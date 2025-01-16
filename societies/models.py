@@ -1,5 +1,8 @@
+from datetime import timedelta
+
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils import timezone
 
 # Create your models here.
 
@@ -84,7 +87,7 @@ class Society(models.Model):
     Attributes:
         name : str 
             The name of the society
-        members : ManyToManyField
+        society_members : ManyToManyField
             The society members
         roles : JSONField(dict) 
             A dictionary of customised roles for society members
@@ -97,10 +100,10 @@ class Society(models.Model):
         __str__(): Returns the society's name
     """
 
-    name = models.CharField(max_length=30)
-    members = models.ManyToManyField(
+    name = models.CharField(max_length=30, default='')
+    society_members = models.ManyToManyField(
         'Student',
-        related_name='societies',
+        related_name='societies_belongs_to',
         blank=True
     )
 
@@ -109,15 +112,17 @@ class Society(models.Model):
 
     leader = models.ForeignKey(
         Student,
-        on_delete=models.SET_NULL,
-        related_name='society'
+        on_delete=models.DO_NOTHING,
+        related_name='society',
+        null=True
     )
 
     approved_by = models.ForeignKey(
-        Admin,
+        Advisor,
         on_delete=models.SET_NULL,
         related_name='approved_societies',
-        blank=False
+        blank=False,
+        null = True
     )
 
     def __str__(self):
@@ -147,24 +152,37 @@ class Event(models.Model):
         __str__(): Returns the event's name
     """
 
-    title = models.CharField(max_length=20)
-    description = models.CharField(max_length=300)
+    title = models.CharField(max_length=20, default='')
+    description = models.CharField(max_length=300, default='')
 
-    date = models.DateField(blank=False, null=False)
+    date = models.DateField(
+        blank=False,
+        null=False,
+        default=timezone.now
+    )
 
-    start_time = models.TimeField(blank=False, null=False)
+    start_time = models.TimeField(
+        blank=False,
+        null=False,
+        default=timezone.now
+    )
 
     # Stores only duration inplace of duration & endtime
-    duration = models.DurationField(blank=False, null=False)
+    duration = models.DurationField(
+        blank=False,
+        null=False,
+        default=timedelta(hours=1)
+    )
 
     hosted_by = models.ForeignKey(
         Society,
         on_delete=models.CASCADE,
-        related_name='events'
+        related_name='events',
+        null=True
     )
 
     # May need to be longer or shorter, for address
-    location = models.CharField(max_length=300)
+    location = models.CharField(max_length=300, default='')
 
     def __str__(self):
         return str(self.title)
@@ -188,7 +206,7 @@ class Notification(models.Model):
         Event,
         on_delete=models.CASCADE,
         blank=False,
-        null=False
+        null=True
     )
 
     for_student = models.ForeignKey(
@@ -196,7 +214,7 @@ class Notification(models.Model):
         on_delete=models.CASCADE,
         related_name='notifications',
         blank=False,
-        null=False
+        null=True
     )
 
     def __str__(self):
