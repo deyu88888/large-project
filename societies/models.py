@@ -108,7 +108,7 @@ class Society(models.Model):
     )
 
     # Roles will hold a dictionary of role_name to user_id
-    roles = models.JSONField(default=dict)
+    roles = models.JSONField(default=dict, blank=True)
 
     leader = models.ForeignKey(
         Student,
