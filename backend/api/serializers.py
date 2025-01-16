@@ -1,4 +1,4 @@
-from django.contrib.auth.models import User
+from api.models import User
 from rest_framework import serializers
 from api.models import Society, Event, Notification
 
