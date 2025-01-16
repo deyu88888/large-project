@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 from django.contrib.auth.models import AbstractUser
+from django.core.validators import MinLengthValidator, MaxLengthValidator, RegexValidator
 from django.db import models
 from django.utils import timezone
 
@@ -13,6 +14,16 @@ class User(AbstractUser):
     username = models.CharField(
         unique=True,
         max_length=30,
+        validators=[
+            MinLengthValidator(6),
+            MaxLengthValidator(30),
+            RegexValidator(
+                regex='^[a-zA-Z0-9_.-]+$',
+                message='Usernames must only contain letters, numbers, underscore, hyphen, and dots.',
+                code='invalid_username',
+            )
+        ],
+        help_text="6-30 characters. Letters, digits, underscore, hyphen, and dots only.",
     )
     first_name = models.CharField(max_length=50, blank=False)
     last_name = models.CharField(max_length=50, blank=False)
@@ -29,6 +40,12 @@ class User(AbstractUser):
 
     class Meta:
         ordering = ('first_name', 'last_name')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['username'],
+                name='unique_username'
+            )
+        ]
 
     @property
     def full_name(self):
