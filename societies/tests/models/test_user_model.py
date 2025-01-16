@@ -31,6 +31,16 @@ class UserModelTestCase(TestCase):
         self.user.username = 'x' * 31
         self._assert_user_is_invalid()
 
+    def test_username_with_invalid_characters(self):
+        user = User(username='invalid@user!', email='test@example.com')
+        with self.assertRaises(ValidationError):
+            user.full_clean()
+
+    def test_username_with_spaces(self):
+        user = User(username='invalid user', email='test@example.com')
+        with self.assertRaises(ValidationError):
+            user.full_clean()
+
     def test_username_must_be_unique(self):
         second_user = User.objects.get(username='janedoe')
         self.user.username = second_user.username
