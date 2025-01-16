@@ -31,6 +31,26 @@ class UserModelTestCase(TestCase):
         self.user.username = 'x' * 31
         self._assert_user_is_invalid()
 
+    def test_username_with_invalid_characters(self):
+        user = User(username='invalid@user!', email='test@example.com')
+        with self.assertRaises(ValidationError):
+            user.full_clean()
+
+    def test_username_with_spaces(self):
+        user = User(username='invalid user', email='test@example.com')
+        with self.assertRaises(ValidationError):
+            user.full_clean()
+
+    def test_username_case_sensitivity(self):
+        user1 = User.objects.create(username='UserName', email='user1@example.com')
+        user2 = User(username='username', email='user2@example.com')
+        with self.assertRaises(ValidationError):
+            user2.full_clean()
+
+    def test_username_preserves_case(self):
+        user = User.objects.create(username='UserName', email='user@example.com')
+        self.assertEqual(user.username, 'UserName')
+
     def test_username_must_be_unique(self):
         second_user = User.objects.get(username='janedoe')
         self.user.username = second_user.username
