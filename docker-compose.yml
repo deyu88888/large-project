@@ -1,0 +1,25 @@
+services:
+  # Django Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/db.sqlite3:/app/db.sqlite3
+    environment:
+      - DJANGO_SECRET_KEY=some-very-secret-key
+      - DJANGO_DEBUG=True
+
+  # React Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
