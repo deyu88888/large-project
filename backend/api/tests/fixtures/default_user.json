@@ -1,0 +1,16 @@
+[
+    {
+        "model": "api.user",
+        "pk": 1,
+        "fields": {
+            "username": "johndoe",
+            "first_name": "John",
+            "last_name": "Doe",
+            "email": "johndoe@example.com",
+            "password": "pbkdf2_sha256$870000$aiqeVmJs11ftW0dDhJc3Ss$NO5U98iwRG2819XuQJyJDErrNJVEAaxTv1AcosEK8tc=",
+            "is_active": true,
+            "is_superuser": false,
+            "role": "student"
+        }
+    }
+]
