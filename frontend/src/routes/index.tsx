@@ -7,10 +7,9 @@ import { PublicGuard } from "../components/guards/public-guard";
 import { PrivateGuard } from "../components/guards/private-guard";
 
 // Lazy-loaded pages
-const HomePage = lazy(() => import("../pages/home"));
+const DashboardPage = lazy(() => import("../pages/Dashboard"));
 const LoginPage = lazy(() => import("../pages/login"));
 const RegisterPage = lazy(() => import("../pages/register"));
-const DashboardPage = lazy(() => import("../pages/Dashboard"));
 
 function Logout() {
     localStorage.clear();
@@ -19,14 +18,13 @@ function Logout() {
 
 // Routes Configuration
 const routes = [
+    // Public Home Dashboard
     {
         path: "/",
         element: (
-            <PrivateGuard>
-                <Suspense fallback={<CircularLoader />}>
-                    <Outlet />
-                </Suspense>
-            </PrivateGuard>
+            <Suspense fallback={<CircularLoader />}>
+                <Outlet />
+            </Suspense>
         ),
         children: [
             {
@@ -37,16 +35,9 @@ const routes = [
                     </Suspense>
                 ),
             },
-            {
-                path: "logout",
-                element: (
-                    <Suspense fallback={<CircularLoader />}>
-                        <Navigate to="/login" replace />
-                    </Suspense>
-                ),
-            },
         ],
     },
+    // Public Routes for Login and Registration
     {
         path: "/",
         element: (
@@ -65,12 +56,14 @@ const routes = [
                 path: "register",
                 element: <RegisterPage />,
             },
-            {
-                path: "logout",
-                element: <Logout />,
-            },
         ],
     },
+    // Logout Route
+    {
+        path: "logout",
+        element: <Logout />,
+    },
+    // Catch-All for 404
     {
         path: "*",
         element: (
