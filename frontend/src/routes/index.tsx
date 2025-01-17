@@ -10,6 +10,7 @@ import { PrivateGuard } from "../components/guards/private-guard";
 const HomePage = lazy(() => import("../pages/home"));
 const LoginPage = lazy(() => import("../pages/login"));
 const RegisterPage = lazy(() => import("../pages/register"));
+const DashboardPage = lazy(() => import("../pages/Dashboard"));
 
 function Logout() {
     localStorage.clear();
@@ -30,7 +31,11 @@ const routes = [
         children: [
             {
                 index: true,
-                element: <HomePage />,
+                element: (
+                    <Suspense fallback={<CircularLoader />}>
+                        <DashboardPage />
+                    </Suspense>
+                ),
             },
             {
                 path: "logout",
