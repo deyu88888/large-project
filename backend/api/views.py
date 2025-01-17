@@ -1,35 +1,29 @@
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
-from api.models import User
+from api.models import User, Society, Event
 from rest_framework import generics
 from .serializers import UserSerializer
 from rest_framework.permissions import IsAuthenticated, AllowAny
-
-
-# class NoteListCreate(generics.ListCreateAPIView):
-#     serializer_class = NoteSerializer
-#     permission_classes = [IsAuthenticated]
-
-#     def get_queryset(self):
-#         user = self.request.user
-#         return Note.objects.filter(author=user)
-
-#     def perform_create(self, serializer):
-#         if serializer.is_valid():
-#             serializer.save(author=self.request.user)
-#         else:
-#             print(serializer.errors)
-
-
-# class NoteDelete(generics.DestroyAPIView):
-#     serializer_class = NoteSerializer
-#     permission_classes = [IsAuthenticated]
-
-#     def get_queryset(self):
-#         user = self.request.user
-#         return Note.objects.filter(author=user)
 
 
 class CreateUserView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [AllowAny]
+
+
+@login_required
+def dashboard_stats(request):
+    """
+    API endpoint to provide dashboard statistics:
+    - Total number of societies
+    - Total number of events
+    - Pending society approvals
+    """
+    stats = {
+        "total_societies": Society.objects.count(),
+        "total_events": Event.objects.count(),
+        "pending_approvals": Society.objects.filter(approved_by=None).count(),
+    }
+    return JsonResponse(stats)
