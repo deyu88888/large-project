@@ -1,6 +1,5 @@
-from api.models import User
+from api.models import User, Society, Event, Notification
 from rest_framework import serializers
-from api.models import Society, Event, Notification
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
