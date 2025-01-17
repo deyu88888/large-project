@@ -4,6 +4,8 @@ from api.views import CreateUserView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 urlpatterns = [
+
+    path("", root_view, name="root"),
     # Admin Panel
     path("admin/", admin.site.urls),
 
