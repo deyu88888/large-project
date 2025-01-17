@@ -27,3 +27,6 @@ def dashboard_stats(request):
         "pending_approvals": Society.objects.filter(approved_by=None).count(),
     }
     return JsonResponse(stats)
+
+def root_view(request):
+    return JsonResponse({"message": "Welcome to the Universal Student Society API!"})
