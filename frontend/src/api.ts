@@ -1,7 +1,7 @@
 import axios from "axios";
 import { ACCESS_TOKEN } from "./constants";
 
-const apiUrl = "http://localhost:8000/";
+const apiUrl = "http://localhost:8000";
 
 export const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL : apiUrl,
@@ -22,9 +22,9 @@ apiClient.interceptors.request.use(
 
 export const apiPaths = {
   USER: {
-    LOGIN: '/api/user/login',
-    REGISTER: '/api/user/register',
-    REFRESH: '/api/token/refresh',
-    CURRENT: '/api/user/current',
-  }
-}
+    LOGIN: "/api/user/login",
+    REGISTER: "/api/user/register",
+    REFRESH: "/api/user/token/refresh",
+    CURRENT: "/api/user/current",
+  },
+};
