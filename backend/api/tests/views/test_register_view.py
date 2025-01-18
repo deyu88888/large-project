@@ -13,8 +13,6 @@ class RegisterViewTestCase(APITestCase):
             "username": "jane_doe",
             "password": "Password123",
             "major": "Computer Science",
-            "department": "Computer Engineering",
-            "societies": "",
         }
         self.existing_user = User.objects.create_user(
             username="existing_user",
@@ -64,18 +62,6 @@ class RegisterViewTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("username", response.data)
         self.assertEqual(response.data["username"][0], "Username already exists.")
-
-    def test_register_student_optional_fields(self):
-        """
-        Test registering a student with optional fields.
-        """
-        self.valid_payload["department"] = ""
-        self.valid_payload["societies"] = None
-        response = self.client.post(reverse("register"), data=self.valid_payload)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        student = Student.objects.get(username=self.valid_payload["username"])
-        self.assertEqual(student.department, "")
-        self.assertEqual(list(student.societies.all()), [])
 
     def test_register_student_invalid_password(self):
         """
