@@ -22,7 +22,7 @@ export default function LoginPage() {
             localStorage.setItem(ACCESS_TOKEN, res.data.access);
             localStorage.setItem(REFRESH_TOKEN, res.data.refresh);
             navigate("/");
-        } catch (error) {
+        } catch {
             alert("Login failed. Please check your credentials and try again.");
         } finally {
             setLoading(false);
