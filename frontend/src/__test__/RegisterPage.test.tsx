@@ -112,7 +112,6 @@ describe("RegisterPage", () => {
     await waitFor(() => {
       expect(screen.getByText(/email already exists/i)).toBeInTheDocument();
     });
-  });
-  
+  });  
   
 });
