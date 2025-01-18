@@ -9,10 +9,9 @@
 
     /* Bundler mode */
     "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
     "isolatedModules": true,
     "moduleDetection": "force",
-    "noEmit": true,
+    "noEmit": false, // Required for composite projects to generate output files
     "jsx": "react-jsx",
 
     /* Linting */
@@ -20,7 +19,10 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true
+    "noUncheckedSideEffectImports": true,
+
+    /* Composite Mode */
+    "composite": true // Enables project references
   },
   "include": ["src"]
 }

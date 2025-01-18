@@ -1,30 +1,58 @@
 import axios from "axios";
-import { ACCESS_TOKEN } from "./constants";
 
-const apiUrl = "http://localhost:8000";
+// Base URL for API
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://127.0.0.1:8000/api/";
 
+// Axios instance
 export const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL : apiUrl,
+  baseURL: API_BASE_URL,
+  timeout: 10000, // 10 seconds timeout
+  headers: {
+    "Content-Type": "application/json",
+  },
 });
 
-apiClient.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem(ACCESS_TOKEN);
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
+// API Paths
 export const apiPaths = {
-  USER: {
-    LOGIN: "/api/user/login",
-    REGISTER: "/api/user/register",
-    REFRESH: "/api/user/token/refresh",
-    CURRENT: "/api/user/current",
+  user: {
+    login: "user/login",
+    register: "user/register",
+    refresh: "user/token/refresh",
+    current: "user/current",
+  },
+  dashboard: {
+    stats: "dashboard/stats/",
+    recentActivities: "dashboard/recent-activities/",
+    notifications: "dashboard/notifications/",
+    societySpotlight: "dashboard/society-spotlight/",
+    eventCalendar: "dashboard/events-calendar/",
   },
 };
+
+// API Endpoints
+export const getDashboardStats = async () => {
+  const response = await apiClient.get(apiPaths.dashboard.stats);
+  return response.data;
+};
+
+export const getRecentActivities = async () => {
+  const response = await apiClient.get(apiPaths.dashboard.recentActivities);
+  return response.data;
+};
+
+export const getNotifications = async () => {
+  const response = await apiClient.get(apiPaths.dashboard.notifications);
+  return response.data;
+};
+
+export const getSocietySpotlight = async () => {
+  const response = await apiClient.get(apiPaths.dashboard.societySpotlight);
+  return response.data;
+};
+
+export const getEventCalendar = async () => {
+  const response = await apiClient.get(apiPaths.dashboard.eventCalendar);
+  return response.data;
+};
+
+export default apiClient;

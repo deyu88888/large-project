@@ -1,15 +1,13 @@
 import { lazy, Suspense } from "react";
 import { Outlet, Navigate, useRoutes } from "react-router-dom";
 
-import NotFound from "../pages/404";
-import CircularLoader from "../components/loading/circular-loader";
-import { PublicGuard } from "../components/guards/public-guard";
-import { PrivateGuard } from "../components/guards/private-guard";
+import CircularLoader from "../components/loading/CircularLoader";
 
 // Lazy-loaded pages
-const HomePage = lazy(() => import("../pages/home"));
+const DashboardPage = lazy(() => import("../pages/Dashboard"));
 const LoginPage = lazy(() => import("../pages/login"));
 const RegisterPage = lazy(() => import("../pages/register"));
+const NotFoundPage = lazy(() => import("../pages/NotFound"));
 
 function Logout() {
     localStorage.clear();
@@ -18,59 +16,63 @@ function Logout() {
 
 // Routes Configuration
 const routes = [
+    // Public Home Dashboard
     {
         path: "/",
         element: (
-            <PrivateGuard>
-                <Suspense fallback={<CircularLoader />}>
-                    <Outlet />
-                </Suspense>
-            </PrivateGuard>
+            <Suspense fallback={<CircularLoader />}>
+                <Outlet />
+            </Suspense>
         ),
         children: [
             {
                 index: true,
-                element: <HomePage />,
-            },
-            {
-                path: "logout",
                 element: (
                     <Suspense fallback={<CircularLoader />}>
-                        <Navigate to="/login" replace />
+                        <DashboardPage />
                     </Suspense>
                 ),
             },
         ],
     },
+    // Public Routes for Login and Registration
     {
         path: "/",
         element: (
-            <PublicGuard>
-                <Suspense fallback={<CircularLoader />}>
-                    <Outlet />
-                </Suspense>
-            </PublicGuard>
+            <Suspense fallback={<CircularLoader />}>
+                <Outlet />
+            </Suspense>
         ),
         children: [
             {
                 path: "login",
-                element: <LoginPage />,
+                element: (
+                    <Suspense fallback={<CircularLoader />}>
+                        <LoginPage />
+                    </Suspense>
+                ),
             },
             {
                 path: "register",
-                element: <RegisterPage />,
-            },
-            {
-                path: "logout",
-                element: <Logout />,
+                element: (
+                    <Suspense fallback={<CircularLoader />}>
+                        <RegisterPage />
+                    </Suspense>
+                ),
             },
         ],
     },
+    // Logout Route
+    {
+        path: "logout",
+        element: <Logout />,
+    },
+    // Catch-All for 404
     {
         path: "*",
         element: (
             <Suspense fallback={<CircularLoader />}>
-                <NotFound />
+                <NotFoundPage />
             </Suspense>
         ),
     },

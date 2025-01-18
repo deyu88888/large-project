@@ -13,34 +13,32 @@ export default function RegisterPage() {
     const [department, setDepartment] = useState("");
     const [societies, setSocieties] = useState("");
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const navigate = useNavigate();
 
-    const handleSubmit = async (e: any) => {
-        setLoading(true);
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        console.log("Sending data:", { username, password, major, department, societies });
-
+        setLoading(true);
 
         try {
-            const res = await apiClient.post(apiPaths.USER.REGISTER, {
+            const res = await apiClient.post(apiPaths.user.register, {
                 first_name: firstName,
                 last_name: lastName,
-                email: email,
-                username: username,
-                password: password,
-                major: major,
+                email,
+                username,
+                password,
+                major,
                 department: department || null, // Optional
                 societies: societies || null,  // Optional
             });
-            console.log(res);
-
+            console.log("Registration successful:", res.data);
             navigate("/login");
-        } catch (error) {
-            alert("Error during registration. Please try again.");
+        } catch (err) {
+            console.error("Error during registration:", err);
+            setError("Registration failed. Please try again.");
         } finally {
             setLoading(false);
         }
-
     };
 
     return (
@@ -52,6 +50,9 @@ export default function RegisterPage() {
                 <h1 className="text-2xl font-bold text-center mb-6">
                     Register as a Student
                 </h1>
+                {error && (
+                    <p className="text-red-500 text-center mb-4">{error}</p>
+                )}
                 <div className="mb-4">
                     <label
                         htmlFor="firstName"
@@ -86,7 +87,6 @@ export default function RegisterPage() {
                         required
                     />
                 </div>
-
                 <div className="mb-4">
                     <label
                         htmlFor="email"
@@ -104,7 +104,6 @@ export default function RegisterPage() {
                         required
                     />
                 </div>
-
                 <div className="mb-4">
                     <label
                         htmlFor="username"
@@ -196,88 +195,11 @@ export default function RegisterPage() {
                 <button
                     type="submit"
                     className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md shadow hover:bg-indigo-700"
+                    disabled={loading}
                 >
-                    Register
+                    {loading ? "Registering..." : "Register"}
                 </button>
             </form>
         </div>
     );
-    
 }
-
-// import { apiClient, apiPaths } from "../api";
-// import { useState } from "react";
-// import { useNavigate } from "react-router-dom";
-// import CircularLoader from "../components/loading/circular-loader";
-
-// export default function RegisterPage() {
-//     const [username, setUsername] = useState("");
-//     const [password, setPassword] = useState("");
-//     const [major, setMajor] = useState("");
-//     const [department, setDepartment] = useState("");
-//     const [societies, setSocieties] = useState("");
-//     const [loading, setLoading] = useState(false);
-//     const navigate = useNavigate();
-
-//     const handleSubmit = async (e: any) => {
-//         setLoading(true);
-//         e.preventDefault();
-
-//         try {
-//             const res = await apiClient.post(apiPaths.USER.REGISTER, {
-//                 username: username,
-//                 password: password,
-//                 major: major,
-//                 department: department || null, // Optional
-//                 societies: societies || null,  // Optional
-//             });
-//             console.log(res);
-//             navigate("/login");
-//         } catch (error) {
-//             alert("Error during registration. Please try again.");
-//         } finally {
-//             setLoading(false);
-//         }
-//     };
-
-//     return (
-//         <form onSubmit={handleSubmit} className="form-container">
-//             <h1>Register as a Student</h1>
-//             <input
-//                 type="text"
-//                 value={username}
-//                 onChange={(e) => setUsername(e.target.value)}
-//                 placeholder="Username"
-//                 required
-//             />
-//             <input
-//                 type="password"
-//                 value={password}
-//                 onChange={(e) => setPassword(e.target.value)}
-//                 placeholder="Password"
-//                 required
-//             />
-//             <input
-//                 type="text"
-//                 value={major}
-//                 onChange={(e) => setMajor(e.target.value)}
-//                 placeholder="Major (e.g., Computer Science)"
-//                 required
-//             />
-//             <input
-//                 type="text"
-//                 value={department}
-//                 onChange={(e) => setDepartment(e.target.value)}
-//                 placeholder="Department (optional, if advisor)"
-//             />
-//             <input
-//                 type="text"
-//                 value={societies}
-//                 onChange={(e) => setSocieties(e.target.value)}
-//                 placeholder="Societies (optional, if advisor)"
-//             />
-//             {loading && <CircularLoader />}
-//             <button type="submit">Register</button>
-//         </form>
-//     );
-// }
