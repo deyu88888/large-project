@@ -6,6 +6,8 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .models import Student, User
+from rest_framework.decorators import api_view, permission_classes
+
 
 
 # class NoteListCreate(generics.ListCreateAPIView):
@@ -49,3 +51,12 @@ class RegisterView(APIView):
             return Response({"message": "Student registered successfully."}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_current_user(request):
+    user = request.user
+    return Response({
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,  # Include other fields if needed
+    })
