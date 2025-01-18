@@ -1,5 +1,11 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import {
+  mockStats,
+  mockRecentActivities,
+  mockNotifications,
+  mockSocietySpotlight,
+  mockEventCalendar,
+} from "./mockData";
 
 const Dashboard: React.FC = () => {
   const [stats, setStats] = useState<any>(null);
@@ -9,25 +15,14 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [statsResponse, activitiesResponse, notificationsResponse, spotlightResponse] = await Promise.all([
-          axios.get("/api/dashboard/stats/"),
-          axios.get("/api/dashboard/recent-activities/"),
-          axios.get("/api/dashboard/notifications/"),
-          axios.get("/api/dashboard/society-spotlight/"),
-        ]);
-        setStats(statsResponse.data);
-        setRecentActivities(activitiesResponse.data);
-        setNotifications(notificationsResponse.data);
-        setSocietySpotlight(spotlightResponse.data);
-      } catch (error) {
-        console.error("Error fetching dashboard data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
+    // Simulate data fetching
+    setTimeout(() => {
+      setStats(mockStats);
+      setRecentActivities(mockRecentActivities);
+      setNotifications(mockNotifications);
+      setSocietySpotlight(mockSocietySpotlight);
+      setLoading(false);
+    }, 500); // Mock delay for data fetching
   }, []);
 
   if (loading) return <div>Loading...</div>;
@@ -91,7 +86,11 @@ const Dashboard: React.FC = () => {
       {/* Event Calendar */}
       <div className="bg-white shadow p-4 rounded">
         <h2 className="text-lg font-bold mb-4">Event Calendar</h2>
-        <p>Calendar integration goes here...</p>
+        <ul>
+          {mockEventCalendar.map((event, idx) => (
+            <li key={idx}>{`${event.date}: ${event.event}`}</li>
+          ))}
+        </ul>
       </div>
 
       {/* Notifications */}
