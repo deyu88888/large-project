@@ -33,23 +33,46 @@ class StudentSerializer(UserSerializer):
     Serializer for the Student model.
     """
     societies = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    major = serializers.CharField(required=True)
+    department = serializers.CharField(required=False, allow_null=True, allow_blank=True)
 
     class Meta(UserSerializer.Meta):
         model = Student
-        fields = UserSerializer.Meta.fields + ['major', 'societies']
+        fields = UserSerializer.Meta.fields + ['major', 'department', 'societies']
 
+    def validate_email(self, value):
+        """
+        Check if the email is unique.
+        """
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("Email already exists.")
+        return value
+
+    def validate_username(self, value):
+        """
+        Check if the username is unique.
+        """
+        if User.objects.filter(username=value).exists():
+            raise serializers.ValidationError("Username already exists.")
+        return value
+    
     def create(self, validated_data):
         """
         Override create to handle Advisor-specific fields.
         """
         societies = validated_data.pop('societies', [])
         major = validated_data.pop('major')
+        department = validated_data.pop('department', None)
         password = validated_data.pop('password')
         student = Student.objects.create(**validated_data)
         student.set_password(password)
         student.major = major
-        student.save()
 
+        if department:
+            student.department = department
+            
+        student.save()
+            
         if societies:
             student.societies.set(societies)
 
