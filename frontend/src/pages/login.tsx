@@ -15,7 +15,7 @@ export default function LoginPage() {
         e.preventDefault();
 
         try {
-            const res = await apiClient.post(apiPaths.login, {
+            const res = await apiClient.post(apiPaths.user.login, {
                 username,
                 password,
             });

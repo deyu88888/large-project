@@ -1,7 +1,7 @@
 import { lazy, Suspense } from "react";
 import { Outlet, Navigate, useRoutes } from "react-router-dom";
 
-import CircularLoader from "../components/loading/CircularLoader";
+import CircularLoader from "../components/loading/circular-loader";
 
 // Lazy-loaded pages
 const DashboardPage = lazy(() => import("../pages/Dashboard"));
