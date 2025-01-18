@@ -1,13 +1,13 @@
 import { lazy, Suspense } from "react";
 import { Outlet, Navigate, useRoutes } from "react-router-dom";
 
-import NotFound from "../pages/404";
-import CircularLoader from "../components/loading/circular-loader";
+import CircularLoader from "../components/loading/CircularLoader";
 
 // Lazy-loaded pages
 const DashboardPage = lazy(() => import("../pages/Dashboard"));
 const LoginPage = lazy(() => import("../pages/login"));
 const RegisterPage = lazy(() => import("../pages/register"));
+const NotFoundPage = lazy(() => import("../pages/NotFound"));
 
 function Logout() {
     localStorage.clear();
@@ -72,7 +72,7 @@ const routes = [
         path: "*",
         element: (
             <Suspense fallback={<CircularLoader />}>
-                <NotFound />
+                <NotFoundPage />
             </Suspense>
         ),
     },
