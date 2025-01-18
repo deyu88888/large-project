@@ -1,30 +1,42 @@
 import axios from "axios";
-import { ACCESS_TOKEN } from "./constants";
 
-const apiUrl = "http://localhost:8000/";
+// Base URL for API
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://127.0.0.1:8000/api/";
 
-export const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL : apiUrl,
+// Axios instance
+const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 10000, // 10 seconds timeout
+  headers: {
+    "Content-Type": "application/json",
+  },
 });
 
-apiClient.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem(ACCESS_TOKEN);
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
+// API Endpoints
+export const getDashboardStats = async () => {
+  const response = await apiClient.get("dashboard/stats/");
+  return response.data;
+};
 
-export const apiPaths = {
-  USER: {
-    LOGIN: '/api/user/login',
-    REGISTER: '/api/user/register',
-    REFRESH: '/api/token/refresh',
-    CURRENT: '/api/user/current',
-  }
-}
+export const getRecentActivities = async () => {
+  const response = await apiClient.get("dashboard/recent-activities/");
+  return response.data;
+};
+
+export const getNotifications = async () => {
+  const response = await apiClient.get("dashboard/notifications/");
+  return response.data;
+};
+
+export const getSocietySpotlight = async () => {
+  const response = await apiClient.get("dashboard/society-spotlight/");
+  return response.data;
+};
+
+export const getEventCalendar = async () => {
+  const response = await apiClient.get("dashboard/events-calendar/");
+  return response.data;
+};
+
+// Export the Axios client for any custom requests
+export default apiClient;
