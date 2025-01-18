@@ -3,8 +3,6 @@ import { Outlet, Navigate, useRoutes } from "react-router-dom";
 
 import NotFound from "../pages/404";
 import CircularLoader from "../components/loading/circular-loader";
-import { PublicGuard } from "../components/guards/public-guard";
-import { PrivateGuard } from "../components/guards/private-guard";
 
 // Lazy-loaded pages
 const DashboardPage = lazy(() => import("../pages/Dashboard"));
@@ -41,20 +39,26 @@ const routes = [
     {
         path: "/",
         element: (
-            <PublicGuard>
-                <Suspense fallback={<CircularLoader />}>
-                    <Outlet />
-                </Suspense>
-            </PublicGuard>
+            <Suspense fallback={<CircularLoader />}>
+                <Outlet />
+            </Suspense>
         ),
         children: [
             {
                 path: "login",
-                element: <LoginPage />,
+                element: (
+                    <Suspense fallback={<CircularLoader />}>
+                        <LoginPage />
+                    </Suspense>
+                ),
             },
             {
                 path: "register",
-                element: <RegisterPage />,
+                element: (
+                    <Suspense fallback={<CircularLoader />}>
+                        <RegisterPage />
+                    </Suspense>
+                ),
             },
         ],
     },
