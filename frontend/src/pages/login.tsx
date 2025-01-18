@@ -32,8 +32,8 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="flex justify-center items-center h-screen bg-gray-100">
-            <form onSubmit={handleSubmit} className="w-full max-w-md bg-white p-6 rounded-lg shadow-lg">
+        <div className="flex justify-center items-center min-h-screen bg-gray-100 py-6 px-4 sm:px-6 lg:px-8">
+            <form onSubmit={handleSubmit} className="w-full max-w-md bg-white p-6 rounded-lg shadow-lg overflow-auto">
                 <h1 className="text-2xl font-bold text-center mb-6">
                     Login
                 </h1>
@@ -73,6 +73,14 @@ export default function LoginPage() {
                 <button type="submit" className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md shadow hover:bg-indigo-700">
                     Login
                 </button>
+                <div className="mt-4 text-center">
+                    <p>
+                        Need to sign up?{" "}
+                        <a href="/register" className="text-indigo-600 hover:underline">
+                            Please register.
+                        </a>
+                    </p>
+                </div>
             </form>
         </div>
     );
