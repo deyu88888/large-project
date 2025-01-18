@@ -5,8 +5,8 @@ import {
   mockNotifications,
   mockSocietySpotlight,
   mockEventCalendar,
-} from "./mockData";
-import EventCalendar from "./components/EventCalendar";
+} from "../mockData";
+import EventCalendar from "../components/EventCalendar";
 
 const Dashboard: React.FC = () => {
   const [stats, setStats] = useState<any>(null);
