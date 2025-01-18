@@ -6,6 +6,7 @@ import {
   mockSocietySpotlight,
   mockEventCalendar,
 } from "./mockData";
+import EventCalendar from "./components/EventCalendar";
 
 const Dashboard: React.FC = () => {
   const [stats, setStats] = useState<any>(null);
@@ -84,14 +85,11 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Event Calendar */}
-      <div className="bg-white shadow p-4 rounded">
-        <h2 className="text-lg font-bold mb-4">Event Calendar</h2>
-        <ul>
-          {mockEventCalendar.map((event, idx) => (
-            <li key={idx}>{`${event.date}: ${event.event}`}</li>
-          ))}
-        </ul>
-      </div>
+      <EventCalendar events={mockEventCalendar.map((event) => ({
+        title: event.event,
+        start: new Date(event.date),
+        end: new Date(event.date),
+      }))} />
 
       {/* Notifications */}
       <div className="bg-white shadow p-4 rounded">
