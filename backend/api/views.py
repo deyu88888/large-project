@@ -55,6 +55,7 @@ class RegisterView(APIView):
     information such as department and societies.
     """
     permission_classes = [AllowAny]
+    authentication_classes = []
 
     def post(self, request):
         first_name = request.data.get("first_name")
