@@ -32,26 +32,48 @@ export default function LoginPage() {
     };
 
     return (
-        <form onSubmit={handleSubmit} className="form-container">
-            <h1>Login</h1>
-            <input
-                className=""
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Username"
-            />
-            <input
-                className=""
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Password"
-            />
-            {loading && <CircularLoader />}
-            <button className="form-button" type="submit">
-                Login
-            </button>
-        </form>
+        <div className="flex justify-center items-center h-screen bg-gray-100">
+            <form onSubmit={handleSubmit} className="w-full max-w-md bg-white p-6 rounded-lg shadow-lg">
+                <h1 className="text-2xl font-bold text-center mb-6">
+                    Login
+                </h1>
+                <div className="mb-4">
+                    <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+                        Username
+                    </label>
+                    <input
+                        id="username"
+                        type="text"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        placeholder="Enter your username"
+                        className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                        required
+                    />
+                </div>
+                <div className="mb-4">
+                    <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                        Password
+                    </label>
+                    <input
+                        id="password"
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Enter your password"
+                        className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                        required
+                    />
+                </div>
+                {loading && (
+                    <div className="flex justify-center mb-4">
+                        <CircularLoader />
+                    </div>
+                )}
+                <button type="submit" className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md shadow hover:bg-indigo-700">
+                    Login
+                </button>
+            </form>
+        </div>
     );
 }
