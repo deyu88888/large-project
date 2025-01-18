@@ -1,5 +1,4 @@
 from datetime import timedelta
-
 from django.core.validators import MinLengthValidator, MaxLengthValidator, RegexValidator
 from django.db import models
 from django.contrib.auth.models import User, AbstractUser
