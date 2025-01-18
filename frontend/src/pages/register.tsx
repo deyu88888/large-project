@@ -44,10 +44,10 @@ export default function RegisterPage() {
     };
 
     return (
-        <div className="flex justify-center items-center h-screen bg-gray-100">
+        <div className="flex justify-center items-center min-h-screen bg-gray-100 py-6 px-4 sm:px-6 lg:px-8">
             <form
                 onSubmit={handleSubmit}
-                className="w-full max-w-md bg-white p-6 rounded-lg shadow-lg"
+                className="w-full max-w-md bg-white p-6 rounded-lg shadow-lg overflow-auto"
             >
                 <h1 className="text-2xl font-bold text-center mb-6">
                     Register as a Student
@@ -199,6 +199,14 @@ export default function RegisterPage() {
                 >
                     Register
                 </button>
+                <div className="mt-4 text-center">
+                    <p>
+                        Already registered?{" "}
+                        <a href="/login" className="text-indigo-600 hover:underline">
+                            Please login.
+                        </a>
+                    </p>
+                </div>
             </form>
         </div>
     );
