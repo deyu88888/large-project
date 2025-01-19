@@ -5,7 +5,6 @@ import { ACCESS_TOKEN, REFRESH_TOKEN } from "../constants";
 import CircularLoader from "../components/loading/circular-loader";
 import { useFormik } from "formik";
 
-
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
