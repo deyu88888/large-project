@@ -15,5 +15,8 @@ urlpatterns = [
     path("api/token/refresh", TokenRefreshView.as_view(), name="refresh"),
     path("api/user/me", get_current_user, name="get_current_user"), #For global callout
     path("api-auth", include("rest_framework.urls")),
+
+    # This is basically importing all urls from api/urls.py with /api
+    # attached to front of it
     path("api/", include("api.urls")),
 ]

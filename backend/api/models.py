@@ -144,6 +144,16 @@ class Society(models.Model):
     def __str__(self):
         return str(self.name)
 
+def get_date():
+    """ Returns the current date """
+
+    return timezone.now().date()
+
+def get_time():
+    """ Returns the current time """
+
+    return timezone.now().time()
+
 class Event(models.Model):
     """
     A class modelling an event held by a student society
@@ -174,13 +184,13 @@ class Event(models.Model):
     date = models.DateField(
         blank=False,
         null=False,
-        default=timezone.now
+        default=get_date
     )
 
     start_time = models.TimeField(
         blank=False,
         null=False,
-        default=timezone.now
+        default=get_time
     )
 
     # Stores only duration inplace of duration & endtime

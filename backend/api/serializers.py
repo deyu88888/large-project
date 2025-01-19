@@ -1,6 +1,5 @@
-from api.models import User, Student, Advisor, Admin
+from api.models import User, Student, Advisor, Admin, Society, Event, Notification
 from rest_framework import serializers
-from api.models import Society, Event, Notification
 
 class UserSerializer(serializers.ModelSerializer):
     """

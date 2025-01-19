@@ -218,6 +218,11 @@ export default function RegisterPage() {
 //                 first_name: firstName,
 //                 last_name: lastName,
 //                 email: email,
+//         setLoading(true);
+//         e.preventDefault();
+
+//         try {
+//             const res = await apiClient.post(apiPaths.USER.REGISTER, {
 //                 username: username,
 //                 password: password,
 //                 major: major,
@@ -379,4 +384,46 @@ export default function RegisterPage() {
 //         </div>
 //     );
     
+//     };
+
+//     return (
+//         <form onSubmit={handleSubmit} className="form-container">
+//             <h1>Register as a Student</h1>
+//             <input
+//                 type="text"
+//                 value={username}
+//                 onChange={(e) => setUsername(e.target.value)}
+//                 placeholder="Username"
+//                 required
+//             />
+//             <input
+//                 type="password"
+//                 value={password}
+//                 onChange={(e) => setPassword(e.target.value)}
+//                 placeholder="Password"
+//                 required
+//             />
+//             <input
+//                 type="text"
+//                 value={major}
+//                 onChange={(e) => setMajor(e.target.value)}
+//                 placeholder="Major (e.g., Computer Science)"
+//                 required
+//             />
+//             <input
+//                 type="text"
+//                 value={department}
+//                 onChange={(e) => setDepartment(e.target.value)}
+//                 placeholder="Department (optional, if advisor)"
+//             />
+//             <input
+//                 type="text"
+//                 value={societies}
+//                 onChange={(e) => setSocieties(e.target.value)}
+//                 placeholder="Societies (optional, if advisor)"
+//             />
+//             {loading && <CircularLoader />}
+//             <button type="submit">Register</button>
+//         </form>
+//     );
 // }
