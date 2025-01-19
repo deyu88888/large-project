@@ -79,7 +79,7 @@ export default function ProfilePage() {
             email,
             role,
           }) => {
-            const res = await apiClient.put(apiPaths.USER.CURRENT, {
+            const res = await apiClient.put(apiPaths.user.current, {
               first_name: user.firstName == first_name ? undefined : first_name,
               last_name: user.lastName == last_name ? undefined : last_name,
               username: user.username == username ? undefined : username,

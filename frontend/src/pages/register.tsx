@@ -21,7 +21,7 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const res = await apiClient.post(apiPaths.USER.REGISTER, {
+      const res = await apiClient.post(apiPaths.user.register, {
         first_name: firstName,
         last_name: lastName,
         email,
