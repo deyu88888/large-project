@@ -10,6 +10,7 @@ import { PrivateGuard } from "../components/guards/private-guard";
 const HomePage = lazy(() => import("../pages/home"));
 const LoginPage = lazy(() => import("../pages/login"));
 const RegisterPage = lazy(() => import("../pages/register"));
+const ProfilePage = lazy(() => import("../pages/profile"));
 
 function Logout() {
   localStorage.clear();
@@ -31,6 +32,10 @@ const routes = [
       {
         index: true,
         element: <HomePage />,
+      },
+      {
+        path: "profile",
+        element: <ProfilePage />,
       },
       {
         path: "logout",
