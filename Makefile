@@ -31,3 +31,9 @@ setup-be: ## Setup the backend (install dependencies)
 .PHONY: migrate
 migrate: ## Run the migrations
 	@cd backend && python3 manage.py migrate
+
+########################################################################################################################
+
+.PHONY: dockerc
+dockerc: ## Docker compose and run fe and be containers
+	@docker-compose up --build
