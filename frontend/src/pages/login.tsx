@@ -17,11 +17,11 @@ export default function LoginPage() {
     onSubmit: async (data) => {
       setLoading(true);
       try {
-        const res = await apiClient.post(apiPaths.USER.LOGIN, data);
+        const res = await apiClient.post(apiPaths.user.login, data);
         localStorage.setItem(ACCESS_TOKEN, res.data.access);
         localStorage.setItem(REFRESH_TOKEN, res.data.refresh);
         navigate("/");
-      } catch (error) {
+      } catch {
         alert("Login failed. Please try again.");
       } finally {
         setLoading(false);
