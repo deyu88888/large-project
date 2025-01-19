@@ -32,7 +32,6 @@ class CreateUserView(generics.CreateAPIView):
     permission_classes = [AllowAny]
 
 
-<<<<<<< HEAD
 
 class RegisterView(APIView):
     permission_classes = [AllowAny]  # Otherwise it won't allow anonymous access
@@ -53,7 +52,6 @@ def get_current_user(request):
         "username": user.username,
         "email": user.email,  # Include other fields if needed
     })
-=======
 
 class CurrentUserView(APIView):
     """
@@ -88,4 +86,3 @@ class CurrentUserView(APIView):
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
->>>>>>> b8a5dbd7b91dd2bcd5e91aa9a0e357836ebbd66f
