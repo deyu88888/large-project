@@ -25,6 +25,7 @@ class RegisterView(APIView):
     View for registering a new student user. Handles creating a student user with optional data like department and societies.
     """
     permission_classes = [AllowAny]
+    authentication_classes = []
 
     def post(self, request):
         first_name = request.data.get("first_name")
@@ -84,7 +85,7 @@ class CurrentUserView(APIView):
         if not serializer.data:
             return Response({
                 "error": "User data could not be retrieved. Please try again later."
-            }, status=status.HTTP_400_BAD_REQUEST)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
