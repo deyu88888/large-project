@@ -1,33 +1,30 @@
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../stores/auth-store";
-import { useEffect } from "react";
-import { apiClient, apiPaths } from "../api";
+import { Link } from "react-router";
+
+// ------------------------------------------------
 
 export default function HomePage() {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
+  const { user } = useAuthStore();
 
-    const { user } = useAuthStore();
+  const logout = () => {
+    localStorage.removeItem("access");
+    localStorage.removeItem("refresh");
+    navigate("/login");
+  };
 
-    const logout = () => {
-        localStorage.removeItem("access");
-        localStorage.removeItem("refresh");
-        navigate("/login");
-    };
+  return (
+    <div className="flex flex-col gap-4 container p-4">
+      <div>user: {user?.username}</div>
 
+      <Link className="btn bg-slate-400 mx-auto px-4 py-2" to={"/profile"}>
+        profile
+      </Link>
 
-useEffect(()=> {
-    async function current() {
-        const response = await apiClient.get(apiPaths.USER.CURRENT)
-    }
-    current()
-},[])
-
-    return (
-        <div className="flex flex-col gap-4">
-            <div>user: {user?.username}</div>
-            <button className="btn bg-teal-500" onClick={logout}>
-                logout
-            </button>
-        </div>
-    );
+      <button className="btn bg-slate-400 mx-auto px-4 py-2" onClick={logout}>
+        logout
+      </button>
+    </div>
+  );
 }
