@@ -67,6 +67,12 @@ class Student(User):
         blank=True,
     )
 
+    attended_events = models.ManyToManyField(
+        'Event',
+        related_name='attendees',
+        blank=True
+    )
+    
     def save(self, *args, **kwargs):
         self.role = 'student'
         super().save(*args, **kwargs)
@@ -154,6 +160,8 @@ def get_time():
 
     return timezone.now().time()
 
+
+#TODO: edit doc comment because added new fields and functions
 class Event(models.Model):
     """
     A class modelling an event held by a student society
@@ -209,9 +217,20 @@ class Event(models.Model):
 
     # May need to be longer or shorter, for address
     location = models.CharField(max_length=300, default='')
+    
+    max_capacity = models.PositiveIntegerField(default=0)  # 0 = No limit
+    current_attendees = models.ManyToManyField('Student', blank=True)
 
     def __str__(self):
         return str(self.title)
+    
+    def is_full(self):
+        return self.max_capacity > 0 and self.current_attendees.count() >= self.max_capacity
+
+    def has_started(self):
+        now = timezone.now()
+        event_datetime = timezone.datetime.combine(self.date, self.start_time, tzinfo=timezone.utc)
+        return now >= event_datetime
 
 class Notification(models.Model):
     """

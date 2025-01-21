@@ -1,15 +1,26 @@
-from api.models import User
+from datetime import timezone
+from api.models import User, Society, Event, Student
 from rest_framework import generics, status
-from .serializers import UserSerializer, StudentSerializer
+from .serializers import EventSerializer, RSVPEventSerializer, UserSerializer, StudentSerializer, LeaveSocietySerializer, JoinSocietySerializer, SocietySerializer
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .models import Student, User
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
 
-
+"""
+This function is for the global callout
+"""
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_current_user(request):
+    user = request.user
+    return Response({
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,  
+    })
 
 class CreateUserView(generics.CreateAPIView):
     """
@@ -43,15 +54,7 @@ class RegisterView(APIView):
             return Response({"message": "Student registered successfully."}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-@api_view(["GET"])
-@permission_classes([IsAuthenticated])
-def get_current_user(request):
-    user = request.user
-    return Response({
-        "id": user.id,
-        "username": user.username,
-        "email": user.email,  # Include other fields if needed
-    })
+
 
 class CurrentUserView(APIView):
     """
@@ -85,4 +88,150 @@ class CurrentUserView(APIView):
                 "error": "User data could not be retrieved. Please try again later."
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class MySocietiesView(APIView):
+    """
+    API View for managing societies that a student has joined.
+
+    - **GET**: Retrieves a list of societies the currently logged-in student has joined.
+        - Permissions: Requires the user to be authenticated and a student.
+        - Response:
+            - 200: A list of societies with details such as name and leader.
+            - 403: If the user is not a student.
+
+    - **POST**: Allows the student to leave a society they are part of.
+        - Permissions: Requires the user to be authenticated and a student.
+        - Request Body:
+            - `society_id` (int): ID of the society to leave.
+        - Response:
+            - 200: Confirmation message indicating the student has successfully left the society.
+            - 400: Validation errors, such as invalid society ID.
+            - 403: If the user is not a student.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        # I am not sure if we need this
+        if not hasattr(user, "student"):
+            return Response({"error": "Only students can manage societies."}, status=status.HTTP_403_FORBIDDEN)
+
+        societies = user.student.societies.all()
+        serializer = SocietySerializer(societies, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        serializer = LeaveSocietySerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            society = serializer.save()
+            return Response({"message": f"Successfully left society '{society.name}'."}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class JoinSocietyView(APIView):
+    """
+    API View for managing the joining of new societies by a student.
+
+    - **GET**: Retrieves a list of societies the currently logged-in student has NOT joined.
+        - Permissions: Requires the user to be authenticated and a student.
+        - Response:
+            - 200: A list of available societies with details such as name and leader.
+            - 403: If the user is not a student.
+
+    - **POST**: Allows the student to join a new society.
+        - Permissions: Requires the user to be authenticated and a student.
+        - Request Body:
+            - `society_id` (int): ID of the society to join.
+        - Response:
+            - 200: Confirmation message indicating the student has successfully joined the society.
+            - 400: Validation errors, such as invalid society ID.
+            - 403: If the user is not a student.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        # I am not sure if we need this
+        if not hasattr(user, "student"):
+            return Response({"error": "Only students can join societies."}, status=status.HTTP_403_FORBIDDEN)
+
+        joined_societies = user.student.societies.all()
+        available_societies = Society.objects.exclude(id__in=joined_societies)
+
+        serializer = SocietySerializer(available_societies, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        serializer = JoinSocietySerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            society = serializer.save()
+            return Response({"message": f"Successfully joined society '{society.name}'."}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class RSVPEventView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """
+        List events the student is eligible to RSVP for.
+        """
+        student = request.user.student
+        events = Event.objects.filter(
+            date__gte=timezone.now().date(),  # Future events only
+        ).exclude(
+            current_attendees=student  # Exclude already RSVP’d events
+        ).filter(
+            hosted_by__in=student.societies.all()  # Hosted by societies the student belongs to
+        )
+        serializer = EventSerializer(events, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        """
+        RSVP for an event.
+        """
+        event_id = request.data.get('event_id')
+        try:
+            event = Event.objects.get(id=event_id)
+        except Event.DoesNotExist:
+            return Response({"error": "Event not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = RSVPEventSerializer(instance=event, data={}, context={'request': request, 'action': 'RSVP'})
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": f"RSVP'd for event '{event.title}'."}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request):
+        """
+        Cancel RSVP for an event.
+        """
+        event_id = request.data.get('event_id')
+        try:
+            event = Event.objects.get(id=event_id)
+        except Event.DoesNotExist:
+            return Response({"error": "Event not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = RSVPEventSerializer(instance=event, data={}, context={'request': request, 'action': 'CANCEL'})
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": f"Successfully canceled RSVP for event '{event.title}'."}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class EventHistoryView(APIView):
+    """
+    API View for viewing a student's event history.
+    
+    - **GET**: Retrieve a list of past events the student attended.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        student = request.user.student
+        attended_events = student.attended_events.filter(date__lt=timezone.now().date())
+        serializer = EventSerializer(attended_events, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
