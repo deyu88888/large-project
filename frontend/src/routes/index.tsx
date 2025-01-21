@@ -65,10 +65,6 @@ const routes = [
         path: "register",
         element: <RegisterPage />,
       },
-      {
-        path: "logout",
-        element: <Logout />,
-      },
     ],
   },
   {
