@@ -12,6 +12,8 @@ const LoginPage = lazy(() => import("../pages/login"));
 const RegisterPage = lazy(() => import("../pages/register"));
 const ProfilePage = lazy(() => import("../pages/profile"));
 const DashboardPage = lazy(() => import("../pages/dashboard"));
+const StudentDashboard = lazy(() => import("../pages/studentDashboard"));
+
 
 function Logout() {
   localStorage.clear();
@@ -37,6 +39,14 @@ const routes = [
       {
         path: "profile",
         element: <ProfilePage />,
+      },
+      {
+        path: "studentDashboard",
+        element: (
+          <Suspense fallback={<LoadingView />}>
+            <StudentDashboard />
+          </Suspense>
+        ),
       },
       {
         path: "logout",
