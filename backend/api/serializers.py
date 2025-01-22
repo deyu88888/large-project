@@ -34,6 +34,14 @@ class StudentSerializer(UserSerializer):
     societies = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
     major = serializers.CharField(required=True)
     department = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    email = serializers.EmailField(
+        required=True,
+        validators=[]  # Remove the default unique validator
+    )
+    username = serializers.CharField(
+        required=True,
+        validators=[]  # Remove the default unique validator
+    )
 
     class Meta(UserSerializer.Meta):
         model = Student
@@ -41,19 +49,22 @@ class StudentSerializer(UserSerializer):
 
     def validate_email(self, value):
         """
-        Check if the email is unique.
+        Check if the email is unique and provide a custom error message.
         """
-        if User.objects.filter(email=value).exists():
-            raise serializers.ValidationError("Email already exists.")
+        instance = getattr(self, 'instance', None)
+        if User.objects.filter(email=value).exclude(id=instance.id if instance else None).exists():
+            raise serializers.ValidationError("user with this email already exists.")
         return value
 
     def validate_username(self, value):
         """
-        Check if the username is unique.
+        Check if the username is unique and provide a custom error message.
         """
-        if User.objects.filter(username=value).exists():
-            raise serializers.ValidationError("Username already exists.")
+        instance = getattr(self, 'instance', None)
+        if User.objects.filter(username=value).exclude(id=instance.id if instance else None).exists():
+            raise serializers.ValidationError("user with this username already exists.")
         return value
+
     
     def create(self, validated_data):
         """

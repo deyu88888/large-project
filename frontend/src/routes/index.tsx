@@ -11,7 +11,7 @@ const HomePage = lazy(() => import("../pages/home"));
 const LoginPage = lazy(() => import("../pages/login"));
 const RegisterPage = lazy(() => import("../pages/register"));
 const ProfilePage = lazy(() => import("../pages/profile"));
-const StudentDashboard = lazy(() => import("../pages/studentDashboard"));
+const StudentDashboard = lazy(() => import("../pages/student-dashboard"));
 
 
 function Logout() {
@@ -40,7 +40,7 @@ const routes = [
         element: <ProfilePage />,
       },
       {
-        path: "studentDashboard",
+        path: "student-dashboard",
         element: (
           <Suspense fallback={<LoadingView />}>
             <StudentDashboard />
