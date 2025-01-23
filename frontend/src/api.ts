@@ -12,6 +12,20 @@ export const apiClient = axios.create({
   },
 });
 
+// Interceptor to attach Authorization header
+apiClient.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("ACCESS_TOKEN"); // Fetch token from local storage
+    if (token) {
+      config.headers["Authorization"] = `Bearer ${token}`; // Attach token if available
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error); // Handle request errors
+  }
+);
+
 // API Paths
 export const apiPaths = {
   user: {
