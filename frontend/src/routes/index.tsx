@@ -15,7 +15,7 @@ const DashboardPage = lazy(() => import("../pages/dashboard"));
 
 function Logout() {
   localStorage.clear();
-  return <Navigate to="/login" />;
+  return <Navigate to="/" />;
 }
 
 // Routes Configuration
@@ -42,7 +42,7 @@ const routes = [
         path: "logout",
         element: (
           <Suspense fallback={<LoadingView />}>
-            <Navigate to="/login" replace />
+            <Navigate to="/" replace />
           </Suspense>
         ),
       },

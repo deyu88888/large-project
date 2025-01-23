@@ -20,7 +20,7 @@ export default function LoginPage() {
         const res = await apiClient.post(apiPaths.USER.LOGIN, data);
         localStorage.setItem(ACCESS_TOKEN, res.data.access);
         localStorage.setItem(REFRESH_TOKEN, res.data.refresh);
-        navigate("/");
+        navigate("/home");
       } catch (error) {
         alert(error);
       } finally {
