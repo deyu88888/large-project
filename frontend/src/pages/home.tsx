@@ -11,7 +11,7 @@ export default function HomePage() {
   const logout = () => {
     localStorage.removeItem("access");
     localStorage.removeItem("refresh");
-    navigate("/login");
+    navigate("/");
   };
 
   return (
