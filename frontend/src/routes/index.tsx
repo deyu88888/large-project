@@ -30,7 +30,7 @@ const routes = [
     children: [
       {
         index: true,
-        element: <DashboardPage />, // Removed redundant Suspense
+        element: <DashboardPage />,
       },
     ],
   },
@@ -47,7 +47,7 @@ const routes = [
     children: [
       {
         path: "profile",
-        element: <ProfilePage />, // Removed redundant Suspense
+        element: <ProfilePage />,
       },
       {
         path: "logout",
@@ -68,18 +68,18 @@ const routes = [
     children: [
       {
         path: "login",
-        element: <LoginPage />, // Removed redundant Suspense
+        element: <LoginPage />,
       },
       {
         path: "register",
-        element: <RegisterPage />, // Removed redundant Suspense
+        element: <RegisterPage />,
       },
     ],
   },
   // Catch-All for 404
   {
     path: "*",
-    element: <NotFound />, // Removed redundant Suspense
+    element: <NotFound />,
   },
 ];
 
