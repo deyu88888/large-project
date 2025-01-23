@@ -2,13 +2,15 @@ from datetime import timedelta
 
 from django.core.validators import MinLengthValidator, MaxLengthValidator, RegexValidator
 from django.db import models
-from django.contrib.auth.models import User, AbstractUser
+from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
 
-
+#
+# 1) Custom User model
+#
 class User(AbstractUser):
     """
-
+    A custom user model with role-based logic.
     """
     username = models.CharField(
         unique=True,
@@ -17,12 +19,12 @@ class User(AbstractUser):
             MinLengthValidator(6),
             MaxLengthValidator(30),
             RegexValidator(
-                regex='^[a-zA-Z0-9_.-]+$',
-                message='Usernames must only contain letters, numbers, underscore, hyphen, and dots.',
+                regex=r'^[a-zA-Z0-9_.-]+$',
+                message='Usernames must only contain letters, numbers, underscores, hyphens, or dots.',
                 code='invalid_username',
             )
         ],
-        help_text="6-30 characters. Letters, digits, underscore, hyphen, and dots only.",
+        help_text="6-30 chars. Letters, digits, underscores, hyphens, and dots only.",
     )
     first_name = models.CharField(max_length=50, blank=False)
     last_name = models.CharField(max_length=50, blank=False)
@@ -34,16 +36,12 @@ class User(AbstractUser):
         ('advisor', 'Advisor'),
         ('admin', 'Admin'),
     ]
-
     role = models.CharField(max_length=50, choices=ROLE_CHOICES, default='student')
 
     class Meta:
         ordering = ('first_name', 'last_name')
         constraints = [
-            models.UniqueConstraint(
-                fields=['username'],
-                name='unique_username'
-            )
+            models.UniqueConstraint(fields=['username'], name='unique_username')
         ]
 
     @property
@@ -59,35 +57,47 @@ class User(AbstractUser):
     def is_admin(self):
         return self.role == 'admin'
 
+
+#
+# 2) Student model
+#
 class Student(User):
-    major = models.CharField(max_length=50)
+    major = models.CharField(max_length=50, blank=True)
+    # Typical membership M2M
     societies = models.ManyToManyField(
         'Society',
         related_name='members',
         blank=True,
     )
+    #
+    # Here is the M2M for societies where this student is President.
+    # Note the related_name='presidents' from Society -> Student,
+    # and the name on this side is 'president_of'.
+    #
     president_of = models.ManyToManyField(
         'Society',
-        related_name='president',
+        related_name='presidents',
         blank=True,
     )
+
+    # This boolean indicates if the student is a president of at least one society
     is_president = models.BooleanField(default=False)
 
     def save(self, *args, **kwargs):
-        self.is_president = self.president_of.exists()
+        # Do not check the M2M here (that causes a PK error for new students).
+        # Instead, rely on signals to set is_president whenever M2M changes.
         self.role = 'student'
         super().save(*args, **kwargs)
 
     def __str__(self):
         return self.full_name
 
+
+#
+# 3) Advisor model
+#
 class Advisor(User):
     department = models.CharField(max_length=50)
-    societies = models.ManyToManyField(
-        'Society',
-        related_name='advisors',
-        blank=True,
-    )
 
     def save(self, *args, **kwargs):
         self.role = 'advisor'
@@ -96,6 +106,10 @@ class Advisor(User):
     def __str__(self):
         return self.full_name
 
+
+#
+# 4) Admin model
+#
 class Admin(User):
     def save(self, *args, **kwargs):
         self.is_superuser = True
@@ -103,36 +117,27 @@ class Admin(User):
         self.role = 'admin'
         super().save(*args, **kwargs)
 
+
+#
+# 5) Society model
+#
 class Society(models.Model):
     """
-    A class modelling a student society
-
-    Attributes:
-        name : str 
-            The name of the society
-        society_members : ManyToManyField
-            The society members
-        roles : JSONField(dict) 
-            A dictionary of customised roles for society members
-        leader : ForeignKey(Student)
-            The society leader
-        approved_by : ForeignKey(Admin)
-            The admin responsible for approving the society
-
-    Methods:
-        __str__(): Returns the society's name
+    A model for a student society.
     """
-
     name = models.CharField(max_length=30, default='')
+    # If you want a separate M2M for "members" (in addition to the one in Student),
+    # you can keep it. Or just rely on Student.societies. This is optional.
     society_members = models.ManyToManyField(
         'Student',
         related_name='societies_belongs_to',
         blank=True
     )
 
-    # Roles will hold a dictionary of role_name to user_id
+    # Roles or other metadata
     roles = models.JSONField(default=dict, blank=True)
 
+    # Single leader (optional) or null
     leader = models.ForeignKey(
         'Student',
         on_delete=models.DO_NOTHING,
@@ -140,108 +145,60 @@ class Society(models.Model):
         null=True
     )
 
+    # Must be approved by an Advisor
     approved_by = models.ForeignKey(
         'Advisor',
         on_delete=models.SET_NULL,
         related_name='approved_societies',
         blank=False,
-        null = True
+        null=True
     )
 
     def __str__(self):
-        return str(self.name)
+        return self.name
+
 
 def get_date():
-    """ Returns the current date """
-
+    """ Returns today's date """
     return timezone.now().date()
 
 def get_time():
     """ Returns the current time """
-
     return timezone.now().time()
 
+
+#
+# 6) Event model
+#
 class Event(models.Model):
     """
-    A class modelling an event held by a student society
-
-    Attributes:
-        title : str 
-            The title of the event
-        description : str 
-            A description of the event
-        date : DateField
-            The data the event is to be held
-        start_time : TimeField 
-            The time at which the event begins
-        duration : DurationField
-            The duration for which the event lasts
-        hosted_by : ForeignKey(Society)
-            The society hosting the event
-        location : str
-            The location/address in which the event will be held
-
-    Methods:
-        __str__(): Returns the event's name
+    An event organized by a society.
     """
-
     title = models.CharField(max_length=20, default='')
     description = models.CharField(max_length=300, default='')
-
-    date = models.DateField(
-        blank=False,
-        null=False,
-        default=get_date
-    )
-
-    start_time = models.TimeField(
-        blank=False,
-        null=False,
-        default=get_time
-    )
-
-    # Stores only duration inplace of duration & endtime
-    duration = models.DurationField(
-        blank=False,
-        null=False,
-        default=timedelta(hours=1)
-    )
-
+    date = models.DateField(blank=False, null=False, default=get_date)
+    start_time = models.TimeField(blank=False, null=False, default=get_time)
+    duration = models.DurationField(blank=False, null=False, default=timedelta(hours=1))
     hosted_by = models.ForeignKey(
         'Society',
         on_delete=models.CASCADE,
         related_name='events',
         null=True
     )
-
-    # May need to be longer or shorter, for address
     location = models.CharField(max_length=300, default='')
 
     def __str__(self):
-        return str(self.title)
+        return self.title
 
+
+#
+# 7) Notification model
+#
 class Notification(models.Model):
     """
-    A class modelling notifications to be sent 
-    to a user to inform them of events
-
-    Attributes:
-        for_event : ForeignKey(Event)
-            The event the student is to informed of
-        for_student : ForeignKey(Student)
-            The student the notification is intended for
-
-    Methods:
-        __str__(): Returns the related event's name
+    Notifications for a student about an event, etc.
     """
-
-    for_event = models.ForeignKey(
-        'Event',
-        on_delete=models.CASCADE,
-        blank=False,
-        null=True
-    )
-
+    for_event = models.ForeignKey('Event', on_delete=models.CASCADE, blank=False, null=True)
     for_student = models.ForeignKey(
         'Student',
         on_delete=models.CASCADE,
