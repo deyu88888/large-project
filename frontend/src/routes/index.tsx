@@ -11,6 +11,7 @@ const HomePage = lazy(() => import("../pages/home"));
 const LoginPage = lazy(() => import("../pages/login"));
 const RegisterPage = lazy(() => import("../pages/register"));
 const ProfilePage = lazy(() => import("../pages/profile"));
+const DashboardPage = lazy(() => import("../pages/dashboard"));
 
 function Logout() {
   localStorage.clear();
@@ -30,7 +31,7 @@ const routes = [
     ),
     children: [
       {
-        index: true,
+        path: "home",
         element: <HomePage />,
       },
       {
@@ -57,6 +58,10 @@ const routes = [
       </PublicGuard>
     ),
     children: [
+      {
+        index: true,
+        element: <DashboardPage />,
+      },
       {
         path: "login",
         element: <LoginPage />,
