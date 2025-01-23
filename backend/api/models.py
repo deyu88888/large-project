@@ -66,6 +66,12 @@ class Student(User):
         related_name='members',
         blank=True,
     )
+    president_of = models.ManyToManyField(
+        'Society',
+        related_name='president',
+        blank=True,
+    )
+    is_president = models.BooleanField(default=False)
 
     attended_events = models.ManyToManyField(
         'Event',
@@ -74,6 +80,7 @@ class Student(User):
     )
     
     def save(self, *args, **kwargs):
+        self.is_president = self.president_of.exists()
         self.role = 'student'
         super().save(*args, **kwargs)
 

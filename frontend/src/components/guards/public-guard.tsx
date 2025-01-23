@@ -36,5 +36,5 @@ export function PublicGuard({ children }: { children: React.ReactNode }) {
     return <LoadingView />;
   }
 
-  return isAuthorized ? <Navigate to="/" replace /> : <>{children}</>;
+  return isAuthorized ? <Navigate to="/home" replace /> : <>{children}</>;
 }

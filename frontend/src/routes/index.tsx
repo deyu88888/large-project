@@ -13,10 +13,11 @@ const RegisterPage = lazy(() => import("../pages/register"));
 const ProfilePage = lazy(() => import("../pages/profile"));
 const StudentDashboard = lazy(() => import("../pages/student-dashboard"));
 
+const DashboardPage = lazy(() => import("../pages/dashboard"));
 
 function Logout() {
   localStorage.clear();
-  return <Navigate to="/login" />;
+  return <Navigate to="/" />;
 }
 
 // Routes Configuration
@@ -32,7 +33,7 @@ const routes = [
     ),
     children: [
       {
-        index: true,
+        path: "home",
         element: <HomePage />,
       },
       {
@@ -51,7 +52,7 @@ const routes = [
         path: "logout",
         element: (
           <Suspense fallback={<LoadingView />}>
-            <Navigate to="/login" replace />
+            <Navigate to="/" replace />
           </Suspense>
         ),
       },
@@ -67,6 +68,10 @@ const routes = [
       </PublicGuard>
     ),
     children: [
+      {
+        index: true,
+        element: <DashboardPage />,
+      },
       {
         path: "login",
         element: <LoginPage />,
