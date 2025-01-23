@@ -5,7 +5,7 @@ class Command(BaseCommand):
     help = "Seed the database with admin, advisor, student, and president users"
 
     def handle(self, *args, **kwargs):
-        # Create Admin
+
         admin, created = Admin.objects.get_or_create(
             username="admin_user",
             email="admin@example.com",
@@ -18,7 +18,6 @@ class Command(BaseCommand):
         else:
             self.stdout.write(f"Admin already exists: {admin.username}")
 
-        # Create Advisor
         advisor, created = Advisor.objects.get_or_create(
             username="advisor_user",
             email="advisor@example.com",
@@ -31,7 +30,6 @@ class Command(BaseCommand):
         else:
             self.stdout.write(f"Advisor already exists: {advisor.username}")
 
-        # Create a regular Student
         student, created = Student.objects.get_or_create(
             username="student_user",
             email="student@example.com",
@@ -44,7 +42,6 @@ class Command(BaseCommand):
         else:
             self.stdout.write(f"Student already exists: {student.username}")
 
-        # Create a President Student
         president, created = Student.objects.get_or_create(
             username="president_user",
             email="president@example.com",
@@ -57,18 +54,14 @@ class Command(BaseCommand):
         else:
             self.stdout.write(f"President already exists: {president.username}")
 
-        # Create or get a Society; must be approved by an Advisor
         society, _ = Society.objects.get_or_create(
             name="Robotics Club",
-            leader=president,      # optional: single leader
-            approved_by=advisor    # must be an Advisor, not Admin
+            leader=president,      
+            approved_by=advisor    
         )
 
-        # Instead of society.president.add(...), we do:
-        # This triggers the signals with instance = president (student).
         president.president_of.add(society)
 
-        # Done!
         self.stdout.write(self.style.SUCCESS(
             f"Society '{society.name}' created/retrieved. President: {president.username}"
         ))

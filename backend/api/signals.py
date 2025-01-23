@@ -9,13 +9,13 @@ def update_is_president_on_m2m_change(sender, instance, action, reverse, pk_set,
     or stop being President of a society), update that Student's 'is_president' field.
     """
     if action in ["post_add", "post_remove", "post_clear"]:
-        # If reverse=False, 'instance' is the Student object
+
         if not reverse:
-            # 'instance' is a Student, so we can directly check
+
             instance.is_president = instance.president_of.exists()
             instance.save(update_fields=['is_president'])
         else:
-            # reverse=True => 'instance' is a Society, so pk_set are Student PKs
+
             for student_pk in pk_set:
                 try:
                     student = Student.objects.get(pk=student_pk)

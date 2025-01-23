@@ -5,9 +5,6 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
 
-#
-# 1) Custom User model
-#
 class User(AbstractUser):
     """
     A custom user model with role-based logic.
@@ -57,45 +54,31 @@ class User(AbstractUser):
     def is_admin(self):
         return self.role == 'admin'
 
-
-#
-# 2) Student model
-#
 class Student(User):
     major = models.CharField(max_length=50, blank=True)
-    # Typical membership M2M
+
     societies = models.ManyToManyField(
         'Society',
         related_name='members',
         blank=True,
     )
-    #
-    # Here is the M2M for societies where this student is President.
-    # Note the related_name='presidents' from Society -> Student,
-    # and the name on this side is 'president_of'.
-    #
+
     president_of = models.ManyToManyField(
         'Society',
         related_name='presidents',
         blank=True,
     )
 
-    # This boolean indicates if the student is a president of at least one society
     is_president = models.BooleanField(default=False)
 
     def save(self, *args, **kwargs):
-        # Do not check the M2M here (that causes a PK error for new students).
-        # Instead, rely on signals to set is_president whenever M2M changes.
+
         self.role = 'student'
         super().save(*args, **kwargs)
 
     def __str__(self):
         return self.full_name
 
-
-#
-# 3) Advisor model
-#
 class Advisor(User):
     department = models.CharField(max_length=50)
 
@@ -106,10 +89,6 @@ class Advisor(User):
     def __str__(self):
         return self.full_name
 
-
-#
-# 4) Admin model
-#
 class Admin(User):
     def save(self, *args, **kwargs):
         self.is_superuser = True
@@ -117,27 +96,20 @@ class Admin(User):
         self.role = 'admin'
         super().save(*args, **kwargs)
 
-
-#
-# 5) Society model
-#
 class Society(models.Model):
     """
     A model for a student society.
     """
     name = models.CharField(max_length=30, default='')
-    # If you want a separate M2M for "members" (in addition to the one in Student),
-    # you can keep it. Or just rely on Student.societies. This is optional.
+
     society_members = models.ManyToManyField(
         'Student',
         related_name='societies_belongs_to',
         blank=True
     )
 
-    # Roles or other metadata
     roles = models.JSONField(default=dict, blank=True)
 
-    # Single leader (optional) or null
     leader = models.ForeignKey(
         'Student',
         on_delete=models.DO_NOTHING,
@@ -145,7 +117,6 @@ class Society(models.Model):
         null=True
     )
 
-    # Must be approved by an Advisor
     approved_by = models.ForeignKey(
         'Advisor',
         on_delete=models.SET_NULL,
@@ -157,7 +128,6 @@ class Society(models.Model):
     def __str__(self):
         return self.name
 
-
 def get_date():
     """ Returns today's date """
     return timezone.now().date()
@@ -166,10 +136,6 @@ def get_time():
     """ Returns the current time """
     return timezone.now().time()
 
-
-#
-# 6) Event model
-#
 class Event(models.Model):
     """
     An event organized by a society.
@@ -190,10 +156,6 @@ class Event(models.Model):
     def __str__(self):
         return self.title
 
-
-#
-# 7) Notification model
-#
 class Notification(models.Model):
     """
     Notifications for a student about an event, etc.
