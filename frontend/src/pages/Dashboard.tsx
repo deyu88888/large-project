@@ -7,6 +7,8 @@ import {
   mockEventCalendar,
 } from "../mockData";
 import EventCalendar from "../components/EventCalendar";
+import { Link } from "react-router-dom";
+import { LoadingView } from "../components/loading/loading-view";
 
 const Dashboard: React.FC = () => {
   const [stats, setStats] = useState<any>(null);
@@ -26,18 +28,28 @@ const Dashboard: React.FC = () => {
     }, 500); // Mock delay for data fetching
   }, []);
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <LoadingView />;
 
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <header className="bg-gray-800 text-white p-4 flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Student Society Dashboard</h1>
-        <input
-          type="text"
-          placeholder="Search societies or events..."
-          className="p-2 rounded border border-gray-300"
-        />
+      <header className="bg-gray-800 text-white p-4 flex justify-end items-center">
+        <h1 className="text-2xl font-bold mr-auto">
+          Student Society Dashboard
+        </h1>
+        <div className="flex flex-row gap-2">
+          <input
+            type="text"
+            placeholder="Search societies or events..."
+            className="p-2 rounded border border-gray-300"
+          />
+          <button className={"btn btn-secondary"}>
+            <Link to={"/register"}>Register</Link>
+          </button>
+          <button className={"btn btn-primary"}>
+            <Link to={"/login"}>Login</Link>
+          </button>
+        </div>
       </header>
 
       {/* Stats Section */}
@@ -77,7 +89,9 @@ const Dashboard: React.FC = () => {
           <div>
             <h3 className="text-xl font-bold">{societySpotlight.name}</h3>
             <p>{societySpotlight.description}</p>
-            <p className="text-sm text-gray-500">Upcoming Event: {societySpotlight.upcoming_event}</p>
+            <p className="text-sm text-gray-500">
+              Upcoming Event: {societySpotlight.upcoming_event}
+            </p>
           </div>
         ) : (
           <p>No spotlight available.</p>
@@ -85,11 +99,13 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Event Calendar */}
-      <EventCalendar events={mockEventCalendar.map((event) => ({
-        title: event.event,
-        start: new Date(event.date),
-        end: new Date(event.date),
-      }))} />
+      <EventCalendar
+        events={mockEventCalendar.map((event) => ({
+          title: event.event,
+          start: new Date(event.date),
+          end: new Date(event.date),
+        }))}
+      />
 
       {/* Notifications */}
       <div className="bg-white shadow p-4 rounded">
