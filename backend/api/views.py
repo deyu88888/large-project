@@ -1,14 +1,14 @@
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
-from api.models import User, Society, Event
 from rest_framework import generics, status
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from .serializers import UserSerializer
-from .models import Student, User
+from .serializers import UserSerializer, StudentSerializer
+from .models import User, Student, Society, Event
 
 
 class CreateUserView(generics.CreateAPIView):
@@ -25,45 +25,39 @@ class RegisterView(APIView):
     View for registering a new student user. Handles creating a student user with optional data like department and societies.
     """
     permission_classes = [AllowAny]
-    authentication_classes = []
 
     def post(self, request):
-        first_name = request.data.get("first_name")
-        last_name = request.data.get("last_name")
-        email = request.data.get("email")
-        username = request.data.get("username")
-        password = request.data.get("password")
-        major = request.data.get("major")
-        department = request.data.get("department")  # Optional
-        societies = request.data.get("societies")  # Optional
+        serializer = StudentSerializer(data=request.data)
+        if serializer.is_valid():
+            student = serializer.save()
 
-        if not email or not username or not password or not major or not first_name or not last_name:
-            return Response({"error": "All required fields must be provided."}, status=status.HTTP_400_BAD_REQUEST)
+            # Additional optional fields (department and societies)
+            department = request.data.get("department")
+            societies = request.data.get("societies")
 
-        if User.objects.filter(email=email).exists():
-            return Response({"error": "Email already exists."}, status=status.HTTP_400_BAD_REQUEST)
+            if department:
+                student.department = department
 
-        if User.objects.filter(username=username).exists():
-            return Response({"error": "Username already exists."}, status=status.HTTP_400_BAD_REQUEST)
+            if societies:
+                student.societies.add(*societies.split(","))
 
-        # Create the student user
-        student = Student.objects.create_user(
-            first_name=first_name,
-            last_name=last_name,
-            email=email,
-            username=username,
-            password=password,
-            major=major,
-        )
+            student.save()
+            return Response({"message": "Student registered successfully."}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        # Add optional advisor-related fields if provided
-        if department:
-            student.department = department
-        if societies:
-            student.societies.add(*societies.split(","))
 
-        student.save()
-        return Response({"message": "Student registered successfully."}, status=status.HTTP_201_CREATED)
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_current_user(request):
+    """
+    API endpoint to retrieve the current authenticated user.
+    """
+    user = request.user
+    return Response({
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,  # Include other fields if needed
+    })
 
 
 class CurrentUserView(APIView):
