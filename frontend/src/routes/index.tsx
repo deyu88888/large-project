@@ -30,11 +30,7 @@ const routes = [
     children: [
       {
         index: true,
-        element: (
-          <Suspense fallback={<CircularLoader />}>
-            <DashboardPage />
-          </Suspense>
-        ),
+        element: <DashboardPage />, // Removed redundant Suspense
       },
     ],
   },
@@ -51,11 +47,7 @@ const routes = [
     children: [
       {
         path: "profile",
-        element: (
-          <Suspense fallback={<CircularLoader />}>
-            <ProfilePage />
-          </Suspense>
-        ),
+        element: <ProfilePage />, // Removed redundant Suspense
       },
       {
         path: "logout",
@@ -76,30 +68,18 @@ const routes = [
     children: [
       {
         path: "login",
-        element: (
-          <Suspense fallback={<CircularLoader />}>
-            <LoginPage />
-          </Suspense>
-        ),
+        element: <LoginPage />, // Removed redundant Suspense
       },
       {
         path: "register",
-        element: (
-          <Suspense fallback={<CircularLoader />}>
-            <RegisterPage />
-          </Suspense>
-        ),
+        element: <RegisterPage />, // Removed redundant Suspense
       },
     ],
   },
   // Catch-All for 404
   {
     path: "*",
-    element: (
-      <Suspense fallback={<CircularLoader />}>
-        <NotFound />
-      </Suspense>
-    ),
+    element: <NotFound />, // Removed redundant Suspense
   },
 ];
 
