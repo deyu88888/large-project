@@ -12,7 +12,7 @@
     "allowSyntheticDefaultImports": true,
     "isolatedModules": true,
     "composite": true,
-    "noEmit": false
+    "noEmit": true
   },
   "include": ["src/**/*"]
 }
