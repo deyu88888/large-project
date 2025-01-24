@@ -1,3 +1,5 @@
+from django.db.models.signals import m2m_changed
+
 from .models import User, Student, Admin, Society, Event, Notification
 from rest_framework import serializers
 
@@ -70,6 +72,8 @@ class StudentSerializer(UserSerializer):
             student.societies.set(societies)
         if president_of:
             student.president_of.set(president_of)
+
+            m2m_changed.send(sender=Student.president_of.through, instance=student, action="post_add")
 
         return student
 
