@@ -1,7 +1,9 @@
-from django.test import TestCase
-from api.models import Admin, Student, Society
+from unittest.mock import patch
+from django.test import TransactionTestCase
+from api.models import Admin, Student, Society, Event, Notification
+from api.management.commands import seed_data
 
-class SeedingTestCase(TestCase):
+class SeedingTestCase(TransactionTestCase):
     def setUp(self):
         """
         This simulates the seeding process, ensuring the data is created as expected.
@@ -39,7 +41,18 @@ class SeedingTestCase(TestCase):
             approved_by=self.admin
         )
 
+        self.society.society_members.add(self.student)
+
+        self.event = Event.objects.create(
+            title='Day',
+            description='Day out',
+            hosted_by=self.society,
+            location='KCL Campus',
+        )
+
         self.president.president_of.add(self.society)
+
+        self.command_instance = seed_data.Command()
 
     def test_admin_exists(self):
         """Test if the admin user was correctly seeded."""
@@ -69,3 +82,23 @@ class SeedingTestCase(TestCase):
         self.assertEqual(society.leader, self.president)
         self.assertEqual(society.approved_by, self.admin)
         self.assertIn(self.president, society.presidents.all())
+
+    @patch('builtins.print') # Avoids printing while testing
+    def test_society_creation(self, mock_print):
+        """Test that seed_data create_society works"""
+        self.command_instance.create_society(1)
+        self.assertTrue(Society.objects.get(name="Society1"))
+
+    @patch('builtins.print') # Avoids printing while testing
+    def test_event_creation(self, mock_print):
+        """Test that seed_data create_event works"""
+        self.command_instance.create_event(1)
+        self.assertTrue(Event.objects.get(title="Event1"))
+
+    @patch('builtins.print') # Avoids printing while testing
+    def test_notification_creation(self, mock_print):
+        """Test that seed_data create_event_notification works"""
+        self.command_instance.create_event_notification(self.event)
+        notif = Notification.objects.first()
+        self.assertTrue(notif.for_event == self.event)
+        self.assertTrue(notif.for_student == self.student)
