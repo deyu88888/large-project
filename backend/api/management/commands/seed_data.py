@@ -48,6 +48,7 @@ class Command(BaseCommand):
             last_name="User",
             defaults={"password": "adminpassword"},
         )
+        admin.save()
 
         student, _ = get_or_create_user(
             Student,
@@ -67,14 +68,12 @@ class Command(BaseCommand):
             defaults={"password": "presidentpassword", "major": "Mechanical Engineering"},
         )
 
-        print(f'{president}\n{admin}')
-
         society, _ = get_or_create_object(
             Society,
             name="Robotics Club",
             leader=president,
-            approved_by=admin,
         )
+        society.approved_by = admin
 
         president.president_of.add(society)
 
@@ -97,7 +96,7 @@ class Command(BaseCommand):
             society_leader = Student.objects.order_by('?').first()
             society, created = Society.objects.get_or_create(
                 name=f'Society{i}',
-                leader=society_leader
+                leader=society_leader,
             )
             if created:
                 society_leader.president_of.add(society)
@@ -124,9 +123,7 @@ class Command(BaseCommand):
             if created:
                 event_list.append(event)
         print()
-
-        for event in event_list:
-            self.create_event_notification(event)
+        self.create_event_notifications(event_list)
 
     def generate_random_duration(self):
         """ Generate and return a random duration from 1-3 hours """
@@ -144,6 +141,10 @@ class Command(BaseCommand):
         random_minute = choice([0, 15, 30, 45])
         return time(hour=random_hour,minute=random_minute)
 
+    def create_event_notifications(self, events):
+        """ Creates notifications from a list of events """
+        for event in events:
+            self.create_event_notification(event)
 
     def create_event_notification(self, event):
         """ Create the notifications for a specific event """
