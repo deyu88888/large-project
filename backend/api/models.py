@@ -8,10 +8,29 @@ from django.db.models.signals import post_save, m2m_changed
 from django.dispatch import receiver
 
 
-
 class User(AbstractUser):
     """
+    A class modelling a user
 
+    Attributes:
+        username : str
+            The username of the user
+        first_name : str
+            The first name of the user
+        last_name : str
+            The last name of the user
+        email : str
+            The email of the user
+        is_active : bool
+            The status of the user to determine if this user is active
+        role : str
+            The role of the user
+
+    Methods:
+        full_name(): Returns the user's full name, this method is a property,
+                     so it can be accessed as an attribute.
+        is_student(): Returns True if the user is a student
+        is_admin(): Returns True if the user is an admin
     """
     username = models.CharField(
         unique=True,
@@ -34,7 +53,6 @@ class User(AbstractUser):
 
     ROLE_CHOICES = [
         ('student', 'Student'),
-        ('advisor', 'Advisor'),
         ('admin', 'Admin'),
     ]
 
@@ -42,12 +60,6 @@ class User(AbstractUser):
 
     class Meta:
         ordering = ('first_name', 'last_name')
-        constraints = [
-            models.UniqueConstraint(
-                fields=['username'],
-                name='unique_username'
-            )
-        ]
 
     @property
     def full_name(self):
@@ -63,6 +75,22 @@ class User(AbstractUser):
         return self.role == 'admin'
 
 class Student(User):
+    """
+    A class modelling a student
+
+    Attributes:
+        major : str
+            The major of the student
+        societies : ManyToManyField
+            The societies the student belongs to
+        president_of : ManyToManyField
+            The societies the student is president of
+        is_president : bool
+            A flag to determine if the student is a president
+
+    Methods:
+        __str__(): Returns the student's full name
+    """
     major = models.CharField(max_length=50)
     societies = models.ManyToManyField(
         'Society',
@@ -81,7 +109,7 @@ class Student(User):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return self.get_full_name()
+        return self.full_name
 
 
 @receiver(m2m_changed, sender=Student.president_of.through)
@@ -92,22 +120,21 @@ def update_is_president(sender, instance, action, **kwargs):
         instance.save(update_fields=["is_president"])
 
 
-class Advisor(User):
-    department = models.CharField(max_length=50)
-    societies = models.ManyToManyField(
-        'Society',
-        related_name='advisors',
-        blank=True,
-    )
-
-    def save(self, *args, **kwargs):
-        self.role = 'advisor'
-        super().save(*args, **kwargs)
-
-    def __str__(self):
-        return self.full_name
-
 class Admin(User):
+    """
+    A class modelling an admin
+
+    Attributes:
+        is_superuser : bool
+            A flag to determine if the admin is a superuser
+        is_staff : bool
+            A flag to determine if the admin is a staff
+        role : str
+            The role of the admin
+
+    Methods:
+        save(): Overrides the save method to set is_superuser and is_staff to True
+    """
     def save(self, *args, **kwargs):
         self.is_superuser = True
         self.is_staff = True
@@ -149,14 +176,6 @@ class Society(models.Model):
         on_delete=models.DO_NOTHING,
         related_name='society',
         null=True
-    )
-
-    approved_by = models.ForeignKey(
-        'Advisor',
-        on_delete=models.SET_NULL,
-        related_name='approved_societies',
-        blank=False,
-        null = True
     )
 
     def __str__(self):

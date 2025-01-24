@@ -1,21 +1,11 @@
 from django.core.exceptions import ValidationError
 from django.test import TestCase
-from api.models import Society, Advisor, Student
+from api.models import Society, Student
 
 class SocietyModelTestCase(TestCase):
     """ Unit tests for the Society model """
 
     def setUp(self):
-        self.advisor = Advisor(
-            username='J-Smith',
-            first_name='John',
-            last_name='Smith',
-            email='jsmith@gmail.com',
-            role='advisor',
-            department='Informatics',
-        )
-        self.advisor.save()
-
         self.student1 = Student(
             username='QWERTY',
             first_name='QWE',
@@ -39,7 +29,6 @@ class SocietyModelTestCase(TestCase):
         self.society = Society(
             name='Tech',
             leader=self.student1,
-            approved_by=self.advisor,
         )
         self.society.save()
         self.society.society_members.add(self.student2) # pylint: disable=no-member
@@ -48,9 +37,9 @@ class SocietyModelTestCase(TestCase):
         """ Test to ensure valid societies are accepted """
         self._assert_society_is_valid()
 
-    def test_blank_advisor(self):
+    def test_blank_leader(self):
         """ Test to ensure an advisor must be specified """
-        self.society.approved_by = None
+        self.society.leader = None
 
         self._assert_society_is_invalid()
 
@@ -69,6 +58,18 @@ class SocietyModelTestCase(TestCase):
         self.society.society_members.remove(self.student2) # pylint: disable=no-member
 
         self._assert_society_is_valid()
+
+    def test_roles_field(self):
+        """ Test roles JSON field functionality """
+        self.society.roles = {"President": self.student1.id, "Vice-President": self.student2.id}
+        self.society.save()
+        self.assertEqual(self.society.roles["President"], self.student1.id)
+
+    def test_change_leader(self):
+        """ Test to ensure changing the leader works correctly """
+        self.society.leader = self.student2
+        self.society.save()
+        self.assertEqual(self.society.leader, self.student2)
 
     def _assert_society_is_valid(self):
         try:

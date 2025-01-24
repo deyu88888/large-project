@@ -1,6 +1,6 @@
 from django.test import TestCase
-from api.models import User, Student, Advisor, Admin
-from api.serializers import UserSerializer, StudentSerializer, AdvisorSerializer, AdminSerializer
+from api.models import User, Student, Admin
+from api.serializers import UserSerializer, StudentSerializer, AdminSerializer
 from rest_framework.exceptions import ValidationError
 
 
@@ -114,42 +114,6 @@ class StudentSerializerTestCase(TestCase):
         serializer = StudentSerializer(data=self.student_data)
         self.assertFalse(serializer.is_valid())
         self.assertIn("password", serializer.errors)
-
-
-
-class AdvisorSerializerTestCase(TestCase):
-    def setUp(self):
-        self.advisor_data = {
-            "username": "unique_advisor",
-            "password": "Password123",
-            "first_name": "Alice",
-            "last_name": "Smith",
-            "email": "unique_email@example.com",
-            "department": "Computer Science",
-        }
-        self.advisor = Advisor.objects.create_user(
-            username="existing_advisor",
-            password="Password123",
-            first_name="Alice",
-            last_name="Smith",
-            email="existing_email@example.com",
-            role="advisor",
-            department="Computer Science",
-        )
-
-    def test_advisor_serialization(self):
-        serializer = AdvisorSerializer(instance=self.advisor)
-        data = serializer.data
-        self.assertEqual(data["username"], self.advisor.username)
-        self.assertEqual(data["department"], self.advisor.department)
-
-    def test_advisor_deserialization(self):
-        serializer = AdvisorSerializer(data=self.advisor_data)
-        self.assertTrue(serializer.is_valid())
-        advisor = serializer.save()
-        self.assertEqual(advisor.department, self.advisor_data["department"])
-        self.assertTrue(advisor.check_password(self.advisor_data["password"]))
-
 
 class AdminSerializerTestCase(TestCase):
     def setUp(self):

@@ -1,22 +1,12 @@
 # pylint: disable=no-member
 from django.test import TestCase
-from api.models import Society, Advisor, Student
+from api.models import Society, Student
 from api.serializers import SocietySerializer
 
 class SocietySerializerTestCase(TestCase):
     """ Unit tests for the Society serializer """
 
     def setUp(self):
-        self.advisor = Advisor(
-            username='J-Smith',
-            first_name='John',
-            last_name='Smith',
-            email='jsmith@gmail.com',
-            role='advisor',
-            department='Informatics',
-        )
-        self.advisor.save()
-
         self.student1 = Student(
             username='QWERTY',
             first_name='QWE',
@@ -51,7 +41,6 @@ class SocietySerializerTestCase(TestCase):
             'name' : 'Music',
             'leader' : self.student1.id,
             'society_members' : [self.student2.id],
-            'approved_by' : self.advisor.id,
             'roles' : []
         }
 

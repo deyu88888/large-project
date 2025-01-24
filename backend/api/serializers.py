@@ -1,4 +1,4 @@
-from api.models import User, Student, Advisor, Admin, Society, Event, Notification
+from .models import User, Student, Admin, Society, Event, Notification
 from rest_framework import serializers
 
 class UserSerializer(serializers.ModelSerializer):
@@ -31,13 +31,13 @@ class StudentSerializer(UserSerializer):
     """
     Serializer for the Student model.
     """
-    societies = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    societies = serializers.PrimaryKeyRelatedField(many=True, queryset=Society.objects.all())
+    president_of = serializers.PrimaryKeyRelatedField(many=True, queryset=Society.objects.all())
     major = serializers.CharField(required=True)
-    department = serializers.CharField(required=False, allow_null=True, allow_blank=True)
 
     class Meta(UserSerializer.Meta):
         model = Student
-        fields = UserSerializer.Meta.fields + ['major', 'societies', 'president_of', 'is_president', 'department']
+        fields = UserSerializer.Meta.fields + ['major', 'societies', 'president_of', 'is_president']
 
     def validate_email(self, value):
         """
@@ -56,54 +56,22 @@ class StudentSerializer(UserSerializer):
         return value
     
     def create(self, validated_data):
-        """
-        Override create to handle Advisor-specific fields.
-        """
         societies = validated_data.pop('societies', [])
+        president_of = validated_data.pop('president_of', [])
         major = validated_data.pop('major')
-        department = validated_data.pop('department', None)
         password = validated_data.pop('password')
+
         student = Student.objects.create(**validated_data)
         student.set_password(password)
         student.major = major
-
-        if department:
-            student.department = department
-            
         student.save()
             
         if societies:
             student.societies.set(societies)
+        if president_of:
+            student.president_of.set(president_of)
 
         return student
-
-class AdvisorSerializer(UserSerializer):
-    """
-    Serializer for the Advisor model.
-    """
-    societies = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
-
-    class Meta(UserSerializer.Meta):
-        model = Advisor
-        fields = UserSerializer.Meta.fields + ['department', 'societies']
-
-    def create(self, validated_data):
-        """
-        Override create to handle Advisor-specific fields.
-        """
-        societies = validated_data.pop('societies', [])
-        department = validated_data.pop('department')
-        password = validated_data.pop('password')
-        advisor = Advisor.objects.create(**validated_data)
-        advisor.set_password(password)
-        advisor.department = department
-        advisor.save()
-
-        if societies:
-            advisor.societies.set(societies)
-
-        return advisor
-
 
 class AdminSerializer(UserSerializer):
     """
@@ -123,6 +91,16 @@ class AdminSerializer(UserSerializer):
         admin.is_staff = True
         admin.save()
         return admin
+
+    def validate_email(self, value):
+        if Admin.objects.filter(email=value).exists():
+            raise serializers.ValidationError("Email already exists.")
+        return value
+
+    def validate_username(self, value):
+        if Admin.objects.filter(username=value).exists():
+            raise serializers.ValidationError("Username already exists.")
+        return value
 
 class SocietySerializer(serializers.ModelSerializer):
     """ Serializer for objects of the Society model """
