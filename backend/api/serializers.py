@@ -49,18 +49,20 @@ class StudentSerializer(UserSerializer):
 
     def validate_email(self, value):
         """
-        Check if the email is unique.
+        Check if the email is unique and provide a custom error message.
         """
-        if User.objects.filter(email=value).exists():
-            raise serializers.ValidationError("Email already exists.")
+        instance = getattr(self, 'instance', None)
+        if User.objects.filter(email=value).exclude(id=instance.id if instance else None).exists():
+            raise serializers.ValidationError("user with this email already exists.")
         return value
 
     def validate_username(self, value):
         """
-        Check if the username is unique.
+        Check if the username is unique and provide a custom error message.
         """
-        if User.objects.filter(username=value).exists():
-            raise serializers.ValidationError("Username already exists.")
+        instance = getattr(self, 'instance', None)
+        if User.objects.filter(username=value).exclude(id=instance.id if instance else None).exists():
+            raise serializers.ValidationError("user with this username already exists.")
         return value
 
     def create(self, validated_data):
@@ -203,3 +205,110 @@ class NotificationSerializer(serializers.ModelSerializer):
 
         instance.save()
         return instance
+    
+    
+
+
+class LeaveSocietySerializer(serializers.Serializer):
+    society_id = serializers.IntegerField()
+
+    def validate_society_id(self, value):
+        request_user = self.context['request'].user
+        if not hasattr(request_user, 'student'):
+            raise serializers.ValidationError("Only students can leave societies.")
+
+        try:
+            society = Society.objects.get(id=value)
+        except Society.DoesNotExist:
+            raise serializers.ValidationError("Society does not exist.")
+
+        if not society.society_members.filter(id=request_user.id).exists():
+            raise serializers.ValidationError("You are not a member of this society.")
+
+        return value
+
+    def save(self):
+        society_id = self.validated_data['society_id']
+        request_user = self.context['request'].user
+        society = Society.objects.get(id=society_id)
+        request_user.student.societies.remove(society)
+        return society
+
+
+class JoinSocietySerializer(serializers.Serializer):
+    society_id = serializers.IntegerField()
+
+    def validate_society_id(self, value):
+        request_user = self.context['request'].user
+        if not hasattr(request_user, 'student'):
+            raise serializers.ValidationError("Only students can join societies.")
+
+        try:
+            society = Society.objects.get(id=value)
+        except Society.DoesNotExist:
+            raise serializers.ValidationError("Society does not exist.")
+
+        if society.society_members.filter(id=request_user.id).exists():
+            raise serializers.ValidationError("You are already a member of this society.")
+
+        return value
+
+    def save(self):
+        society_id = self.validated_data['society_id']
+        request_user = self.context['request'].user
+        society = Society.objects.get(id=society_id)
+        request_user.student.societies.add(society)
+        return society
+
+
+class RSVPEventSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Event
+        fields = ['id', 'title', 'date', 'start_time', 'duration', 'location']
+
+    def validate(self, attrs):
+        """
+        Validate RSVP eligibility for an event.
+        """
+        request = self.context.get('request')
+        event = self.instance
+        student = request.user.student
+
+        if self.context.get('action') == 'RSVP':
+            # Rule 1: Ensure the student is a member of the hosting society
+            if event.hosted_by not in student.societies.all():
+                raise serializers.ValidationError("You must be a member of the hosting society to RSVP for this event.")
+
+            # Rule 2: Ensure the student has not already RSVP’d
+            if student in event.current_attendees.all():
+                raise serializers.ValidationError("You have already RSVP'd for this event.")
+
+            # Rule 3: Ensure the event is not in the past or has started
+            if event.has_started():
+                raise serializers.ValidationError("You cannot RSVP for an event that has already started.")
+
+            # Rule 4: Ensure the event is not full
+            if event.is_full():
+                raise serializers.ValidationError("This event is full and cannot accept more RSVPs.")
+
+        elif self.context.get('action') == 'CANCEL':
+            # Rule 1: Ensure the student is currently RSVP’d for the event
+            if student not in event.current_attendees.all():
+                raise serializers.ValidationError("You have not RSVP'd for this event.")
+
+        return attrs
+
+    def save(self, **kwargs):
+        """
+        Save the RSVP or cancel RSVP action.
+        """
+        request = self.context.get('request')
+        student = request.user.student
+        event = self.instance
+
+        if self.context.get('action') == 'RSVP':
+            event.current_attendees.add(student)  # Add student to attendees
+        elif self.context.get('action') == 'CANCEL':
+            event.current_attendees.remove(student)  # Remove student from attendees
+
+        return event
