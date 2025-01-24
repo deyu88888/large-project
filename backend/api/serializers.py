@@ -109,7 +109,7 @@ class SocietySerializer(serializers.ModelSerializer):
         """ SocietySerializer meta data """
 
         model = Society
-        fields = ['id', 'name', 'society_members', 'roles', 'leader', 'approved_by']
+        fields = ['id', 'name', 'society_members', 'roles', 'leader']
 
     def create(self, validated_data):
         """ Use passing in json dict data to create a new Society """
