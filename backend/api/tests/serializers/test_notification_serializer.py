@@ -1,29 +1,53 @@
 # pylint: disable=no-member
 from django.test import TestCase
-from api.models import Notification
+from django.utils.timezone import now
+from datetime import timedelta
+from api.models import Notification, Event, Student, Society
 from api.serializers import NotificationSerializer
-from api.tests.serializers.test_event_serializer import EventSerializerTestCase
 
-class NotificationSerialierTestCase(TestCase):
+class NotificationSerializerTestCase(TestCase):
     """ Test cases for the Notification Serializer """
 
     def setUp(self):
-        self.event = None
-        self.student2 = None
+        # Create a student
+        self.student2 = Student.objects.create_user(
+            username="test_student",
+            password="Password123",
+            first_name="Test",
+            last_name="Student",
+            email="test_student@example.com",
+            role="student",
+            major="Computer Science",
+        )
 
-        # Will initialize both self.event and self.student2
-        EventSerializerTestCase.setUp(self)
+        # Create a society
+        self.society = Society.objects.create(
+            name="Test Society",
+            leader=self.student2
+        )
 
-        self.notification = Notification(
+        # Create an event
+        self.event = Event.objects.create(
+            title="Test Event",
+            description="This is a test event",
+            date=now().date(),
+            start_time=now().time(),
+            duration=timedelta(hours=2),
+            hosted_by=self.society,
+            location="Test Location"
+        )
+
+        # Create a notification
+        self.notification = Notification.objects.create(
             for_event=self.event,
             for_student=self.student2
         )
-        self.notification.save()
 
+        # Sample data for serialization
         self.serializer = None
         self.data = {
-            'for_event' : self.event.id,
-            'for_student' : self.student2.id
+            'for_event': self.event.id,
+            'for_student': self.student2.id
         }
 
     def test_notification_serialization(self):

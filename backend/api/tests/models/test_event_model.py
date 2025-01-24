@@ -2,29 +2,53 @@ from django.utils.timezone import now, make_aware
 from datetime import datetime, timedelta
 from django.core.exceptions import ValidationError
 from django.test import TestCase
-from api.models import Event, Society, Student
-from api.tests.models.test_society_model import SocietyModelTestCase
+from api.models import Event, Society, Admin, Student
 
 class EventModelTestCase(TestCase):
-    """Unit tests for the event model"""
+    """ Unit tests for the Event model """
 
     def setUp(self):
-        # Create a society for hosting events
-        self.society = Society.objects.create(name="Test Society")
-
-        # Create a student for testing RSVP functionality
-        self.student = Student.objects.create_user(
-            username="teststudent",
-            password="password123",
-            email="teststudent@example.com",
-            first_name="Test",
-            last_name="Student",
+        # Create an admin user
+        self.admin = Admin.objects.create(
+            username='admin_user',
+            first_name='Admin',
+            last_name='User',
+            email='admin@example.com',
+            password='adminpassword',
+            role='admin',
         )
+
+        # Create students
+        self.student1 = Student.objects.create(
+            username='QWERTY',
+            first_name='QWE',
+            last_name='RTY',
+            email='qwerty@gmail.com',
+            role='student',
+            major='CompSci',
+        )
+
+        self.student2 = Student.objects.create(
+            username='Ja-Smith',
+            first_name='Jane',
+            last_name='Smith',
+            email='jasmith@gmail.com',
+            role='student',
+            major='Mathematics',
+        )
+
+        # Create a society
+        self.society = Society.objects.create(
+            name='Tech',
+            leader=self.student1,
+            approved_by=self.admin,
+        )
+        self.society.society_members.add(self.student2)
 
         # Create an event
         self.event = Event.objects.create(
-            title="Day Out",
-            description="Day out at the park",
+            title='Day',
+            description='Day out',
             hosted_by=self.society,
             location="KCL Campus",
             max_capacity=2,
