@@ -106,6 +106,13 @@ class Command(BaseCommand):
     def create_event(self, n):
         """ Create n different events """
         event_list = [] # Create empty list to hold created events
+        locations = [
+            'Main Auditorium',
+            'Library Conference Room',
+            'Sports Hall',
+            'Computer Lab',
+            'Music Hall'
+        ]
 
         for i in range(1, n+1):
             print(f"Seeding event {i}/{n}", end='\r')
@@ -118,7 +125,7 @@ class Command(BaseCommand):
                 start_time=self.generate_reasonable_time(),
                 duration=self.generate_random_duration(),
                 hosted_by=society,
-                location='XXX'
+                location=choice(locations)
             )
             if created:
                 event_list.append(event)
