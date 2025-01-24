@@ -1,21 +1,21 @@
 from django.core.exceptions import ValidationError
 from django.test import TestCase
-from api.models import Society, Advisor, Student
+from api.models import Society, Admin, Student
 
 
 class SocietyModelTestCase(TestCase):
     """ Unit tests for the Society model """
 
     def setUp(self):
-        self.advisor = Advisor(
-            username='J-Smith',
+        self.admin = Admin(
+            username='admin_user',
             first_name='John',
             last_name='Smith',
-            email='jsmith@gmail.com',
-            role='advisor',
-            department='Informatics',
+            email='admin@example.com',
+            role='admin',
+            password='adminpassword',
         )
-        self.advisor.save()
+        self.admin.save()
 
         self.student1 = Student(
             username='QWERTY',
@@ -40,7 +40,7 @@ class SocietyModelTestCase(TestCase):
         self.society = Society(
             name='Tech',
             leader=self.student1,
-            approved_by=self.advisor,
+            approved_by=self.admin,
         )
         self.society.save()
         self.society.society_members.add(self.student2)  # pylint: disable=no-member
@@ -49,8 +49,8 @@ class SocietyModelTestCase(TestCase):
         """ Test to ensure valid societies are accepted """
         self._assert_society_is_valid()
 
-    def test_blank_advisor(self):
-        """ Test to ensure an advisor must be specified """
+    def test_blank_admin(self):
+        """ Test to ensure an admin must be specified """
         self.society.approved_by = None
         self._assert_society_is_invalid()
 

@@ -1,22 +1,55 @@
 from django.core.exceptions import ValidationError
 from django.test import TestCase
-from api.models import Event
-from api.tests.models.test_society_model import SocietyModelTestCase
+from api.models import Event, Society, Admin, Student
 
 class EventModelTestCase(TestCase):
-    """ Unit tests for the event model """
+    """ Unit tests for the Event model """
 
     def setUp(self):
-        self.society = None
-        SocietyModelTestCase.setUp(self)
+        # Create an admin user
+        self.admin = Admin.objects.create(
+            username='admin_user',
+            first_name='Admin',
+            last_name='User',
+            email='admin@example.com',
+            password='adminpassword',
+            role='admin',
+        )
 
-        self.event = Event(
+        # Create students
+        self.student1 = Student.objects.create(
+            username='QWERTY',
+            first_name='QWE',
+            last_name='RTY',
+            email='qwerty@gmail.com',
+            role='student',
+            major='CompSci',
+        )
+
+        self.student2 = Student.objects.create(
+            username='Ja-Smith',
+            first_name='Jane',
+            last_name='Smith',
+            email='jasmith@gmail.com',
+            role='student',
+            major='Mathematics',
+        )
+
+        # Create a society
+        self.society = Society.objects.create(
+            name='Tech',
+            leader=self.student1,
+            approved_by=self.admin,
+        )
+        self.society.society_members.add(self.student2)
+
+        # Create an event
+        self.event = Event.objects.create(
             title='Day',
             description='Day out',
             hosted_by=self.society,
             location='KCL Campus',
         )
-        self.event.save()
 
     def test_event_valid(self):
         """ Test to ensure base event is valid """
@@ -29,13 +62,11 @@ class EventModelTestCase(TestCase):
     def test_location_not_null(self):
         """ Test to assert that location cannot be null """
         self.event.location = None
-
         self._assert_event_is_invalid()
 
     def test_society_not_null(self):
         """ Test to assert a society must host each event """
         self.event.hosted_by = None
-
         self._assert_event_is_invalid()
 
     def _assert_event_is_valid(self):

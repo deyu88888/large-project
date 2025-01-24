@@ -1,4 +1,4 @@
-from api.models import User, Student, Advisor, Admin, Society, Event, Notification
+from api.models import User, Student, Admin, Society, Event, Notification
 from rest_framework import serializers
 
 
@@ -82,35 +82,6 @@ class StudentSerializer(UserSerializer):
             student.president_of.set(president_of)
 
         return student
-
-
-class AdvisorSerializer(UserSerializer):
-    """
-    Serializer for the Advisor model.
-    """
-    societies = serializers.PrimaryKeyRelatedField(many=True, queryset=Society.objects.all())
-
-    class Meta(UserSerializer.Meta):
-        model = Advisor
-        fields = UserSerializer.Meta.fields + ['department', 'societies']
-
-    def create(self, validated_data):
-        """
-        Override create to handle Advisor-specific fields.
-        """
-        societies = validated_data.pop('societies', [])
-        department = validated_data.pop('department')
-        password = validated_data.pop('password')
-
-        advisor = Advisor.objects.create(**validated_data)
-        advisor.set_password(password)
-        advisor.department = department
-        advisor.save()
-
-        if societies:
-            advisor.societies.set(societies)
-
-        return advisor
 
 
 class AdminSerializer(UserSerializer):

@@ -36,7 +36,6 @@ class User(AbstractUser):
 
     ROLE_CHOICES = [
         ("student", "Student"),
-        ("advisor", "Advisor"),
         ("admin", "Admin"),
     ]
     role = models.CharField(
@@ -61,9 +60,6 @@ class User(AbstractUser):
     def is_student(self):
         return self.role == "student"
 
-    def is_advisor(self):
-        return self.role == "advisor"
-
     def is_admin(self):
         return self.role == "admin"
 
@@ -87,17 +83,6 @@ class Student(User):
 
     def save(self, *args, **kwargs):
         self.role = "student"
-        super().save(*args, **kwargs)
-
-    def __str__(self):
-        return self.full_name
-
-
-class Advisor(User):
-    department = models.CharField(max_length=50)
-
-    def save(self, *args, **kwargs):
-        self.role = "advisor"
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -133,7 +118,7 @@ class Society(models.Model):
     )
 
     approved_by = models.ForeignKey(
-        "Advisor",
+        "Admin",
         on_delete=models.SET_NULL,
         related_name="approved_societies",
         blank=False,

@@ -1,5 +1,5 @@
 from django.test import TestCase
-from api.models import Admin, Advisor, Student, Society
+from api.models import Admin, Student, Society
 
 class SeedingTestCase(TestCase):
     def setUp(self):
@@ -13,15 +13,6 @@ class SeedingTestCase(TestCase):
             first_name="Admin",
             last_name="User",
             password="adminpassword"
-        )
-
-        self.advisor = Advisor.objects.create(
-            username="advisor_user",
-            email="advisor@example.com",
-            first_name="Advisor",
-            last_name="User",
-            password="advisorpassword",
-            department="Engineering"
         )
 
         self.student = Student.objects.create(
@@ -45,7 +36,7 @@ class SeedingTestCase(TestCase):
         self.society = Society.objects.create(
             name="Robotics Club",
             leader=self.president,
-            approved_by=self.advisor
+            approved_by=self.admin
         )
 
         self.president.president_of.add(self.society)
@@ -57,13 +48,6 @@ class SeedingTestCase(TestCase):
         self.assertEqual(admin.first_name, "Admin")
         self.assertTrue(admin.is_superuser)
         self.assertTrue(admin.is_staff)
-
-    def test_advisor_exists(self):
-        """Test if the advisor user was correctly seeded."""
-        advisor = Advisor.objects.get(username="advisor_user")
-        self.assertEqual(advisor.email, "advisor@example.com")
-        self.assertEqual(advisor.department, "Engineering")
-        self.assertTrue(advisor.is_advisor())
 
     def test_student_exists(self):
         """Test if the regular student was correctly seeded."""
@@ -83,5 +67,5 @@ class SeedingTestCase(TestCase):
         """Test if the society was created and linked correctly."""
         society = Society.objects.get(name="Robotics Club")
         self.assertEqual(society.leader, self.president)
-        self.assertEqual(society.approved_by, self.advisor)
+        self.assertEqual(society.approved_by, self.admin)
         self.assertIn(self.president, society.presidents.all())
