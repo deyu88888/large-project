@@ -4,6 +4,9 @@ from django.core.validators import MinLengthValidator, MaxLengthValidator, Regex
 from django.db import models
 from django.contrib.auth.models import User, AbstractUser
 from django.utils import timezone
+from django.db.models.signals import post_save, m2m_changed
+from django.dispatch import receiver
+
 
 
 class User(AbstractUser):
@@ -74,12 +77,20 @@ class Student(User):
     is_president = models.BooleanField(default=False)
 
     def save(self, *args, **kwargs):
-        self.is_president = self.president_of.exists()
         self.role = 'student'
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return self.full_name
+        return self.get_full_name()
+
+
+@receiver(m2m_changed, sender=Student.president_of.through)
+def update_is_president(sender, instance, action, **kwargs):
+    if action in ["post_add", "post_remove", "post_clear"]:
+        # Update `is_president` field whenever the `president_of` many-to-many field changes
+        instance.is_president = instance.president_of.exists()
+        instance.save(update_fields=["is_president"])
+
 
 class Advisor(User):
     department = models.CharField(max_length=50)
