@@ -1,13 +1,18 @@
 from api.models import User, Student, Advisor, Admin, Society, Event, Notification
 from rest_framework import serializers
 
+
 class UserSerializer(serializers.ModelSerializer):
     """
     Serializer for the base User model.
     """
+
     class Meta:
         model = User
-        fields =['id', 'username', 'password', 'first_name', 'last_name', 'email', 'is_active', 'role']
+        fields = [
+            'id', 'username', 'password', 'first_name',
+            'last_name', 'email', 'is_active', 'role'
+        ]
         extra_kwargs = {
             'password': {'write_only': True, 'min_length': 8},
         }
@@ -27,17 +32,18 @@ class UserSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
+
 class StudentSerializer(UserSerializer):
     """
     Serializer for the Student model.
     """
-    societies = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    societies = serializers.PrimaryKeyRelatedField(many=True, queryset=Society.objects.all())
+    president_of = serializers.PrimaryKeyRelatedField(many=True, queryset=Society.objects.all())
     major = serializers.CharField(required=True)
-    department = serializers.CharField(required=False, allow_null=True, allow_blank=True)
 
     class Meta(UserSerializer.Meta):
         model = Student
-        fields = UserSerializer.Meta.fields + ['major', 'societies', 'president_of', 'is_president', 'department']
+        fields = UserSerializer.Meta.fields + ['major', 'societies', 'president_of', 'is_president']
 
     def validate_email(self, value):
         """
@@ -54,34 +60,35 @@ class StudentSerializer(UserSerializer):
         if User.objects.filter(username=value).exists():
             raise serializers.ValidationError("Username already exists.")
         return value
-    
+
     def create(self, validated_data):
         """
-        Override create to handle Advisor-specific fields.
+        Override create to handle Student-specific fields.
         """
         societies = validated_data.pop('societies', [])
+        president_of = validated_data.pop('president_of', [])
         major = validated_data.pop('major')
-        department = validated_data.pop('department', None)
         password = validated_data.pop('password')
+
         student = Student.objects.create(**validated_data)
         student.set_password(password)
         student.major = major
-
-        if department:
-            student.department = department
-            
         student.save()
-            
+
         if societies:
             student.societies.set(societies)
 
+        if president_of:
+            student.president_of.set(president_of)
+
         return student
+
 
 class AdvisorSerializer(UserSerializer):
     """
     Serializer for the Advisor model.
     """
-    societies = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    societies = serializers.PrimaryKeyRelatedField(many=True, queryset=Society.objects.all())
 
     class Meta(UserSerializer.Meta):
         model = Advisor
@@ -94,6 +101,7 @@ class AdvisorSerializer(UserSerializer):
         societies = validated_data.pop('societies', [])
         department = validated_data.pop('department')
         password = validated_data.pop('password')
+
         advisor = Advisor.objects.create(**validated_data)
         advisor.set_password(password)
         advisor.department = department
@@ -124,12 +132,12 @@ class AdminSerializer(UserSerializer):
         admin.save()
         return admin
 
+
 class SocietySerializer(serializers.ModelSerializer):
     """ Serializer for objects of the Society model """
 
     class Meta:
         """ SocietySerializer meta data """
-
         model = Society
         fields = ['id', 'name', 'society_members', 'roles', 'leader', 'approved_by']
 
@@ -157,32 +165,31 @@ class SocietySerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
+
 class EventSerializer(serializers.ModelSerializer):
     """ Serializer for objects of the Event model """
 
     class Meta:
         """ EventSerializer meta data """
-
         model = Event
         fields = [
             'id', 'title', 'description', 'date',
             'start_time', 'duration', 'hosted_by', 'location'
         ]
-        extra_kwargs = { 'hosted_by' : { 'required' : True } }
+        extra_kwargs = {'hosted_by': {'required': True}}
 
     def create(self, validated_data):
         """ Creates a new entry in the Event table according to json data """
-
         return Event.objects.create(**validated_data)
 
     def update(self, instance, validated_data):
         """ Update 'instance' object according to provided json data """
-
         for key, value in validated_data.items():
             setattr(instance, key, value)
 
         instance.save()
         return instance
+
 
 class NotificationSerializer(serializers.ModelSerializer):
     """ Serializer for objects of the Notification model """
@@ -192,18 +199,16 @@ class NotificationSerializer(serializers.ModelSerializer):
         model = Notification
         fields = ['id', 'for_event', 'for_student']
         extra_kwargs = {
-            'for_event' : { 'required' : True },
-            'for_student' : { 'required' : True }
+            'for_event': {'required': True},
+            'for_student': {'required': True}
         }
 
     def create(self, validated_data):
         """ Create a notification entry according to json data """
-
         return Notification.objects.create(**validated_data)
 
     def update(self, instance, validated_data):
         """ Update 'instance' object according to provided json data """
-
         for key, value in validated_data.items():
             setattr(instance, key, value)
 

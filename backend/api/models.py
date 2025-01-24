@@ -40,14 +40,17 @@ class User(AbstractUser):
         ("admin", "Admin"),
     ]
     role = models.CharField(
-        max_length=50, choices=ROLE_CHOICES, default="student"
+        max_length=50,
+        choices=ROLE_CHOICES,
+        default="student"
     )
 
     class Meta:
         ordering = ("first_name", "last_name")
         constraints = [
             models.UniqueConstraint(
-                fields=["username"], name="unique_username"
+                fields=["username"],
+                name="unique_username"
             )
         ]
 
@@ -83,7 +86,6 @@ class Student(User):
     is_president = models.BooleanField(default=False)
 
     def save(self, *args, **kwargs):
-
         self.role = "student"
         super().save(*args, **kwargs)
 

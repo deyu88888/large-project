@@ -79,7 +79,7 @@ class StudentSerializerTestCase(TestCase):
         student = serializer.save()
         self.assertEqual(student.major, self.student_data["major"])
         self.assertTrue(student.check_password(self.student_data["password"]))
-    
+
     def test_duplicate_email_validation(self):
         self.student_data["email"] = self.student.email  # Duplicate email
         serializer = StudentSerializer(data=self.student_data)
@@ -93,14 +93,14 @@ class StudentSerializerTestCase(TestCase):
         self.assertFalse(serializer.is_valid())
         self.assertIn("username", serializer.errors)
         self.assertEqual(serializer.errors["username"][0], "user with this username already exists.")
-    
+
     def test_missing_required_fields(self):
         invalid_data = self.student_data.copy()
         del invalid_data["email"]  # Remove email
         serializer = StudentSerializer(data=invalid_data)
         self.assertFalse(serializer.is_valid())
         self.assertIn("email", serializer.errors)
-        
+
     def test_optional_fields(self):
         self.student_data["societies"] = None
         serializer = StudentSerializer(data=self.student_data)
@@ -108,13 +108,11 @@ class StudentSerializerTestCase(TestCase):
         student = serializer.save()
         self.assertEqual(list(student.societies.all()), [])
 
-
     def test_password_minimum_length(self):
         self.student_data["password"] = "short"
         serializer = StudentSerializer(data=self.student_data)
         self.assertFalse(serializer.is_valid())
         self.assertIn("password", serializer.errors)
-
 
 
 class AdvisorSerializerTestCase(TestCase):

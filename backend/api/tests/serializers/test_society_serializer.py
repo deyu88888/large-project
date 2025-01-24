@@ -1,7 +1,7 @@
-# pylint: disable=no-member
 from django.test import TestCase
 from api.models import Society, Advisor, Student
 from api.serializers import SocietySerializer
+
 
 class SocietySerializerTestCase(TestCase):
     """ Unit tests for the Society serializer """
@@ -41,18 +41,18 @@ class SocietySerializerTestCase(TestCase):
             name='Tech',
             leader=self.student1,
             approved_by=self.advisor,
-            roles={'Treasurer' : self.student2.id}
+            roles={'Treasurer': self.student2.id}
         )
         self.society.save()
         self.society.society_members.add(self.student2)
 
         self.serializer = None
         self.data = {
-            'name' : 'Music',
-            'leader' : self.student1.id,
-            'society_members' : [self.student2.id],
-            'approved_by' : self.advisor.id,
-            'roles' : []
+            'name': 'Music',
+            'leader': self.student1.id,
+            'society_members': [self.student2.id],
+            'approved_by': self.advisor.id,
+            'roles': []
         }
 
     def test_society_serialization(self):
@@ -65,7 +65,7 @@ class SocietySerializerTestCase(TestCase):
         self.assertEqual(data['leader'], self.society.leader.id)
         self.assertEqual(data['approved_by'], self.society.approved_by.id)
         self.assertEqual(
-            data['society_members'], 
+            data['society_members'],
             [self.society.society_members.first().id]
         )
         self.assertEqual(data['roles'], self.society.roles)
@@ -108,7 +108,7 @@ class SocietySerializerTestCase(TestCase):
         """ Test society update functions correctly """
 
         self.serializer = SocietySerializer(
-            instance=self.society, 
+            instance=self.society,
             data=self.data,
             partial=True
         )
