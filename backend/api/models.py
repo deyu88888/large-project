@@ -8,8 +8,7 @@ from django.core.validators import (
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
-from django.db.models.signals import post_save, m2m_changed
-from django.dispatch import receiver
+
 
 
 class User(AbstractUser):

@@ -2,6 +2,7 @@ from datetime import date, timedelta, time
 from random import choice, randint
 from django.core.management.base import BaseCommand
 from api.models import Admin, Student, Society, Event, Notification
+from django.contrib.auth.hashers import make_password
 
 class Command(BaseCommand):
     help = "Seed the database with admin, student, and president users"
@@ -46,7 +47,7 @@ class Command(BaseCommand):
             email="admin@example.com",
             first_name="Admin",
             last_name="User",
-            defaults={"password": "adminpassword"},
+            defaults={"password": make_password("adminpassword")},
         )
         admin.save()
 
@@ -56,7 +57,10 @@ class Command(BaseCommand):
             email="student@example.com",
             first_name="Student",
             last_name="User",
-            defaults={"password": "studentpassword", "major": "Computer Science"},
+            defaults={
+                "password": make_password("studentpassword"),  
+                "major": "Computer Science",
+            },
         )
 
         president, _ = get_or_create_user(
@@ -65,7 +69,7 @@ class Command(BaseCommand):
             email="president@example.com",
             first_name="President",
             last_name="User",
-            defaults={"password": "presidentpassword", "major": "Mechanical Engineering"},
+            defaults={"password": make_password("presidentpassword"), "major": "Mechanical Engineering"},
         )
 
         society, _ = get_or_create_object(
