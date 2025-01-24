@@ -61,7 +61,7 @@ class StudentSerializerTestCase(TestCase):
         serializer = StudentSerializer(data=self.student_data)
         self.assertFalse(serializer.is_valid())
         self.assertIn("email", serializer.errors)
-        self.assertEqual(serializer.errors["email"][0], "user with this email already exists.")
+        self.assertEqual(serializer.errors["email"][0], "Email already exists.")
 
     def test_duplicate_username_validation(self):
         """test duplicate username validation"""
@@ -69,7 +69,7 @@ class StudentSerializerTestCase(TestCase):
         serializer = StudentSerializer(data=self.student_data)
         self.assertFalse(serializer.is_valid())
         self.assertIn("username", serializer.errors)
-        self.assertEqual(serializer.errors["username"][0], "user with this username already exists.")
+        self.assertEqual(serializer.errors["username"][0], "Username already exists.")
 
     def test_missing_required_fields(self):
         """test missing required fields"""

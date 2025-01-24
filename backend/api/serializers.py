@@ -15,6 +15,8 @@ class UserSerializer(serializers.ModelSerializer):
         ]
         extra_kwargs = {
             'password': {'write_only': True, 'min_length': 8},
+            'username': {'validators': []},
+            'email': {'validators': []},
         }
 
     def create(self, validated_data):
@@ -92,6 +94,22 @@ class AdminSerializer(UserSerializer):
     class Meta(UserSerializer.Meta):
         model = Admin
         fields = UserSerializer.Meta.fields
+
+    def validate_email(self, value):
+        """
+        Check if the email is unique.
+        """
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("Email already exists.")
+        return value
+
+    def validate_username(self, value):
+        """
+        Check if the username is unique.
+        """
+        if User.objects.filter(username=value).exists():
+            raise serializers.ValidationError("Username already exists.")
+        return value
 
     def create(self, validated_data):
         password = validated_data.pop("password")

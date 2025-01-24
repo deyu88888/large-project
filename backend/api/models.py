@@ -46,12 +46,6 @@ class User(AbstractUser):
 
     class Meta:
         ordering = ("first_name", "last_name")
-        constraints = [
-            models.UniqueConstraint(
-                fields=["username"],
-                name="unique_username"
-            )
-        ]
 
     @property
     def full_name(self):

@@ -5,7 +5,7 @@ from datetime import timedelta
 from api.models import Notification, Event, Student, Society
 from api.serializers import NotificationSerializer
 
-class NotificationSerialierTestCase(TestCase):
+class NotificationSerializerTestCase(TestCase):
     """ Test cases for the Notification Serializer """
 
     def setUp(self):

@@ -57,7 +57,7 @@ class RegisterViewTestCase(APITestCase):
         response = self.client.post(reverse("register"), data=self.valid_payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("email", response.data)
-        self.assertEqual(response.data["email"][0], "user with this email already exists.")
+        self.assertEqual(response.data["email"][0], "Email already exists.")
 
     def test_register_student_duplicate_username(self):
         """
@@ -67,7 +67,7 @@ class RegisterViewTestCase(APITestCase):
         response = self.client.post(reverse("register"), data=self.valid_payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("username", response.data)
-        self.assertEqual(response.data["username"][0], "user with this username already exists.")
+        self.assertEqual(response.data["username"][0], "Username already exists.")
 
     def test_register_student_invalid_password(self):
         """
