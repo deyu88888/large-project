@@ -88,7 +88,7 @@ class EventModelTestCase(TestCase):
 
     def test_event_is_full(self):
         """Test to ensure event reports as full when max capacity is reached"""
-        self.event.current_attendees.add(self.student)  # Add one attendee
+        self.event.current_attendees.add(self.student1)  # Add one attendee
         another_student = Student.objects.create_user(
             username="student2",
             password="password123",
@@ -101,7 +101,7 @@ class EventModelTestCase(TestCase):
 
     def test_event_is_not_full(self):
         """Test to ensure event reports as not full when under max capacity"""
-        self.event.current_attendees.add(self.student)  # Add one attendee
+        self.event.current_attendees.add(self.student1)  # Add one attendee
         self.assertFalse(self.event.is_full())
 
     def test_event_has_not_started(self):
