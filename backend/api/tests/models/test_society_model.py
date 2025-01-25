@@ -2,7 +2,6 @@ from django.core.exceptions import ValidationError
 from django.test import TestCase
 from api.models import Society, Admin, Student
 
-
 class SocietyModelTestCase(TestCase):
     """ Unit tests for the Society model """
 
@@ -41,6 +40,11 @@ class SocietyModelTestCase(TestCase):
             name='Tech',
             leader=self.student1,
             approved_by=self.admin,
+            category='Technology',
+            social_media_links={"email": "techsociety@example.com"},
+            timetable="Weekly meetings on Fridays at 5 PM",
+            membership_requirements="Members must attend at least 3 events per semester",
+            upcoming_projects_or_plans="Plan to host a Tech Fest in May",
         )
         self.society.save()
         self.society.society_members.add(self.student2)  # pylint: disable=no-member
@@ -84,6 +88,22 @@ class SocietyModelTestCase(TestCase):
         self.society.leader = self.student2
         self.society.save()
         self.assertEqual(self.society.leader, self.student2)
+
+    def test_social_media_links(self):
+        """ Test the social_media_links JSON field """
+        self.assertEqual(self.society.social_media_links["email"], "techsociety@example.com")
+
+    def test_timetable(self):
+        """ Test the timetable field """
+        self.assertEqual(self.society.timetable, "Weekly meetings on Fridays at 5 PM")
+
+    def test_membership_requirements(self):
+        """ Test the membership_requirements field """
+        self.assertEqual(self.society.membership_requirements, "Members must attend at least 3 events per semester")
+
+    def test_upcoming_projects_or_plans(self):
+        """ Test the upcoming_projects_or_plans field """
+        self.assertEqual(self.society.upcoming_projects_or_plans, "Plan to host a Tech Fest in May")
 
     def _assert_society_is_valid(self):
         try:

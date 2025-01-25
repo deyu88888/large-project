@@ -35,6 +35,8 @@ class NotificationModelTestCase(TestCase):
         self.notification = Notification.objects.create(
             for_event=self.event,
             for_student=self.student,
+            is_read=False,
+            message="You have an upcoming event: Test Event."
         )
 
     def test_notification_valid(self):
@@ -51,9 +53,30 @@ class NotificationModelTestCase(TestCase):
         self.notification.for_student = None
         self._assert_notification_is_invalid()
 
+    def test_message_not_empty(self):
+        """Test ensuring message cannot be empty"""
+        self.notification.message = ""
+        self._assert_notification_is_invalid()
+
+    def test_is_read_default(self):
+        """Test to ensure `is_read` defaults to False"""
+        notification = Notification.objects.create(
+            for_event=self.event,
+            for_student=self.student,
+            message="Test notification message."
+        )
+        self.assertFalse(notification.is_read)
+
     def test_string_representation(self):
         """Test the string representation matches the event title"""
         self.assertEqual(str(self.notification), self.event.title)
+
+    def test_mark_notification_as_read(self):
+        """Test marking a notification as read"""
+        self.notification.is_read = True
+        self.notification.full_clean()
+        self.notification.save()
+        self.assertTrue(self.notification.is_read)
 
     def _assert_notification_is_valid(self):
         try:

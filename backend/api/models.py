@@ -7,7 +7,9 @@ from django.core.validators import (
 )
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.dispatch import receiver
 from django.utils import timezone
+from django.db.models.signals import m2m_changed
 
 
 
@@ -89,6 +91,11 @@ class Student(User):
     def __str__(self):
         return self.full_name
 
+# Signal to update `is_president` when `president_of` changes
+@receiver(m2m_changed, sender=Student.president_of.through)
+def update_is_president(sender, instance, **kwargs):
+    instance.is_president = instance.president_of.exists()
+    instance.save()
 
 class Admin(User):
     def save(self, *args, **kwargs):
@@ -102,9 +109,13 @@ class Society(models.Model):
     """
     A model for a student society.
     """
-
+    STATUS_CHOICES = [
+        ("Pending", "Pending Approval"),
+        ("Approved", "Approved"),
+        ("Rejected", "Rejected"),
+    ]
+    
     name = models.CharField(max_length=30, default="")
-
     society_members = models.ManyToManyField(
         "Student", related_name="societies_belongs_to", blank=True
     )
@@ -125,6 +136,17 @@ class Society(models.Model):
         blank=False,
         null=True,
     )
+    
+    status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default="Pending"
+    )
+    
+    category = models.CharField(max_length=50, default="General")
+    social_media_links = models.JSONField(default=dict, blank=True)  # {"facebook": "link", "email": "email"}
+    timetable = models.TextField(blank=True, null=True)
+    membership_requirements = models.TextField(blank=True, null=True)
+    upcoming_projects_or_plans = models.TextField(blank=True, null=True)
+    #society_logo = models.ImageField(upload_to="society_logos/", blank=True, null=True)
 
     def __str__(self):
         return self.name
@@ -162,11 +184,13 @@ class Event(models.Model):
 
     def __str__(self):
         return str(self.title)
-    
+
     def is_full(self):
+        """Returns a boolean representing whether the event is full"""
         return self.max_capacity > 0 and self.current_attendees.count() >= self.max_capacity
 
     def has_started(self):
+        """Returns a boolean representing whether an event has began"""
         now = timezone.now()
         event_datetime = timezone.datetime.combine(self.date, self.start_time, tzinfo=timezone.utc)
         return now >= event_datetime
@@ -187,6 +211,8 @@ class Notification(models.Model):
         blank=False,
         null=True,
     )
-
+    
+    is_read = models.BooleanField(default=False)
+    message = models.TextField()
     def __str__(self):
         return self.for_event.title
