@@ -1,8 +1,8 @@
 from datetime import date, timedelta, time
 from random import choice, randint
+from django.contrib.auth.hashers import make_password
 from django.core.management.base import BaseCommand
 from api.models import Admin, Student, Society, Event, Notification
-from django.contrib.auth.hashers import make_password
 
 class Command(BaseCommand):
     help = "Seed the database with admin, student, and president users"
@@ -51,7 +51,7 @@ class Command(BaseCommand):
         )
         admin.save()
 
-        student, _ = get_or_create_user(
+        get_or_create_user(
             Student,
             username="student_user",
             email="student@example.com",
@@ -69,7 +69,10 @@ class Command(BaseCommand):
             email="president@example.com",
             first_name="President",
             last_name="User",
-            defaults={"password": make_password("presidentpassword"), "major": "Mechanical Engineering"},
+            defaults={
+                "password": make_password("presidentpassword"), 
+                "major": "Mechanical Engineering"
+            },
         )
 
         society, _ = get_or_create_object(
@@ -81,16 +84,28 @@ class Command(BaseCommand):
 
         president.president_of.add(society)
 
-        self.stdout.write(
-            self.style.SUCCESS(
-                f"Society '{society.name}' created/retrieved. President: {president.username}"
-            )
-        )
-
+        self.create_student(30)
         self.create_society(10)
         self.create_event(10)
 
         self.stdout.write(self.style.SUCCESS("Seeding complete!"))
+
+    def create_student(self, n):
+        """ Create n different students """
+        majors = ["Computer Science", "Maths", "Music"]
+        for i in range(1, n+1):
+            print(f"Seeding student {i}/{n}", end='\r', flush=True)
+            Student.objects.get_or_create(
+                username=f"student{i}",
+                email=f"student{i}@example.com",
+                first_name=f"student{i}",
+                last_name="User",
+                defaults={
+                    "password": make_password("studentpassword"),  
+                    "major": choice(majors),
+                },
+            )
+        print()
 
     def create_society(self, n):
         """ Create n different societies owned by random students """
@@ -110,6 +125,17 @@ class Command(BaseCommand):
     def create_event(self, n):
         """ Create n different events """
         event_list = [] # Create empty list to hold created events
+
+        for i in range(1, n+1):
+            print(f"Seeding event {i}/{n}", end='\r')
+            event, created = self.generate_random_event(i)
+            if created:
+                event_list.append(event)
+        print()
+        self.create_event_notifications(event_list)
+
+    def generate_random_event(self, i):
+        """ Generate 'i'th new event object """
         locations = [
             'Main Auditorium',
             'Library Conference Room',
@@ -117,24 +143,16 @@ class Command(BaseCommand):
             'Computer Lab',
             'Music Hall'
         ]
-
-        for i in range(1, n+1):
-            print(f"Seeding event {i}/{n}", end='\r')
-
-            society = Society.objects.order_by('?').first()
-            event, created = Event.objects.get_or_create(
-                title=f'Event{i}',
-                description=f'Event{i} organised by {society}',
-                date=self.generate_random_date(),
-                start_time=self.generate_reasonable_time(),
-                duration=self.generate_random_duration(),
-                hosted_by=society,
-                location=choice(locations)
-            )
-            if created:
-                event_list.append(event)
-        print()
-        self.create_event_notifications(event_list)
+        society = Society.objects.order_by('?').first()
+        return Event.objects.get_or_create(
+            title=f'Event{i}',
+            description=f'Event{i} organised by {society}',
+            date=self.generate_random_date(),
+            start_time=self.generate_reasonable_time(),
+            duration=self.generate_random_duration(),
+            hosted_by=society,
+            location=choice(locations)
+        )
 
     def generate_random_duration(self):
         """ Generate and return a random duration from 1-3 hours """
