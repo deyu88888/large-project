@@ -1,7 +1,7 @@
 from datetime import timezone
-from api.models import User, Society, Event, Student
+from api.models import User, Society, Event, Student, Notification
 from rest_framework import generics, status
-from .serializers import EventSerializer, RSVPEventSerializer, UserSerializer, StudentSerializer, LeaveSocietySerializer, JoinSocietySerializer, SocietySerializer
+from .serializers import EventSerializer, RSVPEventSerializer, UserSerializer, StudentSerializer, LeaveSocietySerializer, JoinSocietySerializer, SocietySerializer, NotificationSerializer
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -235,3 +235,159 @@ class EventHistoryView(APIView):
         attended_events = student.attended_events.filter(date__lt=timezone.now().date())
         serializer = EventSerializer(attended_events, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+
+class StudentNotificationsView(APIView):
+    """
+    View to retrieve and update notifications for a student.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Ensure the user is a student
+        if not hasattr(request.user, 'student'):
+            return Response({"error": "Only students can view notifications."}, status=status.HTTP_403_FORBIDDEN)
+
+        # Get notifications for societies the student has joined
+        student = request.user.student
+        notifications = Notification.objects.filter(for_student=student)
+
+        serializer = NotificationSerializer(notifications, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def patch(self, request, pk=None):
+        # Ensure the user is a student
+        if not hasattr(request.user, 'student'):
+            return Response({"error": "Only students can mark notifications as read."}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            # Get the specific notification
+            notification = Notification.objects.get(id=pk, for_student=request.user.student)
+        except Notification.DoesNotExist:
+            return Response({"error": "Notification not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Update the notification
+        serializer = NotificationSerializer(notification, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "Notification updated successfully."}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class StartSocietyRequestView(APIView):
+    """View to handle society creation requests."""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+
+        # Ensure the user is a student
+        if not hasattr(user, "student"):
+            return Response({"error": "Only students can request a new society."}, status=status.HTTP_403_FORBIDDEN)
+
+        # Validate and save the data
+        serializer = StartSocietyRequestSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(requested_by=user.student)
+            return Response(
+                {"message": "Your request has been submitted for review."},
+                status=status.HTTP_201_CREATED,
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+class ManageMySocietyView(APIView):
+    """
+    API View for society presidents to manage their societies.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, society_id):
+        user = request.user
+
+        # Ensure the user is a society president
+        if not user.is_student() or not user.student.is_president:
+            return Response({"error": "Only society presidents can manage their societies."}, status=status.HTTP_403_FORBIDDEN)
+
+        # Fetch the society
+        society = Society.objects.filter(id=society_id, leader=user.student).first()
+        if not society:
+            return Response({"error": "Society not found or you are not the president of this society."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Serialize the society details
+        serializer = SocietySerializer(society)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def patch(self, request, society_id):
+        user = request.user
+
+        # Ensure the user is a society president
+        if not user.is_student() or not user.student.is_president:
+            return Response({"error": "Only society presidents can manage their societies."}, status=status.HTTP_403_FORBIDDEN)
+
+        # Fetch the society
+        society = Society.objects.filter(id=society_id, leader=user.student).first()
+        if not society:
+            return Response({"error": "Society not found or you are not the president of this society."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Update the society details
+        serializer = SocietySerializer(society, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "Society details updated successfully.", "data": serializer.data}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CreateSocietyEventView(APIView):
+    """
+    API View for society presidents to create events for their societies.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, society_id):
+        user = request.user
+
+        # Ensure the user is a society president
+        if not user.is_student() or not user.student.is_president:
+            return Response({"error": "Only society presidents can create events."}, status=status.HTTP_403_FORBIDDEN)
+
+        # Fetch the society
+        society = Society.objects.filter(id=society_id, leader=user.student).first()
+        if not society:
+            return Response({"error": "Society not found or you are not the president of this society."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Validate and save the event data
+        serializer = EventSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(hosted_by=society)
+            return Response({"message": "Event created successfully.", "data": serializer.data}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class EditSocietyView(APIView):
+    """
+    View for editing society details by the society's president.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, society_id):
+        try:
+            society = Society.objects.get(id=society_id)
+        except Society.DoesNotExist:
+            return Response({"error": "Society not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Ensure the user is the president of this society
+        if not hasattr(request.user, "student") or request.user.student not in society.presidents.all():
+            return Response(
+                {"error": "You are not authorized to edit this society."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # Update the society details
+        serializer = EditSocietySerializer(society, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                {"message": "Society details updated successfully.", "data": serializer.data},
+                status=status.HTTP_200_OK,
+            )
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

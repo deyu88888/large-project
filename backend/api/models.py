@@ -84,6 +84,7 @@ class Student(User):
     
     def save(self, *args, **kwargs):
         self.role = "student"
+        self.is_president = self.president_of.exists() # To change automatically when a president of a society
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -102,9 +103,13 @@ class Society(models.Model):
     """
     A model for a student society.
     """
-
+    STATUS_CHOICES = [
+        ("Pending", "Pending Approval"),
+        ("Approved", "Approved"),
+        ("Rejected", "Rejected"),
+    ]
+    
     name = models.CharField(max_length=30, default="")
-
     society_members = models.ManyToManyField(
         "Student", related_name="societies_belongs_to", blank=True
     )
@@ -125,6 +130,17 @@ class Society(models.Model):
         blank=False,
         null=True,
     )
+    
+    status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default="Pending"
+    )
+    
+    category = models.CharField(max_length=50, default="General")
+    social_media_links = models.JSONField(default=dict, blank=True)  # {"facebook": "link", "email": "email"}
+    timetable = models.TextField(blank=True, null=True)
+    membership_requirements = models.TextField(blank=True, null=True)
+    upcoming_projects_or_plans = models.TextField(blank=True, null=True)
+    society_logo = models.ImageField(upload_to="society_logos/", blank=True, null=True)
 
     def __str__(self):
         return self.name
@@ -187,6 +203,8 @@ class Notification(models.Model):
         blank=False,
         null=True,
     )
-
+    
+    is_read = models.BooleanField(default=False)
+    message = models.TextField()
     def __str__(self):
         return self.for_event.title

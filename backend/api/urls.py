@@ -9,4 +9,10 @@ urlpatterns = [
     path("user/register", RegisterView.as_view(), name="register"),
     path("user/login", TokenObtainPairView.as_view(), name="get_token"),
     path("user/current", CurrentUserView.as_view(), name="current_user"),
+    path('notifications/', StudentNotificationsView.as_view(), name='student_notifications'),
+    path('notifications/<int:pk>/', StudentNotificationsView.as_view(), name='mark_notification_read'),
+    path("start-society/", StartSocietyRequestView.as_view(), name="start_society"),
+    path('manage-society/<int:society_id>/', ManageMySocietyView.as_view(), name='manage_my_society'),
+    path('society/<int:society_id>/create-event/', CreateSocietyEventView.as_view(), name='create_society_event'),
+    path("societies/<int:society_id>/edit", EditSocietyView.as_view(), name="edit_society"),
 ]

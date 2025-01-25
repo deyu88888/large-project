@@ -46,7 +46,8 @@ class StudentSerializer(UserSerializer):
     class Meta(UserSerializer.Meta):
         model = Student
         fields = UserSerializer.Meta.fields + ['major', 'societies', 'president_of', 'is_president']
-
+        read_only_fields = ["is_president"]
+        
     def validate_email(self, value):
         """
         Check if the email is unique and provide a custom error message.
@@ -128,9 +129,19 @@ class SocietySerializer(serializers.ModelSerializer):
     """ Serializer for objects of the Society model """
 
     class Meta:
-        """ SocietySerializer meta data """
         model = Society
-        fields = ['id', 'name', 'society_members', 'roles', 'leader', 'approved_by']
+        fields = [
+            'id', 'name', 'society_members', 'roles', 'leader', 'approved_by',
+            'status', 'category', 'social_media_links', 'timetable',
+            'membership_requirements', 'upcoming_projects_or_plans', 'society_logo'
+        ]
+
+    def validate_social_media_links(self, value):
+        """ Ensure social media links include valid URLs """
+        for key, link in value.items():
+            if not link.startswith("http"):
+                raise serializers.ValidationError(f"{key} link must be a valid URL.")
+        return value
 
     def create(self, validated_data):
         """ Use passing in json dict data to create a new Society """
@@ -188,7 +199,7 @@ class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         """ NotificationSerializer meta data """
         model = Notification
-        fields = ['id', 'for_event', 'for_student']
+        fields = ['id', 'for_event', 'for_student', 'is_read']
         extra_kwargs = {
             'for_event': {'required': True},
             'for_student': {'required': True}
@@ -312,3 +323,55 @@ class RSVPEventSerializer(serializers.ModelSerializer):
             event.current_attendees.remove(student)  # Remove student from attendees
 
         return event
+    
+class StartSocietyRequestSerializer(serializers.ModelSerializer):
+    """Serializer for creating a new society request."""
+
+    description = serializers.CharField(max_length=500)
+    category = serializers.CharField(max_length=50)
+    requested_by = serializers.PrimaryKeyRelatedField(queryset=Student.objects.all(), required=True)
+
+    class Meta:
+        model = Society
+        fields = ["id", "name", "description", "category", "requested_by", "status"]
+        read_only_fields = ["status"]
+
+    def validate(self, data):
+        # Check if a society with the same name already exists
+        if Society.objects.filter(name=data["name"]).exists():
+            raise serializers.ValidationError("A society with this name already exists.")
+        return data
+
+    def create(self, validated_data):
+        """Handle creating a society request (save as a draft society)."""
+        return Society.objects.create(
+            name=validated_data["name"],
+            roles={"description": validated_data["description"], "category": validated_data["category"]},
+            leader=validated_data["requested_by"],
+            status="Pending"
+        )
+
+class EditSocietySerializer(serializers.ModelSerializer):
+    """
+    Serializer for editing a society's details.
+    """
+    class Meta:
+        model = Society
+        fields = [
+            "name",
+            "roles",  # Includes description, category, and other structured details.
+            "social_media_links",  # Add this field if not already part of the Society model.
+            "timetable",          # Optional timetable field.
+            "membership_requirements",
+            "upcoming_projects_or_plans",
+            "logo",
+        ]
+        extra_kwargs = {
+            "name": {"read_only": True},  # Prevent name edits.
+        }
+
+    def update(self, instance, validated_data):
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save()
+        return instance
