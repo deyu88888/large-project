@@ -206,9 +206,6 @@ class Command(BaseCommand):
         """ Counts all the potential participants of events """
         total = 0
         for _, members in event_dict.items():
-            print()
-            print(members)
-            print()
             total += len(members)
         return total
 
