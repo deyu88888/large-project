@@ -46,7 +46,8 @@ class StudentSerializer(UserSerializer):
     class Meta(UserSerializer.Meta):
         model = Student
         fields = UserSerializer.Meta.fields + ['major', 'societies', 'president_of', 'is_president']
-
+        read_only_fields = ["is_president"]
+        
     def validate_email(self, value):
         """
         Check if the email is unique and provide a custom error message.
@@ -128,9 +129,20 @@ class SocietySerializer(serializers.ModelSerializer):
     """ Serializer for objects of the Society model """
 
     class Meta:
-        """ SocietySerializer meta data """
         model = Society
-        fields = ['id', 'name', 'society_members', 'roles', 'leader', 'approved_by']
+        fields = [
+            'id', 'name', 'society_members', 'roles', 'leader', 'approved_by',
+            'status', 'category', 'social_media_links', 'timetable',
+            'membership_requirements', 'upcoming_projects_or_plans', 
+            #'society_logo'
+        ]
+
+    def validate_social_media_links(self, value):
+        """ Ensure social media links include valid URLs """
+        for key, link in value.items():
+            if not link.startswith("http"):
+                raise serializers.ValidationError(f"{key} link must be a valid URL.")
+        return value
 
     def create(self, validated_data):
         """ Use passing in json dict data to create a new Society """
@@ -188,7 +200,7 @@ class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         """ NotificationSerializer meta data """
         model = Notification
-        fields = ['id', 'for_event', 'for_student']
+        fields = ['id', 'for_event', 'for_student', 'is_read']
         extra_kwargs = {
             'for_event': {'required': True},
             'for_student': {'required': True}
@@ -205,7 +217,6 @@ class NotificationSerializer(serializers.ModelSerializer):
 
         instance.save()
         return instance
-    
     
 
 
@@ -275,24 +286,24 @@ class RSVPEventSerializer(serializers.ModelSerializer):
         student = request.user.student
 
         if self.context.get('action') == 'RSVP':
-            # Rule 1: Ensure the student is a member of the hosting society
+            # Ensure the student is a member of the hosting society
             if event.hosted_by not in student.societies.all():
                 raise serializers.ValidationError("You must be a member of the hosting society to RSVP for this event.")
 
-            # Rule 2: Ensure the student has not already RSVP’d
+            # Ensure the student has not already RSVP’d
             if student in event.current_attendees.all():
                 raise serializers.ValidationError("You have already RSVP'd for this event.")
 
-            # Rule 3: Ensure the event is not in the past or has started
+            # Ensure the event is not in the past or has started
             if event.has_started():
                 raise serializers.ValidationError("You cannot RSVP for an event that has already started.")
 
-            # Rule 4: Ensure the event is not full
+            # Ensure the event is not full
             if event.is_full():
                 raise serializers.ValidationError("This event is full and cannot accept more RSVPs.")
 
         elif self.context.get('action') == 'CANCEL':
-            # Rule 1: Ensure the student is currently RSVP’d for the event
+            # Ensure the student is currently RSVP’d for the event
             if student not in event.current_attendees.all():
                 raise serializers.ValidationError("You have not RSVP'd for this event.")
 
@@ -307,8 +318,35 @@ class RSVPEventSerializer(serializers.ModelSerializer):
         event = self.instance
 
         if self.context.get('action') == 'RSVP':
-            event.current_attendees.add(student)  # Add student to attendees
+            event.current_attendees.add(student)  
         elif self.context.get('action') == 'CANCEL':
-            event.current_attendees.remove(student)  # Remove student from attendees
+            event.current_attendees.remove(student)  
 
         return event
+    
+class StartSocietyRequestSerializer(serializers.ModelSerializer):
+    """Serializer for creating a new society request."""
+
+    description = serializers.CharField(max_length=500)
+    category = serializers.CharField(max_length=50)
+    requested_by = serializers.PrimaryKeyRelatedField(queryset=Student.objects.all(), required=True)
+
+    class Meta:
+        model = Society
+        fields = ["id", "name", "description", "category", "requested_by", "status"]
+        read_only_fields = ["status"]
+
+    def validate(self, data):
+        # Check if a society with the same name already exists
+        if Society.objects.filter(name=data["name"]).exists():
+            raise serializers.ValidationError("A society with this name already exists.")
+        return data
+
+    def create(self, validated_data):
+        """Handle creating a society request (save as a draft society)."""
+        return Society.objects.create(
+            name=validated_data["name"],
+            roles={"description": validated_data["description"], "category": validated_data["category"]},
+            leader=validated_data["requested_by"],
+            status="Pending"
+        )
