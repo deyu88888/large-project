@@ -162,11 +162,13 @@ class Event(models.Model):
 
     def __str__(self):
         return str(self.title)
-    
+
     def is_full(self):
+        """Returns a boolean representing whether the event is full"""
         return self.max_capacity > 0 and self.current_attendees.count() >= self.max_capacity
 
     def has_started(self):
+        """Returns a boolean representing whether an event has began"""
         now = timezone.now()
         event_datetime = timezone.datetime.combine(self.date, self.start_time, tzinfo=timezone.utc)
         return now >= event_datetime
