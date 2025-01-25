@@ -86,6 +86,7 @@ class Student(User):
     
     def save(self, *args, **kwargs):
         self.role = "student"
+        self.is_president = self.president_of.exists() # To change automatically when a president of a society
         super().save(*args, **kwargs)
 
     def __str__(self):
