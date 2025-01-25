@@ -91,6 +91,12 @@ class SeedingTestCase(TransactionTestCase):
         self.assertTrue(Student.objects.get(username="student1"))
 
     @patch('builtins.print') # Avoids printing while testing
+    def test_admin_creation(self, mock_print):
+        """Test that seed_data create_admin works"""
+        self.command_instance.create_admin(1)
+        self.assertTrue(Admin.objects.get(username="admin1"))
+
+    @patch('builtins.print') # Avoids printing while testing
     def test_society_creation(self, mock_print):
         """Test that seed_data create_society works"""
         self.command_instance.create_society(1)
