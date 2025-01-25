@@ -26,12 +26,12 @@ const StudentDashboard: React.FC = () => {
 
     // Navigate to the "View All Societies" page
     const handleViewAllSocieties = () => {
-        navigate("/my_societies"); // Must be implemented
+        navigate("/my-societies"); // Must be implemented
     };
 
     // Navigate to the "View All Events" page
     const handleViewAllEvents = () => {
-        navigate("/rsvp_event"); // Must be implemented
+        navigate("/rsvp-event"); // Must be implemented
     };
 
     // Navigate to the "Start a Society" page
