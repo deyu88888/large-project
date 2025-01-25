@@ -51,7 +51,7 @@ class Command(BaseCommand):
         )
         admin.save()
 
-        get_or_create_user(
+        student, _ = get_or_create_user(
             Student,
             username="student_user",
             email="student@example.com",
@@ -81,10 +81,12 @@ class Command(BaseCommand):
             leader=president,
         )
         society.approved_by = admin
+        society.society_members.add(student)
 
         president.president_of.add(society)
 
         self.create_student(30)
+        self.create_admin(5)
         self.create_society(10)
         self.create_event(10)
 
@@ -105,22 +107,36 @@ class Command(BaseCommand):
                     "major": choice(majors),
                 },
             )
-        print()
+        print(self.style.SUCCESS(f"Seeding student {n}/{n}"), flush=True)
+
+    def create_admin(self, n):
+        """ Create n different admins """
+        for i in range(1, n+1):
+            print(f"Seeding admin {i}/{n}", end='\r', flush=True)
+            Admin.objects.get_or_create(
+                username=f"admin{i}",
+                email=f"admin{i}@example.com",
+                first_name=f"admin{i}",
+                last_name="User",
+                defaults={"password": make_password("adminpassword")},
+            )
+        print(self.style.SUCCESS(f"Seeding admin {n}/{n}"), flush=True)
 
     def create_society(self, n):
         """ Create n different societies owned by random students """
         for i in range(1, n+1):
             print(f"Seeding society {i}/{n}", end='\r', flush=True)
 
-            society_leader = Student.objects.order_by('?').first()
+            student_randomised = Student.objects.order_by('?')
+            society_leader = student_randomised.first()
             society, created = Society.objects.get_or_create(
                 name=f'Society{i}',
                 leader=society_leader,
             )
             if created:
                 society_leader.president_of.add(society)
-                society.society_members.add(society_leader)
-        print()
+                society.society_members.add(*student_randomised.all()[:2])
+        print(self.style.SUCCESS(f"Seeding society {n}/{n}"), flush=True)
 
     def create_event(self, n):
         """ Create n different events """
@@ -131,7 +147,7 @@ class Command(BaseCommand):
             event, created = self.generate_random_event(i)
             if created:
                 event_list.append(event)
-        print()
+        print(self.style.SUCCESS(f"Seeding event {n}/{n}"), flush=True)
         self.create_event_notifications(event_list)
 
     def generate_random_event(self, i):
@@ -172,20 +188,36 @@ class Command(BaseCommand):
 
     def create_event_notifications(self, events):
         """ Creates notifications from a list of events """
+        notification_dict = {}
+
         for event in events:
+            members = event.hosted_by.society_members
+            notification_dict[event] = members.all()
+
+        count = 0
+        total = self.count_all_event_participants(notification_dict)
+        for event in events:
+            print(f"Seeding notification {count}/{total}", end='\r')
             self.create_event_notification(event)
+            count += len(notification_dict[event])
+        print(self.style.SUCCESS(f"Seeding notification {count}/{total}"))
+
+    def count_all_event_participants(self, event_dict):
+        """ Counts all the potential participants of events """
+        total = 0
+        for _, members in event_dict.items():
+            print()
+            print(members)
+            print()
+            total += len(members)
+        return total
 
     def create_event_notification(self, event):
         """ Create the notifications for a specific event """
         members = event.hosted_by.society_members
 
-        count = 0
         for member in members.all():
-            count += 1
-            print(f"Notification {count}/{len(members.all())} for: {event.title}", end='\r')
-
             Notification.objects.create(
                 for_event=event,
                 for_student=member
             )
-        print()
