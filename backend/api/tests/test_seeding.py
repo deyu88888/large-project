@@ -4,6 +4,7 @@ from api.models import Admin, Student, Society, Event, Notification
 from api.management.commands import seed_data
 
 class SeedingTestCase(TransactionTestCase):
+    """Unit test for the seed_data Command"""
     def setUp(self):
         """
         This simulates the seeding process, ensuring the data is created as expected.
@@ -82,6 +83,12 @@ class SeedingTestCase(TransactionTestCase):
         self.assertEqual(society.leader, self.president)
         self.assertEqual(society.approved_by, self.admin)
         self.assertIn(self.president, society.presidents.all())
+
+    @patch('builtins.print') # Avoids printing while testing
+    def test_student_creation(self, mock_print):
+        """Test that seed_data create_student works"""
+        self.command_instance.create_student(1)
+        self.assertTrue(Student.objects.get(username="student1"))
 
     @patch('builtins.print') # Avoids printing while testing
     def test_society_creation(self, mock_print):
