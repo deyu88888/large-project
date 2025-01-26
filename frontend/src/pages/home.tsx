@@ -13,21 +13,6 @@ export default function HomePage() {
     localStorage.removeItem("refresh");
     navigate("/");
   };
-    const { user, setUser } = useAuthStore();
-
-  //   useEffect(() => {
-  //     async function current() {
-  //         const response = await apiClient.get(apiPaths.USER.CURRENT);
-  //         console.log(response.data);
-  //         setUser(response.data);
-  //     }
-  //     current()
-  // }, []);
-  // return (
-  //   <div className="flex flex-col gap-4 container p-4">
-  //     <div>user: {user?.username}</div>
-
-
 
     return (
         <div className="flex flex-col gap-4">

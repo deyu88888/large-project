@@ -5,6 +5,7 @@ import NotFound from "../pages/404";
 import { LoadingView } from "../components/loading/loading-view";
 import { PublicGuard } from "../components/guards/public-guard";
 import { PrivateGuard } from "../components/guards/private-guard";
+import CircularLoader from "../components/loading/circular-loader";
 
 // Lazy-loaded pages
 const HomePage = lazy(() => import("../pages/home"));
