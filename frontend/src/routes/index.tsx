@@ -13,7 +13,12 @@ const RegisterPage = lazy(() => import("../pages/register"));
 const ProfilePage = lazy(() => import("../pages/profile"));
 const StudentDashboard = lazy(() => import("../pages/student-dashboard"));
 
-const DashboardPage = lazy(() => import("../pages/dashboard"));
+// Admin pages
+const AdminHomePage = lazy(() => import("../pages/Admin/AdminHome"));
+const EventListPage = lazy(() => import("../pages/Admin/EventList"));
+const SocietyListPage = lazy(() => import("../pages/Admin/SocietyList"));
+const StudentListPage = lazy(() => import("../pages/Admin/StudentList"));
+const DashboardPage = lazy(() => import("../pages/Dashboard"));
 
 function Logout() {
   localStorage.clear();
@@ -37,6 +42,22 @@ const routes = [
         element: <HomePage />,
       },
       {
+        path: "admin-home",
+        element: <AdminHomePage />,
+      },
+      {
+        path: "event-list",
+        element: <EventListPage />,
+      },
+      {
+        path: "society-list",
+        element: <SocietyListPage />,
+      },
+      {
+        path: "student-list",
+        element: <StudentListPage />,
+      },
+      {
         path: "profile",
         element: <ProfilePage />,
       },
@@ -50,6 +71,27 @@ const routes = [
       },
       {
         path: "logout",
+        children: [
+            {
+                index: true,
+                element: <HomePage />,
+            },
+            {
+                path: "logout",
+                element: (
+                    <Suspense fallback={<CircularLoader />}>
+                        <Navigate to="/login" replace />
+                    </Suspense>
+                ),
+            },
+            {
+                path: "profile",
+                element: <ProfilePage />,
+            },
+        ],
+    },
+    {
+        path: "/",
         element: (
           <Suspense fallback={<LoadingView />}>
             <Navigate to="/" replace />
@@ -79,6 +121,10 @@ const routes = [
       {
         path: "register",
         element: <RegisterPage />,
+      },
+      {
+        path: "event-list",
+        element: <EventListPage />,
       },
     ],
   },

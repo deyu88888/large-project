@@ -14,4 +14,8 @@ urlpatterns = [
     path("start-society/", StartSocietyRequestView.as_view(), name="start_society"),
     path('manage-society/<int:society_id>/', ManageMySocietyView.as_view(), name='manage_my_society'),
     path('society/<int:society_id>/create-event/', CreateSocietyEventView.as_view(), name='create_society_event'),
+    path("user/admin", AdminView.as_view(), name="admin"),
+    path("user/student", StudentView.as_view(), name="student"),
+    path("admin-panel/society", SocietyView.as_view(), name="admin"),
+    path("society/event", EventView.as_view(), name="event"),
 ]

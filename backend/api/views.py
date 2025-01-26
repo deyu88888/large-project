@@ -2,11 +2,15 @@ from datetime import timezone
 from api.models import User, Society, Event, Student, Notification
 from rest_framework import generics, status
 from .serializers import EventSerializer, RSVPEventSerializer, UserSerializer, StudentSerializer, LeaveSocietySerializer, JoinSocietySerializer, SocietySerializer, NotificationSerializer
+from api.models import Admin, User, Society, Event, Student
+from rest_framework import generics, status
+from .serializers import AdminSerializer, EventSerializer, RSVPEventSerializer, UserSerializer, StudentSerializer, LeaveSocietySerializer, JoinSocietySerializer, SocietySerializer
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from django.utils import timezone
 
 
 """
@@ -21,6 +25,7 @@ def get_current_user(request):
         "username": user.username,
         "email": user.email,  
     })
+
 
 class CreateUserView(generics.CreateAPIView):
     """
@@ -43,7 +48,6 @@ class CreateUserView(generics.CreateAPIView):
     permission_classes = [AllowAny]
 
 
-
 class RegisterView(APIView):
     permission_classes = [AllowAny]  # Otherwise it won't allow anonymous access
 
@@ -53,7 +57,6 @@ class RegisterView(APIView):
             serializer.save()
             return Response({"message": "Student registered successfully."}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 
 class CurrentUserView(APIView):
@@ -130,7 +133,6 @@ class MySocietiesView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-
 class JoinSocietyView(APIView):
     """
     API View for managing the joining of new societies by a student.
@@ -173,7 +175,8 @@ class JoinSocietyView(APIView):
 
 
 class RSVPEventView(APIView):
-    permission_classes = [IsAuthenticated]
+    
+    permission_classes = [IsAuthenticated] 
 
     def get(self, request):
         """
@@ -221,6 +224,7 @@ class RSVPEventView(APIView):
             serializer.save()
             return Response({"message": f"Successfully canceled RSVP for event '{event.title}'."}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class EventHistoryView(APIView):
     """
@@ -362,3 +366,81 @@ class CreateSocietyEventView(APIView):
             return Response({"message": "Event created successfully.", "data": serializer.data}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    
+    def put(self, request):
+        jwt_authenticator = JWTAuthentication()
+        decoded_auth = jwt_authenticator.authenticate(request)
+
+        if decoded_auth is None:
+            return Response({
+                "error": "Invalid or expired token. Please log in again."
+            }, status=status.HTTP_401_UNAUTHORIZED)
+
+        user, _ = decoded_auth
+        print("request.data: ", request.data)
+        serializer = UserSerializer(user, data=request.data, partial=True)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+class EventView(APIView):       
+    """
+    event view for admins see  all events
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request) -> Response:
+        """
+        List of approved events for the admin.
+        """
+        events = Event.objects.all()
+        serializer = EventSerializer(events, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class AdminView(APIView):
+    """
+    admin view for admins to view all admins
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request) -> Response:
+        """
+        get the list of admins for the admin.
+        """
+        admin = Admin.objects.all()
+        serializer = AdminSerializer(admin, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class SocietyView(APIView):
+    """
+    society view for admins to view all societies
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request) -> Response:
+        """
+        get the list of approved societies for the admin.
+        """
+        society = Society.objects.all()
+        serializer = SocietySerializer(society, many=True)
+        print("serializer data: ", serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class StudentView(APIView):
+    """
+    student view for admins to view all students
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request) -> Response:
+        """
+        get the list of students for the admin.
+        """
+        # get all students and extend their user information
+        students = Student.objects.all()
+        serializer = StudentSerializer(students, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

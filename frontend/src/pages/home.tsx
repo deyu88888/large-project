@@ -13,18 +13,33 @@ export default function HomePage() {
     localStorage.removeItem("refresh");
     navigate("/");
   };
+    const { user, setUser } = useAuthStore();
 
-  return (
-    <div className="flex flex-col gap-4 container p-4">
-      <div>user: {user?.username}</div>
+  //   useEffect(() => {
+  //     async function current() {
+  //         const response = await apiClient.get(apiPaths.USER.CURRENT);
+  //         console.log(response.data);
+  //         setUser(response.data);
+  //     }
+  //     current()
+  // }, []);
+  // return (
+  //   <div className="flex flex-col gap-4 container p-4">
+  //     <div>user: {user?.username}</div>
 
-      <Link className="btn bg-slate-400 mx-auto px-4 py-2" to={"/profile"}>
-        profile
-      </Link>
 
-      <button className="btn bg-slate-400 mx-auto px-4 py-2" onClick={logout}>
-        logout
-      </button>
-    </div>
-  );
+
+    return (
+        <div className="flex flex-col gap-4">
+            <div>user: {user?.username}</div>
+            <button className="btn bg-teal-500" onClick={logout}>
+                logout
+            </button>
+            <button className="btn bg-teal-500" onClick={() => {
+                navigate("/profile");
+            }}>
+                profile
+            </button>
+        </div>
+    );
 }
