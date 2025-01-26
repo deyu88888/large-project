@@ -108,7 +108,7 @@ class Society(models.Model):
         ("Approved", "Approved"),
         ("Rejected", "Rejected"),
     ]
-    
+
     name = models.CharField(max_length=30, default="")
     society_members = models.ManyToManyField(
         "Student", related_name="societies_belongs_to", blank=True

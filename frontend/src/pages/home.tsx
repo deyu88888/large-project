@@ -1,6 +1,5 @@
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../stores/auth-store";
-import { Link } from "react-router";
 
 // ------------------------------------------------
 
