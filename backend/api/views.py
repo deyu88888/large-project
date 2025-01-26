@@ -362,3 +362,21 @@ class CreateSocietyEventView(APIView):
             return Response({"message": "Event created successfully.", "data": serializer.data}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    
+    def put(self, request):
+        jwt_authenticator = JWTAuthentication()
+        decoded_auth = jwt_authenticator.authenticate(request)
+
+        if decoded_auth is None:
+            return Response({
+                "error": "Invalid or expired token. Please log in again."
+            }, status=status.HTTP_401_UNAUTHORIZED)
+
+        user, _ = decoded_auth
+        print("request.data: ", request.data)
+        serializer = UserSerializer(user, data=request.data, partial=True)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

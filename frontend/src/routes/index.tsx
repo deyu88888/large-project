@@ -50,6 +50,27 @@ const routes = [
       },
       {
         path: "logout",
+        children: [
+            {
+                index: true,
+                element: <HomePage />,
+            },
+            {
+                path: "logout",
+                element: (
+                    <Suspense fallback={<CircularLoader />}>
+                        <Navigate to="/login" replace />
+                    </Suspense>
+                ),
+            },
+            {
+                path: "profile",
+                element: <ProfilePage />,
+            },
+        ],
+    },
+    {
+        path: "/",
         element: (
           <Suspense fallback={<LoadingView />}>
             <Navigate to="/" replace />
