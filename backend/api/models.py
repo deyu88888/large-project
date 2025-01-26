@@ -7,7 +7,6 @@ from django.utils import timezone
 from django.db.models.signals import m2m_changed
 
 
-
 class User(AbstractUser):
     """
     A custom user model with role-based logic.

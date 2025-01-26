@@ -26,5 +26,8 @@ export const apiPaths = {
     REGISTER: "/api/user/register",
     REFRESH: "/api/user/token/refresh",
     CURRENT: "/api/user/current",
+    EVENTS: "api/society/event",
+    SOCIETY: "api/admin-panel/society",
+    STUDENTS: "api/user/student",
   },
 };
