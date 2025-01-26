@@ -15,7 +15,13 @@ urlpatterns = [
     path('manage-society/<int:society_id>/', ManageMySocietyView.as_view(), name='manage_my_society'),
     path('society/<int:society_id>/create-event/', CreateSocietyEventView.as_view(), name='create_society_event'),
     path("user/admin", AdminView.as_view(), name="admin"),
+    # path('user/admin/', AdminView.as_view(), name='create_admin'),
     path("user/student", StudentView.as_view(), name="student"),
     path("admin-panel/society", SocietyView.as_view(), name="admin"),
     path("society/event", EventView.as_view(), name="event"),
+    path("admin-panel/rejected-society", RejectedSocietyRequestView.as_view(), name="rejected_society"),
+    path("society/request/pending", SocietyRequestView.as_view(), name="request_society"),
+    path("society/request/pending/<int:society_id>", SocietyRequestView.as_view(), name="request_society"),
+
+    #     REJECTEDSOCIETY: "api/admin-panel/rejected-society",
 ]

@@ -1,5 +1,6 @@
 import axios from "axios";
 import { ACCESS_TOKEN } from "./constants";
+import PendingSocietyRequest from "./pages/Admin/PendingSocietyRequest";
 
 const apiUrl = "http://localhost:8000";
 
@@ -28,6 +29,10 @@ export const apiPaths = {
     CURRENT: "/api/user/current",
     EVENTS: "api/society/event",
     SOCIETY: "api/admin-panel/society",
+    REJECTEDSOCIETY: "api/admin-panel/rejected-society",
     STUDENTS: "api/user/student",
+    ADMIN: "api/user/admin",
+    PENDINGSOCIETYREQUEST: "api/society/request/pending",
+    // REJECTEDEVENTS: "api/society/rejectedevent",
   },
 };

@@ -17,8 +17,12 @@ const StudentDashboard = lazy(() => import("../pages/student-dashboard"));
 const AdminHomePage = lazy(() => import("../pages/Admin/AdminHome"));
 const EventListPage = lazy(() => import("../pages/Admin/EventList"));
 const SocietyListPage = lazy(() => import("../pages/Admin/SocietyList"));
+const SocietyListRejectPage = lazy(() => import("../pages/Admin/SocietyListReject"));
 const StudentListPage = lazy(() => import("../pages/Admin/StudentList"));
 const DashboardPage = lazy(() => import("../pages/Dashboard"));
+const CreateAdminPage = lazy(() => import("../pages/Admin/CreateAdmin"));
+const RequestSocietyPage = lazy(() => import("../pages/Admin/PendingSocietyRequest"));
+// const RejectedEventListPage = lazy(() => import("../pages/Admin/EventListRejected"));
 
 function Logout() {
   localStorage.clear();
@@ -54,12 +58,24 @@ const routes = [
         element: <SocietyListPage />,
       },
       {
+        path: "society-list-rejected",
+        element: <SocietyListRejectPage />,
+      },
+      {
         path: "student-list",
         element: <StudentListPage />,
       },
       {
         path: "profile",
         element: <ProfilePage />,
+      },
+      {
+        path: "create-admin",
+        element: <CreateAdminPage />,
+      },
+      {
+        path: "request-society",
+        element: <RequestSocietyPage />,
       },
       {
         path: "student-dashboard",
