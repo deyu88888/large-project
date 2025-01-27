@@ -34,6 +34,5 @@ export const apiPaths = {
     ADMIN: "api/user/admin",
     PENDINGSOCIETYREQUEST: "api/society/request/pending",
     // REJECTEDEVENTS: "api/society/rejectedevent",
-    PROFILE: "api/user/profile"
   },
 };
