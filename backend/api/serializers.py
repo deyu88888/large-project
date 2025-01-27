@@ -350,3 +350,51 @@ class StartSocietyRequestSerializer(serializers.ModelSerializer):
             leader=validated_data["requested_by"],
             status="Pending"
         )
+
+class DashboardStatisticSerializer(serializers.Serializer):
+    """
+    Serializer for dashboard statistics.
+    """
+    total_societies = serializers.IntegerField()
+    total_events = serializers.IntegerField()
+    pending_approvals = serializers.IntegerField()
+    active_members = serializers.IntegerField()
+
+
+class RecentActivitySerializer(serializers.Serializer):
+    """
+    Serializer for recent activities on the dashboard.
+    """
+    description = serializers.CharField(max_length=500)
+    timestamp = serializers.DateTimeField()
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    """
+    Updated Notification serializer to include read/unread tracking for the dashboard.
+    """
+    event_title = serializers.CharField(source="for_event.title", read_only=True)
+    student_name = serializers.CharField(source="for_student.full_name", read_only=True)
+
+    class Meta:
+        model = Notification
+        fields = [
+            'id', 'message', 'is_read', 'event_title', 'student_name', 'timestamp'
+        ]
+
+# If you need real-time event data for a calendar, you may also extend EventSerializer to include formatted fields
+class EventCalendarSerializer(serializers.ModelSerializer):
+    """
+    Serializer for calendar events on the dashboard.
+    """
+    start = serializers.DateTimeField(source='date')
+    end = serializers.SerializerMethodField()
+    title = serializers.CharField(source="title")
+
+    class Meta:
+        model = Event
+        fields = ['id', 'title', 'start', 'end', 'location']
+
+    def get_end(self, obj):
+        # Calculate the event's end time based on start_time and duration
+        return timezone.datetime.combine(obj.date, obj.start_time) + obj.duration

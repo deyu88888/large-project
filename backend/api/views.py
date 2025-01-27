@@ -1,7 +1,7 @@
 from datetime import timezone
 from api.models import User, Society, Event, Student, Notification
 from rest_framework import generics, status
-from .serializers import EventSerializer, RSVPEventSerializer, UserSerializer, StudentSerializer, LeaveSocietySerializer, JoinSocietySerializer, SocietySerializer, NotificationSerializer
+from .serializers import EventSerializer, RSVPEventSerializer, UserSerializer, StudentSerializer, LeaveSocietySerializer, JoinSocietySerializer, SocietySerializer, NotificationSerializer, DashboardStatisticSerializer, RecentActivitySerializer, EventCalendarSerializer
 from api.models import Admin, User, Society, Event, Student
 from rest_framework import generics, status
 from .serializers import AdminSerializer, EventSerializer, RSVPEventSerializer, UserSerializer, StudentSerializer, LeaveSocietySerializer, JoinSocietySerializer, SocietySerializer
@@ -11,6 +11,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.utils import timezone
+from django.db.models import Count
 
 
 """
@@ -556,3 +557,71 @@ class StudentView(APIView):
         students = Student.objects.all()
         serializer = StudentSerializer(students, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+class DashboardStatsView(APIView):
+    """
+    View to provide aggregated statistics for the dashboard.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Aggregated statistics from the database
+        total_societies = Society.objects.count()
+        total_events = Event.objects.count()
+        pending_approvals = Society.objects.filter(status="Pending").count()
+        active_members = Student.objects.aggregate(active_members=Count("id"))["active_members"]
+
+        stats = {
+            "total_societies": total_societies,
+            "total_events": total_events,
+            "pending_approvals": pending_approvals,
+            "active_members": active_members,
+        }
+        serializer = DashboardStatisticSerializer(stats)
+        return Response(serializer.data, status=200)
+
+
+
+class RecentActivitiesView(APIView):
+    """
+    View to provide a list of recent activities for the dashboard.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Example recent activities (can be extended based on project requirements)
+        activities = [
+            {"description": "John Doe joined the Chess Society", "timestamp": timezone.now()},
+            {"description": "A new event was created: 'AI Workshop'", "timestamp": timezone.now()},
+        ]
+
+        serializer = RecentActivitySerializer(activities, many=True)
+        return Response(serializer.data, status=200)
+
+
+class NotificationsView(APIView):
+    """
+    View to provide notifications for the logged-in user.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        student = getattr(request.user, "student", None)
+        if not student:
+            return Response({"error": "Only students can view notifications."}, status=403)
+
+        notifications = Notification.objects.filter(for_student=student).order_by("-id")
+        serializer = NotificationSerializer(notifications, many=True)
+        return Response(serializer.data, status=200)
+
+
+class EventCalendarView(APIView):
+    """
+    View to provide events for the dashboard calendar.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        events = Event.objects.all()
+        serializer = EventCalendarSerializer(events, many=True)
+        return Response(serializer.data, status=200)    
