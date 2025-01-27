@@ -21,6 +21,7 @@ const SocietyList = () => {
   const navigate = useNavigate();
   const [societies, setSocieties] = useState<Society[]>([]);
   const ws = useRef<WebSocket | null>(null);
+  const [socket, setSocket] = useState<WebSocket | null>(null);
 
     const fetchSocieties = async () => {
         try {
@@ -31,6 +32,10 @@ const SocietyList = () => {
         }
     };
 
+
+    function goBack() {
+        navigate(-1);
+      }
 
   useEffect(() => {
     const connectWebSocket = () => {
