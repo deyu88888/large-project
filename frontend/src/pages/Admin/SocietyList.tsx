@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { apiClient, apiPaths } from "../../api";
+import { useNavigate } from "react-router-dom";
 
 type Society = { 
     name: string; 
@@ -11,7 +12,12 @@ type Society = {
 }
 
 const SocietyList = () => {
+    const navigate = useNavigate();
     const [societies, setSocieties] = useState<Society[]>([]);
+
+    function goBack() {
+        navigate(-1);
+      }
 
     useEffect(() => {
         const getdata = async () => {
@@ -26,39 +32,64 @@ const SocietyList = () => {
     getdata();
     }, []); 
 
-    return (<div>
-        <table>
-            <thead>
-            <tr>
-                <th>
-                    Name</th>
-                <th>Leader</th>
-                <th>Members</th>
-                <th>roles</th>
-                <th>approved by</th>
-                <th>actions</th>
-            </tr>
-            </thead>
-            <tbody>
-                 {societies.length > 0 ? (
-                    societies.map((item, index) => (
-                        <tr key={index}>
-                            <td>{item.name}</td>
-                            <td>{item.leader}</td>
-                            <td>{item.societyMembers}</td>
-                            {/* <td>{item.roles}</td> */}
-                            <td>{item.approvedBy}</td>
-                            {/* <td>{item.actions}</td> */}
+    return (
+        <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center mb-6">
+                <h1 className="text-3xl font-bold text-gray-800 mb-6">Society List</h1>
+                    <button
+                    className="group px-6 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white hover:bg-gray-700 transition-all shadow-sm hover:shadow-md"
+                    onClick={goBack}
+                    >
+                    <span className="inline-flex items-center">
+                        <span className="mr-2 group-hover:-translate-x-1 transition-transform duration-200">←</span>
+                        Back
+                    </span>
+                    </button>
+                </div>
+            <div className="overflow-x-auto shadow-lg rounded-lg">
+                <table className="min-w-full bg-white border border-gray-200 rounded-lg">
+                    <thead className="bg-gray-50">
+                        <tr>
+                            {["Name", "Leader", "Members", "Roles", "Approved By", "Actions"].map((heading) => (
+                                <th
+                                    key={heading}
+                                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                >
+                                    {heading}
+                                </th>
+                            ))}
                         </tr>
-                    ))
-                    ) : (
-                    <tr>
-                        <td colSpan={6}>No societies found.</td>
-                    </tr>
-                    )}
-        </tbody>
-            </table> 
-            </div>)
-}; 
+                    </thead>
+                    <tbody>
+                        {societies.length > 0 ? (
+                            societies.map((item, index) => (
+                                <tr
+                                    key={index}
+                                    className={`${index % 2 === 0 ? "bg-white" : "bg-gray-50"}`}
+                                >
+                                    <td className="px-6 py-4 text-sm text-gray-800">{item.name}</td>
+                                    <td className="px-6 py-4 text-sm text-gray-800">{item.leader}</td>
+                                    <td className="px-6 py-4 text-sm text-gray-800">{item.members}</td>
+                                    {/* <td className="px-6 py-4 text-sm text-gray-800">{item.roles || "-"}</td> */}
+                                    <td className="px-6 py-4 text-sm text-gray-800">{item.approvedBy || "-"}</td>
+                                    {/* <td className="px-6 py-4 text-sm text-gray-800">{item.actions || "-"}</td> */}
+                                </tr>
+                            ))
+                        ) : (
+                            <tr>
+                                <td
+                                    colSpan={6}
+                                    className="px-6 py-4 text-center text-gray-500 italic"
+                                >
+                                    No societies found.
+                                </td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    );
+};
 
 export default SocietyList;
