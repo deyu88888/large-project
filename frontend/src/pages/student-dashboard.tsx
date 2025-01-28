@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaCalendarAlt, FaBell, FaUsers, FaUserPlus } from "react-icons/fa";
 import axios from "axios";
+import { apiClient } from "../api";
 
 const StudentDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -23,15 +24,15 @@ const StudentDashboard: React.FC = () => {
       setLoading(true);
 
       // Fetch societies
-      const societiesResponse = await axios.get("/api/my-societies/");
+      const societiesResponse = await apiClient.get("/api/my-societies/");
       setSocieties(societiesResponse.data || []);
 
       // Fetch events
-      const eventsResponse = await axios.get("/api/events/history/");
+      const eventsResponse = await apiClient.get("/api/events/history/");
       setEvents(eventsResponse.data || []);
 
       // Fetch notifications
-      const notificationsResponse = await axios.get("/api/notifications/");
+      const notificationsResponse = await apiClient.get("/api/notifications/");
       setNotifications(notificationsResponse.data || []);
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -43,7 +44,7 @@ const StudentDashboard: React.FC = () => {
   // Join a society
   const joinSociety = async (societyId: number) => {
     try {
-      await axios.post(`/api/join-society/${societyId}/`);
+      await apiClient.post(`/api/join-society/${societyId}/`);
       fetchData(); // Refresh the data after joining a society
     } catch (error) {
       console.error("Error joining society:", error);
@@ -53,7 +54,7 @@ const StudentDashboard: React.FC = () => {
   // Leave a society
   const leaveSociety = async (societyId: number) => {
     try {
-      await axios.post(`/api/leave-society/${societyId}/`);
+      await apiClient.post(`/api/leave-society/${societyId}/`);
       fetchData(); // Refresh the data after leaving a society
     } catch (error) {
       console.error("Error leaving society:", error);
@@ -63,7 +64,7 @@ const StudentDashboard: React.FC = () => {
   // RSVP for an event
   const rsvpEvent = async (eventId: number) => {
     try {
-      await axios.post(`/api/events/rsvp/`, { event_id: eventId });
+      await apiClient.post(`/api/events/rsvp/`, { event_id: eventId });
       fetchData(); // Refresh the events after RSVP
     } catch (error) {
       console.error("Error RSVPing for event:", error);
@@ -73,7 +74,7 @@ const StudentDashboard: React.FC = () => {
   // Cancel RSVP for an event
   const cancelRSVP = async (eventId: number) => {
     try {
-      await axios.delete(`/api/events/rsvp/`, { data: { event_id: eventId } });
+      await apiClient.delete(`/api/events/rsvp/`, { data: { event_id: eventId } });
       fetchData(); // Refresh the events after canceling RSVP
     } catch (error) {
       console.error("Error canceling RSVP:", error);
