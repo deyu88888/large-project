@@ -23,5 +23,11 @@ urlpatterns = [
     path("society/request/pending", SocietyRequestView.as_view(), name="request_society"),
     path("society/request/pending/<int:society_id>", SocietyRequestView.as_view(), name="request_society"),
 
+    path('student-societies/', StudentSocietiesView.as_view(), name='student_societies'),
+    path('join-society/', JoinSocietyView.as_view(), name='get_available_societies'),  
+    path('join-society/<int:society_id>/', JoinSocietyView.as_view(), name='join_society'),  
+    path('leave-society/<int:society_id>/', StudentSocietiesView.as_view(), name='leave_society'),
+    path('events/rsvp/', RSVPEventView.as_view(), name='rsvp_event'),
+    path('events/history/', EventHistoryView.as_view(), name='event_history'),
     #     REJECTEDSOCIETY: "api/admin-panel/rejected-society",
 ]

@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.http import HttpResponse
 from django.urls import path, include
-from api.views import EventHistoryView, RSVPEventView, RegisterView, get_current_user, MySocietiesView, JoinSocietyView
+from api.views import EventHistoryView, RSVPEventView, RegisterView, get_current_user, JoinSocietyView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 def welcome_view(request):
@@ -18,11 +18,7 @@ urlpatterns = [
     
 
 
-    path('my-societies/', MySocietiesView.as_view(), name='my_societies'),
-    path('join-society/<int:society_id>/', JoinSocietyView.as_view(), name='join_society'),
-    path('leave-society/<int:society_id>/', MySocietiesView.as_view(), name='leave_society'),
-    path('events/rsvp/', RSVPEventView.as_view(), name='rsvp_event'),
-    path('events/history/', EventHistoryView.as_view(), name='event_history'),
+    
 
 
 

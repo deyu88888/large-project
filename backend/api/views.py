@@ -120,7 +120,7 @@ class CurrentUserView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class MySocietiesView(APIView):
+class StudentSocietiesView(APIView):
     """
     API View for managing societies that a student has joined.
 
@@ -143,7 +143,6 @@ class MySocietiesView(APIView):
 
     def get(self, request):
         user = request.user
-        # I am not sure if we need this
         if not hasattr(user, "student"):
             return Response({"error": "Only students can manage societies."}, status=status.HTTP_403_FORBIDDEN)
 
@@ -183,7 +182,6 @@ class JoinSocietyView(APIView):
 
     def get(self, request):
         user = request.user
-        # I am not sure if we need this
         if not hasattr(user, "student"):
             return Response({"error": "Only students can join societies."}, status=status.HTTP_403_FORBIDDEN)
 
@@ -193,9 +191,15 @@ class JoinSocietyView(APIView):
         serializer = SocietySerializer(available_societies, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def post(self, request):
-        serializer = JoinSocietySerializer(
-            data=request.data, context={'request': request})
+    def post(self, request, society_id=None):
+        user = request.user
+        if not hasattr(user, "student"):
+            return Response({"error": "Only students can join societies."}, status=status.HTTP_403_FORBIDDEN)
+
+        if not society_id:
+            return Response({"error": "Society ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = JoinSocietySerializer(data={"society_id": society_id}, context={"request": request})
         if serializer.is_valid():
             society = serializer.save()
             return Response({"message": f"Successfully joined society '{society.name}'."}, status=status.HTTP_200_OK)
