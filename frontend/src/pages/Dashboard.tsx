@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios"; // Import axios for API calls
+import axios from "axios";
 import EventCalendar from "../components/EventCalendar";
 import { Link } from "react-router-dom";
 import { LoadingView } from "../components/loading/loading-view";
@@ -11,60 +11,40 @@ const Dashboard: React.FC = () => {
   const [eventCalendar, setEventCalendar] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const fetchDashboardData = async () => {
+    try {
+      const statsResponse = await axios.get("/api/dashboard/stats/");
+      setStats(statsResponse.data);
+
+      const activitiesResponse = await axios.get("/api/dashboard/activities/");
+      setRecentActivities(Array.isArray(activitiesResponse.data) ? activitiesResponse.data : []);
+
+      const notificationsResponse = await axios.get("/api/dashboard/notifications/");
+      setNotifications(Array.isArray(notificationsResponse.data) ? notificationsResponse.data : []);
+
+      const eventsResponse = await axios.get("/api/dashboard/events/");
+      const formattedEvents = Array.isArray(eventsResponse.data)
+        ? eventsResponse.data.map((event: any) => ({
+            title: event.title,
+            start: new Date(event.start),
+            end: new Date(event.end),
+          }))
+        : [];
+      setEventCalendar(formattedEvents);
+    } catch (error) {
+      console.error("Error fetching dashboard data:", error);
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
+    setLoading(true);
+    fetchDashboardData().finally(() => setLoading(false));
 
-      try {
-        const accessToken = "<your-access-token>"; // Replace this with your access token
+    const interval = setInterval(() => {
+      fetchDashboardData();
+    }, 10000); // Fetch every 10 seconds
 
-        // Fetch dashboard statistics
-        const statsResponse = await axios.get("/api/dashboard/stats/", {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        });
-        setStats(statsResponse.data);
-
-        // Fetch recent activities
-        const activitiesResponse = await axios.get("/api/dashboard/activities/", {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        });
-        setRecentActivities(Array.isArray(activitiesResponse.data) ? activitiesResponse.data : []);
-
-        // Fetch notifications
-        const notificationsResponse = await axios.get("/api/dashboard/notifications/", {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        });
-        setNotifications(Array.isArray(notificationsResponse.data) ? notificationsResponse.data : []);
-
-        // Fetch events for the calendar
-        const eventsResponse = await axios.get("/api/dashboard/events/", {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        });
-
-        const formattedEvents = Array.isArray(eventsResponse.data)
-          ? eventsResponse.data.map((event: any) => ({
-              title: event.title,
-              start: new Date(event.start),
-              end: new Date(event.end),
-            }))
-          : [];
-        setEventCalendar(formattedEvents);
-      } catch (error) {
-        console.error("Error fetching dashboard data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
+    return () => clearInterval(interval); // Cleanup interval on component unmount
   }, []);
 
   if (loading) return <LoadingView />;
@@ -123,24 +103,8 @@ const Dashboard: React.FC = () => {
         )}
       </div>
 
-      {/* Society Spotlight */}
-      <div className="bg-white shadow p-4 rounded">
-        <h2 className="text-lg font-bold mb-4">Society Spotlight</h2>
-        {stats?.spotlight_society ? (
-          <div>
-            <h3 className="text-xl font-bold">{stats.spotlight_society.name}</h3>
-            <p>{stats.spotlight_society.description}</p>
-            <p className="text-sm text-gray-500">
-              Upcoming Event: {stats.spotlight_society.upcoming_event}
-            </p>
-          </div>
-        ) : (
-          <p>No spotlight available.</p>
-        )}
-      </div>
-
       {/* Event Calendar */}
-      <EventCalendar events={eventCalendar.length > 0 ? eventCalendar : []} />
+      <EventCalendar events={eventCalendar} />
 
       {/* Notifications */}
       <div className="bg-white shadow p-4 rounded">

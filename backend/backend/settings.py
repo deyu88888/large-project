@@ -75,6 +75,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "corsheaders.middleware.CorsMiddleware",
+    "csp.middleware.CSPMiddleware",
 ]
 
 ROOT_URLCONF = "backend.urls"
@@ -167,3 +168,23 @@ CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOWS_CREDENTIALS = True
 
 AUTH_USER_MODEL = "api.User"
+
+# Add channels to installed apps
+INSTALLED_APPS += [
+    "channels",
+]
+
+# Configure the ASGI application for Channels
+ASGI_APPLICATION = "backend.asgi.application"
+
+# Add this configuration
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],  # Replace with your Redis host and port
+        },
+    },
+}
+CSP_CONNECT_SRC = ["'self'", "ws://127.0.0.1:8000"]
+CSP_DEFAULT_SRC = ["'self'"]
