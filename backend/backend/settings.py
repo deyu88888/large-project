@@ -39,7 +39,7 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
     ],
-     'DEFAULT_RENDERER_CLASSES': (
+    'DEFAULT_RENDERER_CLASSES': (
         'djangorestframework_camel_case.render.CamelCaseJSONRenderer',
     ),
     'DEFAULT_PARSER_CLASSES': (
@@ -64,6 +64,7 @@ INSTALLED_APPS = [
     "api",
     "rest_framework",
     "corsheaders",
+    "channels",  # Add channels to installed apps
 ]
 
 MIDDLEWARE = [
@@ -97,31 +98,18 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "backend.wsgi.application"
+ASGI_APPLICATION = "backend.asgi.application"  # Configure the ASGI application for Channels
 
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 DATABASES = {
-    # For PostgreSQL
-    # ---------------
-    # "default": {
-    #     "ENGINE": "django.db.backends.postgresql",
-    #     "NAME": os.getenv("DB_NAME"),
-    #     "USER": os.getenv("DB_USER"),
-    #     "PASSWORD": os.getenv("DB_PWD"),
-    #     "HOST": os.getenv("DB_HOST"),
-    #     "PORT": os.getenv("DB_PORT"),
-    # }
-    
-    # For SQLite
-    # ---------------
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / "db.sqlite3",
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -169,15 +157,7 @@ CORS_ALLOWS_CREDENTIALS = True
 
 AUTH_USER_MODEL = "api.User"
 
-# Add channels to installed apps
-INSTALLED_APPS += [
-    "channels",
-]
-
-# Configure the ASGI application for Channels
-ASGI_APPLICATION = "backend.asgi.application"
-
-# Add this configuration
+# Channels configuration
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
@@ -186,5 +166,12 @@ CHANNEL_LAYERS = {
         },
     },
 }
-CSP_CONNECT_SRC = ["'self'", "ws://127.0.0.1:8000"]
+
+CSP_CONNECT_SRC = [
+    "'self'",
+    "ws://127.0.0.1:8000",
+    "http://127.0.0.1:8000",
+]
 CSP_DEFAULT_SRC = ["'self'"]
+CSP_SCRIPT_SRC = ["'self'", "'unsafe-inline'"]
+CSP_STYLE_SRC = ["'self'", "'unsafe-inline'"]
