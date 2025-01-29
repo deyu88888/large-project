@@ -10,3 +10,14 @@ sqlparse
 psycopg2-binary
 python-dotenv
 gunicorn
+daphne
+channels
+channels-redis
+fakeredis[async]
+pytest
+pytest-django
+pytest-asyncio
+pytest-cov
+six
+django-csp
+Pillow

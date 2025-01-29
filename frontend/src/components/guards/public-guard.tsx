@@ -9,30 +9,47 @@ export function PublicGuard({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const token = localStorage.getItem(ACCESS_TOKEN);
+      console.log("%c[PublicGuard] Starting authentication check...", "color: blue; font-weight: bold;");
 
+      const token = localStorage.getItem(ACCESS_TOKEN);
       if (token) {
         try {
-          const decoded = jwtDecode(token);
+          console.log("%c[PublicGuard] Found access token:", "color: green;", token);
+          const decoded = jwtDecode<{ exp: number }>(token);
           const tokenExpiration = decoded.exp;
           const now = Date.now() / 1000;
 
+          console.log("%c[PublicGuard] Token expiration time:", "color: blue;", tokenExpiration);
+          console.log("%c[PublicGuard] Current time:", "color: blue;", now);
+
           if (tokenExpiration && tokenExpiration > now) {
+            console.log("%c[PublicGuard] Token is valid. User is authorized.", "color: green;");
             setIsAuthorized(true);
             return;
+          } else {
+            console.warn("%c[PublicGuard] Token is expired. Removing token.", "color: orange;");
+            localStorage.removeItem(ACCESS_TOKEN);
           }
         } catch (error) {
-          console.log("Invalid token", error);
+          console.error("%c[PublicGuard] Failed to decode token:", "color: red;", error);
         }
+      } else {
+        console.log("%c[PublicGuard] No access token found.", "color: orange;");
       }
 
+      console.log("%c[PublicGuard] User is unauthorized.", "color: red;");
       setIsAuthorized(false);
     };
 
     checkAuth();
   }, []);
 
+  useEffect(() => {
+    console.log("%c[PublicGuard] Authorization state updated:", "color: purple;", isAuthorized);
+  }, [isAuthorized]);
+
   if (isAuthorized === null) {
+    console.log("%c[PublicGuard] Waiting for authentication check...", "color: orange;");
     return <LoadingView />;
   }
 
