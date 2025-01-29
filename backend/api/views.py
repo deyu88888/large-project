@@ -627,13 +627,15 @@ class NotificationsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        student = getattr(request.user, "student", None)
-        if not student:
+        # If user's role is not "student", forbid access
+        if request.user.role != "student":
             return Response({"error": "Only students can view notifications."}, status=403)
 
-        notifications = Notification.objects.filter(for_student=student).order_by("-id")
+        notifications = Notification.objects.filter(for_student=request.user).order_by("-id")
         serializer = NotificationSerializer(notifications, many=True)
         return Response(serializer.data, status=200)
+
+
 
 
 class EventCalendarView(APIView):
