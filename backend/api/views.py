@@ -1,7 +1,7 @@
 from datetime import timezone
 from api.models import User, Society, Event, Student, Notification
 from rest_framework import generics, status
-from .serializers import EventSerializer, RSVPEventSerializer, UserSerializer, StudentSerializer, LeaveSocietySerializer, JoinSocietySerializer, SocietySerializer, NotificationSerializer, DashboardStatisticSerializer, RecentActivitySerializer, EventCalendarSerializer
+from .serializers import EventSerializer, RSVPEventSerializer, UserSerializer, StudentSerializer, LeaveSocietySerializer, JoinSocietySerializer, SocietySerializer, NotificationSerializer, DashboardStatisticSerializer, RecentActivitySerializer, EventCalendarSerializer, DashboardNotificationSerializer
 from api.models import Admin, User, Society, Event, Student
 from rest_framework import generics, status
 from .serializers import AdminSerializer, EventSerializer, RSVPEventSerializer, UserSerializer, StudentSerializer, LeaveSocietySerializer, JoinSocietySerializer, SocietySerializer, StartSocietyRequestSerializer
@@ -632,7 +632,7 @@ class NotificationsView(APIView):
             return Response({"error": "Only students can view notifications."}, status=403)
 
         notifications = Notification.objects.filter(for_student=request.user).order_by("-id")
-        serializer = NotificationSerializer(notifications, many=True)
+        serializer = DashboardNotificationSerializer(notifications, many=True)
         return Response(serializer.data, status=200)
 
 

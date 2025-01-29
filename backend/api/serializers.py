@@ -370,7 +370,7 @@ class RecentActivitySerializer(serializers.Serializer):
 
 # api/serializers.py (snippet)
 
-class NotificationSerializer(serializers.ModelSerializer):
+class DashboardNotificationSerializer(serializers.ModelSerializer):
     """
     Updated Notification serializer to include read/unread tracking for the dashboard.
     """
@@ -388,7 +388,6 @@ class NotificationSerializer(serializers.ModelSerializer):
         ]
         # Removed 'timestamp' since the model does not have it
 
-# If you need real-time event data for a calendar, you may also extend EventSerializer to include formatted fields
 
 class EventCalendarSerializer(serializers.ModelSerializer):
     """

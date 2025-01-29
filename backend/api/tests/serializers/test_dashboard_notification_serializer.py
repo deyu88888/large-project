@@ -1,10 +1,8 @@
-# api/tests/serializers/test_serializers_notification.py
-
 from django.test import TestCase
 from django.utils import timezone
 from datetime import timedelta
 from api.models import Student, User, Event, Notification
-from api.serializers import NotificationSerializer
+from api.serializers import DashboardNotificationSerializer
 
 class TestNotificationSerializer(TestCase):
     def setUp(self):
@@ -42,7 +40,7 @@ class TestNotificationSerializer(TestCase):
 
     def test_valid_notification_serialization(self):
         """Test that valid notification data serializes correctly."""
-        serializer = NotificationSerializer(self.notification)
+        serializer = DashboardNotificationSerializer(self.notification)
         expected_data = {
             "id": self.notification.id,
             "message": self.notification.message,
@@ -59,13 +57,13 @@ class TestNotificationSerializer(TestCase):
             "for_student": self.student.id,
             "is_read": False,
         }
-        serializer = NotificationSerializer(data=invalid_data)
+        serializer = DashboardNotificationSerializer(data=invalid_data)
         self.assertFalse(serializer.is_valid(), "Serializer should be invalid without 'message'")
         self.assertIn("message", serializer.errors)
 
     def test_partial_update_is_read(self):
         """Test partial update for the `is_read` field."""
-        serializer = NotificationSerializer(
+        serializer = DashboardNotificationSerializer(
             self.notification, data={"is_read": True}, partial=True
         )
         self.assertTrue(serializer.is_valid(), "Serializer should be valid for partial update")
@@ -82,7 +80,7 @@ class TestNotificationSerializer(TestCase):
             "event_title": "Fake Event Title",
             "student_name": "Fake Name",
         }
-        serializer = NotificationSerializer(
+        serializer = DashboardNotificationSerializer(
             self.notification, data=invalid_data, partial=True
         )
         # The serializer is "valid" because DRF just ignores read-only fields. 
