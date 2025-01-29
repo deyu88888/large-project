@@ -4,6 +4,7 @@ from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from .models import Student, Society, Notification
 
+
 @receiver(m2m_changed, sender=Student.president_of.through)
 def update_is_president_on_m2m_change(sender, instance, action, reverse, pk_set, **kwargs):
     """
@@ -53,6 +54,7 @@ def broadcast_dashboard_update():
     Fetch updated dashboard statistics and send them to the WebSocket group.
     """
     from .models import Society, Event, Student
+    from channels.exceptions import ChannelFull
 
     # Calculate the statistics
     stats = {
@@ -64,10 +66,13 @@ def broadcast_dashboard_update():
 
     # Send the data through WebSocket
     channel_layer = get_channel_layer()
-    async_to_sync(channel_layer.group_send)(
-        "dashboard",  # Group name
-        {
-            "type": "dashboard.update",  # Event type
-            "data": stats,               # Data payload
-        }
-    )
+    try:
+        async_to_sync(channel_layer.group_send)(
+            "dashboard",  # Group name
+            {
+                "type": "dashboard.update",  # Event type
+                "data": stats,               # Data payload
+            }
+        )
+    except ChannelFull:
+        print("Channel is full, unable to send the message.")
