@@ -1,7 +1,6 @@
 from api.models import User, Student, Admin, Society, Event, Notification
 from rest_framework import serializers
-
-
+import datetime
 class UserSerializer(serializers.ModelSerializer):
     """
     Serializer for the base User model.
@@ -369,6 +368,8 @@ class RecentActivitySerializer(serializers.Serializer):
     timestamp = serializers.DateTimeField()
 
 
+# api/serializers.py (snippet)
+
 class NotificationSerializer(serializers.ModelSerializer):
     """
     Updated Notification serializer to include read/unread tracking for the dashboard.
@@ -379,22 +380,43 @@ class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notification
         fields = [
-            'id', 'message', 'is_read', 'event_title', 'student_name', 'timestamp'
+            'id',
+            'message',
+            'is_read',
+            'event_title',
+            'student_name'
         ]
+        # Removed 'timestamp' since the model does not have it
 
 # If you need real-time event data for a calendar, you may also extend EventSerializer to include formatted fields
+
 class EventCalendarSerializer(serializers.ModelSerializer):
     """
     Serializer for calendar events on the dashboard.
     """
-    start = serializers.DateTimeField(source='date')
+    # Convert `date` + `start_time` into a UTC-aware datetime
+    start = serializers.SerializerMethodField()
     end = serializers.SerializerMethodField()
-    title = serializers.CharField(source="title")
+    # Remove `source="title"` since it's the same name
+    title = serializers.CharField()
 
     class Meta:
         model = Event
-        fields = ['id', 'title', 'start', 'end', 'location']
+        fields = ["id", "title", "start", "end", "location"]
+        # Mark them read-only if needed:
+        read_only_fields = ["start", "end"]
+
+    def get_start(self, obj):
+        # Combine date and start_time in UTC
+        return (
+            datetime.datetime.combine(obj.date, obj.start_time)
+            .replace(tzinfo=datetime.timezone.utc)
+            .isoformat()
+        )
 
     def get_end(self, obj):
-        # Calculate the event's end time based on start_time and duration
-        return timezone.datetime.combine(obj.date, obj.start_time) + obj.duration
+        # Combine date and start_time, add duration
+        start_dt = datetime.datetime.combine(obj.date, obj.start_time).replace(
+            tzinfo=datetime.timezone.utc
+        )
+        return (start_dt + obj.duration).isoformat()
