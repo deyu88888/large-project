@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.http import HttpResponse
 from django.urls import path, include
-from api.views import EventHistoryView, RSVPEventView, RegisterView, get_current_user, JoinSocietyView
+from api.views import *
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 def welcome_view(request):
@@ -17,9 +17,7 @@ urlpatterns = [
     path("api-auth", include("rest_framework.urls")),
     
 
-
     
-
 
 
     # This is basically importing all urls from api/urls.py with /api

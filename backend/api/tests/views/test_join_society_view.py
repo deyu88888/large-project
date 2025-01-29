@@ -67,7 +67,7 @@ class JoinSocietyViewTestCase(TestCase):
     def test_get_available_societies_authenticated_student(self):
         """Test retrieving societies a student has not joined."""
         self.client.credentials(HTTP_AUTHORIZATION=self.student1_token)
-        response = self.client.get("/join-society/")  
+        response = self.client.get("/api/societies/available")  # Updated URL
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 2)  # Math Club and Art Club
         self.assertEqual(response.data[0]["name"], "Math Club")
@@ -75,53 +75,48 @@ class JoinSocietyViewTestCase(TestCase):
 
     def test_get_available_societies_unauthenticated(self):
         """Test retrieving societies without authentication."""
-        response = self.client.get("join-society/")  
+        response = self.client.get("/api/societies/available")  # Updated URL
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_get_available_societies_non_student(self):
         """Test retrieving societies for a non-student user."""
         self.client.credentials(HTTP_AUTHORIZATION=self._generate_token(self.admin))
-        response = self.client.get("join-society/")  
+        response = self.client.get("/api/societies/available")  # Updated URL
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(response.data["error"], "Only students can join societies.")
 
     def test_join_society_valid(self):
         """Test joining a valid society."""
         self.client.credentials(HTTP_AUTHORIZATION=self.student1_token)
-        response = self.client.post(f"/join-society/{self.society2.id}/")
+        response = self.client.post(f"/api/societies/{self.society2.id}/join")  # Updated URL
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(
             response.data["message"], f"Successfully joined society '{self.society2.name}'."
         )
         self.assertTrue(self.society2.society_members.filter(id=self.student1.id).exists())
 
-
     def test_join_society_already_joined(self):
         """Test joining a society that the student has already joined."""
         self.client.credentials(HTTP_AUTHORIZATION=self.student1_token)
-        response = self.client.post(f"/join-society/{self.society1.id}/")  # Already a member
+        response = self.client.post(f"/api/societies/{self.society1.id}/join")  # Updated URL
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("error", response.data)
-
 
     def test_join_society_invalid_id(self):
         """Test joining a society with an invalid ID."""
         self.client.credentials(HTTP_AUTHORIZATION=self.student1_token)
-        response = self.client.post("/join-society/9999/")  # Non-existent society ID
+        response = self.client.post("/api/societies/9999/join")  # Updated URL
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        self.assertIn("error", response.json)
-
+        self.assertIn("error", response.json())
 
     def test_join_society_unauthenticated(self):
         """Test joining a society without authentication."""
-        data = {"society_id": self.society2.id}
-        response = self.client.post("join-society/<int:society_id>/", data)  
+        response = self.client.post(f"/api/societies/{self.society2.id}/join")  # Updated URL
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_join_society_non_student(self):
         """Test joining a society as a non-student user."""
         self.client.credentials(HTTP_AUTHORIZATION=self._generate_token(self.admin))
-        data = {"society_id": self.society2.id}
-        response = self.client.post("join-society/", data)  
+        response = self.client.post(f"/api/societies/{self.society2.id}/join")  # Updated URL
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(response.data["error"], "Only students can join societies.")

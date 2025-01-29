@@ -201,8 +201,14 @@ class JoinSocietyView(APIView):
 
         serializer = JoinSocietySerializer(data={"society_id": society_id}, context={"request": request})
         if serializer.is_valid():
-            society = serializer.save()
-            return Response({"message": f"Successfully joined society '{society.name}'."}, status=status.HTTP_200_OK)
+            try:
+                society = serializer.save()
+                return Response({"message": f"Successfully joined society '{society.name}'."}, status=status.HTTP_200_OK)
+            except Society.DoesNotExist:
+                return Response(
+                    {"error": "Society not found"}, 
+                    status=status.HTTP_404_NOT_FOUND
+                )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
