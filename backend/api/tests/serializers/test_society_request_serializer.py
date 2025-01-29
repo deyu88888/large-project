@@ -1,10 +1,11 @@
+# pylint: disable=no-member
 from django.test import TestCase
 from django.utils import timezone
 from api.models import Society, Admin, Student, SocietyRequest
 from api.serializers import SocietyRequestSerializer
 
 
-class SocietySerializerTestCase(TestCase):
+class SocietyRequestSerializerTestCase(TestCase):
     """ Unit tests for the Society serializer """
 
     def setUp(self):
