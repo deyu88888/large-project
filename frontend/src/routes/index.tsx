@@ -132,6 +132,14 @@ const routes = [
         ),
       },
       {
+        path: "join-society/:id",
+        element: (
+          <Suspense fallback={<LoadingView />}>
+            <JoinSocietiesPage />
+          </Suspense>
+        ),
+      },
+      {
         path: "logout",
         children: [
             {

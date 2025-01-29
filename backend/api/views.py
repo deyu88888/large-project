@@ -267,8 +267,9 @@ class EventHistoryView(APIView):
 
     def get(self, request):
         student = request.user.student
-        attended_events = student.attended_events.filter(
-            date__lt=timezone.now().date())
+        # attended_events = student.attended_events.filter(
+        #     date__lt=timezone.now().date())
+        attended_events = student.attended_events.all()
         serializer = EventSerializer(attended_events, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
