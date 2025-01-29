@@ -1,4 +1,4 @@
-from api.models import User, Student, Admin, Society, Event, Notification
+from api.models import User, Student, Admin, Society, Event, Notification, Request, SocietyRequest, EventRequest
 from rest_framework import serializers
 
 
@@ -177,7 +177,8 @@ class EventSerializer(serializers.ModelSerializer):
         model = Event
         fields = [
             'id', 'title', 'description', 'date',
-            'start_time', 'duration', 'hosted_by', 'location'
+            'start_time', 'duration', 'hosted_by', 'location',
+            'max_capacity', 'current_attendees', 'status'
         ]
         extra_kwargs = {'hosted_by': {'required': True}}
 
@@ -200,7 +201,7 @@ class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         """ NotificationSerializer meta data """
         model = Notification
-        fields = ['id', 'for_event', 'for_student', 'is_read']
+        fields = ['id', 'for_event', 'for_student', 'is_read', 'message']
         extra_kwargs = {
             'for_event': {'required': True},
             'for_student': {'required': True}
@@ -217,7 +218,6 @@ class NotificationSerializer(serializers.ModelSerializer):
 
         instance.save()
         return instance
-    
 
 
 class LeaveSocietySerializer(serializers.Serializer):
@@ -323,7 +323,8 @@ class RSVPEventSerializer(serializers.ModelSerializer):
             event.current_attendees.remove(student)  
 
         return event
-    
+
+
 class StartSocietyRequestSerializer(serializers.ModelSerializer):
     """Serializer for creating a new society request."""
 
@@ -350,3 +351,56 @@ class StartSocietyRequestSerializer(serializers.ModelSerializer):
             leader=validated_data["requested_by"],
             status="Pending"
         )
+
+
+class RequestSerializer(serializers.ModelSerializer):
+    """
+    Abstract serializer for the Request model
+    """
+
+    class Meta:
+        """ RequestSerializer meta data """
+        model = Request
+        fields = [
+            'id', 'from_student', 'requested_at',
+            'approved', 'description', 'intent'
+        ]
+        extra_kwargs = {
+            'from_student': {'required': True},
+        }
+
+    def create(self, validated_data):
+        """ Create a notification entry according to json data """
+        return self.Meta.model.objects.create(**validated_data)
+
+    def update(self, instance, validated_data):
+        """ Update 'instance' object according to provided json data """
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+
+        instance.save()
+        return instance
+
+class SocietyRequestSerializer(RequestSerializer):
+    """
+    Serializer for the SocietyRequest model
+    """
+
+    class Meta:
+        model = SocietyRequest
+        fields = RequestSerializer.Meta.fields + ['society']
+        extra_kwargs = RequestSerializer.Meta.extra_kwargs | {
+            'society': {'required': True}
+        }
+
+class EventRequestSerializer(SocietyRequestSerializer):
+    """
+    Serializer for the EventRequest model
+    """
+
+    class Meta:
+        model = EventRequest
+        fields = SocietyRequestSerializer.Meta.fields + ['event']
+        extra_kwargs = SocietyRequestSerializer.Meta.extra_kwargs | {
+            'event': {'required': True}
+        }
