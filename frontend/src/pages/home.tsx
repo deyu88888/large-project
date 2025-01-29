@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../stores/auth-store";
+import { useEffect } from "react";
 
 // ------------------------------------------------
 
@@ -13,6 +14,16 @@ export default function HomePage() {
     navigate("/");
   };
 
+  useEffect(() => {
+    console.log("user", user);
+    if (user?.role==="student"){
+        navigate("/student-dashboard");
+    // } else if (user?.role==="admin"){    # remove comment when page is ready
+    //     navigate("/admin-dashboard");
+    }
+    
+  }, [user]);
+  
     return (
         <div className="flex flex-col gap-4">
             <div>user: {user?.username}</div>
@@ -27,3 +38,5 @@ export default function HomePage() {
         </div>
     );
 }
+
+

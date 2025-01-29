@@ -268,8 +268,9 @@ class EventHistoryView(APIView):
 
     def get(self, request):
         student = request.user.student
-        attended_events = student.attended_events.filter(
-            date__lt=timezone.now().date())
+        # attended_events = student.attended_events.filter(
+        #     date__lt=timezone.now().date())
+        attended_events = student.attended_events.all()
         serializer = EventSerializer(attended_events, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -350,6 +351,26 @@ class SocietyRequestView(APIView):
         requests = Society.objects.filter(status='Pending')
         serializer = SocietySerializer(requests, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    # put request to update the status of the society request from pending to approved or rejected for admins
+    def put(self, request, society_id):
+        user = request.user
+
+        # Ensure the user is a admin
+        if not hasattr(user, "admin"):
+            return Response({"error": "Only admins can approve or reject society requests."}, status=status.HTTP_403_FORBIDDEN)
+
+        # Fetch the society request
+        society = Society.objects.filter(id=society_id).first()
+        if not society:
+            return Response({"error": "Society request not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Update the society request status
+        serializer = SocietySerializer(society, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "Society request updated successfully.", "data": serializer.data}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class RejectedSocietyRequestView(APIView):
