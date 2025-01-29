@@ -40,9 +40,7 @@ class DashboardConsumer(AsyncWebsocketConsumer):
     async def receive(self, text_data):
         """
         Handles incoming WebSocket messages from any client (React or wscat).
-        Instead of directly sending back to just one client,
-        we broadcast the message to the 'dashboard' group so all connected
-        sockets receive the update.
+        Processes `dashboard.update` and other update types.
         """
         try:
             logger.info(f"[DashboardConsumer] Received message on WebSocket: {self.channel_name}, Data: {text_data}")
@@ -51,45 +49,38 @@ class DashboardConsumer(AsyncWebsocketConsumer):
 
             message_type = data.get("type")
             if message_type == "dashboard.update":
-                # Fetch updated statistics and broadcast to entire group
-                stats = await self.get_dashboard_stats()
+                # Use provided data if available; fetch from database otherwise
+                if "data" in data:
+                    logger.info("[DashboardConsumer] Broadcasting manual update received via WebSocket.")
+                    await self.channel_layer.group_send(
+                        self.group_name,
+                        {
+                            "type": "dashboard_update",
+                            "data": data["data"],
+                        }
+                    )
+                else:
+                    logger.info("[DashboardConsumer] Fetching updated statistics from the database.")
+                    stats = await self.get_dashboard_stats()
+                    await self.channel_layer.group_send(
+                        self.group_name,
+                        {
+                            "type": "dashboard_update",
+                            "data": stats,
+                        }
+                    )
+            elif message_type in ["update_notifications", "update_events", "update_activities"]:
+                logger.info(f"[DashboardConsumer] Broadcasting update for {message_type}.")
                 await self.channel_layer.group_send(
                     self.group_name,
-                    {
-                        "type": "broadcast_dashboard_update",
-                        "data": stats,
-                    }
-                )
-            elif message_type == "update_notifications":
-                notifications = data.get("notifications", [])
-                await self.channel_layer.group_send(
-                    self.group_name,
-                    {
-                        "type": "broadcast_notifications",
-                        "notifications": notifications,
-                    }
-                )
-            elif message_type == "update_events":
-                events = data.get("events", [])
-                await self.channel_layer.group_send(
-                    self.group_name,
-                    {
-                        "type": "broadcast_events",
-                        "events": events,
-                    }
-                )
-            elif message_type == "update_activities":
-                activities = data.get("activities", [])
-                await self.channel_layer.group_send(
-                    self.group_name,
-                    {
-                        "type": "broadcast_activities",
-                        "activities": activities,
-                    }
+                    {**data, "type": f"{message_type}"}
                 )
             else:
                 logger.warning(f"[DashboardConsumer] Unknown message type received: {message_type}")
                 await self.send(json.dumps({"error": "Unknown message type"}))
+        except json.JSONDecodeError as e:
+            logger.error(f"[DashboardConsumer] JSON Decode Error: {e}")
+            await self.send(json.dumps({"error": "Invalid JSON format"}))
         except Exception as e:
             logger.error(f"[DashboardConsumer] Error processing WebSocket message: {e}")
             await self.send(json.dumps({"error": str(e)}))
@@ -98,44 +89,48 @@ class DashboardConsumer(AsyncWebsocketConsumer):
     #  BROADCAST HANDLERS - Called for each group member's socket
     # =========================================================
 
-    async def broadcast_dashboard_update(self, event):
+    async def dashboard_update(self, event):
         """
-        Broadcasts dashboard stats to all 'dashboard' group members.
+        Handles the 'dashboard.update' message type.
+        Sends the updated statistics to the client.
         """
-        logger.info(f"[DashboardConsumer] Broadcasting dashboard update to {self.channel_name}")
+        logger.info(f"[DashboardConsumer] Broadcasting dashboard update: {event['data']}")
         await self.send(json.dumps({
             "type": "dashboard.update",
             "data": event["data"],
         }))
 
-    async def broadcast_notifications(self, event):
+    async def update_notifications(self, event):
         """
-        Broadcasts notifications to all 'dashboard' group members.
+        Handles 'update_notifications' event.
+        Broadcasts notifications to all group members.
         """
-        notifications = event["notifications"]
-        logger.info(f"[DashboardConsumer] Broadcasting notifications to {self.channel_name}: {notifications}")
+        notifications = event.get("notifications", [])
+        logger.info(f"[DashboardConsumer] Broadcasting notifications: {notifications}")
         await self.send(json.dumps({
             "type": "update_notifications",
             "notifications": notifications,
         }))
 
-    async def broadcast_events(self, event):
+    async def update_events(self, event):
         """
-        Broadcasts events to all 'dashboard' group members.
+        Handles 'update_events' event.
+        Broadcasts events to all group members.
         """
-        events = event["events"]
-        logger.info(f"[DashboardConsumer] Broadcasting events to {self.channel_name}: {events}")
+        events = event.get("events", [])
+        logger.info(f"[DashboardConsumer] Broadcasting events: {events}")
         await self.send(json.dumps({
             "type": "update_events",
             "events": events,
         }))
 
-    async def broadcast_activities(self, event):
+    async def update_activities(self, event):
         """
-        Broadcasts activities to all 'dashboard' group members.
+        Handles 'update_activities' event.
+        Broadcasts activities to all group members.
         """
-        activities = event["activities"]
-        logger.info(f"[DashboardConsumer] Broadcasting activities to {self.channel_name}: {activities}")
+        activities = event.get("activities", [])
+        logger.info(f"[DashboardConsumer] Broadcasting activities: {activities}")
         await self.send(json.dumps({
             "type": "update_activities",
             "activities": activities,
@@ -148,7 +143,7 @@ class DashboardConsumer(AsyncWebsocketConsumer):
         """
         try:
             logger.debug("[DashboardConsumer] Fetching dashboard statistics from the database.")
-            from api.models import Society, Event, Student  # Lazy import models here
+            from api.models import Society, Event, Student
 
             total_societies = Society.objects.count()
             total_events = Event.objects.count()

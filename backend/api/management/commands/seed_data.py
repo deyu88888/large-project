@@ -2,6 +2,8 @@ from datetime import date, timedelta, time
 from random import choice, randint
 from django.contrib.auth.hashers import make_password
 from django.core.management.base import BaseCommand
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 from api.models import Admin, Student, Society, Event, Notification
 
 class Command(BaseCommand):
@@ -89,6 +91,9 @@ class Command(BaseCommand):
         self.create_admin(5)
         self.create_society(10)
         self.create_event(10)
+
+        # Broadcast updates to the WebSocket
+        self.broadcast_updates()
 
         self.stdout.write(self.style.SUCCESS("Seeding complete!"))
 
@@ -218,3 +223,9 @@ class Command(BaseCommand):
                 for_event=event,
                 for_student=member
             )
+
+    def broadcast_updates(self):
+        """ Broadcast updates to the WebSocket """
+        from api.signals import broadcast_dashboard_update
+        print("Broadcasting updates to WebSocket...")
+        broadcast_dashboard_update()
