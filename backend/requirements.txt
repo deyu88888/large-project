@@ -10,23 +10,11 @@ sqlparse==0.4.4
 psycopg2-binary==2.9.6
 python-dotenv==1.0.0
 gunicorn==21.2.0
-
-# Channels dependencies
 channels==4.0.0
 channels-redis==4.1.0
-
-# Testing dependencies
+daphne==4.0.0
 pytest==7.4.2
 pytest-django==4.5.2
 pytest-asyncio==0.21.0
-pytest-cov==4.1.0  # If you need test coverage reports
-
-# Development and debugging utilities
-ipdb==0.14.0
-ipython==8.16.0
-
-# Redis for Channel layers
-redis==5.1.0
-
-# Other utilities
-coverage==7.3.1  # If you use code coverage tools
+pytest-cov==4.1.0
+ipdb==0.13.13
