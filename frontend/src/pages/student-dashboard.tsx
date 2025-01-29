@@ -24,15 +24,17 @@ const StudentDashboard: React.FC = () => {
       setLoading(true);
 
       // Fetch societies
-      const societiesResponse = await apiClient.get("/api/my-societies/");
+      const societiesResponse = await apiClient.get("/api/my-societies");
+      console.log(societiesResponse.data);
       setSocieties(societiesResponse.data || []);
 
       // Fetch events
       const eventsResponse = await apiClient.get("/api/events/history/");
+      console.log(eventsResponse.data);
       setEvents(eventsResponse.data || []);
 
       // Fetch notifications
-      const notificationsResponse = await apiClient.get("/api/notifications/");
+      const notificationsResponse = await apiClient.get("/api/notifications");
       setNotifications(notificationsResponse.data || []);
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -152,6 +154,7 @@ const StudentDashboard: React.FC = () => {
               </button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {/* {JSON.stringify(events)} */}
               {events.slice(0, 3).map((event) => (
                 <div
                   key={event.id}

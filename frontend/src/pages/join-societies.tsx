@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaUsers } from "react-icons/fa";
 import axios from "axios";
+import { apiClient } from "../api";
 
 const JoinSocieties: React.FC = () => {
   const navigate = useNavigate();
@@ -13,7 +14,7 @@ const JoinSocieties: React.FC = () => {
     const fetchAvailableSocieties = async () => {
       try {
         setLoading(true);
-        const response = await axios.get("/api/join-societies/");
+        const response = await apiClient.get("/api/join-society/");
         setSocieties(response.data);
       } catch (error) {
         console.error("Error fetching societies:", error);
@@ -27,7 +28,7 @@ const JoinSocieties: React.FC = () => {
   
   const handleJoinSociety = async (societyId: number) => {
     try {
-      await axios.post(`/api/join-society/${societyId}/`);
+      await apiClient.post(`/api/join-society/${societyId}/`);
       alert("Successfully joined the society!");
       setSocieties((prev) => prev.filter((society) => society.id !== societyId));
     } catch (error) {
