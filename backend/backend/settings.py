@@ -2,7 +2,7 @@ from pathlib import Path
 from datetime import timedelta
 from dotenv import load_dotenv
 import os
-
+from fakeredis.aioredis import FakeRedis
 # Load environment variables
 load_dotenv()
 
@@ -125,14 +125,24 @@ CORS_ALLOW_CREDENTIALS = True
 AUTH_USER_MODEL = "api.User"
 
 # Channels configuration
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [("127.0.0.1", 6379)],  # Redis server
-        },
-    },
-}
+if os.getenv("USE_FAKEREDIS", "false").lower() == "true":
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {
+                "hosts": [FakeRedis()],
+            },
+        }
+    }
+else:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {
+                "hosts": [("127.0.0.1", 6379)],
+            },
+        }
+    }
 
 # Content Security Policy settings for WebSocket and frontend communication
 CSP_DEFAULT_SRC = ["'self'"]

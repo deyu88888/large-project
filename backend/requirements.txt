@@ -13,6 +13,7 @@ gunicorn
 daphne
 channels
 channels-redis
+fakeredis[async]
 pytest
 pytest-django
 pytest-asyncio
