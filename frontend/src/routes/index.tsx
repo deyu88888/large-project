@@ -13,6 +13,11 @@ const LoginPage = lazy(() => import("../pages/login"));
 const RegisterPage = lazy(() => import("../pages/register"));
 const ProfilePage = lazy(() => import("../pages/profile"));
 const StudentDashboard = lazy(() => import("../pages/student-dashboard"));
+const MySocieties = lazy(() => import("../pages/my-societies"));
+const ViewEvents = lazy(() => import("../pages/view-events"));
+const ViewNotifications = lazy(() => import("../pages/view-notifications"));
+const StartSociety = lazy(() => import("../pages/start-society"));
+const JoinSocietiesPage = lazy(() => import("../pages/join-societies"));
 
 // Admin pages
 const AdminHomePage = lazy(() => import("../pages/Admin/AdminHome"));
@@ -83,6 +88,54 @@ const routes = [
         element: (
           <Suspense fallback={<LoadingView />}>
             <StudentDashboard />
+          </Suspense>
+        ),
+      },
+      {
+        path: "my-societies", // Add the route here
+        element: (
+          <Suspense fallback={<LoadingView />}>
+            <MySocieties />
+          </Suspense>
+        ),
+      },
+      {
+        path: "view-events",
+        element: (
+          <Suspense fallback={<LoadingView />}>
+            <ViewEvents />
+          </Suspense>
+        ),
+      },
+      {
+        path: "view-notifications",
+        element: (
+          <Suspense fallback={<LoadingView />}>
+            <ViewNotifications />
+          </Suspense>
+        ),
+      },
+      {
+        path: "start-society",
+        element: (
+          <Suspense fallback={<LoadingView />}>
+            <StartSociety />
+          </Suspense>
+        ),
+      },
+      {
+        path: "join-society",
+        element: (
+          <Suspense fallback={<LoadingView />}>
+            <JoinSocietiesPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "join-society/:id",
+        element: (
+          <Suspense fallback={<LoadingView />}>
+            <JoinSocietiesPage />
           </Suspense>
         ),
       },
