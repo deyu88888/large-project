@@ -45,6 +45,7 @@ class SocietySerializerTestCase(TestCase):
         )
         self.society.society_members.add(self.student2)
 
+        # Create a request for a society
         self.society_request = SocietyRequest.objects.create(
             from_student=self.student1,
             approved=False,
@@ -65,7 +66,7 @@ class SocietySerializerTestCase(TestCase):
         }
 
     def test_society_request_serialization(self):
-        """ Test to ensure the serializer is correctly serializing """
+        """Test to ensure serialization function correctly"""
 
         self.serializer = SocietyRequestSerializer(instance=self.society_request)
         data = self.serializer.data
@@ -92,23 +93,49 @@ class SocietySerializerTestCase(TestCase):
         )
 
     def test_society_request_deserialization(self):
-        """ Test to ensure deserialization functions correctly """
+        """Test to ensure deserialization functions correctly"""
 
         self.serializer = SocietyRequestSerializer(data=self.data)
         self._assert_serializer_is_valid()
-
         society_request = self.serializer.save()
+
+        self.assertEqual(society_request.approved, self.data["approved"])
+        self.assertEqual(society_request.intent, self.data["intent"])
+        self.assertEqual(society_request.society.id, self.data["society"])
+
+        self.assertEqual(
+            society_request.description,
+            self.data["description"]
+        )
+        self.assertEqual(
+            society_request.from_student.id,
+            self.data["from_student"]
+        )
 
     def test_society_requests_create(self):
-        """ Test society request creation function correctly """
+        """Test society request creation function correctly"""
 
         self.serializer = SocietyRequestSerializer(data=self.data)
         self._assert_serializer_is_valid()
-
         society_request = self.serializer.save()
 
+        self.assertEqual(society_request.approved, self.data["approved"])
+        self.assertEqual(society_request.intent, self.data["intent"])
+        self.assertEqual(society_request.society.id, self.data["society"])
+
+        self.assertEqual(
+            society_request.description,
+            self.data["description"]
+        )
+        self.assertEqual(
+            society_request.from_student.id,
+            self.data["from_student"]
+        )
+
     def test_society_request_update(self):
-        """ Test society request update functions correctly """
+        """Test society request update functions correctly"""
+
+        self.assertFalse(self.society_request.approved)
 
         self.serializer = SocietyRequestSerializer(
             instance=self.society_request,
@@ -116,12 +143,13 @@ class SocietySerializerTestCase(TestCase):
             partial=True,
         )
         self._assert_serializer_is_valid()
-
         self.serializer.save()
+
+        self.assertTrue(self.society_request.approved)
 
     def _assert_serializer_is_valid(self):
         if not self.serializer.is_valid():
-            print(self.serializer.errors)
+            print(f'Errors: {self.serializer.errors}')
             self.fail("Test serializer should be valid")
 
     def _assert_serializer_is_invalid(self):
