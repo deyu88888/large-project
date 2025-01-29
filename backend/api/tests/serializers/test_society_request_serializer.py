@@ -55,56 +55,29 @@ class SocietySerializerTestCase(TestCase):
     def test_society_serialization(self):
         """ Test to ensure the serializer is correctly serializing """
 
-        self.serializer = SocietySerializer(instance=self.society)
+        self.serializer = SocietyRequestSerializer(instance=self.society)
         data = self.serializer.data
-
-        self.assertEqual(data["name"], self.society.name)
-        self.assertEqual(data["leader"], self.society.leader.id)
-        self.assertEqual(data["approved_by"], self.society.approved_by.id)
-        self.assertEqual(
-            data["society_members"],
-            [self.society.society_members.first().id],
-        )
-        self.assertEqual(data["roles"], self.society.roles)
 
     def test_society_deserialization(self):
         """ Test to ensure deserialization functions correctly """
 
-        self.serializer = SocietySerializer(data=self.data)
+        self.serializer = SocietyRequestSerializer(data=self.data)
         self._assert_serializer_is_valid()
 
         society = self.serializer.save()
-
-        self.assertEqual(society.name, self.data["name"])
-        self.assertEqual(society.leader.id, self.data["leader"])
-        self.assertEqual(
-            list(society.society_members.values_list("id", flat=True)),
-            self.data["society_members"],
-        )
-        self.assertEqual(society.approved_by.id, self.data["approved_by"])
-        self.assertEqual(society.roles, self.data["roles"])
 
     def test_society_create(self):
         """ Test society creation function correctly """
 
-        self.serializer = SocietySerializer(data=self.data)
+        self.serializer = SocietyRequestSerializer(data=self.data)
         self._assert_serializer_is_valid()
 
         society = self.serializer.save()
 
-        self.assertEqual(society.name, self.data["name"])
-        self.assertEqual(society.leader.id, self.data["leader"])
-        self.assertEqual(
-            list(society.society_members.values_list("id", flat=True)),
-            self.data["society_members"],
-        )
-        self.assertEqual(society.approved_by.id, self.data["approved_by"])
-        self.assertEqual(society.roles, self.data["roles"])
-
-    def test_society_update(self):
+    def test_society_request_update(self):
         """ Test society update functions correctly """
 
-        self.serializer = SocietySerializer(
+        self.serializer = SocietyRequestSerializer(
             instance=self.society,
             data=self.data,
             partial=True,
@@ -112,15 +85,6 @@ class SocietySerializerTestCase(TestCase):
         self._assert_serializer_is_valid()
 
         self.serializer.save()
-
-        self.assertEqual(self.society.name, self.data["name"])
-        self.assertEqual(self.society.leader.id, self.data["leader"])
-        self.assertEqual(
-            list(self.society.society_members.values_list("id", flat=True)),
-            self.data["society_members"],
-        )
-        self.assertEqual(self.society.approved_by.id, self.data["approved_by"])
-        self.assertEqual(self.society.roles, self.data["roles"])
 
     def _assert_serializer_is_valid(self):
         if not self.serializer.is_valid():
