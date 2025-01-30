@@ -1,8 +1,9 @@
-# pylint: disable=no-member
 from django.test import TestCase
 from django.utils import timezone
 from api.models import Event, Society, Admin, Student, EventRequest
 from api.serializers import EventRequestSerializer
+
+# pylint: disable=no-member
 
 
 class EventRequestSerializerTestCase(TestCase):
