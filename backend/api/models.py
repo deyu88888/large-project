@@ -11,7 +11,6 @@ class User(AbstractUser):
     """
     A custom user model with role-based logic.
     """
-
     username = models.CharField(
         unique=True,
         max_length=30,
@@ -94,6 +93,7 @@ def update_is_president(sender, instance, **kwargs):
     instance.is_president = instance.president_of.exists()
     instance.save()
 
+
 class Admin(User):
     """
     A model representing admin users
@@ -146,7 +146,6 @@ class Society(models.Model):
     timetable = models.TextField(blank=True, null=True)
     membership_requirements = models.TextField(blank=True, null=True)
     upcoming_projects_or_plans = models.TextField(blank=True, null=True)
-    #society_logo = models.ImageField(upload_to="society_logos/", blank=True, null=True)
 
     def __str__(self):
         return self.name
@@ -166,7 +165,6 @@ class Event(models.Model):
     """
     An event organized by a society.
     """
-
     title = models.CharField(max_length=20, default="")
     description = models.CharField(max_length=300, default="")
     date = models.DateField(blank=False, null=False, default=get_date)
@@ -211,7 +209,6 @@ class Notification(models.Model):
     """
     Notifications for a student about an event, etc.
     """
-
     for_event = models.ForeignKey(
         "Event", on_delete=models.CASCADE, blank=False, null=True
     )

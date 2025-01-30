@@ -1,3 +1,4 @@
+import datetime
 from api.models import User, Student, Admin, Society, Event, Notification, Request, SocietyRequest, EventRequest, UserRequest
 from rest_framework import serializers
 
@@ -47,7 +48,7 @@ class StudentSerializer(UserSerializer):
         model = Student
         fields = UserSerializer.Meta.fields + ['major', 'societies', 'president_of', 'is_president']
         read_only_fields = ["is_president"]
-        
+
     def validate_email(self, value):
         """
         Check if the email is unique and provide a custom error message.
@@ -422,3 +423,74 @@ class EventRequestSerializer(SocietyRequestSerializer):
         extra_kwargs = SocietyRequestSerializer.Meta.extra_kwargs | {
             'event': {'required': True}
         }
+
+
+class DashboardStatisticSerializer(serializers.Serializer):
+    """
+    Serializer for dashboard statistics.
+    """
+    total_societies = serializers.IntegerField()
+    total_events = serializers.IntegerField()
+    pending_approvals = serializers.IntegerField()
+    active_members = serializers.IntegerField()
+
+
+class RecentActivitySerializer(serializers.Serializer):
+    """
+    Serializer for recent activities on the dashboard.
+    """
+    description = serializers.CharField(max_length=500)
+    timestamp = serializers.DateTimeField()
+
+
+# api/serializers.py (snippet)
+
+class DashboardNotificationSerializer(serializers.ModelSerializer):
+    """
+    Updated Notification serializer to include read/unread tracking for the dashboard.
+    """
+    event_title = serializers.CharField(source="for_event.title", read_only=True)
+    student_name = serializers.CharField(source="for_student.full_name", read_only=True)
+
+    class Meta:
+        model = Notification
+        fields = [
+            'id',
+            'message',
+            'is_read',
+            'event_title',
+            'student_name'
+        ]
+        # Removed 'timestamp' since the model does not have it
+
+
+class EventCalendarSerializer(serializers.ModelSerializer):
+    """
+    Serializer for calendar events on the dashboard.
+    """
+    # Convert `date` + `start_time` into a UTC-aware datetime
+    start = serializers.SerializerMethodField()
+    end = serializers.SerializerMethodField()
+    # Remove `source="title"` since it's the same name
+    title = serializers.CharField()
+
+    class Meta:
+        model = Event
+        fields = ["id", "title", "start", "end", "location"]
+        # Mark them read-only if needed:
+        read_only_fields = ["start", "end"]
+
+    def get_start(self, obj):
+        # Combine date and start_time in UTC
+        return (
+            datetime.datetime.combine(obj.date, obj.start_time)
+            .replace(tzinfo=datetime.timezone.utc)
+            .isoformat()
+        )
+
+    def get_end(self, obj):
+        # Combine date and start_time, add duration
+        start_dt = datetime.datetime.combine(obj.date, obj.start_time).replace(
+            tzinfo=datetime.timezone.utc
+        )
+        return (start_dt + obj.duration).isoformat()

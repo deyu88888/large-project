@@ -1,9 +1,12 @@
-from django.urls import path
-from . import views
-from .views import *
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-
-
+from django.urls import path
+from .views import (
+    RegisterView, CurrentUserView,
+    StudentNotificationsView, StartSocietyRequestView, ManageMySocietyView,
+    CreateSocietyEventView, AdminView, StudentView, SocietyView, EventView,
+    RejectedSocietyRequestView, SocietyRequestView, DashboardStatsView,
+    RecentActivitiesView, NotificationsView, EventCalendarView, MySocietiesView, JoinSocietyView, RSVPEventView, EventHistoryView
+)
 urlpatterns = [
     path("user/token/refresh", TokenRefreshView.as_view(), name="refresh"),
     path("user/register", RegisterView.as_view(), name="register"),
@@ -15,7 +18,6 @@ urlpatterns = [
     path('manage-society/<int:society_id>', ManageMySocietyView.as_view(), name='manage_my_society'),
     path('society/<int:society_id>/create-event', CreateSocietyEventView.as_view(), name='create_society_event'),
     path("user/admin", AdminView.as_view(), name="admin"),
-    # path('user/admin/', AdminView.as_view(), name='create_admin'),
     path("user/student", StudentView.as_view(), name="student"),
     path('my-societies', MySocietiesView.as_view(), name='my_societies'),
     path('join-society/<int:society_id>/', JoinSocietyView.as_view(), name='join_society'), # for put request
@@ -30,5 +32,9 @@ urlpatterns = [
     path("society/request/pending", SocietyRequestView.as_view(), name="request_society"),
     path("society/request/pending/<int:society_id>", SocietyRequestView.as_view(), name="request_society"),
 
-    #     REJECTEDSOCIETY: "api/admin-panel/rejected-society",
+    # Dashboard API endpoints
+    path("dashboard/stats/", DashboardStatsView.as_view(), name="dashboard_stats"),
+    path("dashboard/activities/", RecentActivitiesView.as_view(), name="recent_activities"),
+    path("dashboard/notifications/", NotificationsView.as_view(), name="dashboard_notifications"),
+    path("dashboard/events/", EventCalendarView.as_view(), name="dashboard_events"),
 ]
