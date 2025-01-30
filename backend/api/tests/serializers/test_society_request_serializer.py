@@ -1,12 +1,15 @@
-# pylint: disable=no-member
 from django.test import TestCase
 from django.utils import timezone
 from api.models import Society, Admin, Student, SocietyRequest
 from api.serializers import SocietyRequestSerializer
 
+# pylint: disable=no-member
+
 
 class SocietyRequestSerializerTestCase(TestCase):
-    """ Unit tests for the Society serializer """
+    """
+    Unit tests for the Society serializer
+    """
 
     def setUp(self):
         # Create an Admin user
@@ -152,7 +155,3 @@ class SocietyRequestSerializerTestCase(TestCase):
         if not self.serializer.is_valid():
             print(f'Errors: {self.serializer.errors}')
             self.fail("Test serializer should be valid")
-
-    def _assert_serializer_is_invalid(self):
-        if self.serializer.is_valid():
-            self.fail("Test serializer should be invalid")
