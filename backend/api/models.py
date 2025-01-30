@@ -234,17 +234,26 @@ class Request(models.Model):
     Blueprint for Requests made by students requiring admin approval
     """
 
+    INTENT = [
+        ("CreateSoc", "Create Society"),
+        ("UpdateSoc", "Update Society"),
+        ("CreateEve", "Create Event"),
+        ("UpdateEve", "Update Event"),
+        ("CreateUse", "Create User"),
+        ("UpdateUse", "Update User")
+    ]
+
+    intent = models.CharField(max_length=10, choices=INTENT)
+    requested_at = models.DateTimeField(auto_now_add=True)
+    approved = models.BooleanField(default=False)
+
+    # Use "%(class)s" in related_name for uniqueness in inherited models
     from_student = models.ForeignKey(
         "Student",
         on_delete=models.CASCADE,
-        related_name="requests",
+        related_name="%(class)ss",
         blank=False,
         null=False,
-    )
-    requested_at = models.DateTimeField(auto_now_add=True)
-
-    approved = models.BooleanField(
-        default=False
     )
 
     description = models.CharField(
@@ -252,18 +261,6 @@ class Request(models.Model):
         blank=True,
         null=True,
         help_text="Student to fill in additional details",
-    )
-
-    INTENT = [
-        ("CreateSoc", "Create Society"),
-        ("UpdateSoc", "Update Society"),
-        ("CreateEve", "Create Event"),
-        ("UpdateEve", "Update Event"),
-    ]
-
-    intent = models.CharField(
-        max_length=10,
-        choices=INTENT,
     )
 
     class Meta:
@@ -279,6 +276,20 @@ class SocietyRequest(Request):
         "Society",
         on_delete=models.CASCADE,
         related_name="society_requests",
+        blank=False,
+        null=False,
+    )
+
+
+class UserRequest(Request):
+    """
+    Requests related to users
+    """
+
+    student = models.ForeignKey(
+        "Student",
+        on_delete=models.CASCADE,
+        related_name="user_requests",
         blank=False,
         null=False,
     )
