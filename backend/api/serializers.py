@@ -1,4 +1,4 @@
-from api.models import User, Student, Admin, Society, Event, Notification, Request, SocietyRequest, EventRequest
+from api.models import User, Student, Admin, Society, Event, Notification, Request, SocietyRequest, EventRequest, UserRequest
 from rest_framework import serializers
 
 
@@ -359,7 +359,7 @@ class RequestSerializer(serializers.ModelSerializer):
     """
 
     class Meta:
-        """ RequestSerializer meta data """
+        """RequestSerializer meta data"""
         model = Request
         fields = [
             'id', 'from_student', 'requested_at',
@@ -381,17 +381,34 @@ class RequestSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
+
 class SocietyRequestSerializer(RequestSerializer):
     """
     Serializer for the SocietyRequest model
     """
 
     class Meta:
+        """SocietyRequestSerializer meta data"""
         model = SocietyRequest
         fields = RequestSerializer.Meta.fields + ['society']
         extra_kwargs = RequestSerializer.Meta.extra_kwargs | {
             'society': {'required': True}
         }
+
+
+class UserRequestSerializer(RequestSerializer):
+    """
+    Serializer for the UserRequest model
+    """
+
+    class Meta:
+        """UserRequestSerializer meta data"""
+        model = UserRequest
+        fields = RequestSerializer.Meta.fields + ['student']
+        extra_kwargs = RequestSerializer.Meta.extra_kwargs | {
+            'student': {'required': True}
+        }
+
 
 class EventRequestSerializer(SocietyRequestSerializer):
     """
@@ -399,6 +416,7 @@ class EventRequestSerializer(SocietyRequestSerializer):
     """
 
     class Meta:
+        """EventRequestSerializer meta data"""
         model = EventRequest
         fields = SocietyRequestSerializer.Meta.fields + ['event']
         extra_kwargs = SocietyRequestSerializer.Meta.extra_kwargs | {
