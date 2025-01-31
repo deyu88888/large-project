@@ -2,7 +2,7 @@ from pathlib import Path
 from datetime import timedelta
 from dotenv import load_dotenv
 import os
-from fakeredis.aioredis import FakeRedis
+# from fakeredis.aioredis import FakeRedis
 # Load environment variables
 load_dotenv()
 
@@ -91,6 +91,7 @@ TEMPLATES = [
 WSGI_APPLICATION = "backend.wsgi.application"
 ASGI_APPLICATION = "backend.asgi.application"
 
+
 # Database configuration
 DATABASES = {
     "default": {
@@ -124,25 +125,27 @@ CORS_ALLOW_CREDENTIALS = True
 # Custom user model
 AUTH_USER_MODEL = "api.User"
 
-# Channels configuration
-if os.getenv("USE_FAKEREDIS", "false").lower() == "true":
-    CHANNEL_LAYERS = {
-        "default": {
-            "BACKEND": "channels_redis.core.RedisChannelLayer",
-            "CONFIG": {
-                "hosts": [FakeRedis()],
-            },
-        }
+# # Channels configuration
+# if os.getenv("USE_FAKEREDIS", "false").lower() == "true":
+#     fake_redis = aioredis.FakeRedis(decode_responses=True)  # Use async FakeRedis
+#     CHANNEL_LAYERS = {
+#         "default": {
+#             "BACKEND": "channels_redis.core.RedisChannelLayer",
+#             "CONFIG": {
+#                 # "hosts": [FakeRedis()],
+#                 "hosts": [fake_redis],
+#             },
+#         }
+#     }
+# else:
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
     }
-else:
-    CHANNEL_LAYERS = {
-        "default": {
-            "BACKEND": "channels_redis.core.RedisChannelLayer",
-            "CONFIG": {
-                "hosts": [("127.0.0.1", 6379)],
-            },
-        }
-    }
+}
 
 # Content Security Policy settings for WebSocket and frontend communication
 CSP_DEFAULT_SRC = ["'self'"]
