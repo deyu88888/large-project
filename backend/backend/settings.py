@@ -3,6 +3,7 @@ from datetime import timedelta
 from dotenv import load_dotenv
 import os
 # from fakeredis.aioredis import FakeRedis
+from fakeredis import FakeRedis
 # Load environment variables
 load_dotenv()
 
