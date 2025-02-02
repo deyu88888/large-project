@@ -21,3 +21,4 @@ pytest-cov
 six
 django-csp
 Pillow
+fakeredis
