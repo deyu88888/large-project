@@ -2,8 +2,6 @@ from datetime import date, timedelta, time
 from random import choice, randint
 from django.contrib.auth.hashers import make_password
 from django.core.management.base import BaseCommand
-from asgiref.sync import async_to_sync
-from channels.layers import get_channel_layer
 from api.models import (
     Admin,
     Student,
