@@ -1,27 +1,41 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-
-const mockNotifications = [
-  { id: 1, text: "Chess Club meeting tomorrow!", read: false },
-  { id: 2, text: "New event added to Debate Society", read: true },
-  { id: 3, text: "Basketball match rescheduled", read: false },
-  { id: 4, text: "Music Society's workshop is cancelled", read: true },
-];
+import { apiClient } from "../api"; // Ensure apiClient is correctly imported
 
 const ViewNotifications: React.FC = () => {
   const navigate = useNavigate();
-  const [notifications, setNotifications] = useState(mockNotifications);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleMarkAsRead = (id: number) => {
-    setNotifications((prevNotifications) =>
-      prevNotifications.map((notification) =>
-        notification.id === id ? { ...notification, read: true } : notification
-      )
-    );
+  // Fetch notifications when the component mounts
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
+
+  const fetchNotifications = async () => {
+    try {
+      setLoading(true);
+      const response = await apiClient.get("/api/notifications");
+      console.log("Fetched Notifications:", response.data); // Debugging log
+      setNotifications(response.data || []);
+    } catch (error) {
+      console.error("Error fetching notifications:", error.response?.data || error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleBackToDashboard = () => {
-    navigate("/student-dashboard");
+  const markNotificationAsRead = async (id: number) => {
+    try {
+      await apiClient.patch(`/api/notifications/${id}/`, { is_read: true });
+      setNotifications((prev) =>
+        prev.map((notification) =>
+          notification.id === id ? { ...notification, is_read: true } : notification
+        )
+      );
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+    }
   };
 
   return (
@@ -33,36 +47,42 @@ const ViewNotifications: React.FC = () => {
         </p>
       </header>
 
-      <div className="space-y-6">
-        {notifications.map((notification) => (
-          <div
-            key={notification.id}
-            className={`p-5 rounded-lg shadow-md hover:shadow-lg border transition-all ${
-              notification.read ? "bg-gray-100 border-gray-300" : "bg-blue-50 border-blue-100"
-            }`}
-          >
-            <div className="flex justify-between items-center">
-              <p className="text-gray-800">{notification.text}</p>
-              <div className="flex items-center space-x-4">
-                {notification.read ? (
-                  <span className="text-green-500 text-sm font-medium">Read</span>
-                ) : (
-                  <button
-                    onClick={() => handleMarkAsRead(notification.id)}
-                    className="text-sm text-blue-500 hover:underline"
-                  >
-                    Mark as Read
-                  </button>
-                )}
+      {loading ? (
+        <p className="text-center text-gray-600">Loading notifications...</p>
+      ) : notifications.length === 0 ? (
+        <p className="text-center text-gray-600">No new notifications.</p>
+      ) : (
+        <div className="space-y-6">
+          {notifications.map((notification) => (
+            <div
+              key={notification.id}
+              className={`p-5 rounded-lg shadow-md hover:shadow-lg border transition-all ${
+                notification.is_read ? "bg-gray-100 border-gray-300" : "bg-blue-50 border-blue-100"
+              }`}
+            >
+              <div className="flex justify-between items-center">
+                <p className="text-gray-800">{notification.message}</p>
+                <div className="flex items-center space-x-4">
+                  {notification.is_read ? (
+                    <span className="text-green-500 text-sm font-medium">Read</span>
+                  ) : (
+                    <button
+                      onClick={() => markNotificationAsRead(notification.id)}
+                      className="text-sm text-blue-500 hover:underline"
+                    >
+                      Mark as Read
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       <div className="mt-10 text-center">
         <button
-          onClick={handleBackToDashboard}
+          onClick={() => navigate("/student-dashboard")}
           className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-all"
         >
           Go Back

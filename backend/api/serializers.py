@@ -222,29 +222,54 @@ class NotificationSerializer(serializers.ModelSerializer):
 
 
 class LeaveSocietySerializer(serializers.Serializer):
-    society_id = serializers.IntegerField()
+    """
+    Serializer for leaving a society.
+    """
 
-    def validate_society_id(self, value):
+    def __init__(self, *args, **kwargs):
+        # Expect society_id to be passed in the context, not request.data
+        self.society_id = kwargs.pop('society_id', None)
+        super().__init__(*args, **kwargs)
+
+    def validate(self, data):
+        """
+        Validate if the user can leave the given society.
+        """
         request_user = self.context['request'].user
+
+        # Ensure the user is a student
         if not hasattr(request_user, 'student'):
-            raise serializers.ValidationError("Only students can leave societies.")
+            raise serializers.ValidationError({"error": "Only students can leave societies."})
 
+        # Ensure society_id is provided (from the URL)
+        society_id = self.society_id
+        if society_id is None:
+            raise serializers.ValidationError({"error": "society_id is required."})
+
+        # Check if the society exists
         try:
-            society = Society.objects.get(id=value)
+            society = Society.objects.get(id=society_id)
         except Society.DoesNotExist:
-            raise serializers.ValidationError("Society does not exist.")
+            raise serializers.ValidationError({"error": "Society does not exist."})
 
+        # Check if the user is actually a member of the society
         if not society.society_members.filter(id=request_user.id).exists():
-            raise serializers.ValidationError("You are not a member of this society.")
+            raise serializers.ValidationError({"error": "You are not a member of this society."})
 
-        return value
+        return {"society": society}
 
     def save(self):
-        society_id = self.validated_data['society_id']
+        """
+        Remove the student from the society.
+        """
         request_user = self.context['request'].user
-        society = Society.objects.get(id=society_id)
+        society = self.validated_data["society"]
+
+        # Remove the user from the society
         request_user.student.societies.remove(society)
+
         return society
+
 
 
 class JoinSocietySerializer(serializers.Serializer):

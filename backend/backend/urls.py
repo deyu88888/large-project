@@ -18,6 +18,11 @@ urlpatterns = [
     # path("api/user/login", TokenObtainPairView.as_view(), name="get_token"),
     # path("api/token/refresh", TokenRefreshView.as_view(), name="refresh"),
 
+    
+
+
+    # This is basically importing all urls from api/urls.py with /api
+    # attached to front of it
     # This includes all URLs from api/urls.py with '/api' prefix
     path("api/", include("api.urls")),
 ]
