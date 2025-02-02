@@ -2,6 +2,7 @@ from django.test import TestCase
 from django.utils import timezone
 from api.models import Event, Society, Admin, Student, EventRequest
 from api.serializers import EventRequestSerializer
+from datetime import timedelta
 
 # pylint: disable=no-member
 
@@ -44,25 +45,29 @@ class EventRequestSerializerTestCase(TestCase):
         )
 
         self.event_request = EventRequest(
-            from_student=self.student1,
-            approved=False,
-            description="Wanted tech event",
-            intent="CreateSoc",
-            society=self.society,
             event=self.event,
+            title="Night",
+            description="Night out",
+            location="UCL Campus",
+            date=timezone.now().date(),
+            start_time=timezone.now().time(),
+            duration=timedelta(hours=1),
+            from_student=self.student1,
+            intent="CreateSoc",
         )
         self.event_request.save()
 
         # Serializer data
         self.serializer = None
         self.data = {
+            "event": self.event.id,
+            "title": "Night",
+            "description": "Night out",
+            "location": "UCL Capus",
             "from_student": self.student1.id,
             "requested_at": timezone.now(),
             "approved": True,
-            "description": "Wanted tech event",
             "intent": "CreateSoc",
-            "society": self.society.id,
-            "event": self.event.id,
         }
 
     def test_event_request_serialization(self):
@@ -70,12 +75,12 @@ class EventRequestSerializerTestCase(TestCase):
         self.serializer = EventRequestSerializer(instance=self.event_request)
         data = self.serializer.data
 
+        self.assertEqual(self.event_request.event.id, data["event"])
+        self.assertEqual(self.event_request.title, data["title"])
         self.assertEqual(self.event_request.description, data["description"])
+        self.assertEqual(self.event_request.location, data["location"])
         self.assertEqual(self.event_request.approved, data["approved"])
         self.assertEqual(self.event_request.intent, data["intent"])
-        self.assertEqual(self.event_request.society.id, data["society"])
-        self.assertEqual(self.event_request.event.id, data["event"])
-
         self.assertEqual(
             self.event_request.from_student.id,
             data["from_student"]
@@ -100,11 +105,11 @@ class EventRequestSerializerTestCase(TestCase):
         self._assert_serializer_is_valid()
         event_request = self.serializer.save()
 
+        self.assertEqual(event_request.event.id, self.data["event"])
+        self.assertEqual(event_request.title, self.data["title"])
+        self.assertEqual(event_request.location, self.data["location"])
         self.assertEqual(event_request.approved, self.data["approved"])
         self.assertEqual(event_request.intent, self.data["intent"])
-        self.assertEqual(event_request.society.id, self.data["society"])
-        self.assertEqual(event_request.event.id, self.data["event"])
-
         self.assertEqual(
             event_request.description,
             self.data["description"]
@@ -118,19 +123,19 @@ class EventRequestSerializerTestCase(TestCase):
         """Test event request creation function correctly"""
         self.serializer = EventRequestSerializer(data=self.data)
         self._assert_serializer_is_valid()
-        event_request = self.serializer.save()
+        event_request = self.serializer.validated_data
 
-        self.assertEqual(event_request.approved, self.data["approved"])
-        self.assertEqual(event_request.intent, self.data["intent"])
-        self.assertEqual(event_request.society.id, self.data["society"])
-        self.assertEqual(event_request.event.id, self.data["event"])
-
+        self.assertEqual(event_request["event"].id, self.data["event"])
+        self.assertEqual(event_request["title"], self.data["title"])
+        self.assertEqual(event_request["location"], self.data["location"])
+        self.assertEqual(event_request["approved"], self.data["approved"])
+        self.assertEqual(event_request["intent"], self.data["intent"])
         self.assertEqual(
-            event_request.description,
+            event_request["description"],
             self.data["description"]
         )
         self.assertEqual(
-            event_request.from_student.id,
+            event_request["from_student"].id,
             self.data["from_student"]
         )
 

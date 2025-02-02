@@ -24,9 +24,8 @@ class UserRequestSerializerTestCase(TestCase):
         self.user_request = UserRequest.objects.create(
             from_student=self.student,
             approved=False,
-            description="Attempting account creation",
             intent="CreateUse",
-            student=self.student,
+            major="Computing",
         )
 
         # Serializer data
@@ -35,22 +34,18 @@ class UserRequestSerializerTestCase(TestCase):
             "from_student": self.student.id,
             "requested_at": timezone.now(),
             "approved": True,
-            "description": "Attempting account creation",
             "intent": "CreateUse",
-            "student": self.student.id,
+            "major": "Computing"
         }
 
     def test_user_request_serialization(self):
         """Test UserRequestSerializer serialization"""
-
         self.serializer = UserRequestSerializer(instance=self.user_request)
         data = self.serializer.data
-
+        self.assertEqual(self.user_request.from_student.id, data["from_student"])
         self.assertEqual(self.user_request.approved, data["approved"])
-        self.assertEqual(self.user_request.description, data["description"])
+        self.assertEqual(self.user_request.major, data["major"])
         self.assertEqual(self.user_request.intent, data["intent"])
-        self.assertEqual(self.user_request.student.id, data["student"])
-
         self.assertEqual(
             self.user_request.from_student.id,
             data["from_student"]
@@ -58,16 +53,14 @@ class UserRequestSerializerTestCase(TestCase):
 
     def test_user_request_deserialization(self):
         """Test UserRequestSerializer deserialization"""
-
         self.serializer = UserRequestSerializer(data=self.data)
         self._assert_serializer_is_valid()
         user_request = self.serializer.save()
 
+        self.assertEqual(user_request.from_student.id, self.data["from_student"])
         self.assertEqual(user_request.approved, self.data["approved"])
-        self.assertEqual(user_request.description, self.data["description"])
+        self.assertEqual(user_request.major, self.data["major"])
         self.assertEqual(user_request.intent, self.data["intent"])
-        self.assertEqual(user_request.student.id, self.data["student"])
-
         self.assertEqual(
             user_request.from_student.id,
             self.data["from_student"]
@@ -75,24 +68,20 @@ class UserRequestSerializerTestCase(TestCase):
 
     def test_user_requests_create(self):
         """Test UserRequestSerializer creation"""
-
         self.serializer = UserRequestSerializer(data=self.data)
         self._assert_serializer_is_valid()
-        user_request = self.serializer.save()
+        user_request = self.serializer.validated_data
 
-        self.assertEqual(user_request.approved, self.data["approved"])
-        self.assertEqual(user_request.description, self.data["description"])
-        self.assertEqual(user_request.intent, self.data["intent"])
-        self.assertEqual(user_request.student.id, self.data["student"])
-
+        self.assertEqual(user_request["approved"], self.data["approved"])
+        self.assertEqual(user_request["major"], self.data["major"])
+        self.assertEqual(user_request["intent"], self.data["intent"])
         self.assertEqual(
-            user_request.from_student.id,
+            user_request["from_student"].id,
             self.data["from_student"]
         )
 
     def test_user_request_update(self):
         """Test UserRequestSerializer update"""
-
         self.assertFalse(self.user_request.approved)
 
         self.serializer = UserRequestSerializer(
