@@ -364,7 +364,7 @@ class RequestSerializer(serializers.ModelSerializer):
         model = Request
         fields = [
             'id', 'from_student', 'requested_at',
-            'approved', 'description', 'intent'
+            'approved', 'intent'
         ]
         extra_kwargs = {
             'from_student': {'required': True},
@@ -391,7 +391,12 @@ class SocietyRequestSerializer(RequestSerializer):
     class Meta:
         """SocietyRequestSerializer meta data"""
         model = SocietyRequest
-        fields = RequestSerializer.Meta.fields + ['society']
+        fields = (
+            RequestSerializer.Meta.fields
+            + ['name', 'roles', 'leader', 'category',
+            'social_media_links', 'timetable', 'membership_requirements',
+            'upcoming_projects_or_plans', 'society']
+        )
         extra_kwargs = RequestSerializer.Meta.extra_kwargs | {
             'society': {'required': True}
         }
@@ -405,13 +410,11 @@ class UserRequestSerializer(RequestSerializer):
     class Meta:
         """UserRequestSerializer meta data"""
         model = UserRequest
-        fields = RequestSerializer.Meta.fields + ['student']
-        extra_kwargs = RequestSerializer.Meta.extra_kwargs | {
-            'student': {'required': True}
-        }
+        fields = RequestSerializer.Meta.fields + ['major']
+        extra_kwargs = RequestSerializer.Meta.extra_kwargs
 
 
-class EventRequestSerializer(SocietyRequestSerializer):
+class EventRequestSerializer(RequestSerializer):
     """
     Serializer for the EventRequest model
     """
@@ -419,8 +422,12 @@ class EventRequestSerializer(SocietyRequestSerializer):
     class Meta:
         """EventRequestSerializer meta data"""
         model = EventRequest
-        fields = SocietyRequestSerializer.Meta.fields + ['event']
-        extra_kwargs = SocietyRequestSerializer.Meta.extra_kwargs | {
+        fields = (
+            RequestSerializer.Meta.fields
+            + ['title', 'description', 'location', 'date',
+            'start_time', 'duration', 'event']
+        )
+        extra_kwargs = RequestSerializer.Meta.extra_kwargs | {
             'event': {'required': True}
         }
 
