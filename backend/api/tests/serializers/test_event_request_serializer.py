@@ -53,6 +53,7 @@ class EventRequestSerializerTestCase(TestCase):
             start_time=timezone.now().time(),
             duration=timedelta(hours=1),
             from_student=self.student1,
+            hosted_by=self.society,
             intent="CreateSoc",
         )
         self.event_request.save()
@@ -68,6 +69,7 @@ class EventRequestSerializerTestCase(TestCase):
             "requested_at": timezone.now(),
             "approved": True,
             "intent": "CreateSoc",
+            "hosted_by": self.society.id
         }
 
     def test_event_request_serialization(self):

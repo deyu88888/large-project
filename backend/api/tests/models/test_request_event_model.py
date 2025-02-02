@@ -53,6 +53,7 @@ class EventRequestTestCase(TestCase):
             start_time=timezone.now().time(),
             duration=timedelta(hours=1),
             from_student=self.student,
+            hosted_by=self.society,
             intent="CreateSoc",
         )
         self.event_request.save()
