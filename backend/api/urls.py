@@ -5,7 +5,7 @@ from .views import (
     StudentNotificationsView, StartSocietyRequestView, ManageMySocietyView,
     CreateSocietyEventView, AdminView, StudentView, SocietyView, EventView,
     RejectedSocietyRequestView, SocietyRequestView, DashboardStatsView,
-    RecentActivitiesView, NotificationsView, EventCalendarView, MySocietiesView, JoinSocietyView, RSVPEventView, EventHistoryView
+    RecentActivitiesView, NotificationsView, EventCalendarView, StudentSocietiesView, JoinSocietyView, RSVPEventView, EventHistoryView
 )
 urlpatterns = [
     path("user/token/refresh", TokenRefreshView.as_view(), name="refresh"),
