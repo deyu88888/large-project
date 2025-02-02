@@ -1,4 +1,5 @@
-from api.models import User, Student, Admin, Society, Event, Notification
+import datetime
+from api.models import User, Student, Admin, Society, Event, Notification, Request, SocietyRequest, EventRequest, UserRequest
 from rest_framework import serializers
 
 
@@ -47,7 +48,7 @@ class StudentSerializer(UserSerializer):
         model = Student
         fields = UserSerializer.Meta.fields + ['major', 'societies', 'president_of', 'is_president']
         read_only_fields = ["is_president"]
-        
+
     def validate_email(self, value):
         """
         Check if the email is unique and provide a custom error message.
@@ -177,7 +178,8 @@ class EventSerializer(serializers.ModelSerializer):
         model = Event
         fields = [
             'id', 'title', 'description', 'date',
-            'start_time', 'duration', 'hosted_by', 'location'
+            'start_time', 'duration', 'hosted_by', 'location',
+            'max_capacity', 'current_attendees', 'status'
         ]
         extra_kwargs = {'hosted_by': {'required': True}}
 
@@ -200,7 +202,7 @@ class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         """ NotificationSerializer meta data """
         model = Notification
-        fields = ['id', 'for_event', 'for_student', 'is_read']
+        fields = ['id', 'for_event', 'for_student', 'is_read', 'message']
         extra_kwargs = {
             'for_event': {'required': True},
             'for_student': {'required': True}
@@ -217,7 +219,6 @@ class NotificationSerializer(serializers.ModelSerializer):
 
         instance.save()
         return instance
-    
 
 
 class LeaveSocietySerializer(serializers.Serializer):
@@ -348,7 +349,8 @@ class RSVPEventSerializer(serializers.ModelSerializer):
             event.current_attendees.remove(student)  
 
         return event
-    
+
+
 class StartSocietyRequestSerializer(serializers.ModelSerializer):
     """Serializer for creating a new society request."""
 
@@ -375,3 +377,145 @@ class StartSocietyRequestSerializer(serializers.ModelSerializer):
             leader=validated_data["requested_by"],
             status="Pending"
         )
+
+
+class RequestSerializer(serializers.ModelSerializer):
+    """
+    Abstract serializer for the Request model
+    """
+
+    class Meta:
+        """RequestSerializer meta data"""
+        model = Request
+        fields = [
+            'id', 'from_student', 'requested_at',
+            'approved', 'description', 'intent'
+        ]
+        extra_kwargs = {
+            'from_student': {'required': True},
+        }
+
+    def create(self, validated_data):
+        """ Create a notification entry according to json data """
+        return self.Meta.model.objects.create(**validated_data)
+
+    def update(self, instance, validated_data):
+        """ Update 'instance' object according to provided json data """
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+
+        instance.save()
+        return instance
+
+
+class SocietyRequestSerializer(RequestSerializer):
+    """
+    Serializer for the SocietyRequest model
+    """
+
+    class Meta:
+        """SocietyRequestSerializer meta data"""
+        model = SocietyRequest
+        fields = RequestSerializer.Meta.fields + ['society']
+        extra_kwargs = RequestSerializer.Meta.extra_kwargs | {
+            'society': {'required': True}
+        }
+
+
+class UserRequestSerializer(RequestSerializer):
+    """
+    Serializer for the UserRequest model
+    """
+
+    class Meta:
+        """UserRequestSerializer meta data"""
+        model = UserRequest
+        fields = RequestSerializer.Meta.fields + ['student']
+        extra_kwargs = RequestSerializer.Meta.extra_kwargs | {
+            'student': {'required': True}
+        }
+
+
+class EventRequestSerializer(SocietyRequestSerializer):
+    """
+    Serializer for the EventRequest model
+    """
+
+    class Meta:
+        """EventRequestSerializer meta data"""
+        model = EventRequest
+        fields = SocietyRequestSerializer.Meta.fields + ['event']
+        extra_kwargs = SocietyRequestSerializer.Meta.extra_kwargs | {
+            'event': {'required': True}
+        }
+
+
+class DashboardStatisticSerializer(serializers.Serializer):
+    """
+    Serializer for dashboard statistics.
+    """
+    total_societies = serializers.IntegerField()
+    total_events = serializers.IntegerField()
+    pending_approvals = serializers.IntegerField()
+    active_members = serializers.IntegerField()
+
+
+class RecentActivitySerializer(serializers.Serializer):
+    """
+    Serializer for recent activities on the dashboard.
+    """
+    description = serializers.CharField(max_length=500)
+    timestamp = serializers.DateTimeField()
+
+
+# api/serializers.py (snippet)
+
+class DashboardNotificationSerializer(serializers.ModelSerializer):
+    """
+    Updated Notification serializer to include read/unread tracking for the dashboard.
+    """
+    event_title = serializers.CharField(source="for_event.title", read_only=True)
+    student_name = serializers.CharField(source="for_student.full_name", read_only=True)
+
+    class Meta:
+        model = Notification
+        fields = [
+            'id',
+            'message',
+            'is_read',
+            'event_title',
+            'student_name'
+        ]
+        # Removed 'timestamp' since the model does not have it
+
+
+class EventCalendarSerializer(serializers.ModelSerializer):
+    """
+    Serializer for calendar events on the dashboard.
+    """
+    # Convert `date` + `start_time` into a UTC-aware datetime
+    start = serializers.SerializerMethodField()
+    end = serializers.SerializerMethodField()
+    # Remove `source="title"` since it's the same name
+    title = serializers.CharField()
+
+    class Meta:
+        model = Event
+        fields = ["id", "title", "start", "end", "location"]
+        # Mark them read-only if needed:
+        read_only_fields = ["start", "end"]
+
+    def get_start(self, obj):
+        # Combine date and start_time in UTC
+        return (
+            datetime.datetime.combine(obj.date, obj.start_time)
+            .replace(tzinfo=datetime.timezone.utc)
+            .isoformat()
+        )
+
+    def get_end(self, obj):
+        # Combine date and start_time, add duration
+        start_dt = datetime.datetime.combine(obj.date, obj.start_time).replace(
+            tzinfo=datetime.timezone.utc
+        )
+        return (start_dt + obj.duration).isoformat()
