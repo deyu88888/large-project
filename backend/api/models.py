@@ -58,6 +58,12 @@ class Student(User):
     """
     A model representing student users
     """
+    STATUS_CHOICES = [
+        ("Pending", "Pending Approval"),
+        ("Approved", "Approved"),
+        ("Rejected", "Rejected"),
+    ]
+
     major = models.CharField(max_length=50, blank=True)
 
     societies = models.ManyToManyField(
@@ -78,6 +84,10 @@ class Student(User):
         'Event',
         related_name='attendees',
         blank=True
+    )
+
+    status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default="Pending"
     )
 
     def save(self, *args, **kwargs):
@@ -253,13 +263,6 @@ class Request(models.Model):
         null=False,
     )
 
-    description = models.CharField(
-        max_length=200,
-        blank=True,
-        null=True,
-        help_text="Student to fill in additional details",
-    )
-
     class Meta:
         abstract = True
 
@@ -268,39 +271,59 @@ class SocietyRequest(Request):
     """
     Requests related to societies
     """
-
     society = models.ForeignKey(
         "Society",
-        on_delete=models.CASCADE,
-        related_name="society_requests",
-        blank=False,
-        null=False,
+        on_delete=models.DO_NOTHING,
+        related_name="society_request",
+        blank=True,
+        null=True,
     )
+    name = models.CharField(max_length=30, blank=True, default="")
+    roles = models.JSONField(default=dict, blank=True)
+    leader = models.ForeignKey(
+        "Student",
+        on_delete=models.DO_NOTHING,
+        related_name="society_request_leader",
+        blank=True,
+        null=True,
+    )
+    category = models.CharField(max_length=50, blank=True, default="")
+    # {"facebook": "link", "email": "email"}
+    social_media_links = models.JSONField(default=dict, blank=True, null=True)
+    timetable = models.TextField(blank=True, default="")
+    membership_requirements = models.TextField(blank=True, default="")
+    upcoming_projects_or_plans = models.TextField(blank=True, default="")
 
 
 class UserRequest(Request):
     """
     Requests related to users
     """
-
-    student = models.ForeignKey(
-        "Student",
-        on_delete=models.CASCADE,
-        related_name="user_requests",
-        blank=False,
-        null=False,
-    )
+    # username at some point
+    major = models.CharField(max_length=50, blank=True, default="")
 
 
-class EventRequest(SocietyRequest):
+class EventRequest(Request):
     """
     Requests related to events
     """
-
     event = models.ForeignKey(
         "Event",
-        on_delete=models.CASCADE,
-        related_name="event_requests",
-        blank=False,
-        null=False
+        on_delete=models.DO_NOTHING,
+        related_name="event_request",
+        blank=True,
+        null=True,
     )
+    hosted_by = models.ForeignKey(
+        "Society",
+        on_delete=models.DO_NOTHING,
+        related_name="event_request_society",
+        blank=False,
+        null=False,
+    )
+    title = models.CharField(max_length=20, blank=True, default="")
+    description = models.CharField(max_length=300, blank=True, default="")
+    location = models.CharField(max_length=300, blank=True, default="")
+    date = models.DateField(blank=True, null=True)
+    start_time = models.TimeField(blank=True, null=True)
+    duration = models.DurationField(blank=True, null=True)

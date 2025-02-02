@@ -25,9 +25,7 @@ class RequestTestCase(TestCase):
         self.request = UserRequest.objects.create(
             from_student=self.student,
             approved=False,
-            description="Attempting account creation",
             intent="CreateUse",
-            student=self.student,
         )
 
     def test_valid_intent(self):
@@ -44,7 +42,7 @@ class RequestTestCase(TestCase):
         self.assert_intent_validity("CreateSociety", False)
         self.assert_intent_validity("AAA", False)
         self.assert_intent_validity(10, False)
-        self.assert_intent_validity("Update", False)
+        self.assert_intent_validity("", False)
 
     def assert_intent_validity(self, intent, valid):
         """Helper function to avoid code repetition"""
@@ -66,28 +64,9 @@ class RequestTestCase(TestCase):
         """Test Request.approved defaults to False"""
         temp_request = UserRequest.objects.create(
             from_student=self.student,
-            description="Attempting account creation",
             intent="CreateUse",
-            student=self.student,
         )
         self.assertFalse(temp_request.approved)
-
-    def test_description_borderline(self):
-        """Test Request.description can be 200 chars"""
-        self.request.description = 'a' * 200
-        self._assert_request_is_valid()
-
-    def test_description_too_long(self):
-        """Test Request.description can't be <200 chars"""
-        self.request.description = 'a' * 201
-        self._assert_request_is_invalid()
-
-    def test_blank_description(self):
-        """Test Request.description can be empty"""
-        self.request.description = ""
-        self._assert_request_is_valid()
-        self.request.description = None
-        self._assert_request_is_valid()
 
     def test_from_student_required(self):
         """Test Request.from_student is a required field"""
