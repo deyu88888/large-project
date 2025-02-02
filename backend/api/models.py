@@ -314,6 +314,13 @@ class EventRequest(Request):
         blank=True,
         null=True,
     )
+    hosted_by = models.ForeignKey(
+        "Society",
+        on_delete=models.DO_NOTHING,
+        related_name="event_request_society",
+        blank=False,
+        null=False,
+    )
     title = models.CharField(max_length=20, blank=True, default="")
     description = models.CharField(max_length=300, blank=True, default="")
     location = models.CharField(max_length=300, blank=True, default="")

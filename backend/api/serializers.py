@@ -397,9 +397,6 @@ class SocietyRequestSerializer(RequestSerializer):
             'social_media_links', 'timetable', 'membership_requirements',
             'upcoming_projects_or_plans', 'society']
         )
-        extra_kwargs = RequestSerializer.Meta.extra_kwargs | {
-            'society': {'required': True}
-        }
 
 
 class UserRequestSerializer(RequestSerializer):
@@ -425,10 +422,10 @@ class EventRequestSerializer(RequestSerializer):
         fields = (
             RequestSerializer.Meta.fields
             + ['title', 'description', 'location', 'date',
-            'start_time', 'duration', 'event']
+            'start_time', 'duration', 'event', 'hosted_by']
         )
         extra_kwargs = RequestSerializer.Meta.extra_kwargs | {
-            'event': {'required': True}
+            'hosted_by': {'required': True}
         }
 
 
