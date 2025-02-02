@@ -58,7 +58,7 @@ class Command(BaseCommand):
             first_name="Student",
             last_name="User",
             defaults={
-                "password": make_password("studentpassword"),  
+                "password": make_password("studentpassword"),
                 "major": "Computer Science",
             },
         )

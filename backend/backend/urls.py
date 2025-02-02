@@ -15,16 +15,12 @@ urlpatterns = [
     path("api/token/refresh", TokenRefreshView.as_view(), name="refresh"),
     path("api/user/me", get_current_user, name="get_current_user"), #For global callout
     path("api-auth", include("rest_framework.urls")),
-    
-
 
     path('my-societies/', MySocietiesView.as_view(), name='my_societies'),
     path('join-society/<int:society_id>/', JoinSocietyView.as_view(), name='join_society'),
     path('leave-society/<int:society_id>/', MySocietiesView.as_view(), name='leave_society'),
     path('events/rsvp/', RSVPEventView.as_view(), name='rsvp_event'),
     path('events/history/', EventHistoryView.as_view(), name='event_history'),
-
-
 
     # This is basically importing all urls from api/urls.py with /api
     # attached to front of it

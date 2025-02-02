@@ -1,16 +1,20 @@
 from datetime import timezone
+from django.shortcuts import get_object_or_404
 from api.models import User, Society, Event, Student, Notification
 from rest_framework import generics, status
 from .serializers import EventSerializer, RSVPEventSerializer, UserSerializer, StudentSerializer, LeaveSocietySerializer, JoinSocietySerializer, SocietySerializer, NotificationSerializer
 from api.models import Admin, User, Society, Event, Student
 from rest_framework import generics, status
-from .serializers import AdminSerializer, EventSerializer, RSVPEventSerializer, UserSerializer, StudentSerializer, LeaveSocietySerializer, JoinSocietySerializer, SocietySerializer
+from .serializers import AdminSerializer, EventSerializer, RSVPEventSerializer, UserSerializer, StudentSerializer, LeaveSocietySerializer, JoinSocietySerializer, SocietySerializer, StartSocietyRequestSerializer
+from channels.layers import get_channel_layer
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.utils import timezone
+from django.db.models import Count
+from asgiref.sync import async_to_sync
 
 
 """
@@ -332,16 +336,16 @@ class StartSocietyRequestView(APIView):
                 status=status.HTTP_201_CREATED,
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+
 
 class SocietyRequestView(APIView):
     """
-    GET request to get all the society requests that's pending in status for admins
+    GET request to get all the society requests that are pending in status for admins.
     """
     def get(self, request):
         user = request.user
 
-        # Ensure the user is a admin
+        # Ensure the user is an admin
         if not hasattr(user, "admin"):
             return Response({"error": "Only admins can view society requests."}, status=status.HTTP_403_FORBIDDEN)
 
@@ -349,9 +353,62 @@ class SocietyRequestView(APIView):
         requests = Society.objects.filter(status='Pending')
         serializer = SocietySerializer(requests, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    def put(self, request, society_id):
+        """
+        PUT request to update the status of the society request from pending to approved or rejected for admins.
+        """
+        user = request.user
+
+        # Ensure the user is an admin
+        if not hasattr(user, "admin"):
+            return Response({"error": "Only admins can approve or reject society requests."}, status=status.HTTP_403_FORBIDDEN)
+
+        # Fetch the society request
+        society = get_object_or_404(Society, id=society_id)
+
+        # Update the society request status
+        serializer = SocietySerializer(society, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+
+            # Notify WebSocket clients about the update
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                "society_requests",
+                {
+                    # "type": "pending_requests_update", 
+                    "type": "send_pending_requests", 
+                    "message": "Society request updated successfully.",
+                    "data": serializer.data,
+                 },
+            )
+
+            # If society was approved, notify the society view WebSocket clients
+            if serializer.validated_data.get("status") == "Approved":
+                async_to_sync(channel_layer.group_send)(
+                    "society_updates",
+                    {
+                        "type": "society_list_update",
+                        "message": "A new society has been approved.",
+                        "data": serializer.data,  # Send updated society data
+                    },
+                )
+            elif serializer.validated_data.get("status") == "Rejected":
+                async_to_sync(channel_layer.group_send)(
+                    "society_updates",
+                    {
+                        "type": "society_list_update",
+                        "message": "A society request has been rejected.",
+                        "data": serializer.data,  # Send updated society data
+                    },
+                )
+
+            return Response({"message": "Society request updated successfully.", "data": serializer.data}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class RejectedSocietyRequestView(APIView):
+class RejectedSocietyRequestView(APIView):      #TODO: societyRequestView works the same as this, remove after
     """
     get request to get all the societies that's rejected
     """ 
@@ -443,6 +500,9 @@ class CreateSocietyEventView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, society_id):
+        """
+        create a new event for the society
+        """
         user = request.user
 
         # Ensure the user is a society president
@@ -455,6 +515,8 @@ class CreateSocietyEventView(APIView):
         if not society:
             return Response({"error": "Society not found or you are not the president of this society."}, status=status.HTTP_404_NOT_FOUND)
 
+        # TODO:  create my own error handler that can be used for the whole project, serializer isn't appropriate for this
+        # include ?
         # Validate and save the event data
         serializer = EventSerializer(data=request.data)
         if serializer.is_valid():
@@ -463,6 +525,9 @@ class CreateSocietyEventView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def put(self, request):
+        """
+        update the event details
+        """
         jwt_authenticator = JWTAuthentication()
         decoded_auth = jwt_authenticator.authenticate(request)
 
@@ -540,7 +605,6 @@ class SocietyView(APIView):
         print("serializer data: ", serializer.data)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-# add a class to review the society requests that's rejected
 
 class StudentView(APIView):
     """
@@ -556,3 +620,71 @@ class StudentView(APIView):
         students = Student.objects.all()
         serializer = StudentSerializer(students, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class DashboardStatsView(APIView):
+    """
+    View to provide aggregated statistics for the dashboard.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Aggregated statistics from the database
+        total_societies = Society.objects.count()
+        total_events = Event.objects.count()
+        pending_approvals = Society.objects.filter(status="Pending").count()
+        active_members = Student.objects.aggregate(active_members=Count("id"))["active_members"]
+
+        stats = {
+            "total_societies": total_societies,
+            "total_events": total_events,
+            "pending_approvals": pending_approvals,
+            "active_members": active_members,
+        }
+        serializer = DashboardStatisticSerializer(stats)
+        return Response(serializer.data, status=200)
+
+
+class RecentActivitiesView(APIView):
+    """
+    View to provide a list of recent activities for the dashboard.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Example recent activities (can be extended based on project requirements)
+        activities = [
+            {"description": "John Doe joined the Chess Society", "timestamp": timezone.now()},
+            {"description": "A new event was created: 'AI Workshop'", "timestamp": timezone.now()},
+        ]
+
+        serializer = RecentActivitySerializer(activities, many=True)
+        return Response(serializer.data, status=200)
+
+
+class NotificationsView(APIView):
+    """
+    View to provide notifications for the logged-in user.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # If user's role is not "student", forbid access
+        if request.user.role != "student":
+            return Response({"error": "Only students can view notifications."}, status=403)
+
+        notifications = Notification.objects.filter(for_student=request.user).order_by("-id")
+        serializer = DashboardNotificationSerializer(notifications, many=True)
+        return Response(serializer.data, status=200)
+
+
+class EventCalendarView(APIView):
+    """
+    View to provide events for the dashboard calendar.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        events = Event.objects.all()
+        serializer = EventCalendarSerializer(events, many=True)
+        return Response(serializer.data, status=200)

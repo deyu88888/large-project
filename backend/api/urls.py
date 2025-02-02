@@ -22,6 +22,9 @@ urlpatterns = [
     path("admin-panel/rejected-society", RejectedSocietyRequestView.as_view(), name="rejected_society"),
     path("society/request/pending", SocietyRequestView.as_view(), name="request_society"),
     path("society/request/pending/<int:society_id>", SocietyRequestView.as_view(), name="request_society"),
-
-    #     REJECTEDSOCIETY: "api/admin-panel/rejected-society",
+    # Dashboard API endpoints
+    path("dashboard/stats/", DashboardStatsView.as_view(), name="dashboard_stats"),
+    path("dashboard/activities/", RecentActivitiesView.as_view(), name="recent_activities"),
+    path("dashboard/notifications/", NotificationsView.as_view(), name="dashboard_notifications"),
+    path("dashboard/events/", EventCalendarView.as_view(), name="dashboard_events"),
 ]
