@@ -121,7 +121,7 @@ class CurrentUserView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class MySocietiesView(APIView):
+class StudentSocietiesView(APIView):
     """
     API View for managing societies that a student has joined.
 
@@ -144,7 +144,6 @@ class MySocietiesView(APIView):
 
     def get(self, request):
         user = request.user
-        # I am not sure if we need this
         if not hasattr(user, "student"):
             return Response({"error": "Only students can manage societies."}, status=status.HTTP_403_FORBIDDEN)
 
@@ -152,13 +151,32 @@ class MySocietiesView(APIView):
         serializer = SocietySerializer(societies, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def post(self, request):
-        serializer = LeaveSocietySerializer(
-            data=request.data, context={'request': request})
-        if serializer.is_valid():
-            society = serializer.save()
-            return Response({"message": f"Successfully left society '{society.name}'."}, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def delete(self, request, society_id):
+        """
+        Handle DELETE request to leave a society.
+        """
+        user = request.user
+
+        # Ensure the user is a student
+        if not hasattr(user, "student"):
+            return Response({"error": "Only students can leave societies."}, status=status.HTTP_403_FORBIDDEN)
+
+        # Check if the society exists
+        try:
+            society = Society.objects.get(id=society_id)
+        except Society.DoesNotExist:
+            return Response({"error": "Society does not exist."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Check if the user is actually a member of the society
+        if not user.student.societies.filter(id=society_id).exists():
+            return Response({"error": "You are not a member of this society."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Remove the student from the society
+        user.student.societies.remove(society)
+
+        return Response({"message": f"Successfully left society '{society.name}'."}, status=status.HTTP_200_OK)
+
+
 
 
 class JoinSocietyView(APIView):
@@ -184,7 +202,6 @@ class JoinSocietyView(APIView):
 
     def get(self, request):
         user = request.user
-        # I am not sure if we need this
         if not hasattr(user, "student"):
             return Response({"error": "Only students can join societies."}, status=status.HTTP_403_FORBIDDEN)
 
@@ -194,12 +211,24 @@ class JoinSocietyView(APIView):
         serializer = SocietySerializer(available_societies, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def post(self, request):
-        serializer = JoinSocietySerializer(
-            data=request.data, context={'request': request})
+    def post(self, request, society_id=None):
+        user = request.user
+        if not hasattr(user, "student"):
+            return Response({"error": "Only students can join societies."}, status=status.HTTP_403_FORBIDDEN)
+
+        if not society_id:
+            return Response({"error": "Society ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = JoinSocietySerializer(data={"society_id": society_id}, context={"request": request})
         if serializer.is_valid():
-            society = serializer.save()
-            return Response({"message": f"Successfully joined society '{society.name}'."}, status=status.HTTP_200_OK)
+            try:
+                society = serializer.save()
+                return Response({"message": f"Successfully joined society '{society.name}'."}, status=status.HTTP_200_OK)
+            except Society.DoesNotExist:
+                return Response(
+                    {"error": "Society not found"}, 
+                    status=status.HTTP_404_NOT_FOUND
+                )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -293,25 +322,19 @@ class StudentNotificationsView(APIView):
         serializer = NotificationSerializer(notifications, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def patch(self, request, pk=None):
-        # Ensure the user is a student
+    def patch(self, request, pk):
         if not hasattr(request.user, 'student'):
             return Response({"error": "Only students can mark notifications as read."}, status=status.HTTP_403_FORBIDDEN)
 
         try:
-            # Get the specific notification
-            notification = Notification.objects.get(
-                id=pk, for_student=request.user.student)
+            notification = Notification.objects.get(id=pk, for_student=request.user.student)
         except Notification.DoesNotExist:
             return Response({"error": "Notification not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Update the notification
-        serializer = NotificationSerializer(
-            notification, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({"message": "Notification updated successfully."}, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        notification.is_read = True  # ✅ Manually update is_read field
+        notification.save()  # ✅ Save the notification explicitly
+
+        return Response({"message": "Notification marked as read.", "id": pk}, status=status.HTTP_200_OK)
 
 
 class StartSocietyRequestView(APIView):

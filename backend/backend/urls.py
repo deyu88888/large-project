@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.http import HttpResponse
 from django.urls import path, include
+from api.views import *
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from api.views import get_current_user
 
@@ -18,6 +19,11 @@ urlpatterns = [
     # path("api/user/login", TokenObtainPairView.as_view(), name="get_token"),
     # path("api/token/refresh", TokenRefreshView.as_view(), name="refresh"),
 
+    
+
+
+    # This is basically importing all urls from api/urls.py with /api
+    # attached to front of it
     # This includes all URLs from api/urls.py with '/api' prefix
     path("api/", include("api.urls")),
 ]
