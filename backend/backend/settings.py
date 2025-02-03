@@ -3,6 +3,7 @@ from datetime import timedelta
 from dotenv import load_dotenv
 import os
 # from fakeredis.aioredis import FakeRedis
+
 # Load environment variables
 load_dotenv()
 
@@ -10,7 +11,10 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Secret key for Django
-SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "django-insecure-nma=xi6x2p-crjg^ifqqkapyu1qjd0l=+wn)-rijk_o%$!k3w_")
+SECRET_KEY = os.getenv(
+    "DJANGO_SECRET_KEY",
+    "django-insecure-nma=xi6x2p-crjg^ifqqkapyu1qjd0l=+wn)-rijk_o%$!k3w_"
+)
 
 # Debug setting
 DEBUG = os.getenv("DJANGO_DEBUG", "True") == "True"
@@ -48,10 +52,8 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "api",
     "rest_framework",
     "corsheaders",
-    "channels",  # Django Channels
 ]
 
 # Middleware settings
@@ -91,7 +93,6 @@ TEMPLATES = [
 WSGI_APPLICATION = "backend.wsgi.application"
 ASGI_APPLICATION = "backend.asgi.application"
 
-
 # Database configuration
 DATABASES = {
     "default": {
@@ -124,35 +125,3 @@ CORS_ALLOW_CREDENTIALS = True
 
 # Custom user model
 AUTH_USER_MODEL = "api.User"
-
-# # Channels configuration
-# if os.getenv("USE_FAKEREDIS", "false").lower() == "true":
-#     fake_redis = aioredis.FakeRedis(decode_responses=True)  # Use async FakeRedis
-#     CHANNEL_LAYERS = {
-#         "default": {
-#             "BACKEND": "channels_redis.core.RedisChannelLayer",
-#             "CONFIG": {
-#                 # "hosts": [FakeRedis()],
-#                 "hosts": [fake_redis],
-#             },
-#         }
-#     }
-# else:
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [("127.0.0.1", 6379)],
-        },
-    }
-}
-
-# Content Security Policy settings for WebSocket and frontend communication
-CSP_DEFAULT_SRC = ["'self'"]
-CSP_CONNECT_SRC = [
-    "'self'",
-    "ws://127.0.0.1:8000",
-    "http://127.0.0.1:8000",
-]
-CSP_SCRIPT_SRC = ["'self'", "'unsafe-inline'"]
-CSP_STYLE_SRC = ["'self'", "'unsafe-inline'"]

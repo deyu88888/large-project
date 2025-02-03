@@ -12,75 +12,78 @@ type Society = {
     timetable: string | null;
     membershipRequirements:string | null;
     upcomingProjectsOrPlans: string | null;
-}
+};
 
 const PendingSocietyRequest = () => {
     const [societies, setSocieties] = useState<Society[]>([]);
-    useEffect(() => {
 
-    const getdata = async () => {
-        const res = await apiClient.get(apiPaths.USER.PENDINGSOCIETYREQUEST);
-        // console.log(res);
-        setSocieties(res.data);
-    };
-    getdata();
-    },[]);
+    useEffect(() => {
+        const socket = new WebSocket("ws://127.0.0.1:8000/ws/admin/society-request/");
+
+        socket.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            if (data.pending_requests) {
+                setSocieties(data.pending_requests);
+            }
+        };
+
+        socket.onclose = () => {
+            console.log("WebSocket closed");
+        };
+
+        return () => {
+            socket.close();
+        };
+    }, []);
 
     const handleAccept = async (id: number) => {
-        // return async () => {
-            const res = await apiClient.put(apiPaths.USER.PENDINGSOCIETYREQUEST+'/'+id, {status: 'Approved'});
-            console.log(res);
-            setSocieties(societies.filter((society) => society.id !== id));
-        // }
-        // console.log(id);
-    }
+        const res = await apiClient.put(apiPaths.USER.PENDINGSOCIETYREQUEST + '/' + id, {status: 'Approved'});
+        console.log(res);
+        setSocieties(societies.filter((society) => society.id !== id));
+    };
+
     const handleReject = async (id: number) => {
-        // return async () => {
-            const res = await apiClient.put(apiPaths.USER.PENDINGSOCIETYREQUEST+'/'+id, {status: 'Rejected'});
-            console.log(res);
-            setSocieties(societies.filter((society) => society.id !== id));
-        // }
-        // console.log(id);
-    }
-    return (<div>
-        <table>
-            <tr>
-                <th>
-                    id</th>
-                <th>name</th>
-                <th>societyMembers</th>
-                {/* <th>roles</th> */}
-                <th>leader</th>
-                <th>category</th>
-                {/* <th>socialMediaLinks</th> */}
-                <th>timetable</th>
-                <th>membershipRequirements</th>
-                <th>upcomingProjectsOrPlans</th>
-                <th>Accept</th>
-                <th>Reject</th>
-            </tr>
-            {societies.map((item, index) => {
-                return (
-                    <tr key={index}>
-                    <td>{item.id}</td>
-                    <td>{item.name}</td>
-                    <td>{item.societyMembers}</td>
-                    {/* <td>{item.roles}</td> */}
-                    <td>{item.leader}</td>
-                    <td>{item.category}</td>
-                    {/* <td>{item.socialMediaLinks}</td> */}
-                    <td>{item.timetable}</td>
-                    <td>{item.membershipRequirements}</td>
-                    <td>{item.upcomingProjectsOrPlans}</td>
-                    <td><button onClick={() => handleAccept(item.id)}>accept</button></td>
-                    <td><button onClick={() => handleReject(item.id)}>reject</button></td>
-                    {/* <td><button>reject</button></td> */}
+        const res = await apiClient.put(apiPaths.USER.PENDINGSOCIETYREQUEST + '/' + id, {status: 'Rejected'});
+        console.log(res);
+        setSocieties(societies.filter((society) => society.id !== id));
+    };
+
+    return (
+        <div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        {/* <th>Society Members</th> */}
+                        <th>Leader</th>
+                        <th>Category</th>
+                        <th>Timetable</th>
+                        <th>Membership Requirements</th>
+                        <th>Upcoming Projects or Plans</th>
+                        <th>Accept</th>
+                        <th>Reject</th>
                     </tr>
-                )
-            })}
-
-            </table> </div>)
-} 
-
+                </thead>
+                <tbody>
+                    {societies.map((item, index) => (
+                        <tr key={index}>
+                            <td>{item.id}</td>
+                            <td>{item.name}</td>
+                            {/* <td>{item.societyMembers.join(", ")}</td> */}
+                            <td>{item.leader}</td>
+                            <td>{item.category}</td>
+                            <td>{item.timetable}</td>
+                            <td>{item.membershipRequirements}</td>
+                            <td>{item.upcomingProjectsOrPlans}</td>
+                            <td><button onClick={() => handleAccept(item.id)}>Accept</button></td>
+                            <td><button onClick={() => handleReject(item.id)}>Reject</button></td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+    );
+};
 
 export default PendingSocietyRequest;
