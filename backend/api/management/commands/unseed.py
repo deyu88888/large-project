@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from api.models import User, Student, Admin, Society, Event, Notification
+import api.models as m
 
 class Command(BaseCommand):
     """ Build automation command to unseed the database """
@@ -13,7 +13,17 @@ class Command(BaseCommand):
         if args or kwargs:
             log += 'Unused args passed\n'
 
-        models = [Notification, Event, Society, User, Student, Admin]
+        models = [
+            m.Notification,
+            m.EventRequest,
+            m.Event,
+            m.SocietyRequest,
+            m.Society,
+            m.UserRequest,
+            m.User,
+            m.Student,
+            m.Admin,
+        ]
 
         for model in models: # Iterate through and clear all models
             model.objects.all().delete()

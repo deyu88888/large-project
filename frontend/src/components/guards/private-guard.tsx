@@ -14,19 +14,31 @@ export function PrivateGuard({ children }: { children: React.ReactNode }) {
   const { setUser } = useAuthStore();
 
   const authenticate = useCallback(async () => {
+    console.log("%c[PrivateGuard] Starting authentication...", "color: blue; font-weight: bold;");
     try {
       const token = localStorage.getItem(ACCESS_TOKEN);
-      if (!token) throw new Error("No access token available");
+      if (!token) {
+        console.error("%c[PrivateGuard] No access token found.", "color: red;");
+        throw new Error("No access token available");
+      }
 
       const isTokenValid = await validateToken(token);
-      if (!isTokenValid) await handleTokenRefresh();
+      console.log("%c[PrivateGuard] Access token validity:", "color: green;", isTokenValid);
 
+      if (!isTokenValid) {
+        console.log("%c[PrivateGuard] Access token expired. Refreshing...", "color: orange;");
+        await handleTokenRefresh();
+      }
+
+      console.log("%c[PrivateGuard] Fetching user data...", "color: blue;");
       const userData = await fetchUserData();
+      console.log("%c[PrivateGuard] User data fetched:", "color: green;", userData);
+
       setUser(userData);
 
       setAuthState({ isAuthorized: true, loading: false });
     } catch (error) {
-      console.error("Authentication failed:", error);
+      console.error("%c[PrivateGuard] Authentication failed:", "color: red;", error);
       setAuthState({ isAuthorized: false, loading: false });
     }
   }, [setUser]);
@@ -36,35 +48,64 @@ export function PrivateGuard({ children }: { children: React.ReactNode }) {
   }, [authenticate]);
 
   const validateToken = async (token: string): Promise<boolean> => {
-    const { exp: tokenExpiration } = jwtDecode<{ exp: number }>(token);
-    const now = Date.now() / 1000;
-    return !!tokenExpiration && tokenExpiration > now;
+    try {
+      const { exp: tokenExpiration } = jwtDecode<{ exp: number }>(token);
+      const now = Date.now() / 1000;
+      const isValid = !!tokenExpiration && tokenExpiration > now;
+      console.log("%c[PrivateGuard] Token expiration time:", "color: blue;", tokenExpiration, "Current time:", now);
+      return isValid;
+    } catch (error) {
+      console.error("%c[PrivateGuard] Error decoding token:", "color: red;", error);
+      return false;
+    }
   };
 
   const handleTokenRefresh = async () => {
     const refreshToken = localStorage.getItem(REFRESH_TOKEN);
-    if (!refreshToken) throw new Error("No refresh token available");
+    if (!refreshToken) {
+      console.error("%c[PrivateGuard] No refresh token found.", "color: red;");
+      throw new Error("No refresh token available");
+    }
 
-    const response = await apiClient.post(apiPaths.USER.REFRESH, {
-      refresh: refreshToken,
-    });
-    if (response.status === 200 && response.data?.access) {
-      localStorage.setItem(ACCESS_TOKEN, response.data.access);
-    } else {
-      throw new Error("Failed to refresh token");
+    try {
+      const response = await apiClient.post(apiPaths.USER.REFRESH, {
+        refresh: refreshToken,
+      });
+      if (response.status === 200 && response.data?.access) {
+        localStorage.setItem(ACCESS_TOKEN, response.data.access);
+        console.log("%c[PrivateGuard] Token refreshed successfully.", "color: green;");
+      } else {
+        console.error("%c[PrivateGuard] Failed to refresh token. Response:", "color: red;", response.data);
+        throw new Error("Failed to refresh token");
+      }
+    } catch (error) {
+      console.error("%c[PrivateGuard] Error during token refresh:", "color: red;", error);
+      throw error;
     }
   };
 
   const fetchUserData = async () => {
-    const response = await apiClient.get(apiPaths.USER.CURRENT);
-    if (response.data) {
-      return response.data;
-    } else {
-      throw new Error("User data not found");
+    try {
+      const response = await apiClient.get(apiPaths.USER.CURRENT);
+      if (response.data) {
+        console.log("%c[PrivateGuard] User data received:", "color: green;", response.data);
+        return response.data;
+      } else {
+        console.error("%c[PrivateGuard] User data not found in response.", "color: red;");
+        throw new Error("User data not found");
+      }
+    } catch (error) {
+      console.error("%c[PrivateGuard] Error fetching user data:", "color: red;", error);
+      throw error;
     }
   };
 
+  useEffect(() => {
+    console.log("%c[PrivateGuard] Auth state updated:", "color: purple;", authState);
+  }, [authState]);
+
   if (authState.loading) {
+    console.log("%c[PrivateGuard] Loading user authentication...", "color: orange;");
     return <LoadingView />;
   }
 

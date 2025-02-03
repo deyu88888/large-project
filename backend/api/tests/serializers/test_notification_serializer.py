@@ -47,7 +47,9 @@ class NotificationSerializerTestCase(TestCase):
         self.serializer = None
         self.data = {
             'for_event': self.event.id,
-            'for_student': self.student2.id
+            'for_student': self.student2.id,
+            'is_read': False,
+            'message': 'xxx',
         }
 
     def test_notification_serialization(self):
@@ -59,7 +61,7 @@ class NotificationSerializerTestCase(TestCase):
         self.assertEqual(data['for_event'], self.event.id)
         self.assertEqual(data['for_student'], self.student2.id)
 
-    def test_event_deserialization(self):
+    def test_notification_deserialization(self):
         """ Test to ensure deserialization functions correctly """
 
         self.serializer = NotificationSerializer(data=self.data)

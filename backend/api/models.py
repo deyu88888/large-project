@@ -11,7 +11,6 @@ class User(AbstractUser):
     """
     A custom user model with role-based logic.
     """
-
     username = models.CharField(
         unique=True,
         max_length=30,
@@ -56,6 +55,15 @@ class User(AbstractUser):
 
 
 class Student(User):
+    """
+    A model representing student users
+    """
+    STATUS_CHOICES = [
+        ("Pending", "Pending Approval"),
+        ("Approved", "Approved"),
+        ("Rejected", "Rejected"),
+    ]
+
     major = models.CharField(max_length=50, blank=True)
 
     societies = models.ManyToManyField(
@@ -77,7 +85,11 @@ class Student(User):
         related_name='attendees',
         blank=True
     )
-    
+
+    status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default="Pending"
+    )
+
     def save(self, *args, **kwargs):
         self.role = "student"
         super().save(*args, **kwargs)
@@ -91,7 +103,11 @@ def update_is_president(sender, instance, **kwargs):
     instance.is_president = instance.president_of.exists()
     instance.save()
 
+
 class Admin(User):
+    """
+    A model representing admin users
+    """
     def save(self, *args, **kwargs):
         self.is_superuser = True
         self.is_staff = True
@@ -130,17 +146,16 @@ class Society(models.Model):
         blank=False,
         null=True,
     )
-    
+
     status = models.CharField(
         max_length=20, choices=STATUS_CHOICES, default="Pending"
     )
-    
+
     category = models.CharField(max_length=50, default="General")
     social_media_links = models.JSONField(default=dict, blank=True)  # {"facebook": "link", "email": "email"}
     timetable = models.TextField(blank=True, null=True)
     membership_requirements = models.TextField(blank=True, null=True)
     upcoming_projects_or_plans = models.TextField(blank=True, null=True)
-    #society_logo = models.ImageField(upload_to="society_logos/", blank=True, null=True)
 
     def __str__(self):
         return self.name
@@ -160,7 +175,6 @@ class Event(models.Model):
     """
     An event organized by a society.
     """
-
     title = models.CharField(max_length=20, default="")
     description = models.CharField(max_length=300, default="")
     date = models.DateField(blank=False, null=False, default=get_date)
@@ -175,6 +189,17 @@ class Event(models.Model):
 
     max_capacity = models.PositiveIntegerField(default=0)  # 0 = No limit
     current_attendees = models.ManyToManyField('Student', blank=True)
+
+    STATUS_CHOICES = [
+        ("Pending", "Pending Approval"),
+        ("Approved", "Approved"),
+        ("Rejected", "Rejected"),
+    ]
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="Pending"
+    )
 
     def __str__(self):
         return str(self.title)
@@ -194,7 +219,6 @@ class Notification(models.Model):
     """
     Notifications for a student about an event, etc.
     """
-
     for_event = models.ForeignKey(
         "Event", on_delete=models.CASCADE, blank=False, null=True
     )
@@ -205,8 +229,101 @@ class Notification(models.Model):
         blank=False,
         null=True,
     )
-    
+
     is_read = models.BooleanField(default=False)
     message = models.TextField()
     def __str__(self):
         return self.for_event.title
+
+
+class Request(models.Model):
+    """
+    Blueprint for Requests made by students requiring admin approval
+    """
+
+    INTENT = [
+        ("CreateSoc", "Create Society"),
+        ("UpdateSoc", "Update Society"),
+        ("CreateEve", "Create Event"),
+        ("UpdateEve", "Update Event"),
+        ("CreateUse", "Create User"),
+        ("UpdateUse", "Update User")
+    ]
+
+    intent = models.CharField(max_length=10, choices=INTENT)
+    requested_at = models.DateTimeField(auto_now_add=True)
+    approved = models.BooleanField(default=False)
+
+    # Use "%(class)s" in related_name for uniqueness in inherited models
+    from_student = models.ForeignKey(
+        "Student",
+        on_delete=models.CASCADE,
+        related_name="%(class)ss",
+        blank=False,
+        null=False,
+    )
+
+    class Meta:
+        abstract = True
+
+
+class SocietyRequest(Request):
+    """
+    Requests related to societies
+    """
+    society = models.ForeignKey(
+        "Society",
+        on_delete=models.DO_NOTHING,
+        related_name="society_request",
+        blank=True,
+        null=True,
+    )
+    name = models.CharField(max_length=30, blank=True, default="")
+    roles = models.JSONField(default=dict, blank=True)
+    leader = models.ForeignKey(
+        "Student",
+        on_delete=models.DO_NOTHING,
+        related_name="society_request_leader",
+        blank=True,
+        null=True,
+    )
+    category = models.CharField(max_length=50, blank=True, default="")
+    # {"facebook": "link", "email": "email"}
+    social_media_links = models.JSONField(default=dict, blank=True, null=True)
+    timetable = models.TextField(blank=True, default="")
+    membership_requirements = models.TextField(blank=True, default="")
+    upcoming_projects_or_plans = models.TextField(blank=True, default="")
+
+
+class UserRequest(Request):
+    """
+    Requests related to users
+    """
+    # username at some point
+    major = models.CharField(max_length=50, blank=True, default="")
+
+
+class EventRequest(Request):
+    """
+    Requests related to events
+    """
+    event = models.ForeignKey(
+        "Event",
+        on_delete=models.DO_NOTHING,
+        related_name="event_request",
+        blank=True,
+        null=True,
+    )
+    hosted_by = models.ForeignKey(
+        "Society",
+        on_delete=models.DO_NOTHING,
+        related_name="event_request_society",
+        blank=False,
+        null=False,
+    )
+    title = models.CharField(max_length=20, blank=True, default="")
+    description = models.CharField(max_length=300, blank=True, default="")
+    location = models.CharField(max_length=300, blank=True, default="")
+    date = models.DateField(blank=True, null=True)
+    start_time = models.TimeField(blank=True, null=True)
+    duration = models.DurationField(blank=True, null=True)
