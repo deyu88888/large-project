@@ -1,3 +1,9 @@
+import json
+import random
+from django.core.mail import send_mail
+from django.http.response import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from backend.settings import EMAIL_HOST_USER
 from api.models import User
 from rest_framework import generics, status
 from .serializers import UserSerializer, StudentSerializer
@@ -31,17 +37,94 @@ class CreateUserView(generics.CreateAPIView):
     serializer_class = UserSerializer
     permission_classes = [AllowAny]
 
+OTP_STORAGE = {}
+
+def generate_otp():
+    return str(random.randint(100000, 999999))
+
+def send_otp_email(email, otp):
+    subject = "Your OTP Code"
+    message = f"Your OTP code is: {otp}. It is valid for 5 minutes."
+
+    send_mail(
+        subject,
+        message,
+        EMAIL_HOST_USER,
+        [email],
+        fail_silently=False,
+    )
+
+@csrf_exempt
+def request_otp(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            email = data.get("email")
+
+            if not email or not email.endswith("@kcl.ac.uk"):
+                return JsonResponse({"error": "Only KCL emails are allowed"}, status=status.HTTP_400_BAD_REQUEST)
+
+            otp = generate_otp()
+            OTP_STORAGE[email] = otp
+
+            send_otp_email(email, otp)
+
+            return JsonResponse({"message": "OTP sent to your email"}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    return JsonResponse({"error": "Invalid request"}, status=status.HTTP_400_BAD_REQUEST)
+
+@csrf_exempt
+def verify_otp(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            email = data.get("email")
+            otp = data.get("otp")
+
+            if OTP_STORAGE.get(email) == otp:
+                del OTP_STORAGE[email]
+                return JsonResponse({"message": "OTP verified"}, status=status.HTTP_200_OK)
+            else:
+                return JsonResponse({"error": "Invalid OTP"}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    return JsonResponse({"error": "Invalid request"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class RegisterView(APIView):
     permission_classes = [AllowAny]  # Otherwise it won't allow anonymous access
 
     def post(self, request):
+        print("Received data:", request.data)
+        email = request.data["email"]
+        otp = request.data["otp"]
+
+        print("Stored OTPs:", OTP_STORAGE)
+
+        if not email or not otp:
+            return Response({"error": "Email and OTP are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if OTP_STORAGE.get(email) != otp:
+            return Response({"error": "Invalid OTP or OTP expired."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if User.objects.filter(email=email).exists():
+            return Response({"error": "This email is already registered."}, status=status.HTTP_400_BAD_REQUEST)
+
         serializer = StudentSerializer(data=request.data)
+        if not serializer.is_valid():
+            print("Serializer Errors:", serializer.errors)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         if serializer.is_valid():
             serializer.save()
+            del OTP_STORAGE[email]
             return Response({"message": "Student registered successfully."}, status=status.HTTP_201_CREATED)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])

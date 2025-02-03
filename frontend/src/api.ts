@@ -22,9 +22,11 @@ apiClient.interceptors.request.use(
 
 export const apiPaths = {
   USER: {
-    LOGIN: "/api/user/login",
-    REGISTER: "/api/user/register",
-    REFRESH: "/api/user/token/refresh",
-    CURRENT: "/api/user/current",
+    LOGIN: "/api/user/login/",
+    REGISTER: "/api/user/register/",
+    REFRESH: "/api/user/token/refresh/",
+    CURRENT: "/api/user/current/",
+    REQUEST_OTP: "/api/request-otp/",  // ✅ 添加这个
+    VERIFY_OTP: "/api/verify-otp/",
   },
 };

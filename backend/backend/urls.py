@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.http import HttpResponse
 from django.urls import path, include
-from api.views import RegisterView, get_current_user
+from api.views import get_current_user
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 def welcome_view(request):
@@ -10,7 +10,6 @@ def welcome_view(request):
 urlpatterns = [
     path("", welcome_view, name="welcome"),
     path("admin", admin.site.urls),
-    path("api/user/register", RegisterView.as_view(), name="register"),
     path("api/user/login", TokenObtainPairView.as_view(), name="get_token"),
     path("api/token/refresh", TokenRefreshView.as_view(), name="refresh"),
     path("api/user/me", get_current_user, name="get_current_user"), #For global callout

@@ -1,13 +1,15 @@
 import { apiClient, apiPaths } from "../api";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import CircularLoader from "../components/loading/circular-loader";
 import { Formik, Field, Form, ErrorMessage } from "formik";
 import * as Yup from "yup";
-import React from "react";
 
 
 export default function RegisterPage() {
     const navigate = useNavigate();
+    const [otpSent, setOtpSent] = useState(false);
+    const [email, setEmail] = useState("");
 
     // Validation schema using Yup
     const validationSchema = Yup.object({
@@ -36,9 +38,34 @@ export default function RegisterPage() {
             .required("Major is required"),
     });
 
-    const handleSubmit = async (values: any, { setSubmitting, setFieldError }: any) => {
+    const handleRequestOTP = async (email: string, setFieldError: any) => {
         try {
-            const res = await apiClient.post(apiPaths.USER.REGISTER, values);
+            const res = await apiClient.post(apiPaths.USER.REQUEST_OTP, { email });
+            console.log(res);
+            setOtpSent(true);
+            setEmail(email);
+            alert("OTP has been sent to your email.");
+        } catch (error: any) {
+            if (error.response?.data?.error) {
+                setFieldError("email", error.response.data.error);
+            } else {
+                alert("Error sending OTP. Please try again.");
+            }
+        }
+    };
+
+    const handleSubmit = async (values: any, { setSubmitting, setFieldError }: any) => {
+        if (values.email !== email) {
+            setFieldError("email", "Email must match the one used for OTP.");
+            return;
+        }
+
+        try {
+            const res = await apiClient.post(apiPaths.USER.REGISTER, {
+                ...values,
+                societies: [],
+                president_of: [],
+            });
             console.log(res);
             navigate("/login");
         } catch (error: any) {
@@ -68,11 +95,12 @@ export default function RegisterPage() {
                         username: "",
                         password: "",
                         major: "",
+                        otp: "",
                     }}
                     validationSchema={validationSchema}
                     onSubmit={handleSubmit}
                 >
-                    {({ isSubmitting }) => (
+                    {({ isSubmitting, setFieldError, values }) => (
                         <Form className="grid grid-cols-1 gap-6">
                             <div>
                                 <label htmlFor="first_name" className="block text-sm font-medium text-gray-700">
@@ -85,7 +113,7 @@ export default function RegisterPage() {
                                     placeholder="Enter your first name"
                                     className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                                 />
-                                <ErrorMessage name="first_name" component="div" className="text-red-500 text-sm" />
+                                <ErrorMessage name="first_name" component="div" className="text-red-500 text-sm"/>
                             </div>
 
                             <div>
@@ -99,21 +127,43 @@ export default function RegisterPage() {
                                     placeholder="Enter your last name"
                                     className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                                 />
-                                <ErrorMessage name="last_name" component="div" className="text-red-500 text-sm" />
+                                <ErrorMessage name="last_name" component="div" className="text-red-500 text-sm"/>
                             </div>
 
                             <div>
                                 <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                                     Email
                                 </label>
+                                <div className="flex">
+                                    <Field
+                                        id="email"
+                                        name="email"
+                                        type="email"
+                                        className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                    />
+                                    <button
+                                        type="button"
+                                        className="ml-2 px-4 py-2 bg-blue-500 text-white rounded-md"
+                                        disabled={otpSent}
+                                        onClick={() => handleRequestOTP(values.email, setFieldError)}
+                                    >
+                                        {otpSent ? "OTP Sent" : "Get OTP"}
+                                    </button>
+                                </div>
+                                <ErrorMessage name="email" component="div" className="text-red-500 text-sm"/>
+                            </div>
+
+                            <div>
+                                <label htmlFor="otp" className="block text-sm font-medium text-gray-700">
+                                    OTP Code
+                                </label>
                                 <Field
-                                    id="email"
-                                    name="email"
-                                    type="email"
-                                    placeholder="Enter your email"
+                                    id="otp"
+                                    name="otp"
+                                    type="text"
                                     className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                                 />
-                                <ErrorMessage name="email" component="div" className="text-red-500 text-sm" />
+                                <ErrorMessage name="otp" component="div" className="text-red-500 text-sm"/>
                             </div>
 
                             <div>
@@ -127,7 +177,7 @@ export default function RegisterPage() {
                                     placeholder="Enter your username"
                                     className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                                 />
-                                <ErrorMessage name="username" component="div" className="text-red-500 text-sm" />
+                                <ErrorMessage name="username" component="div" className="text-red-500 text-sm"/>
                             </div>
 
                             <div>
@@ -141,7 +191,7 @@ export default function RegisterPage() {
                                     placeholder="Enter your password"
                                     className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                                 />
-                                <ErrorMessage name="password" component="div" className="text-red-500 text-sm" />
+                                <ErrorMessage name="password" component="div" className="text-red-500 text-sm"/>
                             </div>
 
                             <div>
@@ -155,12 +205,12 @@ export default function RegisterPage() {
                                     placeholder="E.g., Computer Science"
                                     className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                                 />
-                                <ErrorMessage name="major" component="div" className="text-red-500 text-sm" />
+                                <ErrorMessage name="major" component="div" className="text-red-500 text-sm"/>
                             </div>
 
                             {isSubmitting && (
                                 <div className="flex justify-center mt-4">
-                                    <CircularLoader />
+                                    <CircularLoader/>
                                 </div>
                             )}
 
@@ -178,7 +228,6 @@ export default function RegisterPage() {
         </div>
     );
 }
-
 
 
 // import { apiClient, apiPaths } from "../api";
@@ -204,12 +253,12 @@ export default function RegisterPage() {
 //             alert("All required fields must be filled out!");
 //             return;
 //         }
-    
+
 //         if (!email.includes("@")) {
 //             alert("Please provide a valid email address!");
 //             return;
 //         }
-    
+
 //         setLoading(true);
 
 
