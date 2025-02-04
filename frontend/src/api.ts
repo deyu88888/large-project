@@ -25,6 +25,8 @@ export const apiPaths = {
   USER: {
     LOGIN: "/api/user/login",
     REGISTER: "/api/user/register",
+    REQUEST_OTP: "/api/request-otp/",
+    VERIFY_OTP: "/api/verify-otp/",
     REFRESH: "/api/user/token/refresh",
     CURRENT: "/api/user/current",
     EVENTS: "api/society/event",

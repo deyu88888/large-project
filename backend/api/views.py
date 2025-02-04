@@ -15,6 +15,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.utils import timezone
 from django.db.models import Count
 from asgiref.sync import async_to_sync
+from api.utils import *
 
 """
 This function is for the global callout
@@ -54,15 +55,36 @@ class CreateUserView(generics.CreateAPIView):
 
 
 class RegisterView(APIView):
-    # Otherwise it won't allow anonymous access
-    permission_classes = [AllowAny]
+    permission_classes = [AllowAny]  # Otherwise it won't allow anonymous access
 
     def post(self, request):
+        print("Received data:", request.data)
+        email = request.data["email"]
+        otp = request.data["otp"]
+
+        print("Stored OTPs:", OTP_STORAGE)
+
+        if not email or not otp:
+            return Response({"error": "Email and OTP are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if OTP_STORAGE.get(email) != otp:
+            return Response({"error": "Invalid OTP or OTP expired."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if User.objects.filter(email=email).exists():
+            return Response({"error": "This email is already registered."}, status=status.HTTP_400_BAD_REQUEST)\
+
         serializer = StudentSerializer(data=request.data)
+
+        if not serializer.is_valid():
+            print("Serializer Errors:", serializer.errors)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
         if serializer.is_valid():
             serializer.save()
+            del OTP_STORAGE[email]
             return Response({"message": "Student registered successfully."}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 class CurrentUserView(APIView):

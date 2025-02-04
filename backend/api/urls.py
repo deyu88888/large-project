@@ -8,11 +8,14 @@ from .views import (
     RecentActivitiesView, NotificationsView, EventCalendarView,
     StudentSocietiesView, JoinSocietyView, RSVPEventView, EventHistoryView
 )
+from .utils import request_otp, verify_otp
 
 urlpatterns = [
     # Authentication endpoints
     path("user/token/refresh", TokenRefreshView.as_view(), name="refresh"),
     path("user/register", RegisterView.as_view(), name="register"),
+    path("request-otp/", request_otp, name="request-otp"),
+    path("verify-otp/", verify_otp, name="verify-otp"),
     path("user/login", TokenObtainPairView.as_view(), name="get_token"),
     path("user/current", CurrentUserView.as_view(), name="current_user"),
 
