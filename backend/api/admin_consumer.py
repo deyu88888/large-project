@@ -1,10 +1,3 @@
-import os
-import django
-
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "backend.settings")
-django.setup()  
-
-
 from channels.generic.websocket import AsyncWebsocketConsumer
 from .serializers import SocietySerializer
 from asgiref.sync import sync_to_async

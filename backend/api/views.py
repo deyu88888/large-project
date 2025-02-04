@@ -722,3 +722,6 @@ class EventCalendarView(APIView):
         events = Event.objects.all()
         serializer = EventCalendarSerializer(events, many=True)
         return Response(serializer.data, status=200)
+
+class MySocietiesView(APIView):
+    pass
