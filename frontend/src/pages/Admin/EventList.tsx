@@ -22,11 +22,7 @@ const EventList = () => {
   const navigate = useNavigate();
   const [events, setEvents] = useState<Event[]>([]);
 
-    function goBack() {
-        navigate(-1);
-      }
-
-    useEffect(() => {
+  useEffect(() => {
     const getdata = async () => {
       try {
         const res = await apiClient.get(apiPaths.USER.EVENTS);

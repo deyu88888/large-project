@@ -5,6 +5,7 @@ import { apiClient, apiPaths } from "../../api";
 import { tokens } from "../../theme/theme";
 import Topbar from "../../components/layout/Topbar";
 // import Topbar from "../Topbar"; // Import Topbar
+import { useNavigate } from "react-router-dom";
 
 interface Student {
   id: number;

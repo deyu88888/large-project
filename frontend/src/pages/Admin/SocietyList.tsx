@@ -33,9 +33,14 @@ const SocietyList = () => {
     };
 
 
-    function goBack() {
-        navigate(-1);
-      }
+//   useEffect(() => {
+//     const getdata = async () => {
+//       try {
+//         const res = await apiClient.get(apiPaths.USER.SOCIETY);
+//         setSocieties(res.data || []);
+//       } catch (error) {
+//         console.error("Error fetching societies:", error);
+//       }
 
   useEffect(() => {
     const connectWebSocket = () => {

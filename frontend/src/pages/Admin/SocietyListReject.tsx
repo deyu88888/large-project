@@ -21,6 +21,7 @@ const SocietyListRejected = () => {
   const navigate = useNavigate();
   const [societies, setSocieties] = useState<Society[]>([]);
   const ws = useRef<WebSocket | null>(null);
+  const [socket, setSocket] = useState<WebSocket | null>(null);
 
     const fetchSocieties = async () => {
         try {
