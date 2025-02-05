@@ -180,7 +180,7 @@ const PendingSocietyRequest = () => {
             "& .MuiCheckbox-root": { color: `${colors.greenAccent[200]} !important` },
           }}
         >
-          <DataGrid rows={societies} columns={columns} checkboxSelection />
+          <DataGrid rows={societies} columns={columns} pageSize={5} checkboxSelection />
         </Box>
       </Box>
     </Box>
