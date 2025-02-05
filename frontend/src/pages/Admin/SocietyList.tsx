@@ -1,95 +1,135 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
+import { Box, Typography, useTheme, Button } from "@mui/material";
+import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { apiClient, apiPaths } from "../../api";
 import { useNavigate } from "react-router-dom";
+import { tokens } from "../../theme/theme";
 
-type Society = { 
-    name: string; 
-    leader: string; 
-    members: string; 
-    roles: any;     // change later
-    approvedBy: any; // change later
-    actions: any;  // change later
+interface Society {
+  name: string;
+  leader: string;
+  members: string;
+  roles: any;
+  approvedBy: any;
+  actions: any;
 }
 
 const SocietyList = () => {
-    const navigate = useNavigate();
-    const [societies, setSocieties] = useState<Society[]>([]);
+  const theme = useTheme();
+  const colors = tokens(theme.palette.mode);
+  const navigate = useNavigate();
+  const [societies, setSocieties] = useState<Society[]>([]);
 
-    function goBack() {
-        navigate(-1);
+  useEffect(() => {
+    const getdata = async () => {
+      try {
+        const res = await apiClient.get(apiPaths.USER.SOCIETY);
+        setSocieties(res.data || []);
+      } catch (error) {
+        console.error("Error fetching societies:", error);
       }
-
-    useEffect(() => {
-        const getdata = async () => {
-            try {
-                const res = await apiClient.get(apiPaths.USER.SOCIETY);
-                console.log("Fetched Societies:", res.data);
-                setSocieties(res.data || []);  // should always be an array
-            } catch (error) {
-                console.error("Error fetching societies:", error);
-            }
-        };
+    };
     getdata();
-    }, []); 
+  }, []);
 
-    return (
-        <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-3xl font-bold text-gray-800 mb-6">Society List</h1>
-                    <button
-                    className="group px-6 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white hover:bg-gray-700 transition-all shadow-sm hover:shadow-md"
-                    onClick={goBack}
-                    >
-                    <span className="inline-flex items-center">
-                        <span className="mr-2 group-hover:-translate-x-1 transition-transform duration-200">←</span>
-                        Back
-                    </span>
-                    </button>
-                </div>
-            <div className="overflow-x-auto shadow-lg rounded-lg">
-                <table className="min-w-full bg-white border border-gray-200 rounded-lg">
-                    <thead className="bg-gray-50">
-                        <tr>
-                            {["Name", "Leader", "Members", "Roles", "Approved By", "Actions"].map((heading) => (
-                                <th
-                                    key={heading}
-                                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                >
-                                    {heading}
-                                </th>
-                            ))}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {societies.length > 0 ? (
-                            societies.map((item, index) => (
-                                <tr
-                                    key={index}
-                                    className={`${index % 2 === 0 ? "bg-white" : "bg-gray-50"}`}
-                                >
-                                    <td className="px-6 py-4 text-sm text-gray-800">{item.name}</td>
-                                    <td className="px-6 py-4 text-sm text-gray-800">{item.leader}</td>
-                                    <td className="px-6 py-4 text-sm text-gray-800">{item.members}</td>
-                                    {/* <td className="px-6 py-4 text-sm text-gray-800">{item.roles || "-"}</td> */}
-                                    <td className="px-6 py-4 text-sm text-gray-800">{item.approvedBy || "-"}</td>
-                                    {/* <td className="px-6 py-4 text-sm text-gray-800">{item.actions || "-"}</td> */}
-                                </tr>
-                            ))
-                        ) : (
-                            <tr>
-                                <td
-                                    colSpan={6}
-                                    className="px-6 py-4 text-center text-gray-500 italic"
-                                >
-                                    No societies found.
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    );
+  const columns: GridColDef[] = [
+    { field: "name", headerName: "Name", width: 150 },
+    { field: "leader", headerName: "Leader", width: 200 },
+    { field: "members", headerName: "Members", width: 150 },
+    { field: "roles", headerName: "Roles", width: 200 },
+    { field: "approvedBy", headerName: "Approved By", width: 150 },
+    { field: "actions", headerName: "Actions", width: 200 },
+  ];
+
+  const handleRejectPageNavigation = () => {
+    navigate("/admin/society-list-rejected");
+  };
+
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        maxHeight: "100vh",
+        maxWidth: "100vw",
+        marginLeft: "100px",
+        padding: "10px",
+        backgroundColor: theme.palette.mode === "light" ? colors.primary[1000] : colors.primary[500],
+        transition: "margin-left 0.3s ease-in-out",
+        position: "fixed",
+      }}
+    >
+      <Box
+        sx={{
+          width: "100%",
+          maxWidth: "1600px",
+          padding: "0px 60px",
+          boxSizing: "border-box",
+        }}
+      >
+        <Button
+          variant="contained"
+          color="error"
+          onClick={handleRejectPageNavigation}
+          sx={{
+            position: "absolute",
+            top: 20,
+            right: 75,
+            backgroundColor: colors.blueAccent[500],
+            "&:hover": {
+              backgroundColor: colors.blueAccent[700],
+            },
+            display: "flex",
+            alignItems: "center",
+            padding: "8px 16px",
+          }}
+        >
+          Rejected Societies
+          <span style={{ marginLeft: "8px", fontSize: "18px" }}>→</span>
+        </Button>
+        <Typography
+          variant="h1"
+          sx={{
+            color: colors.grey[100],
+            fontSize: "2.25rem",
+            fontWeight: 800,
+            marginBottom: "2rem",
+          }}
+        >
+          Society List
+        </Typography>
+        <Box
+          sx={{
+            height: "75vh",
+            width: "100%",
+            "& .MuiDataGrid-root": { border: "none" },
+            "& .MuiDataGrid-cell": { borderBottom: "none" },
+            "& .MuiDataGrid-columnHeaders": {
+              backgroundColor: colors.blueAccent[700],
+              borderBottom: "none",
+            },
+            "& .MuiDataGrid-columnHeader": {
+              whiteSpace: "normal",
+              wordBreak: "break-word",
+            },
+            "& .MuiDataGrid-virtualScroller": {
+              backgroundColor: colors.primary[400],
+            },
+            "& .MuiDataGrid-footerContainer": {
+              borderTop: "none",
+              backgroundColor: colors.blueAccent[700],
+            },
+            "& .MuiCheckbox-root": {
+              color: `${colors.greenAccent[200]} !important`,
+            },
+          }}
+        >
+          <DataGrid rows={societies} columns={columns} pageSize={5} checkboxSelection />
+        </Box>
+      </Box>
+    </Box>
+  );
 };
 
 export default SocietyList;

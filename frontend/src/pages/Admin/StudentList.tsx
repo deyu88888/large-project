@@ -1,126 +1,144 @@
-import { useState, useEffect } from "react"
-
-interface Student {
-    id: number;
-    username: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    isActive: boolean;
-    role: string;
-    major: string;
-    societies: any[];
-    presidentOf: number[];
-    isPresident: boolean;
-}
-
+import React, { useState, useEffect } from "react";
+import { Box, Typography, useTheme } from "@mui/material";
+import { DataGrid } from "@mui/x-data-grid";
 import { apiClient, apiPaths } from "../../api";
 import { useNavigate } from "react-router-dom";
+import { tokens } from "../../theme/theme";
+
+interface Student {
+  id: number;
+  username: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  isActive: boolean;
+  role: string;
+  major: string;
+  societies: any[];
+  presidentOf: number[];
+  isPresident: boolean;
+}
 
 function StudentList() {
-    const navigate = useNavigate();
-    const [students, setStudents] = useState<Student[]>([]);
+  const theme = useTheme();
+  const colors = tokens(theme.palette.mode);
+  const navigate = useNavigate();
+  const [students, setStudents] = useState<Student[]>([]);
 
-    function goBack() {
-        navigate(-1);
+  useEffect(() => {
+    const getdata = async () => {
+      try {
+        const res = await apiClient.get(apiPaths.USER.STUDENTS);
+        setStudents(res.data || []);
+      } catch (error) {
+        console.error("Error fetching students:", error);
       }
+    };
+    getdata();
+  }, []);
 
-    useEffect(() => {
-        const getdata = async () => {
-            try {
-                const res = await apiClient.get(apiPaths.USER.STUDENTS);
-                console.log("Fetched Students:", res.data);
-                setStudents(res.data || []);  // should always be an array
-            } catch (error) {
-                console.error("Error fetching students:", error);
-            }
-        };
-        getdata();
-    }, []);
+  const columns = [
+    { field: "id", headerName: "ID", width: 100 },
+    { field: "username", headerName: "Username", width: 100 },
+    { field: "firstName", headerName: "First Name", width: 100 },
+    { field: "lastName", headerName: "Last Name", width: 100 },
+    { field: "email", headerName: "Email", width: 100 },
+    {
+      field: "isActive",
+      headerName: "Active",
+      renderCell: (params: any) => (params.row.isActive ? "Yes" : "No"),
+      width: 100,
+    },
+    { field: "role", headerName: "Role", width: 100 },
+    { field: "major", headerName: "Major", width: 100 },
+    {
+      field: "societies",
+      headerName: "Societies",
+      renderCell: (params: any) => params.row.societies.join(", "),
+      width: 100,
+    },
+    {
+      field: "presidentOf",
+      headerName: "President Of",
+      renderCell: (params: any) => params.row.presidentOf.join(", "),
+      width: 100,
+    },
+    {
+      field: "isPresident",
+      headerName: "Is President",
+      renderCell: (params: any) => (params.row.isPresident ? "Yes" : "No"),
+    },
+  ];
 
-    return (
-        <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold text-gray-800 mb-6">Student List</h1>
-                <button
-                className="group px-6 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white hover:bg-gray-700 transition-all shadow-sm hover:shadow-md"
-                onClick={goBack}
-                >
-                <span className="inline-flex items-center">
-                    <span className="mr-2 group-hover:-translate-x-1 transition-transform duration-200">←</span>
-                    Back
-                </span>
-                </button>
-            </div>
-            <div className="overflow-x-auto shadow-lg rounded-lg">
-                <table className="min-w-full bg-white border border-gray-200 rounded-lg">
-                    <thead className="bg-gray-50">
-                        <tr>
-                            {[
-                                "ID",
-                                "Username",
-                                "First Name",
-                                "Last Name",
-                                "Email",
-                                "Active",
-                                "Role",
-                                "Major",
-                                "Societies",
-                                "President Of",
-                                "Is President",
-                            ].map((heading) => (
-                                <th
-                                    key={heading}
-                                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                >
-                                    {heading}
-                                </th>
-                            ))}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {students?.length > 0 ? (
-                            students.map((item, index) => (
-                                <tr
-                                    key={index}
-                                    className={`${index % 2 === 0 ? "bg-white" : "bg-gray-50"}`}
-                                >
-                                    <td className="px-6 py-4 text-sm text-gray-800">{item.id}</td>
-                                    <td className="px-6 py-4 text-sm text-gray-800">{item.username}</td>
-                                    <td className="px-6 py-4 text-sm text-gray-800">{item.firstName}</td>
-                                    <td className="px-6 py-4 text-sm text-gray-800">{item.lastName}</td>
-                                    <td className="px-6 py-4 text-sm text-gray-800">{item.email}</td>
-                                    <td className="px-6 py-4 text-sm text-gray-800">
-                                        {item.isActive ? "Yes" : "No"}
-                                    </td>
-                                    <td className="px-6 py-4 text-sm text-gray-800">{item.role}</td>
-                                    <td className="px-6 py-4 text-sm text-gray-800">{item.major}</td>
-                                    <td className="px-6 py-4 text-sm text-gray-800">
-                                        {item.societies.join(", ")}
-                                    </td>
-                                    <td className="px-6 py-4 text-sm text-gray-800">
-                                        {item.presidentOf.join(", ")}
-                                    </td>
-                                    <td className="px-6 py-4 text-sm text-gray-800">
-                                        {item.isPresident ? "Yes" : "No"}
-                                    </td>
-                                </tr>
-                            ))
-                        ) : (
-                            <tr>
-                                <td
-                                    colSpan={11}
-                                    className="px-6 py-4 text-center text-gray-500 italic"
-                                >
-                                    No students found.
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    );
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        maxHeight: "100vh",
+        maxWidth: "100vw",
+        marginLeft: "100px",
+        padding: "10px",
+        backgroundColor: theme.palette.mode === "light" ? colors.primary[1000] : colors.primary[500],
+        transition: "margin-left 0.3s ease-in-out",
+        position: "fixed",
+      }}
+    >
+      <Box
+        sx={{
+          width: "100%",
+          maxWidth: "1600px",
+          padding: "0px 60px",
+          boxSizing: "border-box",
+        }}
+      >
+        <Typography
+          variant="h1"
+          sx={{
+            color: theme.palette.mode === "light" ? colors.grey[100] : colors.grey[100],
+            fontSize: "2.25rem",
+            fontWeight: 800,
+            marginBottom: "2rem",
+          }}
+        >
+          Student List
+        </Typography>
+        <Box
+          sx={{
+            height: "75vh",
+            width: "100%",
+            "& .MuiDataGrid-root": {
+              border: "none",
+            },
+            "& .MuiDataGrid-cell": {
+              borderBottom: "none",
+            },
+            "& .MuiDataGrid-columnHeaders": {
+              backgroundColor: colors.blueAccent[700],
+              borderBottom: "none",
+            },
+            "& .MuiDataGrid-columnHeader": {
+              whiteSpace: "normal",
+              wordBreak: "break-word",
+            },
+            "& .MuiDataGrid-virtualScroller": {
+              backgroundColor: colors.primary[400],
+            },
+            "& .MuiDataGrid-footerContainer": {
+              borderTop: "none",
+              backgroundColor: colors.blueAccent[700],
+            },
+            "& .MuiCheckbox-root": {
+              color: `${colors.greenAccent[200]} !important`,
+            },
+          }}
+        >
+          <DataGrid rows={students} columns={columns} pageSize={5} checkboxSelection />
+        </Box>
+      </Box>
+    </Box>
+  );
 }
 
 export default StudentList;

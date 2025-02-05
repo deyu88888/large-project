@@ -33,6 +33,6 @@ export const apiPaths = {
     STUDENTS: "api/user/student",
     ADMIN: "api/user/admin",
     PENDINGSOCIETYREQUEST: "api/society/request/pending",
-    // REJECTEDEVENTS: "api/society/rejectedevent",
+    REJECTEDEVENT: "api/society/rejectedevent",
   },
 };
