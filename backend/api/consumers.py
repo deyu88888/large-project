@@ -7,14 +7,23 @@ import logging
 logger = logging.getLogger(__name__)
 
 class DashboardConsumer(AsyncWebsocketConsumer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.channel_layer = None
+        self.group_name = None
+        self.channel_name = None
+
     async def connect(self):
         """
         Handles WebSocket connection.
         Joins this socket to the 'dashboard' group.
         """
         try:
-            logger.info(f"[DashboardConsumer] Attempting to connect WebSocket: {self.channel_name}")
+            self.channel_layer = self.channel_layer
             self.group_name = "dashboard"
+
+            if not hasattr(self, "channel_name"):
+                self.channel_name = f"dashboard_{id(self)}"
             
             # Add WebSocket to the "dashboard" group
             await self.channel_layer.group_add(self.group_name, self.channel_name)
