@@ -1,8 +1,8 @@
 from datetime import timezone
 from django.shortcuts import get_object_or_404
-from api.models import User, Society, Event, Student, Notification
+from api.models import Award, AwardStudent, User, Society, Event, Student, Notification
 from rest_framework import generics, status
-from .serializers import EventSerializer, RSVPEventSerializer, UserSerializer, StudentSerializer, LeaveSocietySerializer, JoinSocietySerializer, SocietySerializer, NotificationSerializer, DashboardStatisticSerializer, RecentActivitySerializer, EventCalendarSerializer, DashboardNotificationSerializer
+from .serializers import AwardSerializer, AwardStudentSerializer, EventSerializer, RSVPEventSerializer, UserSerializer, StudentSerializer, LeaveSocietySerializer, JoinSocietySerializer, SocietySerializer, NotificationSerializer, DashboardStatisticSerializer, RecentActivitySerializer, EventCalendarSerializer, DashboardNotificationSerializer
 from api.models import Admin, User, Society, Event, Student
 from rest_framework import generics, status
 from .serializers import AdminSerializer, EventSerializer, RSVPEventSerializer, UserSerializer, StudentSerializer, LeaveSocietySerializer, JoinSocietySerializer, SocietySerializer, StartSocietyRequestSerializer
@@ -725,3 +725,23 @@ class EventCalendarView(APIView):
 
 class MySocietiesView(APIView):
     pass
+
+class AwardView(generics.ListCreateAPIView):
+    """Handles listing and creating awards"""
+    queryset = Award.objects.all()
+    serializer_class = AwardSerializer
+
+class AwardDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """Handles retrieving, updating, and deleting an award"""
+    queryset = Award.objects.all()
+    serializer_class = AwardSerializer
+
+class AwardStudentView(generics.ListCreateAPIView):
+    """Handles listing and assigning awards to students"""
+    queryset = AwardStudent.objects.all()
+    serializer_class = AwardStudentSerializer
+
+class AwardStudentDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """Handles retrieving, updating, and deleting a specific award assignment"""
+    queryset = AwardStudent.objects.all()
+    serializer_class = AwardStudentSerializer

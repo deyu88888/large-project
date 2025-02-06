@@ -3,7 +3,7 @@ from django.dispatch import receiver
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from channels.exceptions import ChannelFull
-from .models import Student, Society, Notification
+from .models import AwardStudent, Student, Society, Notification
 
 @receiver(m2m_changed, sender=Student.president_of.through)
 def update_is_president_on_m2m_change(sender, instance, action, reverse, pk_set, **kwargs):
@@ -94,3 +94,19 @@ def broadcast_dashboard_update():
         print("[broadcast_dashboard_update] Error: Channel is full, unable to send the message.")
     except Exception as e:
         print(f"[broadcast_dashboard_update] Error broadcasting updates: {e}")
+        
+@receiver(post_save, sender=AwardStudent)
+def notify_student_award(sender, instance, created, **kwargs):
+    if created:
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            "award_notifications",
+            {
+                "type": "send_award_notification",
+                "message": {
+                    "student": str(instance.student),
+                    "award": str(instance.award),
+                    "awarded_at": instance.awarded_at.isoformat(),
+                },
+            },
+        )

@@ -1,7 +1,7 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from .views import (
-    RegisterView, CurrentUserView,
+    AwardDetailView, AwardStudentDetailView, AwardStudentView, AwardView, RegisterView, CurrentUserView,
     StudentNotificationsView, StartSocietyRequestView, ManageMySocietyView,
     CreateSocietyEventView, AdminView, StudentView, SocietyView, EventView,
     RejectedSocietyRequestView, SocietyRequestView, DashboardStatsView,
@@ -53,4 +53,11 @@ urlpatterns = [
     path("dashboard/activities/", RecentActivitiesView.as_view(), name="recent_activities"),
     path("dashboard/notifications/", NotificationsView.as_view(), name="dashboard_notifications"),
     path("dashboard/events/", EventCalendarView.as_view(), name="dashboard_events"),
+    
+    # Awards endpoints
+    path("awards/", AwardView.as_view(), name="awards"),
+    path("awards/<int:pk>/", AwardDetailView.as_view(), name="award_detail"),
+    path("award-students/", AwardStudentView.as_view(), name="award_students"),
+    path("award-students/<int:pk>/", AwardStudentDetailView.as_view(), name="award_student_detail"),
+
 ]

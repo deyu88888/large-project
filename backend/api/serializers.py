@@ -1,5 +1,5 @@
 import datetime
-from api.models import User, Student, Admin, Society, Event, Notification, Request, SocietyRequest, EventRequest, UserRequest
+from api.models import Award, AwardStudent, User, Student, Admin, Society, Event, Notification, Request, SocietyRequest, EventRequest, UserRequest
 from rest_framework import serializers
 
 
@@ -523,3 +523,18 @@ class EventCalendarSerializer(serializers.ModelSerializer):
             tzinfo=datetime.timezone.utc
         )
         return (start_dt + obj.duration).isoformat()
+
+
+class AwardSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Award
+        fields = '__all__'
+
+class AwardStudentSerializer(serializers.ModelSerializer):
+    award = AwardSerializer(read_only=True)
+    student_id = serializers.PrimaryKeyRelatedField(source='student', queryset=Student.objects.all(), write_only=True)
+    award_id = serializers.PrimaryKeyRelatedField(source='award', queryset=Award.objects.all(), write_only=True)
+
+    class Meta:
+        model = AwardStudent
+        fields = ['id', 'award', 'student_id', 'award_id', 'awarded_at']
