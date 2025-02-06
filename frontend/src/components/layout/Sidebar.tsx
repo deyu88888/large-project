@@ -47,7 +47,14 @@ const Item: React.FC<ItemProps> = ({ title, to, icon, selected, setSelected }) =
 const Sidebar: React.FC = () => {
   const theme = useTheme();
   const colours = tokens(theme.palette.mode);
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    const storedState = localStorage.getItem('sidebarCollapsed');
+    return storedState ? JSON.parse(storedState) : true;
+  });
+  
+  useEffect(() => {
+    localStorage.setItem('sidebarCollapsed', JSON.stringify(isCollapsed));
+  }, [isCollapsed]);
   const [selected, setSelected] = useState("Dashboard");
 
  
@@ -71,6 +78,7 @@ const Sidebar: React.FC = () => {
           top: 0,
           left: 0,
           width: isCollapsed ? `${collapsedWidth}px` : `${expandedWidth}px`,
+          overflow: "hidden",
         },
         "& .ps-sidebar-container": {
           background: `${colours.primary[400]} !important`,
@@ -105,7 +113,7 @@ const Sidebar: React.FC = () => {
         },
       }}
     >
-      <ProSidebar collapsed={isCollapsed} key={isCollapsed ? "collapsed" : "expanded"}>
+      <ProSidebar key={`sidebar-${isCollapsed}`} collapsed={isCollapsed}>
         <Menu>
           {/* LOGO AND MENU ICON */}
           <MenuItem
@@ -113,18 +121,15 @@ const Sidebar: React.FC = () => {
             icon={isCollapsed ? <MenuOutlinedIcon /> : undefined}
             style={{
               margin: "10px 0 20px 0",
-              colour: colours.grey[100],
+              color: colours.grey[100],
             }}
           >
             {!isCollapsed && (
               <Box display="flex" justifyContent="space-between" alignItems="center" ml="15px">
-                <Typography variant="h3" colour={colours.grey[100]}>
+                <Typography variant="h3" color={colours.grey[100]}>
                   Student
                 </Typography>
-                <IconButton
-                  onClick={() => setIsCollapsed(!isCollapsed)}
-                  sx={{ colour: colours.grey[100] }}
-                >
+                <IconButton sx={{ color: colours.grey[100] }}>
                   <MenuOutlinedIcon />
                 </IconButton>
               </Box>

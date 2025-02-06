@@ -1,5 +1,6 @@
 import { Box, IconButton, useTheme, InputBase } from "@mui/material";
 import { useContext } from "react";
+import { useSidebar } from "./SidebarContext";
 import { ColorModeContext, tokens } from "../../styles/theme";
 import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
 import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
@@ -12,23 +13,23 @@ const Topbar: React.FC = () => {
   const theme = useTheme();
   const colours = tokens(theme.palette.mode);
   const colourMode = useContext(ColorModeContext);
-
-
-  const SIDEBAR_WIDTH = 270;
-
   const TOPBAR_HEIGHT = 64;
+
+  // Get the dynamic sidebarWidth from context
+  const { sidebarWidth } = useSidebar();
+
+  // Add an extra width offset
+  const extraWidth = 100;
 
   return (
     <Box
       sx={{
         position: "fixed",
         top: 0,
-        left: `${SIDEBAR_WIDTH}px`, 
-        width: `calc(100% - ${SIDEBAR_WIDTH}px)`,
+        left: `${sidebarWidth + extraWidth}px`, 
+        width: `calc(100% - ${sidebarWidth + extraWidth}px)`,
         height: `${TOPBAR_HEIGHT}px`,
-
         zIndex: 1100,
-
         backgroundColor: "rgba(0, 0, 0, 0)", 
         backdropFilter: "blur(8px)", 
         WebkitBackdropFilter: "blur(8px)",
@@ -38,13 +39,10 @@ const Topbar: React.FC = () => {
         px: 2,
       }}
     >
-
       <Box
         display="flex"
         borderRadius="3px"
-        sx={{ 
-          backgroundColor: colours.primary[400], 
-        }}
+        sx={{ backgroundColor: colours.primary[400] }}
       >
         <InputBase sx={{ ml: 2, flex: 1 }} placeholder="Search" />
         <IconButton type="button" sx={{ p: 1 }}>
