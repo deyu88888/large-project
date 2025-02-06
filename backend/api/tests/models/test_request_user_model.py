@@ -23,16 +23,18 @@ class UserRequestTestCase(TestCase):
         self.user_request = UserRequest.objects.create(
             from_student=self.student,
             approved=False,
-            description="Attempting account creation",
             intent="CreateUse",
-            student=self.student,
+            major="CompSci"
         )
 
-    def test_student_required(self):
-        """Test UserRequest.student is a required field """
+    def test_valid_user_request(self):
+        """Test that our example request is valid"""
         self._assert_user_request_is_valid()
-        self.user_request.student = None
-        self._assert_user_request_is_invalid()
+
+    def test_name_not_required(self):
+        """Test that the name field doesn't have to be populated"""
+        self.user_request.major = None
+        self._assert_user_request_is_valid()
 
     def _assert_user_request_is_valid(self):
         try:
