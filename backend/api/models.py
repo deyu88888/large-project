@@ -347,19 +347,19 @@ class Award(models.Model):
     is_custom = models.BooleanField(default=False)
     title = models.CharField(
         max_length=20,
-        default='default_title',
+        default="default_title",
         blank=False,
         null=False,
     )
     description = models.CharField(
         max_length=150,
-        default='default_description',
+        default="default_description",
         blank=False,
         null=False,
     )
 
     def __str__(self):
-        return f'{self.title}, {self.rank}'
+        return f"{self.title}, {self.rank}"
 
 class AwardStudent(models.Model):
     """
@@ -382,4 +382,4 @@ class AwardStudent(models.Model):
     awarded_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f'{self.student}, ({self.award})'
+        return f"{self.student}, ({self.award})"
