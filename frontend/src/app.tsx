@@ -22,9 +22,8 @@ export function App() {
         <CssBaseline />
         <BrowserRouter>
           <Box display="flex">
-            <Sidebar /> 
             <Box flexGrow={1} display="flex" flexDirection="column">
-              <Topbar /> 
+              <Topbar />
               <Box p={2}>
                 <Routes />
               </Box>

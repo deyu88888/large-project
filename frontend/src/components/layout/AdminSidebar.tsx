@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Sidebar as ProSidebar, Menu, MenuItem } from "react-pro-sidebar";
-import { Box, IconButton, Typography, useTheme } from "@mui/material";
+import { Avatar, Box, IconButton, Typography, useTheme } from "@mui/material";
 import { Link } from "react-router-dom";
 import { tokens } from "../../theme/theme";
 import { useSidebar } from "./SidebarContext";
@@ -23,7 +23,13 @@ interface ItemProps {
   setSelected: (title: string) => void;
 }
 
-const Item: React.FC<ItemProps> = ({ title, to, icon, selected, setSelected }) => {
+const Item: React.FC<ItemProps> = ({
+  title,
+  to,
+  icon,
+  selected,
+  setSelected,
+}) => {
   const theme = useTheme();
   const colours = tokens(theme.palette.mode);
   return (
@@ -46,7 +52,7 @@ const Sidebar: React.FC = () => {
   const colours = tokens(theme.palette.mode);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [selected, setSelected] = useState("Dashboard");
- 
+
   const expandedWidth = 120;
   const collapsedWidth = 0;
   const { setSidebarWidth } = useSidebar();
@@ -100,18 +106,26 @@ const Sidebar: React.FC = () => {
         },
       }}
     >
-      <ProSidebar collapsed={isCollapsed} key={isCollapsed ? "collapsed" : "expanded"}>
+      <ProSidebar
+        collapsed={isCollapsed}
+        key={isCollapsed ? "collapsed" : "expanded"}
+      >
         <Menu>
           <MenuItem
             onClick={() => setIsCollapsed(!isCollapsed)}
             icon={isCollapsed ? <MenuOutlinedIcon /> : undefined}
             style={{
               margin: "10px 0 20px 0",
-              colour: colours.grey[100],
+              color: colours.grey[100],
             }}
           >
             {!isCollapsed && (
-              <Box display="flex" justifyContent="space-between" alignItems="center" ml="15px">
+              <Box
+                display="flex"
+                justifyContent="space-between"
+                alignItems="center"
+                ml="15px"
+              >
                 <Typography variant="h3" colour={colours.grey[100]}>
                   Admin
                 </Typography>
@@ -127,16 +141,20 @@ const Sidebar: React.FC = () => {
           {!isCollapsed && (
             <Box mb="25px">
               <Box display="flex" justifyContent="center" alignItems="center">
-                <img
-                  alt="profile-user"
-                  width="100px"
-                  height="100px"
-                  src={`../../assets/user.png`}
-                  style={{ cursor: "pointer", borderRadius: "50%" }}
+                <Avatar
+                  sx={{
+                    width: "72px",
+                    height: "72px",
+                  }}
                 />
               </Box>
               <Box textAlign="center">
-                <Typography variant="h2" colour={colours.grey[100]} fontWeight="bold" sx={{ m: "10px 0 0 0" }}>
+                <Typography
+                  variant="h2"
+                  colour={colours.grey[100]}
+                  fontWeight="bold"
+                  sx={{ m: "10px 0 0 0" }}
+                >
                   John Doe
                 </Typography>
                 <Typography variant="h5" colour={colours.greenAccent[500]}>
@@ -153,7 +171,11 @@ const Sidebar: React.FC = () => {
               selected={selected}
               setSelected={setSelected}
             />
-            <Typography variant="h6" colour={colours.grey[300]} sx={{ m: "15px 0 5px 20px" }}>
+            <Typography
+              variant="h6"
+              colour={colours.grey[300]}
+              sx={{ m: "15px 0 5px 20px" }}
+            >
               Pages
             </Typography>
             <Item
