@@ -2,7 +2,7 @@ import axios from "axios";
 import { ACCESS_TOKEN } from "./constants";
 
 // ✅ Define base API URL properly
-const apiUrl = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL : "http://localhost:8000/";
+const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/";
 
 // ✅ Axios instance
 export const apiClient = axios.create({
@@ -12,7 +12,7 @@ export const apiClient = axios.create({
   },
 });
 
-// ✅ Attach Authorization token for every request
+// ✅ Attach Authorization token for every request (only if it exists)
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem(ACCESS_TOKEN);
@@ -31,7 +31,6 @@ export const apiPaths = {
     REGISTER: "/api/user/register/",
     REFRESH: "/api/user/token/refresh/",
     CURRENT: "/api/user/current/",
-    EVENTS: "/api/society/event/",
     SOCIETY: "/api/admin-panel/society/",
     REJECTEDSOCIETY: "/api/admin-panel/rejected-society/",
     STUDENTS: "/api/user/student/",
@@ -39,7 +38,10 @@ export const apiPaths = {
     PENDINGSOCIETYREQUEST: "/api/society/request/pending/",
   },
   SOCIETY: {
-    POPULAR_SOCIETIES: "/api/popular-societies/", // ✅ Added trailing slash to match Django behavior
+    POPULAR_SOCIETIES: "/api/popular-societies/", // ✅ Trailing slash
+  },
+  EVENTS: {
+    ALL: "/api/events/", // ✅ Correct path for sorted events
   },
 };
 
@@ -50,6 +52,19 @@ export const getPopularSocieties = async () => {
     return response.data;
   } catch (error: any) {
     console.error("❌ Error fetching popular societies:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+// ✅ Fetch All Events (Public Access)
+export const getAllEvents = async () => {
+  try {
+    // 🟢 If your endpoint doesn't require auth, do NOT force check token
+    // If your endpoint does require auth, keep the token logic. But since you made it public, remove or skip this check.
+    const response = await apiClient.get(apiPaths.EVENTS.ALL);
+    return response.data;
+  } catch (error: any) {
+    console.error("❌ Error fetching events:", error.response?.data || error.message);
     throw error;
   }
 };

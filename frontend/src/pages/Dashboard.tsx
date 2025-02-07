@@ -1,8 +1,11 @@
 import React, { useEffect, useState, useRef, useCallback, memo } from "react";
 import EventCalendar from "../components/EventCalendar";
+import UpcomingEvents from "../components/UpcomingEvents"; // ✅ Import UpcomingEvents Component
 import { Link } from "react-router-dom";
 import { LoadingView } from "../components/loading/loading-view";
 import PopularSocieties from "../components/PopularSocieties"; // ✅ Import PopularSocieties Component
+import { getAllEvents } from "../api"; // ✅ Import function to fetch events
+import { motion } from "framer-motion"; // ✅ Added animations
 
 console.log("=== React app is running! ===");
 
@@ -23,6 +26,7 @@ interface Notification {
 }
 
 interface CalendarEvent {
+  id: number;
   title: string;
   start: Date;
   end: Date;
@@ -38,7 +42,7 @@ type WebSocketMessage =
   | { type: "dashboard.update"; data: StatData }
   | { type: "update_activities"; activities: Activity[] }
   | { type: "update_notifications"; notifications: Notification[] }
-  | { type: "update_events"; events: { title: string; start: string; end: string }[] }
+  | { type: "update_events"; events: { id: number; title: string; start: string; end: string }[] }
   | { type: "update_introduction"; introduction: Introduction };
 
 const Dashboard: React.FC = () => {
@@ -47,6 +51,7 @@ const Dashboard: React.FC = () => {
   const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [eventCalendar, setEventCalendar] = useState<CalendarEvent[]>([]);
+  const [upcomingEvents, setUpcomingEvents] = useState<CalendarEvent[]>([]);
   const [introduction, setIntroduction] = useState<Introduction | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -55,6 +60,60 @@ const Dashboard: React.FC = () => {
   // WebSocket references
   const socketRef = useRef<WebSocket | null>(null);
   const reconnectIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const MAX_RECONNECT_ATTEMPTS = 5;
+  let reconnectAttempts = 0;
+
+  // --- Fetch All Events for Both Calendar & Upcoming Events ---
+  useEffect(() => {
+    getAllEvents()
+      .then((data) => {
+        console.log("🎉 Raw Events from API:", data);
+
+        interface RawEvent {
+          id: number;
+          title: string;
+          date: string;
+          startTime: string;
+          duration?: string;
+        }
+
+        const formattedEvents: CalendarEvent[] = (data as RawEvent[])
+          .map((event: RawEvent): CalendarEvent | null => {
+            try {
+              if (!event.duration || typeof event.duration !== "string" || !event.duration.includes(":")) {
+                console.warn(`⚠️ Skipping event with invalid duration:`, event);
+                return null;
+              }
+
+              const startDateTime = new Date(`${event.date}T${event.startTime}`);
+              const [hours, minutes, seconds] = event.duration.split(":").map(Number);
+              const durationMs = (hours * 3600 + minutes * 60 + (seconds || 0)) * 1000;
+              const endDateTime = new Date(startDateTime.getTime() + durationMs);
+
+              return {
+                id: event.id,
+                title: event.title,
+                start: startDateTime,
+                end: endDateTime,
+              };
+            } catch (error) {
+              console.error(`❌ Error processing event:`, event, error);
+              return null;
+            }
+          })
+          .filter((event): event is CalendarEvent => event !== null);
+
+        formattedEvents.sort((a, b) => a.start.getTime() - b.start.getTime());
+
+        console.log("✅ Formatted Events (Sorted):", formattedEvents);
+        setUpcomingEvents(formattedEvents);
+        setEventCalendar(formattedEvents);
+      })
+      .catch((error) => {
+        console.error("❌ Error fetching events:", error);
+        setError("Failed to fetch events.");
+      });
+  }, []);
 
   // --- WebSocket Message Handler ---
   const messageHandler = useCallback((data: WebSocketMessage) => {
@@ -68,16 +127,17 @@ const Dashboard: React.FC = () => {
       case "update_notifications":
         setNotifications((prev) => (prev.length !== data.notifications.length ? data.notifications : prev));
         break;
-      case "update_events":
-        setEventCalendar((prev) => {
-          const formattedEvents = data.events.map(ev => ({
-            title: ev.title,
-            start: new Date(ev.start),
-            end: new Date(ev.end),
-          }));
-          return prev.length !== formattedEvents.length ? formattedEvents : prev;
-        });
+      case "update_events": {
+        const formattedEvents = data.events.map((ev) => ({
+          id: ev.id,
+          title: ev.title,
+          start: new Date(ev.start),
+          end: new Date(ev.end),
+        }));
+        setEventCalendar(formattedEvents);
+        setUpcomingEvents(formattedEvents);
         break;
+      }
       case "update_introduction":
         setIntroduction((prev) => (prev?.title !== data.introduction.title ? data.introduction : prev));
         break;
@@ -88,14 +148,14 @@ const Dashboard: React.FC = () => {
 
   // --- WebSocket Connection Handling ---
   useEffect(() => {
-    console.log("%c[Dashboard] Initializing WebSocket...", "color: #2f8de4;");
+    console.log("[Dashboard] Initializing WebSocket...");
     const wsURL = process.env.NODE_ENV === "production"
       ? "wss://your-production-domain.com/ws/dashboard/"
       : "ws://127.0.0.1:8000/ws/dashboard/";
 
     const connectWebSocket = () => {
       if (socketRef.current) {
-        console.warn("%c[Dashboard] WebSocket already connected. Skipping reconnection.", "color: orange;");
+        console.warn("[Dashboard] WebSocket already connected. Skipping reconnection.");
         return;
       }
 
@@ -103,8 +163,9 @@ const Dashboard: React.FC = () => {
       socketRef.current = socket;
 
       socket.onopen = () => {
-        console.log("%c[Dashboard] WebSocket Connected!", "color: green;");
+        console.log("[Dashboard] WebSocket Connected!");
         setError(null);
+        reconnectAttempts = 0;
         if (reconnectIntervalRef.current) {
           clearInterval(reconnectIntervalRef.current);
           reconnectIntervalRef.current = null;
@@ -122,18 +183,22 @@ const Dashboard: React.FC = () => {
       };
 
       socket.onerror = (error) => {
-        console.error("%c[Dashboard] WebSocket Error:", "color: red;", error);
+        console.error("[Dashboard] WebSocket Error:", error);
         setError("WebSocket connection failed.");
       };
 
       socket.onclose = (event) => {
-        console.warn("%c[Dashboard] WebSocket Closed:", "color: orange;", event.code);
+        console.warn("[Dashboard] WebSocket Closed:", event.code);
         socketRef.current = null;
-        if (event.code !== 1000 && event.code !== 1005) {
+
+        if (event.code !== 1000 && event.code !== 1005 && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+          reconnectAttempts++;
+          console.log(`[Dashboard] Attempting WebSocket Reconnect (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`);
           if (!reconnectIntervalRef.current) {
-            console.log("%c[Dashboard] Attempting WebSocket Reconnect...", "color: #f1c40f;");
-            reconnectIntervalRef.current = setInterval(connectWebSocket, 5000);
+            reconnectIntervalRef.current = setTimeout(connectWebSocket, 5000);
           }
+        } else {
+          console.warn("[Dashboard] Maximum WebSocket reconnect attempts reached. Stopping retries.");
         }
       };
     };
@@ -141,7 +206,7 @@ const Dashboard: React.FC = () => {
     connectWebSocket();
 
     return () => {
-      console.log("%c[Dashboard] Cleaning up WebSocket...", "color: #2f8de4;");
+      console.log("[Dashboard] Cleaning up WebSocket...");
       if (socketRef.current) {
         socketRef.current.close();
       }
@@ -159,34 +224,28 @@ const Dashboard: React.FC = () => {
     }
   }, [stats, introduction]);
 
-  // Debug Logs
-  useEffect(() => {
-    console.log("%c[Dashboard] Current State:", "color: #27ae60;", {
-      stats,
-      recentActivities,
-      notifications,
-      eventCalendar,
-      introduction,
-    });
-  }, [stats, recentActivities, notifications, eventCalendar, introduction]);
-
   if (loading) {
-    console.log("%c[Dashboard] Loading Dashboard...", "color: #2f8de4;");
     return <LoadingView />;
   }
 
   // ==================== REUSABLE COMPONENTS ====================
 
+
   // Reusable section wrapper for each content block
   const SectionCard: React.FC<{ title: string; icon: string; children: React.ReactNode }> = memo(
     ({ title, icon, children }) => (
-      <div className="bg-white/70 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border-l-8 border-transparent hover:border-gradient-to-r hover:from-purple-500 hover:to-indigo-500 transition-all duration-300">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="bg-white/70 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border-l-8 border-transparent hover:border-gradient-to-r hover:from-purple-500 hover:to-indigo-500 transition-all duration-300"
+      >
         <h2 className="text-3xl font-bold mb-6 text-gray-800 flex items-center gap-3">
           <span role="img" aria-hidden="true" className="text-4xl">{icon}</span>
           {title}
         </h2>
         <div className="space-y-4">{children}</div>
-      </div>
+      </motion.div>
     )
   );
   SectionCard.displayName = "SectionCard";
@@ -194,12 +253,15 @@ const Dashboard: React.FC = () => {
   // Reusable statistics card for dashboard
   const StatCard: React.FC<{ title: string; value: number; color: string }> = memo(
     ({ title, value, color }) => (
-      <div
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.3 }}
         className={`relative rounded-2xl shadow-2xl p-8 text-white bg-gradient-to-br ${color} transition-all duration-300 ease-in-out transform hover:scale-110 hover:shadow-2xl`}
       >
         <p className="uppercase tracking-widest text-lg">{title}</p>
         <p className="text-6xl font-extrabold mt-2">{value}</p>
-      </div>
+      </motion.div>
     )
   );
   StatCard.displayName = "StatCard";
@@ -208,7 +270,12 @@ const Dashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 p-10 space-y-12">
       {/* ========== HEADER ========== */}
-      <header className="bg-gradient-to-r from-indigo-700 via-purple-600 to-pink-600 text-white p-8 rounded-3xl shadow-2xl flex flex-col md:flex-row justify-between items-center animate-fadeInDown">
+      <motion.header
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="bg-gradient-to-r from-indigo-700 via-purple-600 to-pink-600 text-white p-8 rounded-3xl shadow-2xl flex flex-col md:flex-row justify-between items-center animate-fadeInDown"
+      >
         <h1 className="text-4xl font-extrabold tracking-widest flex items-center gap-3">
           <span role="img" aria-hidden="true" className="text-5xl">✨</span> Student Society Dashboard
         </h1>
@@ -228,7 +295,7 @@ const Dashboard: React.FC = () => {
             <Link to="/login">Login</Link>
           </button>
         </div>
-      </header>
+      </motion.header>
 
       {/* ========== WEBSITE INTRODUCTION ========== */}
       <SectionCard title={introduction?.title || "Welcome!"} icon="🌐">
@@ -252,11 +319,25 @@ const Dashboard: React.FC = () => {
       {/* 🔥 MOST POPULAR SOCIETIES SECTION */}
       <PopularSocieties />
 
+      {/* 🕒 UPCOMING EVENTS SECTION (Fixed Prop) */}
+      <SectionCard title="Upcoming Events" icon="📅">
+        {upcomingEvents.length > 0 ? (
+          <UpcomingEvents events={upcomingEvents} />
+        ) : (
+          <p className="text-gray-500 text-lg text-center animate-pulse">No upcoming events.</p> // ✅ Added Fallback UI
+        )}
+      </SectionCard>
+
       {/* ========== ERROR MESSAGE ========== */}
       {error && (
-        <div className="bg-red-100 border-l-8 border-red-600 text-red-800 p-6 rounded-2xl shadow-lg animate-pulse">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3 }}
+          className="bg-red-100 border-l-8 border-red-600 text-red-800 p-6 rounded-2xl shadow-lg animate-pulse"
+        >
           <strong>Error:</strong> {error}
-        </div>
+        </motion.div>
       )}
 
       {/* ========== RECENT ACTIVITIES ========== */}
@@ -272,9 +353,13 @@ const Dashboard: React.FC = () => {
         )}
       </SectionCard>
 
-      {/* ========== EVENT CALENDAR ========== */}
+      {/* ========== EVENT CALENDAR (Now Fills After Seeding) ========== */}
       <SectionCard title="Event Calendar" icon="📅">
-        <EventCalendar events={eventCalendar ?? []} />
+        {eventCalendar.length > 0 ? (
+          <EventCalendar events={eventCalendar} />
+        ) : (
+          <p className="text-gray-500 text-lg text-center animate-pulse">No events scheduled yet.</p> // ✅ Added Fallback UI
+        )}
       </SectionCard>
 
       {/* ========== NOTIFICATIONS ========== */}

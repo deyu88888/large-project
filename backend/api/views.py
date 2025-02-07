@@ -1,24 +1,34 @@
 from datetime import timezone
-from django.shortcuts import get_object_or_404
-from api.models import User, Society, Event, Student, Notification
-from rest_framework import generics, status
-from .serializers import EventSerializer, RSVPEventSerializer, UserSerializer, StudentSerializer, LeaveSocietySerializer, JoinSocietySerializer, SocietySerializer, NotificationSerializer, DashboardStatisticSerializer, RecentActivitySerializer, EventCalendarSerializer, DashboardNotificationSerializer
-from api.models import Admin, User, Society, Event, Student
-from rest_framework import generics, status
-from .serializers import AdminSerializer, EventSerializer, RSVPEventSerializer, UserSerializer, StudentSerializer, LeaveSocietySerializer, JoinSocietySerializer, SocietySerializer, StartSocietyRequestSerializer
-from channels.layers import get_channel_layer
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework_simplejwt.authentication import JWTAuthentication
-from django.utils import timezone
-from django.db.models import Count
 from asgiref.sync import async_to_sync
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from .models import Society
+from channels.layers import get_channel_layer
 from django.db.models import Count, Sum
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework import generics, status
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from api.models import Admin, Event, Notification, Society, Student, User
+from api.serializers import (
+    AdminSerializer,
+    DashboardNotificationSerializer,
+    DashboardStatisticSerializer,
+    EventCalendarSerializer,
+    EventSerializer,
+    JoinSocietySerializer,
+    LeaveSocietySerializer,
+    NotificationSerializer,
+    RecentActivitySerializer,
+    RSVPEventSerializer,
+    SocietySerializer,
+    StartSocietyRequestSerializer,
+    StudentSerializer,
+    UserSerializer,
+)
 
 """
 This function is for the global callout
@@ -588,15 +598,14 @@ class CreateSocietyEventView(APIView):
 
 class EventView(APIView):
     """
-    event view for admins see  all events
+    Event view to show upcoming approved events.
     """
-    permission_classes = [IsAuthenticated]
 
     def get(self, request) -> Response:
         """
-        List of approved events for the admin.
+        Returns a list of upcoming approved events sorted by date and time.
         """
-        events = Event.objects.all()
+        events = Event.objects.filter(status="Approved").order_by("date", "start_time")
         serializer = EventSerializer(events, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -757,3 +766,11 @@ def get_popular_societies(request):
     )
 
     return JsonResponse(list(popular_societies), safe=False)
+
+@api_view(["GET"])
+@permission_classes([])
+def get_sorted_events(request):
+    # Get only upcoming events
+    events = Event.objects.filter(status="Approved", date__gte=now()).order_by("date", "start_time")
+    serializer = EventSerializer(events, many=True)
+    return Response(serializer.data)

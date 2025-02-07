@@ -261,14 +261,15 @@ class Command(BaseCommand):
         return choice(locations)
 
     def generate_random_event(self, society):
-        """Generate a random event for a society and add attendees"""
+        """Generate a random event and ensure attendees are added."""
         location = self.get_random_location()
+        event_date = self.generate_random_date()
 
         event, created = Event.objects.get_or_create(
-            title=f'{society.name} Event',  # ✅ No more 'int' error
-            description=f'An exciting event by {society.name}',  # ✅ Fix
-            date=self.generate_random_date(),
-            start_time=self.generate_reasonable_time(),
+            title=f"{society.name} Event",
+            description=f"An exciting event by {society.name}",
+            date=event_date,
+            start_time=self.generate_random_time(),
             duration=self.generate_random_duration(),
             hosted_by=society,
             location=location,
@@ -277,16 +278,15 @@ class Command(BaseCommand):
 
         if created:
             # ✅ Assign 5-20 random attendees
-            all_students = list(Student.objects.exclude(id=society.leader.id))  # ✅ Exclude the leader
-            num_attendees = min(randint(5, 20), len(all_students))  # Ensure not exceeding available students
+            all_students = list(Student.objects.exclude(id=society.leader.id))
+            num_attendees = min(randint(5, 20), len(all_students))
             selected_attendees = all_students[:num_attendees]
 
-            event.current_attendees.add(*selected_attendees)  # ✅ Add selected attendees
-            event.save()  # ✅ Make sure changes persist
+            event.current_attendees.add(*selected_attendees)
+            event.save()
+            print(self.style.SUCCESS(f"📅 Event Created: {event.title} ({event.date})"))
 
-            print(self.style.SUCCESS(f"Assigned {num_attendees} attendees to {event.title}"))
-
-        return event, created
+        return event
 
     def handle_event_status(self, society, i):
         """Creates event requests if pending"""
@@ -328,8 +328,8 @@ class Command(BaseCommand):
         return choice(duration_choices)
 
     def generate_random_date(self):
-        """Generate and return a random date up to a month in advance"""
-        random_days = randint(1, 31)
+        """Generate a random event date: 30 days in the past or future."""
+        random_days = randint(-30, 30)  # ✅ Allows past and future events
         return date.today() + timedelta(days=random_days)
 
     def generate_reasonable_time(self):
