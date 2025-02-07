@@ -45,7 +45,7 @@ const Layout: React.FC<LayoutProps> = ({ role }) => {
   return (
     <SidebarProvider>
       {renderSidebar()}
-      <Topbar />
+      {/* <Topbar /> */}
       <LayoutContent />
     </SidebarProvider>
   );
