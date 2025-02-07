@@ -18,6 +18,7 @@ const LayoutContent: React.FC = () => {
         marginLeft: `${sidebarWidth}px`,
         marginTop: `${TOPBAR_HEIGHT}px`,
         p: 2,
+        overflowX: "hidden",
       }}
     >
       <Outlet />
@@ -35,16 +36,16 @@ const Layout: React.FC<LayoutProps> = ({ role }) => {
       case "admin":
         return <AdminSidebar />;
       case "student":
-        // return <StudentSidebar />;
+      // return <StudentSidebar />;
       default:
-        // return <GlobalSidebar />;
+      // return <GlobalSidebar />;
     }
   };
 
   return (
     <SidebarProvider>
       {renderSidebar()}
-      <Topbar />
+      {/* <Topbar /> */}
       <LayoutContent />
     </SidebarProvider>
   );

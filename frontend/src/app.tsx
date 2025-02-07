@@ -21,14 +21,7 @@ export function App() {
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <BrowserRouter>
-          <Box display="flex">
-            <Box flexGrow={1} display="flex" flexDirection="column">
-              <Topbar />
-              <Box p={2}>
-                <Routes />
-              </Box>
-            </Box>
-          </Box>
+          <Routes />
         </BrowserRouter>
       </ThemeProvider>
     </ColorModeContext.Provider>
