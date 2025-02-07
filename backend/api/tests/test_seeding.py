@@ -1,6 +1,6 @@
 from unittest.mock import patch
 from django.test import TransactionTestCase
-from api.models import Admin, Student, Society, Event, Notification
+from api.models import Admin, Student, Society, Event, Notification, EventRequest, SocietyRequest, Award, AwardStudent
 from api.management.commands import seed
 
 class SeedingTestCase(TransactionTestCase):
@@ -84,29 +84,36 @@ class SeedingTestCase(TransactionTestCase):
         self.assertEqual(society.approved_by, self.admin)
         self.assertIn(self.president, society.presidents.all())
 
-    #@patch('builtins.print') # Avoids printing while testing
-    #def test_student_creation(self, mock_print):
-    #    """Test that seed create_student works"""
-    #    self.command_instance.create_student(1)
-    #    self.assertTrue(Student.objects.get(username="student1"))
+    @patch('builtins.print') # Avoids printing while testing
+    def test_student_creation(self, mock_print):
+        """Test that seed create_student works"""
+        self.command_instance.create_student(1)
+        self.assertEqual(Student.objects.count(), 3)
 
     @patch('builtins.print') # Avoids printing while testing
     def test_admin_creation(self, mock_print):
         """Test that seed create_admin works"""
         self.command_instance.create_admin(1)
         self.assertTrue(Admin.objects.get(username="admin1"))
+        self.assertEqual(Admin.objects.count(), 2)
 
-    #@patch('builtins.print') # Avoids printing while testing
-    #def test_society_creation(self, mock_print):
-    #    """Test that seed create_society works"""
-    #    self.command_instance.create_society(1)
-    #    self.assertTrue(Society.objects.get(name="Society1"))
+    @patch('builtins.print') # Avoids printing while testing
+    def test_society_creation(self, mock_print):
+        """Test that seed create_society works"""
+        self.command_instance.create_society(1)
+        self.assertEqual(
+            Society.objects.count() + SocietyRequest.objects.count(),
+            2
+        )
 
-    #@patch('builtins.print') # Avoids printing while testing
-    #def test_event_creation(self, mock_print):
-    #    """Test that seed create_event works"""
-    #    self.command_instance.create_event(1)
-    #    self.assertTrue(Event.objects.get(title="Event1"))
+    @patch('builtins.print') # Avoids printing while testing
+    def test_event_creation(self, mock_print):
+        """Test that seed create_event works"""
+        self.command_instance.create_event(1)
+        self.assertEqual(
+            Event.objects.count() + EventRequest.objects.count(),
+            2
+        )
 
     @patch('builtins.print') # Avoids printing while testing
     def test_notification_creation(self, mock_print):
@@ -115,3 +122,16 @@ class SeedingTestCase(TransactionTestCase):
         notif = Notification.objects.first()
         self.assertTrue(notif.for_event == self.event)
         self.assertTrue(notif.for_student == self.student)
+
+    @patch('builtins.print') # Avoids printing while testing
+    def test_award_initialisation(self, mock_print):
+        """Test that seed create_student works"""
+        self.command_instance.pre_define_awards()
+        self.assertEqual(Award.objects.count(), 9)
+
+    @patch('builtins.print') # Avoids printing while testing
+    def test_award_student_creation(self, mock_print):
+        """Test that seed create_student works"""
+        self.command_instance.pre_define_awards()
+        self.command_instance.randomly_assign_awards(1)
+        self.assertEqual(AwardStudent.objects.count(), 1)
