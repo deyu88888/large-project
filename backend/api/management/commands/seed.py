@@ -1,4 +1,5 @@
-from datetime import date, timedelta, time
+from datetime import date, datetime, time, timedelta
+import random
 from random import choice, randint
 from django.contrib.auth.hashers import make_password
 from django.core.management.base import BaseCommand
@@ -227,24 +228,23 @@ class Command(BaseCommand):
 
     def create_event(self, n):
         """Create n different events"""
-        event_list = []  # Create empty list to hold created events
+        event_list = []
 
-        societies = list(Society.objects.all())  # ✅ Get all societies first
+        societies = list(Society.objects.all())
 
-        for i in range(1, n+1):
+        for i in range(1, n + 1):
             print(f"Seeding event {i}/{n}", end='\r')
 
-            if not societies:  # ✅ Ensure we have societies to assign events to
+            if not societies:
                 print(self.style.WARNING("No societies found. Skipping event creation."))
                 break
 
-            society = choice(societies)  # ✅ Pick a random society
+            society = choice(societies)
 
             approved = self.handle_event_status(society, i)
             if approved:
-                event, created = self.generate_random_event(society)  # ✅ Pass Society object
-                if created:
-                    event_list.append(event)
+                event, _ = self.generate_random_event(society)
+                event_list.append(event)
 
         print(self.style.SUCCESS(f"Seeding event {n}/{n}"), flush=True)
         self.create_event_notifications(event_list)
@@ -286,23 +286,27 @@ class Command(BaseCommand):
             event.save()
             print(self.style.SUCCESS(f"📅 Event Created: {event.title} ({event.date})"))
 
-        return event
+        # ✅ Ensure function returns (event, created) as a tuple
+        return event, created
 
     def handle_event_status(self, society, i):
         """Creates event requests if pending"""
         random_status = choice(["Pending", "Approved", "Rejected"])
         location = self.get_random_location()
+        
+        event_date = self.generate_random_date()  # ✅ Generate event date first
+        event_time = self.generate_reasonable_time(event_date)  # ✅ Pass event_date
 
         if random_status == "Approved":
             return True
         elif random_status == "Pending":
             EventRequest.objects.get_or_create(
                 title=f'Event{i}',
-                description=f'Event{i} organised by {society.name}',  # ✅ Fix
-                date=self.generate_random_date(),
-                start_time=self.generate_reasonable_time(),
+                description=f'Event{i} organised by {society.name}',
+                date=event_date,  # ✅ Use generated event_date
+                start_time=event_time,  # ✅ Use generated event_time
                 duration=self.generate_random_duration(),
-                hosted_by=society,  # ✅ Fix
+                hosted_by=society,
                 from_student=society.leader,
                 location=location,
                 intent="CreateEve",
@@ -310,11 +314,11 @@ class Command(BaseCommand):
         else:
             EventRequest.objects.get_or_create(
                 title=f'Event{i}',
-                description=f'Event{i} organised by {society.name}',  # ✅ Fix
-                date=self.generate_random_date(),
-                start_time=self.generate_reasonable_time(),
+                description=f'Event{i} organised by {society.name}',
+                date=event_date,  # ✅ Use generated event_date
+                start_time=event_time,  # ✅ Use generated event_time
                 duration=self.generate_random_duration(),
-                hosted_by=society,  # ✅ Fix
+                hosted_by=society,
                 from_student=society.leader,
                 location=location,
                 intent="CreateEve",
@@ -323,20 +327,47 @@ class Command(BaseCommand):
         return False
 
     def generate_random_duration(self):
-        """Generate and return a random duration from 1-3 hours"""
-        duration_choices = [timedelta(hours=i) for i in range(1,4)]
+        """Generate and return a random duration from 1-3 hours."""
+        duration_choices = [timedelta(hours=i) for i in range(1, 4)]
         return choice(duration_choices)
 
     def generate_random_date(self):
-        """Generate a random event date: 30 days in the past or future."""
-        random_days = randint(-30, 30)  # ✅ Allows past and future events
-        return date.today() + timedelta(days=random_days)
+        """Generate a future event date within the next 30 days, including today."""
+        today = date.today()
+        random_days = randint(0, 30)
+        return today + timedelta(days=random_days)
 
-    def generate_reasonable_time(self):
-        """Generate and return a random time from 9:00am to 8:45pm"""
-        random_hour = randint(9, 20)
-        random_minute = choice([0, 15, 30, 45])
-        return time(hour=random_hour,minute=random_minute)
+
+    def generate_reasonable_time(self, event_date):
+        """Generate a future time (9:00 AM to 8:45 PM), ensuring it's always after the current time if today."""
+        now = datetime.now()
+
+        valid_hours = list(range(9, 21))  # 9 AM to 8:45 PM
+        valid_minutes = [0, 15, 30, 45]
+
+        if event_date > now.date():
+            return time(hour=choice(valid_hours), minute=choice(valid_minutes))
+
+        elif event_date == now.date():
+            # Only choose times strictly after 'now'
+            possible_times = [
+                time(hour=h, minute=m)
+                for h in valid_hours
+                for m in valid_minutes
+                if datetime.combine(event_date, time(hour=h, minute=m)) > now
+            ]
+
+            if possible_times:
+                return min(possible_times)  # Pick the earliest valid time
+
+            # If all available times are in the past, schedule it for tomorrow at 9:00 AM
+            return time(hour=9, minute=0)
+    
+    def generate_random_time(self):
+        """Generates a random time within a day."""
+        hours = random.randint(0, 23)  # Random hour between 0-23
+        minutes = random.randint(0, 59)  # Random minute between 0-59
+        return time(hour=hours, minute=minutes)
 
     def create_event_notifications(self, events):
         """Creates notifications from a list of events"""
