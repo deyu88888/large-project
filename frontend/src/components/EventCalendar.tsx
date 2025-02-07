@@ -11,16 +11,17 @@ const EventCalendar: React.FC<EventCalendarProps> = ({ events }) => {
   const localizer = momentLocalizer(moment);
 
   return (
-    <div className="bg-white shadow p-4 rounded">
-      <h2 className="text-lg font-bold mb-4">Event Calendar</h2>
-      <Calendar
-        localizer={localizer}
-        events={events}
-        startAccessor="start"
-        endAccessor="end"
-        style={{ height: 500 }}
-        className="rounded"
-      />
+    <div className="relative p-1 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-400 rounded-3xl shadow-2xl transition-all duration-500 hover:scale-105 hover:shadow-3xl">
+      <div className="bg-white/90 backdrop-blur-sm rounded-3xl p-6">
+        <Calendar
+          localizer={localizer}
+          events={events}
+          startAccessor="start"
+          endAccessor="end"
+          style={{ height: 600 }}
+          className="rounded-lg"
+        />
+      </div>
     </div>
   );
 };

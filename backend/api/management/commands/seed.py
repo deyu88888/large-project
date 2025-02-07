@@ -159,7 +159,7 @@ class Command(BaseCommand):
                 f"Society{i}",
             )
             created = False
-            society=None
+            society = None
             if approved:
                 society, created = Society.objects.get_or_create(
                     name=f"Society{i}",
@@ -170,18 +170,35 @@ class Command(BaseCommand):
             if created:
                 members = student_randomised.all()[:2]
                 self.finalize_society_creation(society, members)
+
+                # ✅ NEW: Create 2-5 events for this society
+                num_events = randint(2, 5)
+                for _ in range(num_events):
+                    self.generate_random_event(society)
+
         print(self.style.SUCCESS(f"Seeding society {n}/{n}"), flush=True)
 
     def finalize_society_creation(self, society, members):
-        """Finishes society creation"""
+        """Finishes society creation with proper members and roles"""
         society.leader.president_of.add(society)
-        society.society_members.add(*members)
-        society.roles = {
-            "Treasurer": members[0], 
-            "Social Manager": members[1]
-        }
+
+        # Ensure at least 5-15 members
+        all_students = list(Student.objects.exclude(id=society.leader.id))
+        selected_members = all_students[:randint(5, 15)]
+
+        society.society_members.add(*selected_members)
+
+        # Assign roles (ensure at least 2 roles)
+        if len(selected_members) >= 2:
+            society.roles = {
+                "Treasurer": selected_members[0].id, 
+                "Social Manager": selected_members[1].id
+            }
+
+        # Assign an admin
         admin_randomised = Admin.objects.order_by('?')
         society.approved_by = admin_randomised.first()
+        society.save()
 
     def handle_society_status(self, leader, name):
         """Creates society requests if pending, else assigns an admin to approved_by"""
@@ -210,15 +227,25 @@ class Command(BaseCommand):
 
     def create_event(self, n):
         """Create n different events"""
-        event_list = [] # Create empty list to hold created events
+        event_list = []  # Create empty list to hold created events
+
+        societies = list(Society.objects.all())  # ✅ Get all societies first
 
         for i in range(1, n+1):
             print(f"Seeding event {i}/{n}", end='\r')
-            approved = self.handle_event_status(i)
+
+            if not societies:  # ✅ Ensure we have societies to assign events to
+                print(self.style.WARNING("No societies found. Skipping event creation."))
+                break
+
+            society = choice(societies)  # ✅ Pick a random society
+
+            approved = self.handle_event_status(society, i)
             if approved:
-                event, created = self.generate_random_event(i)
+                event, created = self.generate_random_event(society)  # ✅ Pass Society object
                 if created:
                     event_list.append(event)
+
         print(self.style.SUCCESS(f"Seeding event {n}/{n}"), flush=True)
         self.create_event_notifications(event_list)
 
@@ -233,13 +260,13 @@ class Command(BaseCommand):
         ]
         return choice(locations)
 
-    def generate_random_event(self, i):
-        """Generate 'i'th new event object"""
+    def generate_random_event(self, society):
+        """Generate a random event for a society and add attendees"""
         location = self.get_random_location()
-        society = Society.objects.order_by('?').first()
-        return Event.objects.get_or_create(
-            title=f'Event{i}',
-            description=f'Event{i} organised by {society}',
+
+        event, created = Event.objects.get_or_create(
+            title=f'{society.name} Event',  # ✅ No more 'int' error
+            description=f'An exciting event by {society.name}',  # ✅ Fix
             date=self.generate_random_date(),
             start_time=self.generate_reasonable_time(),
             duration=self.generate_random_duration(),
@@ -248,10 +275,22 @@ class Command(BaseCommand):
             status="Approved",
         )
 
-    def handle_event_status(self, i):
+        if created:
+            # ✅ Assign 5-20 random attendees
+            all_students = list(Student.objects.exclude(id=society.leader.id))  # ✅ Exclude the leader
+            num_attendees = min(randint(5, 20), len(all_students))  # Ensure not exceeding available students
+            selected_attendees = all_students[:num_attendees]
+
+            event.current_attendees.add(*selected_attendees)  # ✅ Add selected attendees
+            event.save()  # ✅ Make sure changes persist
+
+            print(self.style.SUCCESS(f"Assigned {num_attendees} attendees to {event.title}"))
+
+        return event, created
+
+    def handle_event_status(self, society, i):
         """Creates event requests if pending"""
         random_status = choice(["Pending", "Approved", "Rejected"])
-        society = Society.objects.order_by('?').first()
         location = self.get_random_location()
 
         if random_status == "Approved":
@@ -259,11 +298,11 @@ class Command(BaseCommand):
         elif random_status == "Pending":
             EventRequest.objects.get_or_create(
                 title=f'Event{i}',
-                description=f'Event{i} organised by {society}',
+                description=f'Event{i} organised by {society.name}',  # ✅ Fix
                 date=self.generate_random_date(),
                 start_time=self.generate_reasonable_time(),
                 duration=self.generate_random_duration(),
-                hosted_by=society,
+                hosted_by=society,  # ✅ Fix
                 from_student=society.leader,
                 location=location,
                 intent="CreateEve",
@@ -271,11 +310,11 @@ class Command(BaseCommand):
         else:
             EventRequest.objects.get_or_create(
                 title=f'Event{i}',
-                description=f'Event{i} organised by {society}',
+                description=f'Event{i} organised by {society.name}',  # ✅ Fix
                 date=self.generate_random_date(),
                 start_time=self.generate_reasonable_time(),
                 duration=self.generate_random_duration(),
-                hosted_by=society,
+                hosted_by=society,  # ✅ Fix
                 from_student=society.leader,
                 location=location,
                 intent="CreateEve",
@@ -301,19 +340,13 @@ class Command(BaseCommand):
 
     def create_event_notifications(self, events):
         """Creates notifications from a list of events"""
-        notification_dict = {}
-
-        for event in events:
-            members = event.hosted_by.society_members
-            notification_dict[event] = members.all()
-
         count = 0
-        total = self.count_all_event_participants(notification_dict)
+        # Instead of building a dictionary, simply iterate over the events.
         for event in events:
-            print(f"Seeding notification {count}/{total}", end='\r')
+            print(f"Seeding notifications for {event.title}", end='\r')
             self.create_event_notification(event)
-            count += len(notification_dict[event])
-        print(self.style.SUCCESS(f"Seeding notification {count}/{total}"))
+            count += event.current_attendees.count()
+        print(self.style.SUCCESS(f"Seeding notifications for {count} attendees across events"))
 
     def count_all_event_participants(self, event_dict):
         """Counts all the potential participants of events"""
@@ -323,14 +356,16 @@ class Command(BaseCommand):
         return total
 
     def create_event_notification(self, event):
-        """Create the notifications for a specific event"""
-        members = event.hosted_by.society_members
+        """Create notifications only for students attending"""
+        members = event.current_attendees.all()  # ✅ Get attendees dynamically
 
-        for member in members.all():
+        for member in members:
             Notification.objects.create(
                 for_event=event,
                 for_student=member
             )
+
+        print(self.style.SUCCESS(f"Created notifications for {len(members)} attendees of {event.title}"))
 
     def broadcast_updates(self):
         """Broadcast updates to the WebSocket"""

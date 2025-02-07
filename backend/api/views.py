@@ -15,6 +15,10 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.utils import timezone
 from django.db.models import Count
 from asgiref.sync import async_to_sync
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from .models import Society
+from django.db.models import Count, Sum
 
 """
 This function is for the global callout
@@ -725,3 +729,31 @@ class EventCalendarView(APIView):
 
 class MySocietiesView(APIView):
     pass
+
+@csrf_exempt
+def get_popular_societies(request):
+    """
+    Returns the top 5 most popular societies based on:
+    - Number of members
+    - Number of hosted events
+    - Total event attendees
+    """
+    
+    popular_societies = (
+        Society.objects.annotate(
+            total_members=Count("society_members"),
+            total_events=Count("events"),
+            total_event_attendance=Sum("events__current_attendees")
+        )
+        .annotate(
+            popularity_score=(
+                (2 * Count("society_members")) +
+                (3 * Count("events")) +
+                (4 * Sum("events__current_attendees"))
+            )
+        )
+        .order_by("-popularity_score")[:5]
+        .values("id", "name", "total_members", "total_events", "total_event_attendance", "popularity_score")
+    )
+
+    return JsonResponse(list(popular_societies), safe=False)

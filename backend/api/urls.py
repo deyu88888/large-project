@@ -8,6 +8,7 @@ from .views import (
     RecentActivitiesView, NotificationsView, EventCalendarView,
     StudentSocietiesView, JoinSocietyView, RSVPEventView, EventHistoryView
 )
+from .views import get_popular_societies
 
 urlpatterns = [
     # Authentication endpoints
@@ -53,4 +54,5 @@ urlpatterns = [
     path("dashboard/activities/", RecentActivitiesView.as_view(), name="recent_activities"),
     path("dashboard/notifications/", NotificationsView.as_view(), name="dashboard_notifications"),
     path("dashboard/events/", EventCalendarView.as_view(), name="dashboard_events"),
+    path('popular-societies/', get_popular_societies, name='popular_societies'),
 ]
