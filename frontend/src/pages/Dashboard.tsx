@@ -1,281 +1,380 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback, memo } from "react";
 import EventCalendar from "../components/EventCalendar";
+import UpcomingEvents from "../components/UpcomingEvents"; // ✅ Import UpcomingEvents Component
 import { Link } from "react-router-dom";
 import { LoadingView } from "../components/loading/loading-view";
+import PopularSocieties from "../components/PopularSocieties"; // ✅ Import PopularSocieties Component
+import { getAllEvents } from "../api"; // ✅ Import function to fetch events
+import { motion } from "framer-motion"; // ✅ Added animations
 
-// Debug message remains for clarity
 console.log("=== React app is running! ===");
 
-const Dashboard: React.FC = () => {
-  // State for dashboard data
-  const [stats, setStats] = useState({
-    totalSocieties: 0,
-    totalEvents: 0,
-    pendingApprovals: 0,
-    activeMembers: 0,
-  });
-  const [recentActivities, setRecentActivities] = useState<any[]>([]);
-  const [notifications, setNotifications] = useState<any[]>([]);
-  const [eventCalendar, setEventCalendar] = useState<any[]>([]);
+// --- Type Definitions ---
+interface StatData {
+  totalSocieties: number;
+  totalEvents: number;
+  pendingApprovals: number;
+  activeMembers: number;
+}
 
-  // UI and error states
+interface Activity {
+  description: string;
+}
+
+interface Notification {
+  message: string;
+}
+
+interface CalendarEvent {
+  id: number;
+  title: string;
+  start: Date;
+  end: Date;
+}
+
+interface Introduction {
+  title: string;
+  content: string[];
+}
+
+// WebSocket message types
+type WebSocketMessage =
+  | { type: "dashboard.update"; data: StatData }
+  | { type: "update_activities"; activities: Activity[] }
+  | { type: "update_notifications"; notifications: Notification[] }
+  | { type: "update_events"; events: { id: number; title: string; start: string; end: string }[] }
+  | { type: "update_introduction"; introduction: Introduction };
+
+const Dashboard: React.FC = () => {
+  // State Management
+  const [stats, setStats] = useState<StatData>({ totalSocieties: 0, totalEvents: 0, pendingApprovals: 0, activeMembers: 0 });
+  const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [eventCalendar, setEventCalendar] = useState<CalendarEvent[]>([]);
+  const [upcomingEvents, setUpcomingEvents] = useState<CalendarEvent[]>([]);
+  const [introduction, setIntroduction] = useState<Introduction | null>(null);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  // Search bar state
-  const [searchQuery, setSearchQuery] = useState(""); // Controlled input
-
-  // WebSocket connection tracking
-  const isConnectedRef = useRef(false);
+  // WebSocket references
   const socketRef = useRef<WebSocket | null>(null);
+  const reconnectIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const MAX_RECONNECT_ATTEMPTS = 5;
+  let reconnectAttempts = 0;
 
+  // --- Fetch All Events for Both Calendar & Upcoming Events ---
   useEffect(() => {
-    console.log("%c[Dashboard] Component mounted", "color: #2f8de4; font-weight: bold;");
+    getAllEvents()
+      .then((data) => {
+        console.log("🎉 Raw Events from API:", data);
 
-    let reconnectInterval: NodeJS.Timeout | null = null;
+        interface RawEvent {
+          id: number;
+          title: string;
+          date: string;
+          startTime: string;
+          duration?: string;
+        }
 
-    const connectWebSocket = () => {
-      console.log("%c[Dashboard] Attempting to create WebSocket connection...", "color: #2f8de4;");
-      const wsURL =
-        process.env.NODE_ENV === "production"
-          ? "wss://your-production-domain.com/ws/dashboard/"
-          : "ws://127.0.0.1:8000/ws/dashboard/";
-
-      try {
-        const socket = new WebSocket(wsURL);
-        socketRef.current = socket;
-
-        // === onopen ===
-        socket.onopen = () => {
-          console.log(
-            "%c[Dashboard] WebSocket connected successfully!",
-            "color: green; font-weight: bold;"
-          );
-          isConnectedRef.current = true;
-          setError(null);
-          setLoading(false);
-
-          if (reconnectInterval) {
-            clearInterval(reconnectInterval);
-            reconnectInterval = null;
-            console.log(
-              "%c[Dashboard] Reconnection successful. Clearing reconnect interval.",
-              "color: #27ae60;"
-            );
-          }
-        };
-
-        // === onmessage ===
-        socket.onmessage = (event) => {
-          console.log("%c[Dashboard] Raw WebSocket message received:", "color: #8e44ad;", event.data);
-
-          try {
-            const data = JSON.parse(event.data);
-            console.log("%c[Dashboard] Parsed WebSocket message:", "color: #8e44ad;", data);
-
-            if (!data.type) {
-              console.warn("%c[Dashboard] Message has no 'type' field.", "color: orange;", data);
-              return;
-            }
-
-            switch (data.type) {
-              case "dashboard.update":
-                setStats(data.data);
-                break;
-              case "update_activities":
-                setRecentActivities(data.activities || []);
-                break;
-              case "update_notifications":
-                setNotifications(data.notifications || []);
-                break;
-              case "update_events": {
-                const formattedEvents = (data.events || []).map((ev: any) => ({
-                  title: ev.title,
-                  start: new Date(ev.start),
-                  end: new Date(ev.end),
-                }));
-                setEventCalendar(formattedEvents);
-                break;
+        const formattedEvents: CalendarEvent[] = (data as RawEvent[])
+          .map((event: RawEvent): CalendarEvent | null => {
+            try {
+              if (!event.duration || typeof event.duration !== "string" || !event.duration.includes(":")) {
+                console.warn(`⚠️ Skipping event with invalid duration:`, event);
+                return null;
               }
-              default:
-                console.warn("%c[Dashboard] Unknown message type:", "color: orange;", data.type);
+
+              const startDateTime = new Date(`${event.date}T${event.startTime}`);
+              const [hours, minutes, seconds] = event.duration.split(":").map(Number);
+              const durationMs = (hours * 3600 + minutes * 60 + (seconds || 0)) * 1000;
+              const endDateTime = new Date(startDateTime.getTime() + durationMs);
+
+              return {
+                id: event.id,
+                title: event.title,
+                start: startDateTime,
+                end: endDateTime,
+              };
+            } catch (error) {
+              console.error(`❌ Error processing event:`, event, error);
+              return null;
             }
-          } catch (parseError) {
-            console.error("%c[Dashboard] Error parsing message:", "color: red;", parseError);
-            setError("An error occurred while processing WebSocket messages.");
-          }
-        };
+          })
+          .filter((event): event is CalendarEvent => event !== null);
 
-        // === onerror ===
-        socket.onerror = (wsError) => {
-          console.error("%c[Dashboard] WebSocket error:", "color: red;", wsError);
-          setError("WebSocket connection failed. Please refresh.");
-        };
+        formattedEvents.sort((a, b) => a.start.getTime() - b.start.getTime());
 
-        // === onclose ===
-        socket.onclose = (event) => {
-          console.warn("%c[Dashboard] WebSocket closed with code:", "color: orange;", event.code);
-
-          if (!isConnectedRef.current) {
-            console.error("%c[Dashboard] WebSocket never fully established!", "color: red;");
-            setError("WebSocket disconnected unexpectedly before establishing a connection.");
-          } else {
-            console.log("%c[Dashboard] WebSocket closed gracefully.", "color: #f39c12;");
-          }
-
-          if (!reconnectInterval) {
-            console.log("%c[Dashboard] Starting reconnect interval...", "color: #f1c40f;");
-            reconnectInterval = setInterval(connectWebSocket, 5000);
-          }
-        };
-      } catch (err) {
-        console.error("%c[Dashboard] WebSocket initialization failed:", "color: red;", err);
-        setError("Failed to initialize WebSocket connection.");
-      }
-    };
-
-    // Initial WebSocket connection
-    connectWebSocket();
-
-    // Cleanup on unmount
-    return () => {
-      console.log("%c[Dashboard] Cleaning up WebSocket connection...", "color: #2f8de4;");
-      if (
-        socketRef.current &&
-        (socketRef.current.readyState === WebSocket.OPEN ||
-          socketRef.current.readyState === WebSocket.CONNECTING)
-      ) {
-        console.log("%c[Dashboard] Closing WebSocket...", "color: #2f8de4;");
-        socketRef.current.close();
-      }
-      if (reconnectInterval) clearInterval(reconnectInterval);
-    };
+        console.log("✅ Formatted Events (Sorted):", formattedEvents);
+        setUpcomingEvents(formattedEvents);
+        setEventCalendar(formattedEvents);
+      })
+      .catch((error) => {
+        console.error("❌ Error fetching events:", error);
+        setError("Failed to fetch events.");
+      });
   }, []);
 
-  // Debug effect: logs state whenever it changes
+  // --- WebSocket Message Handler ---
+  const messageHandler = useCallback((data: WebSocketMessage) => {
+    switch (data.type) {
+      case "dashboard.update":
+        setStats((prev) => (prev.totalSocieties !== data.data.totalSocieties ? data.data : prev));
+        break;
+      case "update_activities":
+        setRecentActivities((prev) => (prev.length !== data.activities.length ? data.activities : prev));
+        break;
+      case "update_notifications":
+        setNotifications((prev) => (prev.length !== data.notifications.length ? data.notifications : prev));
+        break;
+      case "update_events": {
+        const formattedEvents = data.events.map((ev) => ({
+          id: ev.id,
+          title: ev.title,
+          start: new Date(ev.start),
+          end: new Date(ev.end),
+        }));
+        setEventCalendar(formattedEvents);
+        setUpcomingEvents(formattedEvents);
+        break;
+      }
+      case "update_introduction":
+        setIntroduction((prev) => (prev?.title !== data.introduction.title ? data.introduction : prev));
+        break;
+      default:
+        console.warn("Unknown WebSocket message type:", data);
+    }
+  }, []);
+
+  // --- WebSocket Connection Handling ---
   useEffect(() => {
-    console.log("%c[Dashboard] Current stats:", "color: #27ae60;", stats);
-    console.log("%c[Dashboard] Current recent activities:", "color: #27ae60;", recentActivities);
-    console.log("%c[Dashboard] Current notifications:", "color: #27ae60;", notifications);
-    console.log("%c[Dashboard] Current event calendar:", "color: #27ae60;", eventCalendar);
-  }, [stats, recentActivities, notifications, eventCalendar]);
+    console.log("[Dashboard] Initializing WebSocket...");
+    const wsURL = process.env.NODE_ENV === "production"
+      ? "wss://your-production-domain.com/ws/dashboard/"
+      : "ws://127.0.0.1:8000/ws/dashboard/";
+
+    const connectWebSocket = () => {
+      if (socketRef.current) {
+        console.warn("[Dashboard] WebSocket already connected. Skipping reconnection.");
+        return;
+      }
+
+      const socket = new WebSocket(wsURL);
+      socketRef.current = socket;
+
+      socket.onopen = () => {
+        console.log("[Dashboard] WebSocket Connected!");
+        setError(null);
+        reconnectAttempts = 0;
+        if (reconnectIntervalRef.current) {
+          clearInterval(reconnectIntervalRef.current);
+          reconnectIntervalRef.current = null;
+        }
+      };
+
+      socket.onmessage = (event) => {
+        try {
+          const data: WebSocketMessage = JSON.parse(event.data);
+          messageHandler(data);
+        } catch (parseError) {
+          console.error("Error parsing WebSocket message:", parseError);
+          setError("Error parsing WebSocket message.");
+        }
+      };
+
+      socket.onerror = (error) => {
+        console.error("[Dashboard] WebSocket Error:", error);
+        setError("WebSocket connection failed.");
+      };
+
+      socket.onclose = (event) => {
+        console.warn("[Dashboard] WebSocket Closed:", event.code);
+        socketRef.current = null;
+
+        if (event.code !== 1000 && event.code !== 1005 && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+          reconnectAttempts++;
+          console.log(`[Dashboard] Attempting WebSocket Reconnect (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`);
+          if (!reconnectIntervalRef.current) {
+            reconnectIntervalRef.current = setTimeout(connectWebSocket, 5000);
+          }
+        } else {
+          console.warn("[Dashboard] Maximum WebSocket reconnect attempts reached. Stopping retries.");
+        }
+      };
+    };
+
+    connectWebSocket();
+
+    return () => {
+      console.log("[Dashboard] Cleaning up WebSocket...");
+      if (socketRef.current) {
+        socketRef.current.close();
+      }
+      if (reconnectIntervalRef.current) {
+        clearInterval(reconnectIntervalRef.current);
+        reconnectIntervalRef.current = null;
+      }
+    };
+  }, [messageHandler]);
+
+  // Set loading state after stats & introduction are received
+  useEffect(() => {
+    if (stats.totalSocieties >= 0 && introduction !== null) {
+      setLoading(false);
+    }
+  }, [stats, introduction]);
 
   if (loading) {
-    console.log("%c[Dashboard] Loading dashboard data...", "color: #2f8de4;");
     return <LoadingView />;
   }
 
-  // ==================== RENDER ====================
+  // ==================== REUSABLE COMPONENTS ====================
+
+
+  // Reusable section wrapper for each content block
+  const SectionCard: React.FC<{ title: string; icon: string; children: React.ReactNode }> = memo(
+    ({ title, icon, children }) => (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="bg-white/70 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border-l-8 border-transparent hover:border-gradient-to-r hover:from-purple-500 hover:to-indigo-500 transition-all duration-300"
+      >
+        <h2 className="text-3xl font-bold mb-6 text-gray-800 flex items-center gap-3">
+          <span role="img" aria-hidden="true" className="text-4xl">{icon}</span>
+          {title}
+        </h2>
+        <div className="space-y-4">{children}</div>
+      </motion.div>
+    )
+  );
+  SectionCard.displayName = "SectionCard";
+
+  // Reusable statistics card for dashboard
+  const StatCard: React.FC<{ title: string; value: number; color: string }> = memo(
+    ({ title, value, color }) => (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.3 }}
+        className={`relative rounded-2xl shadow-2xl p-8 text-white bg-gradient-to-br ${color} transition-all duration-300 ease-in-out transform hover:scale-110 hover:shadow-2xl`}
+      >
+        <p className="uppercase tracking-widest text-lg">{title}</p>
+        <p className="text-6xl font-extrabold mt-2">{value}</p>
+      </motion.div>
+    )
+  );
+  StatCard.displayName = "StatCard";
+
+  // ==================== MAIN RENDER ====================
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-300 p-6 space-y-10">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 p-10 space-y-12">
       {/* ========== HEADER ========== */}
-      <header className="bg-gradient-to-r from-indigo-700 via-purple-600 to-pink-600 text-white p-6 rounded-2xl shadow-xl flex justify-between items-center animate-fadeIn">
-        <h1 className="text-3xl font-bold tracking-widest flex items-center gap-2">
-          <span role="img" aria-label="star">
-            ✨
-          </span>
-          Student Society Dashboard
+      <motion.header
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="bg-gradient-to-r from-indigo-700 via-purple-600 to-pink-600 text-white p-8 rounded-3xl shadow-2xl flex flex-col md:flex-row justify-between items-center animate-fadeInDown"
+      >
+        <h1 className="text-4xl font-extrabold tracking-widest flex items-center gap-3">
+          <span role="img" aria-hidden="true" className="text-5xl">✨</span> Student Society Dashboard
         </h1>
-        <div className="flex gap-4 items-center">
-          {/* Controlled input with black caret */}
+        <div className="flex gap-6 items-center mt-4 md:mt-0">
           <input
             type="text"
             placeholder="Search..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-64 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 shadow text-gray-800"
-            style={{ caretColor: "black" }} // ensures dark caret
+            className="w-80 p-4 rounded-full focus:outline-none focus:ring-4 focus:ring-pink-300 shadow-lg text-gray-800"
+            style={{ caretColor: "black" }}
           />
-          <button className="bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-lg font-semibold shadow-md transition-transform transform hover:scale-105">
-            <Link to={"/register"}>Register</Link>
+          <button className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-full font-semibold shadow-lg transition-all transform hover:scale-105">
+            <Link to="/register">Register</Link>
           </button>
-          <button className="bg-green-500 hover:bg-green-600 text-white px-5 py-2 rounded-lg font-semibold shadow-md transition-transform transform hover:scale-105">
-            <Link to={"/login"}>Login</Link>
+          <button className="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-full font-semibold shadow-lg transition-all transform hover:scale-105">
+            <Link to="/login">Login</Link>
           </button>
         </div>
-      </header>
+      </motion.header>
+
+      {/* ========== WEBSITE INTRODUCTION ========== */}
+      <SectionCard title={introduction?.title || "Welcome!"} icon="🌐">
+        {introduction?.content?.length ? (
+          introduction.content.map((paragraph, index) => (
+            <p key={index} className="text-gray-700 leading-relaxed text-lg">{paragraph}</p>
+          ))
+        ) : (
+          <p className="text-gray-700 leading-relaxed text-lg">No introduction available.</p>
+        )}
+      </SectionCard>
+
+      {/* ========== STATS GRID ========== */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <StatCard title="Total Societies" value={stats.totalSocieties} color="from-blue-600 to-blue-400" />
+        <StatCard title="Total Events" value={stats.totalEvents} color="from-green-600 to-green-400" />
+        <StatCard title="Pending Approvals" value={stats.pendingApprovals} color="from-yellow-600 to-yellow-400" />
+        <StatCard title="Active Members" value={stats.activeMembers} color="from-purple-600 to-purple-400" />
+      </div>
+
+      {/* 🔥 MOST POPULAR SOCIETIES SECTION */}
+      <PopularSocieties />
+
+      {/* 🕒 UPCOMING EVENTS SECTION (Fixed Prop) */}
+      <SectionCard title="Upcoming Events" icon="📅">
+        {upcomingEvents.length > 0 ? (
+          <UpcomingEvents events={upcomingEvents} />
+        ) : (
+          <p className="text-gray-500 text-lg text-center animate-pulse">No upcoming events.</p> // ✅ Added Fallback UI
+        )}
+      </SectionCard>
 
       {/* ========== ERROR MESSAGE ========== */}
       {error && (
-        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-xl shadow-lg animate-pulse">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3 }}
+          className="bg-red-100 border-l-8 border-red-600 text-red-800 p-6 rounded-2xl shadow-lg animate-pulse"
+        >
           <strong>Error:</strong> {error}
-        </div>
+        </motion.div>
       )}
 
-      {/* ========== STATS GRID ========== */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="relative overflow-hidden rounded-xl shadow-xl p-6 text-white bg-gradient-to-r from-blue-600 to-blue-400 transition-transform transform hover:scale-105">
-          <p className="uppercase text-sm">Total Societies</p>
-          <p className="text-5xl font-extrabold">{stats.totalSocieties}</p>
-        </div>
-        <div className="relative overflow-hidden rounded-xl shadow-xl p-6 text-white bg-gradient-to-r from-green-600 to-green-400 transition-transform transform hover:scale-105">
-          <p className="uppercase text-sm">Total Events</p>
-          <p className="text-5xl font-extrabold">{stats.totalEvents}</p>
-        </div>
-        <div className="relative overflow-hidden rounded-xl shadow-xl p-6 text-white bg-gradient-to-r from-yellow-600 to-yellow-400 transition-transform transform hover:scale-105">
-          <p className="uppercase text-sm">Pending Approvals</p>
-          <p className="text-5xl font-extrabold">{stats.pendingApprovals}</p>
-        </div>
-        <div className="relative overflow-hidden rounded-xl shadow-xl p-6 text-white bg-gradient-to-r from-purple-600 to-purple-400 transition-transform transform hover:scale-105">
-          <p className="uppercase text-sm">Active Members</p>
-          <p className="text-5xl font-extrabold">{stats.activeMembers}</p>
-        </div>
-      </div>
-
       {/* ========== RECENT ACTIVITIES ========== */}
-      <div className="bg-white rounded-xl shadow-xl p-6">
-        <h2 className="text-2xl font-bold mb-4 text-gray-700 flex items-center gap-2">
-          <span role="img" aria-label="fire">
-            🔥
-          </span>
-          Recent Activities
-        </h2>
-        {recentActivities.length > 0 ? (
+      <SectionCard title="Recent Activities" icon="🔥">
+        {recentActivities.length ? (
           <ul className="space-y-3 pl-4">
             {recentActivities.map((activity, idx) => (
-              <li key={idx} className="text-gray-600 leading-relaxed">
-                • {activity.description}
-              </li>
+              <li key={idx} className="text-gray-700 text-lg">• {activity.description}</li>
             ))}
           </ul>
         ) : (
-          <p className="text-gray-500">No recent activities found.</p>
+          <p className="text-gray-500 text-lg">No recent activities found.</p>
         )}
-      </div>
+      </SectionCard>
 
-      {/* ========== EVENT CALENDAR ========== */}
-      <div className="bg-white rounded-xl shadow-xl p-6">
-        <h2 className="text-2xl font-bold mb-4 text-gray-700 flex items-center gap-2">
-          <span role="img" aria-label="calendar">
-            📅
-          </span>
-          Event Calendar
-        </h2>
-        <EventCalendar events={eventCalendar} />
-      </div>
+      {/* ========== EVENT CALENDAR (Now Fills After Seeding) ========== */}
+      <SectionCard title="Event Calendar" icon="📅">
+        {eventCalendar.length > 0 ? (
+          <EventCalendar events={eventCalendar} />
+        ) : (
+          <p className="text-gray-500 text-lg text-center animate-pulse">No events scheduled yet.</p> // ✅ Added Fallback UI
+        )}
+      </SectionCard>
 
       {/* ========== NOTIFICATIONS ========== */}
-      <div className="bg-white rounded-xl shadow-xl p-6">
-        <h2 className="text-2xl font-bold mb-4 text-gray-700 flex items-center gap-2">
-          <span role="img" aria-label="bell">
-            🔔
-          </span>
-          Notifications
-        </h2>
-        {notifications.length > 0 ? (
+      <SectionCard title="Notifications" icon="🔔">
+        {notifications.length ? (
           <ul className="space-y-3 pl-4">
             {notifications.map((notification, idx) => (
-              <li key={idx} className="text-gray-600 leading-relaxed">
-                • {notification.message}
-              </li>
+              <li key={idx} className="text-gray-700 text-lg">• {notification.message}</li>
             ))}
           </ul>
         ) : (
-          <p className="text-gray-500">No notifications found.</p>
+          <p className="text-gray-500 text-lg">No notifications found.</p>
         )}
-      </div>
+      </SectionCard>
     </div>
   );
 };
-
 export default Dashboard;

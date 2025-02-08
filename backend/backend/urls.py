@@ -10,19 +10,19 @@ def welcome_view(request):
 
 urlpatterns = [
     path("", welcome_view, name="welcome"),
-    path("admin", admin.site.urls),
+    path("admin/", admin.site.urls),  # Corrected line: Added trailing slash
     path("api/user/me", get_current_user, name="get_current_user"),
     path("api-auth", include("rest_framework.urls")),
-    
+
     # Society endpoints
     path('my-societies/', MySocietiesView.as_view(), name='my_societies'),
     path('join-society/<int:society_id>/', JoinSocietyView.as_view(), name='join_society'),
     path('leave-society/<int:society_id>/', MySocietiesView.as_view(), name='leave_society'),
-    
+
     # Event endpoints
     path('events/rsvp/', RSVPEventView.as_view(), name='rsvp_event'),
     path('events/history/', EventHistoryView.as_view(), name='event_history'),
-    
+
     # Removed direct registration/login paths:
     # path("api/user/register", RegisterView.as_view(), name="register"),
     # path("api/user/login", TokenObtainPairView.as_view(), name="get_token"),
