@@ -349,7 +349,7 @@ class Command(BaseCommand):
             return time(hour=choice(valid_hours), minute=choice(valid_minutes))
 
         elif event_date == now.date():
-            # Only choose times strictly after 'now'
+            # Filter times that are strictly in the future
             possible_times = [
                 time(hour=h, minute=m)
                 for h in valid_hours
@@ -358,9 +358,9 @@ class Command(BaseCommand):
             ]
 
             if possible_times:
-                return min(possible_times)  # Pick the earliest valid time
+                return choice(possible_times)  # ✅ Randomly select a valid future time today
 
-            # If all available times are in the past, schedule it for tomorrow at 9:00 AM
+            # If no valid times remain, schedule the event for tomorrow at 9:00 AM
             return time(hour=9, minute=0)
     
     def generate_random_time(self):

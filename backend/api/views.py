@@ -2,6 +2,7 @@ from datetime import timezone
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from django.db.models import Count, Sum
+from django.utils.timezone import now
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
