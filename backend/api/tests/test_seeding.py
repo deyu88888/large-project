@@ -102,8 +102,8 @@ class SeedingTestCase(TransactionTestCase):
         """Test that seed create_society works"""
         self.command_instance.create_society(1)
         self.assertEqual(
-            Society.objects.count() + SocietyRequest.objects.count(),
-            2
+            first=Society.objects.count() + SocietyRequest.objects.count(),
+            second=2
         )
 
     @patch('builtins.print') # Avoids printing while testing
@@ -111,17 +111,20 @@ class SeedingTestCase(TransactionTestCase):
         """Test that seed create_event works"""
         self.command_instance.create_event(1)
         self.assertEqual(
-            Event.objects.count() + EventRequest.objects.count(),
-            2
+            first=Event.objects.count() + EventRequest.objects.count(),
+            second=2
         )
 
     @patch('builtins.print') # Avoids printing while testing
     def test_notification_creation(self, mock_print):
         """Test that seed create_event_notification works"""
         self.command_instance.create_event_notification(self.event)
-        notif = Notification.objects.first()
-        self.assertTrue(notif.for_event == self.event)
-        self.assertTrue(notif.for_student == self.student)
+        self.assertTrue(
+            Notification.objects.filter(
+                for_event=self.event,
+                for_student=self.student,
+            ).exists()
+        )
 
     @patch('builtins.print') # Avoids printing while testing
     def test_award_initialisation(self, mock_print):
