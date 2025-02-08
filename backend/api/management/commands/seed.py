@@ -264,12 +264,15 @@ class Command(BaseCommand):
         """Generate a random event and ensure attendees are added."""
         location = self.get_random_location()
         event_date = self.generate_random_date()
-
+        # Use generate_reasonable_time to ensure that the start time is in the future.
+        # If the event is scheduled for today, this function will pick a time after now.
+        event_time = self.generate_reasonable_time(event_date)
+        
         event, created = Event.objects.get_or_create(
             title=f"{society.name} Event",
             description=f"An exciting event by {society.name}",
             date=event_date,
-            start_time=self.generate_random_time(),
+            start_time=event_time,
             duration=self.generate_random_duration(),
             hosted_by=society,
             location=location,
@@ -332,9 +335,19 @@ class Command(BaseCommand):
         return choice(duration_choices)
 
     def generate_random_date(self):
-        """Generate a future event date within the next 30 days, including today."""
+        """Generate a future event date within the next 30 days.
+        
+        If the current time is past the allowed event hours (after 8:45 PM), 
+        then events will not be scheduled for today.
+        """
         today = date.today()
-        random_days = randint(0, 30)
+        now_time = datetime.now().time()
+        latest_allowed_time = time(20, 45)  # 8:45 PM as the latest allowed event time
+        # If it's already too late today, start from tomorrow (i.e. add at least 1 day)
+        if now_time > latest_allowed_time:
+            random_days = randint(1, 30)
+        else:
+            random_days = randint(0, 30)
         return today + timedelta(days=random_days)
 
 

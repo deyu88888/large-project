@@ -26,17 +26,18 @@ const formatDateTime = (date: Date): string => {
 };
 
 // -- Custom Hook: useCountdown --
-// Calculates the time left until the target date in days, hours, and minutes.
+// Calculates the time left until the target date in days, hours, minutes, and seconds.
 const useCountdown = (targetDate: Date) => {
   const calculateTimeLeft = () => {
     const diff = targetDate.getTime() - Date.now();
     if (diff <= 0) {
-      return { days: 0, hours: 0, minutes: 0 };
+      return { days: 0, hours: 0, minutes: 0, seconds: 0 };
     }
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
     const minutes = Math.floor((diff / (1000 * 60)) % 60);
-    return { days, hours, minutes };
+    const seconds = Math.floor((diff / 1000) % 60);
+    return { days, hours, minutes, seconds };
   };
 
   const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
@@ -44,7 +45,7 @@ const useCountdown = (targetDate: Date) => {
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft(calculateTimeLeft());
-    }, 60000); // update every minute
+    }, 1000); // update every second
 
     // Update immediately on mount
     setTimeLeft(calculateTimeLeft());
@@ -64,14 +65,28 @@ const listVariants: Variants = {
 const itemVariants: Variants = {
   hidden: { opacity: 0, y: 20 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
-  exit: { opacity: 0, y: -20 },
+  exit: { opacity: 0, y: -20, transition: { duration: 0.3 } },
 };
 
 const UpcomingEvents: React.FC<UpcomingEventsProps> = ({ events }) => {
-  // Memoize the sorted events for performance
+  // Sort the events by start time
   const sortedEvents = useMemo(() => {
     return [...events].sort((a, b) => a.start.getTime() - b.start.getTime());
   }, [events]);
+
+  // Local state for current time to trigger re-render every second
+  const [currentTime, setCurrentTime] = useState(Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Filter active events (those whose start time is still in the future)
+  const activeEvents = sortedEvents.filter(
+    (event) => event.start.getTime() > currentTime
+  );
 
   return (
     <motion.div
@@ -83,12 +98,18 @@ const UpcomingEvents: React.FC<UpcomingEventsProps> = ({ events }) => {
       role="region"
       aria-label="Upcoming Events Section"
     >
-      {sortedEvents.length > 0 ? (
+      {activeEvents.length > 0 ? (
         <AnimatePresence>
-          <motion.ul className="space-y-6" initial="hidden" animate="visible" exit="hidden" variants={listVariants}>
-            {sortedEvents.map((event) => {
+          <motion.ul
+            className="space-y-6"
+            initial="hidden"
+            animate="visible"
+            exit="hidden"
+            variants={listVariants}
+          >
+            {activeEvents.map((event) => {
               // Use our custom hook to get a live countdown until event.start
-              const { days, hours, minutes } = useCountdown(event.start);
+              const { days, hours, minutes, seconds } = useCountdown(event.start);
 
               return (
                 <motion.li
@@ -99,7 +120,9 @@ const UpcomingEvents: React.FC<UpcomingEventsProps> = ({ events }) => {
                 >
                   {/* --- Event Info --- */}
                   <div>
-                    <h3 className="text-2xl font-extrabold tracking-tight mb-1">{event.title}</h3>
+                    <h3 className="text-2xl font-extrabold tracking-tight mb-1">
+                      {event.title}
+                    </h3>
                     <p className="text-sm text-white/90">
                       {formatDateTime(event.start)} &mdash; {formatDateTime(event.end)}
                     </p>
@@ -120,7 +143,7 @@ const UpcomingEvents: React.FC<UpcomingEventsProps> = ({ events }) => {
                         transition={{ duration: 0.4 }}
                         className="text-white"
                       >
-                        Starts in: {days}d {hours}h {minutes}m
+                        Starts in: {days}d {hours}h {minutes}m {seconds}s
                       </motion.p>
                     </div>
                   </div>
@@ -138,7 +161,9 @@ const UpcomingEvents: React.FC<UpcomingEventsProps> = ({ events }) => {
           </motion.ul>
         </AnimatePresence>
       ) : (
-        <p className="text-gray-600 text-lg text-center animate-pulse">No upcoming events.</p>
+        <p className="text-gray-600 text-lg text-center animate-pulse">
+          No upcoming events.
+        </p>
       )}
     </motion.div>
   );
