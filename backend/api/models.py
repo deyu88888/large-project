@@ -1,4 +1,3 @@
-# api/models.py
 from datetime import timedelta
 from django.core.validators import MinLengthValidator, MaxLengthValidator, RegexValidator
 from django.db import models
@@ -8,56 +7,6 @@ from django.utils import timezone
 from django.db.models.signals import m2m_changed
 from django.utils.translation import gettext_lazy as _  # Import for i18n
 
-
-class SiteSettings(models.Model):
-    """
-    Stores site-wide settings, including the introduction text.
-    We use a singleton pattern (only one instance allowed).
-    """
-    singleton_instance_id = 1  # We'll enforce this as the only valid ID.
-
-    introduction_title = models.CharField(
-        max_length=255,
-        default=_("Welcome to the Universal Student Society Platform!"),  # Use translation
-        verbose_name=_("Introduction Title"),
-        help_text=_("The title of the website introduction section."),
-    )
-    introduction_content = models.TextField(
-        default=_(
-            "This platform is designed to help student societies manage their members, share news, "
-            "organize events, and much more. Whether you're a small club or a large society, "
-            "we provide the tools you need to connect with your members and thrive.\n\n"
-            "Key features include: membership management, event calendars, news feeds, notifications, "
-            "and customizable society pages. Get started by registering your society or logging in!"
-        ),
-        verbose_name=_("Introduction Content"),
-        help_text=_("The main content of the website introduction. Use newlines to separate paragraphs."),
-    )
-
-    class Meta:
-        verbose_name = _("Site Settings")
-        verbose_name_plural = _("Site Settings")
-
-    def __str__(self):
-        return "Site Settings"
-
-    def save(self, *args, **kwargs):
-        """
-        Enforce the singleton pattern. Only allow saving if the ID is the
-        singleton_instance_id.
-        """
-        if self.pk != self.singleton_instance_id:
-            self.pk = self.singleton_instance_id
-        super().save(*args, **kwargs)
-
-    @classmethod
-    def load(cls):
-        """
-        Load the singleton instance.  Create it if it doesn't exist.
-        This is a more robust way to get the settings.
-        """
-        obj, created = cls.objects.get_or_create(pk=cls.singleton_instance_id)
-        return obj
 
 class User(AbstractUser):
     """
@@ -379,3 +328,54 @@ class EventRequest(Request):
     date = models.DateField(blank=True, null=True)
     start_time = models.TimeField(blank=True, null=True)
     duration = models.DurationField(blank=True, null=True)
+
+
+class SiteSettings(models.Model):
+    """
+    Stores site-wide settings, including the introduction text.
+    We use a singleton pattern (only one instance allowed).
+    """
+    singleton_instance_id = 1  # We'll enforce this as the only valid ID.
+
+    introduction_title = models.CharField(
+        max_length=255,
+        default=_("Welcome to the Universal Student Society Platform!"),  # Use translation
+        verbose_name=_("Introduction Title"),
+        help_text=_("The title of the website introduction section."),
+    )
+    introduction_content = models.TextField(
+        default=_(
+            "This platform is designed to help student societies manage their members, share news, "
+            "organize events, and much more. Whether you're a small club or a large society, "
+            "we provide the tools you need to connect with your members and thrive.\n\n"
+            "Key features include: membership management, event calendars, news feeds, notifications, "
+            "and customizable society pages. Get started by registering your society or logging in!"
+        ),
+        verbose_name=_("Introduction Content"),
+        help_text=_("The main content of the website introduction. Use newlines to separate paragraphs."),
+    )
+
+    class Meta:
+        verbose_name = _("Site Settings")
+        verbose_name_plural = _("Site Settings")
+
+    def __str__(self):
+        return "Site Settings"
+
+    def save(self, *args, **kwargs):
+        """
+        Enforce the singleton pattern. Only allow saving if the ID is the
+        singleton_instance_id.
+        """
+        if self.pk != self.singleton_instance_id:
+            self.pk = self.singleton_instance_id
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def load(cls):
+        """
+        Load the singleton instance.  Create it if it doesn't exist.
+        This is a more robust way to get the settings.
+        """
+        obj, created = cls.objects.get_or_create(pk=cls.singleton_instance_id)
+        return obj

@@ -3,7 +3,7 @@ import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from asgiref.sync import sync_to_async
 import logging
-from .models import SiteSettings  # Import the SiteSettings model
+# from .models import SiteSettings  # Import the SiteSettings model
 
 
 # Set up logger
@@ -220,5 +220,6 @@ class DashboardConsumer(AsyncWebsocketConsumer):
         """
         Fetches the SiteSettings (singleton) from the database.
         """
+        from .models import SiteSettings  # Do not import globally!
         logger.debug("[DashboardConsumer] Fetching site settings.")
         return SiteSettings.load()  # Use the .load() method

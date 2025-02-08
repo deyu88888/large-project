@@ -6,6 +6,7 @@ from channels.security.websocket import AllowedHostsOriginValidator
 from channels.auth import AuthMiddlewareStack
 from api.routing import websocket_urlpatterns
 
+
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
 django.setup()  # Ensure Django is initialized
 
