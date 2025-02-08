@@ -179,8 +179,6 @@ class StudentSocietiesView(APIView):
         return Response({"message": f"Successfully left society '{society.name}'."}, status=status.HTTP_200_OK)
 
 
-
-
 class JoinSocietyView(APIView):
     """
     API View for managing the joining of new societies by a student.
@@ -379,7 +377,7 @@ class SocietyRequestView(APIView):
         requests = Society.objects.filter(status='Pending')
         serializer = SocietySerializer(requests, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-    
+
     def put(self, request, society_id):
         """
         PUT request to update the status of the society request from pending to approved or rejected for admins.

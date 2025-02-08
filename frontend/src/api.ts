@@ -1,6 +1,6 @@
 import axios from "axios";
 import { ACCESS_TOKEN } from "./constants";
-import PendingSocietyRequest from "./pages/Admin/PendingSocietyRequest";
+// import PendingSocietyRequest from "./pages/Admin/PendingSocietyRequest";  // not used
 
 const apiUrl = "http://localhost:8000";
 
