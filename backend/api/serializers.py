@@ -129,36 +129,52 @@ class AdminSerializer(UserSerializer):
 class SocietySerializer(serializers.ModelSerializer):
     """ Serializer for objects of the Society model """
 
+    icon = serializers.ImageField(required=False, allow_null=True)
+    tags = serializers.ListField(child=serializers.CharField(), required=False)
+
     class Meta:
         model = Society
         fields = [
             'id', 'name', 'society_members', 'roles', 'leader', 'approved_by',
             'status', 'category', 'social_media_links', 'timetable',
-            'membership_requirements', 'upcoming_projects_or_plans', 
-            #'society_logo'
+            'membership_requirements', 'upcoming_projects_or_plans',
+            'tags', 'icon',  # Added the new fields
         ]
+        extra_kwargs = {
+            'society_members': {'required': False},  # Allows empty or missing data
+            'roles': {'required': False},
+            'social_media_links': {'required': False},
+            'timetable': {'required': False},
+            'membership_requirements': {'required': False},
+            'upcoming_projects_or_plans': {'required': False},
+        }
 
     def validate_social_media_links(self, value):
         """ Ensure social media links include valid URLs """
-        for key, link in value.items():
-            if not link.startswith("http"):
-                raise serializers.ValidationError(f"{key} link must be a valid URL.")
+        if value:
+            for key, link in value.items():
+                if not link.startswith("http"):
+                    raise serializers.ValidationError(f"{key} link must be a valid URL.")
         return value
 
     def create(self, validated_data):
-        """ Use passing in json dict data to create a new Society """
+        """ Use passing in JSON dict data to create a new Society """
         members_data = validated_data.pop('society_members', [])
+        tags_data = validated_data.pop('tags', [])
+
         society = Society.objects.create(**validated_data)
 
         if members_data:
             society.society_members.set(members_data)
 
+        society.tags = tags_data  # Assign tags
         society.save()
         return society
 
     def update(self, instance, validated_data):
-        """ Use passing in a Society and json dict data to update a Society """
+        """ Use passing in a Society and JSON dict data to update a Society """
         members_data = validated_data.pop('society_members', [])
+        tags_data = validated_data.pop('tags', [])
 
         for key, value in validated_data.items():
             setattr(instance, key, value)
@@ -166,8 +182,10 @@ class SocietySerializer(serializers.ModelSerializer):
         if members_data:
             instance.society_members.set(members_data)
 
+        instance.tags = tags_data  # Assign updated tags
         instance.save()
         return instance
+
 
 
 class EventSerializer(serializers.ModelSerializer):
@@ -294,7 +312,7 @@ class JoinSocietySerializer(serializers.Serializer):
         society_id = self.validated_data['society_id']
         request_user = self.context['request'].user
         society = Society.objects.get(id=society_id)
-        request_user.student.societies.add(society)
+        request_user.student.societies_belongs_to.add(society)
         return society
 
 

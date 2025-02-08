@@ -156,7 +156,15 @@ class Society(models.Model):
     timetable = models.TextField(blank=True, null=True)
     membership_requirements = models.TextField(blank=True, null=True)
     upcoming_projects_or_plans = models.TextField(blank=True, null=True)
+    tags = models.JSONField(default=list, blank=True)  # Stores tags as a list
+    icon = models.ImageField(upload_to="society_icons/", blank=True, null=True)  # Stores an image icon
 
+    def save(self, *args, **kwargs):
+        """Ensure the leader is always a member"""
+        super().save(*args, **kwargs)  # Save the society first
+        if self.leader:
+            self.society_members.add(self.leader) 
+            
     def __str__(self):
         return self.name
 

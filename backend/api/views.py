@@ -149,7 +149,7 @@ class StudentSocietiesView(APIView):
         if not hasattr(user, "student"):
             return Response({"error": "Only students can manage societies."}, status=status.HTTP_403_FORBIDDEN)
 
-        societies = user.student.societies.all()
+        societies = user.student.societies_belongs_to.all()
         serializer = SocietySerializer(societies, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -170,11 +170,11 @@ class StudentSocietiesView(APIView):
             return Response({"error": "Society does not exist."}, status=status.HTTP_404_NOT_FOUND)
 
         # Check if the user is actually a member of the society
-        if not user.student.societies.filter(id=society_id).exists():
+        if not user.student.societies_belongs_to.filter(id=society_id).exists():
             return Response({"error": "You are not a member of this society."}, status=status.HTTP_400_BAD_REQUEST)
 
         # Remove the student from the society
-        user.student.societies.remove(society)
+        user.student.societies_belongs_to.remove(society)
 
         return Response({"message": f"Successfully left society '{society.name}'."}, status=status.HTTP_200_OK)
 
@@ -207,7 +207,7 @@ class JoinSocietyView(APIView):
         if not hasattr(user, "student"):
             return Response({"error": "Only students can join societies."}, status=status.HTTP_403_FORBIDDEN)
 
-        joined_societies = user.student.societies.all()
+        joined_societies = user.student.societies_belongs_to.all()
         available_societies = Society.objects.exclude(id__in=joined_societies)
 
         serializer = SocietySerializer(available_societies, many=True)
@@ -215,6 +215,7 @@ class JoinSocietyView(APIView):
 
     def post(self, request, society_id=None):
         user = request.user
+
         if not hasattr(user, "student"):
             return Response({"error": "Only students can join societies."}, status=status.HTTP_403_FORBIDDEN)
 
@@ -222,16 +223,17 @@ class JoinSocietyView(APIView):
             return Response({"error": "Society ID is required."}, status=status.HTTP_400_BAD_REQUEST)
 
         serializer = JoinSocietySerializer(data={"society_id": society_id}, context={"request": request})
-        if serializer.is_valid():
-            try:
-                society = serializer.save()
-                return Response({"message": f"Successfully joined society '{society.name}'."}, status=status.HTTP_200_OK)
-            except Society.DoesNotExist:
-                return Response(
-                    {"error": "Society not found"}, 
-                    status=status.HTTP_404_NOT_FOUND
-                )
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        if not serializer.is_valid():
+
+            if "Society does not exist." in serializer.errors.get("society_id", []):
+                return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
+
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)  
+
+        society = serializer.save()
+        return Response({"message": f"Successfully joined society '{society.name}'."}, status=status.HTTP_200_OK)
+
 
 
 class RSVPEventView(APIView):
