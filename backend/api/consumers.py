@@ -1,3 +1,4 @@
+# api/consumers.py
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from asgiref.sync import sync_to_async
@@ -122,7 +123,7 @@ class DashboardConsumer(AsyncWebsocketConsumer):
             await self.send(json.dumps({"error": str(e)}))
 
     # =========================================================
-    #  BROADCAST HANDLERS - Called for each group member's socket
+    #   BROADCAST HANDLERS - Called for each group member's socket
     # =========================================================
 
     async def dashboard_update(self, event):

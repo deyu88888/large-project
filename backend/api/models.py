@@ -1,3 +1,4 @@
+# api/models.py
 from datetime import timedelta
 from django.core.validators import MinLengthValidator, MaxLengthValidator, RegexValidator
 from django.db import models
@@ -5,7 +6,7 @@ from django.contrib.auth.models import AbstractUser
 from django.dispatch import receiver
 from django.utils import timezone
 from django.db.models.signals import m2m_changed
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext_lazy as _  # Import for i18n
 
 
 class SiteSettings(models.Model):
