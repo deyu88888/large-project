@@ -16,25 +16,81 @@ type Society = {
 
 const PendingSocietyRequest = () => {
     const [societies, setSocieties] = useState<Society[]>([]);
+    const [socket, setSocket] = useState<WebSocket | null>(null);
 
     useEffect(() => {
-        const socket = new WebSocket("ws://127.0.0.1:8000/ws/admin/society-request/");
-
-        socket.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            if (data.pending_requests) {
-                setSocieties(data.pending_requests);
+        const fetchSocieties = async () => {
+            try {
+                const res = await apiClient.get(apiPaths.USER.PENDINGSOCIETYREQUEST);
+                console.log("Fetched Societies:", res.data);
+                setSocieties(Array.isArray(res.data) ? res.data : []);
+            } catch (error) {
+                console.error("⚠️ Error fetching societies:", error);
             }
         };
 
-        socket.onclose = () => {
-            console.log("WebSocket closed");
-        };
+        fetchSocieties();
 
-        return () => {
-            socket.close();
-        };
-    }, []);
+    //     const socket = new WebSocket("ws://127.0.0.1:8000/ws/admin/society-request/");
+
+    //     socket.onmessage = (event) => {
+    //         const data = JSON.parse(event.data);
+    //         if (data.pending_requests) {
+    //             setSocieties(data.pending_requests);
+    //         }
+    //     };
+
+    //     socket.onclose = () => {
+    //         console.log("WebSocket closed");
+    //     };
+
+    //     return () => {
+    //         socket.close();
+    //     };
+    // }, []);
+    // WebSocket Setup
+    const ws = new WebSocket("ws://127.0.0.1:8000/ws/admin/society/");
+
+    ws.onopen = () => {
+        console.log("WebSocket Connected for Society List");
+    };
+
+    ws.onmessage = (event) => {
+        try {
+            const data = JSON.parse(event.data);
+            console.log("WebSocket Update Received:", data.data);
+
+            if (data.data) {
+                setSocieties((prevSocieties) => {
+                    const existingIds = new Set(prevSocieties.map((society) => society.id));
+                    return existingIds.has(data.data.id) ? prevSocieties : [...prevSocieties, data.data];
+                    // }
+                });
+            } else {
+                console.warn("WebSocket message has invalid format:", data);
+            }
+        } catch (error) {
+            console.error("Error parsing WebSocket message:", error);
+        }
+    };
+
+    ws.onerror = (event) => {
+        console.error("WebSocket Error:", event);
+    };
+
+    ws.onclose = (event) => {
+        console.log("WebSocket Disconnected:", event.reason);
+        setTimeout(() => {
+            setSocket(new WebSocket("ws://127.0.0.1:8000/ws/admin/society/"));
+        }, 5000);
+    };
+
+    setSocket(ws);
+
+    return () => {
+        ws.close();
+    };
+}, []);
 
     const handleAccept = async (id: number) => {
         const res = await apiClient.put(apiPaths.USER.PENDINGSOCIETYREQUEST + '/' + id, {status: 'Approved'});

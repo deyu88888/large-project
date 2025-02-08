@@ -29,10 +29,10 @@ urlpatterns = [
     # User role endpoints
     path("user/admin", AdminView.as_view(), name="admin"),
     path("user/student", StudentView.as_view(), name="student"),
-
-    # Society membership endpoints
-    path("join-society/<int:society_id>/", JoinSocietyView.as_view(), name="join_society"),
-    path("join-society/", JoinSocietyView.as_view(), name="join_society"),
+  
+  # Society membership endpoints
+    path('join-society/<int:society_id>/', JoinSocietyView.as_view(), name='join_society'),
+    path('join-society/', JoinSocietyView.as_view(), name='join_society'),
 
     # Event endpoints
     path("events/rsvp/", RSVPEventView.as_view(), name="rsvp_event"),
