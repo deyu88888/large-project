@@ -556,9 +556,10 @@ class AwardStudentSerializer(serializers.ModelSerializer):
     Serializer for the AwardStudent model
     """
     award = AwardSerializer(read_only=True)
+    student = StudentSerializer(read_only=True)
     student_id = serializers.PrimaryKeyRelatedField(source='student', queryset=Student.objects.all(), write_only=True)
     award_id = serializers.PrimaryKeyRelatedField(source='award', queryset=Award.objects.all(), write_only=True)
 
     class Meta:
         model = AwardStudent
-        fields = ['id', 'award', 'student_id', 'award_id', 'awarded_at']
+        fields = ['id', 'award', 'student', 'student_id', 'award_id', 'awarded_at']
