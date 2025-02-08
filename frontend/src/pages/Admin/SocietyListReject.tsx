@@ -11,7 +11,7 @@ type Society = {
     actions: string;
 };
 
-const SocietyList = () => {
+const SocietyListReject = () => {
     const [societies, setSocieties] = useState<Society[]>([]);
     const [socket, setSocket] = useState<WebSocket | null>(null);
 
@@ -38,9 +38,9 @@ const SocietyList = () => {
         ws.onmessage = (event) => {
             try {
                 const data = JSON.parse(event.data);
-                console.log("WebSocket Update Received:", data.data);
+                console.log("WebSocket Update Received:", data);
 
-                if (data.data) {
+                if (data.data && data.data.status === "Rejected") {
                     setSocieties((prevSocieties) => {
                         const existingIds = new Set(prevSocieties.map((society) => society.id));
                         return existingIds.has(data.data.id) ? prevSocieties : [...prevSocieties, data.data];
@@ -101,4 +101,4 @@ const SocietyList = () => {
     );
 };
 
-export default SocietyList;
+export default SocietyListReject;

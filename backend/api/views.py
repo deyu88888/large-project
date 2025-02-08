@@ -387,14 +387,10 @@ class SocietyRequestView(APIView):
                 {"error": "Only admins can view society requests."},
                 status=status.HTTP_403_FORBIDDEN
             )
-        print("testing: reached")
-        print("Society.objects.filter(status='Pending'): ", Society.objects.filter(status='Pending'))
+       
         # Fetch the society requests
         pending_societies = Society.objects.filter(status='Pending')
-        print("pending_societies zzzzz: ", pending_societies)
         serializer = SocietySerializer(pending_societies, many=True)
-        # print("serializer.errors yyyyyy: ", serializer.errors)
-        print("serializer data xxxxx: ", serializer.data)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, society_id):
@@ -442,6 +438,7 @@ class SocietyRequestView(APIView):
                         "type": "society_list_update",
                         "message": "A new society has been approved.",
                         "data": serializer.data,
+                        "status": "Approved"
                     }
                 )
             elif serializer.validated_data.get("status") == "Rejected":
@@ -451,6 +448,7 @@ class SocietyRequestView(APIView):
                         "type": "society_list_update",
                         "message": "A society request has been rejected.",
                         "data": serializer.data,
+                        "status": "Rejected"
                     }
                 )
             
@@ -461,16 +459,7 @@ class SocietyRequestView(APIView):
                         "type": "society_list_update",
                         "message": "A society request has been updated.",
                         "data": serializer.data,
-                    }
-                )
-
-            elif serializer.validated_data.get("status") == "Pending":      
-                async_to_sync(channel_layer.group_send)(
-                    "society_updates",
-                    {
-                        "type": "society_list_update",
-                        "message": "A society request is pending approval.",
-                        "data": serializer.data,
+                        "status": "Pending"
                     }
                 )
 

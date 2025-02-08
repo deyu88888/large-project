@@ -19,7 +19,6 @@ const SocietyList = () => {
         const fetchSocieties = async () => {
             try {
                 const res = await apiClient.get(apiPaths.USER.SOCIETY);
-                console.log("Fetched Societies:", res.data);
                 setSocieties(Array.isArray(res.data) ? res.data : []);
             } catch (error) {
                 console.error("Error fetching societies:", error);
@@ -38,10 +37,9 @@ const SocietyList = () => {
         ws.onmessage = (event) => {
             try {
                 const data = JSON.parse(event.data);
-                console.log("WebSocket Update Received:", data.data);
 
                 // Check if `data.data` exists and is an array before updating state
-                if (data.data) {
+                if (data.data && data.data.status === "Approved") {
                     setSocieties((prevSocieties) => {
                         const existingIds = new Set(prevSocieties.map((society) => society.id));
                         return existingIds.has(data.data.id) ? prevSocieties : [...prevSocieties, data.data];
