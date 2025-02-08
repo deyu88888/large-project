@@ -20,6 +20,8 @@ class Command(BaseCommand):
             m.SocietyRequest,
             m.Society,
             m.UserRequest,
+            m.AwardStudent,
+            m.Award,
             m.User,
             m.Student,
             m.Admin,
