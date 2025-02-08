@@ -436,6 +436,16 @@ class SocietyRequestView(APIView):
                         "data": serializer.data,
                     }
                 )
+            
+            elif serializer.validated_data.get("status") == "Pending":
+                async_to_sync(channel_layer.group_send)(
+                    "society_updates",
+                    {
+                        "type": "society_list_update",
+                        "message": "A society request has been updated.",
+                        "data": serializer.data,
+                    }
+                )
 
             return Response(
                 {"message": "Society request updated successfully.", "data": serializer.data},
