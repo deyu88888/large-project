@@ -2,7 +2,6 @@ from pathlib import Path
 from datetime import timedelta
 from dotenv import load_dotenv
 import os
-# from fakeredis.aioredis import FakeRedis
 
 # Load environment variables
 load_dotenv()
@@ -20,7 +19,7 @@ SECRET_KEY = os.getenv(
 DEBUG = os.getenv("DJANGO_DEBUG", "True") == "True"
 
 # Allowed hosts
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
 
 # REST framework settings
 REST_FRAMEWORK = {
@@ -53,21 +52,21 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
-    "corsheaders",
+    "corsheaders",  # ✅ CORS Middleware
     "api",
+    "channels",  # ✅ Django Channels for WebSockets
 ]
 
 # Middleware settings
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "corsheaders.middleware.CorsMiddleware",  # ✅ Must be at the top for CORS to work
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "corsheaders.middleware.CorsMiddleware",  # CORS middleware
-    "csp.middleware.CSPMiddleware",  # Content Security Policy middleware
 ]
 
 # Root URL configuration
@@ -120,14 +119,43 @@ USE_TZ = True
 STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# CORS settings
-CORS_ALLOW_ALL_ORIGINS = True
-CORS_ALLOW_CREDENTIALS = True
+# 🔥 **CORS settings** (✅ Optimized)
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",  # ✅ Allow frontend React app
+]
 
-# Custom user model
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",  # ✅ Prevent CSRF errors
+]
+
+CORS_ALLOW_CREDENTIALS = True  # ✅ Allow authentication tokens & cookies
+
+# ✅ **Allow WebSockets & Headers**
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+    "sec-websocket-protocol",  # ✅ Allow WebSocket protocol
+]
+
+# ✅ **Allow WebSockets Origin via Regex**
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^http://localhost:3000$",  # ✅ Allow WebSockets from frontend
+]
+
+# ✅ **Required for secure headers (if using HTTPS)**
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+# 🔥 **Custom user model**
 AUTH_USER_MODEL = "api.User"
 
-# Channels settings
+# 🔥 **Django Channels settings (Optimized for Daphne WebSockets)**
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",

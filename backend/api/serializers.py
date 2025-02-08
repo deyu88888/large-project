@@ -1,7 +1,16 @@
 import datetime
-from api.models import User, Student, Admin, Society, Event, Notification, Request, SocietyRequest, EventRequest, UserRequest
+from api.models import User, Student, Admin, Society, Event, Notification, Request, SocietyRequest, EventRequest, UserRequest, SiteSettings
 from rest_framework import serializers
+from django.utils.translation import gettext_lazy as _
 
+class SiteSettingsSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the SiteSettings model.  Used for the website introduction.
+    """
+    class Meta:
+        model = SiteSettings
+        fields = ('introduction_title', 'introduction_content')
+        read_only_fields = ('introduction_title', 'introduction_content')
 
 class UserSerializer(serializers.ModelSerializer):
     """
@@ -519,6 +528,32 @@ class EventCalendarSerializer(serializers.ModelSerializer):
 
     def get_end(self, obj):
         # Combine date and start_time, add duration
+        start_dt = datetime.datetime.combine(obj.date, obj.start_time).replace(
+            tzinfo=datetime.timezone.utc
+        )
+        return (start_dt + obj.duration).isoformat()
+
+class EventCalendarSerializer(serializers.ModelSerializer):
+    """
+    Serializer for calendar events on the dashboard.
+    """
+    start = serializers.SerializerMethodField()
+    end = serializers.SerializerMethodField()
+    title = serializers.CharField()
+
+    class Meta:
+        model = Event
+        fields = ["id", "title", "start", "end", "location"]
+        read_only_fields = ["start", "end"]
+
+    def get_start(self, obj):
+        return (
+            datetime.datetime.combine(obj.date, obj.start_time)
+            .replace(tzinfo=datetime.timezone.utc)
+            .isoformat()
+        )
+
+    def get_end(self, obj):
         start_dt = datetime.datetime.combine(obj.date, obj.start_time).replace(
             tzinfo=datetime.timezone.utc
         )
