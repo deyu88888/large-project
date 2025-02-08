@@ -19,7 +19,7 @@ const SocietyList = () => {
         const fetchSocieties = async () => {
             try {
                 const res = await apiClient.get(apiPaths.USER.REJECTEDSOCIETY);
-                console.log("📥 Fetched Societies:", res.data);
+                console.log("Fetched Societies:", res.data);
                 setSocieties(Array.isArray(res.data) ? res.data : []);
             } catch (error) {
                 console.error("⚠️ Error fetching societies:", error);

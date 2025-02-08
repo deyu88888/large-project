@@ -31,7 +31,7 @@ urlpatterns = [
 
     # Society membership endpoints (incoming)
     path('join-society/<int:society_id>/', JoinSocietyView.as_view(), name='join_society'),  # for PUT requests
-    path('join-society/', JoinSocietyView.as_view(), name='join_society'),                    # for GET requests
+    path('join-society/', JoinSocietyView.as_view(), name='join_society'),                # for GET requests
 
     # Event endpoints (incoming)
     path('events/rsvp/', RSVPEventView.as_view(), name='rsvp_event'),
