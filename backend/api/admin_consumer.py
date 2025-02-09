@@ -15,7 +15,7 @@ class SocietyRequestConsumer(AsyncWebsocketConsumer):
         # Async-safe query to check user role
         user = await sync_to_async(User.objects.get)(username="admin_user")
 
-        #  TODO: Uncomment when the admin dashboard is linked
+        #   TODO: Uncomment when the admin dashboard is linked
         # if isinstance(user, AnonymousUser) or not hasattr(user, "admin"):
         #     print("User is not an admin, closing WebSocket.")
         #     await self.close()

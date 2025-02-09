@@ -15,7 +15,7 @@ urlpatterns = [
     path("api-auth", include("rest_framework.urls")),
 
     # Society endpoints
-    path('my-societies/', MySocietiesView.as_view(), name='my_societies'),
+    # path('my-societies/', MySocietiesView.as_view(), name='my_societies'),
     path('join-society/<int:society_id>/', JoinSocietyView.as_view(), name='join_society'),
     path('leave-society/<int:society_id>/', MySocietiesView.as_view(), name='leave_society'),
 

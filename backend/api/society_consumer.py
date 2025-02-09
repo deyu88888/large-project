@@ -3,6 +3,10 @@ import json
 
 
 class SocietyConsumer(AsyncWebsocketConsumer):
+    """
+    This class is responsible for handling the websocket connections for the society updates.
+    """
+
     async def connect(self):
         self.group_name = "society_updates"
 

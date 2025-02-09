@@ -16,7 +16,6 @@ type Society = {
 
 const PendingSocietyRequest = () => {
     const [societies, setSocieties] = useState<Society[]>([]);
-    const [socket, setSocket] = useState<WebSocket | null>(null);
 
     useEffect(() => {
         const fetchSocieties = async () => {

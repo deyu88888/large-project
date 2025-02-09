@@ -143,7 +143,7 @@ class SocietySerializer(serializers.ModelSerializer):
         fields = [
             'id', 'name', 'society_members', 'roles', 'leader', 'approved_by',
             'status', 'category', 'social_media_links', 'timetable',
-            'membership_requirements', 'upcoming_projects_or_plans', 
+            'membership_requirements', 'upcoming_projects_or_plans',
             #'society_logo'
         ]
 

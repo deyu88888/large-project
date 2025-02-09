@@ -387,10 +387,10 @@ class SocietyRequestView(APIView):
                 {"error": "Only admins can view society requests."},
                 status=status.HTTP_403_FORBIDDEN
             )
-
+       
         # Fetch the society requests
-        requests = Society.objects.filter(status='Pending')
-        serializer = SocietySerializer(requests, many=True)
+        pending_societies = Society.objects.filter(status='Pending')
+        serializer = SocietySerializer(pending_societies, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, society_id):
@@ -419,16 +419,16 @@ class SocietyRequestView(APIView):
         if serializer.is_valid():
             serializer.save()
 
-            # Notify WebSocket clients about the update
+            # # Notify WebSocket clients about the update       
             channel_layer = get_channel_layer()
-            async_to_sync(channel_layer.group_send)(
-                "society_requests",
-                {
-                    "type": "send_pending_requests",
-                    "message": "Society request updated successfully.",
-                    "data": serializer.data,
-                }
-            )
+            # async_to_sync(channel_layer.group_send)(
+            #     "society_requests",
+            #     {
+            #         "type": "send_pending_requests",
+            #         "message": "Society request updated successfully.",
+            #         "data": serializer.data,
+            #     }
+            # )
 
             # If society was approved, notify the society view WebSocket clients
             if serializer.validated_data.get("status") == "Approved":
@@ -438,6 +438,7 @@ class SocietyRequestView(APIView):
                         "type": "society_list_update",
                         "message": "A new society has been approved.",
                         "data": serializer.data,
+                        "status": "Approved"
                     }
                 )
             elif serializer.validated_data.get("status") == "Rejected":
@@ -447,6 +448,18 @@ class SocietyRequestView(APIView):
                         "type": "society_list_update",
                         "message": "A society request has been rejected.",
                         "data": serializer.data,
+                        "status": "Rejected"
+                    }
+                )
+            
+            elif serializer.validated_data.get("status") == "Pending":
+                async_to_sync(channel_layer.group_send)(
+                    "society_updates",
+                    {
+                        "type": "society_list_update",
+                        "message": "A society request has been updated.",
+                        "data": serializer.data,
+                        "status": "Pending"
                     }
                 )
 

@@ -17,7 +17,9 @@ export default function LoginPage() {
     onSubmit: async (data) => {
       setLoading(true);
       try {
+        console.log(data);
         const res = await apiClient.post(apiPaths.USER.LOGIN, data);
+        console.log(res.data);
         localStorage.setItem(ACCESS_TOKEN, res.data.access);
         localStorage.setItem(REFRESH_TOKEN, res.data.refresh);
         navigate("/home");

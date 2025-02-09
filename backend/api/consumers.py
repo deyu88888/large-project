@@ -3,9 +3,8 @@ import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from asgiref.sync import sync_to_async
 import logging
-from .models import SiteSettings  # Import the SiteSettings model
-# No longer need the serializer here!
-# from .serializers import SiteSettingsSerializer
+# from .models import SiteSettings  # Import the SiteSettings model
+
 
 # Set up logger
 logger = logging.getLogger(__name__)
@@ -124,7 +123,7 @@ class DashboardConsumer(AsyncWebsocketConsumer):
             await self.send(json.dumps({"error": str(e)}))
 
     # =========================================================
-    #  BROADCAST HANDLERS - Called for each group member's socket
+    #   BROADCAST HANDLERS - Called for each group member's socket
     # =========================================================
 
     async def dashboard_update(self, event):
@@ -221,5 +220,6 @@ class DashboardConsumer(AsyncWebsocketConsumer):
         """
         Fetches the SiteSettings (singleton) from the database.
         """
+        from .models import SiteSettings  # Do not import globally!
         logger.debug("[DashboardConsumer] Fetching site settings.")
         return SiteSettings.load()  # Use the .load() method

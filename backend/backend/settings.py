@@ -3,25 +3,19 @@ from datetime import timedelta
 from dotenv import load_dotenv
 import os
 
-# Load environment variables
 load_dotenv()
 
-# Base directory of the project
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Secret key for Django
 SECRET_KEY = os.getenv(
     "DJANGO_SECRET_KEY",
     "django-insecure-nma=xi6x2p-crjg^ifqqkapyu1qjd0l=+wn)-rijk_o%$!k3w_"
 )
 
-# Debug setting
 DEBUG = os.getenv("DJANGO_DEBUG", "True") == "True"
 
-# Allowed hosts
 ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
 
-# REST framework settings
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
@@ -37,13 +31,11 @@ REST_FRAMEWORK = {
     ),
 }
 
-# JWT settings
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
 }
 
-# Application definition
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -52,16 +44,16 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
-    "corsheaders",  # ✅ CORS Middleware
+    "corsheaders",
     "api",
-    "channels",  # ✅ Django Channels for WebSockets
+    "channels",
 ]
 
-# Middleware settings
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "corsheaders.middleware.CorsMiddleware",  # ✅ Must be at the top for CORS to work
+    "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "corsheaders.middleware.CorsMiddleware",  
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -69,10 +61,8 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-# Root URL configuration
 ROOT_URLCONF = "backend.urls"
 
-# Templates configuration
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
@@ -89,11 +79,9 @@ TEMPLATES = [
     },
 ]
 
-# WSGI and ASGI application configuration
 WSGI_APPLICATION = "backend.wsgi.application"
 ASGI_APPLICATION = "backend.asgi.application"
 
-# Database configuration
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
@@ -101,7 +89,6 @@ DATABASES = {
     }
 }
 
-# Password validation
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
@@ -109,28 +96,24 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
-# Internationalization settings
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
 
-# Static files settings
 STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# 🔥 **CORS settings** (✅ Optimized)
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",  # ✅ Allow frontend React app
+    "http://localhost:3000",  
 ]
 
 CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:3000",  # ✅ Prevent CSRF errors
+    "http://localhost:3000",  
 ]
 
-CORS_ALLOW_CREDENTIALS = True  # ✅ Allow authentication tokens & cookies
+CORS_ALLOW_CREDENTIALS = True  
 
-# ✅ **Allow WebSockets & Headers**
 CORS_ALLOW_HEADERS = [
     "accept",
     "accept-encoding",
@@ -141,21 +124,17 @@ CORS_ALLOW_HEADERS = [
     "user-agent",
     "x-csrftoken",
     "x-requested-with",
-    "sec-websocket-protocol",  # ✅ Allow WebSocket protocol
+    "sec-websocket-protocol",  
 ]
 
-# ✅ **Allow WebSockets Origin via Regex**
 CORS_ALLOWED_ORIGIN_REGEXES = [
-    r"^http://localhost:3000$",  # ✅ Allow WebSockets from frontend
+    r"^http://localhost:3000$",  
 ]
 
-# ✅ **Required for secure headers (if using HTTPS)**
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
-# 🔥 **Custom user model**
 AUTH_USER_MODEL = "api.User"
 
-# 🔥 **Django Channels settings (Optimized for Daphne WebSockets)**
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",

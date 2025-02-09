@@ -27,24 +27,23 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// ✅ API Endpoints (Ensure all paths end with `/`)
 export const apiPaths = {
   USER: {
-    LOGIN: "/api/user/login/",
-    REGISTER: "/api/user/register/",
-    REFRESH: "/api/user/token/refresh/",
-    CURRENT: "/api/user/current/",
-    SOCIETY: "/api/admin-panel/society/",
-    REJECTEDSOCIETY: "/api/admin-panel/rejected-society/",
-    STUDENTS: "/api/user/student/",
-    ADMIN: "/api/user/admin/",
-    PENDINGSOCIETYREQUEST: "/api/society/request/pending/",
+    LOGIN: "/api/user/login",   // Remove Trailing slash
+    REGISTER: "/api/user/register",   // Remove Trailing slash
+    REFRESH: "/api/user/token/refresh",  // Remove Trailing slash
+    CURRENT: "/api/user/current",   // Remove Trailing slash
+    SOCIETY: "/api/admin-panel/society",  // Remove Trailing slash
+    REJECTEDSOCIETY: "/api/admin-panel/rejected-society", // Remove Trailing slash
+    STUDENTS: "/api/user/student",  // Remove Trailing slash
+    ADMIN: "/api/user/admin", // Remove Trailing slash
+    PENDINGSOCIETYREQUEST: "/api/society/request/pending",  // Remove Trailing slash
   },
   SOCIETY: {
-    POPULAR_SOCIETIES: "/api/popular-societies/", // ✅ Trailing slash
+    POPULAR_SOCIETIES: "/api/popular-societies", // Remove Trailing slash
   },
   EVENTS: {
-    ALL: "/api/events/", // ✅ Correct path for sorted events
+    ALL: "/api/events", // Remove Trailing slashe
   },
 };
 
