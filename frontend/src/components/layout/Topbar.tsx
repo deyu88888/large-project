@@ -1,5 +1,5 @@
 import { Box, IconButton, useTheme, InputBase } from "@mui/material";
-import { useContext } from "react";
+import { useState, useContext } from "react";
 import { ColorModeContext, tokens } from "../../theme/theme";
 import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
 import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
@@ -8,10 +8,17 @@ import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import PersonOutlinedIcon from "@mui/icons-material/PersonOutlined";
 import SearchIcon from "@mui/icons-material/Search";
 
-const Topbar: React.FC = () => {
+interface TopbarProps {
+  searchTerm: string;
+  setSearchTerm: (term: string) => void;
+}
+
+const Topbar: React.FC<TopbarProps> = ({ searchTerm, setSearchTerm }) => {
+
   const theme = useTheme();
   const colours = tokens(theme.palette.mode);
   const colourMode = useContext(ColorModeContext);
+  // const [searchTerm, setSearchTerm] = useState("");
 
   const SIDEBAR_WIDTH = 270;
   const TOPBAR_HEIGHT = 64;
@@ -41,7 +48,10 @@ const Topbar: React.FC = () => {
           backgroundColor: colours.primary[400], 
         }}
       >
-        <InputBase sx={{ ml: 2, flex: 1 }} placeholder="Search" />
+        <InputBase sx={{ ml: 2, flex: 1 }} placeholder="Search"  
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}/>
+         
         <IconButton type="button" sx={{ p: 1 }}>
           <SearchIcon />
         </IconButton>
