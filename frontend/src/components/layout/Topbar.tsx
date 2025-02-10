@@ -1,5 +1,6 @@
+import React, { useContext } from "react";
 import { Box, IconButton, useTheme, InputBase } from "@mui/material";
-import { useContext } from "react";
+import { Link } from "react-router-dom";
 import { useSidebar } from "./SidebarContext";
 import { ColorModeContext, tokens } from "../../styles/theme";
 import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
@@ -13,12 +14,8 @@ const Topbar: React.FC = () => {
   const theme = useTheme();
   const colours = tokens(theme.palette.mode);
   const colourMode = useContext(ColorModeContext);
-  const TOPBAR_HEIGHT = 64;
-
-  // Get the dynamic sidebarWidth from context
   const { sidebarWidth } = useSidebar();
-
-  // Add an extra width offset
+  const TOPBAR_HEIGHT = 64;
   const extraWidth = 100;
 
   return (
@@ -26,12 +23,12 @@ const Topbar: React.FC = () => {
       sx={{
         position: "fixed",
         top: 0,
-        left: `${sidebarWidth + extraWidth}px`, 
+        left: `${sidebarWidth + extraWidth}px`,
         width: `calc(100% - ${sidebarWidth + extraWidth}px)`,
         height: `${TOPBAR_HEIGHT}px`,
         zIndex: 1100,
-        backgroundColor: "rgba(0, 0, 0, 0)", 
-        backdropFilter: "blur(8px)", 
+        backgroundColor: "rgba(0, 0, 0, 0)",
+        backdropFilter: "blur(8px)",
         WebkitBackdropFilter: "blur(8px)",
         display: "flex",
         justifyContent: "space-between",
@@ -64,7 +61,8 @@ const Topbar: React.FC = () => {
         <IconButton>
           <SettingsOutlinedIcon />
         </IconButton>
-        <IconButton>
+
+        <IconButton component={Link} to="/profile">
           <PersonOutlinedIcon />
         </IconButton>
       </Box>
