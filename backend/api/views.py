@@ -1,20 +1,35 @@
 from datetime import timezone
-from django.shortcuts import get_object_or_404
-from api.models import User, Society, Event, Student, Notification
-from rest_framework import generics, status
-from .serializers import EventSerializer, RSVPEventSerializer, UserSerializer, StudentSerializer, LeaveSocietySerializer, JoinSocietySerializer, SocietySerializer, NotificationSerializer, DashboardStatisticSerializer, RecentActivitySerializer, EventCalendarSerializer, DashboardNotificationSerializer
-from api.models import Admin, User, Society, Event, Student
-from rest_framework import generics, status
-from .serializers import AdminSerializer, EventSerializer, RSVPEventSerializer, UserSerializer, StudentSerializer, LeaveSocietySerializer, JoinSocietySerializer, SocietySerializer, StartSocietyRequestSerializer
-from channels.layers import get_channel_layer
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework_simplejwt.authentication import JWTAuthentication
-from django.utils import timezone
-from django.db.models import Count
 from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+from django.db.models import Count, Sum
+from django.utils.timezone import now
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework import generics, status
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from api.models import Admin, Event, Notification, Society, Student, User
+from api.serializers import (
+    AdminSerializer,
+    DashboardNotificationSerializer,
+    DashboardStatisticSerializer,
+    EventCalendarSerializer,
+    EventSerializer,
+    JoinSocietySerializer,
+    LeaveSocietySerializer,
+    NotificationSerializer,
+    RecentActivitySerializer,
+    RSVPEventSerializer,
+    SocietySerializer,
+    StartSocietyRequestSerializer,
+    StudentSerializer,
+    UserSerializer,
+)
 
 """
 This function is for the global callout
@@ -177,8 +192,6 @@ class StudentSocietiesView(APIView):
         user.student.societies.remove(society)
 
         return Response({"message": f"Successfully left society '{society.name}'."}, status=status.HTTP_200_OK)
-
-
 
 
 class JoinSocietyView(APIView):
@@ -374,12 +387,12 @@ class SocietyRequestView(APIView):
                 {"error": "Only admins can view society requests."},
                 status=status.HTTP_403_FORBIDDEN
             )
-
+       
         # Fetch the society requests
-        requests = Society.objects.filter(status='Pending')
-        serializer = SocietySerializer(requests, many=True)
+        pending_societies = Society.objects.filter(status='Pending')
+        serializer = SocietySerializer(pending_societies, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-    
+
     def put(self, request, society_id):
         """
         PUT request to update the status of the society request from pending to approved or rejected for admins.
@@ -406,16 +419,16 @@ class SocietyRequestView(APIView):
         if serializer.is_valid():
             serializer.save()
 
-            # Notify WebSocket clients about the update
+            # # Notify WebSocket clients about the update       
             channel_layer = get_channel_layer()
-            async_to_sync(channel_layer.group_send)(
-                "society_requests",
-                {
-                    "type": "send_pending_requests",
-                    "message": "Society request updated successfully.",
-                    "data": serializer.data,
-                }
-            )
+            # async_to_sync(channel_layer.group_send)(
+            #     "society_requests",
+            #     {
+            #         "type": "send_pending_requests",
+            #         "message": "Society request updated successfully.",
+            #         "data": serializer.data,
+            #     }
+            # )
 
             # If society was approved, notify the society view WebSocket clients
             if serializer.validated_data.get("status") == "Approved":
@@ -425,6 +438,7 @@ class SocietyRequestView(APIView):
                         "type": "society_list_update",
                         "message": "A new society has been approved.",
                         "data": serializer.data,
+                        "status": "Approved"
                     }
                 )
             elif serializer.validated_data.get("status") == "Rejected":
@@ -434,6 +448,18 @@ class SocietyRequestView(APIView):
                         "type": "society_list_update",
                         "message": "A society request has been rejected.",
                         "data": serializer.data,
+                        "status": "Rejected"
+                    }
+                )
+            
+            elif serializer.validated_data.get("status") == "Pending":
+                async_to_sync(channel_layer.group_send)(
+                    "society_updates",
+                    {
+                        "type": "society_list_update",
+                        "message": "A society request has been updated.",
+                        "data": serializer.data,
+                        "status": "Pending"
                     }
                 )
 
@@ -584,15 +610,14 @@ class CreateSocietyEventView(APIView):
 
 class EventView(APIView):
     """
-    event view for admins see  all events
+    Event view to show upcoming approved events.
     """
-    permission_classes = [IsAuthenticated]
 
     def get(self, request) -> Response:
         """
-        List of approved events for the admin.
+        Returns a list of upcoming approved events sorted by date and time.
         """
-        events = Event.objects.all()
+        events = Event.objects.filter(status="Approved").order_by("date", "start_time")
         serializer = EventSerializer(events, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -725,3 +750,39 @@ class EventCalendarView(APIView):
 
 class MySocietiesView(APIView):
     pass
+
+@csrf_exempt
+def get_popular_societies(request):
+    """
+    Returns the top 5 most popular societies based on:
+    - Number of members
+    - Number of hosted events
+    - Total event attendees
+    """
+    
+    popular_societies = (
+        Society.objects.annotate(
+            total_members=Count("society_members"),
+            total_events=Count("events"),
+            total_event_attendance=Sum("events__current_attendees")
+        )
+        .annotate(
+            popularity_score=(
+                (2 * Count("society_members")) +
+                (3 * Count("events")) +
+                (4 * Sum("events__current_attendees"))
+            )
+        )
+        .order_by("-popularity_score")[:5]
+        .values("id", "name", "total_members", "total_events", "total_event_attendance", "popularity_score")
+    )
+
+    return JsonResponse(list(popular_societies), safe=False)
+
+@api_view(["GET"])
+@permission_classes([])
+def get_sorted_events(request):
+    # Get only upcoming events
+    events = Event.objects.filter(status="Approved", date__gte=now()).order_by("date", "start_time")
+    serializer = EventSerializer(events, many=True)
+    return Response(serializer.data)

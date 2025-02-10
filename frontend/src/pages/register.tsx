@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import CircularLoader from "../components/loading/circular-loader";
 import { Formik, Field, Form, ErrorMessage } from "formik";
 import * as Yup from "yup";
-import React from "react";
 
 
 export default function RegisterPage() {

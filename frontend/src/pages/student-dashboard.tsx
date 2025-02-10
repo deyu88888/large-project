@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { FaCalendarAlt, FaBell, FaUsers, FaUserPlus } from "react-icons/fa";
 import { useTheme } from "@mui/material/styles";
 import { useMode, tokens } from "../styles/theme";
+import { FaCalendarAlt, FaBell, FaUsers, FaUserPlus, FaCogs } from "react-icons/fa";
+import axios from "axios";
 import { apiClient } from "../api";
 import { useSidebar } from "../components/layout/SidebarContext";
 
@@ -16,6 +18,7 @@ const StudentDashboard: React.FC = () => {
   const [events, setEvents] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isPresident, setIsPresident] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -26,6 +29,12 @@ const StudentDashboard: React.FC = () => {
       setLoading(true);
       const societiesResponse = await apiClient.get("/api/student-societies/");
       setSocieties(societiesResponse.data || []);
+
+      // Check if the student is president of any society
+      const presidentSocieties = societiesResponse.data.filter((society: any) => society.is_president);
+      setIsPresident(presidentSocieties.length > 0);
+
+      // Fetch events
       const eventsResponse = await apiClient.get("/api/events/rsvp");
       setEvents(eventsResponse.data || []);
       const notificationsResponse = await apiClient.get("/api/notifications");

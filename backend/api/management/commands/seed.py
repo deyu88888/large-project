@@ -1,4 +1,5 @@
-from datetime import date, timedelta, time
+from datetime import date, datetime, time, timedelta
+import random
 from random import choice, randint
 from django.contrib.auth.hashers import make_password
 from django.core.management.base import BaseCommand
@@ -159,7 +160,7 @@ class Command(BaseCommand):
                 f"Society{i}",
             )
             created = False
-            society=None
+            society = None
             if approved:
                 society, created = Society.objects.get_or_create(
                     name=f"Society{i}",
@@ -170,18 +171,35 @@ class Command(BaseCommand):
             if created:
                 members = student_randomised.all()[:2]
                 self.finalize_society_creation(society, members)
+
+                # ✅ NEW: Create 2-5 events for this society
+                num_events = randint(2, 5)
+                for _ in range(num_events):
+                    self.generate_random_event(society)
+
         print(self.style.SUCCESS(f"Seeding society {n}/{n}"), flush=True)
 
     def finalize_society_creation(self, society, members):
-        """Finishes society creation"""
+        """Finishes society creation with proper members and roles"""
         society.leader.president_of.add(society)
-        society.society_members.add(*members)
-        society.roles = {
-            "Treasurer": members[0], 
-            "Social Manager": members[1]
-        }
+
+        # Ensure at least 5-15 members
+        all_students = list(Student.objects.exclude(id=society.leader.id))
+        selected_members = all_students[:randint(5, 15)]
+
+        society.society_members.add(*selected_members)
+
+        # Assign roles (ensure at least 2 roles)
+        if len(selected_members) >= 2:
+            society.roles = {
+                "Treasurer": selected_members[0].id, 
+                "Social Manager": selected_members[1].id
+            }
+
+        # Assign an admin
         admin_randomised = Admin.objects.order_by('?')
         society.approved_by = admin_randomised.first()
+        society.save()
 
     def handle_society_status(self, leader, name):
         """Creates society requests if pending, else assigns an admin to approved_by"""
@@ -210,15 +228,24 @@ class Command(BaseCommand):
 
     def create_event(self, n):
         """Create n different events"""
-        event_list = [] # Create empty list to hold created events
+        event_list = []
 
-        for i in range(1, n+1):
+        societies = list(Society.objects.all())
+
+        for i in range(1, n + 1):
             print(f"Seeding event {i}/{n}", end='\r')
-            approved = self.handle_event_status(i)
+
+            if not societies:
+                print(self.style.WARNING("No societies found. Skipping event creation."))
+                break
+
+            society = choice(societies)
+
+            approved = self.handle_event_status(society, i)
             if approved:
-                event, created = self.generate_random_event(i)
-                if created:
-                    event_list.append(event)
+                event, _ = self.generate_random_event(society)
+                event_list.append(event)
+
         print(self.style.SUCCESS(f"Seeding event {n}/{n}"), flush=True)
         self.create_event_notifications(event_list)
 
@@ -233,35 +260,54 @@ class Command(BaseCommand):
         ]
         return choice(locations)
 
-    def generate_random_event(self, i):
-        """Generate 'i'th new event object"""
+    def generate_random_event(self, society):
+        """Generate a random event and ensure attendees are added."""
         location = self.get_random_location()
-        society = Society.objects.order_by('?').first()
-        return Event.objects.get_or_create(
-            title=f'Event{i}',
-            description=f'Event{i} organised by {society}',
-            date=self.generate_random_date(),
-            start_time=self.generate_reasonable_time(),
+        event_date = self.generate_random_date()
+        # Use generate_reasonable_time to ensure that the start time is in the future.
+        # If the event is scheduled for today, this function will pick a time after now.
+        event_time = self.generate_reasonable_time(event_date)
+        
+        event, created = Event.objects.get_or_create(
+            title=f"{society.name} Event",
+            description=f"An exciting event by {society.name}",
+            date=event_date,
+            start_time=event_time,
             duration=self.generate_random_duration(),
             hosted_by=society,
             location=location,
             status="Approved",
         )
 
-    def handle_event_status(self, i):
+        if created:
+            # ✅ Assign 5-20 random attendees
+            all_students = list(Student.objects.exclude(id=society.leader.id))
+            num_attendees = min(randint(5, 20), len(all_students))
+            selected_attendees = all_students[:num_attendees]
+
+            event.current_attendees.add(*selected_attendees)
+            event.save()
+            print(self.style.SUCCESS(f"📅 Event Created: {event.title} ({event.date})"))
+
+        # ✅ Ensure function returns (event, created) as a tuple
+        return event, created
+
+    def handle_event_status(self, society, i):
         """Creates event requests if pending"""
         random_status = choice(["Pending", "Approved", "Rejected"])
-        society = Society.objects.order_by('?').first()
         location = self.get_random_location()
+        
+        event_date = self.generate_random_date()  # ✅ Generate event date first
+        event_time = self.generate_reasonable_time(event_date)  # ✅ Pass event_date
 
         if random_status == "Approved":
             return True
         elif random_status == "Pending":
             EventRequest.objects.get_or_create(
                 title=f'Event{i}',
-                description=f'Event{i} organised by {society}',
-                date=self.generate_random_date(),
-                start_time=self.generate_reasonable_time(),
+                description=f'Event{i} organised by {society.name}',
+                date=event_date,  # ✅ Use generated event_date
+                start_time=event_time,  # ✅ Use generated event_time
                 duration=self.generate_random_duration(),
                 hosted_by=society,
                 from_student=society.leader,
@@ -271,9 +317,9 @@ class Command(BaseCommand):
         else:
             EventRequest.objects.get_or_create(
                 title=f'Event{i}',
-                description=f'Event{i} organised by {society}',
-                date=self.generate_random_date(),
-                start_time=self.generate_reasonable_time(),
+                description=f'Event{i} organised by {society.name}',
+                date=event_date,  # ✅ Use generated event_date
+                start_time=event_time,  # ✅ Use generated event_time
                 duration=self.generate_random_duration(),
                 hosted_by=society,
                 from_student=society.leader,
@@ -284,36 +330,67 @@ class Command(BaseCommand):
         return False
 
     def generate_random_duration(self):
-        """Generate and return a random duration from 1-3 hours"""
-        duration_choices = [timedelta(hours=i) for i in range(1,4)]
+        """Generate and return a random duration from 1-3 hours."""
+        duration_choices = [timedelta(hours=i) for i in range(1, 4)]
         return choice(duration_choices)
 
     def generate_random_date(self):
-        """Generate and return a random date up to a month in advance"""
-        random_days = randint(1, 31)
-        return date.today() + timedelta(days=random_days)
+        """Generate a future event date within the next 30 days.
+        
+        If the current time is past the allowed event hours (after 8:45 PM), 
+        then events will not be scheduled for today.
+        """
+        today = date.today()
+        now_time = datetime.now().time()
+        latest_allowed_time = time(20, 45)  # 8:45 PM as the latest allowed event time
+        # If it's already too late today, start from tomorrow (i.e. add at least 1 day)
+        if now_time > latest_allowed_time:
+            random_days = randint(1, 30)
+        else:
+            random_days = randint(0, 30)
+        return today + timedelta(days=random_days)
 
-    def generate_reasonable_time(self):
-        """Generate and return a random time from 9:00am to 8:45pm"""
-        random_hour = randint(9, 20)
-        random_minute = choice([0, 15, 30, 45])
-        return time(hour=random_hour,minute=random_minute)
+
+    def generate_reasonable_time(self, event_date):
+        """Generate a future time (9:00 AM to 8:45 PM), ensuring it's always after the current time if today."""
+        now = datetime.now()
+
+        valid_hours = list(range(9, 21))  # 9 AM to 8:45 PM
+        valid_minutes = [0, 15, 30, 45]
+
+        if event_date > now.date():
+            return time(hour=choice(valid_hours), minute=choice(valid_minutes))
+
+        elif event_date == now.date():
+            # Filter times that are strictly in the future
+            possible_times = [
+                time(hour=h, minute=m)
+                for h in valid_hours
+                for m in valid_minutes
+                if datetime.combine(event_date, time(hour=h, minute=m)) > now
+            ]
+
+            if possible_times:
+                return choice(possible_times)  # ✅ Randomly select a valid future time today
+
+            # If no valid times remain, schedule the event for tomorrow at 9:00 AM
+            return time(hour=9, minute=0)
+    
+    def generate_random_time(self):
+        """Generates a random time within a day."""
+        hours = random.randint(0, 23)  # Random hour between 0-23
+        minutes = random.randint(0, 59)  # Random minute between 0-59
+        return time(hour=hours, minute=minutes)
 
     def create_event_notifications(self, events):
         """Creates notifications from a list of events"""
-        notification_dict = {}
-
-        for event in events:
-            members = event.hosted_by.society_members
-            notification_dict[event] = members.all()
-
         count = 0
-        total = self.count_all_event_participants(notification_dict)
+        # Instead of building a dictionary, simply iterate over the events.
         for event in events:
-            print(f"Seeding notification {count}/{total}", end='\r')
+            print(f"Seeding notifications for {event.title}", end='\r')
             self.create_event_notification(event)
-            count += len(notification_dict[event])
-        print(self.style.SUCCESS(f"Seeding notification {count}/{total}"))
+            count += event.current_attendees.count()
+        print(self.style.SUCCESS(f"Seeding notifications for {count} attendees across events"))
 
     def count_all_event_participants(self, event_dict):
         """Counts all the potential participants of events"""
@@ -323,14 +400,16 @@ class Command(BaseCommand):
         return total
 
     def create_event_notification(self, event):
-        """Create the notifications for a specific event"""
-        members = event.hosted_by.society_members
+        """Create notifications only for students attending"""
+        members = event.current_attendees.all()  # ✅ Get attendees dynamically
 
-        for member in members.all():
+        for member in members:
             Notification.objects.create(
                 for_event=event,
                 for_student=member
             )
+
+        print(self.style.SUCCESS(f"Created notifications for {len(members)} attendees of {event.title}"))
 
     def broadcast_updates(self):
         """Broadcast updates to the WebSocket"""
