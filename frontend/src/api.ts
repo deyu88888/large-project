@@ -1,9 +1,6 @@
 import axios from "axios";
 import { ACCESS_TOKEN } from "./constants";
 
-// import PendingSocietyRequest from "./pages/Admin/PendingSocietyRequest";  // not used
-
-
 // ✅ Define base API URL properly
 const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/";
 
@@ -29,21 +26,21 @@ apiClient.interceptors.request.use(
 
 export const apiPaths = {
   USER: {
-    LOGIN: "/api/user/login",   // Remove Trailing slash
-    REGISTER: "/api/user/register",   // Remove Trailing slash
-    REFRESH: "/api/user/token/refresh",  // Remove Trailing slash
-    CURRENT: "/api/user/current",   // Remove Trailing slash
-    SOCIETY: "/api/admin-panel/society",  // Remove Trailing slash
-    REJECTEDSOCIETY: "/api/admin-panel/rejected-society", // Remove Trailing slash
-    STUDENTS: "/api/user/student",  // Remove Trailing slash
-    ADMIN: "/api/user/admin", // Remove Trailing slash
-    PENDINGSOCIETYREQUEST: "/api/society/request/pending",  // Remove Trailing slash
+    LOGIN: "/api/user/login/", // Added trailing slash
+    REGISTER: "/api/user/register/", // Added trailing slash
+    REFRESH: "/api/user/token/refresh/", // Added trailing slash
+    CURRENT: "/api/user/current/", // Added trailing slash
+    SOCIETY: "/api/admin-panel/society/", // Added trailing slash
+    REJECTEDSOCIETY: "/api/admin-panel/rejected-society/", // Added trailing slash
+    STUDENTS: "/api/user/student/", // Added trailing slash
+    ADMIN: "/api/user/admin/", // Added trailing slash
+    PENDINGSOCIETYREQUEST: "/api/society/request/pending/", // Added trailing slash
   },
   SOCIETY: {
-    POPULAR_SOCIETIES: "/api/popular-societies", // Remove Trailing slash
+    POPULAR_SOCIETIES: "/api/popular-societies/", // Added trailing slash
   },
   EVENTS: {
-    ALL: "/api/events", // Remove Trailing slashe
+    ALL: "/api/events/", // Added trailing slash
   },
 };
 
@@ -53,7 +50,10 @@ export const getPopularSocieties = async () => {
     const response = await apiClient.get(apiPaths.SOCIETY.POPULAR_SOCIETIES);
     return response.data;
   } catch (error: any) {
-    console.error("❌ Error fetching popular societies:", error.response?.data || error.message);
+    console.error(
+      "❌ Error fetching popular societies:",
+      error.response?.data || error.message
+    );
     throw error;
   }
 };
@@ -61,12 +61,13 @@ export const getPopularSocieties = async () => {
 // ✅ Fetch All Events (Public Access)
 export const getAllEvents = async () => {
   try {
-    // 🟢 If your endpoint doesn't require auth, do NOT force check token
-    // If your endpoint does require auth, keep the token logic. But since you made it public, remove or skip this check.
     const response = await apiClient.get(apiPaths.EVENTS.ALL);
     return response.data;
   } catch (error: any) {
-    console.error("❌ Error fetching events:", error.response?.data || error.message);
+    console.error(
+      "❌ Error fetching events:",
+      error.response?.data || error.message
+    );
     throw error;
   }
 };

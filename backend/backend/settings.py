@@ -44,16 +44,15 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
-    "corsheaders",
+    "corsheaders",  # Used for WSGI endpoints (if any)
     "api",
     "channels",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "corsheaders.middleware.CorsMiddleware",
+    "corsheaders.middleware.CorsMiddleware",  # For WSGI endpoints. ASGI endpoints use Starlette's CORSMiddleware.
     "django.contrib.sessions.middleware.SessionMiddleware",
-    "corsheaders.middleware.CorsMiddleware",  
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -104,15 +103,19 @@ USE_TZ = True
 STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# ---------------------------
+# CORS Configuration
+# ---------------------------
+# Note: For ASGI endpoints, CORS is handled in asgi.py using Starlette's CORSMiddleware.
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",  
+    "http://localhost:3000",
 ]
 
 CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:3000",  
+    "http://localhost:3000",
 ]
 
-CORS_ALLOW_CREDENTIALS = True  
+CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOW_HEADERS = [
     "accept",
@@ -124,12 +127,11 @@ CORS_ALLOW_HEADERS = [
     "user-agent",
     "x-csrftoken",
     "x-requested-with",
-    "sec-websocket-protocol",  
+    "sec-websocket-protocol",
 ]
 
-CORS_ALLOWED_ORIGIN_REGEXES = [
-    r"^http://localhost:3000$",  
-]
+# Uncomment the following line for debugging only (do not use in production):
+# CORS_ALLOW_ALL_ORIGINS = True
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
