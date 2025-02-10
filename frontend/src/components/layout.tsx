@@ -26,8 +26,6 @@ const LayoutContent: React.FC = () => {
 const Layout: React.FC = () => {
   return (
     <SidebarProvider>
-      <Sidebar />
-      <Topbar />
       <LayoutContent />
     </SidebarProvider>
   );

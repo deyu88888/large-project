@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaCalendarAlt, FaBell, FaUsers, FaUserPlus } from "react-icons/fa";
 import { useTheme } from "@mui/material/styles";
 import { useMode, tokens } from "../styles/theme";
 import { FaCalendarAlt, FaBell, FaUsers, FaUserPlus, FaCogs } from "react-icons/fa";
