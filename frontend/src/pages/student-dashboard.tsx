@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaCalendarAlt, FaBell, FaUsers, FaUserPlus } from "react-icons/fa";
+import { FaCalendarAlt, FaBell, FaUsers, FaUserPlus, FaCogs } from "react-icons/fa";
 import axios from "axios";
 import { apiClient } from "../api";
 
@@ -12,6 +12,7 @@ const StudentDashboard: React.FC = () => {
   const [events, setEvents] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isPresident, setIsPresident] = useState(false);
 
   // Fetch data when the component mounts
   useEffect(() => {
@@ -27,6 +28,10 @@ const StudentDashboard: React.FC = () => {
       const societiesResponse = await apiClient.get("/api/student-societies/");
       console.log(societiesResponse.data);
       setSocieties(societiesResponse.data || []);
+
+      // Check if the student is president of any society
+      const presidentSocieties = societiesResponse.data.filter((society: any) => society.is_president);
+      setIsPresident(presidentSocieties.length > 0);
 
       // Fetch events
       const eventsResponse = await apiClient.get("/api/events/rsvp");
@@ -120,6 +125,19 @@ const StudentDashboard: React.FC = () => {
               Stay updated with your societies, events, and achievements.
             </p>
           </header>
+
+           {/*  Manage My Societies Button (Only if President) */}
+           {isPresident && (
+            <div className="text-center mb-8">
+              <button
+                onClick={() => navigate("/manage-societies")}
+                className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition-all flex items-center justify-center mx-auto"
+              >
+                <FaCogs className="mr-2" />
+                Manage My Societies
+              </button>
+            </div>
+          )}
 
           {/* Society Management */}
           <section className="mb-16">
