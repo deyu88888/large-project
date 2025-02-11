@@ -26,21 +26,23 @@ apiClient.interceptors.request.use(
 
 export const apiPaths = {
   USER: {
-    LOGIN: "/api/user/login/", // Added trailing slash
-    REGISTER: "/api/user/register/", // Added trailing slash
-    REFRESH: "/api/user/token/refresh/", // Added trailing slash
-    CURRENT: "/api/user/current/", // Added trailing slash
-    SOCIETY: "/api/admin-panel/society/", // Added trailing slash
-    REJECTEDSOCIETY: "/api/admin-panel/rejected-society/", // Added trailing slash
-    STUDENTS: "/api/user/student/", // Added trailing slash
-    ADMIN: "/api/user/admin/", // Added trailing slash
-    PENDINGSOCIETYREQUEST: "/api/society/request/pending/", // Added trailing slash
+    LOGIN: "/api/user/login/",
+    REGISTER: "/api/user/register/",
+    REFRESH: "/api/user/token/refresh/",
+    CURRENT: "/api/user/current/",
+    EVENTS: "/api/society/event/", // Added missing trailing slash
+    SOCIETY: "/api/admin-panel/society/",
+    REJECTEDSOCIETY: "/api/admin-panel/rejected-society/",
+    STUDENTS: "/api/user/student/",
+    ADMIN: "/api/user/admin/",
+    PENDINGSOCIETYREQUEST: "/api/society/request/pending/",
+    REJECTEDEVENT: "/api/society/rejectedevent/", // Ensured uniformity
   },
   SOCIETY: {
-    POPULAR_SOCIETIES: "/api/popular-societies/", // Added trailing slash
+    POPULAR_SOCIETIES: "/api/popular-societies/",
   },
   EVENTS: {
-    ALL: "/api/events/", // Added trailing slash
+    ALL: "/api/events/",
   },
 };
 
