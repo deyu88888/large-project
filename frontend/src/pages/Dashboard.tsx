@@ -1,13 +1,27 @@
-import React, { useEffect, useState, useRef, useCallback, memo } from "react";
-import EventCalendar from "../components/EventCalendar";
-import UpcomingEvents from "../components/UpcomingEvents"; // ✅ Import UpcomingEvents Component
+// Dashboard.tsx
+import React, {
+  useEffect,
+  useState,
+  useRef,
+  useCallback,
+  memo,
+  ReactNode
+} from "react";
+import { Box, Typography, useTheme, Button, TextField } from "@mui/material";
 import { Link } from "react-router-dom";
-import { LoadingView } from "../components/loading/loading-view";
-import PopularSocieties from "../components/PopularSocieties"; // ✅ Import PopularSocieties Component
-import { getAllEvents } from "../api"; // ✅ Import function to fetch events
-import { motion } from "framer-motion"; // ✅ Added animations
+import { motion } from "framer-motion";
 
-console.log("=== React app is running! ===");
+// --- MUI Theme Tokens ---
+import { tokens } from "../styles/theme";
+
+// --- API Calls ---
+import { getAllEvents } from "../api";
+
+// --- Components ---
+import EventCalendar from "../components/EventCalendar";
+import UpcomingEvents from "../components/UpcomingEvents";
+import PopularSocieties from "../components/PopularSocieties";
+import { LoadingView } from "../components/loading/loading-view";
 
 // --- Type Definitions ---
 interface StatData {
@@ -42,12 +56,120 @@ type WebSocketMessage =
   | { type: "dashboard.update"; data: StatData }
   | { type: "update_activities"; activities: Activity[] }
   | { type: "update_notifications"; notifications: Notification[] }
-  | { type: "update_events"; events: { id: number; title: string; start: string; end: string }[] }
+  | {
+      type: "update_events";
+      events: { id: number; title: string; start: string; end: string }[];
+    }
   | { type: "update_introduction"; introduction: Introduction };
 
+/** 
+ * Reusable container for each content block.
+ * Includes an optional `bgColor` prop to override the default background color.
+ */
+interface SectionCardProps {
+  title: string;
+  icon: string;
+  children: ReactNode;
+  bgColor?: (theme: any) => string; // theme-based color override if desired
+}
+
+const SectionCard: React.FC<SectionCardProps> = memo(
+  ({ title, icon, children, bgColor }) => {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+      >
+        <Box
+          sx={(theme) => ({
+            backgroundColor: bgColor
+              ? bgColor(theme)
+              : theme.palette.background.paper,
+            borderRadius: 2,
+            boxShadow: 2,
+            p: 2,
+            mb: 4,
+            borderLeft: "8px solid transparent",
+            "&:hover": {
+              borderLeftColor: theme.palette.primary.main
+            }
+          })}
+        >
+          <Typography
+            variant="h4"
+            component="h2"
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              mb: 2,
+              fontWeight: "bold"
+            }}
+          >
+            <span role="img" aria-hidden="true" style={{ fontSize: "1.5rem" }}>
+              {icon}
+            </span>
+            {title}
+          </Typography>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            {children}
+          </Box>
+        </Box>
+      </motion.div>
+    );
+  }
+);
+SectionCard.displayName = "SectionCard";
+
+/** Reusable statistics card for your dashboard. */
+const StatCard: React.FC<{
+  title: string;
+  value: number;
+  color: string; // e.g. "linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)"
+}> = memo(({ title, value, color }) => (
+  <motion.div
+    initial={{ opacity: 0, scale: 0.9 }}
+    animate={{ opacity: 1, scale: 1 }}
+    transition={{ duration: 0.3 }}
+  >
+    <Box
+      sx={{
+        background: color,
+        color: "#fff",
+        borderRadius: 2,
+        p: 2,
+        boxShadow: 3,
+        textAlign: "center",
+        transition: "transform 0.3s",
+        "&:hover": {
+          transform: "scale(1.05)"
+        }
+      }}
+    >
+      <Typography variant="body2" sx={{ textTransform: "uppercase" }}>
+        {title}
+      </Typography>
+      <Typography variant="h3" sx={{ fontWeight: "bold" }}>
+        {value}
+      </Typography>
+    </Box>
+  </motion.div>
+));
+StatCard.displayName = "StatCard";
+
 const Dashboard: React.FC = () => {
+  // MUI Theme + Colors
+  const theme = useTheme();
+  const colors = tokens(theme.palette.mode);
+
   // State Management
-  const [stats, setStats] = useState<StatData>({ totalSocieties: 0, totalEvents: 0, pendingApprovals: 0, activeMembers: 0 });
+  const [stats, setStats] = useState<StatData>({
+    totalSocieties: 0,
+    totalEvents: 0,
+    pendingApprovals: 0,
+    activeMembers: 0
+  });
   const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [eventCalendar, setEventCalendar] = useState<CalendarEvent[]>([]);
@@ -63,12 +185,10 @@ const Dashboard: React.FC = () => {
   const MAX_RECONNECT_ATTEMPTS = 5;
   let reconnectAttempts = 0;
 
-  // --- Fetch All Events for Both Calendar & Upcoming Events ---
+  // Fetch All Events for Both Calendar & Upcoming Events
   useEffect(() => {
     getAllEvents()
       .then((data) => {
-        console.log("🎉 Raw Events from API:", data);
-
         interface RawEvent {
           id: number;
           title: string;
@@ -78,7 +198,7 @@ const Dashboard: React.FC = () => {
         }
 
         const formattedEvents: CalendarEvent[] = (data as RawEvent[])
-          .map((event: RawEvent): CalendarEvent | null => {
+          .map((event: RawEvent) => {
             try {
               const startDateTime = new Date(`${event.date}T${event.start_time}`); // ✅ Fixed field name
               let endDateTime: Date | null = null;
@@ -94,69 +214,76 @@ const Dashboard: React.FC = () => {
                 id: event.id,
                 title: event.title,
                 start: startDateTime,
-                end: endDateTime || startDateTime, // ✅ Use start time if no valid end time is available
+                end: endDateTime
               };
-            } catch (error) {
-              console.error(`❌ Error processing event:`, event, error);
+            } catch (err) {
+              console.error(`Error processing event:`, event, err);
               return null;
             }
           })
-          .filter((event): event is CalendarEvent => event !== null);
+          .filter((evt): evt is CalendarEvent => evt !== null);
 
 
         formattedEvents.sort((a, b) => a.start.getTime() - b.start.getTime());
 
-        console.log("✅ Formatted Events (Sorted):", formattedEvents);
         setUpcomingEvents(formattedEvents);
         setEventCalendar(formattedEvents);
       })
-      .catch((error) => {
-        console.error("❌ Error fetching events:", error);
+      .catch((err) => {
+        console.error("Error fetching events:", err);
         setError("Failed to fetch events.");
       });
   }, []);
 
-  // --- WebSocket Message Handler ---
+  // WebSocket message handler
   const messageHandler = useCallback((data: WebSocketMessage) => {
     switch (data.type) {
       case "dashboard.update":
-        setStats((prev) => (prev.totalSocieties !== data.data.totalSocieties ? data.data : prev));
+        setStats((prev) =>
+          prev.totalSocieties !== data.data.totalSocieties ? data.data : prev
+        );
         break;
       case "update_activities":
-        setRecentActivities((prev) => (prev.length !== data.activities.length ? data.activities : prev));
+        setRecentActivities((prev) =>
+          prev.length !== data.activities.length ? data.activities : prev
+        );
         break;
       case "update_notifications":
-        setNotifications((prev) => (prev.length !== data.notifications.length ? data.notifications : prev));
+        setNotifications((prev) =>
+          prev.length !== data.notifications.length ? data.notifications : prev
+        );
         break;
       case "update_events": {
-        const formattedEvents = data.events.map((ev) => ({
+        const formatted = data.events.map((ev) => ({
           id: ev.id,
           title: ev.title,
           start: new Date(ev.start),
-          end: new Date(ev.end),
+          end: new Date(ev.end)
         }));
-        setEventCalendar(formattedEvents);
-        setUpcomingEvents(formattedEvents);
+        setEventCalendar(formatted);
+        setUpcomingEvents(formatted);
         break;
       }
       case "update_introduction":
-        setIntroduction((prev) => (prev?.title !== data.introduction.title ? data.introduction : prev));
+        setIntroduction((prev) =>
+          prev?.title !== data.introduction.title ? data.introduction : prev
+        );
         break;
       default:
         console.warn("Unknown WebSocket message type:", data);
     }
   }, []);
 
-  // --- WebSocket Connection Handling ---
+  // WebSocket connection handling
   useEffect(() => {
-    console.log("[Dashboard] Initializing WebSocket...");
-    const wsURL = process.env.NODE_ENV === "production"
-      ? "wss://your-production-domain.com/ws/dashboard/"
-      : "ws://127.0.0.1:8000/ws/dashboard/";
+    const wsURL =
+      process.env.NODE_ENV === "production"
+        ? "wss://your-production-domain.com/ws/dashboard/"
+        : "ws://127.0.0.1:8000/ws/dashboard/";
 
     const connectWebSocket = () => {
       if (socketRef.current) {
-        console.warn("[Dashboard] WebSocket already connected. Skipping reconnection.");
+        console.warn("WebSocket already connected. Skipping reconnection.");
         return;
       }
 
@@ -164,7 +291,7 @@ const Dashboard: React.FC = () => {
       socketRef.current = socket;
 
       socket.onopen = () => {
-        console.log("[Dashboard] WebSocket Connected!");
+        console.log("WebSocket Connected!");
         setError(null);
         reconnectAttempts = 0;
         if (reconnectIntervalRef.current) {
@@ -175,31 +302,36 @@ const Dashboard: React.FC = () => {
 
       socket.onmessage = (event) => {
         try {
-          const data: WebSocketMessage = JSON.parse(event.data);
-          messageHandler(data);
+          const parsedData: WebSocketMessage = JSON.parse(event.data);
+          messageHandler(parsedData);
         } catch (parseError) {
           console.error("Error parsing WebSocket message:", parseError);
           setError("Error parsing WebSocket message.");
         }
       };
 
-      socket.onerror = (error) => {
-        console.error("[Dashboard] WebSocket Error:", error);
+      socket.onerror = (evt) => {
+        console.error("WebSocket Error:", evt);
         setError("WebSocket connection failed.");
       };
 
-      socket.onclose = (event) => {
-        console.warn("[Dashboard] WebSocket Closed:", event.code);
+      socket.onclose = (evt) => {
+        console.warn("WebSocket Closed:", evt.code);
         socketRef.current = null;
-
-        if (event.code !== 1000 && event.code !== 1005 && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+        if (
+          evt.code !== 1000 &&
+          evt.code !== 1005 &&
+          reconnectAttempts < MAX_RECONNECT_ATTEMPTS
+        ) {
           reconnectAttempts++;
-          console.log(`[Dashboard] Attempting WebSocket Reconnect (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`);
+          console.log(
+            `Attempting WebSocket Reconnect (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`
+          );
           if (!reconnectIntervalRef.current) {
             reconnectIntervalRef.current = setTimeout(connectWebSocket, 5000);
           }
         } else {
-          console.warn("[Dashboard] Maximum WebSocket reconnect attempts reached. Stopping retries.");
+          console.warn("Max WebSocket reconnect attempts reached. Stopping.");
         }
       };
     };
@@ -207,7 +339,6 @@ const Dashboard: React.FC = () => {
     connectWebSocket();
 
     return () => {
-      console.log("[Dashboard] Cleaning up WebSocket...");
       if (socketRef.current) {
         socketRef.current.close();
       }
@@ -218,7 +349,7 @@ const Dashboard: React.FC = () => {
     };
   }, [messageHandler]);
 
-  // Set loading state after stats & introduction are received
+  // Once we have stats and introduction, assume loaded
   useEffect(() => {
     if (stats.totalSocieties >= 0 && introduction !== null) {
       setLoading(false);
@@ -229,153 +360,259 @@ const Dashboard: React.FC = () => {
     return <LoadingView />;
   }
 
-  // ==================== REUSABLE COMPONENTS ====================
+  // -- Default Introduction Fallback --
+  const defaultIntroTitle = "Welcome to the Universal Student Society Platform!";
+  const defaultIntroContent = [
+    "This platform is designed to help student societies manage their members, share news, organize events, and much more. Whether you're a small club or a large society, we provide the tools you need to connect with your members and thrive.",
+    "Key features include: membership management, event calendars, news feeds, notifications, and customizable society pages. Get started by registering your society or logging in!"
+  ];
 
-
-  // Reusable section wrapper for each content block
-  const SectionCard: React.FC<{ title: string; icon: string; children: React.ReactNode }> = memo(
-    ({ title, icon, children }) => (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="bg-white/70 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border-l-8 border-transparent hover:border-gradient-to-r hover:from-purple-500 hover:to-indigo-500 transition-all duration-300"
-      >
-        <h2 className="text-3xl font-bold mb-6 text-gray-800 flex items-center gap-3">
-          <span role="img" aria-hidden="true" className="text-4xl">{icon}</span>
-          {title}
-        </h2>
-        <div className="space-y-4">{children}</div>
-      </motion.div>
-    )
-  );
-  SectionCard.displayName = "SectionCard";
-
-  // Reusable statistics card for dashboard
-  const StatCard: React.FC<{ title: string; value: number; color: string }> = memo(
-    ({ title, value, color }) => (
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.3 }}
-        className={`relative rounded-2xl shadow-2xl p-8 text-white bg-gradient-to-br ${color} transition-all duration-300 ease-in-out transform hover:scale-110 hover:shadow-2xl`}
-      >
-        <p className="uppercase tracking-widest text-lg">{title}</p>
-        <p className="text-6xl font-extrabold mt-2">{value}</p>
-      </motion.div>
-    )
-  );
-  StatCard.displayName = "StatCard";
-
-  // ==================== MAIN RENDER ====================
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 p-10 space-y-12">
-      {/* ========== HEADER ========== */}
-      <motion.header
+    <Box
+      sx={{
+        minHeight: "100vh",
+        backgroundColor: theme.palette.background.default,
+        p: { xs: 2, md: 4 }
+      }}
+    >
+      {/* HEADER:
+          - Dark Mode => Primary Main w/ Contrast Text
+          - Light Mode => White (#fff) w/ Black (#000)
+      */}
+      <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="bg-gradient-to-r from-indigo-700 via-purple-600 to-pink-600 text-white p-8 rounded-3xl shadow-2xl flex flex-col md:flex-row justify-between items-center animate-fadeInDown"
       >
-        <h1 className="text-4xl font-extrabold tracking-widest flex items-center gap-3">
-          <span role="img" aria-hidden="true" className="text-5xl">✨</span> Student Society Dashboard
-        </h1>
-        <div className="flex gap-6 items-center mt-4 md:mt-0">
-          <input
-            type="text"
-            placeholder="Search..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-80 p-4 rounded-full focus:outline-none focus:ring-4 focus:ring-pink-300 shadow-lg text-gray-800"
-            style={{ caretColor: "black" }}
-          />
-          <button className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-full font-semibold shadow-lg transition-all transform hover:scale-105">
-            <Link to="/register">Register</Link>
-          </button>
-          <button className="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-full font-semibold shadow-lg transition-all transform hover:scale-105">
-            <Link to="/login">Login</Link>
-          </button>
-        </div>
-      </motion.header>
+        <Box
+          sx={{
+            backgroundColor:
+              theme.palette.mode === "dark"
+                ? theme.palette.primary.main
+                : "#fff",
+            color:
+              theme.palette.mode === "dark"
+                ? theme.palette.primary.contrastText
+                : "#000",
+            borderRadius: 2,
+            p: 2,
+            mb: 4,
+            display: "flex",
+            flexDirection: { xs: "column", md: "row" },
+            alignItems: "center",
+            justifyContent: "space-between",
+            boxShadow: 3
+          }}
+        >
+          <Typography variant="h4" sx={{ fontWeight: "bold" }}>
+            Student Society Dashboard
+          </Typography>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: { xs: "column", md: "row" },
+              gap: 2,
+              mt: { xs: 2, md: 0 }
+            }}
+          >
+            <TextField
+              variant="outlined"
+              size="small"
+              placeholder="Search..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              sx={{
+                bgcolor: "#fff",
+                borderRadius: 1,
+                width: { xs: "100%", md: 200 }
+              }}
+            />
+            <Button
+              variant="contained"
+              color="secondary"
+              component={Link}
+              to="/register"
+            >
+              Register
+            </Button>
+            <Button
+              variant="contained"
+              color="success"
+              component={Link}
+              to="/login"
+            >
+              Login
+            </Button>
+          </Box>
+        </Box>
+      </motion.div>
 
-      {/* ========== WEBSITE INTRODUCTION ========== */}
-      <SectionCard title={introduction?.title || "Welcome!"} icon="🌐">
+      {/* INTRODUCTION SECTION - now also uses white in light mode & primary main in dark */}
+      <SectionCard
+        title={introduction?.title || defaultIntroTitle}
+        icon="🌐"
+        bgColor={(theme) =>
+          theme.palette.mode === "dark" ? theme.palette.primary.main : "#fff"
+        }
+      >
         {introduction?.content?.length ? (
           introduction.content.map((paragraph, index) => (
-            <p key={index} className="text-gray-700 leading-relaxed text-lg">{paragraph}</p>
+            <Typography
+              key={index}
+              variant="body1"
+              sx={{
+                color:
+                  theme.palette.mode === "dark"
+                    ? theme.palette.primary.contrastText
+                    : "#000"
+              }}
+            >
+              {paragraph}
+            </Typography>
           ))
         ) : (
-          <p className="text-gray-700 leading-relaxed text-lg">No introduction available.</p>
+          defaultIntroContent.map((paragraph, index) => (
+            <Typography
+              key={index}
+              variant="body1"
+              sx={{
+                color:
+                  theme.palette.mode === "dark"
+                    ? theme.palette.primary.contrastText
+                    : "#000"
+              }}
+            >
+              {paragraph}
+            </Typography>
+          ))
         )}
       </SectionCard>
 
-      {/* ========== STATS GRID ========== */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-        <StatCard title="Total Societies" value={stats.totalSocieties} color="from-blue-600 to-blue-400" />
-        <StatCard title="Total Events" value={stats.totalEvents} color="from-green-600 to-green-400" />
-        <StatCard title="Pending Approvals" value={stats.pendingApprovals} color="from-yellow-600 to-yellow-400" />
-        <StatCard title="Active Members" value={stats.activeMembers} color="from-purple-600 to-purple-400" />
-      </div>
+      {/* STATS GRID */}
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", md: "repeat(4, 1fr)" },
+          gap: 2,
+          mb: 4
+        }}
+      >
+        <StatCard
+          title="Total Societies"
+          value={stats.totalSocieties}
+          color="linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)"
+        />
+        <StatCard
+          title="Total Events"
+          value={stats.totalEvents}
+          color="linear-gradient(45deg, #66BB6A 30%, #B2FF59 90%)"
+        />
+        <StatCard
+          title="Pending Approvals"
+          value={stats.pendingApprovals}
+          color="linear-gradient(45deg, #FFCA28 30%, #FFE082 90%)"
+        />
+        <StatCard
+          title="Active Members"
+          value={stats.activeMembers}
+          color="linear-gradient(45deg, #AB47BC 30%, #CE93D8 90%)"
+        />
+      </Box>
 
-      {/* 🔥 MOST POPULAR SOCIETIES SECTION */}
-      <PopularSocieties />
+      {/* POPULAR SOCIETIES */}
+      <Box mb={4}>
+        <PopularSocieties />
+      </Box>
 
-      {/* 🕒 UPCOMING EVENTS SECTION (Fixed Prop) */}
+      {/* UPCOMING EVENTS */}
       <SectionCard title="Upcoming Events" icon="📅">
         {upcomingEvents.length > 0 ? (
           <UpcomingEvents events={upcomingEvents} />
         ) : (
-          <p className="text-gray-500 text-lg text-center animate-pulse">No upcoming events.</p> // ✅ Added Fallback UI
+          <Typography variant="body1" sx={{ color: colors.grey[500] }}>
+            No upcoming events.
+          </Typography>
         )}
       </SectionCard>
 
-      {/* ========== ERROR MESSAGE ========== */}
+      {/* ERROR MESSAGE */}
       {error && (
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.3 }}
-          className="bg-red-100 border-l-8 border-red-600 text-red-800 p-6 rounded-2xl shadow-lg animate-pulse"
         >
-          <strong>Error:</strong> {error}
+          <Box
+            sx={{
+              backgroundColor: "#fdecea",
+              borderLeft: "8px solid #f44336",
+              color: "#b71c1c",
+              p: 2,
+              borderRadius: 2,
+              mb: 4
+            }}
+          >
+            <Typography variant="body1">
+              <strong>Error:</strong> {error}
+            </Typography>
+          </Box>
         </motion.div>
       )}
 
-      {/* ========== RECENT ACTIVITIES ========== */}
+      {/* RECENT ACTIVITIES */}
       <SectionCard title="Recent Activities" icon="🔥">
         {recentActivities.length ? (
-          <ul className="space-y-3 pl-4">
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
             {recentActivities.map((activity, idx) => (
-              <li key={idx} className="text-gray-700 text-lg">• {activity.description}</li>
+              <Typography
+                key={idx}
+                variant="body1"
+                sx={{ color: colors.grey[800] }}
+              >
+                • {activity.description}
+              </Typography>
             ))}
-          </ul>
+          </Box>
         ) : (
-          <p className="text-gray-500 text-lg">No recent activities found.</p>
+          <Typography variant="body1" sx={{ color: colors.grey[600] }}>
+            No recent activities found.
+          </Typography>
         )}
       </SectionCard>
 
-      {/* ========== EVENT CALENDAR (Now Fills After Seeding) ========== */}
+      {/* EVENT CALENDAR */}
       <SectionCard title="Event Calendar" icon="📅">
         {eventCalendar.length > 0 ? (
           <EventCalendar events={eventCalendar} />
         ) : (
-          <p className="text-gray-500 text-lg text-center animate-pulse">No events scheduled yet.</p> // ✅ Added Fallback UI
+          <Typography variant="body1" sx={{ color: colors.grey[500] }}>
+            No events scheduled yet.
+          </Typography>
         )}
       </SectionCard>
 
-      {/* ========== NOTIFICATIONS ========== */}
+      {/* NOTIFICATIONS */}
       <SectionCard title="Notifications" icon="🔔">
         {notifications.length ? (
-          <ul className="space-y-3 pl-4">
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
             {notifications.map((notification, idx) => (
-              <li key={idx} className="text-gray-700 text-lg">• {notification.message}</li>
+              <Typography
+                key={idx}
+                variant="body1"
+                sx={{ color: colors.grey[800] }}
+              >
+                • {notification.message}
+              </Typography>
             ))}
-          </ul>
+          </Box>
         ) : (
-          <p className="text-gray-500 text-lg">No notifications found.</p>
+          <Typography variant="body1" sx={{ color: colors.grey[600] }}>
+            No notifications found.
+          </Typography>
         )}
       </SectionCard>
-    </div>
+    </Box>
   );
 };
+
 export default Dashboard;
