@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { Children, lazy, Suspense, useEffect } from "react";
 import { Outlet, Navigate, useRoutes } from "react-router-dom";
 
 import NotFound from "../pages/404";
@@ -6,7 +6,7 @@ import { LoadingView } from "../components/loading/loading-view";
 import { PublicGuard } from "../components/guards/public-guard";
 import { PrivateGuard } from "../components/guards/private-guard";
 import CircularLoader from "../components/loading/circular-loader";
-import Layout from "../components/Layout";
+import Layout from "../components/layout";
 
 // Lazy-loaded pages
 const HomePage = lazy(() => import("../pages/home"));
@@ -21,15 +21,18 @@ const StartSociety = lazy(() => import("../pages/start-society"));
 const JoinSocietiesPage = lazy(() => import("../pages/join-societies"));
 
 // Admin pages
-const AdminHomePage = lazy(() => import("../pages/Admin/AdminHome"));
 const EventListPage = lazy(() => import("../pages/Admin/EventList"));
 const SocietyListPage = lazy(() => import("../pages/Admin/SocietyList"));
 const SocietyListRejectPage = lazy(() => import("../pages/Admin/SocietyListReject"));
+const EventListRejectedPage = lazy(() => import("../pages/Admin/EventListRejected"));
+const AdminDashboardPage = lazy(() => import("../pages/Admin/AdminDashboard"));
+const CalendarPage = lazy(() => import("../pages/Admin/Calendar"));
+
+
 const StudentListPage = lazy(() => import("../pages/Admin/StudentList"));
 const DashboardPage = lazy(() => import("../pages/Dashboard"));
 const CreateAdminPage = lazy(() => import("../pages/Admin/CreateAdmin"));
 const RequestSocietyPage = lazy(() => import("../pages/Admin/PendingSocietyRequest"));
-// const RejectedEventListPage = lazy(() => import("../pages/Admin/EventListRejected"));
 
 function Logout() {
   localStorage.clear();
@@ -51,36 +54,56 @@ const routes = [
         element: <HomePage />,
       },
       {
-        path: "admin-home",
-        element: <AdminHomePage />,
-      },
-      {
-        path: "event-list",
-        element: <EventListPage />,
-      },
-      {
-        path: "society-list",
-        element: <SocietyListPage />,
-      },
-      {
-        path: "society-list-rejected",
-        element: <SocietyListRejectPage />,
-      },
-      {
-        path: "student-list",
-        element: <StudentListPage />,
-      },
-      {
-        path: "profile",
-        element: <ProfilePage />,
-      },
-      {
-        path: "create-admin",
-        element: <CreateAdminPage />,
-      },
-      {
-        path: "request-society",
-        element: <RequestSocietyPage />,
+        path: "admin",
+        element: (
+          <PrivateGuard>
+            <Suspense fallback={<LoadingView />}>
+              <Layout role="admin" />
+            </Suspense>
+          </PrivateGuard>
+        ),
+        children: [
+          {
+            index: true,
+            element: <AdminDashboardPage />,
+          },
+          {
+            path: "event-list",
+            element: <EventListPage />,
+          },
+          {
+            path: "society-list",
+            element: <SocietyListPage />,
+          },
+          {
+            path: "society-list-rejected",
+            element: <SocietyListRejectPage />,
+          },
+          {
+            path: "event-list-rejected",
+            element: <EventListRejectedPage />,
+          },
+          {
+            path: "student-list",
+            element: <StudentListPage />,
+          },
+          {
+            path: "profile",
+            element: <ProfilePage />,
+          },
+          {
+            path: "create-admin",
+            element: <CreateAdminPage />,
+          },
+          {
+            path: "calendar",
+            element: <CalendarPage />,
+          },
+          {
+            path: "request-society",
+            element: <RequestSocietyPage />,
+          },
+        ]
       },
       {
         path: "student-dashboard",

@@ -200,22 +200,15 @@ const Dashboard: React.FC = () => {
         const formattedEvents: CalendarEvent[] = (data as RawEvent[])
           .map((event: RawEvent) => {
             try {
-              if (
-                !event.duration ||
-                typeof event.duration !== "string" ||
-                !event.duration.includes(":")
-              ) {
-                console.warn(`Skipping event with invalid duration:`, event);
-                return null;
-              }
+              const startDateTime = new Date(`${event.date}T${event.start_time}`); // ✅ Fixed field name
+              let endDateTime: Date | null = null;
 
-              const startDateTime = new Date(`${event.date}T${event.startTime}`);
-              const [hours, minutes, seconds] = event.duration
-                .split(":")
-                .map(Number);
-              const durationMs =
-                (hours * 3600 + minutes * 60 + (seconds || 0)) * 1000;
-              const endDateTime = new Date(startDateTime.getTime() + durationMs);
+              // If duration exists, calculate the end time
+              if (event.duration && typeof event.duration === "string" && event.duration.includes(":")) {
+                const [hours, minutes, seconds] = event.duration.split(":").map(Number);
+                const durationMs = (hours * 3600 + minutes * 60 + (seconds || 0)) * 1000;
+                endDateTime = new Date(startDateTime.getTime() + durationMs);
+              }
 
               return {
                 id: event.id,
@@ -230,7 +223,7 @@ const Dashboard: React.FC = () => {
           })
           .filter((evt): evt is CalendarEvent => evt !== null);
 
-        // Sort by start date
+
         formattedEvents.sort((a, b) => a.start.getTime() - b.start.getTime());
 
         setUpcomingEvents(formattedEvents);
