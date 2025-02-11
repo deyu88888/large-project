@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaCalendarAlt, FaBell, FaUsers, FaUserPlus, FaCogs } from "react-icons/fa";
+import { FaCalendarAlt, FaBell, FaUsers, FaUserPlus, FaCogs, FaMedal } from "react-icons/fa";
 import axios from "axios";
 import { apiClient } from "../api";
 
@@ -13,6 +13,7 @@ const StudentDashboard: React.FC = () => {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isPresident, setIsPresident] = useState(false);
+  const [awards, setAwards] = useState<any[]>([]);
 
   // Fetch data when the component mounts
   useEffect(() => {
@@ -41,6 +42,11 @@ const StudentDashboard: React.FC = () => {
       // Fetch notifications
       const notificationsResponse = await apiClient.get("/api/notifications");
       setNotifications(notificationsResponse.data || []);
+
+      // Fetch awards
+      const response = await apiClient.get("/api/awards/");
+      setAwards(response.data || []);
+      
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -297,12 +303,45 @@ const StudentDashboard: React.FC = () => {
             </button>
           </section>
           {/* Achievements Section */}
-          <section>
-            <h2 className="text-3xl font-bold text-gray-800 mb-6">Achievements</h2>
-            <div className="flex items-center justify-center p-8 bg-gray-50 rounded-lg shadow-md border border-gray-200">
-              <p className="text-gray-500 text-lg">Coming Soon!</p>
-            </div>
-          </section>
+      <section className="mb-20">
+        <div className="flex items-center mb-6">
+          <FaMedal className="text-yellow-500 text-2xl mr-3" />
+          <h2 className="text-3xl font-bold text-gray-800">Achievements</h2>
+        </div>
+
+        {loading ? (
+          <p className="text-center text-gray-600">Loading achievements...</p>
+        ) : awards.length === 0 ? (
+          <p className="text-center text-gray-600">No achievements yet.</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {awards.map((award) => (
+              <div
+                key={award.id}
+                className="p-6 bg-white rounded-xl shadow hover:shadow-lg border border-gray-200 transition-transform hover:-translate-y-1"
+              >
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-xl font-semibold text-gray-900">
+                    {award.title}
+                  </h3>
+                  <span
+                    className={`px-3 py-1 rounded-lg text-sm font-medium text-white ${
+                      award.rank === "Gold"
+                        ? "bg-yellow-500"
+                        : award.rank === "Silver"
+                        ? "bg-gray-400"
+                        : "bg-orange-500"
+                    }`}
+                  >
+                    {award.rank}
+                  </span>
+                </div>
+                <p className="text-gray-700 text-sm">{award.description}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
         </>
       )}
     </div>

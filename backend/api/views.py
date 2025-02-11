@@ -5,8 +5,10 @@ from django.db.models import Count, Sum
 from django.utils.timezone import now
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
-from django.utils import timezone
-from django.views.decorators.csrf import csrf_exempt
+from api.models import User, Society, Event, Student, Notification
+from rest_framework import generics, status
+from .serializers import EventSerializer, RSVPEventSerializer, UserSerializer, StudentSerializer, LeaveSocietySerializer, JoinSocietySerializer, SocietySerializer, NotificationSerializer, DashboardStatisticSerializer, RecentActivitySerializer, EventCalendarSerializer, DashboardNotificationSerializer
+from api.models import Admin, User, Society, Event, Student
 from rest_framework import generics, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -164,7 +166,7 @@ class StudentSocietiesView(APIView):
         if not hasattr(user, "student"):
             return Response({"error": "Only students can manage societies."}, status=status.HTTP_403_FORBIDDEN)
 
-        societies = user.student.societies.all()
+        societies = user.student.societies_belongs_to.all()
         serializer = SocietySerializer(societies, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -185,11 +187,11 @@ class StudentSocietiesView(APIView):
             return Response({"error": "Society does not exist."}, status=status.HTTP_404_NOT_FOUND)
 
         # Check if the user is actually a member of the society
-        if not user.student.societies.filter(id=society_id).exists():
+        if not user.student.societies_belongs_to.filter(id=society_id).exists():
             return Response({"error": "You are not a member of this society."}, status=status.HTTP_400_BAD_REQUEST)
 
         # Remove the student from the society
-        user.student.societies.remove(society)
+        user.student.societies_belongs_to.remove(society)
 
         return Response({"message": f"Successfully left society '{society.name}'."}, status=status.HTTP_200_OK)
 
@@ -220,7 +222,7 @@ class JoinSocietyView(APIView):
         if not hasattr(user, "student"):
             return Response({"error": "Only students can join societies."}, status=status.HTTP_403_FORBIDDEN)
 
-        joined_societies = user.student.societies.all()
+        joined_societies = user.student.societies_belongs_to.all()
         available_societies = Society.objects.exclude(id__in=joined_societies)
 
         serializer = SocietySerializer(available_societies, many=True)
@@ -228,6 +230,7 @@ class JoinSocietyView(APIView):
 
     def post(self, request, society_id=None):
         user = request.user
+
         if not hasattr(user, "student"):
             return Response({"error": "Only students can join societies."}, status=status.HTTP_403_FORBIDDEN)
 
@@ -235,16 +238,17 @@ class JoinSocietyView(APIView):
             return Response({"error": "Society ID is required."}, status=status.HTTP_400_BAD_REQUEST)
 
         serializer = JoinSocietySerializer(data={"society_id": society_id}, context={"request": request})
-        if serializer.is_valid():
-            try:
-                society = serializer.save()
-                return Response({"message": f"Successfully joined society '{society.name}'."}, status=status.HTTP_200_OK)
-            except Society.DoesNotExist:
-                return Response(
-                    {"error": "Society not found"}, 
-                    status=status.HTTP_404_NOT_FOUND
-                )
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        if not serializer.is_valid():
+
+            if "Society does not exist." in serializer.errors.get("society_id", []):
+                return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
+
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)  
+
+        society = serializer.save()
+        return Response({"message": f"Successfully joined society '{society.name}'."}, status=status.HTTP_200_OK)
+
 
 
 class RSVPEventView(APIView):
@@ -750,39 +754,3 @@ class EventCalendarView(APIView):
 
 class MySocietiesView(APIView):
     pass
-
-@csrf_exempt
-def get_popular_societies(request):
-    """
-    Returns the top 5 most popular societies based on:
-    - Number of members
-    - Number of hosted events
-    - Total event attendees
-    """
-    
-    popular_societies = (
-        Society.objects.annotate(
-            total_members=Count("society_members"),
-            total_events=Count("events"),
-            total_event_attendance=Sum("events__current_attendees")
-        )
-        .annotate(
-            popularity_score=(
-                (2 * Count("society_members")) +
-                (3 * Count("events")) +
-                (4 * Sum("events__current_attendees"))
-            )
-        )
-        .order_by("-popularity_score")[:5]
-        .values("id", "name", "total_members", "total_events", "total_event_attendance", "popularity_score")
-    )
-
-    return JsonResponse(list(popular_societies), safe=False)
-
-@api_view(["GET"])
-@permission_classes([])
-def get_sorted_events(request):
-    # Get only upcoming events
-    events = Event.objects.filter(status="Approved", date__gte=now()).order_by("date", "start_time")
-    serializer = EventSerializer(events, many=True)
-    return Response(serializer.data)

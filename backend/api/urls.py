@@ -1,7 +1,7 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from .views import (
-    RegisterView, CurrentUserView,
+    AwardStudentView, AwardView, RegisterView, CurrentUserView,
     StudentNotificationsView, StartSocietyRequestView, ManageMySocietyView,
     CreateSocietyEventView, AdminView, StudentView, SocietyView, EventView,
     RejectedSocietyRequestView, SocietyRequestView, DashboardStatsView,
@@ -56,4 +56,13 @@ urlpatterns = [
     path("dashboard/notifications/", NotificationsView.as_view(), name="dashboard_notifications"),
     path("dashboard/events/", EventCalendarView.as_view(), name="dashboard_events"),
     path("popular-societies/", get_popular_societies, name="popular_societies"),
+    
+    # Awards Endpoints
+    path("awards/", AwardView.as_view(), name="awards"),  # List & Create Awards
+    path("awards/<int:pk>/", AwardView.as_view(), name="award_detail"),  # Retrieve, Update, Delete Award
+
+    # Award-Student Endpoints
+    path("award-students/", AwardStudentView.as_view(), name="award_students"),  # List & Assign Awards to Students
+    path("award-students/<int:pk>/", AwardStudentView.as_view(), name="award_student_detail"),  # Retrieve, Update, Delete Assignment
+
 ]
