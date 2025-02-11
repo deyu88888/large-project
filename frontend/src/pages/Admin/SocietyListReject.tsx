@@ -1,49 +1,95 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Box, Typography, Button, useTheme } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { apiClient, apiPaths } from "../../api";
 import { useNavigate } from "react-router-dom";
 import { tokens } from "../../theme/theme";
 
-type Society = {
+// Consistent Society type
+interface Society {
+  id: number;
   name: string;
   leader: string;
-  members: string;
-  roles: any;
-  approvedBy: any;
-  actions: any;
-};
+  members: string[]; // Assuming members is an array
+  roles: Record<string, string>; // Assuming roles is a key-value object
+  approvedBy: string;
+}
 
 const SocietyListRejected = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const navigate = useNavigate();
   const [societies, setSocieties] = useState<Society[]>([]);
+  const ws = useRef<WebSocket | null>(null);
+
+    const fetchSocieties = async () => {
+        try {
+            const res = await apiClient.get(apiPaths.USER.REJECTEDSOCIETY);
+            console.log("Fetched Societies:", res.data);
+            setSocieties(res.data);
+        } catch (error) {
+            console.error("⚠️ Error fetching societies:", error);
+        }
+    };
 
   useEffect(() => {
-    const getdata = async () => {
-      try {
-        const res = await apiClient.get(apiPaths.USER.REJECTEDSOCIETY);
-        console.log("Fetched Rejected Societies:", res.data);
-        setSocieties(res.data || []);
-      } catch (error) {
-        console.error("Error fetching rejected societies:", error);
-      }
+
+    const connectWebSocket = () => {
+        ws.current = new WebSocket("ws://127.0.0.1:8000/ws/admin/society/");
+
+        ws.current.onopen = () => {
+            console.log("WebSocket Connected for Society List");
+        };
+
+        ws.current.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                console.log("WebSocket Update Received:", data);
+
+                //Re-fetch on update
+                fetchSocieties();
+
+            } catch (error) {
+                console.error("Error parsing WebSocket message:", error);
+            }
+        };
+
+        ws.current.onerror = (event) => {
+            console.error("WebSocket Error:", event);
+        };
+
+        ws.current.onclose = (event) => {
+            console.log("WebSocket Disconnected:", event.reason);
+            setTimeout(() => {
+                connectWebSocket();
+            }, 5000);
+        };
+    }
+
+      //Initial fetch
+      fetchSocieties();
+
+      //Establish websocket connection
+      connectWebSocket();
+
+    return () => {
+        if (ws.current) {
+            ws.current.close();
+        }
     };
-    getdata();
-  }, []);
+}, []);
 
   const handleBackToSocieties = () => {
     navigate("/admin/society-list");
   };
 
   const columns: GridColDef[] = [
+    { field: "id", headerName: "ID", width: 100 }, // Add ID
     { field: "name", headerName: "Name", width: 150 },
     { field: "leader", headerName: "Leader", width: 200 },
-    { field: "members", headerName: "Members", width: 150 },
-    { field: "roles", headerName: "Roles", width: 200 },
+    { field: "members", headerName: "Members", width: 150, valueGetter: (params) => params.row.members.join(", ") },
+    { field: "roles", headerName: "Roles", width: 200, valueGetter: (params) => JSON.stringify(params.row.roles)},
     { field: "approvedBy", headerName: "Approved By", width: 150 },
-    { field: "actions", headerName: "Actions", width: 200 },
   ];
 
   return (
@@ -137,7 +183,16 @@ const SocietyListRejected = () => {
             },
           }}
         >
-          <DataGrid rows={societies} columns={columns} pageSize={5} checkboxSelection />
+          <DataGrid
+            rows={societies}
+            columns={columns}
+            initialState={{
+              pagination: {
+                paginationModel: { page: 0, pageSize: 5 },
+              },
+            }}
+            checkboxSelection
+          />
         </Box>
       </Box>
     </Box>

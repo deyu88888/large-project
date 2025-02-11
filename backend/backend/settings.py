@@ -2,24 +2,20 @@ from pathlib import Path
 from datetime import timedelta
 from dotenv import load_dotenv
 import os
-# from fakeredis.aioredis import FakeRedis
-from fakeredis import FakeRedis
-# Load environment variables
+
 load_dotenv()
 
-# Base directory of the project
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Secret key for Django
-SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "django-insecure-nma=xi6x2p-crjg^ifqqkapyu1qjd0l=+wn)-rijk_o%$!k3w_")
+SECRET_KEY = os.getenv(
+    "DJANGO_SECRET_KEY",
+    "django-insecure-nma=xi6x2p-crjg^ifqqkapyu1qjd0l=+wn)-rijk_o%$!k3w_"
+)
 
-# Debug setting
 DEBUG = os.getenv("DJANGO_DEBUG", "True") == "True"
 
-# Allowed hosts
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
 
-# REST framework settings
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
@@ -27,21 +23,14 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
     ],
-    "DEFAULT_RENDERER_CLASSES": (
-        "djangorestframework_camel_case.render.CamelCaseJSONRenderer",
-    ),
-    "DEFAULT_PARSER_CLASSES": (
-        "djangorestframework_camel_case.parser.CamelCaseJSONParser",
-    ),
+
 }
 
-# JWT settings
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
 }
 
-# Application definition
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -49,29 +38,25 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "api",
     "rest_framework",
-    "corsheaders",
-    "channels",  # Django Channels
+    "corsheaders",  
+    "api",
+    "channels",
 ]
 
-# Middleware settings
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "corsheaders.middleware.CorsMiddleware", 
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "corsheaders.middleware.CorsMiddleware",  # CORS middleware
-    "csp.middleware.CSPMiddleware",  # Content Security Policy middleware
 ]
 
-# Root URL configuration
 ROOT_URLCONF = "backend.urls"
 
-# Templates configuration
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
@@ -88,12 +73,9 @@ TEMPLATES = [
     },
 ]
 
-# WSGI and ASGI application configuration
 WSGI_APPLICATION = "backend.wsgi.application"
 ASGI_APPLICATION = "backend.asgi.application"
 
-
-# Database configuration
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
@@ -101,7 +83,6 @@ DATABASES = {
     }
 }
 
-# Password validation
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
@@ -109,51 +90,44 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
-# Internationalization settings
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
 
-# Static files settings
 STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# CORS settings
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",
+]
+
 CORS_ALLOW_CREDENTIALS = True
 
-# Custom user model
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+    "sec-websocket-protocol",
+]
+
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
 AUTH_USER_MODEL = "api.User"
 
-# # Channels configuration
-# if os.getenv("USE_FAKEREDIS", "false").lower() == "true":
-#     fake_redis = aioredis.FakeRedis(decode_responses=True)  # Use async FakeRedis
-#     CHANNEL_LAYERS = {
-#         "default": {
-#             "BACKEND": "channels_redis.core.RedisChannelLayer",
-#             "CONFIG": {
-#                 # "hosts": [FakeRedis()],
-#                 "hosts": [fake_redis],
-#             },
-#         }
-#     }
-# else:
 CHANNEL_LAYERS = {
     "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [("127.0.0.1", 6379)],
-        },
+        "BACKEND": "channels.layers.InMemoryChannelLayer"  
+
     }
 }
-
-# Content Security Policy settings for WebSocket and frontend communication
-CSP_DEFAULT_SRC = ["'self'"]
-CSP_CONNECT_SRC = [
-    "'self'",
-    "ws://127.0.0.1:8000",
-    "http://127.0.0.1:8000",
-]
-CSP_SCRIPT_SRC = ["'self'", "'unsafe-inline'"]
-CSP_STYLE_SRC = ["'self'", "'unsafe-inline'"]

@@ -1,17 +1,18 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Box, Typography, useTheme, Button } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { apiClient, apiPaths } from "../../api";
 import { useNavigate } from "react-router-dom";
 import { tokens } from "../../theme/theme";
 
+// Consistent Society type
 interface Society {
+  id: number;
   name: string;
   leader: string;
-  members: string;
-  roles: any;
-  approvedBy: any;
-  actions: any;
+  members: string[]; // Assuming members is an array of strings
+  roles: Record<string, string>; // Assuming roles is a key-value object
+  approvedBy: string;
 }
 
 const SocietyList = () => {
@@ -19,26 +20,70 @@ const SocietyList = () => {
   const colors = tokens(theme.palette.mode);
   const navigate = useNavigate();
   const [societies, setSocieties] = useState<Society[]>([]);
+  const ws = useRef<WebSocket | null>(null);
+
+    const fetchSocieties = async () => {
+        try {
+            const res = await apiClient.get(apiPaths.USER.SOCIETY);
+            setSocieties(res.data);
+        } catch (error) {
+            console.error("Error fetching societies:", error);
+        }
+    };
+
 
   useEffect(() => {
-    const getdata = async () => {
-      try {
-        const res = await apiClient.get(apiPaths.USER.SOCIETY);
-        setSocieties(res.data || []);
-      } catch (error) {
-        console.error("Error fetching societies:", error);
-      }
+    const connectWebSocket = () => {
+        ws.current = new WebSocket("ws://127.0.0.1:8000/ws/admin/society/");
+
+        ws.current.onopen = () => {
+            console.log("WebSocket Connected for Society List");
+        };
+
+        ws.current.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                console.log("WebSocket Update Received:", data);
+
+                // Re-fetch on any update
+                fetchSocieties();
+
+            } catch (error) {
+                console.error("Error parsing WebSocket message:", error);
+            }
+        };
+
+        ws.current.onerror = (event) => {
+            console.error("WebSocket Error:", event);
+        };
+
+        ws.current.onclose = (event) => {
+            console.log("WebSocket Disconnected:", event.reason);
+            setTimeout(() => {
+                connectWebSocket();
+            }, 5000);
+        };
+    }
+      //Initial fetch
+      fetchSocieties();
+
+      //Establish websocket connection
+      connectWebSocket();
+
+    return () => {
+        if (ws.current) {
+          ws.current.close();
+        }
     };
-    getdata();
-  }, []);
+}, []);
 
   const columns: GridColDef[] = [
+    { field: "id", headerName: "ID", width: 100 }, // Add ID column
     { field: "name", headerName: "Name", width: 150 },
     { field: "leader", headerName: "Leader", width: 200 },
-    { field: "members", headerName: "Members", width: 150 },
-    { field: "roles", headerName: "Roles", width: 200 },
+    { field: "members", headerName: "Members", width: 150, valueGetter: (params) => params.row.members.join(", ") }, // Display as comma-separated string
+    { field: "roles", headerName: "Roles", width: 200, valueGetter: (params) => JSON.stringify(params.row.roles) }, // Display as JSON string
     { field: "approvedBy", headerName: "Approved By", width: 150 },
-    { field: "actions", headerName: "Actions", width: 200 },
   ];
 
   const handleRejectPageNavigation = () => {
@@ -125,7 +170,15 @@ const SocietyList = () => {
             },
           }}
         >
-          <DataGrid rows={societies} columns={columns} pageSize={5} checkboxSelection />
+          <DataGrid
+            rows={societies}
+            columns={columns}
+            initialState={{
+              pagination: {
+                paginationModel: { page: 0, pageSize: 5 },
+              },
+            }}
+           />
         </Box>
       </Box>
     </Box>

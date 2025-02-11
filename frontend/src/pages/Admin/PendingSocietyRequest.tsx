@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Box, Typography, Button, useTheme } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { apiClient, apiPaths } from "../../api";
 import { useNavigate } from "react-router-dom";
 import { tokens } from "../../theme/theme";
 
-type Society = { 
+type Society = {
   id: number;
   name: string;
   societyMembers: number[];
@@ -23,24 +23,73 @@ const PendingSocietyRequest = () => {
   const colors = tokens(theme.palette.mode);
   const navigate = useNavigate();
   const [societies, setSocieties] = useState<Society[]>([]);
+  const ws = useRef<WebSocket | null>(null); // Use useRef instead of useState
+
+  const fetchPendingSocieties = async () => {
+    try {
+      const res = await apiClient.get(apiPaths.USER.PENDINGSOCIETYREQUEST);
+      console.log("Fetched Pending Societies:", res.data);
+      setSocieties(res.data); // No need to check for array
+    } catch (error) {
+      console.error("Error fetching pending societies:", error);
+    }
+  };
 
   useEffect(() => {
-    const fetchPendingSocieties = async () => {
-      try {
-        const res = await apiClient.get(apiPaths.USER.PENDINGSOCIETYREQUEST);
-        console.log("Fetched Pending Societies:", res.data);
-        setSocieties(res.data || []);
-      } catch (error) {
-        console.error("Error fetching pending societies:", error);
-      }
-    };
+    const connectWebSocket = () => {
+        ws.current = new WebSocket("ws://127.0.0.1:8000/ws/admin/society/");
+
+        ws.current.onopen = () => {
+            console.log("WebSocket Connected for Society List");
+        };
+
+        ws.current.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                console.log("WebSocket Update Received:", data);
+
+                // Re-fetch the entire list on any update
+                fetchPendingSocieties();
+
+            } catch (error) {
+                console.error("Error parsing WebSocket message:", error);
+            }
+        };
+
+        ws.current.onerror = (event) => {
+            console.error("WebSocket Error:", event);
+        };
+
+        ws.current.onclose = (event) => {
+            console.log("WebSocket Disconnected:", event.reason);
+            // Attempt to reconnect after a delay
+            setTimeout(() => {
+                connectWebSocket();
+            }, 5000);
+        };
+    }
+
+
+    // Initial fetch
     fetchPendingSocieties();
-  }, []);
+
+    // Establish WebSocket connection
+    connectWebSocket();
+
+
+    // Cleanup function to close WebSocket on unmount
+    return () => {
+        if (ws.current) {
+            ws.current.close();
+        }
+    };
+}, []); // Empty dependency array ensures this runs only once on mount
+
 
   const handleAccept = async (id: number) => {
     try {
       await apiClient.put(`${apiPaths.USER.PENDINGSOCIETYREQUEST}/${id}`, { status: "Approved" });
-      setSocieties((prev) => prev.filter((society) => society.id !== id));
+      // No need to manually update state; WebSocket will trigger a re-fetch
     } catch (error) {
       console.error("Error accepting society:", error);
     }
@@ -49,7 +98,7 @@ const PendingSocietyRequest = () => {
   const handleReject = async (id: number) => {
     try {
       await apiClient.put(`${apiPaths.USER.PENDINGSOCIETYREQUEST}/${id}`, { status: "Rejected" });
-      setSocieties((prev) => prev.filter((society) => society.id !== id));
+      // No need to manually update state; WebSocket will trigger a re-fetch
     } catch (error) {
       console.error("Error rejecting society:", error);
     }

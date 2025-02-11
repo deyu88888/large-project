@@ -1,7 +1,16 @@
 import datetime
-from api.models import User, Student, Admin, Society, Event, Notification, Request, SocietyRequest, EventRequest, UserRequest
+from api.models import User, Student, Admin, Society, Event, Notification, Request, SocietyRequest, EventRequest, UserRequest, SiteSettings
 from rest_framework import serializers
+from django.utils.translation import gettext_lazy as _
 
+class SiteSettingsSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the SiteSettings model.  Used for the website introduction.
+    """
+    class Meta:
+        model = SiteSettings
+        fields = ('introduction_title', 'introduction_content')
+        read_only_fields = ('introduction_title', 'introduction_content')
 
 class UserSerializer(serializers.ModelSerializer):
     """
@@ -134,7 +143,7 @@ class SocietySerializer(serializers.ModelSerializer):
         fields = [
             'id', 'name', 'society_members', 'roles', 'leader', 'approved_by',
             'status', 'category', 'social_media_links', 'timetable',
-            'membership_requirements', 'upcoming_projects_or_plans', 
+            'membership_requirements', 'upcoming_projects_or_plans',
             #'society_logo'
         ]
 
@@ -222,29 +231,54 @@ class NotificationSerializer(serializers.ModelSerializer):
 
 
 class LeaveSocietySerializer(serializers.Serializer):
-    society_id = serializers.IntegerField()
+    """
+    Serializer for leaving a society.
+    """
 
-    def validate_society_id(self, value):
+    def __init__(self, *args, **kwargs):
+        # Expect society_id to be passed in the context, not request.data
+        self.society_id = kwargs.pop('society_id', None)
+        super().__init__(*args, **kwargs)
+
+    def validate(self, data):
+        """
+        Validate if the user can leave the given society.
+        """
         request_user = self.context['request'].user
+
+        # Ensure the user is a student
         if not hasattr(request_user, 'student'):
-            raise serializers.ValidationError("Only students can leave societies.")
+            raise serializers.ValidationError({"error": "Only students can leave societies."})
 
+        # Ensure society_id is provided (from the URL)
+        society_id = self.society_id
+        if society_id is None:
+            raise serializers.ValidationError({"error": "society_id is required."})
+
+        # Check if the society exists
         try:
-            society = Society.objects.get(id=value)
+            society = Society.objects.get(id=society_id)
         except Society.DoesNotExist:
-            raise serializers.ValidationError("Society does not exist.")
+            raise serializers.ValidationError({"error": "Society does not exist."})
 
+        # Check if the user is actually a member of the society
         if not society.society_members.filter(id=request_user.id).exists():
-            raise serializers.ValidationError("You are not a member of this society.")
+            raise serializers.ValidationError({"error": "You are not a member of this society."})
 
-        return value
+        return {"society": society}
 
     def save(self):
-        society_id = self.validated_data['society_id']
+        """
+        Remove the student from the society.
+        """
         request_user = self.context['request'].user
-        society = Society.objects.get(id=society_id)
+        society = self.validated_data["society"]
+
+        # Remove the user from the society
         request_user.student.societies.remove(society)
+
         return society
+
 
 
 class JoinSocietySerializer(serializers.Serializer):
@@ -364,7 +398,7 @@ class RequestSerializer(serializers.ModelSerializer):
         model = Request
         fields = [
             'id', 'from_student', 'requested_at',
-            'approved', 'description', 'intent'
+            'approved', 'intent'
         ]
         extra_kwargs = {
             'from_student': {'required': True},
@@ -391,10 +425,12 @@ class SocietyRequestSerializer(RequestSerializer):
     class Meta:
         """SocietyRequestSerializer meta data"""
         model = SocietyRequest
-        fields = RequestSerializer.Meta.fields + ['society']
-        extra_kwargs = RequestSerializer.Meta.extra_kwargs | {
-            'society': {'required': True}
-        }
+        fields = (
+            RequestSerializer.Meta.fields
+            + ['name', 'roles', 'leader', 'category',
+            'social_media_links', 'timetable', 'membership_requirements',
+            'upcoming_projects_or_plans', 'society']
+        )
 
 
 class UserRequestSerializer(RequestSerializer):
@@ -405,13 +441,11 @@ class UserRequestSerializer(RequestSerializer):
     class Meta:
         """UserRequestSerializer meta data"""
         model = UserRequest
-        fields = RequestSerializer.Meta.fields + ['student']
-        extra_kwargs = RequestSerializer.Meta.extra_kwargs | {
-            'student': {'required': True}
-        }
+        fields = RequestSerializer.Meta.fields + ['major']
+        extra_kwargs = RequestSerializer.Meta.extra_kwargs
 
 
-class EventRequestSerializer(SocietyRequestSerializer):
+class EventRequestSerializer(RequestSerializer):
     """
     Serializer for the EventRequest model
     """
@@ -419,9 +453,13 @@ class EventRequestSerializer(SocietyRequestSerializer):
     class Meta:
         """EventRequestSerializer meta data"""
         model = EventRequest
-        fields = SocietyRequestSerializer.Meta.fields + ['event']
-        extra_kwargs = SocietyRequestSerializer.Meta.extra_kwargs | {
-            'event': {'required': True}
+        fields = (
+            RequestSerializer.Meta.fields
+            + ['title', 'description', 'location', 'date',
+            'start_time', 'duration', 'event', 'hosted_by']
+        )
+        extra_kwargs = RequestSerializer.Meta.extra_kwargs | {
+            'hosted_by': {'required': True}
         }
 
 
@@ -490,6 +528,32 @@ class EventCalendarSerializer(serializers.ModelSerializer):
 
     def get_end(self, obj):
         # Combine date and start_time, add duration
+        start_dt = datetime.datetime.combine(obj.date, obj.start_time).replace(
+            tzinfo=datetime.timezone.utc
+        )
+        return (start_dt + obj.duration).isoformat()
+
+class EventCalendarSerializer(serializers.ModelSerializer):
+    """
+    Serializer for calendar events on the dashboard.
+    """
+    start = serializers.SerializerMethodField()
+    end = serializers.SerializerMethodField()
+    title = serializers.CharField()
+
+    class Meta:
+        model = Event
+        fields = ["id", "title", "start", "end", "location"]
+        read_only_fields = ["start", "end"]
+
+    def get_start(self, obj):
+        return (
+            datetime.datetime.combine(obj.date, obj.start_time)
+            .replace(tzinfo=datetime.timezone.utc)
+            .isoformat()
+        )
+
+    def get_end(self, obj):
         start_dt = datetime.datetime.combine(obj.date, obj.start_time).replace(
             tzinfo=datetime.timezone.utc
         )

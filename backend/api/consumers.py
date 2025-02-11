@@ -1,31 +1,68 @@
+# api/consumers.py
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from asgiref.sync import sync_to_async
 import logging
+# from .models import SiteSettings  # Import the SiteSettings model
+
 
 # Set up logger
 logger = logging.getLogger(__name__)
 
 class DashboardConsumer(AsyncWebsocketConsumer):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.channel_layer = None
+        self.group_name = None
+        self.channel_name = None
+
     async def connect(self):
         """
         Handles WebSocket connection.
-        Joins this socket to the 'dashboard' group.
+        Joins this socket to the 'dashboard' group and sends initial data.
         """
         try:
-            logger.info(f"[DashboardConsumer] Attempting to connect WebSocket: {self.channel_name}")
+            self.channel_layer = self.channel_layer
             self.group_name = "dashboard"
-            
+
+            if not hasattr(self, "channel_name"):
+                self.channel_name = f"dashboard_{id(self)}"
+
             # Add WebSocket to the "dashboard" group
             await self.channel_layer.group_add(self.group_name, self.channel_name)
-            
+
             # Accept the connection
             await self.accept()
-            logger.info(f"[DashboardConsumer] WebSocket connected successfully: {self.channel_name}, joined group '{self.group_name}'")
+            logger.info(f"[DashboardConsumer] WebSocket connected: {self.channel_name}, group: '{self.group_name}'")
+
+            # --- Send initial data (including SiteSettings) ---
+            await self.send_initial_data()
+
         except Exception as e:
             logger.error(f"[DashboardConsumer] Error during WebSocket connection: {e}")
             await self.close()
 
+    async def send_initial_data(self):
+        """
+        Sends initial data (dashboard stats and site settings) to the newly connected client.
+        """
+        # Fetch dashboard statistics
+        stats = await self.get_dashboard_stats()
+        await self.send(text_data=json.dumps({
+            'type': 'dashboard.update',
+            'data': stats
+        }))
+
+        # Fetch and send SiteSettings (introduction) - Modified
+        site_settings = await self.get_site_settings()
+        await self.send(text_data=json.dumps({
+            "type": "update_introduction",
+            "introduction": {  # Send as a dictionary
+                "title": site_settings.introduction_title,
+                "content": site_settings.introduction_content.splitlines()  # Split into paragraphs
+            }
+        }))
     async def disconnect(self, close_code):
         """
         Handles WebSocket disconnection.
@@ -86,7 +123,7 @@ class DashboardConsumer(AsyncWebsocketConsumer):
             await self.send(json.dumps({"error": str(e)}))
 
     # =========================================================
-    #  BROADCAST HANDLERS - Called for each group member's socket
+    #   BROADCAST HANDLERS - Called for each group member's socket
     # =========================================================
 
     async def dashboard_update(self, event):
@@ -136,6 +173,18 @@ class DashboardConsumer(AsyncWebsocketConsumer):
             "activities": activities,
         }))
 
+    # Add a handler for update_introduction (optional, for later updates)
+    async def update_introduction(self, event):
+        """
+        Handles the 'update_introduction' message (if you send it from the backend later).
+        """
+        logger.info(f"[DashboardConsumer] Broadcasting introduction update: {event.get('introduction')}")
+        await self.send(text_data=json.dumps({
+            "type": "update_introduction",
+            "introduction": event["introduction"],  # Send the introduction data
+        }))
+
+
     @sync_to_async
     def get_dashboard_stats(self):
         """
@@ -166,3 +215,11 @@ class DashboardConsumer(AsyncWebsocketConsumer):
                 "pendingApprovals": 0,
                 "activeMembers": 0,
             }
+    @sync_to_async  # Use sync_to_async for database access
+    def get_site_settings(self):
+        """
+        Fetches the SiteSettings (singleton) from the database.
+        """
+        from .models import SiteSettings  # Do not import globally!
+        logger.debug("[DashboardConsumer] Fetching site settings.")
+        return SiteSettings.load()  # Use the .load() method

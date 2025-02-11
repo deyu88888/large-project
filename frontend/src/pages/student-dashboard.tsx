@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaCalendarAlt, FaBell, FaUsers, FaUserPlus } from "react-icons/fa";
+import { FaCalendarAlt, FaBell, FaUsers, FaUserPlus, FaCogs } from "react-icons/fa";
 import axios from "axios";
 import { apiClient } from "../api";
 
@@ -12,6 +12,7 @@ const StudentDashboard: React.FC = () => {
   const [events, setEvents] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isPresident, setIsPresident] = useState(false);
 
   // Fetch data when the component mounts
   useEffect(() => {
@@ -24,12 +25,16 @@ const StudentDashboard: React.FC = () => {
       setLoading(true);
 
       // Fetch societies
-      const societiesResponse = await apiClient.get("/api/my-societies");
+      const societiesResponse = await apiClient.get("/api/student-societies/");
       console.log(societiesResponse.data);
       setSocieties(societiesResponse.data || []);
 
+      // Check if the student is president of any society
+      const presidentSocieties = societiesResponse.data.filter((society: any) => society.is_president);
+      setIsPresident(presidentSocieties.length > 0);
+
       // Fetch events
-      const eventsResponse = await apiClient.get("/api/events/history/");
+      const eventsResponse = await apiClient.get("/api/events/rsvp");
       console.log(eventsResponse.data);
       setEvents(eventsResponse.data || []);
 
@@ -56,10 +61,10 @@ const StudentDashboard: React.FC = () => {
   // Leave a society
   const leaveSociety = async (societyId: number) => {
     try {
-      await apiClient.post(`/api/leave-society/${societyId}/`);
-      fetchData(); // Refresh the data after leaving a society
+      await apiClient.delete(`/api/leave-society/${societyId}/`); // Ensure societyId is in the URL
+      fetchData(); // Refresh societies after leaving
     } catch (error) {
-      console.error("Error leaving society:", error);
+      console.error("Error leaving society:", error.response?.data || error);
     }
   };
 
@@ -83,6 +88,28 @@ const StudentDashboard: React.FC = () => {
     }
   };
 
+  // Mark a notification as read
+  const markNotificationAsRead = async (id: number) => {
+    try {
+      const response = await apiClient.patch(`/api/notifications/${id}/`, { is_read: true });
+      
+      if (response.status === 200) {
+        // Update local state
+        setNotifications((prevNotifications) =>
+          prevNotifications.map((notification) =>
+            notification.id === id 
+              ? { ...notification, is_read: true } 
+              : notification
+          )
+        );
+      } else {
+        console.error('Failed to mark notification as read');
+      }
+    } catch (error) {
+      console.error("Error marking notification as read:", error.response?.data || error);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-indigo-50 via-white to-indigo-100 py-12 px-8">
       {loading ? (
@@ -98,6 +125,19 @@ const StudentDashboard: React.FC = () => {
               Stay updated with your societies, events, and achievements.
             </p>
           </header>
+
+           {/*  Manage My Societies Button (Only if President) */}
+           {isPresident && (
+            <div className="text-center mb-8">
+              <button
+                onClick={() => navigate("/manage-societies")}
+                className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition-all flex items-center justify-center mx-auto"
+              >
+                <FaCogs className="mr-2" />
+                Manage My Societies
+              </button>
+            </div>
+          )}
 
           {/* Society Management */}
           <section className="mb-16">
@@ -195,29 +235,72 @@ const StudentDashboard: React.FC = () => {
                 View All
               </button>
             </div>
-            <div className="space-y-6">
-              {notifications.map((notification) => (
-                <div
-                  key={notification.id}
-                  className={`p-5 rounded-lg shadow-md hover:shadow-lg border transition-all ${
-                    notification.is_read
-                      ? "bg-gray-100 border-gray-300"
-                      : "bg-blue-50 border-blue-100"
-                  }`}
-                >
-                  <div className="flex justify-between items-center">
-                    <p className="text-gray-800">{notification.message}</p>
-                    {!notification.is_read && (
-                      <button
-                        onClick={() => markNotificationAsRead(notification.id)}
-                        className="text-sm text-blue-500 hover:underline"
-                      >
-                        Mark as Read
-                      </button>
-                    )}
+
+            {/* Show Loading State */}
+            {loading ? (
+              <p className="text-center text-gray-600">Loading notifications...</p>
+            ) : notifications.length === 0 ? (
+              <p className="text-center text-gray-600">No new notifications.</p>
+            ) : (
+              <div className="space-y-6">
+                {notifications.map((notification) => (
+                  <div
+                    key={notification.id}
+                    className={`p-5 rounded-lg shadow-md hover:shadow-lg border transition-all ${
+                      notification.is_read ? "bg-gray-100 border-gray-300" : "bg-blue-50 border-blue-100"
+                    }`}
+                  >
+                    <div className="flex justify-between items-center">
+                      <p className="text-gray-800">{notification.message}</p>
+                      <div className="flex items-center space-x-4">
+                        {notification.is_read ? (
+                          <span className="text-green-500 text-sm font-medium">Read</span>
+                        ) : (
+                          <button
+                            onClick={() => markNotificationAsRead(notification.id)}
+                            className="text-sm text-blue-500 hover:underline"
+                          >
+                            Mark as Read
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
+            )}
+          </section>
+          {/* Calendar Integration */}
+          <section className="mb-20">
+            <div className="flex items-center mb-6">
+              <FaCalendarAlt className="text-teal-500 text-2xl mr-3" />
+              <h2 className="text-3xl font-bold text-gray-800">Calendar</h2>
+            </div>
+            <div className="flex items-center justify-center p-8 bg-gradient-to-r from-teal-50 to-teal-100 rounded-lg shadow-md border border-gray-200">
+              <p className="text-gray-500 text-lg">Calendar Integration Placeholder</p>
+            </div>
+          </section>
+          {/* Start a Society Section */}
+          <section className="mb-20">
+            <div className="flex items-center mb-6">
+              <FaUserPlus className="text-purple-500 text-2xl mr-3" />
+              <h2 className="text-3xl font-bold text-gray-800">Start a Society</h2>
+            </div>
+            <p className="text-gray-600 mb-4">
+              Have an idea for a new society? Share your passion and bring others together!
+            </p>
+            <button
+              onClick={() => navigate("/start-society")}
+              className="bg-purple-500 text-white px-6 py-3 rounded-lg hover:bg-purple-600 transition-all"
+            >
+              Start a Society
+            </button>
+          </section>
+          {/* Achievements Section */}
+          <section>
+            <h2 className="text-3xl font-bold text-gray-800 mb-6">Achievements</h2>
+            <div className="flex items-center justify-center p-8 bg-gray-50 rounded-lg shadow-md border border-gray-200">
+              <p className="text-gray-500 text-lg">Coming Soon!</p>
             </div>
           </section>
         </>

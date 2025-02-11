@@ -1,13 +1,18 @@
 import axios from "axios";
 import { ACCESS_TOKEN } from "./constants";
-import PendingSocietyRequest from "./pages/Admin/PendingSocietyRequest";
 
-const apiUrl = "http://localhost:8000";
+// ✅ Define base API URL properly
+const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/";
 
+// ✅ Axios instance
 export const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL : apiUrl,
+  baseURL: apiUrl,
+  headers: {
+    "Content-Type": "application/json",
+  },
 });
 
+// ✅ Attach Authorization token for every request (only if it exists)
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem(ACCESS_TOKEN);
@@ -16,23 +21,55 @@ apiClient.interceptors.request.use(
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 export const apiPaths = {
   USER: {
-    LOGIN: "/api/user/login",
-    REGISTER: "/api/user/register",
-    REFRESH: "/api/user/token/refresh",
-    CURRENT: "/api/user/current",
-    EVENTS: "api/society/event",
-    SOCIETY: "api/admin-panel/society",
-    REJECTEDSOCIETY: "api/admin-panel/rejected-society",
-    STUDENTS: "api/user/student",
-    ADMIN: "api/user/admin",
-    PENDINGSOCIETYREQUEST: "api/society/request/pending",
-    REJECTEDEVENT: "api/society/rejectedevent",
+    LOGIN: "/api/user/login/",
+    REGISTER: "/api/user/register/",
+    REFRESH: "/api/user/token/refresh/",
+    CURRENT: "/api/user/current/",
+    EVENTS: "/api/society/event/", // Added missing trailing slash
+    SOCIETY: "/api/admin-panel/society/",
+    REJECTEDSOCIETY: "/api/admin-panel/rejected-society/",
+    STUDENTS: "/api/user/student/",
+    ADMIN: "/api/user/admin/",
+    PENDINGSOCIETYREQUEST: "/api/society/request/pending/",
+    REJECTEDEVENT: "/api/society/rejectedevent/", // Ensured uniformity
   },
+  SOCIETY: {
+    POPULAR_SOCIETIES: "/api/popular-societies/",
+  },
+  EVENTS: {
+    ALL: "/api/events/",
+  },
+};
+
+// ✅ Fetch Most Popular Societies
+export const getPopularSocieties = async () => {
+  try {
+    const response = await apiClient.get(apiPaths.SOCIETY.POPULAR_SOCIETIES);
+    return response.data;
+  } catch (error: any) {
+    console.error(
+      "❌ Error fetching popular societies:",
+      error.response?.data || error.message
+    );
+    throw error;
+  }
+};
+
+// ✅ Fetch All Events (Public Access)
+export const getAllEvents = async () => {
+  try {
+    const response = await apiClient.get(apiPaths.EVENTS.ALL);
+    return response.data;
+  } catch (error: any) {
+    console.error(
+      "❌ Error fetching events:",
+      error.response?.data || error.message
+    );
+    throw error;
+  }
 };

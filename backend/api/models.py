@@ -5,6 +5,7 @@ from django.contrib.auth.models import AbstractUser
 from django.dispatch import receiver
 from django.utils import timezone
 from django.db.models.signals import m2m_changed
+from django.utils.translation import gettext_lazy as _  # Import for i18n
 
 
 class User(AbstractUser):
@@ -58,6 +59,12 @@ class Student(User):
     """
     A model representing student users
     """
+    STATUS_CHOICES = [
+        ("Pending", "Pending Approval"),
+        ("Approved", "Approved"),
+        ("Rejected", "Rejected"),
+    ]
+
     major = models.CharField(max_length=50, blank=True)
 
     societies = models.ManyToManyField(
@@ -78,6 +85,10 @@ class Student(User):
         'Event',
         related_name='attendees',
         blank=True
+    )
+
+    status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default="Pending"
     )
 
     def save(self, *args, **kwargs):
@@ -253,13 +264,6 @@ class Request(models.Model):
         null=False,
     )
 
-    description = models.CharField(
-        max_length=200,
-        blank=True,
-        null=True,
-        help_text="Student to fill in additional details",
-    )
-
     class Meta:
         abstract = True
 
@@ -268,39 +272,110 @@ class SocietyRequest(Request):
     """
     Requests related to societies
     """
-
     society = models.ForeignKey(
         "Society",
-        on_delete=models.CASCADE,
-        related_name="society_requests",
-        blank=False,
-        null=False,
+        on_delete=models.DO_NOTHING,
+        related_name="society_request",
+        blank=True,
+        null=True,
     )
+    name = models.CharField(max_length=30, blank=True, default="")
+    roles = models.JSONField(default=dict, blank=True)
+    leader = models.ForeignKey(
+        "Student",
+        on_delete=models.DO_NOTHING,
+        related_name="society_request_leader",
+        blank=True,
+        null=True,
+    )
+    category = models.CharField(max_length=50, blank=True, default="")
+    # {"facebook": "link", "email": "email"}
+    social_media_links = models.JSONField(default=dict, blank=True, null=True)
+    timetable = models.TextField(blank=True, default="")
+    membership_requirements = models.TextField(blank=True, default="")
+    upcoming_projects_or_plans = models.TextField(blank=True, default="")
 
 
 class UserRequest(Request):
     """
     Requests related to users
     """
-
-    student = models.ForeignKey(
-        "Student",
-        on_delete=models.CASCADE,
-        related_name="user_requests",
-        blank=False,
-        null=False,
-    )
+    # username at some point
+    major = models.CharField(max_length=50, blank=True, default="")
 
 
-class EventRequest(SocietyRequest):
+class EventRequest(Request):
     """
     Requests related to events
     """
-
     event = models.ForeignKey(
         "Event",
-        on_delete=models.CASCADE,
-        related_name="event_requests",
-        blank=False,
-        null=False
+        on_delete=models.DO_NOTHING,
+        related_name="event_request",
+        blank=True,
+        null=True,
     )
+    hosted_by = models.ForeignKey(
+        "Society",
+        on_delete=models.DO_NOTHING,
+        related_name="event_request_society",
+        blank=False,
+        null=False,
+    )
+    title = models.CharField(max_length=20, blank=True, default="")
+    description = models.CharField(max_length=300, blank=True, default="")
+    location = models.CharField(max_length=300, blank=True, default="")
+    date = models.DateField(blank=True, null=True)
+    start_time = models.TimeField(blank=True, null=True)
+    duration = models.DurationField(blank=True, null=True)
+
+
+class SiteSettings(models.Model):
+    """
+    Stores site-wide settings, including the introduction text.
+    We use a singleton pattern (only one instance allowed).
+    """
+    singleton_instance_id = 1  # We'll enforce this as the only valid ID.
+
+    introduction_title = models.CharField(
+        max_length=255,
+        default=_("Welcome to the Universal Student Society Platform!"),  # Use translation
+        verbose_name=_("Introduction Title"),
+        help_text=_("The title of the website introduction section."),
+    )
+    introduction_content = models.TextField(
+        default=_(
+            "This platform is designed to help student societies manage their members, share news, "
+            "organize events, and much more. Whether you're a small club or a large society, "
+            "we provide the tools you need to connect with your members and thrive.\n\n"
+            "Key features include: membership management, event calendars, news feeds, notifications, "
+            "and customizable society pages. Get started by registering your society or logging in!"
+        ),
+        verbose_name=_("Introduction Content"),
+        help_text=_("The main content of the website introduction. Use newlines to separate paragraphs."),
+    )
+
+    class Meta:
+        verbose_name = _("Site Settings")
+        verbose_name_plural = _("Site Settings")
+
+    def __str__(self):
+        return "Site Settings"
+
+    def save(self, *args, **kwargs):
+        """
+        Enforce the singleton pattern. Only allow saving if the ID is the
+        singleton_instance_id.
+        """
+        if self.pk != self.singleton_instance_id:
+            self.pk = self.singleton_instance_id
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def load(cls):
+        """
+        Load the singleton instance.  Create it if it doesn't exist.
+        This is a more robust way to get the settings.
+        """
+        obj, created = cls.objects.get_or_create(pk=cls.singleton_instance_id)
+        return obj
