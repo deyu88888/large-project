@@ -1,4 +1,6 @@
 import { BrowserRouter } from "react-router-dom";
+import { ThemeProvider, CssBaseline, Box } from "@mui/material";
+import { ColorModeContext, useMode } from "./styles/theme";
 import { Routes } from "./routes";
 import axios from "axios";
 import { ThemeProvider, CssBaseline, Box } from "@mui/material";
@@ -22,6 +24,15 @@ export function App() {
         <CssBaseline />
         <BrowserRouter>
           <Routes />
+          <Box display="flex">
+            <Sidebar /> {/* Sidebar on the left */}
+            <Box flexGrow={1} display="flex" flexDirection="column">
+              <Topbar /> {/* Topbar at the top */}
+              <Box p={2}>
+                <Routes />
+              </Box>
+            </Box>
+          </Box>
         </BrowserRouter>
       </ThemeProvider>
     </ColorModeContext.Provider>

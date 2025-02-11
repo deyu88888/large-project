@@ -1,6 +1,9 @@
 import { Box, IconButton, useTheme, InputBase } from "@mui/material";
 import { useState, useContext } from "react";
 import { ColorModeContext, tokens } from "../../theme/theme";
+import React, { useContext } from "react";
+import { Link } from "react-router-dom";
+import { ColorModeContext, tokens } from "../../styles/theme";
 import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
 import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
 import NotificationsOutlinedIcon from "@mui/icons-material/NotificationsOutlined";
@@ -22,6 +25,13 @@ const Topbar: React.FC<TopbarProps> = ({ searchTerm, setSearchTerm }) => {
 
   const SIDEBAR_WIDTH = 270;
   const TOPBAR_HEIGHT = 64;
+const Topbar: React.FC = () => {
+  const theme = useTheme();
+  const colours = tokens(theme.palette.mode);
+  const colourMode = useContext(ColorModeContext);
+  const { sidebarWidth } = useSidebar();
+  const TOPBAR_HEIGHT = 64;
+  const extraWidth = 100;
 
   return (
     <Box
@@ -34,6 +44,12 @@ const Topbar: React.FC<TopbarProps> = ({ searchTerm, setSearchTerm }) => {
         zIndex: 1100,
         backgroundColor: "rgba(0, 0, 0, 0)", 
         backdropFilter: "blur(8px)", 
+        left: `${sidebarWidth + extraWidth}px`,
+        width: `calc(100% - ${sidebarWidth + extraWidth}px)`,
+        height: `${TOPBAR_HEIGHT}px`,
+        zIndex: 1100,
+        backgroundColor: "rgba(0, 0, 0, 0)",
+        backdropFilter: "blur(8px)",
         WebkitBackdropFilter: "blur(8px)",
         display: "flex",
         justifyContent: "space-between",
@@ -52,10 +68,14 @@ const Topbar: React.FC<TopbarProps> = ({ searchTerm, setSearchTerm }) => {
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}/>
          
+        sx={{ backgroundColor: colours.primary[400] }}
+      >
+        <InputBase sx={{ ml: 2, flex: 1 }} placeholder="Search" />
         <IconButton type="button" sx={{ p: 1 }}>
           <SearchIcon />
         </IconButton>
       </Box>
+
       <Box display="flex">
         <IconButton onClick={colourMode.toggleColorMode}>
           {theme.palette.mode === "dark" ? (
@@ -71,10 +91,13 @@ const Topbar: React.FC<TopbarProps> = ({ searchTerm, setSearchTerm }) => {
           <SettingsOutlinedIcon />
         </IconButton>
         <IconButton>
+
+        <IconButton component={Link} to="/profile">
           <PersonOutlinedIcon />
         </IconButton>
       </Box>
     </Box>
   );
 };
+
 export default Topbar;

@@ -4,6 +4,7 @@ import { Box } from "@mui/material";
 import AdminSidebar from "./layout/AdminSidebar";
 // import StudentSidebar from "./layout/StudentSidebar";
 // import GlobalSidebar from "./layout/GlobalSidebar";
+import Sidebar from "./layout/Sidebar";
 import Topbar from "./layout/Topbar";
 import { SidebarProvider, useSidebar } from "./layout/SidebarContext";
 

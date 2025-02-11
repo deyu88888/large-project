@@ -6,7 +6,7 @@ import { LoadingView } from "../components/loading/loading-view";
 import { PublicGuard } from "../components/guards/public-guard";
 import { PrivateGuard } from "../components/guards/private-guard";
 import CircularLoader from "../components/loading/circular-loader";
-import Layout from "../components/layout";
+import Layout from "../components/Layout";
 
 // Lazy-loaded pages
 const HomePage = lazy(() => import("../pages/home"));
@@ -45,9 +45,7 @@ const routes = [
     path: "/",
     element: (
       <PrivateGuard>
-        <Suspense fallback={<LoadingView />}>
-          <Outlet />
-        </Suspense>
+        <Layout />
       </PrivateGuard>
     ),
     children: [
@@ -116,7 +114,7 @@ const routes = [
         ),
       },
       {
-        path: "my-societies", // Add the route here
+        path: "my-societies",
         element: (
           <Suspense fallback={<LoadingView />}>
             <MySocieties />
