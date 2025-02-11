@@ -80,21 +80,21 @@ const Dashboard: React.FC = () => {
         const formattedEvents: CalendarEvent[] = (data as RawEvent[])
           .map((event: RawEvent): CalendarEvent | null => {
             try {
-              if (!event.duration || typeof event.duration !== "string" || !event.duration.includes(":")) {
-                console.warn(`⚠️ Skipping event with invalid duration:`, event);
-                return null;
-              }
+              const startDateTime = new Date(`${event.date}T${event.start_time}`); // ✅ Fixed field name
+              let endDateTime: Date | null = null;
 
-              const startDateTime = new Date(`${event.date}T${event.startTime}`);
-              const [hours, minutes, seconds] = event.duration.split(":").map(Number);
-              const durationMs = (hours * 3600 + minutes * 60 + (seconds || 0)) * 1000;
-              const endDateTime = new Date(startDateTime.getTime() + durationMs);
+              // If duration exists, calculate the end time
+              if (event.duration && typeof event.duration === "string" && event.duration.includes(":")) {
+                const [hours, minutes, seconds] = event.duration.split(":").map(Number);
+                const durationMs = (hours * 3600 + minutes * 60 + (seconds || 0)) * 1000;
+                endDateTime = new Date(startDateTime.getTime() + durationMs);
+              }
 
               return {
                 id: event.id,
                 title: event.title,
                 start: startDateTime,
-                end: endDateTime,
+                end: endDateTime || startDateTime, // ✅ Use start time if no valid end time is available
               };
             } catch (error) {
               console.error(`❌ Error processing event:`, event, error);
@@ -102,6 +102,7 @@ const Dashboard: React.FC = () => {
             }
           })
           .filter((event): event is CalendarEvent => event !== null);
+
 
         formattedEvents.sort((a, b) => a.start.getTime() - b.start.getTime());
 
