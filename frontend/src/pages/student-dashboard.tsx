@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { FaCalendarAlt, FaBell, FaUsers, FaUserPlus, FaCogs, FaMedal } from "react-icons/fa";
 import axios from "axios";
 import { apiClient } from "../api";
+import { useAuthStore } from "../stores/auth-store";
 
 const StudentDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -12,27 +13,32 @@ const StudentDashboard: React.FC = () => {
   const [events, setEvents] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isPresident, setIsPresident] = useState(false);
   const [awards, setAwards] = useState<any[]>([]);
+  const { user } = useAuthStore();
 
   // Fetch data when the component mounts
   useEffect(() => {
     fetchData();
   }, []);
 
+  const logout = () => {
+    localStorage.removeItem("access");
+    localStorage.removeItem("refresh");
+    navigate("/");
+  }
+
   // Fetch data from the updated endpoints
   const fetchData = async () => {
     try {
       setLoading(true);
-
+      
+      console.log("is_president is type:", typeof user?.is_president); 
+      console.log("value:", user?.is_president);
+      
       // Fetch societies
       const societiesResponse = await apiClient.get("/api/student-societies/");
       console.log(societiesResponse.data);
       setSocieties(societiesResponse.data || []);
-
-      // Check if the student is president of any society
-      const presidentSocieties = societiesResponse.data.filter((society: any) => society.is_president);
-      setIsPresident(presidentSocieties.length > 0);
 
       // Fetch events
       const eventsResponse = await apiClient.get("/api/events/rsvp");
@@ -44,8 +50,13 @@ const StudentDashboard: React.FC = () => {
       setNotifications(notificationsResponse.data || []);
 
       // Fetch awards
-      const response = await apiClient.get("/api/awards/");
-      setAwards(response.data || []);
+      try {
+        const response = await apiClient.get("/api/award-students/");
+        console.log("Award assignments:", response.data);
+        setAwards(response.data || []);
+      } catch (error) {
+        console.error("Error fetching award assignments:", error);
+      }
       
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -132,14 +143,23 @@ const StudentDashboard: React.FC = () => {
             </p>
           </header>
 
+           <div className="text-center mb-8">
+              <button
+                onClick={logout}
+                className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition-all flex items-center justify-center mx-auto"
+              >
+                <FaCogs className="mr-2" />
+                logout
+              </button>
+            </div>
+            
            {/*  Manage My Societies Button (Only if President) */}
-           {isPresident && (
+           {user?.is_president === true && (
             <div className="text-center mb-8">
               <button
                 onClick={() => navigate("/manage-societies")}
                 className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition-all flex items-center justify-center mx-auto"
               >
-                <FaCogs className="mr-2" />
                 Manage My Societies
               </button>
             </div>
@@ -315,28 +335,28 @@ const StudentDashboard: React.FC = () => {
           <p className="text-center text-gray-600">No achievements yet.</p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {awards.map((award) => (
+            {awards.map((awardAssignment) => (
               <div
-                key={award.id}
+                key={awardAssignment.id}
                 className="p-6 bg-white rounded-xl shadow hover:shadow-lg border border-gray-200 transition-transform hover:-translate-y-1"
               >
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-xl font-semibold text-gray-900">
-                    {award.title}
+                    {awardAssignment.award.title}
                   </h3>
                   <span
                     className={`px-3 py-1 rounded-lg text-sm font-medium text-white ${
-                      award.rank === "Gold"
+                      awardAssignment.award.rank === "Gold"
                         ? "bg-yellow-500"
-                        : award.rank === "Silver"
+                        : awardAssignment.award.rank === "Silver"
                         ? "bg-gray-400"
                         : "bg-orange-500"
                     }`}
                   >
-                    {award.rank}
+                    {awardAssignment.award.rank}
                   </span>
                 </div>
-                <p className="text-gray-700 text-sm">{award.description}</p>
+                <p className="text-gray-700 text-sm">{awardAssignment.award.description}</p>
               </div>
             ))}
           </div>

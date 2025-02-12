@@ -157,8 +157,14 @@ class Command(BaseCommand):
         for i in range(1, n+1):
             print(f"Seeding society {i}/{n}", end='\r', flush=True)
 
-            student_randomised = Student.objects.order_by("?")
-            society_leader = student_randomised.first()
+            # Only select students who are NOT already leading a society
+            available_students = Student.objects.exclude(president_of__isnull=False).order_by("?")
+        
+            if not available_students.exists():
+                print(self.style.WARNING("No available students left to be society leaders. Skipping."))
+                break
+
+            society_leader = available_students.first()
             approved = self.handle_society_status(
                 society_leader,
                 f"Society{i}",
@@ -173,7 +179,10 @@ class Command(BaseCommand):
                     status="Approved",
                 )
             if created:
-                members = student_randomised.all()[:2]
+                # Ensure the leader is always a member
+                society.society_members.add(society_leader)
+                members = Student.objects.exclude(id=society_leader.id).order_by("?")[:randint(4, 10)]
+                society.society_members.add(*members)
                 self.finalize_society_creation(society, members)
 
                 # ✅ NEW: Create 2-5 events for this society

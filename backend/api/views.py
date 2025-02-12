@@ -5,17 +5,14 @@ from django.db.models import Count, Sum
 from django.utils.timezone import now
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
-from api.models import User, Society, Event, Student, Notification
-from rest_framework import generics, status
-from .serializers import EventSerializer, RSVPEventSerializer, UserSerializer, StudentSerializer, LeaveSocietySerializer, JoinSocietySerializer, SocietySerializer, NotificationSerializer, DashboardStatisticSerializer, RecentActivitySerializer, EventCalendarSerializer, DashboardNotificationSerializer
-from api.models import Admin, User, Society, Event, Student
 from rest_framework import generics, status
 from rest_framework.decorators import api_view, permission_classes
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from api.models import Admin, Event, Notification, Society, Student, User
+from api.models import Admin, Event, Notification, Society, Student, User,Award, AwardStudent
 from api.serializers import (
     AdminSerializer,
     DashboardNotificationSerializer,
@@ -31,22 +28,10 @@ from api.serializers import (
     StartSocietyRequestSerializer,
     StudentSerializer,
     UserSerializer,
+    AwardSerializer, 
+    AwardStudentSerializer,
 )
 
-"""
-This function is for the global callout
-"""
-
-
-@api_view(["GET"])
-@permission_classes([IsAuthenticated])
-def get_current_user(request):
-    user = request.user
-    return Response({
-        "id": user.id,
-        "username": user.username,
-        "email": user.email,
-    })
 
 
 class CreateUserView(generics.CreateAPIView):
@@ -107,14 +92,20 @@ class CurrentUserView(APIView):
             }, status=status.HTTP_401_UNAUTHORIZED)
 
         user, _ = decoded_auth
-        serializer = UserSerializer(user)
-
-        if not serializer.data:
-            return Response({
-                "error": "User data could not be retrieved. Please try again later."
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        print("DEBUG: user.pk =", user.pk)
+        print("DEBUG: user type:", type(user))
+        print("DEBUG: user is student:", isinstance(user, Student))
+        print("DEBUG: Student exists in DB?", Student.objects.filter(pk=user.pk).exists())
+        
+        try:
+            student_user = Student.objects.get(pk=user.pk)
+            serializer = StudentSerializer(student_user)
+        except Student.DoesNotExist:
+            # No matching Student row, so just use User
+            serializer = UserSerializer(user)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
+
 
     def put(self, request):
         """
@@ -754,3 +745,140 @@ class EventCalendarView(APIView):
 
 class MySocietiesView(APIView):
     pass
+
+@csrf_exempt
+def get_popular_societies(request):
+    """
+    Returns the top 5 most popular societies based on:
+    - Number of members
+    - Number of hosted events
+    - Total event attendees
+    """
+    
+    popular_societies = (
+        Society.objects.annotate(
+            total_members=Count("society_members"),
+            total_events=Count("events"),
+            total_event_attendance=Sum("events__current_attendees")
+        )
+        .annotate(
+            popularity_score=(
+                (2 * Count("society_members")) +
+                (3 * Count("events")) +
+                (4 * Sum("events__current_attendees"))
+            )
+        )
+        .order_by("-popularity_score")[:5]
+        .values("id", "name", "total_members", "total_events", "total_event_attendance", "popularity_score")
+    )
+
+    return JsonResponse(list(popular_societies), safe=False)
+
+@api_view(["GET"])
+@permission_classes([])
+def get_sorted_events(request):
+    # Get only upcoming events
+    events = Event.objects.filter(status="Approved", date__gte=now()).order_by("date", "start_time")
+    serializer = EventSerializer(events, many=True)
+    return Response(serializer.data)
+
+class AwardView(APIView):
+    """Handles listing, creating, retrieving, updating, and deleting awards"""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk=None) -> Response:
+        """List all awards or retrieve a specific award if ID is provided"""
+        if pk:
+            try:
+                award = Award.objects.get(pk=pk)
+                serializer = AwardSerializer(award)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            except Award.DoesNotExist:
+                return Response({"error": "Award not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        # List all awards if no ID is provided
+        awards = Award.objects.all()
+        serializer = AwardSerializer(awards, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request) -> Response:
+        """Create a new award"""
+        serializer = AwardSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def put(self, request, pk: int) -> Response:
+        """Update an award by ID"""
+        try:
+            award = Award.objects.get(pk=pk)
+        except Award.DoesNotExist:
+            return Response({"error": "Award not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = AwardSerializer(award, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk: int) -> Response:
+        """Delete an award by ID"""
+        try:
+            award = Award.objects.get(pk=pk)
+        except Award.DoesNotExist:
+            return Response({"error": "Award not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        award.delete()
+        return Response({"message": "Award deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+
+
+class AwardStudentView(APIView):
+    """Handles listing, assigning, retrieving, updating, and deleting awards for students"""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk=None) -> Response:
+        """List all award assignments or retrieve a specific one if ID is provided"""
+        if pk:
+            try:
+                award_student = AwardStudent.objects.get(pk=pk)
+                serializer = AwardStudentSerializer(award_student)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            except AwardStudent.DoesNotExist:
+                return Response({"error": "Award assignment not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # List all award assignments
+        awards_students = AwardStudent.objects.filter(student=request.user)
+        serializer = AwardStudentSerializer(awards_students, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request) -> Response:
+        """Assign an award to a student"""
+        serializer = AwardStudentSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def put(self, request, pk: int) -> Response:
+        """Update a specific award assignment"""
+        try:
+            award_student = AwardStudent.objects.get(pk=pk)
+        except AwardStudent.DoesNotExist:
+            return Response({"error": "Award assignment not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = AwardStudentSerializer(award_student, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk: int) -> Response:
+        """Delete a specific award assignment"""
+        try:
+            award_student = AwardStudent.objects.get(pk=pk)
+        except AwardStudent.DoesNotExist:
+            return Response({"error": "Award assignment not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        award_student.delete()
+        return Response({"message": "Award assignment deleted successfully"}, status=status.HTTP_204_NO_CONTENT)

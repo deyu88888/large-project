@@ -34,7 +34,10 @@ export function PrivateGuard({ children }: { children: React.ReactNode }) {
       const userData = await fetchUserData();
       console.log("%c[PrivateGuard] User data fetched:", "color: green;", userData);
 
-      setUser(userData);
+      setUser({
+        ...userData,
+        is_president: userData.is_president,  
+      });
 
       setAuthState({ isAuthorized: true, loading: false });
     } catch (error) {
@@ -87,6 +90,7 @@ export function PrivateGuard({ children }: { children: React.ReactNode }) {
   const fetchUserData = async () => {
     try {
       const response = await apiClient.get(apiPaths.USER.CURRENT);
+      console.log("[PrivateGuard] API Response:", response.data);
       if (response.data) {
         console.log("%c[PrivateGuard] User data received:", "color: green;", response.data);
         return response.data;

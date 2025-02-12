@@ -1,5 +1,5 @@
 import datetime
-from api.models import Award, AwardStudent, User, Student, Admin, Society, Event, Notification, Request, SocietyRequest, EventRequest, UserRequest
+from api.models import Award, AwardStudent, SiteSettings, User, Student, Admin, Society, Event, Notification, Request, SocietyRequest, EventRequest, UserRequest
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
 
@@ -52,7 +52,8 @@ class StudentSerializer(UserSerializer):
     societies = serializers.PrimaryKeyRelatedField(many=True, queryset=Society.objects.all())
     president_of = serializers.PrimaryKeyRelatedField(many=True, queryset=Society.objects.all())
     major = serializers.CharField(required=True)
-
+    is_president = serializers.BooleanField(read_only=True)
+    
     class Meta(UserSerializer.Meta):
         model = Student
         fields = UserSerializer.Meta.fields + ['major', 'societies', 'president_of', 'is_president']

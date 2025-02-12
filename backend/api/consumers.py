@@ -141,3 +141,12 @@ class DashboardConsumer(AsyncWebsocketConsumer):
         except Exception as e:
             logger.error(f"Error fetching dashboard stats: {e}")
             return {"totalSocieties": 0, "totalEvents": 0, "pendingApprovals": 0, "activeMembers": 0}
+
+    @sync_to_async  # Use sync_to_async for database access
+    def get_site_settings(self):
+        """
+        Fetches the SiteSettings (singleton) from the database.
+        """
+        from .models import SiteSettings  # Do not import globally!
+        logger.debug("[DashboardConsumer] Fetching site settings.")
+        return SiteSettings.load()  # Use the .load() method
