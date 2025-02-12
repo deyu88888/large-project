@@ -3,8 +3,6 @@ import { ThemeProvider, CssBaseline, Box } from "@mui/material";
 import { ColorModeContext, useMode } from "./styles/theme";
 import { Routes } from "./routes";
 import axios from "axios";
-import Sidebar from "./components/layout/AdminSidebar";
-import Topbar from "./components/layout/Topbar";
 
 export const apiClient = axios.create({
   baseURL: "http://localhost:8000",

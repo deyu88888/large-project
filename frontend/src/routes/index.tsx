@@ -39,19 +39,18 @@ function Logout() {
   return <Navigate to="/" />;
 }
 
-// Routes Configuration
 const routes = [
   {
     path: "/",
     element: (
       <PrivateGuard>
-        <Layout />
+        <Layout role="global"/>
       </PrivateGuard>
     ),
     children: [
       {
-        path: "home",
-        element: <HomePage />,
+        index: true,
+        element: <DashboardPage />,
       },
       {
         path: "admin",
