@@ -147,14 +147,14 @@ const StudentDashboard: React.FC = () => {
                 </h2>
                 <div className="flex space-x-4">
                   <button
-                    onClick={() => navigate("/join-society")}
+                    onClick={() => navigate("/student/join-society")}
                     className="font-medium transition-all hover:underline"
                     style={{ color: colours.blueAccent[500] }}
                   >
                     Join a Society
                   </button>
                   <button
-                    onClick={() => navigate("/my-societies")}
+                    onClick={() => navigate("/student/my-societies")}
                     className="font-medium transition-all hover:underline"
                     style={{ color: colours.blueAccent[500] }}
                   >
@@ -207,7 +207,7 @@ const StudentDashboard: React.FC = () => {
                   Upcoming Events
                 </h2>
                 <button
-                  onClick={() => navigate("/view-events")}
+                  onClick={() => navigate("/student/view-events")}
                   className="font-medium transition-all hover:underline"
                   style={{ color: colours.blueAccent[500] }}
                 >
@@ -271,7 +271,7 @@ const StudentDashboard: React.FC = () => {
                   Notifications
                 </h2>
                 <button
-                  onClick={() => navigate("/view-notifications")}
+                  onClick={() => navigate("/student/view-notifications")}
                   className="font-medium transition-all hover:underline"
                   style={{ color: colours.blueAccent[500] }}
                 >
@@ -367,7 +367,7 @@ const StudentDashboard: React.FC = () => {
                 Have an idea for a new society? Share your passion and bring others together!
               </p>
               <button
-                onClick={() => navigate("/start-society")}
+                onClick={() => navigate("/student/start-society")}
                 className="px-6 py-3 rounded-lg transition-all font-medium"
                 style={{
                   backgroundColor: colours.blueAccent[500],
