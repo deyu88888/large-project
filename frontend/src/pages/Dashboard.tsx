@@ -529,7 +529,7 @@ const Dashboard: React.FC = () => {
         {upcomingEvents.length > 0 ? (
           <UpcomingEvents events={upcomingEvents} />
         ) : (
-          <Typography variant="body1" sx={{ color: colors.grey[500] }}>
+          <Typography variant="body1" sx={{ color: "colors.grey[500]" }}>
             No upcoming events.
           </Typography>
         )}

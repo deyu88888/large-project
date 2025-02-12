@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useTheme } from "@mui/material/styles";
 import { getPopularSocieties } from "../api";
 
 interface Society {
@@ -14,6 +15,17 @@ const PopularSocieties: React.FC = () => {
   const [popularSocieties, setPopularSocieties] = useState<Society[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Access the current MUI theme
+  const theme = useTheme();
+
+  // Set background color dynamically
+  const backgroundClass =
+    theme.palette.mode === "dark" ? "bg-[#141b2d]" : "bg-[#ffffff]";
+
+  // Set text color dynamically
+  const headerTextClass =
+    theme.palette.mode === "dark" ? "text-white" : "text-black";
 
   useEffect(() => {
     const fetchPopularSocieties = async () => {
@@ -31,20 +43,23 @@ const PopularSocieties: React.FC = () => {
     fetchPopularSocieties();
   }, []);
 
-  if (loading)
+  if (loading) {
     return (
       <p className="text-center text-lg text-gray-600">
         Loading popular societies...
       </p>
     );
-  if (error)
-    return (
-      <p className="text-center text-lg text-red-500">{error}</p>
-    );
+  }
+
+  if (error) {
+    return <p className="text-center text-lg text-red-500">{error}</p>;
+  }
 
   return (
-    <div className="bg-white/70 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border border-gray-200">
-      <h2 className="text-3xl font-extrabold text-gray-800 flex items-center gap-3 mb-6">
+    <div
+      className={`${backgroundClass} backdrop-blur-lg rounded-2xl shadow-2xl p-8`}
+    >
+      <h2 className={`text-3xl font-extrabold flex items-center gap-3 mb-6 ${headerTextClass}`}>
         <span role="img" aria-label="trophy" className="text-5xl">
           🏆
         </span>
@@ -61,17 +76,11 @@ const PopularSocieties: React.FC = () => {
             >
               <div className="flex flex-col justify-between h-full">
                 <div>
-                  <p className="text-2xl font-bold text-gray-800">
-                    {society.name}
-                  </p>
+                  <p className="text-2xl font-bold text-gray-800">{society.name}</p>
                   <p className="mt-2 text-base text-gray-600">
-                    <span className="font-semibold">
-                      {society.total_members}
-                    </span>{" "}
+                    <span className="font-semibold">{society.total_members}</span>{" "}
                     Members •{" "}
-                    <span className="font-semibold">
-                      {society.total_events}
-                    </span>{" "}
+                    <span className="font-semibold">{society.total_events}</span>{" "}
                     Events •{" "}
                     <span className="font-semibold">
                       {society.total_event_attendance}
