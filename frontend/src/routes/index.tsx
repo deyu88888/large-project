@@ -44,7 +44,9 @@ const routes = [
     path: "/",
     element: (
       <PrivateGuard>
-        <Layout role="global"/>
+        <Suspense fallback={<LoadingView />}>
+          <Layout role="global"/>
+        </Suspense>
       </PrivateGuard>
     ),
     children: [
@@ -105,60 +107,44 @@ const routes = [
         ]
       },
       {
-        path: "student-dashboard",
+        path: "student",
         element: (
-          <Suspense fallback={<LoadingView />}>
-            <StudentDashboard />
-          </Suspense>
+          <PrivateGuard>
+            <Suspense fallback={<LoadingView />}>
+              <Layout role="student" />
+            </Suspense>
+          </PrivateGuard>
         ),
-      },
-      {
-        path: "my-societies",
-        element: (
-          <Suspense fallback={<LoadingView />}>
-            <MySocieties />
-          </Suspense>
-        ),
-      },
-      {
-        path: "view-events",
-        element: (
-          <Suspense fallback={<LoadingView />}>
-            <ViewEvents />
-          </Suspense>
-        ),
-      },
-      {
-        path: "view-notifications",
-        element: (
-          <Suspense fallback={<LoadingView />}>
-            <ViewNotifications />
-          </Suspense>
-        ),
-      },
-      {
-        path: "start-society",
-        element: (
-          <Suspense fallback={<LoadingView />}>
-            <StartSociety />
-          </Suspense>
-        ),
-      },
-      {
-        path: "join-society",
-        element: (
-          <Suspense fallback={<LoadingView />}>
-            <JoinSocietiesPage />
-          </Suspense>
-        ),
-      },
-      {
-        path: "join-society/:id",
-        element: (
-          <Suspense fallback={<LoadingView />}>
-            <JoinSocietiesPage />
-          </Suspense>
-        ),
+        children: [
+          {
+            index: true,
+            element: <StudentDashboard />,
+          },
+          {
+            path: "my-societies",
+            element: <MySocieties />,
+          },
+          {
+            path: "view-events",
+            element: <ViewEvents />,
+          },
+          {
+            path: "view-notifications",
+            element: <ViewNotifications />,
+          },
+          {
+            path: "start-society",
+            element: <StartSociety />,
+          },
+          {
+            path: "join-society",
+            element: <JoinSocietiesPage />,
+          },
+          {
+            path: "join-society/:id",
+            element: <JoinSocietiesPage />,
+          }
+        ],
       },
       {
         path: "logout",
