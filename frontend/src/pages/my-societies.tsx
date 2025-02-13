@@ -4,7 +4,7 @@ import { FaArrowLeft } from "react-icons/fa";
 import { apiClient } from "../api";
 import { useTheme } from "@mui/material/styles";
 import { tokens } from "../styles/theme";
-import { useSidebar } from "../components/layout/SidebarContext";
+// Removed: import { useSidebar } from "../components/layout/SidebarContext";
 
 const MySocieties: React.FC = () => {
   const navigate = useNavigate();
@@ -12,7 +12,6 @@ const MySocieties: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const theme = useTheme();
   const colours = tokens(theme.palette.mode);
-  const { sidebarWidth } = useSidebar();
   const isLight = theme.palette.mode === "light";
 
   useEffect(() => {
@@ -38,7 +37,7 @@ const MySocieties: React.FC = () => {
   return (
     <div
       style={{
-        marginLeft: `${sidebarWidth}px`,
+        marginLeft: "0px", // Removed sidebarWidth dependency; set to "0px"
         marginTop: "0px",
         transition: "margin-left 0.3s ease-in-out",
         minHeight: "100vh",

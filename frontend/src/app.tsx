@@ -5,6 +5,8 @@ import axios from "axios";
 import { useSettingsStore } from "./stores/settings-store";
 import { themeSettings } from "./theme/theme";
 import { SearchProvider } from "./components/layout/SearchContext";
+import Box from "@mui/material/Box";
+//import Topbar from "./components/layout/Topbar";
 
 export const apiClient = axios.create({
   baseURL: "http://localhost:8000",
@@ -29,7 +31,7 @@ export function App() {
           <Box display="flex" minHeight="100vh">
             {/* <Sidebar /> <-- Temporarily hidden */}
             <Box display="flex" flexDirection="column" flexGrow={1}>
-              <Topbar />
+              {/* Topbar removed */}
               {/* The rest of your routes */}
               <Routes />
             </Box>

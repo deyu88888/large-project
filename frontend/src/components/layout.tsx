@@ -1,5 +1,5 @@
 import React, { useContext, useState } from "react";
-import { Outlet, Link } from "react-router-dom";
+import { Outlet, Link, useLocation } from "react-router-dom";
 import {
   Avatar,
   Box,
@@ -41,9 +41,6 @@ import {
   CustomDrawerHeader,
 } from "./layout/drawer/CustomDrawer";
 import { SearchContext } from "./layout/SearchContext";
-// ---------------
-
-// -----------
 
 interface LayoutProps {}
 
@@ -53,20 +50,30 @@ const Layout: React.FC<LayoutProps> = () => {
   const { toggleThemeMode } = useSettingsStore();
   const [selected, setSelected] = useState("Dashboard");
   const { searchTerm, setSearchTerm } = useContext(SearchContext);
+  const location = useLocation();
 
-
-  const menuItems = [
-    { title: "Dashboard", icon: <HomeOutlinedIcon />, to: "/admin" },
-    { title: "Manage Students", icon: <PeopleOutlinedIcon />, to: "/admin/student-list" },
-    { title: "View All Societies", icon: <EventOutlinedIcon />, to: "/admin/society-list" },
-    { title: "View All Events", icon: <NotificationsNoneOutlinedIcon />, to: "/admin/event-list" },
-    { title: "Pending Societies", icon: <GroupAddOutlinedIcon />, to: "/admin/request-society" },
-    { title: "Pending Events", icon: <GroupAddOutlinedIcon />, to: "/admin/request-event" },
-    { title: "Calendar", icon: <CalendarTodayOutlinedIcon />, to: "/admin/calendar" },
-    { title: "Activity Log", icon: <CalendarTodayOutlinedIcon />, to: "/admin/admin-dashboard" },
-    { title: "Create Admin", icon: <PersonAddAltIcon />, to: "/admin/create-admin" },
-  ];
-  
+  let menuItems = [];
+  if (location.pathname.startsWith("/admin")) {
+    menuItems = [
+      { title: "Dashboard", icon: <HomeOutlinedIcon />, to: "/admin" },
+      { title: "Manage Students", icon: <PeopleOutlinedIcon />, to: "/admin/student-list" },
+      { title: "View All Societies", icon: <EventOutlinedIcon />, to: "/admin/society-list" },
+      { title: "View All Events", icon: <NotificationsNoneOutlinedIcon />, to: "/admin/event-list" },
+      { title: "Pending Societies", icon: <GroupAddOutlinedIcon />, to: "/admin/request-society" },
+      { title: "Pending Events", icon: <GroupAddOutlinedIcon />, to: "/admin/request-event" },
+      { title: "Calendar", icon: <CalendarTodayOutlinedIcon />, to: "/admin/calendar" },
+      { title: "Activity Log", icon: <CalendarTodayOutlinedIcon />, to: "/admin/admin-dashboard" },
+      { title: "Create Admin", icon: <PersonAddAltIcon />, to: "/admin/create-admin" },
+    ];
+  } else if (location.pathname.startsWith("/student")) {
+    menuItems = [
+      { title: "Dashboard", icon: <HomeOutlinedIcon />, to: "/student" },
+      { title: "My Societies", icon: <GroupAddOutlinedIcon />, to: "/student/my-societies" },
+      { title: "Start Society", icon: <EventOutlinedIcon />, to: "/student/start-society" },
+      { title: "View Events", icon: <NotificationsNoneOutlinedIcon />, to: "/student/view-events" },
+      { title: "Notifications", icon: <PersonOutlinedIcon />, to: "/student/view-notifications" },
+    ];
+  }
 
   return (
     <Box sx={{ display: "flex" }}>
@@ -85,16 +92,12 @@ const Layout: React.FC<LayoutProps> = () => {
             onClick={() => toggleDrawer()}
             edge="start"
             sx={[
-              {
-                marginRight: 5,
-              },
+              { marginRight: 5 },
               drawer && { display: "none" },
             ]}
           >
             <MenuIcon
-              sx={{
-                color: theme.palette.text.primary,
-              }}
+              sx={{ color: theme.palette.text.primary }}
             />
           </IconButton>
           <Box display="flex" borderRadius="3px">
@@ -104,7 +107,6 @@ const Layout: React.FC<LayoutProps> = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
-          
             <IconButton type="button" sx={{ p: 1 }}>
               <SearchIcon />
             </IconButton>
@@ -141,16 +143,11 @@ const Layout: React.FC<LayoutProps> = () => {
           </IconButton>
         </CustomDrawerHeader>
         <Divider />
-
         <Box padding={2} display="flex" justifyContent="center" alignItems="center">
           {drawer ? (
             <Box textAlign="center">
               <Avatar
-                sx={{
-                  width: "72px",
-                  height: "72px",
-                  margin: "0 auto",
-                }}
+                sx={{ width: "72px", height: "72px", margin: "0 auto" }}
               />
               <Typography variant="h6" fontWeight="bold" sx={{ mt: "10px" }}>
                 Ed Roh
@@ -160,24 +157,13 @@ const Layout: React.FC<LayoutProps> = () => {
               </Typography>
             </Box>
           ) : (
-            <Avatar
-              sx={{
-                width: "25px",
-                height: "25px",
-              }}
-            />
+            <Avatar sx={{ width: "25px", height: "25px" }} />
           )}
         </Box>
-
-        
         <Divider />
         <List>
-        {menuItems.map((item) => (
-            <ListItem
-              key={item.title}
-              disablePadding
-              sx={{ display: "block" }}
-            >
+          {menuItems.map((item) => (
+            <ListItem key={item.title} disablePadding sx={{ display: "block" }}>
               <ListItemButton
                 component={Link}
                 to={item.to}
@@ -190,26 +176,15 @@ const Layout: React.FC<LayoutProps> = () => {
               >
                 <ListItemIcon
                   sx={[
-                    {
-                      minWidth: 0,
-                      justifyContent: "center",
-                    },
-                    drawer
-                      ? {
-                          mr: 3,
-                        }
-                      : {
-                          mr: "auto",
-                        },
+                    { minWidth: 0, justifyContent: "center" },
+                    drawer ? { mr: 3 } : { mr: "auto" },
                   ]}
                 >
                   {item.icon}
                 </ListItemIcon>
                 <ListItemText
                   primary={item.title}
-                  sx={{
-                    opacity: drawer ? 1 : 0,
-                  }}
+                  sx={{ opacity: drawer ? 1 : 0 }}
                 />
               </ListItemButton>
             </ListItem>
@@ -221,47 +196,21 @@ const Layout: React.FC<LayoutProps> = () => {
             <ListItem key={text} disablePadding sx={{ display: "block" }}>
               <ListItemButton
                 sx={[
-                  {
-                    minHeight: 48,
-                    px: 2.5,
-                  },
-                  drawer
-                    ? {
-                        justifyContent: "initial",
-                      }
-                    : {
-                        justifyContent: "center",
-                      },
+                  { minHeight: 48, px: 2.5 },
+                  drawer ? { justifyContent: "initial" } : { justifyContent: "center" },
                 ]}
               >
                 <ListItemIcon
                   sx={[
-                    {
-                      minWidth: 0,
-                      justifyContent: "center",
-                    },
-                    drawer
-                      ? {
-                          mr: 3,
-                        }
-                      : {
-                          mr: "auto",
-                        },
+                    { minWidth: 0, justifyContent: "center" },
+                    drawer ? { mr: 3 } : { mr: "auto" },
                   ]}
                 >
                   {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
                 </ListItemIcon>
                 <ListItemText
                   primary={text}
-                  sx={[
-                    drawer
-                      ? {
-                          opacity: 1,
-                        }
-                      : {
-                          opacity: 0,
-                        },
-                  ]}
+                  sx={[drawer ? { opacity: 1 } : { opacity: 0 }]}
                 />
               </ListItemButton>
             </ListItem>

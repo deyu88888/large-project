@@ -4,13 +4,11 @@ import axios from "axios";
 // MUI/theme imports
 import { useTheme } from "@mui/material/styles";
 import { tokens } from "../styles/theme";
-import { useSidebar } from "../components/layout/SidebarContext";
 
 const StartSociety: React.FC = () => {
   const navigate = useNavigate();
   const theme = useTheme();
   const colours = tokens(theme.palette.mode);
-  const { sidebarWidth } = useSidebar();
   const isLight = theme.palette.mode === "light";
 
   const [societyName, setSocietyName] = useState("");
@@ -55,7 +53,7 @@ const StartSociety: React.FC = () => {
   return (
     <div
       style={{
-        marginLeft: `${sidebarWidth}px`,
+        marginLeft: "0px", // Removed sidebarWidth dependency; set to "0px"
         marginTop: "0px",
         transition: "margin-left 0.3s ease-in-out",
         minHeight: "100vh",
@@ -96,16 +94,12 @@ const StartSociety: React.FC = () => {
         }}
       >
         {error && (
-          <p
-            style={{ color: colours.redAccent[500], marginBottom: "1rem" }}
-          >
+          <p style={{ color: colours.redAccent[500], marginBottom: "1rem" }}>
             {error}
           </p>
         )}
         {success && (
-          <p
-            style={{ color: colours.greenAccent[500], marginBottom: "1rem" }}
-          >
+          <p style={{ color: colours.greenAccent[500], marginBottom: "1rem" }}>
             {success}
           </p>
         )}

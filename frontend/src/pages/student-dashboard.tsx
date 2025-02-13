@@ -11,13 +11,13 @@ import {
 } from "react-icons/fa";
 import axios from "axios";
 import { apiClient } from "../api";
-import { useSidebar } from "../components/layout/SidebarContext";
+// Removed dependency: import { useSidebar } from "../components/layout/SidebarContext";
 
 const StudentDashboard: React.FC = () => {
   const navigate = useNavigate();
   const theme = useTheme();
   const colours = tokens(theme.palette.mode);
-  const { sidebarWidth } = useSidebar();
+  // Removed: const { sidebarWidth } = useSidebar();
 
   const [societies, setSocieties] = useState<any[]>([]);
   const [events, setEvents] = useState<any[]>([]);
@@ -105,12 +105,12 @@ const StudentDashboard: React.FC = () => {
   return (
     <div
       style={{
-        marginLeft: `${sidebarWidth}px`,
+        marginLeft: "0px", // Removed sidebarWidth dependency; set marginLeft to 0
         marginTop: "64px",
         transition: "margin-left 0.3s ease-in-out",
         minHeight: "100vh",
         padding: "20px 40px",
-        background: `${colours.primary[400]} !important`, //this is what determines light and dark mode colours
+        background: `${colours.primary[400]} !important`,
         border: "none",
       }}
     >
@@ -179,7 +179,7 @@ const StudentDashboard: React.FC = () => {
                     className="p-6 rounded-xl shadow hover:shadow-lg transition-transform hover:-translate-y-1"
                     style={{
                       backgroundColor: `${colours.grey[400]} !important`,
-                      border: `1px solid ${`${colours.grey[700]} !important`}`,
+                      border: `1px solid ${colours.grey[700]} !important`,
                     }}
                   >
                     <h3
@@ -306,7 +306,7 @@ const StudentDashboard: React.FC = () => {
                         backgroundColor: notification.is_read
                           ? `${colours.primary[400]} !important`
                           : `${colours.blueAccent[700]} !important`,
-                        border: `1px solid ${`${colours.grey[400]} !important`}`,
+                        border: `1px solid ${colours.grey[400]} !important`,
                       }}
                     >
                       <div className="flex justify-between items-center">
@@ -391,8 +391,7 @@ const StudentDashboard: React.FC = () => {
                 className="mb-4"
                 style={{ color: `${colours.grey[300]} !important` }}
               >
-                Have an idea for a new society? Share your passion and bring
-                others together!
+                Have an idea for a new society? Share your passion and bring others together!
               </p>
               <button
                 onClick={() => navigate("/student/start-society")}

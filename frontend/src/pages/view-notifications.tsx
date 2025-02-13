@@ -3,13 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { apiClient } from "../api";
 import { useTheme } from "@mui/material/styles";
 import { tokens } from "../styles/theme";
-import { useSidebar } from "../components/layout/SidebarContext";
+// Removed: import { useSidebar } from "../components/layout/SidebarContext";
 
 const ViewNotifications: React.FC = () => {
   const navigate = useNavigate();
   const theme = useTheme();
   const colours = tokens(theme.palette.mode);
-  const { sidebarWidth } = useSidebar();
   const isLight = theme.palette.mode === "light";
 
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -47,7 +46,7 @@ const ViewNotifications: React.FC = () => {
   return (
     <div
       style={{
-        marginLeft: `${sidebarWidth}px`,
+        marginLeft: "0px", // Removed sidebarWidth dependency; set to "0px"
         marginTop: "0px",
         transition: "margin-left 0.3s ease-in-out",
         minHeight: "100vh",
@@ -60,7 +59,7 @@ const ViewNotifications: React.FC = () => {
           style={{
             textAlign: "center",
             marginBottom: "2.5rem",
-            padding: "2rem 0"
+            padding: "2rem 0",
           }}
         >
           <h1
@@ -68,7 +67,7 @@ const ViewNotifications: React.FC = () => {
               color: isLight ? colours.grey[100] : colours.grey[100],
               fontSize: "2.25rem",
               fontWeight: 700,
-              marginBottom: "0.5rem"
+              marginBottom: "0.5rem",
             }}
           >
             All Notifications
@@ -77,7 +76,7 @@ const ViewNotifications: React.FC = () => {
             style={{
               color: isLight ? colours.grey[300] : colours.grey[300],
               fontSize: "1.125rem",
-              margin: 0
+              margin: 0,
             }}
           >
             Stay informed about the latest updates and announcements.
@@ -89,7 +88,7 @@ const ViewNotifications: React.FC = () => {
             style={{
               color: isLight ? colours.grey[700] : colours.grey[300],
               textAlign: "center",
-              fontSize: "1.125rem"
+              fontSize: "1.125rem",
             }}
           >
             Loading notifications...
@@ -99,7 +98,7 @@ const ViewNotifications: React.FC = () => {
             style={{
               color: isLight ? colours.grey[600] : colours.grey[300],
               textAlign: "center",
-              fontSize: "1.125rem"
+              fontSize: "1.125rem",
             }}
           >
             No new notifications.
@@ -112,20 +111,40 @@ const ViewNotifications: React.FC = () => {
                 className="p-5 rounded-lg shadow-md hover:shadow-lg transition-all border"
                 style={{
                   backgroundColor: notification.is_read
-                    ? isLight ? colours.primary[400] : colours.primary[400]
-                    : isLight ? colours.blueAccent[700] : colours.blueAccent[700],
+                    ? isLight
+                      ? colours.primary[400]
+                      : colours.primary[400]
+                    : isLight
+                    ? colours.blueAccent[700]
+                    : colours.blueAccent[700],
                   borderColor: notification.is_read
-                    ? isLight ? colours.grey[300] : colours.grey[700]
-                    : isLight ? colours.blueAccent[400] : colours.blueAccent[400],
+                    ? isLight
+                      ? colours.grey[300]
+                      : colours.grey[700]
+                    : isLight
+                    ? colours.blueAccent[400]
+                    : colours.blueAccent[400],
                 }}
               >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
                   <p style={{ color: isLight ? colours.grey[100] : colours.grey[100] }}>
                     {notification.message}
                   </p>
                   <div style={{ display: "flex", gap: "1rem" }}>
                     {notification.is_read ? (
-                      <span style={{ color: colours.greenAccent[500], fontSize: "0.875rem", fontWeight: 500 }}>
+                      <span
+                        style={{
+                          color: colours.greenAccent[500],
+                          fontSize: "0.875rem",
+                          fontWeight: 500,
+                        }}
+                      >
                         Read
                       </span>
                     ) : (
@@ -138,7 +157,7 @@ const ViewNotifications: React.FC = () => {
                           background: "none",
                           border: "none",
                           cursor: "pointer",
-                          textDecoration: "underline"
+                          textDecoration: "underline",
                         }}
                       >
                         Mark as Read
@@ -155,7 +174,7 @@ const ViewNotifications: React.FC = () => {
           style={{
             textAlign: "center",
             marginTop: "2.5rem",
-            padding: "2rem 0"
+            padding: "2rem 0",
           }}
         >
           <button
@@ -171,7 +190,7 @@ const ViewNotifications: React.FC = () => {
               cursor: "pointer",
               transition: "all 0.3s ease",
               fontSize: "1rem",
-              fontWeight: 500
+              fontWeight: 500,
             }}
           >
             Go Back to Dashboard
