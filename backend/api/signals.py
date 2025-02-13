@@ -5,32 +5,15 @@ from channels.layers import get_channel_layer
 from channels.exceptions import ChannelFull
 from .models import AwardStudent, Student, Society, Notification
 
-@receiver(m2m_changed, sender=Student.president_of.through)
-def update_is_president_on_m2m_change(sender, instance, action, reverse, pk_set, **kwargs):
-    """
-    Update 'is_president' field and broadcast changes to the dashboard.
-    """
-    print(f"[m2m_changed] Triggered for {instance} with action {action}")
-
-    if action in ["post_add", "post_remove", "post_clear"]:
-        try:
-            if not reverse:
-                instance.is_president = instance.president_of.exists()
-                instance.save(update_fields=['is_president'])
-                print(f"Updated 'is_president' for {instance.username}")
-            else:
-                for student_pk in pk_set:
-                    try:
-                        student = Student.objects.get(pk=student_pk)
-                        student.is_president = student.president_of.exists()
-                        student.save(update_fields=['is_president'])
-                        print(f"Updated 'is_president' for {student.username}")
-                    except Student.DoesNotExist:
-                        print(f"Student with ID {student_pk} does not exist.")
-        except Exception as e:
-            print(f"Error updating 'is_president': {e}")
-
-        # Broadcast the updated statistics
+@receiver(post_save, sender=Student)
+def update_is_president_on_save(sender, instance, created, **kwargs):
+    # Determine the correct value for is_president based on president_of
+    new_value = instance.president_of is not None
+    # If the value has changed, update it without causing recursion
+    if instance.is_president != new_value:
+        Student.objects.filter(pk=instance.pk).update(is_president=new_value)
+        print(f"Updated 'is_president' for {instance.username} to {new_value}")
+        # Optionally, broadcast the dashboard update
         broadcast_dashboard_update()
 
 

@@ -96,7 +96,9 @@ class Command(BaseCommand):
         society.approved_by = admin
         society.society_members.add(student)
 
-        president.president_of.add(society)
+        president.president_of = society
+        president.save()
+
 
         self.create_student(50)
         self.create_admin(5)
@@ -194,7 +196,8 @@ class Command(BaseCommand):
 
     def finalize_society_creation(self, society, members):
         """Finishes society creation with proper members and roles"""
-        society.leader.president_of.add(society)
+        society.leader.president_of = society
+        
 
         # Ensure at least 5-15 members
         all_students = list(Student.objects.exclude(id=society.leader.id))

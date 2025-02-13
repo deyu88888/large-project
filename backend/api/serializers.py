@@ -50,7 +50,7 @@ class StudentSerializer(UserSerializer):
     Serializer for the Student model.
     """
     societies = serializers.PrimaryKeyRelatedField(many=True, queryset=Society.objects.all())
-    president_of = serializers.PrimaryKeyRelatedField(many=True, queryset=Society.objects.all())
+    president_of = serializers.PrimaryKeyRelatedField(queryset=Society.objects.all(), allow_null=True, required=False)
     major = serializers.CharField(required=True)
     is_president = serializers.BooleanField(read_only=True)
     
@@ -82,7 +82,7 @@ class StudentSerializer(UserSerializer):
         Override create to handle Student-specific fields.
         """
         societies = validated_data.pop('societies', [])
-        president_of = validated_data.pop('president_of', [])
+        president_of = validated_data.pop('president_of', None)
         major = validated_data.pop('major')
         password = validated_data.pop('password')
 
@@ -94,10 +94,12 @@ class StudentSerializer(UserSerializer):
         if societies:
             student.societies.set(societies)
 
-        if president_of:
-            student.president_of.set(president_of)
+        if president_of:  # ✅ Check if president_of is provided before assigning
+            student.president_of_id = president_of.id
+            student.save()
 
         return student
+
 
 
 class AdminSerializer(UserSerializer):
@@ -464,22 +466,52 @@ class UserRequestSerializer(RequestSerializer):
         extra_kwargs = RequestSerializer.Meta.extra_kwargs
 
 
-class EventRequestSerializer(RequestSerializer):
+class EventRequestSerializer(serializers.ModelSerializer):
     """
-    Serializer for the EventRequest model
+    Serializer for event requests made by society presidents.
     """
 
+    hosted_by = serializers.PrimaryKeyRelatedField(
+        queryset=Society.objects.all()
+    )
+
     class Meta:
-        """EventRequestSerializer meta data"""
         model = EventRequest
-        fields = (
-            RequestSerializer.Meta.fields
-            + ['title', 'description', 'location', 'date',
-            'start_time', 'duration', 'event', 'hosted_by']
+        fields = [
+            "id", "title", "description", "location", "date", "start_time",
+            "duration", "hosted_by", "from_student", "intent", "approved"
+        ]
+        read_only_fields = ["from_student", "intent", "approved"]
+
+    def create(self, validated_data):
+        """
+        Ensure only society presidents can request event creation.
+        """
+        user = self.context["request"].user  # Get the authenticated user
+
+        if not hasattr(user, "student"):
+            raise serializers.ValidationError(
+                "Only students can request event creation."
+            )
+
+        # Ensure student is the president of the society
+        student = user.student
+        hosted_by = validated_data["hosted_by"]
+
+        if student.president_of != hosted_by:
+            raise serializers.ValidationError(
+                "You can only create events for your own society."
+            )
+
+        # Create a request with "Pending" status
+        event_request = EventRequest.objects.create(
+            from_student=student,
+            intent="CreateEve",
+            approved=False,  # By default, pending approval
+            **validated_data
         )
-        extra_kwargs = RequestSerializer.Meta.extra_kwargs | {
-            'hosted_by': {'required': True}
-        }
+
+        return event_request
 
 
 class DashboardStatisticSerializer(serializers.Serializer):
@@ -598,3 +630,16 @@ class AwardStudentSerializer(serializers.ModelSerializer):
     class Meta:
         model = AwardStudent
         fields = ['id', 'award', 'student', 'student_id', 'award_id', 'awarded_at']
+        
+class PendingMemberSerializer(serializers.ModelSerializer):
+    """
+    Serializer for pending membership requests.
+    """
+    student_id = serializers.IntegerField(source="from_student.id")
+    first_name = serializers.CharField(source="from_student.first_name")
+    last_name = serializers.CharField(source="from_student.last_name")
+    username = serializers.CharField(source="from_student.username")
+
+    class Meta:
+        model = UserRequest
+        fields = ["id", "student_id", "first_name", "last_name", "username", "approved"]

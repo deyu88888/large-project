@@ -14,6 +14,12 @@ const LoginPage = lazy(() => import("../pages/login"));
 const RegisterPage = lazy(() => import("../pages/register"));
 const ProfilePage = lazy(() => import("../pages/profile"));
 const StudentDashboard = lazy(() => import("../pages/student-dashboard"));
+const PresidentPage = lazy(() => import("../pages/president-page"));
+const ManageSocietyDetails = lazy(() => import("../pages/manage-society-details"));
+const ManageSocietyEvents = lazy(() => import("../pages/manage-society-events"));
+const CreateEventPage = lazy(() => import("../pages/create-society-event"));
+import ViewSocietyEvents from "../pages/view-society-events";
+import PendingMembers from "../pages/pending-members";
 const MySocieties = lazy(() => import("../pages/my-societies"));
 const ViewEvents = lazy(() => import("../pages/view-events"));
 const ViewNotifications = lazy(() => import("../pages/view-notifications"));
@@ -116,13 +122,66 @@ const routes = [
         ),
       },
       {
-        path: "my-societies", // Add the route here
+        path: "my-societies", 
         element: (
           <Suspense fallback={<LoadingView />}>
             <MySocieties />
           </Suspense>
         ),
       },
+      {
+        path: "president-page",
+        element: (
+          <Suspense fallback={<LoadingView />}>
+            <PresidentPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "manage-society-details/:society_id",
+        element: (
+          <Suspense fallback={<LoadingView />}>
+            <ManageSocietyDetails />
+          </Suspense>
+        ),
+      },
+
+      {
+        path: "manage-society-events/:society_id/",
+        element: (
+          <Suspense fallback={<LoadingView />}>
+            <ManageSocietyEvents />
+          </Suspense>
+        ),
+      },
+
+      {
+        path: "society/:society_id/create-society-event",
+        element: (
+          <Suspense fallback={<LoadingView />}>
+            <CreateEventPage />
+          </Suspense>
+        ),
+      },
+
+      {
+        path: "society/:society_id/:event_type",
+        element: (
+          <Suspense fallback={<LoadingView />}>
+            <ViewSocietyEvents />
+          </Suspense>
+        ),
+      },
+
+      {
+        path: "society/:society_id/pending-members",
+        element: (
+          <Suspense fallback={<LoadingView />}>
+            <PendingMembers />
+          </Suspense>
+        ),
+      },
+      
       {
         path: "view-events",
         element: (

@@ -4,7 +4,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.dispatch import receiver
 from django.utils import timezone
-from django.db.models.signals import m2m_changed
+from django.db.models.signals import pre_save
 from django.utils.translation import gettext_lazy as _  # Import for i18n
 
 
@@ -73,10 +73,12 @@ class Student(User):
         blank=True,
     )
 
-    president_of = models.ManyToManyField(
+    president_of = models.OneToOneField(
         "Society",
-        related_name="presidents",
+        on_delete=models.SET_NULL,
+        null=True,
         blank=True,
+        related_name="president",
     )
 
     is_president = models.BooleanField(default=False)
@@ -99,10 +101,9 @@ class Student(User):
         return self.full_name
 
 # Signal to update `is_president` when `president_of` changes
-@receiver(m2m_changed, sender=Student.president_of.through)
+@receiver(pre_save, sender=Student)
 def update_is_president(sender, instance, **kwargs):
-    instance.is_president = instance.president_of.exists()
-    instance.save()
+    instance.is_president = instance.president_of is not None
 
 
 class Admin(User):

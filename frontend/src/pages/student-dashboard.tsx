@@ -157,10 +157,10 @@ const StudentDashboard: React.FC = () => {
            {user?.is_president === true && (
             <div className="text-center mb-8">
               <button
-                onClick={() => navigate("/manage-societies")}
+                onClick={() => navigate("/president-page")}
                 className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition-all flex items-center justify-center mx-auto"
               >
-                Manage My Societies
+                Manage My Society
               </button>
             </div>
           )}

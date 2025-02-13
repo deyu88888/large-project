@@ -18,6 +18,7 @@ from api.serializers import (
     DashboardNotificationSerializer,
     DashboardStatisticSerializer,
     EventCalendarSerializer,
+    EventRequestSerializer,
     EventSerializer,
     JoinSocietySerializer,
     LeaveSocietySerializer,
@@ -505,7 +506,7 @@ class RejectedSocietyRequestView(APIView):      #TODO: societyRequestView works 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class ManageMySocietyView(APIView):
+class ManageSocietyDetailsView(APIView):
     """
     API View for society presidents to manage their societies.
     """
@@ -515,7 +516,12 @@ class ManageMySocietyView(APIView):
         user = request.user
 
         # Ensure the user is a society president
-        if not user.is_student() or not user.student.is_president:
+        try:
+            student = Student.objects.get(pk=user.pk)
+        except Student.DoesNotExist:
+            return Response({"error": "Only society presidents can manage their societies."}, status=status.HTTP_403_FORBIDDEN)
+
+        if not student.is_president:
             return Response({"error": "Only society presidents can manage their societies."}, status=status.HTTP_403_FORBIDDEN)
 
         # Fetch the society
@@ -550,58 +556,143 @@ class ManageMySocietyView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class CreateSocietyEventView(APIView):
+class CreateEventRequestView(APIView):
     """
-    API View for society presidents to create events for their societies.
+    API View for society presidents to create events that require admin approval.
     """
     permission_classes = [IsAuthenticated]
 
     def post(self, request, society_id):
         """
-        create a new event for the society
+        Create a new event request (Pending approval)
         """
         user = request.user
 
         # Ensure the user is a society president
         if not user.is_student() or not user.student.is_president:
-            return Response({"error": "Only society presidents can create events."}, status=status.HTTP_403_FORBIDDEN)
+            return Response(
+                {"error": "Only society presidents can create events."},
+                status=status.HTTP_403_FORBIDDEN
+            )
 
         # Fetch the society
         society = Society.objects.filter(
-            id=society_id, leader=user.student).first()
+            id=society_id, leader=user.student
+        ).first()
+
         if not society:
-            return Response({"error": "Society not found or you are not the president of this society."}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"error": "Society not found or you are not the president of this society."},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
-        # TODO:  create my own error handler that can be used for the whole project, serializer isn't appropriate for this
-        # include ?
-        # Validate and save the event data
-        serializer = EventSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save(hosted_by=society)
-            return Response({"message": "Event created successfully.", "data": serializer.data}, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def put(self, request):
-        """
-        update the event details
-        """
-        jwt_authenticator = JWTAuthentication()
-        decoded_auth = jwt_authenticator.authenticate(request)
-
-        if decoded_auth is None:
-            return Response({
-                "error": "Invalid or expired token. Please log in again."
-            }, status=status.HTTP_401_UNAUTHORIZED)
-
-        user, _ = decoded_auth
-        print("request.data: ", request.data)
-        serializer = UserSerializer(user, data=request.data, partial=True)
+        # Validate and save the event request instead of creating an event directly
+        serializer = EventRequestSerializer(data=request.data, context={"request": request})
 
         if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            serializer.save(hosted_by=society, from_student=user.student, intent="CreateEve", approved=False)  # Default: Pending
+            return Response(
+                {"message": "Event request submitted successfully. Awaiting admin approval.", "data": serializer.data},
+                status=status.HTTP_201_CREATED
+            )
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+class EventListView(APIView):
+    """
+    API View to list events based on filters (upcoming, previous, pending).
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        society_id = request.query_params.get("society_id")
+        filter_type = request.query_params.get("filter")
+
+        if not society_id:
+            return Response({"error": "Missing society_id"}, status=400)
+
+        events = Event.objects.filter(hosted_by_id=society_id)
+
+        today = now().date()
+        current_time = now().time()
+
+        if filter_type == "upcoming":
+            events = events.filter(date__gt=today, status="Approved") | events.filter(date=today, start_time__gt=current_time, status="Approved")
+        
+        elif filter_type == "previous":
+            events = events.filter(date__lt=today, status="Approved") | events.filter(date=today, start_time__lt=current_time, status="Approved")
+        
+        elif filter_type == "pending":
+            events = events.filter(status="Pending")
+
+        serializer = EventSerializer(events, many=True)
+        return Response(serializer.data)
+    
+    
+class PendingMembersView(APIView):
+    """
+    API View for Society Presidents to manage pending membership requests.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, society_id):
+        """
+        Retrieve all pending membership requests for a specific society.
+        """
+        user = request.user
+
+        # Ensure the user is a president
+        if not hasattr(user, "student") or not user.student.is_president:
+            return Response({"error": "Only society presidents can manage members."}, status=status.HTTP_403_FORBIDDEN)
+
+        # Ensure the president owns this society
+        society = Society.objects.filter(id=society_id, leader=user.student).first()
+        if not society:
+            return Response({"error": "You are not the president of this society."}, status=status.HTTP_403_FORBIDDEN)
+
+        # Get all pending membership requests
+        pending_requests = UserRequest.objects.filter(
+            intent="JoinSoc", approved=False, from_student__societies_belongs_to=society
+        )
+
+        serializer = PendingMemberSerializer(pending_requests, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, society_id, request_id):
+        """
+        Approve or reject a membership request.
+        """
+        user = request.user
+
+        # Ensure the user is a president
+        if not hasattr(user, "student") or not user.student.is_president:
+            return Response({"error": "Only society presidents can manage members."}, status=status.HTTP_403_FORBIDDEN)
+
+        society = Society.objects.filter(id=society_id, leader=user.student).first()
+        if not society:
+            return Response({"error": "You are not the president of this society."}, status=status.HTTP_403_FORBIDDEN)
+
+        # Find the pending request
+        pending_request = UserRequest.objects.filter(id=request_id, intent="JoinSoc", approved=False).first()
+        if not pending_request:
+            return Response({"error": "Request not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        action = request.data.get("action")  # "approve" or "reject"
+
+        if action == "approve":
+            # Add student to society
+            student = pending_request.from_student
+            society.society_members.add(student)
+            pending_request.approved = True
+            pending_request.save()
+            return Response({"message": f"{student.first_name} has been approved."}, status=status.HTTP_200_OK)
+
+        elif action == "reject":
+            # Delete the request
+            pending_request.delete()
+            return Response({"message": "Request has been rejected."}, status=status.HTTP_200_OK)
+
+        return Response({"error": "Invalid action."}, status=status.HTTP_400_BAD_REQUEST)
 
 class EventView(APIView):
     """
