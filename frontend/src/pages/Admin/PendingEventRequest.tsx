@@ -7,50 +7,49 @@ import { tokens } from "../../theme/theme";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { useSettingsStore } from "../../stores/settings-store";
 
-type Society = {
+type Event = {
   id: number;
-  name: string;
-  societyMembers: number[];
-  roles: {};
-  leader: number;
-  category: string;
-  socialMediaLinks: {};
-  timetable: string | null;
-  membershipRequirements: string | null;
-  upcomingProjectsOrPlans: string | null;
+  title: string;
+  description: string;
+  date: string;
+  startTime: string;
+  duration: string;
+  hostedBy: number;
+  location: string;
 };
 
-const PendingSocietyRequest = () => {
+const PendingEventRequest = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const navigate = useNavigate();
-  const [societies, setSocieties] = useState<Society[]>([]);
+  const [events, setEvents] = useState<Event[]>([]);
   const ws = useRef<WebSocket | null>(null);
   const { searchTerm } = useContext(SearchContext);
   const { drawer } = useSettingsStore(); 
 
-  const fetchPendingSocieties = async () => {
+
+  const fetchPendingEvents = async () => {
     try {
-      const res = await apiClient.get(apiPaths.USER.PENDINGSOCIETYREQUEST);
-      setSocieties(res.data);
+      const res = await apiClient.get(apiPaths.USER.PENDINGEVENTREQUEST);
+      setEvents(res.data);
     } catch (error) {
-      console.error("Error fetching pending societies:", error);
+      console.error("Error fetching pending events:", error);
     }
   };
 
   useEffect(() => {
     const connectWebSocket = () => {
-      ws.current = new WebSocket("ws://127.0.0.1:8000/ws/admin/society/");
+      ws.current = new WebSocket("ws://127.0.0.1:8000/ws/admin/event/");
 
       ws.current.onopen = () => {
-        console.log("WebSocket Connected for Pending Society Requests");
+        console.log("WebSocket Connected for Pending Events");
       };
 
       ws.current.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
           console.log("WebSocket Update Received:", data);
-          fetchPendingSocieties();
+          fetchPendingEvents();
         } catch (error) {
           console.error("Error parsing WebSocket message:", error);
         }
@@ -68,7 +67,7 @@ const PendingSocietyRequest = () => {
       };
     };
 
-    fetchPendingSocieties();
+    fetchPendingEvents();
     connectWebSocket();
 
     return () => {
@@ -78,8 +77,8 @@ const PendingSocietyRequest = () => {
     };
   }, []);
 
-  const filteredSocieties = societies.filter((society) =>
-    Object.values(society)
+  const filteredEvents = events.filter((event) =>
+    Object.values(event)
       .join(" ")
       .toLowerCase()
       .includes(searchTerm.toLowerCase())
@@ -87,34 +86,29 @@ const PendingSocietyRequest = () => {
 
   const handleAccept = async (id: number) => {
     try {
-      await apiClient.put(`${apiPaths.USER.PENDINGSOCIETYREQUEST}/${id}`, { status: "Approved" });
+      await apiClient.put(`${apiPaths.USER.PENDINGEVENTREQUEST}/${id}`, { status: "Approved" });
     } catch (error) {
-      console.error("Error accepting society:", error);
+      console.error("Error accepting event:", error);
     }
   };
 
   const handleReject = async (id: number) => {
     try {
-      await apiClient.put(`${apiPaths.USER.PENDINGSOCIETYREQUEST}/${id}`, { status: "Rejected" });
+      await apiClient.put(`${apiPaths.USER.PENDINGEVENTREQUEST}/${id}`, { status: "Rejected" });
     } catch (error) {
-      console.error("Error rejecting society:", error);
+      console.error("Error rejecting event:", error);
     }
   };
 
   const columns: GridColDef[] = [
     { field: "id", headerName: "ID", flex: 0.5 },
-    { field: "name", headerName: "Name", flex: 1 },
-    {
-      field: "societyMembers",
-      headerName: "Members",
-      renderCell: (params: any) => params.row.societyMembers.join(", "),
-      flex: 1,
-    },
-    { field: "leader", headerName: "Leader", flex: 1 },
-    { field: "category", headerName: "Category", flex: 1 },
-    { field: "timetable", headerName: "Timetable", flex: 1 },
-    { field: "membershipRequirements", headerName: "Membership Requirements", flex: 1 },
-    { field: "upcomingProjectsOrPlans", headerName: "Upcoming Projects", flex: 1 },
+    { field: "title", headerName: "Title", flex: 1 },
+    { field: "description", headerName: "Description", flex: 2 },
+    { field: "date", headerName: "Date", flex: 1 },
+    { field: "startTime", headerName: "Start Time", flex: 1 },
+    { field: "duration", headerName: "Duration", flex: 1 },
+    { field: "hostedBy", headerName: "Hosted By", flex: 1 },
+    { field: "location", headerName: "Location", flex: 1 },
     {
       field: "actions",
       headerName: "Actions",
@@ -153,7 +147,7 @@ const PendingSocietyRequest = () => {
           marginBottom: "2rem",
         }}
       >
-        Pending Society Requests
+        Pending Event Requests
       </Typography>
       <Box
         sx={{
@@ -173,7 +167,7 @@ const PendingSocietyRequest = () => {
         }}
       >
         <DataGrid
-          rows={filteredSocieties}
+          rows={filteredEvents}
           columns={columns}
           initialState={{
             pagination: {
@@ -188,4 +182,4 @@ const PendingSocietyRequest = () => {
   );
 };
 
-export default PendingSocietyRequest;
+export default PendingEventRequest;

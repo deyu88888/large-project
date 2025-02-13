@@ -1,4 +1,4 @@
-import { Children, lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense } from "react";
 import { Outlet, Navigate, useRoutes } from "react-router-dom";
 
 import NotFound from "../pages/404";
@@ -29,23 +29,25 @@ const JoinSocietiesPage = lazy(() => import("../pages/join-societies"));
 // Admin pages
 const EventListPage = lazy(() => import("../pages/Admin/EventList"));
 const SocietyListPage = lazy(() => import("../pages/Admin/SocietyList"));
-const SocietyListRejectPage = lazy(() => import("../pages/Admin/SocietyListReject"));
-const EventListRejectedPage = lazy(() => import("../pages/Admin/EventListRejected"));
+const SocietyListRejectPage = lazy(
+  () => import("../pages/Admin/SocietyListReject")
+);
+const EventListRejectPage = lazy(
+  () => import("../pages/Admin/EventListReject")
+);
 const AdminDashboardPage = lazy(() => import("../pages/Admin/AdminDashboard"));
 const CalendarPage = lazy(() => import("../pages/Admin/Calendar"));
-
 
 const StudentListPage = lazy(() => import("../pages/Admin/StudentList"));
 const DashboardPage = lazy(() => import("../pages/Dashboard"));
 const CreateAdminPage = lazy(() => import("../pages/Admin/CreateAdmin"));
-const RequestSocietyPage = lazy(() => import("../pages/Admin/PendingSocietyRequest"));
+const RequestSocietyPage = lazy(
+  () => import("../pages/Admin/PendingSocietyRequest")
+);
+const RequestEventPage = lazy(
+  () => import("../pages/Admin/PendingEventRequest")
+);
 
-function Logout() {
-  localStorage.clear();
-  return <Navigate to="/" />;
-}
-
-// Routes Configuration
 const routes = [
   {
     path: "/",
@@ -54,19 +56,22 @@ const routes = [
         <Suspense fallback={<LoadingView />}>
           <Outlet />
         </Suspense>
+        <Suspense fallback={<LoadingView />}>
+          <Outlet />
+        </Suspense>
       </PrivateGuard>
     ),
     children: [
       {
-        path: "home",
-        element: <HomePage />,
+        index: true,
+        element: <DashboardPage />,
       },
       {
         path: "admin",
         element: (
           <PrivateGuard>
             <Suspense fallback={<LoadingView />}>
-              <Layout role="admin" />
+              <Layout />
             </Suspense>
           </PrivateGuard>
         ),
@@ -89,7 +94,7 @@ const routes = [
           },
           {
             path: "event-list-rejected",
-            element: <EventListRejectedPage />,
+            element: <EventListRejectPage />,
           },
           {
             path: "student-list",
@@ -111,24 +116,30 @@ const routes = [
             path: "request-society",
             element: <RequestSocietyPage />,
           },
-        ]
+          {
+            path: "request-event",
+            element: <RequestEventPage />,
+          },
+        ],
       },
       {
-        path: "student-dashboard",
+        path: "student",
         element: (
-          <Suspense fallback={<LoadingView />}>
-            <StudentDashboard />
-          </Suspense>
+          <PrivateGuard>
+            <Suspense fallback={<LoadingView />}>
+              <Layout />
+            </Suspense>
+          </PrivateGuard>
         ),
-      },
-      {
-        path: "my-societies", 
-        element: (
-          <Suspense fallback={<LoadingView />}>
-            <MySocieties />
-          </Suspense>
-        ),
-      },
+        children: [
+          {
+            index: true,
+            element: <StudentDashboard />,
+          },
+          {
+            path: "my-societies", 
+            element: <MySocieties />,
+          },
       {
         path: "president-page",
         element: (
@@ -182,68 +193,50 @@ const routes = [
         ),
       },
       
-      {
-        path: "view-events",
-        element: (
-          <Suspense fallback={<LoadingView />}>
-            <ViewEvents />
-          </Suspense>
-        ),
-      },
-      {
-        path: "view-notifications",
-        element: (
-          <Suspense fallback={<LoadingView />}>
-            <ViewNotifications />
-          </Suspense>
-        ),
-      },
-      {
-        path: "start-society",
-        element: (
-          <Suspense fallback={<LoadingView />}>
-            <StartSociety />
-          </Suspense>
-        ),
-      },
-      {
-        path: "join-society",
-        element: (
-          <Suspense fallback={<LoadingView />}>
-            <JoinSocietiesPage />
-          </Suspense>
-        ),
-      },
-      {
-        path: "join-society/:id",
-        element: (
-          <Suspense fallback={<LoadingView />}>
-            <JoinSocietiesPage />
-          </Suspense>
-        ),
+          {
+            path: "view-events",
+            element: <ViewEvents />,
+          },
+          {
+            path: "view-notifications",
+            element: <ViewNotifications />,
+          },
+          {
+            path: "start-society",
+            element: <StartSociety />,
+          },
+          {
+            path: "join-society",
+            element: <JoinSocietiesPage />,
+          },
+          {
+            path: "join-society/:id",
+            element: <JoinSocietiesPage />,
+          },
+        ],
       },
       {
         path: "logout",
         children: [
-            {
-                index: true,
-                element: <HomePage />,
-            },
-            {
-                path: "logout",
-                element: (
-                    <Suspense fallback={<CircularLoader />}>
-                        <Navigate to="/login" replace />
-                    </Suspense>
-                ),
-            },
-            {
-                path: "profile",
-                element: <ProfilePage />,
-            },
+          {
+            index: true,
+            element: <HomePage />,
+          },
+          {
+            path: "logout",
+            element: (
+              <Suspense fallback={<CircularLoader />}>
+                <Navigate to="/login" replace />
+              </Suspense>
+            ),
+          },
+          {
+            path: "profile",
+            element: <ProfilePage />,
+          },
         ],
-    },
-    {
+      },
+      {
         path: "/",
         element: (
           <Suspense fallback={<LoadingView />}>

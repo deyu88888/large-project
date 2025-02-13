@@ -1,12 +1,23 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaCalendarAlt, FaBell, FaUsers, FaUserPlus, FaCogs, FaMedal } from "react-icons/fa";
+import { useTheme } from "@mui/material/styles";
+import { tokens } from "../theme/theme";
+import {
+  FaCalendarAlt,
+  FaBell,
+  FaUsers,
+  FaUserPlus,
+  FaCogs,
+} from "react-icons/fa";
 import axios from "axios";
 import { apiClient } from "../api";
 import { useAuthStore } from "../stores/auth-store";
 
 const StudentDashboard: React.FC = () => {
   const navigate = useNavigate();
+  const theme = useTheme();
+  const colours = tokens(theme.palette.mode);
+  const { sidebarWidth } = useSidebar();
 
   // States for societies, events, and notifications
   const [societies, setSocieties] = useState<any[]>([]);
@@ -39,6 +50,12 @@ const StudentDashboard: React.FC = () => {
       const societiesResponse = await apiClient.get("/api/student-societies/");
       console.log(societiesResponse.data);
       setSocieties(societiesResponse.data || []);
+
+      // Check if the student is president of any society
+      const presidentSocieties = societiesResponse.data.filter(
+        (society: any) => society.is_president
+      );
+      setIsPresident(presidentSocieties.length > 0);
 
       // Fetch events
       const eventsResponse = await apiClient.get("/api/events/rsvp");
@@ -98,8 +115,10 @@ const StudentDashboard: React.FC = () => {
   // Cancel RSVP for an event
   const cancelRSVP = async (eventId: number) => {
     try {
-      await apiClient.delete(`/api/events/rsvp/`, { data: { event_id: eventId } });
-      fetchData(); // Refresh the events after canceling RSVP
+      await apiClient.delete("/api/events/rsvp/", {
+        data: { event_id: eventId },
+      });
+      fetchData();
     } catch (error) {
       console.error("Error canceling RSVP:", error);
     }
@@ -128,235 +147,330 @@ const StudentDashboard: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-indigo-50 via-white to-indigo-100 py-12 px-8">
-      {loading ? (
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-800">Loading your dashboard...</h1>
-        </div>
-      ) : (
-        <>
-          {/* Dashboard Title */}
-          <header className="text-center mb-16">
-            <h1 className="text-5xl font-extrabold text-gray-900">Welcome to Your Dashboard</h1>
-            <p className="text-lg text-gray-600 mt-4">
-              Stay updated with your societies, events, and achievements.
-            </p>
-          </header>
-
-           <div className="text-center mb-8">
-              <button
-                onClick={logout}
-                className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition-all flex items-center justify-center mx-auto"
+    <div
+      style={{
+        marginLeft: `${sidebarWidth}px`,
+        marginTop: "64px",
+        transition: "margin-left 0.3s ease-in-out",
+        minHeight: "100vh",
+        padding: "20px 40px",
+        background: `${colours.primary[400]} !important`, //this is what determines light and dark mode colours
+        border: "none",
+      }}
+    >
+      <div style={{ maxWidth: "1600px", margin: "0 auto" }}>
+        {loading ? (
+          <div className="text-center">
+            <h1
+              style={{ color: `${colours.grey[100]} !important` }}
+              className="text-2xl font-bold"
+            >
+              Loading your dashboard...
+            </h1>
+          </div>
+        ) : (
+          <div className="space-y-8">
+            {/* Dashboard Header */}
+            <header className="text-center mb-16">
+              <h1
+                className="text-5xl font-extrabold mb-4"
+                style={{ color: `${colours.grey[100]} !important` }}
               >
-                <FaCogs className="mr-2" />
-                logout
-              </button>
-            </div>
-            
-           {/*  Manage My Societies Button (Only if President) */}
-           {user?.is_president === true && (
-            <div className="text-center mb-8">
-              <button
-                onClick={() => navigate("/president-page")}
-                className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition-all flex items-center justify-center mx-auto"
+                Welcome to Your Dashboard
+              </h1>
+              <p
+                className="text-lg"
+                style={{ color: `${colours.grey[300]} !important` }}
               >
-                Manage My Society
-              </button>
-            </div>
-          )}
+                Stay updated with your societies, events, and achievements.
+              </p>
+            </header>
 
-          {/* Society Management */}
-          <section className="mb-16">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-3xl font-bold text-gray-800 flex items-center">
-                <FaUsers className="mr-3 text-green-500" />
-                My Societies
-              </h2>
-              <div className="flex space-x-4">
-                <button
-                  onClick={() => navigate("/join-society")}
-                  className="text-blue-500 hover:underline font-medium"
+            {/* Society Management */}
+            <section className="mb-16">
+              <div className="flex justify-between items-center mb-6">
+                <h2
+                  className="text-3xl font-bold flex items-center"
+                  style={{ color: `${colours.grey[100]} !important` }}
                 >
-                  Join a Society
-                </button>
+                  <FaUsers
+                    className="mr-3"
+                    style={{ color: colours.greenAccent[500] }}
+                  />
+                  My Societies
+                </h2>
+                <div className="flex space-x-4">
+                  <button
+                    onClick={() => navigate("/student/join-society")}
+                    className="font-medium transition-all hover:underline"
+                    style={{ color: colours.blueAccent[500] }}
+                  >
+                    Join a Society
+                  </button>
+                  <button
+                    onClick={() => navigate("/student/my-societies")}
+                    className="font-medium transition-all hover:underline"
+                    style={{ color: colours.blueAccent[500] }}
+                  >
+                    View All
+                  </button>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {societies.slice(0, 3).map((society) => (
+                  <div
+                    key={society.id}
+                    className="p-6 rounded-xl shadow hover:shadow-lg transition-transform hover:-translate-y-1"
+                    style={{
+                      backgroundColor: `${colours.grey[400]} !important`,
+                      border: `1px solid ${`${colours.grey[700]} !important`}`,
+                    }}
+                  >
+                    <h3
+                      className="text-xl font-semibold mb-4"
+                      style={{ color: `${colours.grey[100]} !important` }}
+                    >
+                      {society.name}
+                    </h3>
+                    <button
+                      onClick={() => leaveSociety(society.id)}
+                      className="w-full px-6 py-2 rounded-lg transition-all font-medium"
+                      style={{
+                        backgroundColor: colours.redAccent[500],
+                        color: colours.grey[100],
+                      }}
+                    >
+                      Leave Society
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {/* Event Management */}
+            <section className="mb-16">
+              <div className="flex justify-between items-center mb-6">
+                <h2
+                  className="text-3xl font-bold flex items-center"
+                  style={{ color: `${colours.grey[100]} !important` }}
+                >
+                  <FaCalendarAlt
+                    className="mr-3"
+                    style={{ color: colours.blueAccent[500] }}
+                  />
+                  Upcoming Events
+                </h2>
                 <button
-                  onClick={() => navigate("/my-societies")}
-                  className="text-blue-500 hover:underline font-medium"
+                  onClick={() => navigate("/student/view-events")}
+                  className="font-medium transition-all hover:underline"
+                  style={{ color: colours.blueAccent[500] }}
                 >
                   View All
                 </button>
               </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {societies.slice(0, 3).map((society) => (
-                <div
-                  key={society.id}
-                  className="p-6 bg-white rounded-xl shadow hover:shadow-lg border border-gray-200 transition-transform hover:-translate-y-1"
-                >
-                  <h3 className="text-xl font-semibold text-gray-900 mb-4">{society.name}</h3>
-                  <button
-                    onClick={() => leaveSociety(society.id)}
-                    className="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 transition-all"
-                  >
-                    Leave Society
-                  </button>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* Event Management */}
-          <section className="mb-16">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-3xl font-bold text-gray-800 flex items-center">
-                <FaCalendarAlt className="mr-3 text-blue-500" />
-                Upcoming Events
-              </h2>
-              <button
-                onClick={() => navigate("/view-events")}
-                className="text-blue-500 hover:underline font-medium"
-              >
-                View All
-              </button>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {/* {JSON.stringify(events)} */}
-              {events.slice(0, 3).map((event) => (
-                <div
-                  key={event.id}
-                  className="p-6 bg-white rounded-xl shadow hover:shadow-lg border border-gray-200 transition-transform hover:-translate-y-1"
-                >
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-xl font-semibold text-gray-900">{event.title}</h3>
-                    <span className="text-sm text-gray-600 italic">{event.date}</span>
-                  </div>
-                  <button
-                    onClick={() =>
-                      event.rsvp ? cancelRSVP(event.id) : rsvpEvent(event.id)
-                    }
-                    className={`w-full px-6 py-2 text-white rounded-lg ${
-                      event.rsvp
-                        ? "bg-gray-400 hover:bg-gray-500"
-                        : "bg-blue-500 hover:bg-blue-600"
-                    } transition-all`}
-                  >
-                    {event.rsvp ? "Cancel RSVP" : "RSVP Now"}
-                  </button>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* Notifications */}
-          <section className="mb-20">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-3xl font-bold text-gray-800 flex items-center">
-                <FaBell className="text-yellow-500 text-2xl mr-3" />
-                Notifications
-              </h2>
-              <button
-                onClick={() => navigate("/view-notifications")}
-                className="text-blue-500 hover:underline font-medium"
-              >
-                View All
-              </button>
-            </div>
-
-            {/* Show Loading State */}
-            {loading ? (
-              <p className="text-center text-gray-600">Loading notifications...</p>
-            ) : notifications.length === 0 ? (
-              <p className="text-center text-gray-600">No new notifications.</p>
-            ) : (
-              <div className="space-y-6">
-                {notifications.map((notification) => (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {events.slice(0, 3).map((event) => (
                   <div
-                    key={notification.id}
-                    className={`p-5 rounded-lg shadow-md hover:shadow-lg border transition-all ${
-                      notification.is_read ? "bg-gray-100 border-gray-300" : "bg-blue-50 border-blue-100"
-                    }`}
+                    key={event.id}
+                    className="p-6 rounded-xl shadow hover:shadow-lg transition-transform hover:-translate-y-1"
+                    style={{
+                      backgroundColor: `${colours.grey[400]} !important`,
+                      border: `${colours.grey[700]} !important`,
+                    }}
                   >
-                    <div className="flex justify-between items-center">
-                      <p className="text-gray-800">{notification.message}</p>
-                      <div className="flex items-center space-x-4">
-                        {notification.is_read ? (
-                          <span className="text-green-500 text-sm font-medium">Read</span>
-                        ) : (
-                          <button
-                            onClick={() => markNotificationAsRead(notification.id)}
-                            className="text-sm text-blue-500 hover:underline"
-                          >
-                            Mark as Read
-                          </button>
-                        )}
-                      </div>
+                    <div className="flex justify-between items-center mb-4">
+                      <h3
+                        className="text-xl font-semibold"
+                        style={{ color: `${colours.grey[100]} !important` }}
+                      >
+                        {event.title}
+                      </h3>
+                      <span
+                        className="text-sm italic"
+                        style={{ color: `${colours.grey[300]} !important` }}
+                      >
+                        {event.date}
+                      </span>
                     </div>
+                    <button
+                      onClick={() =>
+                        event.rsvp ? cancelRSVP(event.id) : rsvpEvent(event.id)
+                      }
+                      className="w-full px-6 py-2 rounded-lg transition-all font-medium"
+                      style={{
+                        backgroundColor: event.rsvp
+                          ? `${colours.grey[600]} !important`
+                          : colours.blueAccent[500],
+                        color: colours.grey[100],
+                      }}
+                    >
+                      {event.rsvp ? "Cancel RSVP" : "RSVP Now"}
+                    </button>
                   </div>
                 ))}
               </div>
-            )}
-          </section>
-          {/* Calendar Integration */}
-          <section className="mb-20">
-            <div className="flex items-center mb-6">
-              <FaCalendarAlt className="text-teal-500 text-2xl mr-3" />
-              <h2 className="text-3xl font-bold text-gray-800">Calendar</h2>
-            </div>
-            <div className="flex items-center justify-center p-8 bg-gradient-to-r from-teal-50 to-teal-100 rounded-lg shadow-md border border-gray-200">
-              <p className="text-gray-500 text-lg">Calendar Integration Placeholder</p>
-            </div>
-          </section>
-          {/* Start a Society Section */}
-          <section className="mb-20">
-            <div className="flex items-center mb-6">
-              <FaUserPlus className="text-purple-500 text-2xl mr-3" />
-              <h2 className="text-3xl font-bold text-gray-800">Start a Society</h2>
-            </div>
-            <p className="text-gray-600 mb-4">
-              Have an idea for a new society? Share your passion and bring others together!
-            </p>
-            <button
-              onClick={() => navigate("/start-society")}
-              className="bg-purple-500 text-white px-6 py-3 rounded-lg hover:bg-purple-600 transition-all"
-            >
-              Start a Society
-            </button>
-          </section>
-          {/* Achievements Section */}
-      <section className="mb-20">
-        <div className="flex items-center mb-6">
-          <FaMedal className="text-yellow-500 text-2xl mr-3" />
-          <h2 className="text-3xl font-bold text-gray-800">Achievements</h2>
-        </div>
+            </section>
 
-        {loading ? (
-          <p className="text-center text-gray-600">Loading achievements...</p>
-        ) : awards.length === 0 ? (
-          <p className="text-center text-gray-600">No achievements yet.</p>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {awards.map((awardAssignment) => (
-              <div
-                key={awardAssignment.id}
-                className="p-6 bg-white rounded-xl shadow hover:shadow-lg border border-gray-200 transition-transform hover:-translate-y-1"
-              >
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-xl font-semibold text-gray-900">
-                    {awardAssignment.award.title}
-                  </h3>
-                  <span
-                    className={`px-3 py-1 rounded-lg text-sm font-medium text-white ${
-                      awardAssignment.award.rank === "Gold"
-                        ? "bg-yellow-500"
-                        : awardAssignment.award.rank === "Silver"
-                        ? "bg-gray-400"
-                        : "bg-orange-500"
-                    }`}
-                  >
-                    {awardAssignment.award.rank}
-                  </span>
+            {/* Notifications */}
+            <section className="mb-20">
+              <div className="flex justify-between items-center mb-6">
+                <h2
+                  className="text-3xl font-bold flex items-center"
+                  style={{ color: `${colours.grey[100]} !important` }}
+                >
+                  <FaBell
+                    className="mr-3"
+                    style={{ color: colours.redAccent[500] }}
+                  />
+                  Notifications
+                </h2>
+                <button
+                  onClick={() => navigate("/student/view-notifications")}
+                  className="font-medium transition-all hover:underline"
+                  style={{ color: colours.blueAccent[500] }}
+                >
+                  View All
+                </button>
+              </div>
+
+              {notifications.length === 0 ? (
+                <p
+                  className="text-center"
+                  style={{ color: `${colours.grey[300]} !important` }}
+                >
+                  No new notifications.
+                </p>
+              ) : (
+                <div className="space-y-6">
+                  {notifications.map((notification) => (
+                    <div
+                      key={notification.id}
+                      className="p-5 rounded-lg shadow-md transition-all"
+                      style={{
+                        backgroundColor: notification.is_read
+                          ? `${colours.primary[400]} !important`
+                          : `${colours.blueAccent[700]} !important`,
+                        border: `1px solid ${`${colours.grey[400]} !important`}`,
+                      }}
+                    >
+                      <div className="flex justify-between items-center">
+                        <p style={{ color: `${colours.grey[100]} !important` }}>
+                          {notification.message}
+                        </p>
+                        <div className="flex items-center space-x-4">
+                          {notification.is_read ? (
+                            <span
+                              className="text-sm font-medium"
+                              style={{ color: colours.greenAccent[500] }}
+                            >
+                              Read
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() =>
+                                markNotificationAsRead(notification.id)
+                              }
+                              className="text-sm font-medium transition-all hover:underline"
+                              style={{ color: colours.blueAccent[300] }}
+                            >
+                              Mark as Read
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <p className="text-gray-700 text-sm">{awardAssignment.award.description}</p>
+              )}
+            </section>
+
+            {/* Calendar Integration */}
+            <section className="mb-20">
+              <div className="flex items-center mb-6">
+                <FaCalendarAlt
+                  className="mr-3"
+                  style={{
+                    color: colours.greenAccent[500],
+                    fontSize: "1.5rem",
+                  }}
+                />
+                <h2
+                  className="text-3xl font-bold"
+                  style={{ color: `${colours.grey[100]} !important` }}
+                >
+                  Calendar
+                </h2>
+              </div>
+              <div
+                className="p-8 rounded-lg shadow-md border"
+                style={{
+                  backgroundColor: `${colours.primary[400]} !important`,
+                  borderColor: `${colours.grey[700]} !important`,
+                }}
+              >
+                <p
+                  className="text-center text-lg"
+                  style={{ color: `${colours.grey[300]} !important` }}
+                >
+                  Coming Soon!
+                </p>
+              </div>
+            </section>
+
+            {/* Start a Society */}
+            <section className="mb-20">
+              <div className="flex items-center mb-6">
+                <FaUserPlus
+                  className="mr-3"
+                  style={{ color: colours.blueAccent[500], fontSize: "1.5rem" }}
+                />
+                <h2
+                  className="text-3xl font-bold"
+                  style={{ color: `${colours.grey[100]} !important` }}
+                >
+                  Start a Society
+                </h2>
+              </div>
+              <p
+                className="mb-4"
+                style={{ color: `${colours.grey[300]} !important` }}
+              >
+                Have an idea for a new society? Share your passion and bring
+                others together!
+              </p>
+              <button
+                onClick={() => navigate("/student/start-society")}
+                className="px-6 py-3 rounded-lg transition-all font-medium"
+                style={{
+                  backgroundColor: colours.blueAccent[500],
+                  color: colours.grey[100],
+                }}
+              >
+                Start a Society
+              </button>
+            </section>
+
+            {/* Achievements */}
+            <section>
+              <h2
+                className="text-3xl font-bold mb-6"
+                style={{ color: `${colours.grey[100]} !important` }}
+              >
+                Achievements
+              </h2>
+              <div
+                className="p-8 rounded-lg shadow-md border"
+                style={{
+                  backgroundColor: `${colours.primary[400]} !important`,
+                  borderColor: `${colours.grey[700]} !important`,
+                }}
+              >
+                <p
+                  className="text-center text-lg"
+                  style={{ color: `${colours.grey[300]} !important` }}
+                >
+                  Coming Soon!
+                </p>
               </div>
             ))}
           </div>

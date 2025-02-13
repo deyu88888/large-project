@@ -1,8 +1,5 @@
-import { createContext, useState, useMemo } from "react";
-import { createTheme, Theme } from "@mui/material/styles";
-// Define light and dark theme modes
 type ThemeMode = "light" | "dark";
-// Define the structure of color tokens
+
 type ColorTokens = {
   grey: Record<number, string>;
   primary: Record<number, string>;
@@ -10,6 +7,7 @@ type ColorTokens = {
   redAccent: Record<number, string>;
   blueAccent: Record<number, string>;
 };
+
 // color design tokens
 export const tokens = (mode: ThemeMode): ColorTokens => ({
   ...(mode === "dark"
@@ -128,6 +126,7 @@ export const tokens = (mode: ThemeMode): ColorTokens => ({
         },
       }),
 });
+
 // mui theme settings
 export const themeSettings = (mode: ThemeMode) => {
   const colors = tokens(mode);
@@ -160,19 +159,4 @@ export const themeSettings = (mode: ThemeMode) => {
       h6: { fontSize: 14 },
     },
   };
-};
-export const ColorModeContext = createContext({
-  toggleColorMode: () => {},
-});
-export const useMode = (): [Theme, { toggleColorMode: () => void }] => {
-  const [mode, setMode] = useState<ThemeMode>("dark");
-  const colorMode = useMemo(
-    () => ({
-      toggleColorMode: () =>
-        setMode((prev: ThemeMode) => (prev === "light" ? "dark" : "light")),
-    }),
-    []
-  );
-  const theme = useMemo(() => createTheme(themeSettings(mode)), [mode]);
-  return [theme, colorMode];
 };
