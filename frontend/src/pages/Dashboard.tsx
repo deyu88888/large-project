@@ -12,7 +12,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 
 // --- MUI Theme Tokens ---
-import { tokens } from "../styles/theme";
+import { tokens } from "../theme/theme";
 
 // --- API Calls ---
 import { getAllEvents } from "../api";

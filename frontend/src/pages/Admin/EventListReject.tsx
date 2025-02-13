@@ -1,53 +1,41 @@
-import React, { useEffect, useState, useContext } from "react";
-import { Box, Typography, useTheme, Button } from "@mui/material";
+import React, { useState, useEffect, useContext } from "react";
+import { Box, Typography, Button, useTheme } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { apiClient, apiPaths } from "../../api";
 import { useNavigate } from "react-router-dom";
 import { tokens } from "../../theme/theme";
-import { useSettingsStore } from "../../stores/settings-store";
 import { SearchContext } from "../../components/layout/SearchContext";
 
-interface Event {
-  id: number;
-  title: string;
-  description: string;
-  date: string;
-  startTime: string;
-  duration: string;
-  hostedBy: number;
-  location: string;
-}
+type Event = { 
+  id: number; 
+  title: string; 
+  description: string; 
+  date: string; 
+  startTime: string; 
+  duration: string; 
+  hostedBy: number; 
+  location: string; 
+};
 
-const EventList = () => {
+const EventListRejected = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const navigate = useNavigate();
-  const { drawer } = useSettingsStore();
-  const { searchTerm } = useContext(SearchContext);
   const [events, setEvents] = useState<Event[]>([]);
-
-  const fetchEvents = async () => {
-    try {
-      const res = await apiClient.get(apiPaths.USER.EVENTS);
-      setEvents(res.data || []);
-    } catch (error) {
-      console.error("Error fetching events:", error);
-    }
-  };
+  const { searchTerm } = useContext(SearchContext);
 
   useEffect(() => {
-    fetchEvents();
+    const getdata = async () => {
+      try {
+        const res = await apiClient.get(apiPaths.USER.REJECTEDEVENT);
+        console.log("Fetched Rejected Events:", res.data);
+        setEvents(res.data || []);
+      } catch (error) {
+        console.error("Error fetching rejected events:", error);
+      }
+    };
+    getdata();
   }, []);
-
-  const columns: GridColDef[] = [
-    { field: "title", headerName: "Title", flex: 1 },
-    { field: "description", headerName: "Description", flex: 2 },
-    { field: "date", headerName: "Date", flex: 1 },
-    { field: "startTime", headerName: "Start Time", flex: 1 },
-    { field: "duration", headerName: "Duration", flex: 1 },
-    { field: "hostedBy", headerName: "Hosted By", flex: 1 },
-    { field: "location", headerName: "Location", flex: 1 },
-  ];
 
   const filteredEvents = events.filter((event) =>
     Object.values(event)
@@ -56,21 +44,32 @@ const EventList = () => {
       .includes(searchTerm.toLowerCase())
   );
 
-  const handleRejectPageNavigation = () => {
-    navigate("/admin/event-list-rejected");
+  const handleBackToEvents = () => {
+    navigate("/admin/event-list");
   };
+
+  const columns: GridColDef[] = [
+    { field: "id", headerName: "ID", flex: 1 },
+    { field: "title", headerName: "Title", flex: 1 },
+    { field: "description", headerName: "Description", flex: 1 },
+    { field: "date", headerName: "Date", flex: 1 },
+    { field: "startTime", headerName: "Start Time", flex: 1 },
+    { field: "duration", headerName: "Duration", flex: 1 },
+    { field: "hostedBy", headerName: "Hosted By", flex: 1 },
+    { field: "location", headerName: "Location", flex: 1 },
+  ];
 
   return (
     <Box
       sx={{
-        height: "calc(100vh - 64px)", // Full height minus AppBar height
-        maxWidth: drawer ? `calc(100% - 3px)` : "100%",
+        height: "calc(100vh - 64px)", 
+        maxWidth: "100%",
       }}
     >
       <Button
         variant="contained"
         color="error"
-        onClick={handleRejectPageNavigation}
+        onClick={handleBackToEvents}
         sx={{
           position: "absolute",
           top: 85,
@@ -82,14 +81,10 @@ const EventList = () => {
           display: "flex",
           alignItems: "center",
           padding: "8px 16px",
-          marginTop: {
-            xs: "3rem", // Top margin for small screens
-            md: "0rem", // No margin for medium and larger screens
-          },
         }}
       >
-        Rejected Events
-        <span style={{ marginLeft: "8px", fontSize: "18px" }}>→</span>
+        <span style={{ marginRight: "8px", fontSize: "18px" }}>←</span>
+        Back to Events
       </Button>
       <Typography
         variant="h1"
@@ -100,7 +95,7 @@ const EventList = () => {
           marginBottom: "2rem",
         }}
       >
-        Event List
+        Rejected Event List
       </Typography>
       <Box
         sx={{
@@ -143,4 +138,4 @@ const EventList = () => {
   );
 };
 
-export default EventList;
+export default EventListRejected;

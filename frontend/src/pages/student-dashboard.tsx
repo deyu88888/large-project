@@ -1,15 +1,21 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "@mui/material/styles";
-import { useMode, tokens } from "../styles/theme";
-import { FaCalendarAlt, FaBell, FaUsers, FaUserPlus, FaCogs } from "react-icons/fa";
+import { tokens } from "../theme/theme";
+import {
+  FaCalendarAlt,
+  FaBell,
+  FaUsers,
+  FaUserPlus,
+  FaCogs,
+} from "react-icons/fa";
 import axios from "axios";
 import { apiClient } from "../api";
 import { useSidebar } from "../components/layout/SidebarContext";
 
 const StudentDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const [theme] = useMode();
+  const theme = useTheme();
   const colours = tokens(theme.palette.mode);
   const { sidebarWidth } = useSidebar();
 
@@ -30,7 +36,9 @@ const StudentDashboard: React.FC = () => {
       setSocieties(societiesResponse.data || []);
 
       // Check if the student is president of any society
-      const presidentSocieties = societiesResponse.data.filter((society: any) => society.is_president);
+      const presidentSocieties = societiesResponse.data.filter(
+        (society: any) => society.is_president
+      );
       setIsPresident(presidentSocieties.length > 0);
 
       // Fetch events
@@ -74,7 +82,9 @@ const StudentDashboard: React.FC = () => {
 
   const cancelRSVP = async (eventId: number) => {
     try {
-      await apiClient.delete("/api/events/rsvp/", { data: { event_id: eventId } });
+      await apiClient.delete("/api/events/rsvp/", {
+        data: { event_id: eventId },
+      });
       fetchData();
     } catch (error) {
       console.error("Error cancelling RSVP:", error);
@@ -101,14 +111,14 @@ const StudentDashboard: React.FC = () => {
         minHeight: "100vh",
         padding: "20px 40px",
         background: `${colours.primary[400]} !important`, //this is what determines light and dark mode colours
-        border: "none"
+        border: "none",
       }}
     >
       <div style={{ maxWidth: "1600px", margin: "0 auto" }}>
         {loading ? (
           <div className="text-center">
             <h1
-              style={{ color: `${colours.grey[100]} !important`,}}
+              style={{ color: `${colours.grey[100]} !important` }}
               className="text-2xl font-bold"
             >
               Loading your dashboard...
@@ -120,13 +130,13 @@ const StudentDashboard: React.FC = () => {
             <header className="text-center mb-16">
               <h1
                 className="text-5xl font-extrabold mb-4"
-                style={{ color: `${colours.grey[100]} !important`,}}
+                style={{ color: `${colours.grey[100]} !important` }}
               >
                 Welcome to Your Dashboard
               </h1>
               <p
                 className="text-lg"
-                style={{ color: `${colours.grey[300]} !important`, }}
+                style={{ color: `${colours.grey[300]} !important` }}
               >
                 Stay updated with your societies, events, and achievements.
               </p>
@@ -137,7 +147,7 @@ const StudentDashboard: React.FC = () => {
               <div className="flex justify-between items-center mb-6">
                 <h2
                   className="text-3xl font-bold flex items-center"
-                  style={{ color: `${colours.grey[100]} !important`, }}
+                  style={{ color: `${colours.grey[100]} !important` }}
                 >
                   <FaUsers
                     className="mr-3"
@@ -147,14 +157,14 @@ const StudentDashboard: React.FC = () => {
                 </h2>
                 <div className="flex space-x-4">
                   <button
-                    onClick={() => navigate("/join-society")}
+                    onClick={() => navigate("/student/join-society")}
                     className="font-medium transition-all hover:underline"
                     style={{ color: colours.blueAccent[500] }}
                   >
                     Join a Society
                   </button>
                   <button
-                    onClick={() => navigate("/my-societies")}
+                    onClick={() => navigate("/student/my-societies")}
                     className="font-medium transition-all hover:underline"
                     style={{ color: colours.blueAccent[500] }}
                   >
@@ -168,13 +178,13 @@ const StudentDashboard: React.FC = () => {
                     key={society.id}
                     className="p-6 rounded-xl shadow hover:shadow-lg transition-transform hover:-translate-y-1"
                     style={{
-                      backgroundColor:`${colours.grey[400]} !important`,
+                      backgroundColor: `${colours.grey[400]} !important`,
                       border: `1px solid ${`${colours.grey[700]} !important`}`,
                     }}
                   >
                     <h3
                       className="text-xl font-semibold mb-4"
-                      style={{ color: `${colours.grey[100]} !important`, }}
+                      style={{ color: `${colours.grey[100]} !important` }}
                     >
                       {society.name}
                     </h3>
@@ -183,7 +193,7 @@ const StudentDashboard: React.FC = () => {
                       className="w-full px-6 py-2 rounded-lg transition-all font-medium"
                       style={{
                         backgroundColor: colours.redAccent[500],
-                        color: colours.grey[100]
+                        color: colours.grey[100],
                       }}
                     >
                       Leave Society
@@ -198,7 +208,7 @@ const StudentDashboard: React.FC = () => {
               <div className="flex justify-between items-center mb-6">
                 <h2
                   className="text-3xl font-bold flex items-center"
-                  style={{ color: `${colours.grey[100]} !important`, }}
+                  style={{ color: `${colours.grey[100]} !important` }}
                 >
                   <FaCalendarAlt
                     className="mr-3"
@@ -207,7 +217,7 @@ const StudentDashboard: React.FC = () => {
                   Upcoming Events
                 </h2>
                 <button
-                  onClick={() => navigate("/view-events")}
+                  onClick={() => navigate("/student/view-events")}
                   className="font-medium transition-all hover:underline"
                   style={{ color: colours.blueAccent[500] }}
                 >
@@ -227,13 +237,13 @@ const StudentDashboard: React.FC = () => {
                     <div className="flex justify-between items-center mb-4">
                       <h3
                         className="text-xl font-semibold"
-                        style={{ color: `${colours.grey[100]} !important`, }}
+                        style={{ color: `${colours.grey[100]} !important` }}
                       >
                         {event.title}
                       </h3>
                       <span
                         className="text-sm italic"
-                        style={{ color: `${colours.grey[300]} !important`, }}
+                        style={{ color: `${colours.grey[300]} !important` }}
                       >
                         {event.date}
                       </span>
@@ -245,7 +255,7 @@ const StudentDashboard: React.FC = () => {
                       className="w-full px-6 py-2 rounded-lg transition-all font-medium"
                       style={{
                         backgroundColor: event.rsvp
-                          ? (`${colours.grey[600]} !important`)
+                          ? `${colours.grey[600]} !important`
                           : colours.blueAccent[500],
                         color: colours.grey[100],
                       }}
@@ -262,7 +272,7 @@ const StudentDashboard: React.FC = () => {
               <div className="flex justify-between items-center mb-6">
                 <h2
                   className="text-3xl font-bold flex items-center"
-                  style={{ color: `${colours.grey[100]} !important`,}}
+                  style={{ color: `${colours.grey[100]} !important` }}
                 >
                   <FaBell
                     className="mr-3"
@@ -271,7 +281,7 @@ const StudentDashboard: React.FC = () => {
                   Notifications
                 </h2>
                 <button
-                  onClick={() => navigate("/view-notifications")}
+                  onClick={() => navigate("/student/view-notifications")}
                   className="font-medium transition-all hover:underline"
                   style={{ color: colours.blueAccent[500] }}
                 >
@@ -282,7 +292,7 @@ const StudentDashboard: React.FC = () => {
               {notifications.length === 0 ? (
                 <p
                   className="text-center"
-                  style={{ color: `${colours.grey[300]} !important`,}}
+                  style={{ color: `${colours.grey[300]} !important` }}
                 >
                   No new notifications.
                 </p>
@@ -294,13 +304,13 @@ const StudentDashboard: React.FC = () => {
                       className="p-5 rounded-lg shadow-md transition-all"
                       style={{
                         backgroundColor: notification.is_read
-                          ? (`${colours.primary[400]} !important`)
-                          : (`${colours.blueAccent[700]} !important`),
+                          ? `${colours.primary[400]} !important`
+                          : `${colours.blueAccent[700]} !important`,
                         border: `1px solid ${`${colours.grey[400]} !important`}`,
                       }}
                     >
                       <div className="flex justify-between items-center">
-                        <p style={{ color: `${colours.grey[100]} !important`,}}>
+                        <p style={{ color: `${colours.grey[100]} !important` }}>
                           {notification.message}
                         </p>
                         <div className="flex items-center space-x-4">
@@ -313,7 +323,9 @@ const StudentDashboard: React.FC = () => {
                             </span>
                           ) : (
                             <button
-                              onClick={() => markNotificationAsRead(notification.id)}
+                              onClick={() =>
+                                markNotificationAsRead(notification.id)
+                              }
                               className="text-sm font-medium transition-all hover:underline"
                               style={{ color: colours.blueAccent[300] }}
                             >
@@ -333,9 +345,15 @@ const StudentDashboard: React.FC = () => {
               <div className="flex items-center mb-6">
                 <FaCalendarAlt
                   className="mr-3"
-                  style={{ color: colours.greenAccent[500], fontSize: "1.5rem" }}
+                  style={{
+                    color: colours.greenAccent[500],
+                    fontSize: "1.5rem",
+                  }}
                 />
-                <h2 className="text-3xl font-bold" style={{ color: `${colours.grey[100]} !important`,}}>
+                <h2
+                  className="text-3xl font-bold"
+                  style={{ color: `${colours.grey[100]} !important` }}
+                >
                   Calendar
                 </h2>
               </div>
@@ -346,7 +364,10 @@ const StudentDashboard: React.FC = () => {
                   borderColor: `${colours.grey[700]} !important`,
                 }}
               >
-                <p className="text-center text-lg" style={{ color: `${colours.grey[300]} !important`,}}>
+                <p
+                  className="text-center text-lg"
+                  style={{ color: `${colours.grey[300]} !important` }}
+                >
                   Coming Soon!
                 </p>
               </div>
@@ -359,15 +380,22 @@ const StudentDashboard: React.FC = () => {
                   className="mr-3"
                   style={{ color: colours.blueAccent[500], fontSize: "1.5rem" }}
                 />
-                <h2 className="text-3xl font-bold" style={{ color: `${colours.grey[100]} !important`,}}>
+                <h2
+                  className="text-3xl font-bold"
+                  style={{ color: `${colours.grey[100]} !important` }}
+                >
                   Start a Society
                 </h2>
               </div>
-              <p className="mb-4" style={{ color: `${colours.grey[300]} !important`,}}>
-                Have an idea for a new society? Share your passion and bring others together!
+              <p
+                className="mb-4"
+                style={{ color: `${colours.grey[300]} !important` }}
+              >
+                Have an idea for a new society? Share your passion and bring
+                others together!
               </p>
               <button
-                onClick={() => navigate("/start-society")}
+                onClick={() => navigate("/student/start-society")}
                 className="px-6 py-3 rounded-lg transition-all font-medium"
                 style={{
                   backgroundColor: colours.blueAccent[500],
@@ -380,7 +408,10 @@ const StudentDashboard: React.FC = () => {
 
             {/* Achievements */}
             <section>
-              <h2 className="text-3xl font-bold mb-6" style={{color: `${colours.grey[100]} !important`}}>
+              <h2
+                className="text-3xl font-bold mb-6"
+                style={{ color: `${colours.grey[100]} !important` }}
+              >
                 Achievements
               </h2>
               <div
@@ -390,7 +421,10 @@ const StudentDashboard: React.FC = () => {
                   borderColor: `${colours.grey[700]} !important`,
                 }}
               >
-                <p className="text-center text-lg" style={{ color: `${colours.grey[300]} !important`}}>
+                <p
+                  className="text-center text-lg"
+                  style={{ color: `${colours.grey[300]} !important` }}
+                >
                   Coming Soon!
                 </p>
               </div>

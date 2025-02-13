@@ -1,10 +1,10 @@
 import { BrowserRouter } from "react-router-dom";
-import { ThemeProvider, CssBaseline, Box } from "@mui/material";
-import { ColorModeContext, useMode } from "./styles/theme";
+import { ThemeProvider, CssBaseline, createTheme } from "@mui/material";
 import { Routes } from "./routes";
 import axios from "axios";
-import Sidebar from "./components/layout/Sidebar";
-import Topbar from "./components/layout/Topbar";
+import { useSettingsStore } from "./stores/settings-store";
+import { themeSettings } from "./theme/theme";
+import { SearchProvider } from "./components/layout/SearchContext";
 
 export const apiClient = axios.create({
   baseURL: "http://localhost:8000",
@@ -14,12 +14,12 @@ export const apiClient = axios.create({
 });
 
 export function App() {
-  const [theme, colorMode] = useMode();
+  const { themeMode } = useSettingsStore();
 
   return (
-    <ColorModeContext.Provider value={colorMode}>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
+    <ThemeProvider theme={createTheme(themeSettings(themeMode))}>
+      <CssBaseline />
+      <SearchProvider>
         <BrowserRouter>
           {/* 
             Here we render Sidebar & Topbar. 
@@ -35,7 +35,7 @@ export function App() {
             </Box>
           </Box>
         </BrowserRouter>
-      </ThemeProvider>
-    </ColorModeContext.Provider>
+      </SearchProvider>
+    </ThemeProvider>
   );
 }
