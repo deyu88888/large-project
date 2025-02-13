@@ -154,8 +154,8 @@ const Dashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("Recent Activities");
 
-  // Sidebar control
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  // Sidebar control - Now manages width instead of open/closed state
+  const [sidebarWidth, setSidebarWidth] = useState<'collapsed' | 'expanded'>('collapsed');
 
   // -- Dark Mode --
   const [darkMode, setDarkMode] = useState(() => {
@@ -193,9 +193,9 @@ const Dashboard: React.FC = () => {
   const MAX_RECONNECT_ATTEMPTS = 5;
   const RECONNECT_INTERVAL = 5000;
 
-  // -- Toggle Sidebar --
-  const handleToggleSidebar = () => {
-    setIsSidebarOpen((prev) => !prev);
+ // -- Toggle Sidebar --
+const handleToggleSidebar = () => {
+    setSidebarWidth((prev) => (prev === 'collapsed' ? 'expanded' : 'collapsed'));
   };
 
   // -- Navigation Items Array --
@@ -246,55 +246,55 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  // ---- Fetch Events ----
-  useEffect(() => {
-    let isMounted = true;
-    const fetchEvents = async () => {
-      try {
-        const rawEvents: RawEvent[] = await getAllEvents();
-        console.log("🎉 Raw Events from API:", rawEvents);
+    // ---- Fetch Events ----
+    useEffect(() => {
+        let isMounted = true;
+        const fetchEvents = async () => {
+            try {
+                const rawEvents: RawEvent[] = await getAllEvents();
+                console.log("🎉 Raw Events from API:", rawEvents);
 
-        const formattedEvents: CalendarEvent[] = rawEvents
-          .map((event): CalendarEvent | null => {
-            const startDateTime = parseEventDateTime(event.date, event.startTime);
-            const endDateTime = calculateEventEnd(startDateTime, event.duration);
-            if (!startDateTime || !endDateTime) {
-              console.warn("⚠️ Skipping invalid event:", event);
-              return null;
+                const formattedEvents: CalendarEvent[] = rawEvents
+                    .map((event): CalendarEvent | null => {
+                        const startDateTime = parseEventDateTime(event.date, event.startTime);
+                        const endDateTime = calculateEventEnd(startDateTime, event.duration);
+                        if (!startDateTime || !endDateTime) {
+                            console.warn("⚠️ Skipping invalid event:", event);
+                            return null;
+                        }
+                        return {
+                            id: event.id,
+                            title: event.title,
+                            start: startDateTime,
+                            end: endDateTime,
+                        };
+                    })
+                    .filter((evt): evt is CalendarEvent => evt !== null);
+
+                formattedEvents.sort((a, b) => a.start.getTime() - b.start.getTime());
+                console.log("✅ Formatted Events:", formattedEvents);
+
+                if (isMounted) {
+                    setUpcomingEvents(formattedEvents);
+                    setEventCalendar(formattedEvents);
+                }
+            } catch (err) {
+                console.error("❌ Error fetching events:", err);
+                if (isMounted) {
+                    setError("Failed to fetch events.");
+                }
+            } finally {
+                if (isMounted) {
+                    setLoading(false);
+                }
             }
-            return {
-              id: event.id,
-              title: event.title,
-              start: startDateTime,
-              end: endDateTime,
-            };
-          })
-          .filter((evt): evt is CalendarEvent => evt !== null);
+        };
+        fetchEvents();
 
-        formattedEvents.sort((a, b) => a.start.getTime() - b.start.getTime());
-        console.log("✅ Formatted Events:", formattedEvents);
-
-        if (isMounted) {
-          setUpcomingEvents(formattedEvents);
-          setEventCalendar(formattedEvents);
-        }
-      } catch (err) {
-        console.error("❌ Error fetching events:", err);
-        if (isMounted) {
-          setError("Failed to fetch events.");
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    };
-    fetchEvents();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+        return () => {
+            isMounted = false;
+        };
+    }, []);
 
   // ---- WebSocket Handlers & Connection ----
   const messageHandler = useCallback((data: WebSocketMessage) => {
@@ -417,21 +417,25 @@ const Dashboard: React.FC = () => {
   }
 
   return (
-    // Wrap the entire layout in a container that respects the dark mode
+    // Wrap the entire layout in a container that respects the dark mode and uses CSS Grid
     <div
       className={`min-h-screen flex ${
         darkMode ? "dark bg-gray-900" : "bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50"
-      } transition-colors duration-500`}
+      } transition-colors duration-500 grid grid-cols-[auto_1fr]`}
+      style={{
+        gridTemplateColumns: sidebarWidth === 'collapsed' ? 'auto 1fr' : '288px 1fr',
+      }}
     >
       {/* Sidebar */}
       <Sidebar
-        isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
+        isOpen={true} // Sidebar is always present in the layout
+        onClose={handleToggleSidebar}  //  Use toggle handler for expand/collapse
         navigationItems={navigationItems}
         scrollToSection={scrollToSection}
         darkMode={darkMode}
         onToggleDarkMode={() => setDarkMode((prev) => !prev)}
-        showFloatingToggle={false} // or true if you want the floating tab
+        sidebarWidth={sidebarWidth} // Pass the width state
+        // showFloatingToggle={false} No longer needed
       />
 
       {/* Main Content */}
@@ -441,7 +445,7 @@ const Dashboard: React.FC = () => {
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="bg-white dark:bg-gray-800 shadow-md fixed top-0 left-0 right-0 z-10"
+          className="bg-white dark:bg-gray-800 shadow-md fixed top-0  z-10 w-full"
         >
           <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -452,10 +456,10 @@ const Dashboard: React.FC = () => {
                 onClick={handleToggleSidebar}
                 aria-label="Toggle Menu"
               >
-                {isSidebarOpen ? (
-                  <HiX className="h-6 w-6" />
-                ) : (
+                {sidebarWidth === 'collapsed' ? (
                   <HiMenu className="h-6 w-6" />
+                ) : (
+                  <HiX className="h-6 w-6" />
                 )}
               </button>
               <span role="img" aria-label="sparkles" className="text-3xl">
