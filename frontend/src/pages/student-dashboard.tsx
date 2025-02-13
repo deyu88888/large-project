@@ -11,13 +11,11 @@ import {
 } from "react-icons/fa";
 import axios from "axios";
 import { apiClient } from "../api";
-// Removed dependency: import { useSidebar } from "../components/layout/SidebarContext";
 
 const StudentDashboard: React.FC = () => {
   const navigate = useNavigate();
   const theme = useTheme();
   const colours = tokens(theme.palette.mode);
-  // Removed: const { sidebarWidth } = useSidebar();
 
   const [societies, setSocieties] = useState<any[]>([]);
   const [events, setEvents] = useState<any[]>([]);
@@ -105,7 +103,7 @@ const StudentDashboard: React.FC = () => {
   return (
     <div
       style={{
-        marginLeft: "0px", // Removed sidebarWidth dependency; set marginLeft to 0
+        marginLeft: "0px", // Sidebar dependency removed; set marginLeft to 0
         marginTop: "64px",
         transition: "margin-left 0.3s ease-in-out",
         minHeight: "100vh",
@@ -114,7 +112,7 @@ const StudentDashboard: React.FC = () => {
         border: "none",
       }}
     >
-      <div style={{ maxWidth: "1600px", margin: "0 auto" }}>
+      <div style={{ maxWidth: "1920px", margin: "0 auto" }}>
         {loading ? (
           <div className="text-center">
             <h1
@@ -155,22 +153,7 @@ const StudentDashboard: React.FC = () => {
                   />
                   My Societies
                 </h2>
-                <div className="flex space-x-4">
-                  <button
-                    onClick={() => navigate("/student/join-society")}
-                    className="font-medium transition-all hover:underline"
-                    style={{ color: colours.blueAccent[500] }}
-                  >
-                    Join a Society
-                  </button>
-                  <button
-                    onClick={() => navigate("/student/my-societies")}
-                    className="font-medium transition-all hover:underline"
-                    style={{ color: colours.blueAccent[500] }}
-                  >
-                    View All
-                  </button>
-                </div>
+                {/* "Join a Society" and "View All" texts removed */}
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {societies.slice(0, 3).map((society) => (
@@ -205,7 +188,7 @@ const StudentDashboard: React.FC = () => {
 
             {/* Event Management */}
             <section className="mb-16">
-              <div className="flex justify-between items-center mb-6">
+              <div className="flex items-center mb-6">
                 <h2
                   className="text-3xl font-bold flex items-center"
                   style={{ color: `${colours.grey[100]} !important` }}
@@ -216,13 +199,7 @@ const StudentDashboard: React.FC = () => {
                   />
                   Upcoming Events
                 </h2>
-                <button
-                  onClick={() => navigate("/student/view-events")}
-                  className="font-medium transition-all hover:underline"
-                  style={{ color: colours.blueAccent[500] }}
-                >
-                  View All
-                </button>
+                {/* "View All" button removed */}
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {events.slice(0, 3).map((event) => (
@@ -269,7 +246,7 @@ const StudentDashboard: React.FC = () => {
 
             {/* Notifications */}
             <section className="mb-20">
-              <div className="flex justify-between items-center mb-6">
+              <div className="flex items-center mb-6">
                 <h2
                   className="text-3xl font-bold flex items-center"
                   style={{ color: `${colours.grey[100]} !important` }}
@@ -280,15 +257,8 @@ const StudentDashboard: React.FC = () => {
                   />
                   Notifications
                 </h2>
-                <button
-                  onClick={() => navigate("/student/view-notifications")}
-                  className="font-medium transition-all hover:underline"
-                  style={{ color: colours.blueAccent[500] }}
-                >
-                  View All
-                </button>
+                {/* "View All" button removed */}
               </div>
-
               {notifications.length === 0 ? (
                 <p
                   className="text-center"

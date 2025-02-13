@@ -45,7 +45,7 @@ const MySocieties: React.FC = () => {
         backgroundColor: isLight ? colours.primary[1000] : colours.primary[500],
       }}
     >
-      <div style={{ maxWidth: "1600px", margin: "0 auto" }}>
+      <div style={{ maxWidth: "1920px", margin: "0 auto" }}>
         {/* Header */}
         <header
           style={{
