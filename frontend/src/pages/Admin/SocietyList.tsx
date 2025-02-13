@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useContext } from "react";
 import { Box, Typography, useTheme, Button } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { apiClient, apiPaths } from "../../api";
 import { useNavigate } from "react-router-dom";
 import { tokens } from "../../theme/theme";
+import { useSettingsStore } from "../../stores/settings-store";
+import { SearchContext } from "../../components/layout/SearchContext";
 
 // Consistent Society type
 interface Society {
@@ -22,6 +24,9 @@ const SocietyList = () => {
   const [societies, setSocieties] = useState<Society[]>([]);
   const ws = useRef<WebSocket | null>(null);
   const [socket, setSocket] = useState<WebSocket | null>(null);
+  const { drawer } = useSettingsStore(); 
+  const { searchTerm } = useContext(SearchContext);
+
 
     const fetchSocieties = async () => {
         try {
@@ -31,16 +36,6 @@ const SocietyList = () => {
             console.error("Error fetching societies:", error);
         }
     };
-
-
-//   useEffect(() => {
-//     const getdata = async () => {
-//       try {
-//         const res = await apiClient.get(apiPaths.USER.SOCIETY);
-//         setSocieties(res.data || []);
-//       } catch (error) {
-//         console.error("Error fetching societies:", error);
-//       }
 
   useEffect(() => {
     const connectWebSocket = () => {
@@ -87,14 +82,21 @@ const SocietyList = () => {
     };
 }, []);
 
-  const columns: GridColDef[] = [
-    { field: "id", headerName: "ID", width: 100 }, // Add ID column
-    { field: "name", headerName: "Name", width: 150 },
-    { field: "leader", headerName: "Leader", width: 200 },
-    { field: "members", headerName: "Members", width: 150, valueGetter: (params) => params.row.members.join(", ") }, // Display as comma-separated string
-    { field: "roles", headerName: "Roles", width: 200, valueGetter: (params) => JSON.stringify(params.row.roles) }, // Display as JSON string
-    { field: "approvedBy", headerName: "Approved By", width: 150 },
-  ];
+const columns: GridColDef[] = [
+  { field: "name", headerName: "Name", flex: 1 },
+  { field: "leader", headerName: "Leader", flex: 1 },
+  { field: "members", headerName: "Members", flex: 1 },
+  { field: "roles", headerName: "Roles", flex: 1  },
+  { field: "approvedBy", headerName: "Approved By", flex: 1  },
+  // { field: "actions", headerName: "Actions", flex: 1  },
+];
+
+const filteredSocieties = societies.filter((society) =>
+  Object.values(society)
+    .join(" ")
+    .toLowerCase()
+    .includes(searchTerm.toLowerCase())
+);   
 
   const handleRejectPageNavigation = () => {
     navigate("/admin/society-list-rejected");
@@ -103,34 +105,19 @@ const SocietyList = () => {
   return (
     <Box
       sx={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        maxHeight: "100vh",
-        maxWidth: "100vw",
-        marginLeft: "100px",
-        padding: "10px",
-        backgroundColor: theme.palette.mode === "light" ? colors.primary[1000] : colors.primary[500],
-        transition: "margin-left 0.3s ease-in-out",
-        position: "fixed",
+        height: "calc(100vh - 64px)", // Full height minus the AppBar height
+        maxWidth: drawer ? `calc(100% - 3px)`: "100%",
       }}
     >
-      <Box
-        sx={{
-          width: "100%",
-          maxWidth: "1600px",
-          padding: "0px 60px",
-          boxSizing: "border-box",
-        }}
-      >
+
         <Button
           variant="contained"
           color="error"
           onClick={handleRejectPageNavigation}
           sx={{
             position: "absolute",
-            top: 20,
-            right: 75,
+            top: 85,
+            right: 30,
             backgroundColor: colors.blueAccent[500],
             "&:hover": {
               backgroundColor: colors.blueAccent[700],
@@ -138,6 +125,10 @@ const SocietyList = () => {
             display: "flex",
             alignItems: "center",
             padding: "8px 16px",
+            marginTop: {
+              xs: "3rem",  // Top margin for small screens
+              md: "0rem",       // No margin for medium and larger screens
+            },
           }}
         >
           Rejected Societies
@@ -156,8 +147,7 @@ const SocietyList = () => {
         </Typography>
         <Box
           sx={{
-            height: "75vh",
-            width: "100%",
+            height: "78vh",
             "& .MuiDataGrid-root": { border: "none" },
             "& .MuiDataGrid-cell": { borderBottom: "none" },
             "& .MuiDataGrid-columnHeaders": {
@@ -176,21 +166,22 @@ const SocietyList = () => {
               backgroundColor: colors.blueAccent[700],
             },
             "& .MuiCheckbox-root": {
-              color: `${colors.greenAccent[200]} !important`,
+              color: `${colors.blueAccent[400]} !important`,
             },
           }}
         >
           <DataGrid
-            rows={societies}
+            rows={filteredSocieties}
             columns={columns}
             initialState={{
               pagination: {
-                paginationModel: { page: 0, pageSize: 5 },
+                paginationModel: { pageSize: 5, page: 0 },
               },
             }}
-           />
+            pageSizeOptions={[5, 10, 25]}
+            checkboxSelection         
+          />
         </Box>
-      </Box>
     </Box>
   );
 };

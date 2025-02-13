@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Sidebar as ProSidebar, Menu, MenuItem } from "react-pro-sidebar";
-import { Box, IconButton, Typography, useTheme } from "@mui/material";
+import { Avatar, Box, IconButton, Typography, useTheme } from "@mui/material";
 import { Link } from "react-router-dom";
 import { tokens } from "../../styles/theme";
 import { useSidebar } from "./SidebarContext";
@@ -139,12 +139,11 @@ const Sidebar: React.FC = () => {
           {!isCollapsed && (
             <Box mb="25px">
               <Box display="flex" justifyContent="center" alignItems="center">
-                <img
-                  alt="profile-user"
-                  width="100px"
-                  height="100px"
-                  src={`../../assets/user.png`}
-                  style={{ cursor: "pointer", borderRadius: "50%" }}
+              <Avatar
+                  sx={{
+                    width: "72px",
+                    height: "72px",
+                  }}
                 />
               </Box>
               <Box textAlign="center">
@@ -162,7 +161,7 @@ const Sidebar: React.FC = () => {
           <Box paddingLeft={isCollapsed ? undefined : "10%"}>
             <Item
               title="Dashboard"
-              to="/student-dashboard"
+              to="/student"
               icon={<HomeOutlinedIcon />}
               selected={selected}
               setSelected={setSelected}
@@ -172,42 +171,42 @@ const Sidebar: React.FC = () => {
             </Typography>
             <Item
               title="Join a society"
-              to="/join-society"
+              to="/student/join-society"
               icon={<PersonAddAltIcon />}
               selected={selected}
               setSelected={setSelected}
             />
             <Item
               title="My societies"
-              to="/my-societies"
+              to="/student/my-societies"
               icon={<PeopleOutlinedIcon />}
               selected={selected}
               setSelected={setSelected}
             />
             <Item
               title="Events"
-              to="/view-events"
+              to="/student/view-events"
               icon={<EventOutlinedIcon />}
               selected={selected}
               setSelected={setSelected}
             />
             <Item
               title="Notifications"
-              to="/view-notifications"
+              to="/student/view-notifications"
               icon={<NotificationsNoneOutlinedIcon />}
               selected={selected}
               setSelected={setSelected}
             />
             <Item
               title="Calendar"
-              to="/calendar"
+              to="/student/calendar"
               icon={<CalendarTodayOutlinedIcon />}
               selected={selected}
               setSelected={setSelected}
             />
             <Item
               title="Start a society"
-              to="/start-society"
+              to="/student/start-society"
               icon={<GroupAddOutlinedIcon />}
               selected={selected}
               setSelected={setSelected}

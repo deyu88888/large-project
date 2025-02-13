@@ -5,22 +5,15 @@ import useMediaQuery from "@mui/material/useMediaQuery";
 import Header from "../../components/Header";
 import { useState } from "react";
 import CircularLoader from "../../components/loading/circular-loader";
-import { useNavigate } from "react-router-dom";
 import { apiClient, apiPaths } from "../../api";
-import { Typography } from "@mui/material";
+import { useSettingsStore } from "../../stores/settings-store";
 
-
-interface AdminDetails {
-  username: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-}
 
 const Form = () => {
   const isNonMobile = useMediaQuery("(min-width:600px)");
   const [loading, setLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const { drawer } = useSettingsStore(); 
 
   const handleFormSubmit = async (values: any) => {
     setLoading(true);
@@ -52,7 +45,11 @@ const Form = () => {
   }
 
   return (
-    <Box m="20px" paddingLeft='100px' justifyContent={"center"}>
+    <Box m="20px"  justifyContent={"center"}  
+    sx={{
+      height: "calc(100vh - 64px)",
+      maxWidth: drawer ? `calc(100% - 3px)`: "100%",
+    }}>
       <Header title="CREATE ADMIN" subtitle="Create a New Admin Profile" />
 
       <Formik
