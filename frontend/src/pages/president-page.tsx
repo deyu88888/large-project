@@ -18,11 +18,11 @@ const PresidentPage = () => {
     const fetchData = async () => {
       try {
         // Fetch the society the current president is managing
-        const societyResponse = await apiClient.get("/api/my-society/");
+        const societyResponse = await apiClient.get(`/api/society/${user?.president_of}/`);
         setSociety(societyResponse.data);
 
         // Fetch pending members for that society
-        const pendingResponse = await apiClient.get("/api/society/pending-members/");
+        const pendingResponse = await apiClient.get(`/api/society/${user?.president_of}/pending-members/`);
         setPendingMembers(pendingResponse.data || []);
       } catch (error) {
         console.error("Error fetching president data:", error);
@@ -66,7 +66,7 @@ const PresidentPage = () => {
           Manage Society Events
         </button>
         <button
-          onClick={() => navigate(`/api/society/${user?.president_of}/pending-members/`)}
+          onClick={() => navigate(`/society/${user?.president_of}/pending-members`)}
           className="bg-blue-500 text-white px-6 py-3 rounded hover:bg-blue-600 transition"
         >
           Pending Members
