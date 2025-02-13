@@ -36,9 +36,9 @@ export const apiPaths = {
     STUDENTS: "api/user/student",
     ADMIN: "api/user/admin",
     PENDINGSOCIETYREQUEST: "api/society/request/pending",
-    // REJECTEDEVENTS: "api/society/rejectedevent",
-    PROFILE: "api/user/profile"
-    // REJECTEDEVENT: "api/society/rejectedevent",
+    PENDINGEVENTREQUEST: "api/event/request/pending",
+    PROFILE: "api/user/profile",
+    REJECTEDEVENT: "api/admin-panel/rejected-event",
   },
 };
 
