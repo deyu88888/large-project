@@ -143,6 +143,7 @@ const Dashboard: React.FC = () => {
     totalEvents: 0,
     pendingApprovals: 0,
     activeMembers: 0,
+
   });
   const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -273,7 +274,7 @@ const Dashboard: React.FC = () => {
                         const startDateTime = parseEventDateTime(event.date, event.startTime);
                         const endDateTime = calculateEventEnd(startDateTime, event.duration);
                         if (!startDateTime || !endDateTime) {
-                            console.warn("⚠️ Skipping invalid event:", event);
+                            console.warn("Skipping invalid event:", event);
                             return null;
                         }
                         return {
@@ -286,14 +287,14 @@ const Dashboard: React.FC = () => {
                     .filter((evt): evt is CalendarEvent => evt !== null);
 
                 formattedEvents.sort((a, b) => a.start.getTime() - b.start.getTime());
-                console.log("✅ Formatted Events:", formattedEvents);
+                console.log("Formatted Events:", formattedEvents);
 
                 if (isMounted) {
                     setUpcomingEvents(formattedEvents);
                     setEventCalendar(formattedEvents);
                 }
             } catch (err) {
-                console.error("❌ Error fetching events:", err);
+                console.error("Error fetching events:", err);
                 if (isMounted) {
                     setError("Failed to fetch events.");
                 }
@@ -337,6 +338,7 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     console.log("[Dashboard] Initializing WebSocket...");
     let reconnectAttempts = 0;
+
     const wsURL =
       process.env.NODE_ENV === "production"
         ? "wss://your-production-domain.com/ws/dashboard/"
@@ -349,6 +351,7 @@ const Dashboard: React.FC = () => {
       }
       if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
         console.warn("[Dashboard] WebSocket already open. Skipping.");
+
         return;
       }
 
@@ -357,7 +360,7 @@ const Dashboard: React.FC = () => {
       socketRef.current = socket;
 
       socket.onopen = () => {
-        console.log("[Dashboard] WebSocket Connected!");
+        console.log("WebSocket Connected!");
         setError(null);
         reconnectAttempts = 0;
       };
@@ -380,6 +383,7 @@ const Dashboard: React.FC = () => {
       socket.onclose = (evt) => {
         socketRef.current = null;
         console.warn(`[Dashboard] WebSocket Closed: code ${evt.code}`);
+
         if (
           evt.code !== 1000 &&
           evt.code !== 1005 &&
@@ -408,6 +412,7 @@ const Dashboard: React.FC = () => {
       }
     };
   }, [messageHandler]);
+
 
   // -- Helpers for parsing Dates & Durations --
   const parseEventDateTime = (dateStr: string, timeStr: string): Date | null => {

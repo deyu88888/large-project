@@ -1,311 +1,422 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { FaCalendarAlt, FaBell, FaUsers, FaUserPlus, FaCogs } from "react-icons/fa";
-import axios from "axios";
-import { apiClient } from "../api";
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  useTheme,
+  Box,
+  Typography,
+  Paper,
+  Button,
+  Tabs,
+  Tab,
+  CircularProgress,
+} from '@mui/material';
+import { tokens } from '../theme/theme';
+import {
+  FaCalendarAlt,
+  FaBell,
+  FaUsers,
+  FaUserPlus,
+  FaTrophy,
+  FaRegClock,
+} from 'react-icons/fa';
+import { apiClient } from '../api';
+
+// Define TypeScript interfaces for your data types
+interface Society {
+  id: number;
+  name: string;
+  is_president: boolean;
+}
+
+interface Event {
+  id: number;
+  title: string;
+  date: string;
+  rsvp: boolean;
+}
+
+interface Notification {
+  id: number;
+  message: string;
+  is_read: boolean;
+}
 
 const StudentDashboard: React.FC = () => {
   const navigate = useNavigate();
+  const theme = useTheme();
+  const colours = tokens(theme.palette.mode);
 
-  // States for societies, events, and notifications
-  const [societies, setSocieties] = useState<any[]>([]);
-  const [events, setEvents] = useState<any[]>([]);
-  const [notifications, setNotifications] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isPresident, setIsPresident] = useState(false);
+  const [societies, setSocieties] = useState<Society[]>([]);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [activeTab, setActiveTab] = useState<number>(0);
 
-  // Fetch data when the component mounts
   useEffect(() => {
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Fetch data from the updated endpoints
   const fetchData = async () => {
     try {
       setLoading(true);
+      const [societiesRes, eventsRes, notificationsRes] = await Promise.all([
+        apiClient.get('/api/student-societies/'),
+        apiClient.get('/api/events/rsvp'),
+        apiClient.get('/api/notifications'),
+      ]);
 
-      // Fetch societies
-      const societiesResponse = await apiClient.get("/api/student-societies/");
-      console.log(societiesResponse.data);
-      setSocieties(societiesResponse.data || []);
-
-      // Check if the student is president of any society
-      const presidentSocieties = societiesResponse.data.filter((society: any) => society.is_president);
-      setIsPresident(presidentSocieties.length > 0);
-
-      // Fetch events
-      const eventsResponse = await apiClient.get("/api/events/rsvp");
-      console.log(eventsResponse.data);
-      setEvents(eventsResponse.data || []);
-
-      // Fetch notifications
-      const notificationsResponse = await apiClient.get("/api/notifications");
-      setNotifications(notificationsResponse.data || []);
+      setSocieties(societiesRes.data || []);
+      setEvents(eventsRes.data || []);
+      setNotifications(notificationsRes.data || []);
     } catch (error) {
-      console.error("Error fetching data:", error);
+      console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  // Join a society
-  const joinSociety = async (societyId: number) => {
+  const handleLeaveSociety = async (societyId: number) => {
     try {
-      await apiClient.post(`/api/join-society/${societyId}/`);
-      fetchData(); // Refresh the data after joining a society
+      await apiClient.delete(`/api/leave-society/${societyId}/`);
+      fetchData();
     } catch (error) {
-      console.error("Error joining society:", error);
+      console.error('Error leaving society:', error);
     }
   };
 
-  // Leave a society
-  const leaveSociety = async (societyId: number) => {
+  const handleRSVP = async (eventId: number, isAttending: boolean) => {
     try {
-      await apiClient.delete(`/api/leave-society/${societyId}/`); // Ensure societyId is in the URL
-      fetchData(); // Refresh societies after leaving
-    } catch (error) {
-      console.error("Error leaving society:", error.response?.data || error);
-    }
-  };
-
-  // RSVP for an event
-  const rsvpEvent = async (eventId: number) => {
-    try {
-      await apiClient.post(`/api/events/rsvp/`, { event_id: eventId });
-      fetchData(); // Refresh the events after RSVP
-    } catch (error) {
-      console.error("Error RSVPing for event:", error);
-    }
-  };
-
-  // Cancel RSVP for an event
-  const cancelRSVP = async (eventId: number) => {
-    try {
-      await apiClient.delete(`/api/events/rsvp/`, { data: { event_id: eventId } });
-      fetchData(); // Refresh the events after canceling RSVP
-    } catch (error) {
-      console.error("Error canceling RSVP:", error);
-    }
-  };
-
-  // Mark a notification as read
-  const markNotificationAsRead = async (id: number) => {
-    try {
-      const response = await apiClient.patch(`/api/notifications/${id}/`, { is_read: true });
-      
-      if (response.status === 200) {
-        // Update local state
-        setNotifications((prevNotifications) =>
-          prevNotifications.map((notification) =>
-            notification.id === id 
-              ? { ...notification, is_read: true } 
-              : notification
-          )
-        );
+      if (isAttending) {
+        await apiClient.post('/api/events/rsvp/', { event_id: eventId });
       } else {
-        console.error('Failed to mark notification as read');
+        await apiClient.delete('/api/events/rsvp/', { data: { event_id: eventId } });
       }
+      fetchData();
     } catch (error) {
-      console.error("Error marking notification as read:", error.response?.data || error);
+      console.error('Error updating RSVP:', error);
     }
   };
+
+  const handleNotificationRead = async (id: number) => {
+    try {
+      await apiClient.patch(`/api/notifications/${id}/`, { is_read: true });
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
+      );
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setActiveTab(newValue);
+  };
+
+  if (loading) {
+    return (
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="100vh"
+        bgcolor={colours.primary[400]}
+      >
+        <CircularProgress size={48} style={{ color: colours.grey[100] }} />
+      </Box>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-indigo-50 via-white to-indigo-100 py-12 px-8">
-      {loading ? (
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-800">Loading your dashboard...</h1>
-        </div>
-      ) : (
-        <>
-          {/* Dashboard Title */}
-          <header className="text-center mb-16">
-            <h1 className="text-5xl font-extrabold text-gray-900">Welcome to Your Dashboard</h1>
-            <p className="text-lg text-gray-600 mt-4">
-              Stay updated with your societies, events, and achievements.
-            </p>
-          </header>
+    <Box minHeight="100vh" bgcolor={colours.primary[400]} py={8}>
+      <Box maxWidth="1200px" mx="auto" px={4}>
+        {/* Stats Overview */}
+        <Box
+          display="grid"
+          gridTemplateColumns={{ xs: '1fr', md: 'repeat(3, 1fr)' }}
+          gap={3}
+          mb={4}
+        >
+          <StatCard
+            icon={<FaUsers size={24} />}
+            title="My Societies"
+            value={societies.length}
+            color={colours.greenAccent[500]}
+          />
+          <StatCard
+            icon={<FaCalendarAlt size={24} />}
+            title="Upcoming Events"
+            value={events.length}
+            color={colours.blueAccent[500]}
+          />
+          <StatCard
+            icon={<FaBell size={24} />}
+            title="Unread Notifications"
+            value={notifications.filter((n) => !n.is_read).length}
+            color={colours.redAccent[500]}
+          />
+        </Box>
 
-           {/*  Manage My Societies Button (Only if President) */}
-           {isPresident && (
-            <div className="text-center mb-8">
-              <button
-                onClick={() => navigate("/manage-societies")}
-                className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition-all flex items-center justify-center mx-auto"
+        {/* Main Content Tabs */}
+        <Paper
+          elevation={3}
+          sx={{
+            backgroundColor: colours.primary[400],
+            border: `1px solid ${colours.grey[800]}`,
+          }}
+        >
+          <Tabs
+            value={activeTab}
+            onChange={handleTabChange}
+            textColor="inherit"
+            indicatorColor="secondary"
+            variant="fullWidth"
+          >
+            <Tab label="Societies" />
+            <Tab label="Events" />
+            <Tab label="Notifications" />
+          </Tabs>
+          <Box p={3}>
+            {activeTab === 0 && (
+              <Box
+                display="grid"
+                gridTemplateColumns={{
+                  xs: '1fr',
+                  md: 'repeat(2, 1fr)',
+                  lg: 'repeat(3, 1fr)',
+                }}
+                gap={3}
               >
-                <FaCogs className="mr-2" />
-                Manage My Societies
-              </button>
-            </div>
-          )}
-
-          {/* Society Management */}
-          <section className="mb-16">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-3xl font-bold text-gray-800 flex items-center">
-                <FaUsers className="mr-3 text-green-500" />
-                My Societies
-              </h2>
-              <div className="flex space-x-4">
-                <button
-                  onClick={() => navigate("/join-society")}
-                  className="text-blue-500 hover:underline font-medium"
-                >
-                  Join a Society
-                </button>
-                <button
-                  onClick={() => navigate("/my-societies")}
-                  className="text-blue-500 hover:underline font-medium"
-                >
-                  View All
-                </button>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {societies.slice(0, 3).map((society) => (
-                <div
-                  key={society.id}
-                  className="p-6 bg-white rounded-xl shadow hover:shadow-lg border border-gray-200 transition-transform hover:-translate-y-1"
-                >
-                  <h3 className="text-xl font-semibold text-gray-900 mb-4">{society.name}</h3>
-                  <button
-                    onClick={() => leaveSociety(society.id)}
-                    className="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 transition-all"
+                {societies.map((society) => (
+                  <Paper
+                    key={society.id}
+                    elevation={2}
+                    sx={{
+                      backgroundColor: colours.primary[400],
+                      border: `1px solid ${colours.grey[800]}`,
+                      p: 2,
+                    }}
                   >
-                    Leave Society
-                  </button>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* Event Management */}
-          <section className="mb-16">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-3xl font-bold text-gray-800 flex items-center">
-                <FaCalendarAlt className="mr-3 text-blue-500" />
-                Upcoming Events
-              </h2>
-              <button
-                onClick={() => navigate("/view-events")}
-                className="text-blue-500 hover:underline font-medium"
-              >
-                View All
-              </button>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {/* {JSON.stringify(events)} */}
-              {events.slice(0, 3).map((event) => (
-                <div
-                  key={event.id}
-                  className="p-6 bg-white rounded-xl shadow hover:shadow-lg border border-gray-200 transition-transform hover:-translate-y-1"
-                >
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-xl font-semibold text-gray-900">{event.title}</h3>
-                    <span className="text-sm text-gray-600 italic">{event.date}</span>
-                  </div>
-                  <button
-                    onClick={() =>
-                      event.rsvp ? cancelRSVP(event.id) : rsvpEvent(event.id)
-                    }
-                    className={`w-full px-6 py-2 text-white rounded-lg ${
-                      event.rsvp
-                        ? "bg-gray-400 hover:bg-gray-500"
-                        : "bg-blue-500 hover:bg-blue-600"
-                    } transition-all`}
-                  >
-                    {event.rsvp ? "Cancel RSVP" : "RSVP Now"}
-                  </button>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* Notifications */}
-          <section className="mb-20">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-3xl font-bold text-gray-800 flex items-center">
-                <FaBell className="text-yellow-500 text-2xl mr-3" />
-                Notifications
-              </h2>
-              <button
-                onClick={() => navigate("/view-notifications")}
-                className="text-blue-500 hover:underline font-medium"
-              >
-                View All
-              </button>
-            </div>
-
-            {/* Show Loading State */}
-            {loading ? (
-              <p className="text-center text-gray-600">Loading notifications...</p>
-            ) : notifications.length === 0 ? (
-              <p className="text-center text-gray-600">No new notifications.</p>
-            ) : (
-              <div className="space-y-6">
-                {notifications.map((notification) => (
-                  <div
-                    key={notification.id}
-                    className={`p-5 rounded-lg shadow-md hover:shadow-lg border transition-all ${
-                      notification.is_read ? "bg-gray-100 border-gray-300" : "bg-blue-50 border-blue-100"
-                    }`}
-                  >
-                    <div className="flex justify-between items-center">
-                      <p className="text-gray-800">{notification.message}</p>
-                      <div className="flex items-center space-x-4">
-                        {notification.is_read ? (
-                          <span className="text-green-500 text-sm font-medium">Read</span>
-                        ) : (
-                          <button
-                            onClick={() => markNotificationAsRead(notification.id)}
-                            className="text-sm text-blue-500 hover:underline"
-                          >
-                            Mark as Read
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+                    <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                      <Typography variant="h6" sx={{ color: colours.grey[100] }}>
+                        {society.name}
+                      </Typography>
+                      {society.is_president && (
+                        <Box
+                          px={1}
+                          py={0.5}
+                          borderRadius="4px"
+                          bgcolor={colours.greenAccent[500]}
+                          color={colours.primary[500]}
+                        >
+                          <Typography variant="caption">President</Typography>
+                        </Box>
+                      )}
+                    </Box>
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      onClick={() => handleLeaveSociety(society.id)}
+                      sx={{
+                        backgroundColor: colours.redAccent[500],
+                        color: colours.grey[100],
+                      }}
+                    >
+                      Leave Society
+                    </Button>
+                  </Paper>
                 ))}
-              </div>
+              </Box>
             )}
-          </section>
-          {/* Calendar Integration */}
-          <section className="mb-20">
-            <div className="flex items-center mb-6">
-              <FaCalendarAlt className="text-teal-500 text-2xl mr-3" />
-              <h2 className="text-3xl font-bold text-gray-800">Calendar</h2>
-            </div>
-            <div className="flex items-center justify-center p-8 bg-gradient-to-r from-teal-50 to-teal-100 rounded-lg shadow-md border border-gray-200">
-              <p className="text-gray-500 text-lg">Calendar Integration Placeholder</p>
-            </div>
-          </section>
-          {/* Start a Society Section */}
-          <section className="mb-20">
-            <div className="flex items-center mb-6">
-              <FaUserPlus className="text-purple-500 text-2xl mr-3" />
-              <h2 className="text-3xl font-bold text-gray-800">Start a Society</h2>
-            </div>
-            <p className="text-gray-600 mb-4">
+
+            {activeTab === 1 && (
+              <Box
+                display="grid"
+                gridTemplateColumns={{
+                  xs: '1fr',
+                  md: 'repeat(2, 1fr)',
+                  lg: 'repeat(3, 1fr)',
+                }}
+                gap={3}
+              >
+                {events.map((event) => (
+                  <Paper
+                    key={event.id}
+                    elevation={2}
+                    sx={{
+                      backgroundColor: colours.primary[400],
+                      border: `1px solid ${colours.grey[800]}`,
+                      p: 2,
+                    }}
+                  >
+                    <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                      <Box>
+                        <Typography variant="h6" sx={{ color: colours.grey[100] }}>
+                          {event.title}
+                        </Typography>
+                        <Box display="flex" alignItems="center" mt={1}>
+                          <FaRegClock style={{ marginRight: 8, color: colours.grey[300] }} />
+                          <Typography variant="body2" sx={{ color: colours.grey[300] }}>
+                            {event.date}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </Box>
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      onClick={() => handleRSVP(event.id, !event.rsvp)}
+                      sx={{
+                        backgroundColor: event.rsvp ? colours.grey[700] : colours.blueAccent[500],
+                        color: colours.grey[100],
+                      }}
+                    >
+                      {event.rsvp ? 'Cancel RSVP' : 'RSVP Now'}
+                    </Button>
+                  </Paper>
+                ))}
+              </Box>
+            )}
+
+            {activeTab === 2 && (
+              <Box>
+                {notifications.length === 0 ? (
+                  <Typography variant="body1" align="center" sx={{ color: colours.grey[300], py: 4 }}>
+                    No notifications
+                  </Typography>
+                ) : (
+                  notifications.map((notification) => (
+                    <Paper
+                      key={notification.id}
+                      elevation={2}
+                      sx={{
+                        backgroundColor: notification.is_read
+                          ? colours.primary[400]
+                          : colours.primary[500],
+                        border: `1px solid ${colours.grey[800]}`,
+                        p: 2,
+                        mb: 2,
+                      }}
+                    >
+                      <Box display="flex" justifyContent="space-between" alignItems="center">
+                        <Typography variant="body1" sx={{ color: colours.grey[100] }}>
+                          {notification.message}
+                        </Typography>
+                        {!notification.is_read && (
+                          <Button
+                            variant="contained"
+                            size="small"
+                            onClick={() => handleNotificationRead(notification.id)}
+                            sx={{
+                              backgroundColor: colours.grey[800],
+                              color: colours.grey[100],
+                            }}
+                          >
+                            Mark as read
+                          </Button>
+                        )}
+                      </Box>
+                    </Paper>
+                  ))
+                )}
+              </Box>
+            )}
+          </Box>
+        </Paper>
+
+        {/* Quick Actions */}
+        <Box
+          display="grid"
+          gridTemplateColumns={{ xs: '1fr', md: 'repeat(2, 1fr)' }}
+          gap={3}
+          mt={4}
+        >
+          <Paper
+            elevation={3}
+            sx={{
+              backgroundColor: colours.primary[400],
+              border: `1px solid ${colours.grey[800]}`,
+              p: 2,
+            }}
+          >
+            <Box display="flex" alignItems="center" mb={2}>
+              <FaUserPlus size={24} style={{ marginRight: 8, color: colours.blueAccent[500] }} />
+              <Typography variant="h6" sx={{ color: colours.grey[100] }}>
+                Start a Society
+              </Typography>
+            </Box>
+            <Typography variant="body2" sx={{ color: colours.grey[300], mb: 2 }}>
               Have an idea for a new society? Share your passion and bring others together!
-            </p>
-            <button
-              onClick={() => navigate("/start-society")}
-              className="bg-purple-500 text-white px-6 py-3 rounded-lg hover:bg-purple-600 transition-all"
+            </Typography>
+            <Button
+              variant="contained"
+              fullWidth
+              onClick={() => navigate('/student/start-society')}
+              sx={{
+                backgroundColor: colours.blueAccent[500],
+                color: colours.grey[100],
+              }}
             >
-              Start a Society
-            </button>
-          </section>
-          {/* Achievements Section */}
-          <section>
-            <h2 className="text-3xl font-bold text-gray-800 mb-6">Achievements</h2>
-            <div className="flex items-center justify-center p-8 bg-gray-50 rounded-lg shadow-md border border-gray-200">
-              <p className="text-gray-500 text-lg">Coming Soon!</p>
-            </div>
-          </section>
-        </>
-      )}
-    </div>
+              Create New Society
+            </Button>
+          </Paper>
+
+          <Paper
+            elevation={3}
+            sx={{
+              backgroundColor: colours.primary[400],
+              border: `1px solid ${colours.grey[800]}`,
+              p: 2,
+            }}
+          >
+            <Box display="flex" alignItems="center" mb={2}>
+              <FaTrophy size={24} style={{ marginRight: 8, color: colours.greenAccent[500] }} />
+              <Typography variant="h6" sx={{ color: colours.grey[100] }}>
+                Achievements
+              </Typography>
+            </Box>
+            <Typography variant="body2" sx={{ color: colours.grey[300], mb: 2 }}>
+              Track your involvement and accomplishments across societies.
+            </Typography>
+            <Typography variant="body2" align="center" sx={{ color: colours.grey[400] }}>
+              Coming Soon
+            </Typography>
+          </Paper>
+        </Box>
+      </Box>
+    </Box>
+  );
+};
+
+interface StatCardProps {
+  icon: React.ReactNode;
+  title: string;
+  value: number;
+  color: string;
+}
+
+const StatCard: React.FC<StatCardProps> = ({ icon, title, value, color }) => {
+  const theme = useTheme();
+  const colours = tokens(theme.palette.mode);
+  return (
+    <Paper
+      elevation={3}
+      sx={{
+        backgroundColor: colours.primary[400],
+        border: `1px solid ${colours.grey[800]}`,
+        p: 2,
+      }}
+    >
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+        <Typography variant="subtitle1" sx={{ color: colours.grey[300] }}>
+          {title}
+        </Typography>
+        <Box sx={{ color }}>{icon}</Box>
+      </Box>
+      <Typography variant="h4" sx={{ color: colours.grey[100] }}>
+        {value}
+      </Typography>
+    </Paper>
   );
 };
 

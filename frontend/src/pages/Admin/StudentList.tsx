@@ -1,81 +1,144 @@
-import { useState, useEffect } from "react"
+import React, { useState, useEffect, useContext } from "react";
+import { Box, Typography, useTheme } from "@mui/material";
+import { DataGrid } from "@mui/x-data-grid";
+import { apiClient, apiPaths } from "../../api";
+import { tokens } from "../../theme/theme";
+import { SearchContext } from "../../components/layout/SearchContext";
+import { useSettingsStore } from "../../stores/settings-store";
 
 interface Student {
-    id: number;
-    username: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    isActive: boolean;
-    role: string;
-    major: string;
-    societies: any[];
-    presidentOf: number[];
-    isPresident: boolean;
+  id: number;
+  username: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  isActive: boolean;
+  role: string;
+  major: string;
+  societies: string[];
+  presidentOf: number[];
+  isPresident: boolean;
 }
 
-import { apiClient, apiPaths } from "../../api";
+const StudentList: React.FC = () => {
+  const theme = useTheme();
+  const colors = tokens(theme.palette.mode);
+  const [students, setStudents] = useState<Student[]>([]);
+  const { searchTerm } = useContext(SearchContext);
+  const { drawer } = useSettingsStore(); 
 
-function StudentList() {
-    const [students, setStudents] = useState<Student[]>([]);
 
-    useEffect(() => {
-        const getdata = async () => {
-            try {
-                const res = await apiClient.get(apiPaths.USER.STUDENTS);
-                console.log("Fetched Students:", res.data);
-                setStudents(res.data || []);  // should always be an array
-            } catch (error) {
-                console.error("Error fetching students:", error);
-            }
-        };
-        getdata();
-    }, []);
+  useEffect(() => {
+    const getData = async () => {
+      try {
+        const res = await apiClient.get(apiPaths.USER.STUDENTS);
+        setStudents(res.data || []);
+      } catch (error) {
+        console.error("Error fetching students:", error);
+      }
+    };
+    getData();
+  }, []);
+
+  // Filter students based on search term (if provided)
+  const filteredStudents = students.filter((student) =>
+    Object.values(student)
+      .join(" ")
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase())
+  );        
+
+  const columns = [
+    { field: "id", headerName: "ID", flex: 1 },
+    { field: "username", headerName: "Username", flex: 1 },
+    { field: "firstName", headerName: "First Name", flex: 1 },
+    { field: "lastName", headerName: "Last Name", flex: 1 },
+    { field: "email", headerName: "Email", flex: 1 },
+    {
+      field: "isActive",
+      headerName: "Active",
+      renderCell: (params: any) => (params.row.isActive ? "Yes" : "No"),
+      flex: 1,
+    },
+    { field: "role", headerName: "Role", flex: 1 },
+    { field: "major", headerName: "Major", flex: 1 },
+    {
+      field: "societies",
+      headerName: "Societies",
+      renderCell: (params: any) => params.row.societies.join(", "),
+      flex: 1,
+    },
+    {
+      field: "presidentOf",
+      headerName: "President Of",
+      renderCell: (params: any) => params.row.presidentOf.join(", "),
+      flex: 1,
+    },
+    {
+      field: "isPresident",
+      headerName: "Is President",
+      renderCell: (params: any) => (params.row.isPresident ? "Yes" : "No"),
+      flex: 1,
+    },
+  ];
+
+
   return (
-    <div>
-        <table>
-            <thead>
-            <tr>
-                <th>
-                    ID</th>
-                <th>Username</th>
-                <th>First Name</th>
-                <th>Last Name</th>
-                <th>Email</th>
-                <th>Active</th>
-                <th>Role</th>
-                <th>Major</th>
-                <th>Societies</th>
-                <th>President Of</th>
-                <th>Is President</th>
-            </tr>
-            </thead>
-            <tbody>
-                {students?.length > 0 ? (
-                    students?.map((item, index) => (
-                        <tr key={index}>
-                            <td>{item.id}</td>
-                            <td>{item.username}</td>
-                            <td>{item.firstName}</td>
-                            <td>{item.lastName}</td>
-                            <td>{item.email}</td>
-                            <td>{item.isActive ? "Yes" : "No"}</td>
-                            <td>{item.role}</td>
-                            <td>{item.major}</td>
-                            <td>{item.societies.join(", ")}</td>
-                            <td>{item.presidentOf.join(", ")}</td>
-                            <td>{item.isPresident ? "Yes" : "No"}</td>
-                        </tr>
-                    ))
-                    ) : (
-                    <tr>
-                        <td colSpan={11}>No students found.</td>
-                    </tr>
-                    )}
-            </tbody>
-        </table>
-    </div>
-  )
-}
+    <Box
+      sx={{
+        height: "calc(100vh - 64px)", // Full height minus the AppBar height
+        maxWidth: drawer ? `calc(100% - 3px)`: "100%",
+      }}
+    >
+      <Typography
+        variant="h1"
+        sx={{
+          color: theme.palette.mode === "light" ? colors.grey[100] : colors.grey[100],
+          fontSize: "2.25rem",
+          fontWeight: 800,
+          marginBottom: "1rem",
+        }}
+      >
+        Student List
+      </Typography>
 
-export default StudentList
+      <Box sx={{ height: "78vh",
+            "& .MuiDataGrid-root": { border: "none" },
+            "& .MuiDataGrid-cell": { borderBottom: "none" },
+            "& .MuiDataGrid-columnHeaders": {
+              backgroundColor: colors.blueAccent[700],
+              borderBottom: "none",
+            },
+            "& .MuiDataGrid-columnHeader": {
+              whiteSpace: "normal",
+              wordBreak: "break-word",
+            },
+            "& .MuiDataGrid-virtualScroller": {
+              backgroundColor: colors.primary[400],
+            },
+            "& .MuiDataGrid-footerContainer": {
+              borderTop: "none",
+              backgroundColor: colors.blueAccent[700],
+            },
+            "& .MuiCheckbox-root": {
+              color: `${colors.blueAccent[400]} !important`,
+            },
+          }}
+        >
+        <DataGrid
+          rows={filteredStudents}
+          columns={columns}
+          initialState={{
+            pagination: {
+              paginationModel: { pageSize: 5, page: 0 },
+            },
+          }}
+          pageSizeOptions={[5, 10, 25]}
+          checkboxSelection  
+        />
+      </Box>
+    </Box>
+  );
+};
+
+export default StudentList;

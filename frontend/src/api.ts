@@ -26,21 +26,19 @@ apiClient.interceptors.request.use(
 
 export const apiPaths = {
   USER: {
-    LOGIN: "/api/user/login/", // Added trailing slash
-    REGISTER: "/api/user/register/", // Added trailing slash
-    REFRESH: "/api/user/token/refresh/", // Added trailing slash
-    CURRENT: "/api/user/current/", // Added trailing slash
-    SOCIETY: "/api/admin-panel/society/", // Added trailing slash
-    REJECTEDSOCIETY: "/api/admin-panel/rejected-society/", // Added trailing slash
-    STUDENTS: "/api/user/student/", // Added trailing slash
-    ADMIN: "/api/user/admin/", // Added trailing slash
-    PENDINGSOCIETYREQUEST: "/api/society/request/pending/", // Added trailing slash
-  },
-  SOCIETY: {
-    POPULAR_SOCIETIES: "/api/popular-societies/", // Added trailing slash
-  },
-  EVENTS: {
-    ALL: "/api/events/", // Added trailing slash
+    LOGIN: "/api/user/login",
+    REGISTER: "/api/user/register",
+    REFRESH: "/api/user/token/refresh",
+    CURRENT: "/api/user/current",
+    EVENTS: "api/society/event",
+    SOCIETY: "api/admin-panel/society",
+    REJECTEDSOCIETY: "api/admin-panel/rejected-society",
+    STUDENTS: "api/user/student",
+    ADMIN: "api/user/admin",
+    PENDINGSOCIETYREQUEST: "api/society/request/pending",
+    PENDINGEVENTREQUEST: "api/event/request/pending",
+    PROFILE: "api/user/profile",
+    REJECTEDEVENT: "api/admin-panel/rejected-event",
   },
 };
 

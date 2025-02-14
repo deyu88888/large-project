@@ -1,4 +1,5 @@
 import React, { useMemo, useEffect, useState } from "react";
+import { useTheme } from "@mui/material/styles";
 import { motion, AnimatePresence, Variants } from "framer-motion";
 
 // -- Type Definitions --
@@ -26,7 +27,6 @@ const formatDateTime = (date: Date): string => {
 };
 
 // -- Custom Hook: useCountdown --
-// Calculates the time left until the target date in days, hours, minutes, and seconds.
 const useCountdown = (targetDate: Date) => {
   const calculateTimeLeft = () => {
     const diff = targetDate.getTime() - Date.now();
@@ -45,11 +45,7 @@ const useCountdown = (targetDate: Date) => {
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft(calculateTimeLeft());
-    }, 1000); // update every second
-
-    // Update immediately on mount
-    setTimeLeft(calculateTimeLeft());
-
+    }, 1000);
     return () => clearInterval(timer);
   }, [targetDate]);
 
@@ -64,12 +60,23 @@ const itemVariants: Variants = {
 };
 
 const UpcomingEvents: React.FC<UpcomingEventsProps> = ({ events }) => {
-  // Sort the events by start time
+  // MUI theme for dark/light detection
+  const theme = useTheme();
+  const isDarkMode = theme.palette.mode === "dark";
+
+  // Background and text colors based on theme
+  const containerBgClass = isDarkMode ? "bg-[#141b2d] text-white" : "bg-white text-gray-900";
+  const cardBgClass = isDarkMode ? "bg-[#141b2d]" : "bg-gray-100";
+  const borderClass = isDarkMode ? "border-indigo-500" : "border-gray-300";
+  const textColorClass = isDarkMode ? "text-white" : "text-gray-800";
+  const countdownTextClass = isDarkMode ? "text-white" : "text-gray-700";
+
+  // Sort events by start time
   const sortedEvents = useMemo(() => {
     return [...events].sort((a, b) => a.start.getTime() - b.start.getTime());
   }, [events]);
 
-  // Local state for current time to trigger re-render every second
+  // Local state for current time
   const [currentTime, setCurrentTime] = useState(Date.now());
   useEffect(() => {
     const timer = setInterval(() => {
@@ -88,7 +95,9 @@ const UpcomingEvents: React.FC<UpcomingEventsProps> = ({ events }) => {
 
   return (
     <motion.div
-      className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl p-8 border-l-8 border-indigo-500 transition-all duration-300 hover:border-indigo-600"
+      className={`${containerBgClass} backdrop-blur-md rounded-2xl shadow-2xl p-8 border-l-8 ${
+        isDarkMode ? "border-[#141b2d]" : "border-white"
+      }`}
       aria-live="polite"
       role="region"
       aria-label="Upcoming Events Section"
@@ -115,13 +124,14 @@ const UpcomingEvents: React.FC<UpcomingEventsProps> = ({ events }) => {
                     transition: { duration: 0.3, ease: "easeInOut" },
                   }}
                   className="group relative p-6 rounded-xl bg-gradient-to-tr from-purple-500 to-indigo-500 text-white shadow-lg cursor-pointer flex flex-col md:flex-row justify-between items-center"
+
                 >
                   {/* --- Event Info --- */}
                   <div>
                     <h3 className="text-2xl font-extrabold tracking-tight mb-1">
                       {event.title}
                     </h3>
-                    <p className="text-sm text-white/90">
+                    <p className="text-sm opacity-80">
                       {formatDateTime(event.start)} &mdash; {formatDateTime(event.end)}
                     </p>
                   </div>
@@ -139,7 +149,7 @@ const UpcomingEvents: React.FC<UpcomingEventsProps> = ({ events }) => {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ duration: 0.4 }}
-                        className="text-white"
+                        className={countdownTextClass}
                       >
                         Starts in: {days}d {hours}h {minutes}m {seconds}s
                       </motion.p>
@@ -159,7 +169,7 @@ const UpcomingEvents: React.FC<UpcomingEventsProps> = ({ events }) => {
           </AnimatePresence>
         </motion.ul>
       ) : (
-        <p className="text-gray-600 text-lg text-center animate-pulse">
+        <p className="text-lg text-center animate-pulse opacity-80">
           No upcoming events.
         </p>
       )}

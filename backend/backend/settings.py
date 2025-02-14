@@ -3,6 +3,9 @@ from datetime import timedelta
 from dotenv import load_dotenv
 import os
 
+# from fakeredis.aioredis import FakeRedis
+from fakeredis import FakeRedis
+# Load environment variables
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -23,12 +26,7 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
     ],
-    "DEFAULT_RENDERER_CLASSES": (
-        "djangorestframework_camel_case.render.CamelCaseJSONRenderer",
-    ),
-    "DEFAULT_PARSER_CLASSES": (
-        "djangorestframework_camel_case.parser.CamelCaseJSONParser",
-    ),
+
 }
 
 SIMPLE_JWT = {
@@ -44,14 +42,14 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
-    "corsheaders",  # Used for WSGI endpoints (if any)
+    "corsheaders",  
     "api",
     "channels",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "corsheaders.middleware.CorsMiddleware",  # For WSGI endpoints. ASGI endpoints use Starlette's CORSMiddleware.
+    "corsheaders.middleware.CorsMiddleware", 
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -103,10 +101,6 @@ USE_TZ = True
 STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# ---------------------------
-# CORS Configuration
-# ---------------------------
-# Note: For ASGI endpoints, CORS is handled in asgi.py using Starlette's CORSMiddleware.
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
 ]
@@ -130,15 +124,13 @@ CORS_ALLOW_HEADERS = [
     "sec-websocket-protocol",
 ]
 
-# Uncomment the following line for debugging only (do not use in production):
-# CORS_ALLOW_ALL_ORIGINS = True
-
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 AUTH_USER_MODEL = "api.User"
 
 CHANNEL_LAYERS = {
     "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer"
+        "BACKEND": "channels.layers.InMemoryChannelLayer"  
+
     }
 }

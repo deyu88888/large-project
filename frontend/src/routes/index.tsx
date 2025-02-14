@@ -6,9 +6,9 @@ import { LoadingView } from "../components/loading/loading-view";
 import { PublicGuard } from "../components/guards/public-guard";
 import { PrivateGuard } from "../components/guards/private-guard";
 import CircularLoader from "../components/loading/circular-loader";
+import Layout from "../components/layout";
 
 // Lazy-loaded pages
-const HomePage = lazy(() => import("../pages/home"));
 const LoginPage = lazy(() => import("../pages/login"));
 const RegisterPage = lazy(() => import("../pages/register"));
 const ProfilePage = lazy(() => import("../pages/profile"));
@@ -20,22 +20,27 @@ const StartSociety = lazy(() => import("../pages/start-society"));
 const JoinSocietiesPage = lazy(() => import("../pages/join-societies"));
 
 // Admin pages
-const AdminHomePage = lazy(() => import("../pages/Admin/AdminHome"));
 const EventListPage = lazy(() => import("../pages/Admin/EventList"));
 const SocietyListPage = lazy(() => import("../pages/Admin/SocietyList"));
-const SocietyListRejectPage = lazy(() => import("../pages/Admin/SocietyListReject"));
+const SocietyListRejectPage = lazy(
+  () => import("../pages/Admin/SocietyListReject")
+);
+const EventListRejectPage = lazy(
+  () => import("../pages/Admin/EventListReject")
+);
+const AdminDashboardPage = lazy(() => import("../pages/Admin/AdminDashboard"));
+const CalendarPage = lazy(() => import("../pages/Admin/Calendar"));
+
 const StudentListPage = lazy(() => import("../pages/Admin/StudentList"));
 const DashboardPage = lazy(() => import("../pages/Dashboard"));
 const CreateAdminPage = lazy(() => import("../pages/Admin/CreateAdmin"));
-const RequestSocietyPage = lazy(() => import("../pages/Admin/PendingSocietyRequest"));
-// const RejectedEventListPage = lazy(() => import("../pages/Admin/EventListRejected"));
+const RequestSocietyPage = lazy(
+  () => import("../pages/Admin/PendingSocietyRequest")
+);
+const RequestEventPage = lazy(
+  () => import("../pages/Admin/PendingEventRequest")
+);
 
-function Logout() {
-  localStorage.clear();
-  return <Navigate to="/" />;
-}
-
-// Routes Configuration
 const routes = [
   {
     path: "/",
@@ -48,119 +53,127 @@ const routes = [
     ),
     children: [
       {
-        path: "home",
-        element: <HomePage />,
+        index: true,
+        element: <DashboardPage />,
       },
       {
-        path: "admin-home",
-        element: <AdminHomePage />,
-      },
-      {
-        path: "event-list",
-        element: <EventListPage />,
-      },
-      {
-        path: "society-list",
-        element: <SocietyListPage />,
-      },
-      {
-        path: "society-list-rejected",
-        element: <SocietyListRejectPage />,
-      },
-      {
-        path: "student-list",
-        element: <StudentListPage />,
-      },
-      {
-        path: "profile",
-        element: <ProfilePage />,
-      },
-      {
-        path: "create-admin",
-        element: <CreateAdminPage />,
-      },
-      {
-        path: "request-society",
-        element: <RequestSocietyPage />,
-      },
-      {
-        path: "student-dashboard",
+        path: "admin",
         element: (
-          <Suspense fallback={<LoadingView />}>
-            <StudentDashboard />
-          </Suspense>
+          <PrivateGuard requiredRole="admin">
+            <Suspense fallback={<LoadingView />}>
+              <Layout />
+            </Suspense>
+          </PrivateGuard>
         ),
+        children: [
+          {
+            index: true,
+            element: <AdminDashboardPage />,
+          },
+          {
+            path: "event-list",
+            element: <EventListPage />,
+          },
+          {
+            path: "society-list",
+            element: <SocietyListPage />,
+          },
+          {
+            path: "society-list-rejected",
+            element: <SocietyListRejectPage />,
+          },
+          {
+            path: "event-list-rejected",
+            element: <EventListRejectPage />,
+          },
+          {
+            path: "student-list",
+            element: <StudentListPage />,
+          },
+          {
+            path: "profile",
+            element: <ProfilePage />,
+          },
+          {
+            path: "create-admin",
+            element: <CreateAdminPage />,
+          },
+          {
+            path: "calendar",
+            element: <CalendarPage />,
+          },
+          {
+            path: "request-society",
+            element: <RequestSocietyPage />,
+          },
+          {
+            path: "request-event",
+            element: <RequestEventPage />,
+          },
+        ],
       },
       {
-        path: "my-societies", // Add the route here
+        path: "student",
         element: (
-          <Suspense fallback={<LoadingView />}>
-            <MySocieties />
-          </Suspense>
+          <PrivateGuard requiredRole="student">
+            <Suspense fallback={<LoadingView />}>
+              <Layout />
+            </Suspense>
+          </PrivateGuard>
         ),
-      },
-      {
-        path: "view-events",
-        element: (
-          <Suspense fallback={<LoadingView />}>
-            <ViewEvents />
-          </Suspense>
-        ),
-      },
-      {
-        path: "view-notifications",
-        element: (
-          <Suspense fallback={<LoadingView />}>
-            <ViewNotifications />
-          </Suspense>
-        ),
-      },
-      {
-        path: "start-society",
-        element: (
-          <Suspense fallback={<LoadingView />}>
-            <StartSociety />
-          </Suspense>
-        ),
-      },
-      {
-        path: "join-society",
-        element: (
-          <Suspense fallback={<LoadingView />}>
-            <JoinSocietiesPage />
-          </Suspense>
-        ),
-      },
-      {
-        path: "join-society/:id",
-        element: (
-          <Suspense fallback={<LoadingView />}>
-            <JoinSocietiesPage />
-          </Suspense>
-        ),
+        children: [
+          {
+            index: true,
+            element: <StudentDashboard />,
+          },
+          {
+            path: "my-societies",
+            element: <MySocieties />,
+          },
+          {
+            path: "view-events",
+            element: <ViewEvents />,
+          },
+          {
+            path: "view-notifications",
+            element: <ViewNotifications />,
+          },
+          {
+            path: "start-society",
+            element: <StartSociety />,
+          },
+          {
+            path: "join-society",
+            element: <JoinSocietiesPage />,
+          },
+          {
+            path: "join-society/:id",
+            element: <JoinSocietiesPage />,
+          },
+        ],
       },
       {
         path: "logout",
         children: [
-            {
-                index: true,
-                element: <HomePage />,
-            },
-            {
-                path: "logout",
-                element: (
-                    <Suspense fallback={<CircularLoader />}>
-                        <Navigate to="/login" replace />
-                    </Suspense>
-                ),
-            },
-            {
-                path: "profile",
-                element: <ProfilePage />,
-            },
+          {
+            index: true,
+            element: <DashboardPage />,
+          },
+          {
+            path: "logout",
+            element: (
+              <Suspense fallback={<CircularLoader />}>
+                <Navigate to="/login" replace />
+              </Suspense>
+            ),
+          },
+          {
+            path: "profile",
+            element: <ProfilePage />,
+          },
         ],
-    },
-    {
+      },
+      {
         path: "/",
         element: (
           <Suspense fallback={<LoadingView />}>

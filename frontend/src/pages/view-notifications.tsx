@@ -1,13 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { apiClient } from "../api"; // Ensure apiClient is correctly imported
+import { apiClient } from "../api";
+import { useTheme } from "@mui/material/styles";
+import { tokens } from "../styles/theme";
+// Removed: import { useSidebar } from "../components/layout/SidebarContext";
 
 const ViewNotifications: React.FC = () => {
   const navigate = useNavigate();
+  const theme = useTheme();
+  const colours = tokens(theme.palette.mode);
+  const isLight = theme.palette.mode === "light";
+
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch notifications when the component mounts
   useEffect(() => {
     fetchNotifications();
   }, []);
@@ -16,9 +22,8 @@ const ViewNotifications: React.FC = () => {
     try {
       setLoading(true);
       const response = await apiClient.get("/api/notifications");
-      console.log("Fetched Notifications:", response.data); // Debugging log
       setNotifications(response.data || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching notifications:", error.response?.data || error);
     } finally {
       setLoading(false);
@@ -39,54 +44,158 @@ const ViewNotifications: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-indigo-50 via-white to-indigo-100 py-12 px-8">
-      <header className="text-center mb-10">
-        <h1 className="text-4xl font-bold text-gray-900">All Notifications</h1>
-        <p className="text-lg text-gray-600 mt-2">
-          Stay informed about the latest updates and announcements.
-        </p>
-      </header>
+    <div
+      style={{
+        marginLeft: "0px", // Removed sidebarWidth dependency; set to "0px"
+        marginTop: "0px",
+        transition: "margin-left 0.3s ease-in-out",
+        minHeight: "100vh",
+        padding: "20px 40px",
+        backgroundColor: isLight ? colours.primary[1000] : colours.primary[500],
+      }}
+    >
+      <div style={{ maxWidth: "1920px", margin: "0 auto" }}>
+        <header
+          style={{
+            textAlign: "center",
+            marginBottom: "2.5rem",
+            padding: "2rem 0",
+          }}
+        >
+          <h1
+            style={{
+              color: isLight ? colours.grey[100] : colours.grey[100],
+              fontSize: "2.25rem",
+              fontWeight: 700,
+              marginBottom: "0.5rem",
+            }}
+          >
+            All Notifications
+          </h1>
+          <p
+            style={{
+              color: isLight ? colours.grey[300] : colours.grey[300],
+              fontSize: "1.125rem",
+              margin: 0,
+            }}
+          >
+            Stay informed about the latest updates and announcements.
+          </p>
+        </header>
 
-      {loading ? (
-        <p className="text-center text-gray-600">Loading notifications...</p>
-      ) : notifications.length === 0 ? (
-        <p className="text-center text-gray-600">No new notifications.</p>
-      ) : (
-        <div className="space-y-6">
-          {notifications.map((notification) => (
-            <div
-              key={notification.id}
-              className={`p-5 rounded-lg shadow-md hover:shadow-lg border transition-all ${
-                notification.is_read ? "bg-gray-100 border-gray-300" : "bg-blue-50 border-blue-100"
-              }`}
-            >
-              <div className="flex justify-between items-center">
-                <p className="text-gray-800">{notification.message}</p>
-                <div className="flex items-center space-x-4">
-                  {notification.is_read ? (
-                    <span className="text-green-500 text-sm font-medium">Read</span>
-                  ) : (
-                    <button
-                      onClick={() => markNotificationAsRead(notification.id)}
-                      className="text-sm text-blue-500 hover:underline"
-                    >
-                      Mark as Read
-                    </button>
-                  )}
+        {loading ? (
+          <p
+            style={{
+              color: isLight ? colours.grey[700] : colours.grey[300],
+              textAlign: "center",
+              fontSize: "1.125rem",
+            }}
+          >
+            Loading notifications...
+          </p>
+        ) : notifications.length === 0 ? (
+          <p
+            style={{
+              color: isLight ? colours.grey[600] : colours.grey[300],
+              textAlign: "center",
+              fontSize: "1.125rem",
+            }}
+          >
+            No new notifications.
+          </p>
+        ) : (
+          <div className="space-y-6">
+            {notifications.map((notification) => (
+              <div
+                key={notification.id}
+                className="p-5 rounded-lg shadow-md hover:shadow-lg transition-all border"
+                style={{
+                  backgroundColor: notification.is_read
+                    ? isLight
+                      ? colours.primary[400]
+                      : colours.primary[400]
+                    : isLight
+                    ? colours.blueAccent[700]
+                    : colours.blueAccent[700],
+                  borderColor: notification.is_read
+                    ? isLight
+                      ? colours.grey[300]
+                      : colours.grey[700]
+                    : isLight
+                    ? colours.blueAccent[400]
+                    : colours.blueAccent[400],
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <p style={{ color: isLight ? colours.grey[100] : colours.grey[100] }}>
+                    {notification.message}
+                  </p>
+                  <div style={{ display: "flex", gap: "1rem" }}>
+                    {notification.is_read ? (
+                      <span
+                        style={{
+                          color: colours.greenAccent[500],
+                          fontSize: "0.875rem",
+                          fontWeight: 500,
+                        }}
+                      >
+                        Read
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => markNotificationAsRead(notification.id)}
+                        style={{
+                          color: isLight ? colours.blueAccent[400] : colours.blueAccent[300],
+                          fontSize: "0.875rem",
+                          fontWeight: 500,
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                          textDecoration: "underline",
+                        }}
+                      >
+                        Mark as Read
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
 
-      <div className="mt-10 text-center">
-        <button
-          onClick={() => navigate("/student-dashboard")}
-          className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-all"
+        <div
+          style={{
+            textAlign: "center",
+            marginTop: "2.5rem",
+            padding: "2rem 0",
+          }}
         >
-          Go Back
-        </button>
+          <button
+            onClick={() => navigate("/student-dashboard")}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              backgroundColor: isLight ? colours.blueAccent[400] : colours.blueAccent[500],
+              color: isLight ? "#ffffff" : colours.grey[100],
+              padding: "0.75rem 2rem",
+              borderRadius: "6px",
+              border: "none",
+              cursor: "pointer",
+              transition: "all 0.3s ease",
+              fontSize: "1rem",
+              fontWeight: 500,
+            }}
+          >
+            Go Back to Dashboard
+          </button>
+        </div>
       </div>
     </div>
   );
