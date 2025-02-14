@@ -12,7 +12,6 @@ import {
   ListItemText,
   Typography,
 } from "@mui/material";
-import MenuIcon from "@mui/icons-material/Menu";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import GroupAddOutlinedIcon from "@mui/icons-material/GroupAddOutlined";
@@ -23,6 +22,7 @@ import InboxIcon from "@mui/icons-material/MoveToInbox";
 import MailIcon from "@mui/icons-material/Mail";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import LogoutIcon from '@mui/icons-material/Logout';
+import { CustomDrawer, CustomDrawerHeader } from "./drawer/CustomDrawer";
 
 interface StudentDrawerProps {
   drawer: boolean;
@@ -53,39 +53,20 @@ const StudentDrawer: React.FC<StudentDrawerProps> = ({
   };
 
   return (
-    <Box
-      sx={{
-        width: drawer ? 240 : 60,
-        flexShrink: 0,
-        transition: "width 0.3s",
-        borderRight: 1,
-        borderRightColor: "divider",
-      }}
-    >
-      <Box sx={{ overflow: "hidden" , height: "100vh", position: "fixed" }}>
-        {/* Toggle Button Header */}
-        <Box
-          sx={{
-            p: 2,
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <IconButton onClick={toggleDrawer} sx={{ p: 0 }}>
-            {drawer ? <ChevronLeftIcon /> : <MenuIcon />}
-          </IconButton>
-        </Box>
-        <Divider />
+    <CustomDrawer variant="permanent" open={drawer}>
+    <CustomDrawerHeader>
+      <IconButton onClick={() => toggleDrawer()}>
+        {drawer && <ChevronLeftIcon />}
+      </IconButton>
+    </CustomDrawerHeader>
+    <Divider />
 
         {/* User Info Section */}
-        <Box
-          sx={{
-            p: 2,
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
+        <Box 
+          padding= {2}
+          display= "flex"
+          justifyContent= "center"
+          alignItems= "center"
         >
           {drawer ? (
             <Box sx={{ textAlign: "center" }}>
@@ -212,8 +193,7 @@ const StudentDrawer: React.FC<StudentDrawerProps> = ({
             </ListItemButton>
           </ListItem>
         </List>
-      </Box>
-    </Box>
+   </CustomDrawer>
   );
 };
 
