@@ -14,7 +14,6 @@ const ViewNotifications: React.FC = () => {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch notifications when the component mounts
   useEffect(() => {
     fetchNotifications();
   }, []);
@@ -23,9 +22,8 @@ const ViewNotifications: React.FC = () => {
     try {
       setLoading(true);
       const response = await apiClient.get("/api/notifications");
-      console.log("Fetched Notifications:", response.data); // Debugging log
       setNotifications(response.data || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching notifications:", error.response?.data || error);
     } finally {
       setLoading(false);
@@ -198,15 +196,6 @@ const ViewNotifications: React.FC = () => {
             Go Back to Dashboard
           </button>
         </div>
-      )}
-
-      <div className="mt-10 text-center">
-        <button
-          onClick={() => navigate("/student-dashboard")}
-          className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-all"
-        >
-          Go Back
-        </button>
       </div>
     </div>
   );

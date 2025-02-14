@@ -13,9 +13,6 @@ interface PrivateGuardProps {
   requiredRole?: UserRole;
 }
 
-// ✅ Define which routes should be PUBLIC (No login required)
-const PUBLIC_ROUTES = ["/", "/dashboard", "/events"];
-
 export function PrivateGuard({ children, requiredRole }: PrivateGuardProps) {
   const [authState, setAuthState] = useState({
     isAuthorized: false,
@@ -25,17 +22,10 @@ export function PrivateGuard({ children, requiredRole }: PrivateGuardProps) {
   const { user, setUser } = useAuthStore();
   const location = useLocation();
 
-  // ✅ If this is a public route, skip authentication
-  if (PUBLIC_ROUTES.includes(location.pathname)) {
-    return <>{children}</>;
-  }
-
   const authenticate = useCallback(async () => {
     try {
       const token = localStorage.getItem(ACCESS_TOKEN);
-      if (!token) {
-        throw new Error("No access token available");
-      }
+      if (!token) throw new Error("No access token available");
 
       const isTokenValid = await validateToken(token);
       if (!isTokenValid) await handleTokenRefresh();
@@ -43,10 +33,7 @@ export function PrivateGuard({ children, requiredRole }: PrivateGuardProps) {
       const userData = await fetchUserData();
       console.log("%c[PrivateGuard] User data fetched:", "color: green;", userData);
 
-      setUser({
-        ...userData,
-        is_president: userData.is_president,  
-      });
+      setUser(userData);
 
       setAuthState({ isAuthorized: true, loading: false });
     } catch (error) {
@@ -81,34 +68,26 @@ export function PrivateGuard({ children, requiredRole }: PrivateGuardProps) {
   };
 
   const fetchUserData = async () => {
-    try {
-      const response = await apiClient.get(apiPaths.USER.CURRENT);
-      console.log("[PrivateGuard] API Response:", response.data);
-      if (response.data) {
-        console.log("%c[PrivateGuard] User data received:", "color: green;", response.data);
-        return response.data;
-      } else {
-        console.error("%c[PrivateGuard] User data not found in response.", "color: red;");
-        throw new Error("User data not found");
-      }
-    } catch (error) {
-      console.error("%c[PrivateGuard] Error fetching user data:", "color: red;", error);
-      throw error;
-    }
+    const response = await apiClient.get(apiPaths.USER.CURRENT);
+    return response.data;
   };
 
   if (authState.loading) return <LoadingView />;
-
-  if (!authState.isAuthorized) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
-  }
-
+  
   if (requiredRole && user?.role !== requiredRole) {
     return <Navigate to={`/${user?.role}`} replace />;
   }
 
+  if (!authState.isAuthorized) {
+    if (location.pathname === "/") {
+      return children;
+    }
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+  
   if (location.pathname === "/" && user?.role) {
-    return <Navigate to={user.role === "admin" ? "/admin" : "/student"} replace />;
+    const roleRedirect = user.role === "admin" ? "/admin" : "/student";
+    return <Navigate to={roleRedirect} replace />;
   }
 
   return <>{children}</>;

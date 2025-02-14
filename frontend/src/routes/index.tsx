@@ -7,23 +7,24 @@ import { PublicGuard } from "../components/guards/public-guard";
 import { PrivateGuard } from "../components/guards/private-guard";
 import CircularLoader from "../components/loading/circular-loader";
 import Layout from "../components/layout";
+import ViewSocietyEvents from "../pages/view-society-events";
+import PendingMembers from "../pages/pending-members";
 
 // Lazy-loaded pages
 const LoginPage = lazy(() => import("../pages/login"));
 const RegisterPage = lazy(() => import("../pages/register"));
 const ProfilePage = lazy(() => import("../pages/profile"));
 const StudentDashboard = lazy(() => import("../pages/student-dashboard"));
-const PresidentPage = lazy(() => import("../pages/president-page"));
-const ManageSocietyDetails = lazy(() => import("../pages/manage-society-details"));
-const ManageSocietyEvents = lazy(() => import("../pages/manage-society-events"));
-const CreateEventPage = lazy(() => import("../pages/create-society-event"));
-import ViewSocietyEvents from "../pages/view-society-events";
-import PendingMembers from "../pages/pending-members";
 const MySocieties = lazy(() => import("../pages/my-societies"));
 const ViewEvents = lazy(() => import("../pages/view-events"));
 const ViewNotifications = lazy(() => import("../pages/view-notifications"));
 const StartSociety = lazy(() => import("../pages/start-society"));
 const JoinSocietiesPage = lazy(() => import("../pages/join-societies"));
+const PresidentPage = lazy(() => import("../pages/president-page"));
+const ManageSocietyDetails = lazy(() => import("../pages/manage-society-details"));
+const ManageSocietyEvents = lazy(() => import("../pages/manage-society-events"));
+const CreateEventPage = lazy(() => import("../pages/create-society-event"));
+
 
 // Admin pages
 const EventListPage = lazy(() => import("../pages/Admin/EventList"));
@@ -52,9 +53,6 @@ const routes = [
     path: "/",
     element: (
       <PrivateGuard>
-        <Suspense fallback={<LoadingView />}>
-          <Outlet />
-        </Suspense>
         <Suspense fallback={<LoadingView />}>
           <Outlet />
         </Suspense>
@@ -136,62 +134,9 @@ const routes = [
             element: <StudentDashboard />,
           },
           {
-            path: "my-societies", 
+            path: "my-societies",
             element: <MySocieties />,
           },
-      {
-        path: "president-page",
-        element: (
-          <Suspense fallback={<LoadingView />}>
-            <PresidentPage />
-          </Suspense>
-        ),
-      },
-      {
-        path: "manage-society-details/:society_id",
-        element: (
-          <Suspense fallback={<LoadingView />}>
-            <ManageSocietyDetails />
-          </Suspense>
-        ),
-      },
-
-      {
-        path: "manage-society-events/:society_id/",
-        element: (
-          <Suspense fallback={<LoadingView />}>
-            <ManageSocietyEvents />
-          </Suspense>
-        ),
-      },
-
-      {
-        path: "society/:society_id/create-society-event",
-        element: (
-          <Suspense fallback={<LoadingView />}>
-            <CreateEventPage />
-          </Suspense>
-        ),
-      },
-
-      {
-        path: "society/:society_id/:event_type",
-        element: (
-          <Suspense fallback={<LoadingView />}>
-            <ViewSocietyEvents />
-          </Suspense>
-        ),
-      },
-
-      {
-        path: "society/:society_id/pending-members",
-        element: (
-          <Suspense fallback={<LoadingView />}>
-            <PendingMembers />
-          </Suspense>
-        ),
-      },
-      
           {
             path: "view-events",
             element: <ViewEvents />,
@@ -211,6 +156,58 @@ const routes = [
           {
             path: "join-society/:id",
             element: <JoinSocietiesPage />,
+          },
+          {
+            path: "president-page",
+            element: (
+              <Suspense fallback={<LoadingView />}>
+                <PresidentPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "manage-society-details/:society_id",
+            element: (
+              <Suspense fallback={<LoadingView />}>
+                <ManageSocietyDetails />
+              </Suspense>
+            ),
+          },
+    
+          {
+            path: "manage-society-events/:society_id/",
+            element: (
+              <Suspense fallback={<LoadingView />}>
+                <ManageSocietyEvents />
+              </Suspense>
+            ),
+          },
+    
+          {
+            path: "society/:society_id/create-society-event",
+            element: (
+              <Suspense fallback={<LoadingView />}>
+                <CreateEventPage />
+              </Suspense>
+            ),
+          },
+    
+          {
+            path: "society/:society_id/:event_type",
+            element: (
+              <Suspense fallback={<LoadingView />}>
+                <ViewSocietyEvents />
+              </Suspense>
+            ),
+          },
+    
+          {
+            path: "society/:society_id/pending-members",
+            element: (
+              <Suspense fallback={<LoadingView />}>
+                <PendingMembers />
+              </Suspense>
+            ),
           },
         ],
       },

@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaUsers } from "react-icons/fa";
-import axios from "axios";
 import { apiClient } from "../api";
 
 // Import the theme
@@ -17,7 +15,6 @@ const JoinSocieties: React.FC = () => {
   const [societies, setSocieties] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  
   useEffect(() => {
     const fetchAvailableSocieties = async () => {
       try {
@@ -33,7 +30,6 @@ const JoinSocieties: React.FC = () => {
     fetchAvailableSocieties();
   }, []);
 
-  
   const handleJoinSociety = async (societyId: number) => {
     try {
       await apiClient.post(`/api/join-society/${societyId}/`);
@@ -85,41 +81,112 @@ const JoinSocieties: React.FC = () => {
           </p>
         </header>
 
-      {loading ? (
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-800">Loading societies...</h2>
-        </div>
-      ) : societies.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {societies.map((society) => (
-            <div
-              key={society.id}
-              className="p-6 bg-white rounded-xl shadow hover:shadow-lg border border-gray-200 transition-transform hover:-translate-y-1"
-            >
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">{society.name}</h3>
-              <p className="text-gray-600 mb-4">{society.description || "No description available."}</p>
-              <button
-                onClick={() => handleJoinSociety(society.id)}
-                className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-all"
+        {loading ? (
+          <p
+            style={{
+              color: isLight ? colours.grey[700] : colours.grey[300],
+              textAlign: "center",
+              fontSize: "1.125rem",
+            }}
+          >
+            Loading societies...
+          </p>
+        ) : societies.length > 0 ? (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+              gap: "2rem",
+              padding: "1rem 0",
+            }}
+          >
+            {societies.map((society) => (
+              <div
+                key={society.id}
+                style={{
+                  backgroundColor: isLight ? colours.primary[400] : colours.primary[400],
+                  borderRadius: "12px",
+                  padding: "1.5rem",
+                  border: `1px solid ${isLight ? colours.grey[300] : colours.grey[700]}`,
+                  transition: "transform 0.3s, box-shadow 0.3s",
+                  cursor: "pointer",
+                }}
               >
-                Join Society
-              </button>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-800">No societies available to join.</h2>
-        </div>
-      )}
+                <h3
+                  style={{
+                    color: isLight ? colours.grey[100] : colours.grey[100],
+                    fontSize: "1.25rem",
+                    fontWeight: 600,
+                    marginBottom: "0.75rem",
+                  }}
+                >
+                  {society.name}
+                </h3>
+                <p
+                  style={{
+                    color: isLight ? colours.grey[300] : colours.grey[300],
+                    fontSize: "0.875rem",
+                    lineHeight: "1.5",
+                    marginBottom: "0.75rem",
+                  }}
+                >
+                  {society.description || "No description available."}
+                </p>
+                <button
+                  onClick={() => handleJoinSociety(society.id)}
+                  style={{
+                    backgroundColor: isLight ? colours.blueAccent[400] : colours.blueAccent[500],
+                    color: isLight ? "#ffffff" : colours.grey[100],
+                    padding: "0.5rem 1.5rem",
+                    borderRadius: "0.5rem",
+                    transition: "all 0.2s ease",
+                    border: "none",
+                    cursor: "pointer",
+                  }}
+                >
+                  Join Society
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p
+            style={{
+              color: isLight ? colours.grey[600] : colours.grey[300],
+              textAlign: "center",
+              fontSize: "1.125rem",
+            }}
+          >
+            No societies available to join.
+          </p>
+        )}
 
-      <div className="mt-12 text-center">
-        <button
-          onClick={() => navigate("/student-dashboard")}
-          className="bg-gray-300 text-gray-800 px-6 py-3 rounded-lg hover:bg-gray-400 transition-all"
+        <div
+          style={{
+            textAlign: "center",
+            marginTop: "2.5rem",
+            padding: "2rem 0",
+          }}
         >
-          Back to Dashboard
-        </button>
+          <button
+            onClick={() => navigate("/student-dashboard")}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              backgroundColor: isLight ? colours.blueAccent[400] : colours.blueAccent[500],
+              color: isLight ? "#ffffff" : colours.grey[100],
+              padding: "0.75rem 2rem",
+              borderRadius: "6px",
+              border: "none",
+              cursor: "pointer",
+              transition: "all 0.3s ease",
+              fontSize: "1rem",
+              fontWeight: 500,
+            }}
+          >
+            Go Back to Dashboard
+          </button>
+        </div>
       </div>
     </div>
   );

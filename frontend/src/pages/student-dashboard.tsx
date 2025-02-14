@@ -17,11 +17,11 @@ import {
   FaUsers,
   FaUserPlus,
   FaCogs,
+  FaRegClock,
+  FaTrophy,
 } from "react-icons/fa";
-import axios from "axios";
 import { apiClient } from "../api";
 import { useAuthStore } from "../stores/auth-store";
-
 
 // Define TypeScript interfaces for your data types
 interface Society {
@@ -43,46 +43,48 @@ interface Notification {
   is_read: boolean;
 }
 
+interface AwardAssignment {
+  id: number;
+  award: {
+    title: string;
+    description: string;
+    rank: string;
+  };
+}
+
 const StudentDashboard: React.FC = () => {
   const navigate = useNavigate();
   const theme = useTheme();
   const colours = tokens(theme.palette.mode);
 
-  // States for societies, events, and notifications
-  const [awards, setAwards] = useState<any[]>([]);
-  const { user } = useAuthStore();
+  // States for societies, events, notifications, awards, and more
   const [societies, setSocieties] = useState<Society[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [awards, setAwards] = useState<AwardAssignment[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<number>(0);
+  const { user } = useAuthStore();
 
-  // Fetch data when the component mounts
   useEffect(() => {
     fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, []);
 
   const logout = () => {
     localStorage.removeItem("access");
     localStorage.removeItem("refresh");
     navigate("/");
-  }
+  };
 
-  // Fetch data from the updated endpoints
+  // Fetch data from the endpoints
   const fetchData = async () => {
     try {
       setLoading(true);
       
-      console.log("is_president is type:", typeof user?.is_president); 
-      console.log("value:", user?.is_president);
-      
       // Fetch societies
       const societiesResponse = await apiClient.get("/api/student-societies/");
-      console.log(societiesResponse.data);
       setSocieties(societiesResponse.data || []);
-
-      // Check if the student is president of any society
       const presidentSocieties = societiesResponse.data.filter(
         (society: any) => society.is_president
       );
@@ -90,78 +92,64 @@ const StudentDashboard: React.FC = () => {
 
       // Fetch events
       const eventsResponse = await apiClient.get("/api/events/rsvp");
-      console.log(eventsResponse.data);
       setEvents(eventsResponse.data || []);
 
       // Fetch notifications
       const notificationsResponse = await apiClient.get("/api/notifications");
       setNotifications(notificationsResponse.data || []);
 
-      // Fetch awards
+      // Fetch awards (award assignments)
       try {
-        const response = await apiClient.get("/api/award-students/");
-        console.log("Award assignments:", response.data);
-        setAwards(response.data || []);
+        const awardsResponse = await apiClient.get("/api/award-students/");
+        setAwards(awardsResponse.data || []);
       } catch (error) {
         console.error("Error fetching award assignments:", error);
       }
-      
-      const [societiesRes, eventsRes, notificationsRes] = await Promise.all([
-        apiClient.get('/api/student-societies/'),
-        apiClient.get('/api/events/rsvp'),
-        apiClient.get('/api/notifications'),
-      ]);
-
-      setSocieties(societiesRes.data || []);
-      setEvents(eventsRes.data || []);
-      setNotifications(notificationsRes.data || []);
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error("Error fetching data:", error);
     } finally {
       setLoading(false);
     }
-  };z
+  };
 
   // Join a society
   const joinSociety = async (societyId: number) => {
     try {
       await apiClient.post(`/api/join-society/${societyId}/`);
-      fetchData(); // Refresh the data after joining a society
+      fetchData();
     } catch (error) {
       console.error("Error joining society:", error);
     }
   };
 
   // Leave a society
-  const leaveSociety = async (societyId: number) => {
   const handleLeaveSociety = async (societyId: number) => {
     try {
-      await apiClient.delete(`/api/leave-society/${societyId}/`); // Ensure societyId is in the URL
-      fetchData(); // Refresh societies after leaving
+      await apiClient.delete(`/api/leave-society/${societyId}/`);
+      fetchData();
     } catch (error) {
-      console.error('Error leaving society:', error);
+      console.error("Error leaving society:", error);
     }
   };
 
+  // Toggle RSVP for an event
   const handleRSVP = async (eventId: number, isAttending: boolean) => {
     try {
       if (isAttending) {
-        await apiClient.post('/api/events/rsvp/', { event_id: eventId });
+        await apiClient.post("/api/events/rsvp/", { event_id: eventId });
       } else {
-        await apiClient.delete('/api/events/rsvp/', { data: { event_id: eventId } });
+        await apiClient.delete("/api/events/rsvp/", { data: { event_id: eventId } });
       }
       fetchData();
     } catch (error) {
-      console.error('Error updating RSVP:', error);
+      console.error("Error updating RSVP:", error);
     }
   };
 
   // Cancel RSVP for an event
   const cancelRSVP = async (eventId: number) => {
     try {
-      await apiClient.delete("/api/events/rsvp/", {
-        data: { event_id: eventId },
-      });
+      await apiClient.delete("/api/events/rsvp/", { data: { event_id: eventId } });
       fetchData();
     } catch (error) {
       console.error("Error canceling RSVP:", error);
@@ -172,21 +160,17 @@ const StudentDashboard: React.FC = () => {
   const markNotificationAsRead = async (id: number) => {
     try {
       const response = await apiClient.patch(`/api/notifications/${id}/`, { is_read: true });
-      
       if (response.status === 200) {
-        // Update local state
         setNotifications((prevNotifications) =>
           prevNotifications.map((notification) =>
-            notification.id === id 
-              ? { ...notification, is_read: true } 
-              : notification
+            notification.id === id ? { ...notification, is_read: true } : notification
           )
         );
       } else {
-        console.error('Failed to mark notification as read');
+        console.error("Failed to mark notification as read");
       }
     } catch (error) {
-      console.error('Error marking notification as read:', error);
+      console.error("Error marking notification as read:", error);
     }
   };
 
@@ -211,6 +195,38 @@ const StudentDashboard: React.FC = () => {
   return (
     <Box minHeight="100vh" bgcolor={colours.primary[400]} py={8}>
       <Box maxWidth="1200px" mx="auto" px={4}>
+        {/* Header */}
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
+          <Typography variant="h4" sx={{ color: colours.grey[100] }}>
+            Dashboard
+          </Typography>
+          <Box display="flex" gap={2}>
+            <Button
+              variant="contained"
+              onClick={logout}
+              sx={{
+                backgroundColor: colours.redAccent[500],
+                color: colours.grey[100],
+              }}
+            >
+              Logout
+            </Button>
+            {user?.is_president === true && (
+              <Button
+                variant="contained"
+                onClick={() => navigate("/student/president-page")}
+                sx={{
+                  backgroundColor: colours.greenAccent[500],
+                  color: colours.grey[100],
+                }}
+              >
+                <FaCogs style={{ marginRight: 4 }} />
+                Manage My Societies
+              </Button>
+            )}
+          </Box>
+        </Box>
+
         {/* Stats Overview */}
         <Box
           display="grid"
@@ -278,7 +294,12 @@ const StudentDashboard: React.FC = () => {
                       p: 2,
                     }}
                   >
-                    <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                    <Box
+                      display="flex"
+                      justifyContent="space-between"
+                      alignItems="center"
+                      mb={2}
+                    >
                       <Typography variant="h6" sx={{ color: colours.grey[100] }}>
                         {society.name}
                       </Typography>
@@ -330,13 +351,20 @@ const StudentDashboard: React.FC = () => {
                       p: 2,
                     }}
                   >
-                    <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                    <Box
+                      display="flex"
+                      justifyContent="space-between"
+                      alignItems="center"
+                      mb={2}
+                    >
                       <Box>
                         <Typography variant="h6" sx={{ color: colours.grey[100] }}>
                           {event.title}
                         </Typography>
                         <Box display="flex" alignItems="center" mt={1}>
-                          <FaRegClock style={{ marginRight: 8, color: colours.grey[300] }} />
+                          <FaRegClock
+                            style={{ marginRight: 8, color: colours.grey[300] }}
+                          />
                           <Typography variant="body2" sx={{ color: colours.grey[300] }}>
                             {event.date}
                           </Typography>
@@ -348,7 +376,9 @@ const StudentDashboard: React.FC = () => {
                       variant="contained"
                       onClick={() => handleRSVP(event.id, !event.rsvp)}
                       sx={{
-                        backgroundColor: event.rsvp ? colours.grey[700] : colours.blueAccent[500],
+                        backgroundColor: event.rsvp
+                          ? colours.grey[700]
+                          : colours.blueAccent[500],
                         color: colours.grey[100],
                       }}
                     >
@@ -362,7 +392,11 @@ const StudentDashboard: React.FC = () => {
             {activeTab === 2 && (
               <Box>
                 {notifications.length === 0 ? (
-                  <Typography variant="body1" align="center" sx={{ color: colours.grey[300], py: 4 }}>
+                  <Typography
+                    variant="body1"
+                    align="center"
+                    sx={{ color: colours.grey[300], py: 4 }}
+                  >
                     No notifications
                   </Typography>
                 ) : (
@@ -379,7 +413,11 @@ const StudentDashboard: React.FC = () => {
                         mb: 2,
                       }}
                     >
-                      <Box display="flex" justifyContent="space-between" alignItems="center">
+                      <Box
+                        display="flex"
+                        justifyContent="space-between"
+                        alignItems="center"
+                      >
                         <Typography variant="body1" sx={{ color: colours.grey[100] }}>
                           {notification.message}
                         </Typography>
@@ -387,7 +425,7 @@ const StudentDashboard: React.FC = () => {
                           <Button
                             variant="contained"
                             size="small"
-                            onClick={() => handleNotificationRead(notification.id)}
+                            onClick={() => markNotificationAsRead(notification.id)}
                             sx={{
                               backgroundColor: colours.grey[800],
                               color: colours.grey[100],
@@ -408,7 +446,7 @@ const StudentDashboard: React.FC = () => {
         {/* Quick Actions */}
         <Box
           display="grid"
-          gridTemplateColumns={{ xs: '1fr', md: 'repeat(2, 1fr)' }}
+          gridTemplateColumns={{ xs: '1fr', md: 'repeat(1, 1fr)' }}
           gap={3}
           mt={4}
         >
@@ -441,7 +479,40 @@ const StudentDashboard: React.FC = () => {
               Create New Society
             </Button>
           </Paper>
+        </Box>
 
+        {/* Additional Sections */}
+        <Box mt={4}>
+          {/* Calendar Integration */}
+          <Paper
+            elevation={3}
+            sx={{
+              backgroundColor: colours.primary[400],
+              border: `1px solid ${colours.grey[800]}`,
+              p: 2,
+              mb: 4,
+            }}
+          >
+            <Box display="flex" alignItems="center" mb={2}>
+              <FaCalendarAlt size={24} style={{ marginRight: 8, color: colours.blueAccent[500] }} />
+              <Typography variant="h6" sx={{ color: colours.grey[100] }}>
+                Calendar
+              </Typography>
+            </Box>
+            <Box
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+              p={4}
+              bgcolor={colours.primary[500]}
+            >
+              <Typography variant="body1" sx={{ color: colours.grey[300] }}>
+                Calendar Integration Placeholder
+              </Typography>
+            </Box>
+          </Paper>
+
+          {/* Achievements Section */}
           <Paper
             elevation={3}
             sx={{
@@ -456,12 +527,58 @@ const StudentDashboard: React.FC = () => {
                 Achievements
               </Typography>
             </Box>
-            <Typography variant="body2" sx={{ color: colours.grey[300], mb: 2 }}>
-              Track your involvement and accomplishments across societies.
-            </Typography>
-            <Typography variant="body2" align="center" sx={{ color: colours.grey[400] }}>
-              Coming Soon
-            </Typography>
+            {awards.length === 0 ? (
+              <Typography variant="body1" align="center" sx={{ color: colours.grey[300] }}>
+                No achievements yet.
+              </Typography>
+            ) : (
+              <Box
+                display="grid"
+                gridTemplateColumns={{
+                  xs: '1fr',
+                  md: 'repeat(2, 1fr)',
+                  lg: 'repeat(3, 1fr)',
+                }}
+                gap={3}
+              >
+                {awards.map((awardAssignment) => (
+                  <Paper
+                    key={awardAssignment.id}
+                    elevation={2}
+                    sx={{
+                      backgroundColor: colours.primary[400],
+                      border: `1px solid ${colours.grey[800]}`,
+                      p: 2,
+                    }}
+                  >
+                    <Typography variant="h6" sx={{ color: colours.grey[100] }}>
+                      {awardAssignment.award.title}
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: colours.grey[300] }}>
+                      {awardAssignment.award.description}
+                    </Typography>
+                    <Box
+                      mt={1}
+                      px={1}
+                      py={0.5}
+                      borderRadius="4px"
+                      bgcolor={
+                        awardAssignment.award.rank === "Gold"
+                          ? "#FFD700"
+                          : awardAssignment.award.rank === "Silver"
+                          ? "#C0C0C0"
+                          : "#CD7F32"
+                      }
+                      color={colours.primary[500]}
+                    >
+                      <Typography variant="caption">
+                        {awardAssignment.award.rank}
+                      </Typography>
+                    </Box>
+                  </Paper>
+                ))}
+              </Box>
+            )}
           </Paper>
         </Box>
       </Box>
