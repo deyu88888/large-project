@@ -1,9 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { apiClient } from "../api"; // Import API client
+import { apiClient } from "../api";
+import { useTheme } from "@mui/material/styles";
+import { tokens } from "../styles/theme";
+// Removed: import { useSidebar } from "../components/layout/SidebarContext";
 
 const ViewEvents: React.FC = () => {
   const navigate = useNavigate();
+  const theme = useTheme();
+  const colours = tokens(theme.palette.mode);
+  const isLight = theme.palette.mode === "light";
+
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -25,11 +32,44 @@ const ViewEvents: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-indigo-50 via-white to-indigo-100 py-12 px-8">
-      <header className="text-center mb-10">
-        <h1 className="text-4xl font-bold text-gray-900">All Events</h1>
-        <p className="text-lg text-gray-600 mt-2">Check out all upcoming events here!</p>
-      </header>
+    <div
+      style={{
+        marginLeft: "0px", // Removed sidebarWidth dependency; set to "0px"
+        marginTop: "0px",
+        transition: "margin-left 0.3s ease-in-out",
+        minHeight: "100vh",
+        padding: "20px 40px",
+        backgroundColor: isLight ? colours.primary[1000] : colours.primary[500],
+      }}
+    >
+      <div style={{ maxWidth: "1920px", margin: "0 auto" }}>
+        <header
+          style={{
+            textAlign: "center",
+            marginBottom: "2.5rem",
+            padding: "2rem 0",
+          }}
+        >
+          <h1
+            style={{
+              color: isLight ? colours.grey[100] : colours.grey[100],
+              fontSize: "2.25rem",
+              fontWeight: 700,
+              marginBottom: "0.5rem",
+            }}
+          >
+            All Events
+          </h1>
+          <p
+            style={{
+              color: isLight ? colours.grey[100] : colours.grey[100],
+              fontSize: "1.125rem",
+              margin: 0,
+            }}
+          >
+            Check out all upcoming events here!
+          </p>
+        </header>
 
       {/* Show Loading State */}
       {loading ? (

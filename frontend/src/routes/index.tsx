@@ -9,7 +9,6 @@ import CircularLoader from "../components/loading/circular-loader";
 import Layout from "../components/layout";
 
 // Lazy-loaded pages
-const HomePage = lazy(() => import("../pages/home"));
 const LoginPage = lazy(() => import("../pages/login"));
 const RegisterPage = lazy(() => import("../pages/register"));
 const ProfilePage = lazy(() => import("../pages/profile"));
@@ -69,7 +68,7 @@ const routes = [
       {
         path: "admin",
         element: (
-          <PrivateGuard>
+          <PrivateGuard requiredRole="admin">
             <Suspense fallback={<LoadingView />}>
               <Layout />
             </Suspense>
@@ -125,7 +124,7 @@ const routes = [
       {
         path: "student",
         element: (
-          <PrivateGuard>
+          <PrivateGuard requiredRole="student">
             <Suspense fallback={<LoadingView />}>
               <Layout />
             </Suspense>
@@ -220,7 +219,7 @@ const routes = [
         children: [
           {
             index: true,
-            element: <HomePage />,
+            element: <DashboardPage />,
           },
           {
             path: "logout",

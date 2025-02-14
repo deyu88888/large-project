@@ -1,12 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaArrowLeft } from "react-icons/fa";
-import { apiClient } from "../api"; // Ensure you import apiClient for API calls
+import { apiClient } from "../api";
+import { useTheme } from "@mui/material/styles";
+import { tokens } from "../styles/theme";
+// Removed: import { useSidebar } from "../components/layout/SidebarContext";
 
 const MySocieties: React.FC = () => {
   const navigate = useNavigate();
   const [societies, setSocieties] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const theme = useTheme();
+  const colours = tokens(theme.palette.mode);
+  const isLight = theme.palette.mode === "light";
 
   useEffect(() => {
     fetchSocieties();
@@ -30,12 +36,25 @@ const MySocieties: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-indigo-50 via-white to-indigo-100 py-12 px-8">
-      {/* Header */}
-      <header className="flex justify-between items-center mb-8">
-        <button
-          onClick={handleBackToDashboard}
-          className="flex items-center text-blue-500 hover:underline font-medium"
+    <div
+      style={{
+        marginLeft: "0px", // Removed sidebarWidth dependency; set to "0px"
+        marginTop: "0px",
+        transition: "margin-left 0.3s ease-in-out",
+        minHeight: "100vh",
+        padding: "20px 40px",
+        backgroundColor: isLight ? colours.primary[1000] : colours.primary[500],
+      }}
+    >
+      <div style={{ maxWidth: "1920px", margin: "0 auto" }}>
+        {/* Header */}
+        <header
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "2rem",
+          }}
         >
           <FaArrowLeft className="mr-2" />
           Back to Dashboard

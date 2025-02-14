@@ -1,9 +1,15 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+// MUI/theme imports
+import { useTheme } from "@mui/material/styles";
+import { tokens } from "../styles/theme";
 
 const StartSociety: React.FC = () => {
   const navigate = useNavigate();
+  const theme = useTheme();
+  const colours = tokens(theme.palette.mode);
+  const isLight = theme.palette.mode === "light";
 
   const [societyName, setSocietyName] = useState("");
   const [description, setDescription] = useState("");
@@ -47,10 +53,33 @@ const StartSociety: React.FC = () => {
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-indigo-50 via-white to-indigo-100 py-12 px-8">
-      <header className="text-center mb-10">
-        <h1 className="text-4xl font-bold text-gray-900">Start a Society</h1>
-        <p className="text-lg text-gray-600 mt-2">
+    <div
+      style={{
+        marginLeft: "0px", // Removed sidebarWidth dependency; set to "0px"
+        marginTop: "0px",
+        transition: "margin-left 0.3s ease-in-out",
+        minHeight: "100vh",
+        padding: "3rem 2rem",
+        backgroundColor: isLight ? colours.primary[1000] : colours.primary[500],
+      }}
+    >
+      <header style={{ textAlign: "center", marginBottom: "2.5rem" }}>
+        <h1
+          style={{
+            fontSize: "2rem",
+            fontWeight: "bold",
+            color: isLight ? colours.grey[100] : colours.grey[100],
+          }}
+        >
+          Start a Society
+        </h1>
+        <p
+          style={{
+            fontSize: "1.125rem",
+            color: isLight ? colours.grey[300] : colours.grey[300],
+            marginTop: "0.5rem",
+          }}
+        >
           Fill out the form below to submit your request for creating a new society.
         </p>
       </header>
@@ -59,8 +88,16 @@ const StartSociety: React.FC = () => {
         onSubmit={handleSubmit}
         className="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-md"
       >
-        {error && <p className="text-red-500 mb-4">{error}</p>}
-        {success && <p className="text-green-500 mb-4">{success}</p>}
+        {error && (
+          <p style={{ color: colours.redAccent[500], marginBottom: "1rem" }}>
+            {error}
+          </p>
+        )}
+        {success && (
+          <p style={{ color: colours.greenAccent[500], marginBottom: "1rem" }}>
+            {success}
+          </p>
+        )}
 
         <div className="mb-6">
           <label

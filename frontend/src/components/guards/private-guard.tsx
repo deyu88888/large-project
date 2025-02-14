@@ -1,4 +1,4 @@
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useState, useEffect, useCallback } from "react";
 import { ACCESS_TOKEN, REFRESH_TOKEN } from "../../constants";
 import { apiClient, apiPaths } from "../../api";
@@ -6,31 +6,40 @@ import { useAuthStore } from "../../stores/auth-store";
 import { jwtDecode } from "jwt-decode";
 import { LoadingView } from "../loading/loading-view";
 
-export function PrivateGuard({ children }: { children: React.ReactNode }) {
+type UserRole = "admin" | "student";
+
+interface PrivateGuardProps {
+  children: React.ReactNode;
+  requiredRole?: UserRole;
+}
+
+// ✅ Define which routes should be PUBLIC (No login required)
+const PUBLIC_ROUTES = ["/", "/dashboard", "/events"];
+
+export function PrivateGuard({ children, requiredRole }: PrivateGuardProps) {
   const [authState, setAuthState] = useState({
-    isAuthorized: null as boolean | null,
+    isAuthorized: false,
     loading: true,
   });
-  const { setUser } = useAuthStore();
+
+  const { user, setUser } = useAuthStore();
+  const location = useLocation();
+
+  // ✅ If this is a public route, skip authentication
+  if (PUBLIC_ROUTES.includes(location.pathname)) {
+    return <>{children}</>;
+  }
 
   const authenticate = useCallback(async () => {
-    console.log("%c[PrivateGuard] Starting authentication...", "color: blue; font-weight: bold;");
     try {
       const token = localStorage.getItem(ACCESS_TOKEN);
       if (!token) {
-        console.error("%c[PrivateGuard] No access token found.", "color: red;");
         throw new Error("No access token available");
       }
 
       const isTokenValid = await validateToken(token);
-      console.log("%c[PrivateGuard] Access token validity:", "color: green;", isTokenValid);
+      if (!isTokenValid) await handleTokenRefresh();
 
-      if (!isTokenValid) {
-        console.log("%c[PrivateGuard] Access token expired. Refreshing...", "color: orange;");
-        await handleTokenRefresh();
-      }
-
-      console.log("%c[PrivateGuard] Fetching user data...", "color: blue;");
       const userData = await fetchUserData();
       console.log("%c[PrivateGuard] User data fetched:", "color: green;", userData);
 
@@ -41,7 +50,7 @@ export function PrivateGuard({ children }: { children: React.ReactNode }) {
 
       setAuthState({ isAuthorized: true, loading: false });
     } catch (error) {
-      console.error("%c[PrivateGuard] Authentication failed:", "color: red;", error);
+      console.error("[PrivateGuard] Authentication failed:", error);
       setAuthState({ isAuthorized: false, loading: false });
     }
   }, [setUser]);
@@ -53,37 +62,21 @@ export function PrivateGuard({ children }: { children: React.ReactNode }) {
   const validateToken = async (token: string): Promise<boolean> => {
     try {
       const { exp: tokenExpiration } = jwtDecode<{ exp: number }>(token);
-      const now = Date.now() / 1000;
-      const isValid = !!tokenExpiration && tokenExpiration > now;
-      console.log("%c[PrivateGuard] Token expiration time:", "color: blue;", tokenExpiration, "Current time:", now);
-      return isValid;
-    } catch (error) {
-      console.error("%c[PrivateGuard] Error decoding token:", "color: red;", error);
+      return tokenExpiration > Date.now() / 1000;
+    } catch {
       return false;
     }
   };
 
   const handleTokenRefresh = async () => {
     const refreshToken = localStorage.getItem(REFRESH_TOKEN);
-    if (!refreshToken) {
-      console.error("%c[PrivateGuard] No refresh token found.", "color: red;");
-      throw new Error("No refresh token available");
-    }
+    if (!refreshToken) throw new Error("No refresh token available");
 
-    try {
-      const response = await apiClient.post(apiPaths.USER.REFRESH, {
-        refresh: refreshToken,
-      });
-      if (response.status === 200 && response.data?.access) {
-        localStorage.setItem(ACCESS_TOKEN, response.data.access);
-        console.log("%c[PrivateGuard] Token refreshed successfully.", "color: green;");
-      } else {
-        console.error("%c[PrivateGuard] Failed to refresh token. Response:", "color: red;", response.data);
-        throw new Error("Failed to refresh token");
-      }
-    } catch (error) {
-      console.error("%c[PrivateGuard] Error during token refresh:", "color: red;", error);
-      throw error;
+    const response = await apiClient.post(apiPaths.USER.REFRESH, { refresh: refreshToken });
+    if (response.status === 200 && response.data?.access) {
+      localStorage.setItem(ACCESS_TOKEN, response.data.access);
+    } else {
+      throw new Error("Failed to refresh token");
     }
   };
 
@@ -104,14 +97,19 @@ export function PrivateGuard({ children }: { children: React.ReactNode }) {
     }
   };
 
-  useEffect(() => {
-    console.log("%c[PrivateGuard] Auth state updated:", "color: purple;", authState);
-  }, [authState]);
+  if (authState.loading) return <LoadingView />;
 
-  if (authState.loading) {
-    console.log("%c[PrivateGuard] Loading user authentication...", "color: orange;");
-    return <LoadingView />;
+  if (!authState.isAuthorized) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  return authState.isAuthorized ? children : <Navigate to="/login" />;
+  if (requiredRole && user?.role !== requiredRole) {
+    return <Navigate to={`/${user?.role}`} replace />;
+  }
+
+  if (location.pathname === "/" && user?.role) {
+    return <Navigate to={user.role === "admin" ? "/admin" : "/student"} replace />;
+  }
+
+  return <>{children}</>;
 }

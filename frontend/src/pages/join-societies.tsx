@@ -4,8 +4,16 @@ import { FaUsers } from "react-icons/fa";
 import axios from "axios";
 import { apiClient } from "../api";
 
+// Import the theme
+import { useTheme } from "@mui/material/styles";
+import { tokens } from "../styles/theme";
+
 const JoinSocieties: React.FC = () => {
   const navigate = useNavigate();
+  const theme = useTheme();
+  const colours = tokens(theme.palette.mode);
+  const isLight = theme.palette.mode === "light";
+
   const [societies, setSocieties] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -38,13 +46,44 @@ const JoinSocieties: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-indigo-50 via-white to-indigo-100 py-12 px-8">
-      <header className="text-center mb-16">
-        <h1 className="text-5xl font-extrabold text-gray-900">Join a Society</h1>
-        <p className="text-lg text-gray-600 mt-4">
-          Discover new societies and connect with your peers!
-        </p>
-      </header>
+    <div
+      style={{
+        marginLeft: "0px",
+        marginTop: "0px",
+        transition: "margin-left 0.3s ease-in-out",
+        minHeight: "100vh",
+        padding: "20px 40px",
+        backgroundColor: isLight ? colours.primary[1000] : colours.primary[500],
+      }}
+    >
+      <div style={{ maxWidth: "1920px", margin: "0 auto" }}>
+        <header
+          style={{
+            textAlign: "center",
+            marginBottom: "2.5rem",
+            padding: "2rem 0",
+          }}
+        >
+          <h1
+            style={{
+              color: isLight ? colours.grey[100] : colours.grey[100],
+              fontSize: "2.25rem",
+              fontWeight: 700,
+              marginBottom: "0.5rem",
+            }}
+          >
+            Join a Society
+          </h1>
+          <p
+            style={{
+              color: isLight ? colours.grey[100] : colours.grey[100],
+              fontSize: "1.125rem",
+              margin: 0,
+            }}
+          >
+            Discover new societies and connect with your peers!
+          </p>
+        </header>
 
       {loading ? (
         <div className="text-center">
