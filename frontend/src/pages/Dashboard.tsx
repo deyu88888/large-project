@@ -180,7 +180,6 @@ const Dashboard: React.FC = () => {
   }, [darkMode]);
 
   // -- Refs for Scrollable Sections --
-  const introRef = useRef<HTMLDivElement>(null);
   const statsRef = useRef<HTMLDivElement>(null);
   const popularSocietiesRef = useRef<HTMLDivElement>(null);
   const upcomingEventsRef = useRef<HTMLDivElement>(null);
@@ -193,9 +192,13 @@ const Dashboard: React.FC = () => {
   const MAX_RECONNECT_ATTEMPTS = 5;
   const RECONNECT_INTERVAL = 5000;
 
- // -- Toggle Sidebar --
-const handleToggleSidebar = () => {
+  // -- Toggle Sidebar --
+  const handleToggleSidebar = () => {
     setSidebarWidth((prev) => (prev === 'collapsed' ? 'expanded' : 'collapsed'));
+  };
+
+  const handleNavItemClick = (ref: React.RefObject<HTMLElement> | null) => { // Allow null
+    scrollToSection(ref); // Pass the ref (which might be null) directly
   };
 
   // -- Navigation Items Array --
@@ -203,7 +206,7 @@ const handleToggleSidebar = () => {
     {
       label: "Dashboard",
       icon: <span className="text-xl">🏠</span>,
-      ref: introRef,
+      ref: null,
     },
     {
       label: "Statistics",
@@ -233,14 +236,21 @@ const handleToggleSidebar = () => {
   ];
 
   // -- Smooth Scroll --
-  const scrollToSection = (ref: React.RefObject<HTMLElement>) => {
-    if (ref.current) {
-      const headerOffset = document.querySelector("header")?.offsetHeight || 0;
-      const elementPos =
-        ref.current.getBoundingClientRect().top + window.pageYOffset;
-      const offsetPos = elementPos - headerOffset;
+  const scrollToSection = (ref: React.RefObject<HTMLElement> | null) => {  // Allow null
+    if (ref === null) {
+      // Scroll to the top of the document
       window.scrollTo({
-        top: offsetPos,
+        top: 0,
+        behavior: "smooth",
+      });
+    } else if (ref && ref.current) {
+      // Existing scroll to section logic
+      const headerHeight = document.querySelector('header')?.offsetHeight || 0;
+      const elementPosition = ref.current.getBoundingClientRect().top + window.pageYOffset;
+      const offsetPosition = elementPosition - headerHeight;
+
+      window.scrollTo({
+        top: offsetPosition,
         behavior: "smooth",
       });
     }
@@ -417,25 +427,23 @@ const handleToggleSidebar = () => {
   }
 
   return (
-    // Wrap the entire layout in a container that respects the dark mode and uses CSS Grid
     <div
-      className={`min-h-screen flex ${
+        className={`min-h-screen flex ${
         darkMode ? "dark bg-gray-900" : "bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50"
-      } transition-colors duration-500 grid grid-cols-[auto_1fr]`}
-      style={{
+        } transition-colors duration-500 grid grid-cols-[auto_1fr]`}
+        style={{
         gridTemplateColumns: sidebarWidth === 'collapsed' ? 'auto 1fr' : '288px 1fr',
-      }}
+        }}
     >
       {/* Sidebar */}
       <Sidebar
-        isOpen={true} // Sidebar is always present in the layout
-        onClose={handleToggleSidebar}  //  Use toggle handler for expand/collapse
+        isOpen={true}
+        onClose={handleToggleSidebar}
         navigationItems={navigationItems}
-        scrollToSection={scrollToSection}
+        scrollToSection={handleNavItemClick} // Correctly pass the function
         darkMode={darkMode}
         onToggleDarkMode={() => setDarkMode((prev) => !prev)}
-        sidebarWidth={sidebarWidth} // Pass the width state
-        // showFloatingToggle={false} No longer needed
+        sidebarWidth={sidebarWidth}
       />
 
       {/* Main Content */}
@@ -502,7 +510,7 @@ const handleToggleSidebar = () => {
         <div className="max-w-7xl mx-auto px-4 py-8 space-y-10">
           {/* Introduction */}
           <SectionCard title={introduction?.title || "Welcome!"}>
-            <div ref={introRef}>
+            <div>
               {introduction?.content?.length ? (
                 introduction.content.map((paragraph, idx) => (
                   <p
