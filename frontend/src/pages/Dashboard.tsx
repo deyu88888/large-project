@@ -5,9 +5,9 @@ import { Link } from "react-router-dom";
 import { LoadingView } from "../components/loading/loading-view";
 import PopularSocieties from "../components/PopularSocieties";
 import { getAllEvents } from "../api";
-import { motion } from "framer-motion";
 import Sidebar from "../components/Sidebar"; // Our advanced Sidebar (with dark mode toggle)
 import { HiMenu, HiX } from "react-icons/hi";
+import { motion, AnimatePresence } from 'framer-motion';
 
 // -- Type Definitions --
 interface StatData {
@@ -192,9 +192,13 @@ const Dashboard: React.FC = () => {
   const MAX_RECONNECT_ATTEMPTS = 5;
   const RECONNECT_INTERVAL = 5000;
 
-  // -- Toggle Sidebar --
+  // -- Toggle Sidebar -- (ONLY for the hamburger button)
   const handleToggleSidebar = () => {
     setSidebarWidth((prev) => (prev === 'collapsed' ? 'expanded' : 'collapsed'));
+  };
+
+  const handleCloseSidebar = () => {
+    setSidebarWidth('collapsed');
   };
 
   const handleNavItemClick = (ref: React.RefObject<HTMLElement> | null) => { // Allow null
@@ -438,9 +442,10 @@ const Dashboard: React.FC = () => {
       {/* Sidebar */}
       <Sidebar
         isOpen={true}
-        onClose={handleToggleSidebar}
+        onClose={handleCloseSidebar} // Use the new function
+        onToggle={handleToggleSidebar} // Pass handleToggleSidebar
         navigationItems={navigationItems}
-        scrollToSection={handleNavItemClick} // Correctly pass the function
+        scrollToSection={handleNavItemClick}
         darkMode={darkMode}
         onToggleDarkMode={() => setDarkMode((prev) => !prev)}
         sidebarWidth={sidebarWidth}
@@ -450,60 +455,70 @@ const Dashboard: React.FC = () => {
       <div className="flex-grow pt-16">
         {/* Header */}
         <motion.header
-          initial={{ opacity: 0, y: -30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="bg-white dark:bg-gray-800 shadow-md fixed top-0  z-10 w-full"
+            initial={{ opacity: 0, y: -30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="bg-white dark:bg-gray-800 shadow-md fixed top-0 z-10 w-full"
+            style={{
+                gridTemplateColumns: sidebarWidth === 'collapsed' ? 'auto 1fr auto' : '288px 1fr',
+            }}
         >
-          <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              {/* Toggle Button */}
-              <button
-                className="text-gray-600 dark:text-gray-300 hover:text-gray-800
-                           dark:hover:text-white focus:outline-none"
-                onClick={handleToggleSidebar}
-                aria-label="Toggle Menu"
-              >
-                {sidebarWidth === 'collapsed' ? (
-                  <HiMenu className="h-6 w-6" />
-                ) : (
-                  <HiX className="h-6 w-6" />
+            <div className="max-w-7xl mx-auto px-4 py-2 grid grid-cols-[auto_1fr_auto] gap-4 items-center">
+                <div className="flex items-center gap-2">
+                    {/* Toggle Button */}
+                    <button
+                        className="text-gray-600 dark:text-gray-300 hover:text-gray-800
+                                dark:hover:text-white focus:outline-none"
+                        onClick={handleToggleSidebar}
+                        aria-label="Toggle Menu"
+                    >
+                        <motion.span
+                            initial={{ opacity: 0, scale: 0.5 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.2 }}
+                        >
+                            <HiMenu className="h-6 w-6" />
+                        </motion.span>
+                    </button>
+                    <span role="img" aria-label="sparkles" className="text-3xl">
+                        ✨
+                    </span>
+                    <h1 className="text-xl font-extrabold tracking-wide text-gray-800 dark:text-gray-100">
+                        Student Society Dashboard
+                    </h1>
+                </div>
+
+                {/* Conditionally render Register/Login links */}
+                {sidebarWidth === 'collapsed' && (
+                    <div className="flex items-center justify-end gap-4">
+                        {/* Search and Buttons */}
+                        <input
+                            type="search"
+                            placeholder="Search..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="px-4 py-2 rounded-full border border-gray-300
+                                        dark:border-gray-700 dark:bg-gray-700 dark:text-gray-100
+                                        focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            style={{ caretColor: "black" }}
+                        />
+                        <Link
+                            to="/register"
+                            className="px-4 py-2 bg-purple-600 text-white
+                                        rounded-full shadow hover:bg-purple-700 transition whitespace-nowrap"
+                        >
+                            Register
+                        </Link>
+                        <Link
+                            to="/login"
+                            className="px-4 py-2 bg-purple-600 text-white
+                                        rounded-full shadow hover:bg-purple-700 transition whitespace-nowrap"
+                        >
+                            Login
+                        </Link>
+                    </div>
                 )}
-              </button>
-              <span role="img" aria-label="sparkles" className="text-3xl">
-                ✨
-              </span>
-              <h1 className="text-xl font-extrabold tracking-wide text-gray-800 dark:text-gray-100">
-                Student Society Dashboard
-              </h1>
             </div>
-            <div className="flex items-center gap-4">
-              <input
-                type="search"
-                placeholder="Search..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="px-4 py-2 rounded-full border border-gray-300
-                           dark:border-gray-700 dark:bg-gray-700 dark:text-gray-100
-                           focus:outline-none focus:ring-2 focus:ring-purple-500"
-                style={{ caretColor: "black" }}
-              />
-              <Link
-                to="/register"
-                className="px-4 py-2 bg-purple-600 text-white
-                           rounded-full shadow hover:bg-purple-700 transition"
-              >
-                Register
-              </Link>
-              <Link
-                to="/login"
-                className="px-4 py-2 bg-purple-600 text-white
-                           rounded-full shadow hover:bg-purple-700 transition"
-              >
-                Login
-              </Link>
-            </div>
-          </div>
         </motion.header>
 
         {/* Main Content Section */}

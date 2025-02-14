@@ -1,6 +1,7 @@
-import React, { useState, CSSProperties, Fragment, useCallback } from "react";
+import React, { useState, CSSProperties, Fragment } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { BiX, BiMoon, BiSun, BiSearch, BiChevronDown } from "react-icons/bi";
+import { Link } from 'react-router-dom'; // Import Link
 
 interface SubItem {
     label: string;
@@ -16,6 +17,7 @@ interface NavigationItem {
     subItems?: SubItem[];
     roles?: string[]; // Optional roles for visibility
     unreadCount?: number; // Optional unread count
+    link?: string; //for links
 }
 
 interface SidebarProps {
@@ -26,6 +28,7 @@ interface SidebarProps {
     onToggleDarkMode?: () => void;
     sidebarWidth: 'collapsed' | 'expanded';
     userRole?: string; // Add userRole prop
+    onToggle: () => void; //NEW
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -35,7 +38,8 @@ const Sidebar: React.FC<SidebarProps> = ({
     darkMode = false,
     onToggleDarkMode,
     sidebarWidth,
-    userRole, // Receive userRole
+    userRole,
+    onToggle
 }) => {
 
     const [searchQuery, setSearchQuery] = useState("");
@@ -46,7 +50,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         setOpenSubmenu((prev) => (prev === label ? null : label));
     };
 
-    // Filter items by search AND user role
+    // Filter items by search AND user role.  Include the new items ONLY when expanded.
     const filteredItems = navigationItems.filter((item) => {
         if (sidebarWidth === 'collapsed') return true; // Always show icons when collapsed
         if (userRole && item.roles && !item.roles.includes(userRole)) {
@@ -54,6 +58,15 @@ const Sidebar: React.FC<SidebarProps> = ({
         }
         return item.label.toLowerCase().includes(searchQuery.toLowerCase());
     });
+
+      // Add Register and Login as navigation items, ONLY when expanded
+      const allItems = sidebarWidth === 'expanded'
+      ? [
+          ...filteredItems,
+          { label: "Register", icon: <span className="text-xl"></span>, ref: null, link: "/register" },
+          { label: "Login", icon: <span className="text-xl"></span>, ref: null, link: "/login" },
+        ]
+      : filteredItems;
 
 
     const containerStyle: CSSProperties = {
@@ -134,49 +147,54 @@ const Sidebar: React.FC<SidebarProps> = ({
                     aria-label="Sidebar Navigation"
                 >
                     <ul className="space-y-1">
-                        {filteredItems.map((item) => {
-                            const hasSubItems = item.subItems && item.subItems.length > 0;
-                            const isExpanded = openSubmenu === item.label;
+                    {allItems.map((item) => {
+                        const hasSubItems = item.subItems && item.subItems.length > 0;
+                        const isExpanded = openSubmenu === item.label;
 
-                            return (
-                                <Fragment key={item.label}>
-                                    <motion.li
-                                        className="relative group"
-                                    >
-                                        {/* Top-level nav button */}
+                        return (
+                            <Fragment key={item.label}>
+                                <motion.li className="relative group">
+                                    {/* Use Link for items with 'link' property, otherwise use button */}
+                                    {item.link ? (
+                                        <Link
+                                            to={item.link}
+                                            className="w-full text-left flex items-center gap-2 p-3 rounded-md bg-purple-500 text-white hover:bg-purple-600 transition transform group-hover:-translate-y-[1px]"
+                                        >
+                                            {item.icon}
+                                            {sidebarWidth === 'expanded' && (
+                                                <span className="font-medium flex-1">{item.label}</span>
+                                            )}
+                                        </Link>
+                                    ) : (
                                         <motion.button
                                             onClick={() => {
                                                 if (hasSubItems) {
                                                     handleSubmenuToggle(item.label);
                                                 } else {
-                                                    // Only call scrollToSection, NEVER onClose here
                                                     scrollToSection(item.ref);
                                                 }
                                             }}
-                                            className="w-full text-left flex items-center gap-2 p-3
-                         rounded-md text-gray-700 dark:text-gray-200
-                         hover:bg-purple-200 dark:hover:bg-purple-600
-                         transition transform group-hover:-translate-y-[1px] relative"
-
+                                            className="w-full text-left flex items-center gap-2 p-3 rounded-md text-gray-700 dark:text-gray-200 hover:bg-purple-200 dark:hover:bg-purple-600 transition transform group-hover:-translate-y-[1px] relative"
                                             whileHover={{ scale: 1.05 }}
                                             whileTap={{ scale: 0.95 }}
                                         >
+                                            {/* Icon and Label */}
                                             <motion.span
                                                 whileHover={{ scale: 1.1, rotate: 3 }}
                                                 transition={{ type: "spring", stiffness: 300 }}
                                             >
                                                 {item.icon}
                                             </motion.span>
-
                                             {sidebarWidth === 'expanded' && (
                                                 <span className="font-medium flex-1">{item.label}</span>
                                             )}
-                                             {sidebarWidth === 'expanded' && item.unreadCount && (
+
+                                            {/* Unread Count and Submenu Arrow */}
+                                            {sidebarWidth === 'expanded' && item.unreadCount && (
                                                 <span className="bg-red-500 text-white rounded-full px-2 py-1 text-xs">
                                                     {item.unreadCount}
                                                 </span>
                                             )}
-
                                             {hasSubItems && sidebarWidth === 'expanded' && (
                                                 <motion.span
                                                     animate={{ rotate: isExpanded ? 180 : 0 }}
@@ -186,47 +204,44 @@ const Sidebar: React.FC<SidebarProps> = ({
                                                 </motion.span>
                                             )}
                                         </motion.button>
-                                    </motion.li>
-
-                                    {/* Submenu / Accordion - Only show when expanded and has subitems*/}
-                                    {hasSubItems && sidebarWidth === 'expanded' && (
-                                        <AnimatePresence>
-                                            {isExpanded && (
-                                                <motion.ul
-                                                    initial={{ height: 0, opacity: 0 }}
-                                                    animate={{ height: "auto", opacity: 1 }}
-                                                    exit={{ height: 0, opacity: 0 }}
-                                                    transition={{ duration: 0.3 }}
-                                                    className="ml-8 pl-2 border-l border-purple-300
-                                    dark:border-purple-700 overflow-hidden"
-                                                >
-                                                    {item.subItems!.map((sub) => (
-                                                        <li key={sub.label} className="mt-1">
-                                                            <motion.button
-                                                              whileTap={{ scale: 0.95 }}
-                                                                onClick={() => {
-                                                                    if (sub.ref) {
-                                                                        scrollToSection(sub.ref);
-                                                                    }
-                                                                    onClose(); //Keep this for sub-items
-                                                                }}
-                                                                className="w-full text-left flex items-center gap-2
-                                            p-2 rounded-md text-gray-600 dark:text-gray-300
-                                            hover:bg-purple-200 dark:hover:bg-purple-600
-                                            transition"
-                                                            >
-                                                                {sub.icon && <span>{sub.icon}</span>}
-                                                                {sidebarWidth === 'expanded' && <span className="flex-1">{sub.label}</span>}
-                                                            </motion.button>
-                                                        </li>
-                                                    ))}
-                                                </motion.ul>
-                                            )}
-                                        </AnimatePresence>
                                     )}
-                                </Fragment>
-                            );
-                        })}
+                                </motion.li>
+
+                                {/* Submenu / Accordion - Only show when expanded and has subitems */}
+                                {hasSubItems && sidebarWidth === 'expanded' && (
+                                    <AnimatePresence>
+                                        {isExpanded && (
+                                            <motion.ul
+                                                initial={{ height: 0, opacity: 0 }}
+                                                animate={{ height: "auto", opacity: 1 }}
+                                                exit={{ height: 0, opacity: 0 }}
+                                                transition={{ duration: 0.3 }}
+                                                className="ml-8 pl-2 border-l border-purple-300 dark:border-purple-700 overflow-hidden"
+                                            >
+                                                {item.subItems!.map((sub) => (
+                                                    <li key={sub.label} className="mt-1">
+                                                        <motion.button
+                                                            whileTap={{ scale: 0.95 }}
+                                                            onClick={() => {
+                                                                if (sub.ref) {
+                                                                    scrollToSection(sub.ref);
+                                                                }
+                                                                onClose();
+                                                            }}
+                                                            className="w-full text-left flex items-center gap-2 p-2 rounded-md text-gray-600 dark:text-gray-300 hover:bg-purple-200 dark:hover:bg-purple-600 transition"
+                                                        >
+                                                            {sub.icon && <span>{sub.icon}</span>}
+                                                            {sidebarWidth === 'expanded' && <span className="flex-1">{sub.label}</span>}
+                                                        </motion.button>
+                                                    </li>
+                                                ))}
+                                            </motion.ul>
+                                        )}
+                                    </AnimatePresence>
+                                )}
+                            </Fragment>
+                        );
+                    })}
                     </ul>
                 </motion.nav>
 
