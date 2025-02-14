@@ -5,8 +5,6 @@ import axios from "axios";
 import { useSettingsStore } from "./stores/settings-store";
 import { themeSettings } from "./theme/theme";
 import { SearchProvider } from "./components/layout/SearchContext";
-import Box from "@mui/material/Box";
-//import Topbar from "./components/layout/Topbar";
 
 export const apiClient = axios.create({
   baseURL: "http://localhost:8000",
@@ -23,19 +21,7 @@ export function App() {
       <CssBaseline />
       <SearchProvider>
         <BrowserRouter>
-          {/* 
-            Here we render Sidebar & Topbar. 
-            We also wrap Routes in a layout container 
-            so that the content is displayed next to/under them. 
-          */}
-          <Box display="flex" minHeight="100vh">
-            {/* <Sidebar /> <-- Temporarily hidden */}
-            <Box display="flex" flexDirection="column" flexGrow={1}>
-              {/* Topbar removed */}
-              {/* The rest of your routes */}
-              <Routes />
-            </Box>
-          </Box>
+          <Routes />
         </BrowserRouter>
       </SearchProvider>
     </ThemeProvider>
