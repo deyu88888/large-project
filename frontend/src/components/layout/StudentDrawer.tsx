@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Avatar,
   Box,
@@ -22,6 +22,7 @@ import PersonOutlinedIcon from "@mui/icons-material/PersonOutlined";
 import InboxIcon from "@mui/icons-material/MoveToInbox";
 import MailIcon from "@mui/icons-material/Mail";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
+import LogoutIcon from '@mui/icons-material/Logout';
 
 interface StudentDrawerProps {
   drawer: boolean;
@@ -35,6 +36,7 @@ const StudentDrawer: React.FC<StudentDrawerProps> = ({
   location,
 }) => {
   const [selected, setSelected] = useState("Dashboard");
+  const navigate = useNavigate();
 
   const menuItems = [
     { title: "Dashboard", icon: <HomeOutlinedIcon />, to: "/student" },
@@ -43,6 +45,12 @@ const StudentDrawer: React.FC<StudentDrawerProps> = ({
     { title: "View Events", icon: <NotificationsNoneOutlinedIcon />, to: "/student/view-events" },
     { title: "Notifications", icon: <PersonOutlinedIcon />, to: "/student/view-notifications" },
   ];
+
+  const logout = () => {
+    localStorage.removeItem("access");
+    localStorage.removeItem("refresh");
+    navigate("/login");
+  };
 
   return (
     <Box
@@ -54,7 +62,7 @@ const StudentDrawer: React.FC<StudentDrawerProps> = ({
         borderRightColor: "divider",
       }}
     >
-      <Box sx={{ overflow: "hidden" }}>
+      <Box sx={{ overflow: "hidden" , height: "100vh", position: "fixed" }}>
         {/* Toggle Button Header */}
         <Box
           sx={{
@@ -176,6 +184,33 @@ const StudentDrawer: React.FC<StudentDrawerProps> = ({
               </ListItemButton>
             </ListItem>
           ))}
+        </List>
+        <Divider/>
+
+        {/* Logout Item */}
+        <List>
+          <ListItem disablePadding>
+            <ListItemButton
+              sx={{
+                minHeight: 48,
+                px: 2.5,
+                justifyContent: drawer ? "initial" : "center",
+                color: "red",
+              }}
+              onClick={logout}
+            >
+              <ListItemIcon
+                sx={{
+                  minWidth: 0,
+                  mr: drawer ? 3 : "auto",
+                  justifyContent: "center",
+                }}
+              >
+                <LogoutIcon sx={{ color: "red"}}/> 
+              </ListItemIcon>
+              {drawer && <ListItemText primary="Logout" />}
+            </ListItemButton>
+          </ListItem>
         </List>
       </Box>
     </Box>
