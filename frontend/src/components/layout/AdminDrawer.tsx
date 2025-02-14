@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Avatar,
   Box,
@@ -11,6 +11,7 @@ import {
   ListItemIcon,
   ListItemText,
   Typography,
+  Button,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
@@ -23,6 +24,7 @@ import CalendarTodayOutlinedIcon from "@mui/icons-material/CalendarTodayOutlined
 import PersonAddAltIcon from "@mui/icons-material/PersonAddAlt";
 import InboxIcon from "@mui/icons-material/MoveToInbox";
 import MailIcon from "@mui/icons-material/Mail";
+import LogoutIcon from '@mui/icons-material/Logout';
 
 interface AdminDrawerProps {
   drawer: boolean;
@@ -32,6 +34,7 @@ interface AdminDrawerProps {
 
 const AdminDrawer: React.FC<AdminDrawerProps> = ({ drawer, toggleDrawer, location }) => {
   const [selected, setSelected] = useState("Dashboard");
+  const navigate = useNavigate();
 
   const menuItems = [
     { title: "Dashboard", icon: <HomeOutlinedIcon />, to: "/admin" },
@@ -45,6 +48,12 @@ const AdminDrawer: React.FC<AdminDrawerProps> = ({ drawer, toggleDrawer, locatio
     { title: "Create Admin", icon: <PersonAddAltIcon />, to: "/admin/create-admin" },
   ];
 
+  const logout = () => {
+    localStorage.removeItem("access");
+    localStorage.removeItem("refresh");
+    navigate("/login");
+  };
+
   return (
     <Box
       sx={{
@@ -55,7 +64,7 @@ const AdminDrawer: React.FC<AdminDrawerProps> = ({ drawer, toggleDrawer, locatio
         borderRightColor: "divider",
       }}
     >
-      <Box sx={{ overflow: "hidden" }}>
+      <Box sx={{ overflow: "hidden", height: "100vh", position: "fixed" }}>
         {/* Toggle Button Header */}
         <Box sx={{ p: 2, display: "flex", justifyContent: "center", alignItems: "center" }}>
           <IconButton onClick={toggleDrawer} sx={{ p: 0 }}>
@@ -111,7 +120,7 @@ const AdminDrawer: React.FC<AdminDrawerProps> = ({ drawer, toggleDrawer, locatio
 
         {/* Additional Items */}
         <List>
-          {["All mail", "Trash", "Spam"].map((text, index) => (
+          {["All mail", "Trash"].map((text, index) => (
             <ListItem key={text} disablePadding>
               <ListItemButton
                 sx={{
@@ -133,6 +142,33 @@ const AdminDrawer: React.FC<AdminDrawerProps> = ({ drawer, toggleDrawer, locatio
               </ListItemButton>
             </ListItem>
           ))}
+        </List>
+        <Divider/>
+
+        {/* Logout Item */}
+        <List>
+          <ListItem disablePadding>
+            <ListItemButton
+              sx={{
+                minHeight: 48,
+                px: 2.5,
+                justifyContent: drawer ? "initial" : "center",
+                color: "red",
+              }}
+              onClick={logout}
+            >
+              <ListItemIcon
+                sx={{
+                  minWidth: 0,
+                  mr: drawer ? 3 : "auto",
+                  justifyContent: "center",
+                }}
+              >
+                <LogoutIcon sx={{ color: "red"}}/> 
+              </ListItemIcon>
+              {drawer && <ListItemText primary="Logout" />}
+            </ListItemButton>
+          </ListItem>
         </List>
       </Box>
     </Box>
