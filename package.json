@@ -1,9 +1,8 @@
 {
   "dependencies": {
-    "@nivo/bar": "^0.88.0",
-    "lucide-react": "^0.475.0"
-  },
-  "devDependencies": {
-    "@shadcn/ui": "^0.0.4"
+    "axios": "^1.7.9",
+    "date-fns": "^4.1.0",
+    "framer-motion": "^12.4.1",
+    "motion": "^12.4.2"
   }
 }
