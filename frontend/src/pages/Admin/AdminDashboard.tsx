@@ -20,6 +20,7 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
 
   const { drawer } = useSettingsStore(); 
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
 
   useEffect(() => {
@@ -27,6 +28,19 @@ const AdminDashboard = () => {
     fetchSocieties();
   }, []);
 
+  useEffect(() => {
+    fetchCurrentUser();
+  }, []);
+
+  const fetchCurrentUser = async () => {
+    try {
+      const response = await apiClient.get("/api/admin/user-stats/"); // Adjust the endpoint
+      setCurrentUser(response.data);
+    } catch (error) {
+      console.error("Error fetching current user:", error);
+    }
+  };
+  
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -111,7 +125,7 @@ const AdminDashboard = () => {
     >
       <div style={{ maxWidth: "1600px", margin: "0 auto" }}>
         <header className="text-center mb-16">
-          <Header title="Admin Dashboard" subtitle="Manage users, societies, and more." />
+          <Header title={`Welcome to your Dashboard, ${currentUser?.firstName || "User"}`} subtitle="Manage users, societies, and more." />
         </header>
 
         {loading ? (
@@ -147,10 +161,12 @@ const AdminDashboard = () => {
                 Societies Overview
               </Typography>
               <div style={{ height: "300px" }}>
-                <BarChart data={societiesData.map((society) => ({
-                  label: society.name,
-                  value: society.societyMembers.length,
-                }))} />
+              <BarChart
+                data={societiesData.map((society) => ({
+                  country: society.name,
+                  members: society.societyMembers.length,
+                }))}
+              />
               </div>
             </section>
 
