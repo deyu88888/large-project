@@ -214,7 +214,7 @@ const StudentDashboard: React.FC = () => {
             {user?.is_president === true && (
               <Button
                 variant="contained"
-                onClick={() => navigate("/student/president-page")}
+                onClick={() => navigate(`/president-page/${user?.president_of}`)}
                 sx={{
                   backgroundColor: colours.greenAccent[500],
                   color: colours.grey[100],

@@ -1,28 +1,31 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { apiClient } from "../api"; // adjust the import based on your project structure
 import { useAuthStore } from "../stores/auth-store";
 
-
-
 const PresidentPage = () => {
   const navigate = useNavigate();
-  const [society, setSociety] = useState(null);
-  const [pendingMembers, setPendingMembers] = useState([]);
+  const { society_id } = useParams<{ society_id: string }>();
+  const [society, setSociety] = useState<any>(null);
+  const [pendingMembers, setPendingMembers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuthStore();
-
 
   // Fetch society and pending members on component mount
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // Use the society_id from the URL if available; otherwise, fall back to user.president_of.
+        const id = society_id || user?.president_of;
+        if (!id) {
+          throw new Error("No society id available");
+        }
         // Fetch the society the current president is managing
-        const societyResponse = await apiClient.get(`/api/society/${user?.president_of}/`);
+        const societyResponse = await apiClient.get(`/api/manage-society-details/${id}/`);
         setSociety(societyResponse.data);
 
         // Fetch pending members for that society
-        const pendingResponse = await apiClient.get(`/api/society/${user?.president_of}/pending-members/`);
+        const pendingResponse = await apiClient.get(`/api/society/${id}/pending-members/`);
         setPendingMembers(pendingResponse.data || []);
       } catch (error) {
         console.error("Error fetching president data:", error);
@@ -32,7 +35,7 @@ const PresidentPage = () => {
     };
 
     fetchData();
-  }, []);
+  }, [society_id, user]);
 
   if (loading) {
     return (
@@ -53,26 +56,30 @@ const PresidentPage = () => {
 
       {/* Navigation Buttons */}
       <div className="flex justify-center space-x-4 mb-8">
+        {/* Navigate to the manage society details page (child route of /president-page/:society_id) */}
         <button
-          onClick={() => navigate(`/manage-society-details/${user?.president_of}/`)}
+          onClick={() => navigate("manage-society-details")}
           className="bg-green-500 text-white px-6 py-3 rounded hover:bg-green-600 transition"
         >
           Manage Society Page
         </button>
+        {/* Navigate to the manage society events page */}
         <button
-          onClick={() => navigate(`/manage-society-events/${user?.president_of}/`)}
+          onClick={() => navigate("manage-society-events")}
           className="bg-green-500 text-white px-6 py-3 rounded hover:bg-green-600 transition"
         >
           Manage Society Events
         </button>
+        {/* Navigate to pending members page */}
         <button
-          onClick={() => navigate(`/society/${user?.president_of}/pending-members`)}
+          onClick={() => navigate("pending-members")}
           className="bg-blue-500 text-white px-6 py-3 rounded hover:bg-blue-600 transition"
         >
           Pending Members
         </button>
+        {/* Navigate to report to admin page; adjust the route if needed */}
         <button
-          onClick={() => navigate("/manage-society-details")}
+          onClick={() => navigate("report-to-admin")}
           className="bg-red-500 text-white px-6 py-3 rounded hover:bg-red-600 transition"
         >
           Report to Admin
@@ -96,11 +103,10 @@ const PresidentPage = () => {
             ))}
           </ul>
         )}
-        {/* Optionally, add a button to view all pending members */}
         {pendingMembers.length > 3 && (
           <div className="mt-4">
             <button
-              onClick={() => navigate("/pending-members")}
+              onClick={() => navigate("pending-members")}
               className="text-blue-500 hover:underline"
             >
               View All Pending Members

@@ -24,6 +24,8 @@ const PresidentPage = lazy(() => import("../pages/president-page"));
 const ManageSocietyDetails = lazy(() => import("../pages/manage-society-details"));
 const ManageSocietyEvents = lazy(() => import("../pages/manage-society-events"));
 const CreateEventPage = lazy(() => import("../pages/create-society-event"));
+const ReportToAdmin = lazy(() => import("../pages/report-to-admin"));
+
 
 
 // Admin pages
@@ -157,59 +159,79 @@ const routes = [
             path: "join-society/:id",
             element: <JoinSocietiesPage />,
           },
-          {
-            path: "president-page",
-            element: (
-              <Suspense fallback={<LoadingView />}>
-                <PresidentPage />
-              </Suspense>
-            ),
-          },
-          {
-            path: "manage-society-details/:society_id",
-            element: (
-              <Suspense fallback={<LoadingView />}>
-                <ManageSocietyDetails />
-              </Suspense>
-            ),
-          },
-    
-          {
-            path: "manage-society-events/:society_id/",
-            element: (
-              <Suspense fallback={<LoadingView />}>
-                <ManageSocietyEvents />
-              </Suspense>
-            ),
-          },
-    
-          {
-            path: "society/:society_id/create-society-event",
-            element: (
-              <Suspense fallback={<LoadingView />}>
-                <CreateEventPage />
-              </Suspense>
-            ),
-          },
-    
-          {
-            path: "society/:society_id/:event_type",
-            element: (
-              <Suspense fallback={<LoadingView />}>
-                <ViewSocietyEvents />
-              </Suspense>
-            ),
-          },
-    
-          {
-            path: "society/:society_id/pending-members",
-            element: (
-              <Suspense fallback={<LoadingView />}>
-                <PendingMembers />
-              </Suspense>
-            ),
-          },
         ],
+      },
+      {
+        // President Mode routes (separate from regular student routes)
+        // Even though a president is a student, these routes are used when they
+        // click "Manage My Society" and enter president mode.
+        path: "/president-page",
+  element: (
+    <PrivateGuard requiredRole="student">
+      <Suspense fallback={<LoadingView />}>
+        <Layout />
+      </Suspense>
+    </PrivateGuard>
+  ),
+  children: [
+    {
+      // This dynamic segment ensures that the society ID is always captured as a number
+      path: ":society_id",
+      element: <Outlet />, // Passes the dynamic param to children
+      children: [
+        // President dashboard landing page
+        { index: true, element: <PresidentPage /> },
+        {
+          path: "manage-society-details",
+          element: (
+            <Suspense fallback={<LoadingView />}>
+              <ManageSocietyDetails />
+            </Suspense>
+          ),
+        },
+        {
+          path: "manage-society-events",
+          element: (
+            <Suspense fallback={<LoadingView />}>
+              <ManageSocietyEvents />
+            </Suspense>
+          ),
+        },
+        {
+          path: "create-society-event",
+          element: (
+            <Suspense fallback={<LoadingView />}>
+              <CreateEventPage />
+            </Suspense>
+          ),
+        },
+        {
+          path: "society/:event_type",
+          element: (
+            <Suspense fallback={<LoadingView />}>
+              <ViewSocietyEvents />
+            </Suspense>
+          ),
+        },
+        {
+          path: "pending-members",
+          element: (
+            <Suspense fallback={<LoadingView />}>
+              <PendingMembers />
+            </Suspense>
+          ),
+        },
+        {
+          path: "report-to-admin",
+          element: (
+            <Suspense fallback={<LoadingView />}>
+              <ReportToAdmin />
+            </Suspense>
+          ),
+        },
+      ],
+    },
+  ],
       },
       {
         path: "logout",

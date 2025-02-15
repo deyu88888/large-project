@@ -2,7 +2,7 @@ import axios from "axios";
 import { ACCESS_TOKEN } from "./constants";
 
 // ✅ Define base API URL properly
-const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/";
+const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 // ✅ Axios instance
 export const apiClient = axios.create({
@@ -16,6 +16,9 @@ export const apiClient = axios.create({
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem(ACCESS_TOKEN);
+    console.log("Request URL:", config.url);
+    console.log("Full URL:", apiUrl + config.url);
+    console.log("Authorization Token:", token);
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -41,6 +44,7 @@ export const apiPaths = {
   },
   SOCIETY: {
     POPULAR_SOCIETIES: "/api/popular-societies/",
+    MANAGE_DETAILS: (id: number) => `/api/manage-society-details/${id}/`,
   },
   EVENTS: {
     ALL: "/api/events/",

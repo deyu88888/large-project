@@ -1,10 +1,7 @@
 import React, { useState, useEffect, ChangeEvent, FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
-import { apiClient } from "../api";
+import { useNavigate, useParams } from "react-router-dom";
+import { apiClient, apiPaths } from "../api";
 import { useAuthStore } from "../stores/auth-store";
-import { useParams } from "react-router-dom";
-
-
 
 interface SocietyData {
   id: number;
@@ -21,13 +18,13 @@ interface SocietyData {
 const ManageSocietyDetails: React.FC = () => {
   const { user } = useAuthStore();
   const navigate = useNavigate();
+  const { society_id } = useParams<{ society_id: string }>();
+  const societyId = Number(society_id);
+
   const [society, setSociety] = useState<SocietyData | null>(null);
   const [formData, setFormData] = useState<SocietyData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
-  const { society_id } = useParams<{ society_id: string }>();
-  const societyId = Number(society_id);
-
 
   useEffect(() => {
     console.log("Debug: society_id from useParams:", society_id);
@@ -39,11 +36,14 @@ const ManageSocietyDetails: React.FC = () => {
     console.log("Fetching society details for societyId:", societyId);
     try {
       setLoading(true);
-      const response = await apiClient.get(`/api/manage-society-details/${societyId}/`);
+      // FIX: Include the societyId in the API endpoint
+      const response = await apiClient.get(apiPaths.SOCIETY.MANAGE_DETAILS(societyId));
+      console.log("Response received:", response);
+      console.log("Response data:", response.data);
       setSociety(response.data);
       setFormData({
         ...response.data,
-        social_media_links: response.data.social_media_links || {}, 
+        social_media_links: response.data.social_media_links || {},
         tags: response.data.tags || [],
       });
     } catch (error) {
@@ -57,14 +57,8 @@ const ManageSocietyDetails: React.FC = () => {
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-  
     setFormData((prevFormData) =>
-      prevFormData
-        ? {
-            ...prevFormData,
-            [name]: value, 
-          }
-        : null
+      prevFormData ? { ...prevFormData, [name]: value } : null
     );
   };
 
@@ -73,7 +67,7 @@ const ManageSocietyDetails: React.FC = () => {
     if (!formData || !society) return;
     try {
       setSaving(true);
-  
+
       const formDataToSend = new FormData();
       formDataToSend.append("name", formData.name);
       formDataToSend.append("category", formData.category);
@@ -81,26 +75,27 @@ const ManageSocietyDetails: React.FC = () => {
       formDataToSend.append("membership_requirements", formData.membership_requirements);
       formDataToSend.append("upcoming_projects_or_plans", formData.upcoming_projects_or_plans);
       formDataToSend.append("tags", JSON.stringify(formData.tags)); // Convert array to string
-  
+
       // Append social media links
       Object.entries(formData.social_media_links).forEach(([platform, link]) => {
         formDataToSend.append(`social_media_links[${platform}]`, link);
       });
-  
+
       // Append icon if it's a file
       if (formData.icon && formData.icon instanceof File) {
         formDataToSend.append("icon", formData.icon);
       }
-  
-      const response = await apiClient.put(`/api/society/${society.id}/`, formDataToSend, {
+
+      const response = await apiClient.put(`/api/manage-society-details/${societyId}/`, formDataToSend, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       });
-  
+
       setSociety(response.data);
       alert("Society updated successfully!");
-      navigate("/president-dashboard");
+      // FIX: Navigate back using the society ID from the URL
+      navigate(`/president-page/${societyId}`);
     } catch (error) {
       console.error("Error updating society", error);
       alert("There was an error updating your society.");
@@ -108,7 +103,6 @@ const ManageSocietyDetails: React.FC = () => {
       setSaving(false);
     }
   };
-  
 
   if (loading || !formData) {
     return (
@@ -160,7 +154,6 @@ const ManageSocietyDetails: React.FC = () => {
           </div>
         )}
 
-
         {/* Category */}
         <div>
           <label className="block text-lg font-medium mb-1">Category</label>
@@ -182,11 +175,11 @@ const ManageSocietyDetails: React.FC = () => {
               <input
                 type="text"
                 name={platform}
-                value={link || ""} // Ensure empty string if null/undefined
+                value={link || ""}
                 onChange={(e) => {
                   const updatedLinks = {
-                    ...formData?.social_media_links,
-                    [platform]: e.target.value, // ✅ Update the specific platform
+                    ...formData.social_media_links,
+                    [platform]: e.target.value,
                   };
                   setFormData((prevFormData) =>
                     prevFormData ? { ...prevFormData, social_media_links: updatedLinks } : null
@@ -197,8 +190,6 @@ const ManageSocietyDetails: React.FC = () => {
             </div>
           ))}
         </div>
-
-
 
         {/* Timetable */}
         <div>
@@ -249,14 +240,6 @@ const ManageSocietyDetails: React.FC = () => {
             className="w-full border p-2 rounded"
           />
         </div>
-        
-        
-        <button
-          onClick={() => navigate()}
-          className="bg-green-500 text-white px-6 py-3 rounded hover:bg-green-600 transition"
-        >
-          Preview
-        </button>
 
         <button
           type="submit"
