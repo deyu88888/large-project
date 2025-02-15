@@ -103,7 +103,7 @@ class JoinSocietyViewTestCase(TestCase):
         self.client.credentials(HTTP_AUTHORIZATION=self.student1_token)
         response = self.client.post(f"/api/join-society/{self.society1.id}/")  
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("society_id", response.data)
+        self.assertIn("society_id", response.json())
         self.assertEqual(response.data["society_id"], ["You are already a member of this society."])
 
 
@@ -112,8 +112,8 @@ class JoinSocietyViewTestCase(TestCase):
         self.client.credentials(HTTP_AUTHORIZATION=self.student1_token)
         response = self.client.post("/api/join-society/9999/")  # Non-existent society
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        self.assertIn("societyId", response.json())
-        self.assertEqual(response.json()["societyId"], ["Society does not exist."])
+        self.assertIn("society_id", response.json())
+        self.assertEqual(response.json()["society_id"], ["Society does not exist."])
 
     def test_join_society_unauthenticated(self):
         """Test joining a society without authentication."""

@@ -94,7 +94,7 @@ class StudentSerializer(UserSerializer):
         if societies:
             student.societies.set(societies)
 
-        if president_of:  # ✅ Check if president_of is provided before assigning
+        if president_of:  # Check if president_of is provided before assigning
             student.president_of_id = president_of.id
             student.save()
 
@@ -467,51 +467,83 @@ class UserRequestSerializer(RequestSerializer):
 
 
 class EventRequestSerializer(serializers.ModelSerializer):
-    """
-    Serializer for event requests made by society presidents.
-    """
-
+    
+    title = serializers.CharField(
+    required=True,
+    allow_blank=False,
+    error_messages={'blank': 'Title cannot be blank.'}
+    )   
     hosted_by = serializers.PrimaryKeyRelatedField(
-        queryset=Society.objects.all()
+        queryset=Society.objects.all(),
+        required=False
     )
+    # Use SerializerMethodField to always include 'event' in the output.
+    event = serializers.SerializerMethodField()
+    # Make 'approved' writable
+    approved = serializers.BooleanField(required=False)
 
     class Meta:
         model = EventRequest
         fields = [
-            "id", "title", "description", "location", "date", "start_time",
-            "duration", "hosted_by", "from_student", "intent", "approved"
+            "id", "event", "title", "description", "location", "date",
+            "start_time", "duration", "hosted_by", "from_student", "intent", "approved", "requested_at"
         ]
-        read_only_fields = ["from_student", "intent", "approved"]
+        # These fields are set automatically and should not be provided in input.
+        read_only_fields = ["from_student", "intent", "hosted_by", "event", "requested_at"]
+
+    def get_event(self, obj):
+        return obj.event.id if obj.event else None
+
+    def validate_title(self, value):
+        if not value.strip():
+            raise serializers.ValidationError("Title cannot be blank.")
+        return value
 
     def create(self, validated_data):
-        """
-        Ensure only society presidents can request event creation.
-        """
-        user = self.context["request"].user  # Get the authenticated user
+        # Ensure that 'hosted_by' is provided via extra kwargs (e.g. from the view)
+        hosted_by = validated_data.get("hosted_by")
+        if hosted_by is None:
+            raise serializers.ValidationError({"hosted_by": "This field is required."})
+
+        request = self.context.get("request")
+        if not request:
+            raise serializers.ValidationError("Request is required in serializer context.")
+        user = request.user
 
         if not hasattr(user, "student"):
-            raise serializers.ValidationError(
-                "Only students can request event creation."
-            )
+            raise serializers.ValidationError("Only students can request event creation.")
 
-        # Ensure student is the president of the society
         student = user.student
-        hosted_by = validated_data["hosted_by"]
-
         if student.president_of != hosted_by:
-            raise serializers.ValidationError(
-                "You can only create events for your own society."
-            )
+            raise serializers.ValidationError("You can only create events for your own society.")
 
-        # Create a request with "Pending" status
+        # Remove keys that are supplied via extra kwargs so they aren’t duplicated.
+        validated_data.pop("hosted_by", None)
+        validated_data.pop("from_student", None)
+        validated_data.pop("intent", None)
+        validated_data.pop("approved", None)
+
+        # Create the event request with default values.
         event_request = EventRequest.objects.create(
+            hosted_by=hosted_by,
             from_student=student,
             intent="CreateEve",
-            approved=False,  # By default, pending approval
+            approved=False,
             **validated_data
         )
-
         return event_request
+
+    def update(self, instance, validated_data):
+        # Allow updating the 'approved' field (and others) as provided.
+        instance.approved = validated_data.get("approved", instance.approved)
+        instance.title = validated_data.get("title", instance.title)
+        instance.description = validated_data.get("description", instance.description)
+        instance.location = validated_data.get("location", instance.location)
+        instance.date = validated_data.get("date", instance.date)
+        instance.start_time = validated_data.get("start_time", instance.start_time)
+        instance.duration = validated_data.get("duration", instance.duration)
+        instance.save()
+        return instance
 
 
 class DashboardStatisticSerializer(serializers.Serializer):

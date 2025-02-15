@@ -96,10 +96,6 @@ class CurrentUserView(APIView):
             }, status=status.HTTP_401_UNAUTHORIZED)
 
         user, _ = decoded_auth
-        print("DEBUG: user.pk =", user.pk)
-        print("DEBUG: user type:", type(user))
-        print("DEBUG: user is student:", isinstance(user, Student))
-        print("DEBUG: Student exists in DB?", Student.objects.filter(pk=user.pk).exists())
         
         try:
             student_user = Student.objects.get(pk=user.pk)
@@ -108,6 +104,12 @@ class CurrentUserView(APIView):
             # No matching Student row, so just use User
             serializer = UserSerializer(user)
 
+        # Check if serializer.data is falsy, return 500 error.
+        if not serializer.data:
+            return Response(
+                {"error": "User data could not be retrieved. Please try again later."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -988,6 +990,6 @@ class AdminReportView(APIView):
     def post(self, request):
         serializer = AdminReportRequestSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(from_student=request.user.student)  # ✅ Auto-assign the reporter
+            serializer.save(from_student=request.user.student)  #  Auto-assign the reporter
             return Response({"message": "Report submitted successfully."}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

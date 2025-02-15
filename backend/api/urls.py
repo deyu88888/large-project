@@ -24,7 +24,7 @@ urlpatterns = [
     # Society creation/management endpoints
     path("start-society/", StartSocietyRequestView.as_view(), name="start_society"),
     path("manage-society-details/<int:society_id>/", ManageSocietyDetailsView.as_view(), name="manage_society_details"),
-    path("event-requests/", CreateEventRequestView.as_view(), name="create-event-request"),
+    path("event-requests/<int:society_id>/", CreateEventRequestView.as_view(), name="create-event-request"),
     path("events/", EventListView.as_view(), name="event-list"),
 
     # User role endpoints
