@@ -19,10 +19,15 @@ export default function LoginPage() {
       try {
         console.log(data);
         const res = await apiClient.post(apiPaths.USER.LOGIN, data);
-        console.log(res.data);
+        console.log(res.data.role);
         localStorage.setItem(ACCESS_TOKEN, res.data.access);
         localStorage.setItem(REFRESH_TOKEN, res.data.refresh);
-        navigate("/home");
+        if (res.data.role === "admin") {
+          navigate("/admin");
+        }
+        else if (res.data.role === "student") {    
+          navigate("/student");
+        }
       } catch (error) {
         alert(error);
       } finally {

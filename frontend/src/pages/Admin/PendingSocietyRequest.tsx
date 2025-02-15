@@ -6,84 +6,34 @@ import { useNavigate } from "react-router-dom";
 import { tokens } from "../../theme/theme";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { useSettingsStore } from "../../stores/settings-store";
-
-type Society = {
-  id: number;
-  name: string;
-  societyMembers: number[];
-  roles: {};
-  leader: number;
-  category: string;
-  socialMediaLinks: {};
-  timetable: string | null;
-  membershipRequirements: string | null;
-  upcomingProjectsOrPlans: string | null;
-};
+import { fetchPendingSocieties } from "./fetchPendingSocieties";
+import { useFetchPendingSocieties } from "../../hooks/useFetchPendingSocieties";
 
 const PendingSocietyRequest = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
-  const navigate = useNavigate();
-  const [societies, setSocieties] = useState<Society[]>([]);
-  const ws = useRef<WebSocket | null>(null);
+
   const { searchTerm } = useContext(SearchContext);
   const { drawer } = useSettingsStore(); 
+  const societies = useFetchPendingSocieties();
 
-  const fetchPendingSocieties = async () => {
-    try {
-      const res = await apiClient.get(apiPaths.USER.PENDINGSOCIETYREQUEST);
-      setSocieties(res.data);
-    } catch (error) {
-      console.error("Error fetching pending societies:", error);
-    }
-  };
 
-  useEffect(() => {
-    const connectWebSocket = () => {
-      ws.current = new WebSocket("ws://127.0.0.1:8000/ws/admin/society/");
+  const filteredSocieties = Array.isArray(societies) 
+  ? societies.filter((society) => {
+      const searchString = Object.entries(society)
+        .map(([key, value]) => Array.isArray(value) ? value.join(", ") : String(value))
+        .join(" ")
+        .toLowerCase();
+      return searchString.includes(searchTerm.toLowerCase());
+    }).map((society) => ({
+      ...society,
+      society_members: Array.isArray(society.society_members) 
+        ? society.society_members.join(", ") 
+        : society.society_members,
+    }))
+  : [];
 
-      ws.current.onopen = () => {
-        console.log("WebSocket Connected for Pending Society Requests");
-      };
-
-      ws.current.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          console.log("WebSocket Update Received:", data);
-          fetchPendingSocieties();
-        } catch (error) {
-          console.error("Error parsing WebSocket message:", error);
-        }
-      };
-
-      ws.current.onerror = (event) => {
-        console.error("WebSocket Error:", event);
-      };
-
-      ws.current.onclose = (event) => {
-        console.log("WebSocket Disconnected:", event.reason);
-        setTimeout(() => {
-          connectWebSocket();
-        }, 5000);
-      };
-    };
-
-    fetchPendingSocieties();
-    connectWebSocket();
-
-    return () => {
-      if (ws.current) {
-        ws.current.close();
-      }
-    };
-  }, []);
-
-  const filteredSocieties = societies.filter((society) =>
-    Object.values(society)
-      .join(" ")
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase())
-  );
+  
 
   const handleAccept = async (id: number) => {
     try {
@@ -104,10 +54,9 @@ const PendingSocietyRequest = () => {
   const columns: GridColDef[] = [
     { field: "id", headerName: "ID", flex: 0.5 },
     { field: "name", headerName: "Name", flex: 1 },
-    {
-      field: "societyMembers",
+    {      
+      field: "society_members",
       headerName: "Members",
-      renderCell: (params: any) => params.row.societyMembers.join(", "),
       flex: 1,
     },
     { field: "leader", headerName: "Leader", flex: 1 },
@@ -183,6 +132,7 @@ const PendingSocietyRequest = () => {
           pageSizeOptions={[5, 10, 25]}
           checkboxSelection
         />
+        {/* <div> {JSON.stringify(filteredSocieties)} </div> */}
       </Box>
     </Box>
   );
