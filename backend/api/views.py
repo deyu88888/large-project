@@ -12,8 +12,9 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from api.models import Admin, Event, Notification, Society, Student, User,Award, AwardStudent
+from api.models import Admin, Event, Notification, Society, Student, User,Award, AwardStudent, UserRequest
 from api.serializers import (
+    AdminReportRequestSerializer,
     AdminSerializer,
     DashboardNotificationSerializer,
     DashboardStatisticSerializer,
@@ -31,6 +32,8 @@ from api.serializers import (
     UserSerializer,
     AwardSerializer, 
     AwardStudentSerializer,
+    PendingMemberSerializer,
+
 )
 
 
@@ -520,18 +523,20 @@ class ManageSocietyDetailsView(APIView):
             student = Student.objects.get(pk=user.pk)
         except Student.DoesNotExist:
             return Response({"error": "Only society presidents can manage their societies."}, status=status.HTTP_403_FORBIDDEN)
-
+        print("Logged-in student id:", student.id)
+        print("Requested society id:", society_id)
         if not student.is_president:
             return Response({"error": "Only society presidents can manage their societies."}, status=status.HTTP_403_FORBIDDEN)
 
         # Fetch the society
         society = Society.objects.filter(
-            id=society_id, leader=user.student).first()
+            id=society_id).first()
         if not society:
             return Response({"error": "Society not found or you are not the president of this society."}, status=status.HTTP_404_NOT_FOUND)
 
         # Serialize the society details
         serializer = SocietySerializer(society)
+        print("Sending response data:", serializer.data)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def patch(self, request, society_id):
@@ -543,7 +548,7 @@ class ManageSocietyDetailsView(APIView):
 
         # Fetch the society
         society = Society.objects.filter(
-            id=society_id, leader=user.student).first()
+            id=society_id).first()
         if not society:
             return Response({"error": "Society not found or you are not the president of this society."}, status=status.HTTP_404_NOT_FOUND)
 
@@ -973,3 +978,16 @@ class AwardStudentView(APIView):
 
         award_student.delete()
         return Response({"message": "Award assignment deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+
+class AdminReportView(APIView):
+    """
+    API view for students and society presidents to submit reports to admins.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = AdminReportRequestSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(from_student=request.user.student)  # ✅ Auto-assign the reporter
+            return Response({"message": "Report submitted successfully."}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

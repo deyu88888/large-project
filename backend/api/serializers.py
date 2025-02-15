@@ -1,5 +1,5 @@
 import datetime
-from api.models import Award, AwardStudent, SiteSettings, User, Student, Admin, Society, Event, Notification, Request, SocietyRequest, EventRequest, UserRequest
+from api.models import AdminReportRequest, Award, AwardStudent, SiteSettings, User, Student, Admin, Society, Event, Notification, Request, SocietyRequest, EventRequest, UserRequest
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
 
@@ -643,3 +643,10 @@ class PendingMemberSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserRequest
         fields = ["id", "student_id", "first_name", "last_name", "username", "approved"]
+        
+class AdminReportRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AdminReportRequest
+        fields = ["id", "report_type", "subject", "details", "requested_at", "from_student"]
+        extra_kwargs = {"from_student": {"read_only": True}}  # Auto-assign the user
+

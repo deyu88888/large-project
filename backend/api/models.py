@@ -338,6 +338,26 @@ class EventRequest(Request):
     start_time = models.TimeField(blank=True, null=True)
     duration = models.DurationField(blank=True, null=True)
 
+class AdminReportRequest(Request):
+    """
+    Reports submitted to the admin by students or society presidents.
+    """
+
+    REPORT_TYPES = [
+        ("Misconduct", "Misconduct"),
+        ("System Issue", "System Issue"),
+        ("Society Issue", "Society Issue"),
+        ("Event Issue", "Event Issue"),
+        ("Other", "Other"),
+    ]
+
+    report_type = models.CharField(max_length=20, choices=REPORT_TYPES)
+    subject = models.CharField(max_length=100, blank=False)
+    details = models.TextField(blank=False)
+
+    def __str__(self):
+        return f"{self.get_report_type_display()} - {self.subject} (From {self.from_student.username})"
+
 
 class SiteSettings(models.Model):
     """
