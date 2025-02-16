@@ -247,8 +247,8 @@ class JoinSocietyView(APIView):
         return Response({"message": f"Successfully joined society '{society.name}'."}, status=status.HTTP_200_OK)
 
 
-
 class RSVPEventView(APIView):
+    """ API View for RSVPing to events. """
 
     permission_classes = [IsAuthenticated]
 
@@ -605,6 +605,7 @@ class CreateEventRequestView(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 class EventListView(APIView):
     """
     API View to list events based on filters (upcoming, previous, pending).
@@ -630,11 +631,13 @@ class EventListView(APIView):
             events = events.filter(date__lt=today, status="Approved") | events.filter(date=today, start_time__lt=current_time, status="Approved")
         
         elif filter_type == "pending":
+            print("Pending events xxx", events)
             events = events.filter(status="Pending")
 
         serializer = EventSerializer(events, many=True)
         return Response(serializer.data)
     
+    # 
     
 class PendingMembersView(APIView):
     """
@@ -701,18 +704,63 @@ class PendingMembersView(APIView):
 
         return Response({"error": "Invalid action."}, status=status.HTTP_400_BAD_REQUEST)
 
+
 class EventView(APIView):
     """
     Event view to show upcoming approved events.
     """
 
-    def get(self, request) -> Response:
+    def get(self, request, event_status) -> Response:
         """
         Returns a list of upcoming approved events sorted by date and time.
         """
-        events = Event.objects.filter(status="Approved").order_by("date", "start_time")
+        event_status = event_status.capitalize()
+        print("event_status: ", event_status)
+        events = Event.objects.filter(status=event_status).order_by("date", "start_time")
         serializer = EventSerializer(events, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+
+class EventRequestView(APIView):
+    """
+    Event view to show upcoming approved events.
+    """
+
+    def put(self, request, event_id):
+        """
+        PUT request to update the status of the event request from pending to approved or rejected for admins
+        """
+        user = request.user
+
+        if not hasattr(user, "admin"):
+            return Response({"error": "Only admins can approve or reject event requests."}, status=status.HTTP_403_FORBIDDEN)
+
+        event = Event.objects.filter(id=event_id).first()
+        print("event xxx: ", event)
+        if not event:
+            return Response({"error": "Event request not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = EventSerializer(event, data=request.data, partial=True)
+        print("serializer sss: ", serializer)
+        if serializer.is_valid():
+            serializer.save()
+
+        channel_layer = get_channel_layer()
+
+        print("serializer.validated_data.get('status'): ", serializer.validated_data.get("status")) # working
+        if serializer.validated_data.get("status"):
+            async_to_sync(channel_layer.group_send)(
+                "events_updates",
+                {
+                    "type": "event_update",
+                    "message": "A new event has been approved.",
+                    "data": serializer.data,
+                    "status": serializer.validated_data.get("status")
+                }
+            )
+
+            return Response({"message": "Event request updated successfully.", "data": serializer.data}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class AdminView(APIView):
@@ -758,6 +806,7 @@ class SocietyView(APIView):
         serializer = SocietySerializer(society, many=True)
         print("serializer data: ", serializer.data)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 class StudentView(APIView):
     """

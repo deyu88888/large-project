@@ -199,7 +199,6 @@ class SocietySerializer(serializers.ModelSerializer):
         return instance
 
 
-
 class EventSerializer(serializers.ModelSerializer):
     """ Serializer for objects of the Event model """
 

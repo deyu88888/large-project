@@ -7,7 +7,6 @@ import { tokens } from "../../theme/theme";
 import { useSettingsStore } from "../../stores/settings-store";
 import { SearchContext } from "../../components/layout/SearchContext";
 
-// Consistent Society type
 interface Society {
   id: number;
   name: string;
@@ -31,13 +30,13 @@ const SocietyListRejected = () => {
       const res = await apiClient.get(apiPaths.USER.REJECTEDSOCIETY);
       setSocieties(res.data);
     } catch (error) {
-      console.error("⚠️ Error fetching rejected societies:", error);
+      console.error("Error fetching rejected societies:", error);
     }
   };
 
   useEffect(() => {
     const connectWebSocket = () => {
-      ws.current = new WebSocket("ws://127.0.0.1:8000/ws/admin/rejectedsociety/");
+      ws.current = new WebSocket("ws://127.0.0.1:8000/ws/admin/society/");
 
       ws.current.onopen = () => {
         console.log("WebSocket Connected for Rejected Society List");
@@ -86,7 +85,6 @@ const SocietyListRejected = () => {
     { field: "members", headerName: "Members", flex: 1 },
     { field: "roles", headerName: "Roles", flex: 1  },
     { field: "approvedBy", headerName: "Approved By", flex: 1  },
-    // { field: "actions", headerName: "Actions", flex: 1  },
   ];  
 
   const handleBackToSocieties = () => {

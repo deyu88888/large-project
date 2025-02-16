@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from "react";
+import React, { useEffect, useState, useContext, useRef } from "react";
 import { Box, Typography, useTheme, Button } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { apiClient, apiPaths } from "../../api";
@@ -24,11 +24,12 @@ const EventList = () => {
   const navigate = useNavigate();
   const { drawer } = useSettingsStore();
   const { searchTerm } = useContext(SearchContext);
+  const ws = useRef<WebSocket | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
 
   const fetchEvents = async () => {
     try {
-      const res = await apiClient.get(apiPaths.USER.EVENTS);
+      const res = await apiClient.get(apiPaths.EVENTS.APPROVEDEVENTLIST);
       setEvents(res.data || []);
     } catch (error) {
       console.error("Error fetching events:", error);
@@ -36,8 +37,49 @@ const EventList = () => {
   };
 
   useEffect(() => {
+    const connectWebSocket = () => {
+      ws.current = new WebSocket("ws://127.0.0.1:8000/ws/admin/event/");
+
+      ws.current.onopen = () => {
+          console.log("WebSocket Connected for Society List");
+      };
+
+      ws.current.onmessage = (event) => {
+          try {
+              const data = JSON.parse(event.data);
+              console.log("WebSocket Update Received:", data);
+              // Re-fetch on any update
+              fetchEvents();
+
+          } catch (error) {
+              console.error("Error parsing WebSocket message:", error);
+          }
+      };
+
+      ws.current.onerror = (event) => {
+          console.error("WebSocket Error:", event);
+      };
+
+      ws.current.onclose = (event) => {
+          console.log("WebSocket Disconnected:", event.reason);
+          setTimeout(() => {
+              connectWebSocket();
+          }, 5000);
+      };
+  }
+
+    //Initial fetch
     fetchEvents();
-  }, []);
+    //Establish websocket connection
+    connectWebSocket();
+
+  return () => {
+      if (ws.current) {
+        ws.current.close();
+      }
+  };
+
+}, []);
 
   const columns: GridColDef[] = [
     { field: "title", headerName: "Title", flex: 1 },
@@ -132,7 +174,7 @@ const EventList = () => {
           columns={columns}
           initialState={{
             pagination: {
-              paginationModel: { pageSize: 5, page: 0 },
+              paginationModel: { pageSize: 25, page: 0 },
             },
           }}
           pageSizeOptions={[5, 10, 25]}

@@ -29,7 +29,7 @@ apiClient.interceptors.request.use(
 
 export const apiPaths = {
   USER: {
-    LOGIN: "/api/user/login/",  // TODO: DONT ADD BACKSLASH
+    LOGIN: "/api/user/login",  // TODO: DONT ADD BACKSLASH
     REGISTER: "/api/user/register",   // TODO: DONT ADD BACKSLASH
     REFRESH: "/api/user/token/refresh", // TODO: DONT ADD BACKSLASH
     CURRENT: "/api/user/current", // TODO: DONT ADD BACKSLASH
@@ -38,16 +38,18 @@ export const apiPaths = {
     STUDENTS: "/api/user/student",  // TODO: DONT ADD BACKSLASH
     ADMIN: "/api/user/admin", // TODO: DONT ADD BACKSLASH
     PENDINGSOCIETYREQUEST: "/api/society/request/pending",  // TODO: DONT ADD BACKSLASH
-    PENDINGEVENTREQUEST: "/api/event/request/pending",  // TODO: DONT ADD BACKSLASH
     PROFILE: "/api/user/profile", // TODO: DONT ADD BACKSLASH
-    REJECTEDEVENT: "/api/admin-panel/rejected-event", // TODO: DONT ADD BACKSLASH
   },
   SOCIETY: {
     POPULAR_SOCIETIES: "/api/popular-societies",  // TODO: DONT ADD BACKSLASH
     MANAGE_DETAILS: (id: number) => `/api/manage-society-details/${id}`,  // TODO: DONT ADD BACKSLASH
   },
   EVENTS: {
-    ALL: "/api/events", // TODO: DONT ADD BACKSLASH
+    ALL: "api/events", // TODO: DONT ADD BACKSLASH
+    PENDINGEVENTREQUEST: "api/society/event/pending",  // TODO: DONT ADD BACKSLASH
+    UPDATEENEVENTREQUEST: "api/society/event/request",  // TODO: DONT ADD BACKSLASH
+    APPROVEDEVENTLIST: "api/society/event/approved", // TODO: DONT ADD BACKSLASH
+    REJECTEDEVENTLIST: "api/society/event/rejected", // TODO: DONT ADD BACKSLASH
   },
 };
 

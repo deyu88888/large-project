@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useRef, useContext } from "react";
+import { useState, useEffect, useRef, useContext } from "react";
 import { Box, Typography, useTheme, Button } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { apiClient, apiPaths } from "../../api";
-import { useNavigate } from "react-router-dom";
 import { tokens } from "../../theme/theme";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { useSettingsStore } from "../../stores/settings-store";
@@ -21,7 +20,7 @@ type Event = {
 const PendingEventRequest = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   const [events, setEvents] = useState<Event[]>([]);
   const ws = useRef<WebSocket | null>(null);
   const { searchTerm } = useContext(SearchContext);
@@ -30,7 +29,7 @@ const PendingEventRequest = () => {
 
   const fetchPendingEvents = async () => {
     try {
-      const res = await apiClient.get(apiPaths.USER.PENDINGEVENTREQUEST);
+      const res = await apiClient.get(apiPaths.EVENTS.PENDINGEVENTREQUEST);
       setEvents(res.data);
     } catch (error) {
       console.error("Error fetching pending events:", error);
@@ -86,7 +85,7 @@ const PendingEventRequest = () => {
 
   const handleAccept = async (id: number) => {
     try {
-      await apiClient.put(`${apiPaths.USER.PENDINGEVENTREQUEST}/${id}`, { status: "Approved" });
+      await apiClient.put(`${apiPaths.EVENTS.UPDATEENEVENTREQUEST}/${id}`, { status: "Approved" });
     } catch (error) {
       console.error("Error accepting event:", error);
     }
@@ -94,7 +93,7 @@ const PendingEventRequest = () => {
 
   const handleReject = async (id: number) => {
     try {
-      await apiClient.put(`${apiPaths.USER.PENDINGEVENTREQUEST}/${id}`, { status: "Rejected" });
+      await apiClient.put(`${apiPaths.EVENTS.UPDATEENEVENTREQUEST}/${id}`, { status: "Rejected" });
     } catch (error) {
       console.error("Error rejecting event:", error);
     }
@@ -171,11 +170,12 @@ const PendingEventRequest = () => {
           columns={columns}
           initialState={{
             pagination: {
-              paginationModel: { pageSize: 5, page: 0 },
+              paginationModel: { pageSize: 25, page: 0 },
             },
           }}
           pageSizeOptions={[5, 10, 25]}
           checkboxSelection
+          disableRowSelectionOnClick  // Disable row selection on row click to temporarily fix accept/reject button issue
         />
       </Box>
     </Box>
