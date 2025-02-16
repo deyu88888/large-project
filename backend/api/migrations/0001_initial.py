@@ -131,6 +131,40 @@ class Migration(migrations.Migration):
                 ('hosted_by', models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='events', to='api.society')),
             ],
         ),
+        migrations.AddField(
+            model_name='society',
+            name='approved_by',
+            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='approved_societies', to='api.admin'),
+        ),
+        migrations.CreateModel(
+            name='UserRequest',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('intent', models.CharField(choices=[('CreateSoc', 'Create Society'), ('UpdateSoc', 'Update Society'), ('CreateEve', 'Create Event'), ('UpdateEve', 'Update Event'), ('CreateUse', 'Create User'), ('UpdateUse', 'Update User')], max_length=10)),
+                ('requested_at', models.DateTimeField(auto_now_add=True)),
+                ('approved', models.BooleanField(default=False)),
+                ('major', models.CharField(blank=True, default='', max_length=50)),
+                ('from_student', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='%(class)ss', to='api.student')),
+            ],
+            options={
+                'abstract': False,
+            },
+        ),
+        migrations.AddField(
+            model_name='student',
+            name='attended_events',
+            field=models.ManyToManyField(blank=True, related_name='attendees', to='api.event'),
+        ),
+        migrations.AddField(
+            model_name='student',
+            name='president_of',
+            field=models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='president', to='api.society'),
+        ),
+        migrations.AddField(
+            model_name='student',
+            name='societies',
+            field=models.ManyToManyField(blank=True, related_name='members', to='api.society'),
+        ),
         migrations.CreateModel(
             name='SocietyRequest',
             fields=[
