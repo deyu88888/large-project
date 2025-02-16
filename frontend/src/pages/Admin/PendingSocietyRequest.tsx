@@ -1,12 +1,10 @@
-import React, { useState, useEffect, useRef, useContext } from "react";
+import { useContext } from "react";
 import { Box, Typography, useTheme, Button } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { apiClient, apiPaths } from "../../api";
-import { useNavigate } from "react-router-dom";
 import { tokens } from "../../theme/theme";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { useSettingsStore } from "../../stores/settings-store";
-import { fetchPendingSocieties } from "./fetchPendingSocieties";
 import { useFetchPendingSocieties } from "../../hooks/useFetchPendingSocieties";
 
 const PendingSocietyRequest = () => {
@@ -33,7 +31,6 @@ const PendingSocietyRequest = () => {
     }))
   : [];
 
-  
 
   const handleAccept = async (id: number) => {
     try {

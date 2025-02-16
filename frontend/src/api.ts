@@ -1,10 +1,10 @@
 import axios from "axios";
 import { ACCESS_TOKEN } from "./constants";
 
-// ✅ Define base API URL properly
+// Define base API URL properly
 const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
-// ✅ Axios instance
+// Axios instance
 export const apiClient = axios.create({
   baseURL: apiUrl,
   headers: {
@@ -12,7 +12,7 @@ export const apiClient = axios.create({
   },
 });
 
-// ✅ Attach Authorization token for every request (only if it exists)
+// Attach Authorization token for every request (only if it exists)
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem(ACCESS_TOKEN);
@@ -29,29 +29,29 @@ apiClient.interceptors.request.use(
 
 export const apiPaths = {
   USER: {
-    LOGIN: "/api/user/login/",
-    REGISTER: "/api/user/register/",
-    REFRESH: "/api/user/token/refresh/",
-    CURRENT: "/api/user/current/",
-    SOCIETY: "/api/admin-panel/society/",
-    REJECTEDSOCIETY: "/api/admin-panel/rejected-society/",
-    STUDENTS: "/api/user/student/",
-    ADMIN: "/api/user/admin/",
-    PENDINGSOCIETYREQUEST: "/api/society/request/pending/",
-    PENDINGEVENTREQUEST: "/api/event/request/pending/",
-    PROFILE: "/api/user/profile/",
-    REJECTEDEVENT: "/api/admin-panel/rejected-event/",
+    LOGIN: "/api/user/login/",  // TODO: DONT ADD BACKSLASH
+    REGISTER: "/api/user/register",   // TODO: DONT ADD BACKSLASH
+    REFRESH: "/api/user/token/refresh", // TODO: DONT ADD BACKSLASH
+    CURRENT: "/api/user/current", // TODO: DONT ADD BACKSLASH
+    SOCIETY: "/api/admin-panel/society",  // TODO: DONT ADD BACKSLASH
+    REJECTEDSOCIETY: "/api/admin-panel/rejected-society", // TODO: DONT ADD BACKSLASH
+    STUDENTS: "/api/user/student",  // TODO: DONT ADD BACKSLASH
+    ADMIN: "/api/user/admin", // TODO: DONT ADD BACKSLASH
+    PENDINGSOCIETYREQUEST: "/api/society/request/pending",  // TODO: DONT ADD BACKSLASH
+    PENDINGEVENTREQUEST: "/api/event/request/pending",  // TODO: DONT ADD BACKSLASH
+    PROFILE: "/api/user/profile", // TODO: DONT ADD BACKSLASH
+    REJECTEDEVENT: "/api/admin-panel/rejected-event", // TODO: DONT ADD BACKSLASH
   },
   SOCIETY: {
-    POPULAR_SOCIETIES: "/api/popular-societies/",
-    MANAGE_DETAILS: (id: number) => `/api/manage-society-details/${id}/`,
+    POPULAR_SOCIETIES: "/api/popular-societies",  // TODO: DONT ADD BACKSLASH
+    MANAGE_DETAILS: (id: number) => `/api/manage-society-details/${id}`,  // TODO: DONT ADD BACKSLASH
   },
   EVENTS: {
-    ALL: "/api/events/",
+    ALL: "/api/events", // TODO: DONT ADD BACKSLASH
   },
 };
 
-// ✅ Fetch Most Popular Societies
+// Fetch Most Popular Societies
 export const getPopularSocieties = async () => {
   try {
     const response = await apiClient.get(apiPaths.SOCIETY.POPULAR_SOCIETIES);
@@ -65,7 +65,7 @@ export const getPopularSocieties = async () => {
   }
 };
 
-// ✅ Fetch All Events (Public Access)
+// Fetch All Events (Public Access)
 export const getAllEvents = async () => {
   try {
     const response = await apiClient.get(apiPaths.EVENTS.ALL);
