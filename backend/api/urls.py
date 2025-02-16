@@ -1,13 +1,13 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from .views import (
-    RegisterView, CurrentUserView,
-    StudentNotificationsView, StartSocietyRequestView, ManageMySocietyView,
-    CreateSocietyEventView, AdminView, StudentView, SocietyView, EventView,
+    AdminReportView, AwardStudentView, AwardView, EventListView, PendingMembersView, RegisterView, CurrentUserView,
+    StudentNotificationsView, StartSocietyRequestView, ManageSocietyDetailsView,
+    AdminView, StudentView, SocietyView, EventView,
     RejectedSocietyRequestView, SocietyRequestView, DashboardStatsView,
     RecentActivitiesView, NotificationsView, EventCalendarView,
     StudentSocietiesView, JoinSocietyView, RSVPEventView, EventHistoryView,
-    get_popular_societies, get_sorted_events
+    get_popular_societies, get_sorted_events, CreateEventRequestView, 
 )
 
 urlpatterns = [
@@ -23,8 +23,9 @@ urlpatterns = [
 
     # Society creation/management endpoints
     path("start-society/", StartSocietyRequestView.as_view(), name="start_society"),
-    path("manage-society/<int:society_id>/", ManageMySocietyView.as_view(), name="manage_my_society"),
-    path("society/<int:society_id>/create-event/", CreateSocietyEventView.as_view(), name="create_society_event"),
+    path("manage-society-details/<int:society_id>/", ManageSocietyDetailsView.as_view(), name="manage_society_details"),
+    path("event-requests/<int:society_id>/", CreateEventRequestView.as_view(), name="create-event-request"),
+    path("events/", EventListView.as_view(), name="event-list"),
 
     # User role endpoints
     path("user/admin", AdminView.as_view(), name="admin"),
@@ -37,7 +38,7 @@ urlpatterns = [
     # Event endpoints
     path("events/rsvp/", RSVPEventView.as_view(), name="rsvp_event"),
     path("events/history/", EventHistoryView.as_view(), name="event_history"),
-    path("events/", get_sorted_events, name="sorted_events"),
+    #path("events/", get_sorted_events, name="sorted_events"),
 
     # Admin panel endpoints
     path("admin-panel/society", SocietyView.as_view(), name="admin"),
@@ -56,4 +57,20 @@ urlpatterns = [
     path("dashboard/notifications/", NotificationsView.as_view(), name="dashboard_notifications"),
     path("dashboard/events/", EventCalendarView.as_view(), name="dashboard_events"),
     path("popular-societies/", get_popular_societies, name="popular_societies"),
+    
+    # Awards Endpoints
+    path("awards/", AwardView.as_view(), name="awards"),  # List & Create Awards
+    path("awards/<int:pk>/", AwardView.as_view(), name="award_detail"),  # Retrieve, Update, Delete Award
+
+    # Award-Student Endpoints
+    path("award-students/", AwardStudentView.as_view(), name="award_students"),  # List & Assign Awards to Students
+    path("award-students/<int:pk>/", AwardStudentView.as_view(), name="award_student_detail"),  # Retrieve, Update, Delete Assignment
+    
+    # President page
+    path("society/<int:society_id>/pending-members/", PendingMembersView.as_view(), name="pending-members"),
+    path("society/<int:society_id>/pending-members/<int:request_id>/", PendingMembersView.as_view(), name="process-pending-member"),
+    
+    # Report to admin
+    path("report-to-admin/", AdminReportView.as_view(), name="report-to-admin"),
+
 ]

@@ -13,9 +13,7 @@ class DashboardConsumer(AsyncWebsocketConsumer):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.channel_layer = None
-        self.group_name = None
-        self.channel_name = None
+        self.group_name = "dashboard"
 
     async def connect(self):
         """
@@ -29,6 +27,8 @@ class DashboardConsumer(AsyncWebsocketConsumer):
             if not hasattr(self, "channel_name"):
                 self.channel_name = f"dashboard_{id(self)}"
 
+            await self.channel_layer.group_add("award_notifications", self.channel_name)  # Add to awards group too
+
             # Add WebSocket to the "dashboard" group
             await self.channel_layer.group_add(self.group_name, self.channel_name)
 
@@ -38,9 +38,9 @@ class DashboardConsumer(AsyncWebsocketConsumer):
 
             # --- Send initial data (including SiteSettings) ---
             await self.send_initial_data()
-
+            
         except Exception as e:
-            logger.error(f"[DashboardConsumer] Error during WebSocket connection: {e}")
+            logger.error(f"[DashboardConsumer] Connection error: {e}")
             await self.close()
 
     async def send_initial_data(self):
@@ -64,114 +64,56 @@ class DashboardConsumer(AsyncWebsocketConsumer):
             }
         }))
     async def disconnect(self, close_code):
-        """
-        Handles WebSocket disconnection.
-        Removes this socket from the 'dashboard' group.
-        """
+        """Handles WebSocket disconnection."""
         try:
-            logger.info(f"[DashboardConsumer] Disconnecting WebSocket: {self.channel_name}, Close Code: {close_code}")
             await self.channel_layer.group_discard(self.group_name, self.channel_name)
+            await self.channel_layer.group_discard("award_notifications", self.channel_name)
+            logger.info(f"[DashboardConsumer] Disconnected: {self.channel_name}")
         except Exception as e:
-            logger.error(f"[DashboardConsumer] Error during WebSocket disconnection: {e}")
+            logger.error(f"[DashboardConsumer] Disconnection error: {e}")
 
     async def receive(self, text_data):
-        """
-        Handles incoming WebSocket messages from any client (React or wscat).
-        Processes `dashboard.update` and other update types.
-        """
+        """Handles incoming WebSocket messages from clients."""
         try:
-            logger.info(f"[DashboardConsumer] Received message on WebSocket: {self.channel_name}, Data: {text_data}")
             data = json.loads(text_data)
-            logger.debug(f"[DashboardConsumer] Parsed WebSocket message: {data}")
-
             message_type = data.get("type")
+
             if message_type == "dashboard.update":
-                # Use provided data if available; fetch from database otherwise
-                if "data" in data:
-                    logger.info("[DashboardConsumer] Broadcasting manual update received via WebSocket.")
-                    await self.channel_layer.group_send(
-                        self.group_name,
-                        {
-                            "type": "dashboard_update",
-                            "data": data["data"],
-                        }
-                    )
-                else:
-                    logger.info("[DashboardConsumer] Fetching updated statistics from the database.")
-                    stats = await self.get_dashboard_stats()
-                    await self.channel_layer.group_send(
-                        self.group_name,
-                        {
-                            "type": "dashboard_update",
-                            "data": stats,
-                        }
-                    )
-            elif message_type in ["update_notifications", "update_events", "update_activities"]:
-                logger.info(f"[DashboardConsumer] Broadcasting update for {message_type}.")
+                stats = await self.get_dashboard_stats()
                 await self.channel_layer.group_send(
                     self.group_name,
-                    {**data, "type": f"{message_type}"}
+                    {"type": "dashboard_update", "data": stats}
                 )
+            elif message_type in ["update_notifications", "update_events", "update_activities"]:
+                await self.channel_layer.group_send(self.group_name, {**data, "type": message_type})
             else:
-                logger.warning(f"[DashboardConsumer] Unknown message type received: {message_type}")
                 await self.send(json.dumps({"error": "Unknown message type"}))
         except json.JSONDecodeError as e:
-            logger.error(f"[DashboardConsumer] JSON Decode Error: {e}")
-            await self.send(json.dumps({"error": "Invalid JSON format"}))
+            await self.send(json.dumps({"error": "Invalid JSON"}))
         except Exception as e:
-            logger.error(f"[DashboardConsumer] Error processing WebSocket message: {e}")
             await self.send(json.dumps({"error": str(e)}))
 
-    # =========================================================
-    #   BROADCAST HANDLERS - Called for each group member's socket
-    # =========================================================
+    # Broadcast handlers
 
     async def dashboard_update(self, event):
-        """
-        Handles the 'dashboard.update' message type.
-        Sends the updated statistics to the client.
-        """
-        logger.info(f"[DashboardConsumer] Broadcasting dashboard update: {event['data']}")
-        await self.send(json.dumps({
-            "type": "dashboard.update",
-            "data": event["data"],
-        }))
+        """Sends updated dashboard statistics."""
+        await self.send(json.dumps({"type": "dashboard.update", "data": event["data"]}))
 
     async def update_notifications(self, event):
-        """
-        Handles 'update_notifications' event.
-        Broadcasts notifications to all group members.
-        """
-        notifications = event.get("notifications", [])
-        logger.info(f"[DashboardConsumer] Broadcasting notifications: {notifications}")
-        await self.send(json.dumps({
-            "type": "update_notifications",
-            "notifications": notifications,
-        }))
+        """Sends notification updates."""
+        await self.send(json.dumps({"type": "update_notifications", "notifications": event.get("notifications", [])}))
 
     async def update_events(self, event):
-        """
-        Handles 'update_events' event.
-        Broadcasts events to all group members.
-        """
-        events = event.get("events", [])
-        logger.info(f"[DashboardConsumer] Broadcasting events: {events}")
-        await self.send(json.dumps({
-            "type": "update_events",
-            "events": events,
-        }))
+        """Sends event updates."""
+        await self.send(json.dumps({"type": "update_events", "events": event.get("events", [])}))
 
     async def update_activities(self, event):
-        """
-        Handles 'update_activities' event.
-        Broadcasts activities to all group members.
-        """
-        activities = event.get("activities", [])
-        logger.info(f"[DashboardConsumer] Broadcasting activities: {activities}")
-        await self.send(json.dumps({
-            "type": "update_activities",
-            "activities": activities,
-        }))
+        """Sends activity updates."""
+        await self.send(json.dumps({"type": "update_activities", "activities": event.get("activities", [])}))
+
+    async def send_award_notification(self, event):
+        """Handles and sends award notifications."""
+        await self.send(json.dumps({"type": "award_notification", "message": event["message"]}))
 
     # Add a handler for update_introduction (optional, for later updates)
     async def update_introduction(self, event):
@@ -187,34 +129,19 @@ class DashboardConsumer(AsyncWebsocketConsumer):
 
     @sync_to_async
     def get_dashboard_stats(self):
-        """
-        Helper method to get the latest dashboard statistics from the database.
-        """
+        """Fetches dashboard statistics from the database."""
         try:
-            logger.debug("[DashboardConsumer] Fetching dashboard statistics from the database.")
             from api.models import Society, Event, Student
-
-            total_societies = Society.objects.count()
-            total_events = Event.objects.count()
-            pending_approvals = Society.objects.filter(status="Pending").count()
-            active_members = Student.objects.count()
-
-            stats = {
-                "totalSocieties": total_societies,
-                "totalEvents": total_events,
-                "pendingApprovals": pending_approvals,
-                "activeMembers": active_members,
-            }
-            logger.info(f"[DashboardConsumer] Dashboard statistics fetched: {stats}")
-            return stats
-        except Exception as e:
-            logger.error(f"[DashboardConsumer] Error fetching dashboard statistics: {e}")
             return {
-                "totalSocieties": 0,
-                "totalEvents": 0,
-                "pendingApprovals": 0,
-                "activeMembers": 0,
+                "totalSocieties": Society.objects.count(),
+                "totalEvents": Event.objects.count(),
+                "pendingApprovals": Society.objects.filter(status="Pending").count(),
+                "activeMembers": Student.objects.count(),
             }
+        except Exception as e:
+            logger.error(f"Error fetching dashboard stats: {e}")
+            return {"totalSocieties": 0, "totalEvents": 0, "pendingApprovals": 0, "activeMembers": 0}
+
     @sync_to_async  # Use sync_to_async for database access
     def get_site_settings(self):
         """

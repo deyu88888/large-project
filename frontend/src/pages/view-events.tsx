@@ -3,13 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { apiClient } from "../api";
 import { useTheme } from "@mui/material/styles";
 import { tokens } from "../styles/theme";
-import { useSidebar } from "../components/layout/SidebarContext";
+// Removed: import { useSidebar } from "../components/layout/SidebarContext";
 
 const ViewEvents: React.FC = () => {
   const navigate = useNavigate();
   const theme = useTheme();
   const colours = tokens(theme.palette.mode);
-  const { sidebarWidth } = useSidebar();
   const isLight = theme.palette.mode === "light";
 
   const [events, setEvents] = useState<any[]>([]);
@@ -33,7 +32,7 @@ const ViewEvents: React.FC = () => {
   return (
     <div
       style={{
-        marginLeft: `${sidebarWidth}px`,
+        marginLeft: "0px", // Removed sidebarWidth dependency; set to "0px"
         marginTop: "0px",
         transition: "margin-left 0.3s ease-in-out",
         minHeight: "100vh",
@@ -41,7 +40,7 @@ const ViewEvents: React.FC = () => {
         backgroundColor: isLight ? colours.primary[1000] : colours.primary[500],
       }}
     >
-      <div style={{ maxWidth: "1600px", margin: "0 auto" }}>
+      <div style={{ maxWidth: "1920px", margin: "0 auto" }}>
         <header
           style={{
             textAlign: "center",

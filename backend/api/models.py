@@ -4,7 +4,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.dispatch import receiver
 from django.utils import timezone
-from django.db.models.signals import m2m_changed
+from django.db.models.signals import pre_save
 from django.utils.translation import gettext_lazy as _  # Import for i18n
 
 
@@ -73,10 +73,12 @@ class Student(User):
         blank=True,
     )
 
-    president_of = models.ManyToManyField(
+    president_of = models.OneToOneField(
         "Society",
-        related_name="presidents",
+        on_delete=models.SET_NULL,
+        null=True,
         blank=True,
+        related_name="president",
     )
 
     is_president = models.BooleanField(default=False)
@@ -99,10 +101,9 @@ class Student(User):
         return self.full_name
 
 # Signal to update `is_president` when `president_of` changes
-@receiver(m2m_changed, sender=Student.president_of.through)
+@receiver(pre_save, sender=Student)
 def update_is_president(sender, instance, **kwargs):
-    instance.is_president = instance.president_of.exists()
-    instance.save()
+    instance.is_president = instance.president_of is not None
 
 
 class Admin(User):
@@ -157,7 +158,15 @@ class Society(models.Model):
     timetable = models.TextField(blank=True, null=True)
     membership_requirements = models.TextField(blank=True, null=True)
     upcoming_projects_or_plans = models.TextField(blank=True, null=True)
+    tags = models.JSONField(default=list, blank=True)  # Stores tags as a list
+    icon = models.ImageField(upload_to="society_icons/", blank=True, null=True)  # Stores an image icon
 
+    def save(self, *args, **kwargs):
+        """Ensure the leader is always a member"""
+        super().save(*args, **kwargs)  # Save the society first
+        if self.leader:
+            self.society_members.add(self.leader) 
+            
     def __str__(self):
         return self.name
 
@@ -329,6 +338,26 @@ class EventRequest(Request):
     start_time = models.TimeField(blank=True, null=True)
     duration = models.DurationField(blank=True, null=True)
 
+class AdminReportRequest(Request):
+    """
+    Reports submitted to the admin by students or society presidents.
+    """
+
+    REPORT_TYPES = [
+        ("Misconduct", "Misconduct"),
+        ("System Issue", "System Issue"),
+        ("Society Issue", "Society Issue"),
+        ("Event Issue", "Event Issue"),
+        ("Other", "Other"),
+    ]
+
+    report_type = models.CharField(max_length=20, choices=REPORT_TYPES)
+    subject = models.CharField(max_length=100, blank=False)
+    details = models.TextField(blank=False)
+
+    def __str__(self):
+        return f"{self.get_report_type_display()} - {self.subject} (From {self.from_student.username})"
+
 
 class SiteSettings(models.Model):
     """
@@ -379,3 +408,58 @@ class SiteSettings(models.Model):
         """
         obj, created = cls.objects.get_or_create(pk=cls.singleton_instance_id)
         return obj
+class Award(models.Model):
+    """
+    Awards to be granted to students
+    """
+    RANKS = [
+        ("Bronze", "Bronze"),
+        ("Silver", "Silver"),
+        ("Gold", "Gold"),
+    ]
+    rank = models.CharField(
+        max_length=10,
+        default="Bronze",
+        blank=False,
+        null=False,
+        choices=RANKS,
+    )
+    is_custom = models.BooleanField(default=False)
+    title = models.CharField(
+        max_length=20,
+        default="default_title",
+        blank=False,
+        null=False,
+    )
+    description = models.CharField(
+        max_length=150,
+        default="default_description",
+        blank=False,
+        null=False,
+    )
+
+    def __str__(self):
+        return f"{self.title}, {self.rank}"
+
+class AwardStudent(models.Model):
+    """
+    The relation between Award and Student
+    """
+    award = models.ForeignKey(
+        "Award",
+        on_delete=models.CASCADE,
+        related_name="student_awards",
+        blank=False,
+        null=False,
+    )
+    student = models.ForeignKey(
+        "Student",
+        on_delete=models.CASCADE,
+        related_name="award_students",
+        blank=False,
+        null=False,
+    )
+    awarded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.student}, ({self.award})"

@@ -5,20 +5,21 @@ from django.db.models import Count, Sum
 from django.utils.timezone import now
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
-from django.utils import timezone
-from django.views.decorators.csrf import csrf_exempt
 from rest_framework import generics, status
 from rest_framework.decorators import api_view, permission_classes
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from api.models import Admin, Event, Notification, Society, Student, User
+from api.models import Admin, Event, Notification, Society, Student, User,Award, AwardStudent, UserRequest
 from api.serializers import (
+    AdminReportRequestSerializer,
     AdminSerializer,
     DashboardNotificationSerializer,
     DashboardStatisticSerializer,
     EventCalendarSerializer,
+    EventRequestSerializer,
     EventSerializer,
     JoinSocietySerializer,
     LeaveSocietySerializer,
@@ -29,22 +30,12 @@ from api.serializers import (
     StartSocietyRequestSerializer,
     StudentSerializer,
     UserSerializer,
+    AwardSerializer, 
+    AwardStudentSerializer,
+    PendingMemberSerializer,
+
 )
 
-"""
-This function is for the global callout
-"""
-
-
-@api_view(["GET"])
-@permission_classes([IsAuthenticated])
-def get_current_user(request):
-    user = request.user
-    return Response({
-        "id": user.id,
-        "username": user.username,
-        "email": user.email,
-    })
 
 
 class CreateUserView(generics.CreateAPIView):
@@ -105,14 +96,22 @@ class CurrentUserView(APIView):
             }, status=status.HTTP_401_UNAUTHORIZED)
 
         user, _ = decoded_auth
-        serializer = UserSerializer(user)
+        
+        try:
+            student_user = Student.objects.get(pk=user.pk)
+            serializer = StudentSerializer(student_user)
+        except Student.DoesNotExist:
+            # No matching Student row, so just use User
+            serializer = UserSerializer(user)
 
+        # Check if serializer.data is falsy, return 500 error.
         if not serializer.data:
-            return Response({
-                "error": "User data could not be retrieved. Please try again later."
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
+            return Response(
+                {"error": "User data could not be retrieved. Please try again later."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
         return Response(serializer.data, status=status.HTTP_200_OK)
+
 
     def put(self, request):
         """
@@ -164,7 +163,7 @@ class StudentSocietiesView(APIView):
         if not hasattr(user, "student"):
             return Response({"error": "Only students can manage societies."}, status=status.HTTP_403_FORBIDDEN)
 
-        societies = user.student.societies.all()
+        societies = user.student.societies_belongs_to.all()
         serializer = SocietySerializer(societies, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -185,11 +184,11 @@ class StudentSocietiesView(APIView):
             return Response({"error": "Society does not exist."}, status=status.HTTP_404_NOT_FOUND)
 
         # Check if the user is actually a member of the society
-        if not user.student.societies.filter(id=society_id).exists():
+        if not user.student.societies_belongs_to.filter(id=society_id).exists():
             return Response({"error": "You are not a member of this society."}, status=status.HTTP_400_BAD_REQUEST)
 
         # Remove the student from the society
-        user.student.societies.remove(society)
+        user.student.societies_belongs_to.remove(society)
 
         return Response({"message": f"Successfully left society '{society.name}'."}, status=status.HTTP_200_OK)
 
@@ -220,7 +219,7 @@ class JoinSocietyView(APIView):
         if not hasattr(user, "student"):
             return Response({"error": "Only students can join societies."}, status=status.HTTP_403_FORBIDDEN)
 
-        joined_societies = user.student.societies.all()
+        joined_societies = user.student.societies_belongs_to.all()
         available_societies = Society.objects.exclude(id__in=joined_societies)
 
         serializer = SocietySerializer(available_societies, many=True)
@@ -228,6 +227,7 @@ class JoinSocietyView(APIView):
 
     def post(self, request, society_id=None):
         user = request.user
+
         if not hasattr(user, "student"):
             return Response({"error": "Only students can join societies."}, status=status.HTTP_403_FORBIDDEN)
 
@@ -235,16 +235,17 @@ class JoinSocietyView(APIView):
             return Response({"error": "Society ID is required."}, status=status.HTTP_400_BAD_REQUEST)
 
         serializer = JoinSocietySerializer(data={"society_id": society_id}, context={"request": request})
-        if serializer.is_valid():
-            try:
-                society = serializer.save()
-                return Response({"message": f"Successfully joined society '{society.name}'."}, status=status.HTTP_200_OK)
-            except Society.DoesNotExist:
-                return Response(
-                    {"error": "Society not found"}, 
-                    status=status.HTTP_404_NOT_FOUND
-                )
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        if not serializer.is_valid():
+
+            if "Society does not exist." in serializer.errors.get("society_id", []):
+                return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
+
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)  
+
+        society = serializer.save()
+        return Response({"message": f"Successfully joined society '{society.name}'."}, status=status.HTTP_200_OK)
+
 
 
 class RSVPEventView(APIView):
@@ -510,7 +511,7 @@ class RejectedSocietyRequestView(APIView):      #TODO: societyRequestView works 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class ManageMySocietyView(APIView):
+class ManageSocietyDetailsView(APIView):
     """
     API View for society presidents to manage their societies.
     """
@@ -520,17 +521,24 @@ class ManageMySocietyView(APIView):
         user = request.user
 
         # Ensure the user is a society president
-        if not user.is_student() or not user.student.is_president:
+        try:
+            student = Student.objects.get(pk=user.pk)
+        except Student.DoesNotExist:
+            return Response({"error": "Only society presidents can manage their societies."}, status=status.HTTP_403_FORBIDDEN)
+        print("Logged-in student id:", student.id)
+        print("Requested society id:", society_id)
+        if not student.is_president:
             return Response({"error": "Only society presidents can manage their societies."}, status=status.HTTP_403_FORBIDDEN)
 
         # Fetch the society
         society = Society.objects.filter(
-            id=society_id, leader=user.student).first()
+            id=society_id).first()
         if not society:
             return Response({"error": "Society not found or you are not the president of this society."}, status=status.HTTP_404_NOT_FOUND)
 
         # Serialize the society details
         serializer = SocietySerializer(society)
+        print("Sending response data:", serializer.data)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def patch(self, request, society_id):
@@ -542,7 +550,7 @@ class ManageMySocietyView(APIView):
 
         # Fetch the society
         society = Society.objects.filter(
-            id=society_id, leader=user.student).first()
+            id=society_id).first()
         if not society:
             return Response({"error": "Society not found or you are not the president of this society."}, status=status.HTTP_404_NOT_FOUND)
 
@@ -555,58 +563,143 @@ class ManageMySocietyView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class CreateSocietyEventView(APIView):
+class CreateEventRequestView(APIView):
     """
-    API View for society presidents to create events for their societies.
+    API View for society presidents to create events that require admin approval.
     """
     permission_classes = [IsAuthenticated]
 
     def post(self, request, society_id):
         """
-        create a new event for the society
+        Create a new event request (Pending approval)
         """
         user = request.user
 
         # Ensure the user is a society president
         if not user.is_student() or not user.student.is_president:
-            return Response({"error": "Only society presidents can create events."}, status=status.HTTP_403_FORBIDDEN)
+            return Response(
+                {"error": "Only society presidents can create events."},
+                status=status.HTTP_403_FORBIDDEN
+            )
 
         # Fetch the society
         society = Society.objects.filter(
-            id=society_id, leader=user.student).first()
+            id=society_id, leader=user.student
+        ).first()
+
         if not society:
-            return Response({"error": "Society not found or you are not the president of this society."}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"error": "Society not found or you are not the president of this society."},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
-        # TODO:  create my own error handler that can be used for the whole project, serializer isn't appropriate for this
-        # include ?
-        # Validate and save the event data
-        serializer = EventSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save(hosted_by=society)
-            return Response({"message": "Event created successfully.", "data": serializer.data}, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def put(self, request):
-        """
-        update the event details
-        """
-        jwt_authenticator = JWTAuthentication()
-        decoded_auth = jwt_authenticator.authenticate(request)
-
-        if decoded_auth is None:
-            return Response({
-                "error": "Invalid or expired token. Please log in again."
-            }, status=status.HTTP_401_UNAUTHORIZED)
-
-        user, _ = decoded_auth
-        print("request.data: ", request.data)
-        serializer = UserSerializer(user, data=request.data, partial=True)
+        # Validate and save the event request instead of creating an event directly
+        serializer = EventRequestSerializer(data=request.data, context={"request": request})
 
         if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            serializer.save(hosted_by=society, from_student=user.student, intent="CreateEve", approved=False)  # Default: Pending
+            return Response(
+                {"message": "Event request submitted successfully. Awaiting admin approval.", "data": serializer.data},
+                status=status.HTTP_201_CREATED
+            )
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+class EventListView(APIView):
+    """
+    API View to list events based on filters (upcoming, previous, pending).
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        society_id = request.query_params.get("society_id")
+        filter_type = request.query_params.get("filter")
+
+        if not society_id:
+            return Response({"error": "Missing society_id"}, status=400)
+
+        events = Event.objects.filter(hosted_by_id=society_id)
+
+        today = now().date()
+        current_time = now().time()
+
+        if filter_type == "upcoming":
+            events = events.filter(date__gt=today, status="Approved") | events.filter(date=today, start_time__gt=current_time, status="Approved")
+        
+        elif filter_type == "previous":
+            events = events.filter(date__lt=today, status="Approved") | events.filter(date=today, start_time__lt=current_time, status="Approved")
+        
+        elif filter_type == "pending":
+            events = events.filter(status="Pending")
+
+        serializer = EventSerializer(events, many=True)
+        return Response(serializer.data)
+    
+    
+class PendingMembersView(APIView):
+    """
+    API View for Society Presidents to manage pending membership requests.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, society_id):
+        """
+        Retrieve all pending membership requests for a specific society.
+        """
+        user = request.user
+
+        # Ensure the user is a president
+        if not hasattr(user, "student") or not user.student.is_president:
+            return Response({"error": "Only society presidents can manage members."}, status=status.HTTP_403_FORBIDDEN)
+
+        # Ensure the president owns this society
+        society = Society.objects.filter(id=society_id, leader=user.student).first()
+        if not society:
+            return Response({"error": "You are not the president of this society."}, status=status.HTTP_403_FORBIDDEN)
+
+        # Get all pending membership requests
+        pending_requests = UserRequest.objects.filter(
+            intent="JoinSoc", approved=False, from_student__societies_belongs_to=society
+        )
+
+        serializer = PendingMemberSerializer(pending_requests, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, society_id, request_id):
+        """
+        Approve or reject a membership request.
+        """
+        user = request.user
+
+        # Ensure the user is a president
+        if not hasattr(user, "student") or not user.student.is_president:
+            return Response({"error": "Only society presidents can manage members."}, status=status.HTTP_403_FORBIDDEN)
+
+        society = Society.objects.filter(id=society_id, leader=user.student).first()
+        if not society:
+            return Response({"error": "You are not the president of this society."}, status=status.HTTP_403_FORBIDDEN)
+
+        # Find the pending request
+        pending_request = UserRequest.objects.filter(id=request_id, intent="JoinSoc", approved=False).first()
+        if not pending_request:
+            return Response({"error": "Request not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        action = request.data.get("action")  # "approve" or "reject"
+
+        if action == "approve":
+            # Add student to society
+            student = pending_request.from_student
+            society.society_members.add(student)
+            pending_request.approved = True
+            pending_request.save()
+            return Response({"message": f"{student.first_name} has been approved."}, status=status.HTTP_200_OK)
+
+        elif action == "reject":
+            # Delete the request
+            pending_request.delete()
+            return Response({"message": "Request has been rejected."}, status=status.HTTP_200_OK)
+
+        return Response({"error": "Invalid action."}, status=status.HTTP_400_BAD_REQUEST)
 
 class EventView(APIView):
     """
@@ -786,3 +879,117 @@ def get_sorted_events(request):
     events = Event.objects.filter(status="Approved", date__gte=now()).order_by("date", "start_time")
     serializer = EventSerializer(events, many=True)
     return Response(serializer.data)
+
+class AwardView(APIView):
+    """Handles listing, creating, retrieving, updating, and deleting awards"""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk=None) -> Response:
+        """List all awards or retrieve a specific award if ID is provided"""
+        if pk:
+            try:
+                award = Award.objects.get(pk=pk)
+                serializer = AwardSerializer(award)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            except Award.DoesNotExist:
+                return Response({"error": "Award not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        # List all awards if no ID is provided
+        awards = Award.objects.all()
+        serializer = AwardSerializer(awards, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request) -> Response:
+        """Create a new award"""
+        serializer = AwardSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def put(self, request, pk: int) -> Response:
+        """Update an award by ID"""
+        try:
+            award = Award.objects.get(pk=pk)
+        except Award.DoesNotExist:
+            return Response({"error": "Award not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = AwardSerializer(award, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk: int) -> Response:
+        """Delete an award by ID"""
+        try:
+            award = Award.objects.get(pk=pk)
+        except Award.DoesNotExist:
+            return Response({"error": "Award not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        award.delete()
+        return Response({"message": "Award deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+
+
+class AwardStudentView(APIView):
+    """Handles listing, assigning, retrieving, updating, and deleting awards for students"""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk=None) -> Response:
+        """List all award assignments or retrieve a specific one if ID is provided"""
+        if pk:
+            try:
+                award_student = AwardStudent.objects.get(pk=pk)
+                serializer = AwardStudentSerializer(award_student)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            except AwardStudent.DoesNotExist:
+                return Response({"error": "Award assignment not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # List all award assignments
+        awards_students = AwardStudent.objects.filter(student=request.user)
+        serializer = AwardStudentSerializer(awards_students, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request) -> Response:
+        """Assign an award to a student"""
+        serializer = AwardStudentSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def put(self, request, pk: int) -> Response:
+        """Update a specific award assignment"""
+        try:
+            award_student = AwardStudent.objects.get(pk=pk)
+        except AwardStudent.DoesNotExist:
+            return Response({"error": "Award assignment not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = AwardStudentSerializer(award_student, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk: int) -> Response:
+        """Delete a specific award assignment"""
+        try:
+            award_student = AwardStudent.objects.get(pk=pk)
+        except AwardStudent.DoesNotExist:
+            return Response({"error": "Award assignment not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        award_student.delete()
+        return Response({"message": "Award assignment deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+
+class AdminReportView(APIView):
+    """
+    API view for students and society presidents to submit reports to admins.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = AdminReportRequestSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(from_student=request.user.student)  #  Auto-assign the reporter
+            return Response({"message": "Report submitted successfully."}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

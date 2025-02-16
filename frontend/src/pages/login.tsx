@@ -28,6 +28,7 @@ export default function LoginPage() {
         else if (res.data.role === "student") {    
           navigate("/student");
         }
+        // navigate("/");
       } catch (error) {
         alert(error);
       } finally {
