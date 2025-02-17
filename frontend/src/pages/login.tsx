@@ -1,13 +1,16 @@
-import { apiClient, apiPaths } from "../api";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ACCESS_TOKEN, REFRESH_TOKEN } from "../constants";
-import CircularLoader from "../components/loading/circular-loader";
 import { useFormik } from "formik";
+import { Box, Typography, TextField, Button, CircularProgress, useTheme } from "@mui/material";
+import { apiClient, apiPaths } from "../api";
+import { tokens } from "../theme/theme";
+import { ACCESS_TOKEN, REFRESH_TOKEN } from "../constants";
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const theme = useTheme();
+  const colors = tokens(theme.palette.mode);
 
   const loginFormik = useFormik({
     initialValues: {
@@ -17,9 +20,7 @@ export default function LoginPage() {
     onSubmit: async (data) => {
       setLoading(true);
       try {
-        console.log(data);
         const res = await apiClient.post(apiPaths.USER.LOGIN, data);
-        console.log(res.data.role);
         localStorage.setItem(ACCESS_TOKEN, res.data.access);
         localStorage.setItem(REFRESH_TOKEN, res.data.refresh);
         navigate("/");
@@ -38,66 +39,93 @@ export default function LoginPage() {
   });
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-100 py-6 px-4 sm:px-6 lg:px-8">
-      <form
+    <Box
+      sx={{
+        minHeight: "100vh",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: colors.primary[400], 
+        padding: 2,
+      }}
+    >
+      <Box
+        component="form"
         onSubmit={loginFormik.handleSubmit}
-        className="w-full max-w-md bg-white p-6 rounded-lg shadow-lg overflow-auto"
+        sx={{
+          width: "100%",
+          maxWidth: 400,
+          backgroundColor: theme.palette.mode === "light" ? "#fff" : colors.primary[500],
+          padding: 4,
+          borderRadius: 2,
+          boxShadow: 3,
+        }}
       >
-        <h1 className="text-2xl font-bold text-center mb-6">Login</h1>
-        <div className="mb-4">
-          <label
-            htmlFor="username"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Username
-          </label>
-          <input
-            id="username"
-            type="text"
-            value={loginFormik.values.username}
-            onChange={loginFormik.handleChange}
-            placeholder="Enter your username"
-            className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-            required
-          />
-        </div>
-        <div className="mb-4">
-          <label
-            htmlFor="password"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Password
-          </label>
-          <input
-            id="password"
-            type="password"
-            value={loginFormik.values.password}
-            onChange={loginFormik.handleChange}
-            placeholder="Enter your password"
-            className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-            required
-          />
-        </div>
-        {loading && (
-          <div className="flex justify-center mb-4">
-            <CircularLoader />
-          </div>
-        )}
-        <button
-          type="submit"
-          className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md shadow hover:bg-indigo-700"
+        <Typography
+          variant="h4"
+          sx={{ 
+            textAlign: "center", 
+            fontWeight: "bold", 
+            color: colors.grey[100], 
+            marginBottom: 2 
+          }}
         >
           Login
-        </button>
-        <div className="mt-4 text-center">
-          <p>
-            Need to sign up?{" "}
-            <a href="/register" className="text-indigo-600 hover:underline">
-              Please register.
-            </a>
-          </p>
-        </div>
-      </form>
-    </div>
+        </Typography>
+
+        <TextField
+          fullWidth
+          id="username"
+          name="username"
+          label="Username"
+          placeholder="Enter your username here"
+          value={loginFormik.values.username}
+          onChange={loginFormik.handleChange}
+          sx={{ marginBottom: 2 }}
+          InputLabelProps={{ style: { color: colors.grey[300] } }}
+          InputProps={{ style: { color: colors.grey[100] } }}
+        />
+
+        <TextField
+          fullWidth
+          id="password"
+          name="password"
+          label="Password"
+          type="password"
+          placeholder="Enter your password here"
+          value={loginFormik.values.password}
+          onChange={loginFormik.handleChange}
+          sx={{ marginBottom: 2 }}
+          InputLabelProps={{ style: { color: colors.grey[300] } }}
+          InputProps={{ style: { color: colors.grey[100] } }}
+        />
+
+        {loading && (
+          <Box display="flex" justifyContent="center" mb={2}>
+            <CircularProgress />
+          </Box>
+        )}
+
+        <Button
+          fullWidth
+          type="submit"
+          variant="contained"
+          sx={{
+            backgroundColor: colors.blueAccent[500],
+            color: "#fff",
+            "&:hover": { backgroundColor: colors.blueAccent[700] },
+          }}
+        >
+          Login
+        </Button>
+
+        <Typography sx={{ marginTop: 2, textAlign: "center", color: colors.grey[100] }}>
+          Need to sign up?{" "}
+          <a href="/register" style={{ color: colors.blueAccent[300], textDecoration: "underline" }}>
+            Please register.
+          </a>
+        </Typography>
+      </Box>
+    </Box>
   );
 }
