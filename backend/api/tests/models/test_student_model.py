@@ -1,4 +1,6 @@
-from django.core.exceptions import ValidationError
+import io
+from PIL import Image
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from api.models import Student, Society
 
@@ -67,3 +69,25 @@ class StudentModelTestCase(TestCase):
         self.student.president_of.remove(self.society1)
         self.student.refresh_from_db()
         self.assertFalse(self.student.is_president)
+
+    def test_icon_default(self):
+        """Asserts that when no icon is specified it is initialized to a default"""
+        self.assertNotEqual(self.student.icon.name, None)
+
+    def test_icon_upload(self):
+        """Test that an icon can be uploaded and saved"""
+        image = Image.new('RGB', (100, 100), color='red')
+        image_io = io.BytesIO()
+        image.save(image_io, format='JPEG')
+        image_io.seek(0)
+
+        uploaded_icon = SimpleUploadedFile(
+            "test_icon.jpg",
+            image_io.getvalue(),
+            content_type="image/jpeg"
+        )
+
+        self.society1.icon = uploaded_icon
+        self.society1.save()
+
+        self.assertTrue(self.society1.icon.name.startswith('society_icons/'))
