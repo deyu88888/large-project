@@ -1,4 +1,9 @@
 from datetime import timedelta
+from random import randint
+from io import BytesIO
+from PIL import Image, ImageDraw, ImageFont
+from django.core.files.base import ContentFile
+from django.core.exceptions import ValidationError
 from django.core.validators import MinLengthValidator, MaxLengthValidator, RegexValidator
 from django.db import models
 from django.contrib.auth.models import AbstractUser
@@ -55,6 +60,36 @@ class User(AbstractUser):
         return self.role == "admin"
 
 
+def generate_icon(initial1: str, initial2: str) -> BytesIO:
+    """Generates an basic default icon"""
+    # Generates a random RGB value
+    colour = (randint(0, 255), randint(0, 255), randint(0,255))
+    initials = initial1.upper() + initial2.upper()
+    size = (100, 100)
+    image = Image.new('RGB', size=size, color=colour)
+    draw = ImageDraw.Draw(image)
+    try:
+        font = ImageFont.truetype("DejaVuSans.ttf", 50)
+    except IOError:
+        font = ImageFont.load_default()
+    bbox = draw.textbbox((0, 0), initials, font=font)
+    text_width = bbox[2] - bbox[0]
+    text_height = bbox[3] - bbox[1]
+    text_position = ((size[0] - text_width) // 2, (size[1] - text_height) // 2)
+    draw.text(
+        text_position,
+        initials,
+        fill=(255 - colour[0], 255 - colour[1], 255 - colour[2]),
+        font=font
+    )
+
+    buffer = BytesIO()
+    image.save(buffer, format='JPEG')
+    buffer.seek(0)
+
+    return buffer
+
+
 class Student(User):
     """
     A model representing student users
@@ -64,8 +99,6 @@ class Student(User):
         ("Approved", "Approved"),
         ("Rejected", "Rejected"),
     ]
-
-    major = models.CharField(max_length=50, blank=True)
 
     societies = models.ManyToManyField(
         "Society",
@@ -79,8 +112,6 @@ class Student(User):
         blank=True,
     )
 
-    is_president = models.BooleanField(default=False)
-
     attended_events = models.ManyToManyField(
         'Event',
         related_name='attendees',
@@ -91,9 +122,19 @@ class Student(User):
         max_length=20, choices=STATUS_CHOICES, default="Pending"
     )
 
+    major = models.CharField(max_length=50, blank=True)
+    is_president = models.BooleanField(default=False)
+    icon = models.ImageField(upload_to="student_icons/", blank=True, null=True)
+
     def save(self, *args, **kwargs):
         self.role = "student"
+
         super().save(*args, **kwargs)
+
+        if not self.icon.name or not self.icon:
+            buffer = generate_icon(self.first_name[0], self.last_name[0])
+            filename = f"default_icon_{self.pk}.jpeg"
+            self.icon.save(filename, ContentFile(buffer.getvalue()), save=False)
 
     def __str__(self):
         return self.full_name
@@ -157,9 +198,37 @@ class Society(models.Model):
     timetable = models.TextField(blank=True, null=True)
     membership_requirements = models.TextField(blank=True, null=True)
     upcoming_projects_or_plans = models.TextField(blank=True, null=True)
+    icon = models.ImageField(upload_to="society_icons/", blank=True, null=True)
 
     def __str__(self):
         return self.name
+
+
+class SocietyShowreel(models.Model):
+    """
+    A model for each of a societies photos
+    """
+    society = models.ForeignKey(
+        "Society",
+        on_delete=models.CASCADE,
+        related_name="showreel_images",
+        blank=False,
+        null=False,
+    )
+    photo = models.ImageField(
+        upload_to="society_showreel/",
+        blank=False,
+        null=False
+    )
+    caption = models.CharField(max_length=50, default="", blank=True)
+
+    def clean(self):
+        if not self.pk and self.society.showreel_images.count() >= 10:
+            raise ValidationError("Society can have max 10 showreel images")
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
 
 
 def get_date():
@@ -283,7 +352,7 @@ class SocietyRequest(Request):
     roles = models.JSONField(default=dict, blank=True)
     leader = models.ForeignKey(
         "Student",
-        on_delete=models.DO_NOTHING,
+        on_delete=models.CASCADE,
         related_name="society_request_leader",
         blank=True,
         null=True,
@@ -294,6 +363,26 @@ class SocietyRequest(Request):
     timetable = models.TextField(blank=True, default="")
     membership_requirements = models.TextField(blank=True, default="")
     upcoming_projects_or_plans = models.TextField(blank=True, default="")
+    icon = models.ImageField(upload_to="icon_request/", blank=True, null=True)
+
+
+class SocietyShowreelRequest(models.Model):
+    """
+    Requests related to societies showreel photos
+    """
+    society = models.ForeignKey(
+        "SocietyRequest",
+        on_delete=models.CASCADE,
+        related_name="showreel_images_request",
+        blank=False,
+        null=False,
+    )
+    photo = models.ImageField(
+        upload_to="society_showreel_request/",
+        blank=False,
+        null=False
+    )
+    caption = models.CharField(max_length=50, default="", blank=True)
 
 
 class UserRequest(Request):
