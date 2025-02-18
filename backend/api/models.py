@@ -134,7 +134,7 @@ class Student(User):
         if not self.icon.name or not self.icon:
             buffer = generate_icon(self.first_name[0], self.last_name[0])
             filename = f"default_icon_{self.pk}.jpeg"
-            self.icon.save(filename, ContentFile(buffer.getvalue()), save=False)
+            self.icon.save(filename, ContentFile(buffer.getvalue()), save=True)
 
     def __str__(self):
         return self.full_name
