@@ -1,4 +1,3 @@
-import os
 from django.core.files.storage import default_storage
 from django.core.management.base import BaseCommand
 import api.models as m
@@ -38,9 +37,6 @@ class Command(BaseCommand):
         for image in images:
             if image and default_storage.exists(image):
                 default_storage.delete(image)
-                print(f"Deleted: {image}")
-            else:
-                print(f"Couldn't delete: {image}")
 
         for model in models: # Iterate through and clear all models
             model.objects.all().delete()
