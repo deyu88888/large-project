@@ -87,7 +87,7 @@ class StudentModelTestCase(TestCase):
             content_type="image/jpeg"
         )
 
-        self.society1.icon = uploaded_icon
-        self.society1.save()
+        self.student.icon = uploaded_icon
+        self.student.save()
 
-        self.assertTrue(self.society1.icon.name.startswith('society_icons/'))
+        self.assertTrue(self.student.icon.name.startswith('student_icons/'))

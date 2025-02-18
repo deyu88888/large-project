@@ -1,3 +1,6 @@
+import io
+from PIL import Image
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 from api.models import Society, Admin, Student
@@ -99,11 +102,36 @@ class SocietyModelTestCase(TestCase):
 
     def test_membership_requirements(self):
         """ Test the membership_requirements field """
-        self.assertEqual(self.society.membership_requirements, "Members must attend at least 3 events per semester")
+        self.assertEqual(
+            self.society.membership_requirements,
+            "Members must attend at least 3 events per semester"
+        )
 
     def test_upcoming_projects_or_plans(self):
         """ Test the upcoming_projects_or_plans field """
         self.assertEqual(self.society.upcoming_projects_or_plans, "Plan to host a Tech Fest in May")
+
+    def test_icon_default(self):
+        """Asserts that when no icon is specified it is initialized to a default"""
+        self.assertNotEqual(self.society.icon.name, None)
+
+    def test_icon_upload(self):
+        """Test that an icon can be uploaded and saved"""
+        image = Image.new('RGB', (100, 100), color='red')
+        image_io = io.BytesIO()
+        image.save(image_io, format='JPEG')
+        image_io.seek(0)
+
+        uploaded_icon = SimpleUploadedFile(
+            "test_icon.jpg",
+            image_io.getvalue(),
+            content_type="image/jpeg"
+        )
+
+        self.society.icon = uploaded_icon
+        self.society.save()
+
+        self.assertTrue(self.society.icon.name.startswith('society_icons/'))
 
     def _assert_society_is_valid(self):
         try:
