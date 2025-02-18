@@ -1,5 +1,5 @@
 import datetime
-from api.models import User, Student, Admin, Society, Event, Notification, Request, SocietyRequest, EventRequest, UserRequest, SiteSettings
+from api.models import User, Student, Admin, Society, Event, Notification, Request, SocietyRequest, SocietyShowreel, SocietyShowreelRequest, EventRequest, UserRequest, SiteSettings
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
 
@@ -135,16 +135,30 @@ class AdminSerializer(UserSerializer):
         return admin
 
 
-class SocietySerializer(serializers.ModelSerializer):
-    """ Serializer for objects of the Society model """
+class SocietyShowreelSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the SocietyShowreel model
+    """
+
 
     class Meta:
+        """SocietyShowreelSerializer meta data"""
+        model = SocietyShowreel
+        fields= ('photo', 'caption')
+
+
+class SocietySerializer(serializers.ModelSerializer):
+    """ Serializer for objects of the Society model """
+    showreel_images = SocietyShowreelSerializer(many=True, required=False)
+
+
+    class Meta:
+        """SocietySerializer meta data"""
         model = Society
         fields = [
             'id', 'name', 'society_members', 'roles', 'leader', 'approved_by',
-            'status', 'category', 'social_media_links', 'timetable',
-            'membership_requirements', 'upcoming_projects_or_plans',
-            #'society_logo'
+            'status', 'category', 'social_media_links', 'timetable', 'showreel_images',
+            'membership_requirements', 'upcoming_projects_or_plans', 'icon',
         ]
 
     def validate_social_media_links(self, value):
@@ -156,24 +170,32 @@ class SocietySerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         """ Use passing in json dict data to create a new Society """
+        photos_data = validated_data.pop('showreel_images', [])
         members_data = validated_data.pop('society_members', [])
+
         society = Society.objects.create(**validated_data)
 
         if members_data:
             society.society_members.set(members_data)
+        for photo_data in photos_data:
+            SocietyShowreel.objects.create(society=society, **photo_data)
 
         society.save()
         return society
 
     def update(self, instance, validated_data):
         """ Use passing in a Society and json dict data to update a Society """
+        photos_data = validated_data.pop('showreel_images', [])
         members_data = validated_data.pop('society_members', [])
 
         for key, value in validated_data.items():
             setattr(instance, key, value)
 
+        instance.showreel_images.all().delete()
         if members_data:
             instance.society_members.set(members_data)
+        for photo_data in photos_data:
+            SocietyShowreel.objects.create(society=instance, **photo_data)
 
         instance.save()
         return instance
@@ -417,20 +439,58 @@ class RequestSerializer(serializers.ModelSerializer):
         return instance
 
 
+class SocietyShowreelRequestSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the SocietyShowreelRequest model
+    """
+
+
+    class Meta:
+        """SocietyShowreelRequestSerializer meta data"""
+        model = SocietyShowreelRequest
+        fields= ('photo', 'caption')
+
+
 class SocietyRequestSerializer(RequestSerializer):
     """
     Serializer for the SocietyRequest model
     """
+    showreel_images = SocietyShowreelRequestSerializer(many=True, required=False)
+
 
     class Meta:
         """SocietyRequestSerializer meta data"""
         model = SocietyRequest
         fields = (
             RequestSerializer.Meta.fields
-            + ['name', 'roles', 'leader', 'category',
+            + ['name', 'roles', 'leader', 'category', 'icon',
             'social_media_links', 'timetable', 'membership_requirements',
-            'upcoming_projects_or_plans', 'society']
+            'upcoming_projects_or_plans', 'society', 'showreel_images']
         )
+
+    def create(self, validated_data):
+        photos_data = validated_data.pop('showreel_images', [])
+
+        society = SocietyRequest.objects.create(**validated_data)
+
+        for photo_data in photos_data:
+            SocietyShowreelRequest.objects.create(society=society, **photo_data)
+
+        return society
+
+    def update(self, instance, validated_data):
+        photos_data = validated_data.pop('showreel_images', [])
+
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save()
+
+        instance.showreel_images_request.all().delete()
+
+        for photo_data in photos_data:
+            SocietyShowreelRequest.objects.create(society=instance, **photo_data)
+
+        return instance
 
 
 class UserRequestSerializer(RequestSerializer):
