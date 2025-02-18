@@ -17,12 +17,16 @@ class Command(BaseCommand):
             m.Notification,
             m.EventRequest,
             m.Event,
+            m.SocietyShowreelRequest,
             m.SocietyRequest,
+            m.SocietyShowreel,
             m.Society,
             m.UserRequest,
             m.User,
             m.Student,
             m.Admin,
+            m.SocietyShowreel,
+            m.SocietyShowreelRequest,
         ]
 
         for model in models: # Iterate through and clear all models

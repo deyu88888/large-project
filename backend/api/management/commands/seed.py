@@ -172,7 +172,6 @@ class Command(BaseCommand):
                 members = student_randomised.all()[:2]
                 self.finalize_society_creation(society, members)
 
-                # ✅ NEW: Create 2-5 events for this society
                 num_events = randint(2, 5)
                 for _ in range(num_events):
                     self.generate_random_event(society)
@@ -280,7 +279,6 @@ class Command(BaseCommand):
         )
 
         if created:
-            # ✅ Assign 5-20 random attendees
             all_students = list(Student.objects.exclude(id=society.leader.id))
             num_attendees = min(randint(5, 20), len(all_students))
             selected_attendees = all_students[:num_attendees]
@@ -289,7 +287,6 @@ class Command(BaseCommand):
             event.save()
             print(self.style.SUCCESS(f"📅 Event Created: {event.title} ({event.date})"))
 
-        # ✅ Ensure function returns (event, created) as a tuple
         return event, created
 
     def handle_event_status(self, society, i):
