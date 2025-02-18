@@ -133,7 +133,7 @@ class Student(User):
 
         if not self.icon.name or not self.icon:
             buffer = generate_icon(self.first_name[0], self.last_name[0])
-            filename = f"default_icon_{self.pk}.jpeg"
+            filename = f"default_student_icon_{self.pk}.jpeg"
             self.icon.save(filename, ContentFile(buffer.getvalue()), save=True)
 
     def __str__(self):
@@ -167,7 +167,7 @@ class Society(models.Model):
         ("Rejected", "Rejected"),
     ]
 
-    name = models.CharField(max_length=30, default="")
+    name = models.CharField(max_length=30, default="default")
     society_members = models.ManyToManyField(
         "Student", related_name="societies_belongs_to", blank=True
     )
@@ -194,11 +194,20 @@ class Society(models.Model):
     )
 
     category = models.CharField(max_length=50, default="General")
-    social_media_links = models.JSONField(default=dict, blank=True)  # {"facebook": "link", "email": "email"}
+    # {"facebook": "link", "email": "email"}
+    social_media_links = models.JSONField(default=dict, blank=True)
     timetable = models.TextField(blank=True, null=True)
     membership_requirements = models.TextField(blank=True, null=True)
     upcoming_projects_or_plans = models.TextField(blank=True, null=True)
     icon = models.ImageField(upload_to="society_icons/", blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+
+        if not self.icon.name or not self.icon:
+            buffer = generate_icon(self.name[0], "S")
+            filename = f"default_society_icon_{self.pk}.jpeg"
+            self.icon.save(filename, ContentFile(buffer.getvalue()), save=True)
 
     def __str__(self):
         return self.name
