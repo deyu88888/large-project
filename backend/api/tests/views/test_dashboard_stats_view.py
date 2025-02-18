@@ -7,6 +7,8 @@ class TestDashboardStatsView(APITestCase):
         # Create and authenticate a user with the custom User model
         self.user = User.objects.create_user(
             username="testuser",
+            first_name="Test",
+            last_name="User",
             password="testpassword",
             email="testuser@example.com",
             role="admin",
@@ -33,7 +35,11 @@ class TestDashboardStatsView(APITestCase):
         Society.objects.create(name="Society 2", status="Pending")
         Event.objects.create(title="Event 1", location="Test Location")
         Student.objects.create(
-            username="student1", password="password123", email="student1@example.com"
+            username="student1",
+            password="password123",
+            email="student1@example.com",
+            first_name="Test",
+            last_name="User",
         )
 
         response = self.client.get("/api/dashboard/stats/")

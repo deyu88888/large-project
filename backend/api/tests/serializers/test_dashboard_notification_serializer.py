@@ -16,6 +16,8 @@ class TestNotificationSerializer(TestCase):
 
         # Create a student
         self.student = Student.objects.create(
+            first_name="NotificationSerializer",
+            last_name="Student",
             user_ptr=self.user,
             major="Computer Science",
         )
