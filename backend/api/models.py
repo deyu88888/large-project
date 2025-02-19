@@ -232,8 +232,10 @@ class SocietyShowreel(models.Model):
     caption = models.CharField(max_length=50, default="", blank=True)
 
     def clean(self):
+        if not self.society_id:
+            raise ValidationError({"society": "society is required"})
         if not self.pk and self.society.showreel_images.count() >= 10:
-            raise ValidationError("Society can have max 10 showreel images")
+            raise ValidationError({"society": "society can have max 10 showreel images"})
 
     def save(self, *args, **kwargs):
         self.full_clean()
