@@ -2,7 +2,7 @@ import axios from "axios";
 import { ACCESS_TOKEN } from "./constants";
 
 // Define base API URL properly
-const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const apiUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
 // Axios instance
 export const apiClient = axios.create({
@@ -39,6 +39,7 @@ export const apiPaths = {
     ADMIN: "/api/user/admin", // TODO: DONT ADD BACKSLASH
     PENDINGSOCIETYREQUEST: "/api/society/request/pending",  // TODO: DONT ADD BACKSLASH
     PROFILE: "/api/user/profile", // TODO: DONT ADD BACKSLASH
+    REPORT: "/api/report-to-admin", // TODO: DONT ADD BACKSLASH
   },
   SOCIETY: {
     POPULAR_SOCIETIES: "/api/popular-societies",  // TODO: DONT ADD BACKSLASH
@@ -60,7 +61,7 @@ export const getPopularSocieties = async () => {
     return response.data;
   } catch (error: any) {
     console.error(
-      "❌ Error fetching popular societies:",
+      "Error fetching popular societies:",
       error.response?.data || error.message
     );
     throw error;
@@ -74,7 +75,7 @@ export const getAllEvents = async () => {
     return response.data;
   } catch (error: any) {
     console.error(
-      "❌ Error fetching events:",
+      "Error fetching events:",
       error.response?.data || error.message
     );
     throw error;

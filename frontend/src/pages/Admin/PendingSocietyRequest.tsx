@@ -5,7 +5,9 @@ import { apiClient, apiPaths } from "../../api";
 import { tokens } from "../../theme/theme";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { useSettingsStore } from "../../stores/settings-store";
-import { useFetchPendingSocieties } from "../../hooks/useFetchPendingSocieties";
+import { fetchPendingSocieties } from "./fetchPendingSocieties";
+import { useFetchWebSocket } from "../../hooks/useFetchWebSocket";
+
 
 const PendingSocietyRequest = () => {
   const theme = useTheme();
@@ -13,7 +15,8 @@ const PendingSocietyRequest = () => {
 
   const { searchTerm } = useContext(SearchContext);
   const { drawer } = useSettingsStore(); 
-  const societies = useFetchPendingSocieties();
+  // const societies = useFetchPendingSocieties();
+  const societies = useFetchWebSocket(fetchPendingSocieties, 'society');
 
 
   const filteredSocieties = Array.isArray(societies) 
@@ -32,7 +35,7 @@ const PendingSocietyRequest = () => {
   : [];
 
 
-  const handleAccept = async (id: number) => {
+  const handleAccept = async (id: number) => {    // refactor to combine with handleReject
     try {
       await apiClient.put(`${apiPaths.USER.PENDINGSOCIETYREQUEST}/${id}`, { status: "Approved" });
     } catch (error) {

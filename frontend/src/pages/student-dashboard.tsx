@@ -23,6 +23,10 @@ import {
 import { apiClient } from "../api";
 import { useAuthStore } from "../stores/auth-store";
 
+// TIP: (suggestion) use type instead of interface, advantage is that it could be extend later without modifying the original type
+// TIP: (suggestion) move the types/interfaces into type.ts file for better organization
+
+
 // Define TypeScript interfaces for your data types
 interface Society {
   id: number;
@@ -52,6 +56,7 @@ interface AwardAssignment {
   };
 }
 
+
 const StudentDashboard: React.FC = () => {
   const navigate = useNavigate();
   const theme = useTheme();
@@ -68,7 +73,7 @@ const StudentDashboard: React.FC = () => {
 
   useEffect(() => {
     fetchData();
-     
+
   }, []);
 
   const logout = () => {
@@ -77,45 +82,57 @@ const StudentDashboard: React.FC = () => {
     navigate("/");
   };
 
+  // IMPROVE: (suggestion) here are 4 requests, to improve make it into 1 request, 
+  // add a endpoint on the backend that returns all the data
+  // one call to the backend, and the backend will fetch all the data and return it to the frontend
+  // unless pagination is used, then it's necassary to have multiple requests
+
   // Fetch data from the endpoints
   const fetchData = async () => {
-    try {
-      setLoading(true);
-      
+    setLoading(true);
+
+    try {  //NOTE: Fetch societies, not working earlier, and was blocking the following request, so try-catch is necessary
       // Fetch societies
-      const societiesResponse = await apiClient.get("/api/student-societies/");
+      const societiesResponse = await apiClient.get("/api/student-societies");   
       setSocieties(societiesResponse.data || []);
-      const presidentSocieties = societiesResponse.data.filter(
-        (society: any) => society.is_president
-      );
-      setIsPresident(presidentSocieties.length > 0);
+      // const presidentSocieties = societiesResponse.data.filter(
+      //   (society: any) => society.is_president
+      // );
 
-      // Fetch events
-      const eventsResponse = await apiClient.get("/api/events/rsvp");
+      // setIsPresident(presidentSocieties.length > 0);
+
+    }
+    catch (error) {
+      console.error("Error fetching society data:", error);
+    }
+
+    try {  //NOTE: Fetch events, not working earlier, and was blocking the following request, so try-catch is necessary
+      const eventsResponse = await apiClient.get(`/api/events/rsvp`); 
       setEvents(eventsResponse.data || []);
-
-      // Fetch notifications
-      const notificationsResponse = await apiClient.get("/api/notifications");
+    }
+    catch (error) {
+      console.error("Error fetching event data:", error);
+    }
+    try {
+      const notificationsResponse = await apiClient.get("/api/notifications"); 
       setNotifications(notificationsResponse.data || []);
 
-      // Fetch awards (award assignments)
-      try {
-        const awardsResponse = await apiClient.get("/api/award-students/");
-        setAwards(awardsResponse.data || []);
-      } catch (error) {
-        console.error("Error fetching award assignments:", error);
-      }
     } catch (error) {
-      console.error("Error fetching data:", error);
-    } finally {
-      setLoading(false);
+      console.error("Error fetching notification data:", error);
     }
+    try {
+      const awardsResponse = await apiClient.get(`/api/award-students/${user?.id}`); 
+      setAwards([awardsResponse.data]);
+    } catch (error) {
+      console.error("Error fetching award assignments:", error);
+    }
+    setLoading(false);
   };
 
   // Join a society
   const joinSociety = async (societyId: number) => {
     try {
-      await apiClient.post(`/api/join-society/${societyId}/`);
+      await apiClient.post(`/api/join-society/${societyId}`);
       fetchData();
     } catch (error) {
       console.error("Error joining society:", error);
@@ -125,7 +142,7 @@ const StudentDashboard: React.FC = () => {
   // Leave a society
   const handleLeaveSociety = async (societyId: number) => {
     try {
-      await apiClient.delete(`/api/leave-society/${societyId}/`);
+      await apiClient.delete(`/api/leave-society/${societyId}`);
       fetchData();
     } catch (error) {
       console.error("Error leaving society:", error);
@@ -136,9 +153,9 @@ const StudentDashboard: React.FC = () => {
   const handleRSVP = async (eventId: number, isAttending: boolean) => {
     try {
       if (isAttending) {
-        await apiClient.post("/api/events/rsvp/", { event_id: eventId });
+        await apiClient.post("/api/events/rsvp", { event_id: eventId });
       } else {
-        await apiClient.delete("/api/events/rsvp/", { data: { event_id: eventId } });
+        await apiClient.delete("/api/events/rsvp", { data: { event_id: eventId } });
       }
       fetchData();
     } catch (error) {
@@ -149,7 +166,7 @@ const StudentDashboard: React.FC = () => {
   // Cancel RSVP for an event
   const cancelRSVP = async (eventId: number) => {
     try {
-      await apiClient.delete("/api/events/rsvp/", { data: { event_id: eventId } });
+      await apiClient.delete("/api/events/rsvp", { data: { event_id: eventId } });
       fetchData();
     } catch (error) {
       console.error("Error canceling RSVP:", error);
@@ -159,7 +176,7 @@ const StudentDashboard: React.FC = () => {
   // Mark a notification as read
   const markNotificationAsRead = async (id: number) => {
     try {
-      const response = await apiClient.patch(`/api/notifications/${id}/`, { is_read: true });
+      const response = await apiClient.patch(`/api/notifications/${id}`, { is_read: true });
       if (response.status === 200) {
         setNotifications((prevNotifications) =>
           prevNotifications.map((notification) =>
@@ -541,7 +558,8 @@ const StudentDashboard: React.FC = () => {
                 }}
                 gap={3}
               >
-                {awards.map((awardAssignment) => (
+                {/* {awards.map((awardAssignment) => ( */}
+                {Array.isArray(awards) && awards.map((awardAssignment) => (
                   <Paper
                     key={awardAssignment.id}
                     elevation={2}
@@ -566,8 +584,8 @@ const StudentDashboard: React.FC = () => {
                         awardAssignment.award.rank === "Gold"
                           ? "#FFD700"
                           : awardAssignment.award.rank === "Silver"
-                          ? "#C0C0C0"
-                          : "#CD7F32"
+                            ? "#C0C0C0"
+                            : "#CD7F32"
                       }
                       color={colours.primary[500]}
                     >
