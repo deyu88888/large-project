@@ -402,7 +402,7 @@ class UserRequest(Request):
     """
     # username at some point
     major = models.CharField(max_length=50, blank=True, default="")
-
+    icon = models.ImageField(upload_to="icon_request/", blank=True, null=True)
 
 class EventRequest(Request):
     """
