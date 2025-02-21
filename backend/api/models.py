@@ -31,8 +31,8 @@ class User(AbstractUser):
         ],
         help_text="6-30 chars. Letters, digits, underscores, hyphens, and dots only.",
     )
-    first_name = models.CharField(max_length=50, blank=False)
-    last_name = models.CharField(max_length=50, blank=False)
+    first_name = models.CharField(max_length=50, blank=False, default="first")
+    last_name = models.CharField(max_length=50, blank=False, default="last")
     email = models.EmailField(unique=True, blank=False)
     is_active = models.BooleanField(default=True)
 
