@@ -1,6 +1,7 @@
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 from api.models import Student, Society, Admin, SocietyRequest
+from api.tests.file_deletion import delete_file
 
 # pylint: disable=no-member
 
@@ -85,3 +86,11 @@ class SocietyRequestTestCase(TestCase):
     def _assert_society_request_is_invalid(self):
         with self.assertRaises(ValidationError):
             self.society_request.full_clean()
+
+    def tearDown(self):
+        for society in Society.objects.all():
+            if society.icon:
+                delete_file(society.icon.path)
+        for student in Student.objects.all():
+            if student.icon:
+                delete_file(student.icon.path)

@@ -1,7 +1,7 @@
 from django.test import TestCase
 from api.models import Student, Society
 from api.serializers import StudentSerializer
-from rest_framework.exceptions import ValidationError
+from api.tests.file_deletion import delete_file
 
 
 class StudentSerializerTestCase(TestCase):
@@ -109,3 +109,11 @@ class StudentSerializerTestCase(TestCase):
         self.assertEqual(list(student.societies.values_list("id", flat=True)), self.student_data["societies"])
         self.assertEqual(list(student.president_of.values_list("id", flat=True)), self.student_data["president_of"])
         self.assertTrue(student.is_president)
+
+    def tearDown(self):
+        for society in Society.objects.all():
+            if society.icon:
+                delete_file(society.icon.path)
+        for student in Student.objects.all():
+            if student.icon:
+                delete_file(student.icon.path)

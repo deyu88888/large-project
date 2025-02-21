@@ -1,9 +1,10 @@
-import io
+from io import BytesIO
 from PIL import Image
-from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.files.base import ContentFile
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 from api.models import Society, Admin, Student
+from api.tests.file_deletion import delete_file
 
 class SocietyModelTestCase(TestCase):
     """ Unit tests for the Society model """
@@ -117,21 +118,17 @@ class SocietyModelTestCase(TestCase):
 
     def test_icon_upload(self):
         """Test that an icon can be uploaded and saved"""
-        image = Image.new('RGB', (100, 100), color='red')
-        image_io = io.BytesIO()
-        image.save(image_io, format='JPEG')
-        image_io.seek(0)
+        image = Image.new("RGB", (100, 100), color="red")
 
-        uploaded_icon = SimpleUploadedFile(
-            "test_icon.jpg",
-            image_io.getvalue(),
-            content_type="image/jpeg"
-        )
+        buffer = BytesIO()
+        image.save(buffer, format='JPEG')
+        buffer.seek(0)
 
-        self.society.icon = uploaded_icon
+        delete_file(self.society.icon.path)
+        self.society.icon.save("default_icon.jpeg", ContentFile(buffer.getvalue()), save=True)
         self.society.save()
 
-        self.assertTrue(self.society.icon.name.startswith('society_icons/'))
+        self.assertTrue(self.society.icon.name.startswith("society_icons/"))
 
     def _assert_society_is_valid(self):
         try:
@@ -142,3 +139,11 @@ class SocietyModelTestCase(TestCase):
     def _assert_society_is_invalid(self):
         with self.assertRaises(ValidationError):
             self.society.full_clean()
+
+    def tearDown(self):
+        for society in Society.objects.all():
+            if society.icon:
+                delete_file(society.icon.path)
+        for student in Student.objects.all():
+            if student.icon:
+                delete_file(student.icon.path)

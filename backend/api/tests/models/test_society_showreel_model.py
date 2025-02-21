@@ -4,6 +4,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 from api.models import Society, Admin, Student, SocietyShowreel
+from api.tests.file_deletion import delete_file
 
 class SocietyShowreelModelTestCase(TestCase):
     """ Unit tests for the Society model """
@@ -125,3 +126,14 @@ class SocietyShowreelModelTestCase(TestCase):
     def _assert_showreel_is_invalid(self):
         with self.assertRaises(ValidationError):
             self.society_showreel.full_clean()
+
+    def tearDown(self):
+        for society in Society.objects.all():
+            if society.icon:
+                delete_file(society.icon.path)
+        for student in Student.objects.all():
+            if student.icon:
+                delete_file(student.icon.path)
+        for showreel in SocietyShowreel.objects.all():
+            if showreel.photo:
+                delete_file(showreel.photo.path)

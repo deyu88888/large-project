@@ -1,8 +1,9 @@
-import io
+from io import BytesIO
 from PIL import Image
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from api.models import Student, Society
+from api.tests.file_deletion import delete_file
 
 
 class StudentModelTestCase(TestCase):
@@ -76,8 +77,8 @@ class StudentModelTestCase(TestCase):
 
     def test_icon_upload(self):
         """Test that an icon can be uploaded and saved"""
-        image = Image.new('RGB', (100, 100), color='red')
-        image_io = io.BytesIO()
+        image = Image.new('RGB', (1, 1), color='red')
+        image_io = BytesIO()
         image.save(image_io, format='JPEG')
         image_io.seek(0)
 
@@ -87,7 +88,16 @@ class StudentModelTestCase(TestCase):
             content_type="image/jpeg"
         )
 
+        delete_file(self.student.icon.path)
         self.student.icon = uploaded_icon
         self.student.save()
 
         self.assertTrue(self.student.icon.name.startswith('student_icons/'))
+
+    def tearDown(self):
+        for society in Society.objects.all():
+            if society.icon:
+                delete_file(society.icon.path)
+        for student in Student.objects.all():
+            if student.icon:
+                delete_file(student.icon.path)

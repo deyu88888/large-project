@@ -455,7 +455,7 @@ class SocietyRequestSerializer(RequestSerializer):
     """
     Serializer for the SocietyRequest model
     """
-    showreel_images = SocietyShowreelRequestSerializer(many=True, required=False)
+    showreel_images_request = SocietyShowreelRequestSerializer(many=True, required=False)
 
 
     class Meta:
@@ -465,11 +465,11 @@ class SocietyRequestSerializer(RequestSerializer):
             RequestSerializer.Meta.fields
             + ['name', 'roles', 'leader', 'category', 'icon',
             'social_media_links', 'timetable', 'membership_requirements',
-            'upcoming_projects_or_plans', 'society', 'showreel_images']
+            'upcoming_projects_or_plans', 'society', 'showreel_images_request']
         )
 
     def create(self, validated_data):
-        photos_data = validated_data.pop('showreel_images', [])
+        photos_data = validated_data.pop('showreel_images_request', [])
 
         society = SocietyRequest.objects.create(**validated_data)
 
@@ -479,7 +479,7 @@ class SocietyRequestSerializer(RequestSerializer):
         return society
 
     def update(self, instance, validated_data):
-        photos_data = validated_data.pop('showreel_images', [])
+        photos_data = validated_data.pop('showreel_images_request', [])
 
         for key, value in validated_data.items():
             setattr(instance, key, value)
@@ -501,7 +501,7 @@ class UserRequestSerializer(RequestSerializer):
     class Meta:
         """UserRequestSerializer meta data"""
         model = UserRequest
-        fields = RequestSerializer.Meta.fields + ['major']
+        fields = RequestSerializer.Meta.fields + ['major', 'icon']
         extra_kwargs = RequestSerializer.Meta.extra_kwargs
 
 
