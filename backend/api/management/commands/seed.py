@@ -1,5 +1,8 @@
 from datetime import date, datetime, time, timedelta
 import random
+from io import BytesIO
+from PIL import Image
+from django.core.files.uploadedfile import SimpleUploadedFile
 from random import choice, randint
 from django.contrib.auth.hashers import make_password
 from django.core.management.base import BaseCommand
@@ -7,6 +10,7 @@ from api.models import (
     Admin,
     Student,
     Society,
+    SocietyShowreel,
     Event,
     Notification,
     SocietyRequest,
@@ -196,7 +200,6 @@ class Command(BaseCommand):
     def finalize_society_creation(self, society, members):
         """Finishes society creation with proper members and roles"""
         society.leader.president_of = society
-        
 
         # Ensure at least 5-15 members
         all_students = list(Student.objects.exclude(id=society.leader.id))
@@ -215,6 +218,8 @@ class Command(BaseCommand):
         admin_randomised = Admin.objects.order_by('?')
         society.approved_by = admin_randomised.first()
         society.save()
+
+        self.seed_society_showreel(society)
 
     def handle_society_status(self, leader, name):
         """Creates society requests if pending, else assigns an admin to approved_by"""
@@ -532,3 +537,23 @@ class Command(BaseCommand):
             random_award = choice(awards)
             self.enforce_award_validity(random_award, random_student)
         print(self.style.SUCCESS(f"Seeding awards {n}/{n}"))
+
+    def seed_society_showreel(self, society, caption="A sample caption"):
+        """Adds a SocietyShowreel entry to a specific society"""
+        colour = (randint(0, 255), randint(0, 255), randint(0,255))
+        size = (100, 100)
+        image = Image.new('RGB', size=size, color=colour)
+
+        buffer = BytesIO()
+        image.save(buffer, format='JPEG')
+        buffer.seek(0)
+        file_name = f"showreel_{society.id}.jpeg"
+        uploaded_file = SimpleUploadedFile(file_name, buffer.read(), content_type='image/jpeg')
+
+        showreel_entry = SocietyShowreel.objects.create(
+            society=society,
+            photo=uploaded_file,
+            caption=caption
+        )
+
+        return showreel_entry

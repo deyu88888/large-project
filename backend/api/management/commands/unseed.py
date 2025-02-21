@@ -33,8 +33,11 @@ class Command(BaseCommand):
         ]
 
         images = list(m.SocietyShowreel.objects.values_list('photo', flat=True))
+        images.extend(list(m.SocietyShowreelRequest.objects.values_list('photo', flat=True)))
         images.extend(list(m.Student.objects.values_list('icon', flat=True)))
+        images.extend(list(m.UserRequest.objects.values_list('icon', flat=True)))
         images.extend(list(m.Society.objects.values_list('icon', flat=True)))
+        images.extend(list(m.SocietyRequest.objects.values_list('icon', flat=True)))
 
         for image in images:
             if image and default_storage.exists(image):
