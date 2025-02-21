@@ -523,7 +523,9 @@ class UserRequestSerializer(RequestSerializer):
 
 
 class EventRequestSerializer(serializers.ModelSerializer):
-    
+    """
+    Serializer for EventRequest model
+    """
     title = serializers.CharField(
     required=True,
     allow_blank=False,
@@ -539,18 +541,22 @@ class EventRequestSerializer(serializers.ModelSerializer):
     approved = serializers.BooleanField(required=False)
 
     class Meta:
+        """EventRequestSerializer meta data"""
         model = EventRequest
         fields = [
             "id", "event", "title", "description", "location", "date",
-            "start_time", "duration", "hosted_by", "from_student", "intent", "approved", "requested_at"
+            "start_time", "duration", "hosted_by", "from_student",
+            "intent", "approved", "requested_at",
         ]
         # These fields are set automatically and should not be provided in input.
         read_only_fields = ["from_student", "intent", "hosted_by", "event", "requested_at"]
 
     def get_event(self, obj):
+        """Returns the id of the event the request is made for"""
         return obj.event.id if obj.event else None
 
     def validate_title(self, value):
+        """Validates that there is more than whitespace in a title"""
         if not value.strip():
             raise serializers.ValidationError("Title cannot be blank.")
         return value
@@ -630,6 +636,7 @@ class DashboardNotificationSerializer(serializers.ModelSerializer):
     student_name = serializers.CharField(source="for_student.full_name", read_only=True)
 
     class Meta:
+        """Dashboard notification meta data"""
         model = Notification
         fields = [
             'id',
@@ -645,20 +652,19 @@ class EventCalendarSerializer(serializers.ModelSerializer):
     """
     Serializer for calendar events on the dashboard.
     """
-    # Convert `date` + `start_time` into a UTC-aware datetime
     start = serializers.SerializerMethodField()
     end = serializers.SerializerMethodField()
-    # Remove `source="title"` since it's the same name
     title = serializers.CharField()
 
     class Meta:
+        """Calender events meta data"""
         model = Event
         fields = ["id", "title", "start", "end", "location"]
         # Mark them read-only if needed:
         read_only_fields = ["start", "end"]
 
     def get_start(self, obj):
-        # Combine date and start_time in UTC
+        """Combine date and start_time in UTC"""
         return (
             datetime.datetime.combine(obj.date, obj.start_time)
             .replace(tzinfo=datetime.timezone.utc)
@@ -666,33 +672,7 @@ class EventCalendarSerializer(serializers.ModelSerializer):
         )
 
     def get_end(self, obj):
-        # Combine date and start_time, add duration
-        start_dt = datetime.datetime.combine(obj.date, obj.start_time).replace(
-            tzinfo=datetime.timezone.utc
-        )
-        return (start_dt + obj.duration).isoformat()
-
-class EventCalendarSerializer(serializers.ModelSerializer):
-    """
-    Serializer for calendar events on the dashboard.
-    """
-    start = serializers.SerializerMethodField()
-    end = serializers.SerializerMethodField()
-    title = serializers.CharField()
-
-    class Meta:
-        model = Event
-        fields = ["id", "title", "start", "end", "location"]
-        read_only_fields = ["start", "end"]
-
-    def get_start(self, obj):
-        return (
-            datetime.datetime.combine(obj.date, obj.start_time)
-            .replace(tzinfo=datetime.timezone.utc)
-            .isoformat()
-        )
-
-    def get_end(self, obj):
+        """Combine date and start_time, add duration"""
         start_dt = datetime.datetime.combine(obj.date, obj.start_time).replace(
             tzinfo=datetime.timezone.utc
         )
@@ -712,8 +692,16 @@ class AwardStudentSerializer(serializers.ModelSerializer):
     """
     award = AwardSerializer(read_only=True)
     student = StudentSerializer(read_only=True)
-    student_id = serializers.PrimaryKeyRelatedField(source='student', queryset=Student.objects.all(), write_only=True)
-    award_id = serializers.PrimaryKeyRelatedField(source='award', queryset=Award.objects.all(), write_only=True)
+    student_id = serializers.PrimaryKeyRelatedField(
+        source='student',
+        queryset=Student.objects.all(),
+        write_only=True
+    )
+    award_id = serializers.PrimaryKeyRelatedField(
+        source='award',
+        queryset=Award.objects.all(),
+        write_only=True
+    )
 
     class Meta:
         model = AwardStudent
@@ -729,11 +717,16 @@ class PendingMemberSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source="from_student.username")
 
     class Meta:
+        """UserRequest meta data"""
         model = UserRequest
         fields = ["id", "student_id", "first_name", "last_name", "username", "approved"]
         
 class AdminReportRequestSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the AdminReportRequest model
+    """
     class Meta:
+        """AdminReportRequest meta data"""
         model = AdminReportRequest
         fields = ["id", "report_type", "subject", "details", "requested_at", "from_student"]
         extra_kwargs = {"from_student": {"read_only": True}}  # Auto-assign the user
