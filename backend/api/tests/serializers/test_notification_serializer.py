@@ -1,9 +1,12 @@
-# pylint: disable=no-member
+from datetime import timedelta
 from django.test import TestCase
 from django.utils.timezone import now
-from datetime import timedelta
 from api.models import Notification, Event, Student, Society
 from api.serializers import NotificationSerializer
+from api.tests.file_deletion import delete_file
+
+# pylint: disable=no-member
+
 
 class NotificationSerializerTestCase(TestCase):
     """ Test cases for the Notification Serializer """
@@ -93,3 +96,11 @@ class NotificationSerializerTestCase(TestCase):
     def _assert_serializer_is_invalid(self):
         if self.serializer.is_valid():
             self.fail("Test serializer should be invalid")
+
+    def tearDown(self):
+        for society in Society.objects.all():
+            if society.icon:
+                delete_file(society.icon.path)
+        for student in Student.objects.all():
+            if student.icon:
+                delete_file(student.icon.path)

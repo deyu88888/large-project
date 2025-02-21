@@ -1,8 +1,9 @@
+from datetime import timedelta
 from django.test import TestCase
 from django.utils import timezone
-from datetime import timedelta
 from api.models import Student, User, Event, Notification
 from api.serializers import DashboardNotificationSerializer
+from api.tests.file_deletion import delete_file
 
 class TestNotificationSerializer(TestCase):
     def setUp(self):
@@ -102,3 +103,8 @@ class TestNotificationSerializer(TestCase):
             invalid_data.get("student_name", ""),
             "Student name should not change"
         )
+
+    def tearDown(self):
+        for student in Student.objects.all():
+            if student.icon:
+                delete_file(student.icon.path)

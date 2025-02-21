@@ -1,10 +1,11 @@
 from unittest.mock import patch
 from django.test import TransactionTestCase
 from api.models import Admin, Student, Society, Event, Notification
-from api.management.commands import seed_data
+from api.management.commands import seed
+from api.tests.file_deletion import delete_file
 
 class SeedingTestCase(TransactionTestCase):
-    """Unit test for the seed_data Command"""
+    """Unit test for the seed Command"""
     def setUp(self):
         """
         This simulates the seeding process, ensuring the data is created as expected.
@@ -53,7 +54,7 @@ class SeedingTestCase(TransactionTestCase):
 
         self.president.president_of.add(self.society)
 
-        self.command_instance = seed_data.Command()
+        self.command_instance = seed.Command()
 
     def test_admin_exists(self):
         """Test if the admin user was correctly seeded."""
@@ -86,32 +87,40 @@ class SeedingTestCase(TransactionTestCase):
 
     #@patch('builtins.print') # Avoids printing while testing
     #def test_student_creation(self, mock_print):
-    #    """Test that seed_data create_student works"""
+    #    """Test that seed create_student works"""
     #    self.command_instance.create_student(1)
     #    self.assertTrue(Student.objects.get(username="student1"))
 
     @patch('builtins.print') # Avoids printing while testing
     def test_admin_creation(self, mock_print):
-        """Test that seed_data create_admin works"""
+        """Test that seed create_admin works"""
         self.command_instance.create_admin(1)
         self.assertTrue(Admin.objects.get(username="admin1"))
 
     #@patch('builtins.print') # Avoids printing while testing
     #def test_society_creation(self, mock_print):
-    #    """Test that seed_data create_society works"""
+    #    """Test that seed create_society works"""
     #    self.command_instance.create_society(1)
     #    self.assertTrue(Society.objects.get(name="Society1"))
 
     #@patch('builtins.print') # Avoids printing while testing
     #def test_event_creation(self, mock_print):
-    #    """Test that seed_data create_event works"""
+    #    """Test that seed create_event works"""
     #    self.command_instance.create_event(1)
     #    self.assertTrue(Event.objects.get(title="Event1"))
 
     @patch('builtins.print') # Avoids printing while testing
     def test_notification_creation(self, mock_print):
-        """Test that seed_data create_event_notification works"""
+        """Test that seed create_event_notification works"""
         self.command_instance.create_event_notification(self.event)
         notif = Notification.objects.first()
         self.assertTrue(notif.for_event == self.event)
         self.assertTrue(notif.for_student == self.student)
+
+    def tearDown(self):
+        for society in Society.objects.all():
+            if society.icon:
+                delete_file(society.icon.path)
+        for student in Student.objects.all():
+            if student.icon:
+                delete_file(student.icon.path)

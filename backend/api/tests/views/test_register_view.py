@@ -2,6 +2,7 @@ from django.urls import reverse
 from rest_framework.test import APITestCase
 from rest_framework import status
 from api.models import Student, Society, User
+from api.tests.file_deletion import delete_file
 
 class RegisterViewTestCase(APITestCase):
     def setUp(self):
@@ -87,3 +88,11 @@ class RegisterViewTestCase(APITestCase):
         response = self.client.post(reverse("register"), data=invalid_payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("major", response.data)
+
+    def tearDown(self):
+        for society in Society.objects.all():
+            if society.icon:
+                delete_file(society.icon.path)
+        for student in Student.objects.all():
+            if student.icon:
+                delete_file(student.icon.path)

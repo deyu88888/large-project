@@ -1,6 +1,7 @@
 from rest_framework.test import APITestCase
 from rest_framework import status
 from api.models import User, Society, Event, Student
+from api.tests.file_deletion import delete_file
 
 class TestDashboardStatsView(APITestCase):
     def setUp(self):
@@ -58,3 +59,11 @@ class TestDashboardStatsView(APITestCase):
         self.client.logout()
         response = self.client.get("/api/dashboard/stats/")
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def tearDown(self):
+        for society in Society.objects.all():
+            if society.icon:
+                delete_file(society.icon.path)
+        for student in Student.objects.all():
+            if student.icon:
+                delete_file(student.icon.path)
