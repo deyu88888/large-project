@@ -30,7 +30,7 @@ class StudentModelTestCase(TestCase):
         self.assertEqual(self.student.first_name, 'Alice')
         self.assertEqual(self.student.last_name, 'Johnson')
         self.assertEqual(self.student.major, 'Computer Science')
-        self.assertEqual(self.student.role, 'student')  # 验证角色是否设置正确
+        self.assertEqual(self.student.role, 'student') 
 
     def test_student_full_name(self):
         """test full_name property"""

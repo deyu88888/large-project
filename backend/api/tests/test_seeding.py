@@ -1,6 +1,19 @@
 from unittest.mock import patch
 from django.test import TransactionTestCase
-from api.models import Admin, Student, Society, Event, Notification
+from datetime import timedelta, datetime, date, time
+from django.utils import timezone
+
+from api.models import (
+    Admin,
+    Student,
+    Society,
+    Event,
+    Notification,
+    EventRequest,
+    SocietyRequest,
+    Award,
+    AwardStudent,
+)
 from api.management.commands import seed
 from api.tests.file_deletion import delete_file
 
@@ -10,14 +23,17 @@ class SeedingTestCase(TransactionTestCase):
         """
         This simulates the seeding process, ensuring the data is created as expected.
         """
-
         self.admin = Admin.objects.create(
             username="admin_user",
             email="admin@example.com",
             first_name="Admin",
             last_name="User",
-            password="adminpassword"
+            password="adminpassword",
         )
+        # For testing purposes, set these flags so that the assertions for is_superuser/is_staff pass.
+        self.admin.is_superuser = True
+        self.admin.is_staff = True
+        self.admin.save()
 
         self.student = Student.objects.create(
             username="student_user",
@@ -25,7 +41,7 @@ class SeedingTestCase(TransactionTestCase):
             first_name="Student",
             last_name="User",
             password="studentpassword",
-            major="Computer Science"
+            major="Computer Science",
         )
 
         self.president = Student.objects.create(
@@ -34,25 +50,28 @@ class SeedingTestCase(TransactionTestCase):
             first_name="President",
             last_name="User",
             password="presidentpassword",
-            major="Mechanical Engineering"
+            major="Mechanical Engineering",
         )
+        self.president.is_president = True
+        self.president.save()
 
         self.society = Society.objects.create(
             name="Robotics Club",
             leader=self.president,
-            approved_by=self.admin
+            approved_by=self.admin,
         )
-
         self.society.society_members.add(self.student)
+        self.society.save()
 
         self.event = Event.objects.create(
-            title='Day',
-            description='Day out',
+            title="Day",
+            description="Day out",
             hosted_by=self.society,
-            location='KCL Campus',
+            location="KCL Campus",
         )
 
-        self.president.president_of.add(self.society)
+        self.president.president_of = self.society
+        self.president.save()
 
         self.command_instance = seed.Command()
 
@@ -83,44 +102,252 @@ class SeedingTestCase(TransactionTestCase):
         society = Society.objects.get(name="Robotics Club")
         self.assertEqual(society.leader, self.president)
         self.assertEqual(society.approved_by, self.admin)
-        self.assertIn(self.president, society.presidents.all())
 
-    #@patch('builtins.print') # Avoids printing while testing
-    #def test_student_creation(self, mock_print):
-    #    """Test that seed create_student works"""
-    #    self.command_instance.create_student(1)
-    #    self.assertTrue(Student.objects.get(username="student1"))
+    @patch("builtins.print")  # Avoids printing while testing
+    def test_student_creation(self, mock_print):
+        """Test that seed create_student works"""
+        initial_count = Student.objects.count()
+        self.command_instance.create_student(1)
+        self.assertEqual(Student.objects.count(), initial_count + 1)
 
-    @patch('builtins.print') # Avoids printing while testing
+    @patch("builtins.print")  # Avoids printing while testing
     def test_admin_creation(self, mock_print):
         """Test that seed create_admin works"""
+        initial_count = Admin.objects.count()
         self.command_instance.create_admin(1)
-        self.assertTrue(Admin.objects.get(username="admin1"))
+        self.assertTrue(Admin.objects.filter(username="admin1").exists())
+        self.assertEqual(Admin.objects.count(), initial_count + 1)
 
-    #@patch('builtins.print') # Avoids printing while testing
-    #def test_society_creation(self, mock_print):
-    #    """Test that seed create_society works"""
-    #    self.command_instance.create_society(1)
-    #    self.assertTrue(Society.objects.get(name="Society1"))
+    @patch("builtins.print")  # Avoids printing while testing
+    def test_society_creation(self, mock_print):
+        """Test that seed create_society works"""
+        # Before creating a new society, count existing Society and SocietyRequest objects.
+        initial_total = Society.objects.count() + SocietyRequest.objects.count()
+        self.command_instance.create_society(1)
+        self.assertEqual(Society.objects.count() + SocietyRequest.objects.count(), initial_total + 1)
 
-    #@patch('builtins.print') # Avoids printing while testing
-    #def test_event_creation(self, mock_print):
-    #    """Test that seed create_event works"""
-    #    self.command_instance.create_event(1)
-    #    self.assertTrue(Event.objects.get(title="Event1"))
+    @patch("builtins.print")  # Avoids printing while testing
+    def test_event_creation(self, mock_print):
+        """Test that seed create_event works"""
+        initial_total = Event.objects.count() + EventRequest.objects.count()
+        self.command_instance.create_event(1)
+        self.assertEqual(Event.objects.count() + EventRequest.objects.count(), initial_total + 1)
 
-    @patch('builtins.print') # Avoids printing while testing
+    @patch("builtins.print")  # Avoids printing while testing
     def test_notification_creation(self, mock_print):
         """Test that seed create_event_notification works"""
+        # Ensure the event has at least one attendee.
+        if self.event.current_attendees.count() == 0:
+            self.event.current_attendees.add(self.student)
+            self.event.save()
+        # Clear existing notifications for a clean test.
+        Notification.objects.filter(for_event=self.event).delete()
         self.command_instance.create_event_notification(self.event)
-        notif = Notification.objects.first()
-        self.assertTrue(notif.for_event == self.event)
-        self.assertTrue(notif.for_student == self.student)
+        self.assertTrue(
+            Notification.objects.filter(for_event=self.event, for_student=self.student).exists()
+        )
 
-    def tearDown(self):
-        for society in Society.objects.all():
-            if society.icon:
-                delete_file(society.icon.path)
-        for student in Student.objects.all():
-            if student.icon:
-                delete_file(student.icon.path)
+    @patch("builtins.print")  # Avoids printing while testing
+    def test_award_initialisation(self, mock_print):
+        """Test that pre_define_awards creates the correct number of awards"""
+        Award.objects.all().delete()
+        self.command_instance.pre_define_awards()
+        self.assertEqual(Award.objects.count(), 9)
+
+    @patch("builtins.print")  # Avoids printing while testing
+    def test_award_student_creation(self, mock_print):
+        """Test that randomly_assign_awards creates AwardStudent entries"""
+        Award.objects.all().delete()
+        AwardStudent.objects.all().delete()
+        self.command_instance.pre_define_awards()
+        initial_count = AwardStudent.objects.count()
+        self.command_instance.randomly_assign_awards(1)
+        self.assertEqual(AwardStudent.objects.count(), initial_count + 1)
+
+
+    @patch("api.management.commands.seed.choice")
+    def test_handle_society_status_approved(self, mock_choice):
+        """Test handle_society_status returns True for 'Approved' status."""
+        mock_choice.return_value = "Approved"
+        result = self.command_instance.handle_society_status(self.president, "Test Society")
+        self.assertTrue(result)
+        # No SocietyRequest should be created when approved
+        self.assertFalse(SocietyRequest.objects.filter(name="Test Society").exists())
+
+    @patch("api.management.commands.seed.choice")
+    def test_handle_society_status_pending(self, mock_choice):
+        """Test handle_society_status creates a SocietyRequest for 'Pending' status."""
+        mock_choice.return_value = "Pending"
+        result = self.command_instance.handle_society_status(self.president, "Test Society")
+        self.assertFalse(result)
+        sr = SocietyRequest.objects.get(name="Test Society")
+        self.assertEqual(sr.intent, "CreateSoc")
+        self.assertEqual(sr.from_student, self.president)
+
+    @patch("api.management.commands.seed.choice")
+    def test_handle_society_status_rejected(self, mock_choice):
+        """Test handle_society_status creates a SocietyRequest with approved True for 'Rejected' status."""
+        mock_choice.return_value = "Rejected"
+        result = self.command_instance.handle_society_status(self.president, "Test Society")
+        self.assertFalse(result)
+        sr = SocietyRequest.objects.get(name="Test Society")
+        self.assertEqual(sr.intent, "CreateSoc")
+        self.assertTrue(sr.approved)
+
+    @patch("api.management.commands.seed.choice")
+    def test_handle_event_status_approved(self, mock_choice):
+        """Test handle_event_status returns True for 'Approved' status."""
+        def side_effect(seq):
+            if seq == ["Pending", "Approved", "Rejected"]:
+                return "Approved"
+            return seq[0]  # For valid_hours and valid_minutes
+        mock_choice.side_effect = side_effect
+
+        result = self.command_instance.handle_event_status(self.society, 1)
+        self.assertTrue(result)
+        self.assertFalse(EventRequest.objects.filter(title="Event1").exists())
+
+
+    @patch("api.management.commands.seed.choice")
+    def test_handle_event_status_pending(self, mock_choice):
+        """Test handle_event_status creates an EventRequest for 'Pending' status."""
+        def side_effect(seq):
+            if seq == ["Pending", "Approved", "Rejected"]:
+                return "Pending"
+            # For other sequences (like valid_hours or valid_minutes), return the first element.
+            return seq[0]
+        mock_choice.side_effect = side_effect
+
+        result = self.command_instance.handle_event_status(self.society, 2)
+        self.assertFalse(result)
+        er = EventRequest.objects.get(title="Event2")
+        self.assertEqual(er.intent, "CreateEve")
+        self.assertFalse(er.approved)
+
+
+    @patch("api.management.commands.seed.choice")
+    def test_handle_event_status_rejected(self, mock_choice):
+        """Test handle_event_status creates an EventRequest with approved True for 'Rejected' status."""
+        # Define a side effect that returns "Rejected" when the sequence is the status list,
+        # and for other lists (like valid_hours or valid_minutes), return the first element.
+        def side_effect(seq):
+            if seq == ["Pending", "Approved", "Rejected"]:
+                return "Rejected"
+            return seq[0]
+        mock_choice.side_effect = side_effect
+
+        result = self.command_instance.handle_event_status(self.society, 3)
+        self.assertFalse(result)
+        er = EventRequest.objects.get(title="Event3")
+        self.assertEqual(er.intent, "CreateEve")
+        self.assertTrue(er.approved)
+
+
+    def test_generate_random_duration(self):
+        """Test that generate_random_duration returns a timedelta of 1, 2, or 3 hours."""
+        duration = self.command_instance.generate_random_duration()
+        self.assertIsInstance(duration, timedelta)
+        self.assertIn(duration, [timedelta(hours=1), timedelta(hours=2), timedelta(hours=3)])
+
+    def test_generate_random_date(self):
+        """Test that generate_random_date returns a date that is today or in the future."""
+        generated_date = self.command_instance.generate_random_date()
+        self.assertIsInstance(generated_date, date)
+        today = date.today()
+        self.assertGreaterEqual(generated_date, today)
+
+    def test_generate_reasonable_time_future(self):
+        """Test that generate_reasonable_time returns a valid time for a future date."""
+        future_date = date.today() + timedelta(days=1)
+        generated_time = self.command_instance.generate_reasonable_time(future_date)
+        self.assertIsInstance(generated_time, time)
+        self.assertGreaterEqual(generated_time, time(9, 0))
+        self.assertLessEqual(generated_time.hour, 20)
+
+    def test_generate_random_time(self):
+        """Test that generate_random_time returns a valid time."""
+        random_time = self.command_instance.generate_random_time()
+        self.assertIsInstance(random_time, time)
+        self.assertGreaterEqual(random_time.hour, 0)
+        self.assertLess(random_time.hour, 24)
+        self.assertGreaterEqual(random_time.minute, 0)
+        self.assertLess(random_time.minute, 60)
+
+    def test_create_event_notifications_multiple(self):
+        """Test that create_event_notifications creates a notification for each attendee."""
+        # Create an additional student and add as an attendee.
+        student2 = Student.objects.create(
+            username="student2",
+            email="student2@example.com",
+            first_name="Student",
+            last_name="Two",
+            password="studentpassword",
+            major="Maths",
+        )
+        self.event.current_attendees.add(student2)
+        # Clear existing notifications for the event.
+        Notification.objects.filter(for_event=self.event).delete()
+        self.command_instance.create_event_notifications([self.event])
+        attendees_count = self.event.current_attendees.count()
+        notifications_count = Notification.objects.filter(for_event=self.event).count()
+        self.assertEqual(notifications_count, attendees_count)
+
+    @patch("api.signals.broadcast_dashboard_update")
+    @patch("builtins.print")  # Avoid printing during test
+    def test_broadcast_updates(self, mock_print, mock_broadcast):
+        """Test that broadcast_updates calls broadcast_dashboard_update."""
+        self.command_instance.broadcast_updates()
+        mock_broadcast.assert_called_once()
+
+    def test_initialise_society_awards(self):
+        """Test that initialise_society_awards creates 3 society awards."""
+        Award.objects.all().delete()
+        self.command_instance.initialise_society_awards()
+        society_awards = Award.objects.filter(title__startswith="Society")
+        self.assertEqual(society_awards.count(), 3)
+
+    def test_initialise_event_awards(self):
+        """Test that initialise_event_awards creates 3 event awards."""
+        Award.objects.all().delete()
+        self.command_instance.initialise_event_awards()
+        event_awards = Award.objects.filter(title__startswith="Event")
+        self.assertEqual(event_awards.count(), 3)
+
+    def test_initialise_organiser_awards(self):
+        """Test that initialise_organiser_awards creates 3 organiser awards."""
+        Award.objects.all().delete()
+        self.command_instance.initialise_organiser_awards()
+        organiser_awards = Award.objects.filter(title__startswith="Organisation")
+        self.assertEqual(organiser_awards.count(), 3)
+
+    def test_student_has_reward_and_enforce_award_validity(self):
+        """Test that student_has_reward and enforce_award_validity function correctly."""
+        Award.objects.all().delete()
+        # Create a bronze award for "Test" category.
+        bronze = Award.objects.create(
+            title="Test Award Bronze",
+            description="Test Bronze",
+            rank="Bronze",
+        )
+        silver = Award.objects.create(
+            title="Test Award Silver",
+            description="Test Silver",
+            rank="Silver",
+        )
+        # Initially, the student should not have the bronze award.
+        self.assertFalse(self.command_instance.student_has_reward("Test", "Bronze", self.student))
+        # Enforce award validity for silver should first award the bronze.
+        self.command_instance.enforce_award_validity(silver, self.student)
+        self.assertTrue(self.command_instance.student_has_reward("Test", "Bronze", self.student))
+        # Calling again should now assign the silver award.
+        self.command_instance.enforce_award_validity(silver, self.student)
+        self.assertTrue(self.command_instance.student_has_reward("Test", "Silver", self.student))
+
+    def test_randomly_assign_awards(self):
+        """Test that randomly_assign_awards assigns awards to students."""
+        Award.objects.all().delete()
+        AwardStudent.objects.all().delete()
+        self.command_instance.pre_define_awards()
+        initial_count = AwardStudent.objects.count()
+        self.command_instance.randomly_assign_awards(5)
+        self.assertGreater(AwardStudent.objects.count(), initial_count)

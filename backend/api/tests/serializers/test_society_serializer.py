@@ -51,7 +51,7 @@ class SocietySerializerTestCase(TestCase):
         self.data = {
             "name": "Music",
             "leader": self.student1.id,
-            "society_members": [self.student2.id],
+            "society_members": [self.student2.id, self.student1.id],
             "approved_by": self.admin.id,
             "roles": [],
         }
@@ -67,7 +67,7 @@ class SocietySerializerTestCase(TestCase):
         self.assertEqual(data["approved_by"], self.society.approved_by.id)
         self.assertEqual(
             data["society_members"],
-            [self.society.society_members.first().id],
+            list(self.society.society_members.values_list("id", flat=True)),
         )
         self.assertEqual(data["roles"], self.society.roles)
 

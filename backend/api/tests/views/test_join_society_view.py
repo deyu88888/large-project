@@ -40,16 +40,19 @@ class JoinSocietyViewTestCase(TestCase):
             name="Science Club",
             leader=self.student1,
             approved_by=self.admin,
+            status="Approved"
         )
         self.society2 = Society.objects.create(
             name="Math Club",
             leader=self.student2,
             approved_by=self.admin,
+            status="Approved"
         )
         self.society3 = Society.objects.create(
             name="Art Club",
             leader=None,
             approved_by=self.admin,
+            status="Approved"
         )
 
         # Add student1 to society1
@@ -68,28 +71,28 @@ class JoinSocietyViewTestCase(TestCase):
     def test_get_available_societies_authenticated_student(self):
         """Test retrieving societies a student has not joined."""
         self.client.credentials(HTTP_AUTHORIZATION=self.student1_token)
-        response = self.client.get("/api/societies/available")  # Updated URL
+        response = self.client.get("/api/join-society/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 2)  # Math Club and Art Club
+        self.assertEqual(len(response.data), 2)  
         self.assertEqual(response.data[0]["name"], "Math Club")
         self.assertEqual(response.data[1]["name"], "Art Club")
 
     def test_get_available_societies_unauthenticated(self):
         """Test retrieving societies without authentication."""
-        response = self.client.get("/api/societies/available")  # Updated URL
+        response = self.client.get("/api/join-society/")
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_get_available_societies_non_student(self):
         """Test retrieving societies for a non-student user."""
         self.client.credentials(HTTP_AUTHORIZATION=self._generate_token(self.admin))
-        response = self.client.get("/api/societies/available")  # Updated URL
+        response = self.client.get("/api/join-society/")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(response.data["error"], "Only students can join societies.")
 
     def test_join_society_valid(self):
         """Test joining a valid society."""
         self.client.credentials(HTTP_AUTHORIZATION=self.student1_token)
-        response = self.client.post(f"/api/societies/{self.society2.id}/join")  # Updated URL
+        response = self.client.post(f"/api/join-society/{self.society2.id}/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(
             response.data["message"], f"Successfully joined society '{self.society2.name}'."
@@ -99,26 +102,29 @@ class JoinSocietyViewTestCase(TestCase):
     def test_join_society_already_joined(self):
         """Test joining a society that the student has already joined."""
         self.client.credentials(HTTP_AUTHORIZATION=self.student1_token)
-        response = self.client.post(f"/api/societies/{self.society1.id}/join")  # Updated URL
+        response = self.client.post(f"/api/join-society/{self.society1.id}/")  
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("error", response.data)
+        self.assertIn("society_id", response.json())
+        self.assertEqual(response.data["society_id"], ["You are already a member of this society."])
+
 
     def test_join_society_invalid_id(self):
         """Test joining a society with an invalid ID."""
         self.client.credentials(HTTP_AUTHORIZATION=self.student1_token)
-        response = self.client.post("/api/societies/9999/join")  # Updated URL
+        response = self.client.post("/api/join-society/9999/")  # Non-existent society
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        self.assertIn("error", response.json())
+        self.assertIn("society_id", response.json())
+        self.assertEqual(response.json()["society_id"], ["Society does not exist."])
 
     def test_join_society_unauthenticated(self):
         """Test joining a society without authentication."""
-        response = self.client.post(f"/api/societies/{self.society2.id}/join")  # Updated URL
+        response = self.client.post(f"/api/join-society/{self.society2.id}/")
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_join_society_non_student(self):
         """Test joining a society as a non-student user."""
         self.client.credentials(HTTP_AUTHORIZATION=self._generate_token(self.admin))
-        response = self.client.post(f"/api/societies/{self.society2.id}/join")  # Updated URL
+        response = self.client.post(f"/api/join-society/{self.society2.id}/") 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(response.data["error"], "Only students can join societies.")
 

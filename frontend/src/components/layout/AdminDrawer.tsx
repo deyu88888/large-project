@@ -1,0 +1,178 @@
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import {
+  Avatar,
+  Box,
+  Divider,
+  IconButton,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Typography,
+  Button,
+} from "@mui/material";
+import MenuIcon from "@mui/icons-material/Menu";
+import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
+import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
+import PeopleOutlinedIcon from "@mui/icons-material/PeopleOutlined";
+import EventOutlinedIcon from "@mui/icons-material/EventOutlined";
+import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";
+import GroupAddOutlinedIcon from "@mui/icons-material/GroupAddOutlined";
+import CalendarTodayOutlinedIcon from "@mui/icons-material/CalendarTodayOutlined";
+import PersonAddAltIcon from "@mui/icons-material/PersonAddAlt";
+import InboxIcon from "@mui/icons-material/MoveToInbox";
+import MailIcon from "@mui/icons-material/Mail";
+import LogoutIcon from '@mui/icons-material/Logout';
+
+interface AdminDrawerProps {
+  drawer: boolean;
+  toggleDrawer: () => void;
+  location: { pathname: string };
+}
+
+const AdminDrawer: React.FC<AdminDrawerProps> = ({ drawer, toggleDrawer, location }) => {
+  const [selected, setSelected] = useState("Dashboard");
+  const navigate = useNavigate();
+
+  const menuItems = [
+    { title: "Dashboard", icon: <HomeOutlinedIcon />, to: "/admin" },
+    { title: "Manage Students", icon: <PeopleOutlinedIcon />, to: "/admin/student-list" },
+    { title: "View All Societies", icon: <EventOutlinedIcon />, to: "/admin/society-list" },
+    { title: "View All Events", icon: <NotificationsNoneOutlinedIcon />, to: "/admin/event-list" },
+    { title: "Pending Societies", icon: <GroupAddOutlinedIcon />, to: "/admin/request-society" },
+    { title: "Pending Events", icon: <GroupAddOutlinedIcon />, to: "/admin/request-event" },
+    { title: "Calendar", icon: <CalendarTodayOutlinedIcon />, to: "/admin/calendar" },
+    { title: "Activity Log", icon: <CalendarTodayOutlinedIcon />, to: "/admin/admin-dashboard" },
+    { title: "Create Admin", icon: <PersonAddAltIcon />, to: "/admin/create-admin" },
+  ];
+
+  const logout = () => {
+    localStorage.removeItem("access");
+    localStorage.removeItem("refresh");
+    navigate("/login");
+  };
+
+  return (
+    <Box
+      sx={{
+        width: drawer ? 240 : 60,
+        flexShrink: 0,
+        transition: "width 0.3s",
+        borderRight: 1,
+        borderRightColor: "divider",
+      }}
+    >
+      <Box sx={{ overflow: "hidden", height: "100vh", position: "fixed" }}>
+        {/* Toggle Button Header */}
+        <Box sx={{ p: 2, display: "flex", justifyContent: "center", alignItems: "center" }}>
+          <IconButton onClick={toggleDrawer} sx={{ p: 0 }}>
+            {drawer ? <ChevronLeftIcon /> : <MenuIcon />}
+          </IconButton>
+        </Box>
+        <Divider />
+
+        {/* User Info Section */}
+        <Box padding={2} display="flex" justifyContent="center" alignItems="center">
+          {drawer ? (
+            <Box textAlign="center">
+              <Avatar sx={{ width: 72, height: 72, margin: "0 auto" }} />
+              <Typography variant="h6" fontWeight="bold" sx={{ mt: "10px" }}>
+                Ed Roh
+              </Typography>
+              <Typography variant="body2" color="textSecondary">
+                VP Fancy Admin
+              </Typography>
+            </Box>
+          ) : (
+            <Avatar sx={{ width: 25, height: 25 }} />
+          )}
+        </Box>
+        <Divider />
+
+        {/* Menu Items */}
+        <List>
+          {menuItems.map((item) => (
+            <ListItem key={item.title} disablePadding>
+              <ListItemButton
+                component={Link}
+                to={item.to}
+                selected={selected === item.title}
+                onClick={() => setSelected(item.title)}
+                sx={{ justifyContent: drawer ? "initial" : "center", px: 2.5 }}
+              >
+                <ListItemIcon
+                  sx={{
+                    minWidth: 0,
+                    mr: drawer ? 3 : "auto",
+                    justifyContent: "center",
+                  }}
+                >
+                  {item.icon}
+                </ListItemIcon>
+                {drawer && <ListItemText primary={item.title} />}
+              </ListItemButton>
+            </ListItem>
+          ))}
+        </List>
+        <Divider />
+
+        {/* Additional Items */}
+        <List>
+          {["All mail", "Trash"].map((text, index) => (
+            <ListItem key={text} disablePadding>
+              <ListItemButton
+                sx={{
+                  minHeight: 48,
+                  px: 2.5,
+                  justifyContent: drawer ? "initial" : "center",
+                }}
+              >
+                <ListItemIcon
+                  sx={{
+                    minWidth: 0,
+                    mr: drawer ? 3 : "auto",
+                    justifyContent: "center",
+                  }}
+                >
+                  {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
+                </ListItemIcon>
+                {drawer && <ListItemText primary={text} />}
+              </ListItemButton>
+            </ListItem>
+          ))}
+        </List>
+        <Divider/>
+
+        {/* Logout Item */}
+        <List>
+          <ListItem disablePadding>
+            <ListItemButton
+              sx={{
+                minHeight: 48,
+                px: 2.5,
+                justifyContent: drawer ? "initial" : "center",
+                color: "red",
+              }}
+              onClick={logout}
+            >
+              <ListItemIcon
+                sx={{
+                  minWidth: 0,
+                  mr: drawer ? 3 : "auto",
+                  justifyContent: "center",
+                }}
+              >
+                <LogoutIcon sx={{ color: "red"}}/> 
+              </ListItemIcon>
+              {drawer && <ListItemText primary="Logout" />}
+            </ListItemButton>
+          </ListItem>
+        </List>
+      </Box>
+    </Box>
+  );
+};
+
+export default AdminDrawer;

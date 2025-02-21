@@ -1,29 +1,16 @@
-// Dashboard.tsx
-import React, {
-  useEffect,
-  useState,
-  useRef,
-  useCallback,
-  memo,
-  ReactNode
-} from "react";
-import { Box, Typography, useTheme, Button, TextField } from "@mui/material";
-import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
-
-// --- MUI Theme Tokens ---
-import { tokens } from "../styles/theme";
-
-// --- API Calls ---
-import { getAllEvents } from "../api";
-
-// --- Components ---
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import EventCalendar from "../components/EventCalendar";
 import UpcomingEvents from "../components/UpcomingEvents";
-import PopularSocieties from "../components/PopularSocieties";
+import { Link } from "react-router-dom";
 import { LoadingView } from "../components/loading/loading-view";
+import PopularSocieties from "../components/PopularSocieties";
+import { getAllEvents } from "../api";
+import Sidebar from "../components/Sidebar"; // Our advanced Sidebar (with dark mode toggle)
+import { HiMenu } from "react-icons/hi";
+import { motion } from 'framer-motion';
+// Removed duplicate import of RawEvent as it is defined locally.
 
-// --- Type Definitions ---
+// -- Type Definitions --
 interface StatData {
   totalSocieties: number;
   totalEvents: number;
@@ -51,124 +38,112 @@ interface Introduction {
   content: string[];
 }
 
-// WebSocket message types
+interface RawEvent {
+  id: number;
+  title: string;
+  date: string;
+  startTime: string;
+  duration?: string;
+}
+
 type WebSocketMessage =
   | { type: "dashboard.update"; data: StatData }
   | { type: "update_activities"; activities: Activity[] }
   | { type: "update_notifications"; notifications: Notification[] }
-  | {
-      type: "update_events";
-      events: { id: number; title: string; start: string; end: string }[];
-    }
+  | { type: "update_events"; events: CalendarEvent[] }
   | { type: "update_introduction"; introduction: Introduction };
 
-/** 
- * Reusable container for each content block.
- * Includes an optional `bgColor` prop to override the default background color.
- */
-interface SectionCardProps {
-  title: string;
-  icon: string;
-  children: ReactNode;
-  bgColor?: (theme: any) => string; // theme-based color override if desired
-}
-
-const SectionCard: React.FC<SectionCardProps> = memo(
-  ({ title, icon, children, bgColor }) => {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-      >
-        <Box
-          sx={(theme) => ({
-            backgroundColor: bgColor
-              ? bgColor(theme)
-              : theme.palette.background.paper,
-            borderRadius: 2,
-            boxShadow: 2,
-            p: 2,
-            mb: 4,
-            borderLeft: "8px solid transparent",
-            "&:hover": {
-              borderLeftColor: theme.palette.primary.main
-            }
-          })}
-        >
-          <Typography
-            variant="h4"
-            component="h2"
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 1,
-              mb: 2,
-              fontWeight: "bold"
-            }}
-          >
-            <span role="img" aria-hidden="true" style={{ fontSize: "1.5rem" }}>
-              {icon}
-            </span>
-            {title}
-          </Typography>
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            {children}
-          </Box>
-        </Box>
-      </motion.div>
-    );
-  }
+// -- Reusable Components --
+const SectionCard: React.FC<{ title: string; children: React.ReactNode }> = ({
+  title,
+  children,
+}) => (
+  <motion.section
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.4 }}
+    className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-2xl shadow-lg p-6
+               border-l-8 border-transparent hover:border-gradient-to-r
+               hover:from-purple-500 hover:to-indigo-500
+               transition-all duration-300"
+  >
+    <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4">
+      {title}
+    </h2>
+    <div className="space-y-4">{children}</div>
+  </motion.section>
 );
-SectionCard.displayName = "SectionCard";
 
-/** Reusable statistics card for your dashboard. */
-const StatCard: React.FC<{
-  title: string;
-  value: number;
-  color: string; // e.g. "linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)"
-}> = memo(({ title, value, color }) => (
+const StatCard: React.FC<{ title: string; value: number; color: string }> = ({
+  title,
+  value,
+  color,
+}) => (
   <motion.div
-    initial={{ opacity: 0, scale: 0.9 }}
+    initial={{ opacity: 0, scale: 0.95 }}
     animate={{ opacity: 1, scale: 1 }}
     transition={{ duration: 0.3 }}
+    className={`p-6 rounded-2xl text-white bg-gradient-to-br ${color}
+                shadow-md transition transform hover:scale-105 hover:shadow-lg`}
   >
-    <Box
-      sx={{
-        background: color,
-        color: "#fff",
-        borderRadius: 2,
-        p: 2,
-        boxShadow: 3,
-        textAlign: "center",
-        transition: "transform 0.3s",
-        "&:hover": {
-          transform: "scale(1.05)"
-        }
-      }}
-    >
-      <Typography variant="body2" sx={{ textTransform: "uppercase" }}>
-        {title}
-      </Typography>
-      <Typography variant="h3" sx={{ fontWeight: "bold" }}>
-        {value}
-      </Typography>
-    </Box>
+    <p className="text-sm uppercase tracking-wider">{title}</p>
+    <p className="text-4xl font-bold mt-2">{value}</p>
   </motion.div>
-));
-StatCard.displayName = "StatCard";
+);
 
+// Tabs for "Updates" section
+interface TabsProps {
+  activeTab: string;
+  setActiveTab: (tab: string) => void;
+  children: React.ReactNode;
+}
+const Tabs: React.FC<TabsProps> = ({ activeTab, setActiveTab, children }) => {
+  const tabLabels = React.Children.toArray(children)
+    .filter((child) => React.isValidElement(child))
+    .map((child) => (child as React.ReactElement).props.label);
+
+  return (
+    <div>
+      <div className="flex border-b border-gray-200 dark:border-gray-700">
+        {tabLabels.map((label: string) => (
+          <button
+            key={label}
+            className={`py-2 px-4 text-sm font-medium focus:outline-none ${
+              activeTab === label
+                ? "text-purple-600 border-b-2 border-purple-600"
+                : "text-gray-500 hover:text-gray-700 dark:text-gray-300"
+            }`}
+            onClick={() => setActiveTab(label)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      <div className="py-4">
+        {React.Children.toArray(children).find(
+          (child) =>
+            React.isValidElement(child) &&
+            (child as React.ReactElement).props.label === activeTab
+        )}
+      </div>
+    </div>
+  );
+};
+
+interface TabPanelProps {
+  label: string;
+  children: React.ReactNode;
+}
+const TabPanel: React.FC<TabPanelProps> = ({ children }) => <>{children}</>;
+
+// -- Main Dashboard --
 const Dashboard: React.FC = () => {
-  // MUI Theme + Colors
-  const theme = useTheme();
-  const colors = tokens(theme.palette.mode);
-
-  // State Management
+  // ---- States ----
   const [stats, setStats] = useState<StatData>({
     totalSocieties: 0,
     totalEvents: 0,
     pendingApprovals: 0,
-    activeMembers: 0
+    activeMembers: 0,
   });
   const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -178,440 +153,533 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("Recent Activities");
 
-  // WebSocket references
+  // Sidebar control - Now manages width instead of open/closed state
+  const [sidebarWidth, setSidebarWidth] = useState<'collapsed' | 'expanded'>('collapsed');
+
+  // -- Dark Mode --
+  const [darkMode, setDarkMode] = useState(() => {
+    // Optional: read from localStorage or system preference
+    const stored = localStorage.getItem("darkMode");
+    if (stored !== null) {
+      return JSON.parse(stored);
+    }
+    // Or default to system preference
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    return prefersDark;
+  });
+
+  // Apply or remove .dark class on <html> or <body>
+  useEffect(() => {
+    localStorage.setItem("darkMode", JSON.stringify(darkMode));
+    if (darkMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [darkMode]);
+
+  // -- Refs for Scrollable Sections --
+  const statsRef = useRef<HTMLDivElement>(null);
+  const popularSocietiesRef = useRef<HTMLDivElement>(null);
+  const upcomingEventsRef = useRef<HTMLDivElement>(null);
+  const eventCalendarRef = useRef<HTMLDivElement>(null);
+  const updatesRef = useRef<HTMLDivElement>(null);
+
+  // -- WebSocket --
   const socketRef = useRef<WebSocket | null>(null);
   const reconnectIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const MAX_RECONNECT_ATTEMPTS = 5;
-  let reconnectAttempts = 0;
+  const RECONNECT_INTERVAL = 5000;
 
-  // Fetch All Events for Both Calendar & Upcoming Events
-  useEffect(() => {
-    getAllEvents()
-      .then((data) => {
-        interface RawEvent {
-          id: number;
-          title: string;
-          date: string;
-          startTime: string;
-          duration?: string;
-        }
+  // -- Toggle Sidebar -- (ONLY for the hamburger button)
+  const handleToggleSidebar = () => {
+    setSidebarWidth((prev) => (prev === 'collapsed' ? 'expanded' : 'collapsed'));
+  };
 
-        const formattedEvents: CalendarEvent[] = (data as RawEvent[])
-          .map((event: RawEvent) => {
-            try {
-              const startDateTime = new Date(`${event.date}T${event.start_time}`); // ✅ Fixed field name
-              let endDateTime: Date | null = null;
+  const handleCloseSidebar = () => {
+    setSidebarWidth('collapsed');
+  };
 
-              // If duration exists, calculate the end time
-              if (event.duration && typeof event.duration === "string" && event.duration.includes(":")) {
-                const [hours, minutes, seconds] = event.duration.split(":").map(Number);
-                const durationMs = (hours * 3600 + minutes * 60 + (seconds || 0)) * 1000;
-                endDateTime = new Date(startDateTime.getTime() + durationMs);
+  const handleNavItemClick = (ref: React.RefObject<HTMLElement> | null) => { // Allow null
+    scrollToSection(ref); // Pass the ref (which might be null) directly
+  };
+
+  // -- Navigation Items Array --
+  const navigationItems = [
+    {
+      label: "Dashboard",
+      icon: <span className="text-xl">🏠</span>,
+      ref: null,
+    },
+    {
+      label: "Statistics",
+      icon: <span className="text-xl">📊</span>,
+      ref: statsRef,
+    },
+    {
+      label: "Popular Societies",
+      icon: <span className="text-xl">🏆</span>,
+      ref: popularSocietiesRef,
+    },
+    {
+      label: "Upcoming Events",
+      icon: <span className="text-xl">📅</span>,
+      ref: upcomingEventsRef,
+    },
+    {
+      label: "Event Calendar",
+      icon: <span className="text-xl">🗓️</span>,
+      ref: eventCalendarRef,
+    },
+    {
+      label: "Updates",
+      icon: <span className="text-xl">🔔</span>,
+      ref: updatesRef,
+    },
+  ];
+
+  // -- Smooth Scroll --
+  const scrollToSection = (ref: React.RefObject<HTMLElement> | null) => {  // Allow null
+    if (ref === null) {
+      // Scroll to the top of the document
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
+    } else if (ref && ref.current) {
+      // Existing scroll to section logic
+      const headerHeight = document.querySelector('header')?.offsetHeight || 0;
+      const elementPosition = ref.current.getBoundingClientRect().top + window.pageYOffset;
+      const offsetPosition = elementPosition - headerHeight;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: "smooth",
+      });
+    }
+  };
+
+    // ---- Fetch Events ----
+    useEffect(() => {
+      let isMounted = true;
+    
+      async function fetchEvents() {
+        try {
+          // 1️⃣ Fetch raw events from the API
+          const rawEvents: RawEvent[] = await getAllEvents();
+          console.log("🎉 Raw Events from API:", rawEvents);
+    
+          // 2️⃣ Convert raw events to formatted events
+          const formattedEvents = rawEvents
+            .map((event): CalendarEvent | null => {
+              // Use the API field names exactly (e.g. start_time, not startTime)
+              const startDateTime = parseEventDateTime(event.date, event.start_time);
+              // Calculate the end time using the provided duration
+              const endDateTime = calculateEventEnd(startDateTime, event.duration);
+    
+              if (!startDateTime || !endDateTime) {
+                console.warn("⚠️ Skipping invalid event:", event);
+                return null;
               }
-
+    
               return {
                 id: event.id,
                 title: event.title,
                 start: startDateTime,
-                end: endDateTime
+                end: endDateTime,
               };
-            } catch (err) {
-              console.error(`Error processing event:`, event, err);
-              return null;
-            }
-          })
-          .filter((evt): evt is CalendarEvent => evt !== null);
+            })
+            .filter((evt): evt is CalendarEvent => evt !== null);
+    
+          // 3️⃣ Sort events by start time
+          formattedEvents.sort((a, b) => a.start.getTime() - b.start.getTime());
+          console.log("✅ Formatted Events:", formattedEvents);
+    
+          if (isMounted) {
+            setUpcomingEvents(formattedEvents);
+            setEventCalendar(formattedEvents);
+          }
+        } catch (err) {
+          console.error("❌ Error fetching events:", err);
+          if (isMounted) {
+            setError("Failed to fetch events.");
+          }
+        } finally {
+          if (isMounted) {
+            setLoading(false);
+          }
+        }
+      }
+    
+      fetchEvents();
+    
+      return () => {
+        isMounted = false;
+      };
+    }, []);
+    
 
-
-        formattedEvents.sort((a, b) => a.start.getTime() - b.start.getTime());
-
-        setUpcomingEvents(formattedEvents);
-        setEventCalendar(formattedEvents);
-      })
-      .catch((err) => {
-        console.error("Error fetching events:", err);
-        setError("Failed to fetch events.");
-      });
-  }, []);
-
-  // WebSocket message handler
+  // ---- WebSocket Handlers & Connection ----
   const messageHandler = useCallback((data: WebSocketMessage) => {
     switch (data.type) {
       case "dashboard.update":
-        setStats((prev) =>
-          prev.totalSocieties !== data.data.totalSocieties ? data.data : prev
-        );
+        setStats(data.data);
         break;
       case "update_activities":
-        setRecentActivities((prev) =>
-          prev.length !== data.activities.length ? data.activities : prev
-        );
+        setRecentActivities(data.activities);
         break;
       case "update_notifications":
-        setNotifications((prev) =>
-          prev.length !== data.notifications.length ? data.notifications : prev
-        );
+        setNotifications(data.notifications);
         break;
-      case "update_events": {
-        const formatted = data.events.map((ev) => ({
-          id: ev.id,
-          title: ev.title,
-          start: new Date(ev.start),
-          end: new Date(ev.end)
-        }));
-        setEventCalendar(formatted);
-        setUpcomingEvents(formatted);
+      case "update_events":
+        setEventCalendar(data.events);
+        setUpcomingEvents(data.events);
         break;
-      }
       case "update_introduction":
-        setIntroduction((prev) =>
-          prev?.title !== data.introduction.title ? data.introduction : prev
-        );
+        setIntroduction(data.introduction);
         break;
       default:
         console.warn("Unknown WebSocket message type:", data);
     }
   }, []);
 
-  // WebSocket connection handling
   useEffect(() => {
+    console.log("[Dashboard] Initializing WebSocket...");
+    let reconnectAttempts = 0;
     const wsURL =
       process.env.NODE_ENV === "production"
         ? "wss://your-production-domain.com/ws/dashboard/"
         : "ws://127.0.0.1:8000/ws/dashboard/";
 
     const connectWebSocket = () => {
-      if (socketRef.current) {
-        console.warn("WebSocket already connected. Skipping reconnection.");
+      if (reconnectIntervalRef.current) {
+        clearTimeout(reconnectIntervalRef.current);
+        reconnectIntervalRef.current = null;
+      }
+      if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+        console.warn("[Dashboard] WebSocket already open. Skipping.");
         return;
       }
 
+      console.log("[Dashboard] Connecting to WebSocket...");
       const socket = new WebSocket(wsURL);
       socketRef.current = socket;
 
       socket.onopen = () => {
-        console.log("WebSocket Connected!");
+        console.log("[Dashboard] WebSocket Connected!");
         setError(null);
         reconnectAttempts = 0;
-        if (reconnectIntervalRef.current) {
-          clearInterval(reconnectIntervalRef.current);
-          reconnectIntervalRef.current = null;
-        }
       };
 
       socket.onmessage = (event) => {
         try {
-          const parsedData: WebSocketMessage = JSON.parse(event.data);
-          messageHandler(parsedData);
-        } catch (parseError) {
-          console.error("Error parsing WebSocket message:", parseError);
+          const data: WebSocketMessage = JSON.parse(event.data);
+          messageHandler(data);
+        } catch (parseErr) {
+          console.error("Error parsing WebSocket message:", parseErr, event.data);
           setError("Error parsing WebSocket message.");
         }
       };
 
-      socket.onerror = (evt) => {
-        console.error("WebSocket Error:", evt);
+      socket.onerror = (err) => {
+        console.error("[Dashboard] WebSocket Error:", err);
         setError("WebSocket connection failed.");
       };
 
       socket.onclose = (evt) => {
-        console.warn("WebSocket Closed:", evt.code);
         socketRef.current = null;
+        console.warn(`[Dashboard] WebSocket Closed: code ${evt.code}`);
         if (
           evt.code !== 1000 &&
           evt.code !== 1005 &&
           reconnectAttempts < MAX_RECONNECT_ATTEMPTS
         ) {
           reconnectAttempts++;
-          console.log(
-            `Attempting WebSocket Reconnect (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`
+          reconnectIntervalRef.current = setTimeout(
+            connectWebSocket,
+            RECONNECT_INTERVAL
           );
-          if (!reconnectIntervalRef.current) {
-            reconnectIntervalRef.current = setTimeout(connectWebSocket, 5000);
-          }
         } else {
-          console.warn("Max WebSocket reconnect attempts reached. Stopping.");
+          console.warn("[Dashboard] WebSocket closed permanently.");
         }
       };
     };
-
     connectWebSocket();
 
     return () => {
       if (socketRef.current) {
         socketRef.current.close();
+        socketRef.current = null;
       }
       if (reconnectIntervalRef.current) {
-        clearInterval(reconnectIntervalRef.current);
+        clearTimeout(reconnectIntervalRef.current);
         reconnectIntervalRef.current = null;
       }
     };
   }, [messageHandler]);
 
-  // Once we have stats and introduction, assume loaded
-  useEffect(() => {
-    if (stats.totalSocieties >= 0 && introduction !== null) {
-      setLoading(false);
+  // -- Helpers for parsing Dates & Durations --
+  const parseEventDateTime = (dateStr: string, timeStr: string): Date | null => {
+    try {
+      return new Date(`${dateStr}T${timeStr}`);
+    } catch {
+      return null;
     }
-  }, [stats, introduction]);
+  };
+
+  const calculateEventEnd = (start: Date | null, durationStr?: string): Date | null => {
+    if (!start || !durationStr) return null;
+    if (!durationStr.includes(":")) return null;
+    const [hours, minutes, seconds] = durationStr.split(":").map(Number);
+    const durationMs = (hours * 3600 + minutes * 60 + (seconds || 0)) * 1000;
+    return new Date(start.getTime() + durationMs);
+  };
 
   if (loading) {
     return <LoadingView />;
   }
 
-  // -- Default Introduction Fallback --
-  const defaultIntroTitle = "Welcome to the Universal Student Society Platform!";
-  const defaultIntroContent = [
-    "This platform is designed to help student societies manage their members, share news, organize events, and much more. Whether you're a small club or a large society, we provide the tools you need to connect with your members and thrive.",
-    "Key features include: membership management, event calendars, news feeds, notifications, and customizable society pages. Get started by registering your society or logging in!"
-  ];
-
   return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        backgroundColor: theme.palette.background.default,
-        p: { xs: 2, md: 4 }
-      }}
-    >
-      {/* HEADER:
-          - Dark Mode => Primary Main w/ Contrast Text
-          - Light Mode => White (#fff) w/ Black (#000)
-      */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <Box
-          sx={{
-            backgroundColor:
-              theme.palette.mode === "dark"
-                ? theme.palette.primary.main
-                : "#fff",
-            color:
-              theme.palette.mode === "dark"
-                ? theme.palette.primary.contrastText
-                : "#000",
-            borderRadius: 2,
-            p: 2,
-            mb: 4,
-            display: "flex",
-            flexDirection: { xs: "column", md: "row" },
-            alignItems: "center",
-            justifyContent: "space-between",
-            boxShadow: 3
-          }}
-        >
-          <Typography variant="h4" sx={{ fontWeight: "bold" }}>
-            Student Society Dashboard
-          </Typography>
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: { xs: "column", md: "row" },
-              gap: 2,
-              mt: { xs: 2, md: 0 }
-            }}
-          >
-            <TextField
-              variant="outlined"
-              size="small"
-              placeholder="Search..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              sx={{
-                bgcolor: "#fff",
-                borderRadius: 1,
-                width: { xs: "100%", md: 200 }
-              }}
-            />
-            <Button
-              variant="contained"
-              color="secondary"
-              component={Link}
-              to="/register"
-            >
-              Register
-            </Button>
-            <Button
-              variant="contained"
-              color="success"
-              component={Link}
-              to="/login"
-            >
-              Login
-            </Button>
-          </Box>
-        </Box>
-      </motion.div>
-
-      {/* INTRODUCTION SECTION - now also uses white in light mode & primary main in dark */}
-      <SectionCard
-        title={introduction?.title || defaultIntroTitle}
-        icon="🌐"
-        bgColor={(theme) =>
-          theme.palette.mode === "dark" ? theme.palette.primary.main : "#fff"
-        }
-      >
-        {introduction?.content?.length ? (
-          introduction.content.map((paragraph, index) => (
-            <Typography
-              key={index}
-              variant="body1"
-              sx={{
-                color:
-                  theme.palette.mode === "dark"
-                    ? theme.palette.primary.contrastText
-                    : "#000"
-              }}
-            >
-              {paragraph}
-            </Typography>
-          ))
-        ) : (
-          defaultIntroContent.map((paragraph, index) => (
-            <Typography
-              key={index}
-              variant="body1"
-              sx={{
-                color:
-                  theme.palette.mode === "dark"
-                    ? theme.palette.primary.contrastText
-                    : "#000"
-              }}
-            >
-              {paragraph}
-            </Typography>
-          ))
-        )}
-      </SectionCard>
-
-      {/* STATS GRID */}
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: { xs: "1fr", md: "repeat(4, 1fr)" },
-          gap: 2,
-          mb: 4
+    <div
+        className={`min-h-screen flex ${
+        darkMode ? "dark bg-gray-900" : "bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50"
+        } transition-colors duration-500 grid grid-cols-[auto_1fr]`}
+        style={{
+        gridTemplateColumns: sidebarWidth === 'collapsed' ? 'auto 1fr' : '288px 1fr',
         }}
-      >
-        <StatCard
-          title="Total Societies"
-          value={stats.totalSocieties}
-          color="linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)"
-        />
-        <StatCard
-          title="Total Events"
-          value={stats.totalEvents}
-          color="linear-gradient(45deg, #66BB6A 30%, #B2FF59 90%)"
-        />
-        <StatCard
-          title="Pending Approvals"
-          value={stats.pendingApprovals}
-          color="linear-gradient(45deg, #FFCA28 30%, #FFE082 90%)"
-        />
-        <StatCard
-          title="Active Members"
-          value={stats.activeMembers}
-          color="linear-gradient(45deg, #AB47BC 30%, #CE93D8 90%)"
-        />
-      </Box>
+    >
+      {/* Sidebar */}
+      <Sidebar
+        isOpen={true}
+        onClose={handleCloseSidebar} // Use the new function
+        onToggle={handleToggleSidebar} // Pass handleToggleSidebar
+        navigationItems={navigationItems}
+        scrollToSection={handleNavItemClick}
+        darkMode={darkMode}
+        onToggleDarkMode={() => setDarkMode((prev) => !prev)}
+        sidebarWidth={sidebarWidth}
+      />
 
-      {/* POPULAR SOCIETIES */}
-      <Box mb={4}>
-        <PopularSocieties />
-      </Box>
-
-      {/* UPCOMING EVENTS */}
-      <SectionCard title="Upcoming Events" icon="📅">
-        {upcomingEvents.length > 0 ? (
-          <UpcomingEvents events={upcomingEvents} />
-        ) : (
-          <Typography variant="body1" sx={{ color: colors.grey[500] }}>
-            No upcoming events.
-          </Typography>
-        )}
-      </SectionCard>
-
-      {/* ERROR MESSAGE */}
-      {error && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.3 }}
-        >
-          <Box
-            sx={{
-              backgroundColor: "#fdecea",
-              borderLeft: "8px solid #f44336",
-              color: "#b71c1c",
-              p: 2,
-              borderRadius: 2,
-              mb: 4
+      {/* Main Content */}
+      <div className="flex-grow pt-16">
+        {/* Header */}
+        <motion.header
+            initial={{ opacity: 0, y: -30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="bg-white dark:bg-gray-800 shadow-md fixed top-0 z-10 w-full"
+            style={{
+                gridTemplateColumns: sidebarWidth === 'collapsed' ? 'auto 1fr auto' : '288px 1fr',
             }}
+        >
+            <div className="max-w-7xl mx-auto px-4 py-2 grid grid-cols-[auto_1fr_auto] gap-4 items-center">
+                <div className="flex items-center gap-2">
+                    {/* Toggle Button */}
+                    <button
+                        className="text-gray-600 dark:text-gray-300 hover:text-gray-800
+                                dark:hover:text-white focus:outline-none"
+                        onClick={handleToggleSidebar}
+                        aria-label="Toggle Menu"
+                    >
+                        <motion.span
+                            initial={{ opacity: 0, scale: 0.5 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.2 }}
+                        >
+                            <HiMenu className="h-6 w-6" />
+                        </motion.span>
+                    </button>
+                    <span role="img" aria-label="sparkles" className="text-3xl">
+                        ✨
+                    </span>
+                    <h1 className="text-xl font-extrabold tracking-wide text-gray-800 dark:text-gray-100">
+                        Student Society Dashboard
+                    </h1>
+                </div>
+
+                {/* Conditionally render Register/Login links */}
+                {sidebarWidth === 'collapsed' && (
+                    <div className="flex items-center justify-end gap-4">
+                        {/* Search and Buttons */}
+                        <input
+                            type="search"
+                            placeholder="Search..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="px-4 py-2 rounded-full border border-gray-300
+                                        dark:border-gray-700 dark:bg-gray-700 dark:text-gray-100
+                                        focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            style={{ caretColor: "black" }}
+                        />
+                        <Link
+                            to="/register"
+                            className="px-4 py-2 bg-purple-600 text-white
+                                        rounded-full shadow hover:bg-purple-700 transition whitespace-nowrap"
+                        >
+                            Register
+                        </Link>
+                        <Link
+                            to="/login"
+                            className="px-4 py-2 bg-purple-600 text-white
+                                        rounded-full shadow hover:bg-purple-700 transition whitespace-nowrap"
+                        >
+                            Login
+                        </Link>
+                    </div>
+                )}
+            </div>
+        </motion.header>
+
+        {/* Main Content Section */}
+        <div className="max-w-7xl mx-auto px-4 py-8 space-y-10">
+          {/* Introduction */}
+          <SectionCard title={introduction?.title || "Welcome!"}>
+            <div>
+              {introduction?.content?.length ? (
+                introduction.content.map((paragraph, idx) => (
+                  <p
+                    key={idx}
+                    className="text-gray-700 dark:text-gray-200 text-base leading-relaxed"
+                  >
+                    {paragraph}
+                  </p>
+                ))
+              ) : (
+                <p className="text-gray-700 dark:text-gray-300 text-base">
+                  No introduction available.
+                </p>
+              )}
+            </div>
+          </SectionCard>
+
+          {/* Statistics */}
+          <div
+            ref={statsRef}
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
           >
-            <Typography variant="body1">
+            <StatCard
+              title="Total Societies"
+              value={stats.totalSocieties}
+              color="from-purple-600 to-purple-400"
+            />
+            <StatCard
+              title="Total Events"
+              value={stats.totalEvents}
+              color="from-green-600 to-green-400"
+            />
+            <StatCard
+              title="Pending Approvals"
+              value={stats.pendingApprovals}
+              color="from-yellow-600 to-yellow-400"
+            />
+            <StatCard
+              title="Active Members"
+              value={stats.activeMembers}
+              color="from-blue-600 to-blue-400"
+            />
+          </div>
+
+          {/* Popular Societies */}
+          <motion.section
+            ref={popularSocietiesRef}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-2xl shadow-lg p-6
+                       border-l-8 border-transparent hover:border-gradient-to-r
+                       hover:from-purple-500 hover:to-indigo-500
+                       transition-all duration-300"
+          >
+            <PopularSocieties />
+          </motion.section>
+
+          {/* Upcoming Events */}
+          <SectionCard title="Upcoming Events">
+            <div ref={upcomingEventsRef}>
+              {upcomingEvents.length > 0 ? (
+                <UpcomingEvents events={upcomingEvents} />
+              ) : (
+                <p className="text-gray-500 dark:text-gray-400 text-center animate-pulse">
+                  No upcoming events.
+                </p>
+              )}
+            </div>
+          </SectionCard>
+
+          {/* Event Calendar */}
+          <SectionCard title="Event Calendar">
+            <div ref={eventCalendarRef}>
+              {eventCalendar.length > 0 ? (
+                <EventCalendar events={eventCalendar} />
+              ) : (
+                <p className="text-gray-500 dark:text-gray-400 text-center animate-pulse">
+                  No events scheduled yet.
+                </p>
+              )}
+            </div>
+          </SectionCard>
+
+          {/* Updates */}
+          <SectionCard title="Updates">
+            <div ref={updatesRef}>
+              <Tabs activeTab={activeTab} setActiveTab={setActiveTab}>
+                <TabPanel label="Recent Activities">
+                  {recentActivities.length ? (
+                    <ul className="space-y-2 pl-4 list-disc">
+                      {recentActivities.map((activity, idx) => (
+                        <li
+                          key={idx}
+                          className="text-gray-700 dark:text-gray-200 text-base"
+                        >
+                          {activity.description}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-gray-500 dark:text-gray-400 text-base">
+                      No recent activities.
+                    </p>
+                  )}
+                </TabPanel>
+                <TabPanel label="Notifications">
+                  {notifications.length ? (
+                    <ul className="space-y-2 pl-4 list-disc">
+                      {notifications.map((notification, idx) => (
+                        <li
+                          key={idx}
+                          className="text-gray-700 dark:text-gray-200 text-base"
+                        >
+                          {notification.message}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-gray-500 dark:text-gray-400 text-base">
+                      No notifications.
+                    </p>
+                  )}
+                </TabPanel>
+              </Tabs>
+            </div>
+          </SectionCard>
+
+          {/* Error Message */}
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3 }}
+              className="bg-red-100 dark:bg-red-900 border-l-8 border-red-600
+                         text-red-800 dark:text-red-200 p-6 rounded-2xl shadow-md"
+            >
               <strong>Error:</strong> {error}
-            </Typography>
-          </Box>
-        </motion.div>
-      )}
-
-      {/* RECENT ACTIVITIES */}
-      <SectionCard title="Recent Activities" icon="🔥">
-        {recentActivities.length ? (
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-            {recentActivities.map((activity, idx) => (
-              <Typography
-                key={idx}
-                variant="body1"
-                sx={{ color: colors.grey[800] }}
-              >
-                • {activity.description}
-              </Typography>
-            ))}
-          </Box>
-        ) : (
-          <Typography variant="body1" sx={{ color: colors.grey[600] }}>
-            No recent activities found.
-          </Typography>
-        )}
-      </SectionCard>
-
-      {/* EVENT CALENDAR */}
-      <SectionCard title="Event Calendar" icon="📅">
-        {eventCalendar.length > 0 ? (
-          <EventCalendar events={eventCalendar} />
-        ) : (
-          <Typography variant="body1" sx={{ color: colors.grey[500] }}>
-            No events scheduled yet.
-          </Typography>
-        )}
-      </SectionCard>
-
-      {/* NOTIFICATIONS */}
-      <SectionCard title="Notifications" icon="🔔">
-        {notifications.length ? (
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-            {notifications.map((notification, idx) => (
-              <Typography
-                key={idx}
-                variant="body1"
-                sx={{ color: colors.grey[800] }}
-              >
-                • {notification.message}
-              </Typography>
-            ))}
-          </Box>
-        ) : (
-          <Typography variant="body1" sx={{ color: colors.grey[600] }}>
-            No notifications found.
-          </Typography>
-        )}
-      </SectionCard>
-    </Box>
+            </motion.div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 };
 

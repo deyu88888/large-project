@@ -1,18 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { Box, Button, Typography, useTheme } from "@mui/material";
-import { FaChartPie, FaUsers, FaCalendarAlt, FaBell, FaEnvelope } from "react-icons/fa";
+import { FaUsers, FaCalendarAlt, FaEnvelope } from "react-icons/fa";
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 import Header from "../../components/Header";
 import BarChart from "../../components/graphs/BarChart";
-import { tokens } from "../../theme/theme";
-import { useSidebar } from "../../components/layout/SidebarContext";
-import { apiClient } from "../../api";
 import StatBox from "../../components/graphs/StatBox";
+import { tokens } from "../../theme/theme";
+import { apiClient } from "../../api";
+import { useSettingsStore } from "../../stores/settings-store";
 
 const AdminDashboard = () => {
   const theme = useTheme();
   const colours = tokens(theme.palette.mode);
-  const { sidebarWidth } = useSidebar();
 
   const [userStats, setUserStats] = useState<any>(null);
   const [events, setEvents] = useState<any[]>([]);
@@ -20,11 +19,28 @@ const AdminDashboard = () => {
   const [societiesData, setSocietiesData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const { drawer } = useSettingsStore(); 
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+
   useEffect(() => {
     fetchData();
     fetchSocieties();
   }, []);
 
+  useEffect(() => {
+    fetchCurrentUser();
+  }, []);
+
+  const fetchCurrentUser = async () => {
+    try {
+      const response = await apiClient.get("/api/admin/user-stats/"); // Adjust the endpoint
+      setCurrentUser(response.data);
+    } catch (error) {
+      console.error("Error fetching current user:", error);
+    }
+  };
+  
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -50,83 +66,135 @@ const AdminDashboard = () => {
     }
   };
 
-  const chartData = societiesData.map((society: { name: string; societyMembers: any[] }) => ({
-    country: society.name,
-    members: society.societyMembers.length,
-  }));
+  interface StatCardProps {
+    icon: React.ReactNode;
+    title: string;
+    value: number | string;
+  }
+  
+  const StatCard = ({ icon, title, value }: StatCardProps) => {  return (
+      <Box
+        className="p-6 rounded-xl shadow hover:shadow-lg transition-transform hover:-translate-y-1"
+        style={{
+          backgroundColor: "rgba(255, 255, 255, 0.1)",
+          border: "1px solid rgba(255, 255, 255, 0.2)",
+        }}
+      >
+        <Box display="flex" alignItems="center" mb="16px">
+          {icon}
+          <Typography variant="h6" style={{ marginLeft: "12px" }}>
+            {title}
+          </Typography>
+        </Box>
+        <Typography variant="h4" fontWeight="bold">
+          {value}
+        </Typography>
+      </Box>
+    );
+  };
+  
+  interface NotificationCardProps {
+    message: string;
+    isRead: boolean;
+  }
+  
+  const NotificationCard = ({ message, isRead }: NotificationCardProps) => {  return (
+      <Box
+        className="p-5 rounded-lg shadow-md transition-all"
+        style={{
+          backgroundColor: isRead ? "rgba(0, 128, 0, 0.1)" : "rgba(255, 0, 0, 0.1)",
+          border: "1px solid rgba(255, 255, 255, 0.2)",
+        }}
+      >
+        <Typography>{message}</Typography>
+      </Box>
+    );
+  };
 
   return (
-    <Box m="5px" style={{ marginLeft: `125px` }}>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb="20px">
-        <Header title="ADMIN DASHBOARD" subtitle="Manage users, societies, and more." />
-        <Button
-          sx={{
-            backgroundColor: colours.blueAccent[700],
-            color: colours.grey[100],
-            padding: "10px 20px",
-            fontWeight: "bold",
-          }}
-        >
-          <DownloadOutlinedIcon sx={{ mr: "10px" }} />
-          Download Reports
-        </Button>
-      </Box>
+    <div
+      style={{
+        // marginLeft: `${sidebarWidth}px`,
+        marginTop: "64px",
+        transition: "margin-left 0.3s ease-in-out",
+        minHeight: "100vh",
+        maxWidth: drawer ? `calc(100% - 5px)`: "100%",
+        padding: "0px 0px",
+        background: `${colours.primary[400]} !important`,
+      }}
+    >
+      <div style={{ maxWidth: "1600px", margin: "0 auto" }}>
+        <header className="text-center mb-16">
+          <Header title={`Welcome to your Dashboard, ${currentUser?.firstName || "User"}`} subtitle="Manage users, societies, and more." />
+        </header>
 
-      <Box display="grid" gridTemplateColumns="repeat(12, 1fr)" gridAutoRows="140px" gap="20px">
-        <Box gridColumn="span 3" backgroundColor={colours.primary[400]} display="flex" p="20px" height="100%" alignItems="center">
-          <Box display="flex" flexDirection="column" alignItems="center" mr="20px">
-            <FaUsers style={{ color: colours.greenAccent[500], fontSize: "26px" }} />
-            <Typography variant="h6" color={colours.grey[100]} mt="10px">Active Users</Typography>
-            <Typography variant="body2" color={colours.grey[400]} mt="5px">Monthly Revenue</Typography>
-          </Box>
-          <StatBox value={userStats?.totalUsers || 0} progress={0.8} increase="+18%" subtitle="" />
-        </Box>
+        {loading ? (
+          <div className="text-center">
+            <Typography variant="h4" color={colours.grey[100]}>
+              Loading your dashboard...
+            </Typography>
+          </div>
+        ) : (
+          <div className="space-y-8">
+            {/* Stats Overview */}
+            <section className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <StatCard
+                icon={<FaUsers style={{ color: colours.greenAccent[500] }} />}
+                title="Active Users"
+                value={userStats?.totalUsers || 0}
+              />
+              <StatCard
+                icon={<FaCalendarAlt style={{ color: colours.blueAccent[500] }} />}
+                title="Active Events"
+                value={events.length}
+              />
+              <StatCard
+                icon={<FaEnvelope style={{ color: colours.redAccent[500] }} />}
+                title="Pending Requests"
+                value={notifications.length}
+              />
+            </section>
 
-        <Box gridColumn="span 3" backgroundColor={colours.primary[400]} display="flex" p="20px" height="100%" alignItems="center">
-          <Box display="flex" flexDirection="column" alignItems="center" mr="20px">
-            <FaCalendarAlt style={{ color: colours.blueAccent[500], fontSize: "26px" }} />
-            <Typography variant="h6" color={colours.grey[100]} mt="10px">Active Events</Typography>
-            <Typography variant="body2" color={colours.grey[400]} mt="5px">Monthly Revenue</Typography>
-          </Box>
-          <StatBox value={events.length} progress={0.75} increase="+18%" subtitle="" />
-        </Box>
+            {/* Societies Bar Chart */}
+            <section className="mb-16">
+              <Typography variant="h5" color={colours.grey[100]} gutterBottom>
+                Societies Overview
+              </Typography>
+              <div style={{ height: "300px" }}>
+              <BarChart
+                data={societiesData.map((society) => ({
+                  country: society.name,
+                  members: society.societyMembers.length,
+                }))}
+              />
+              </div>
+            </section>
 
-        <Box gridColumn="span 3" backgroundColor={colours.primary[400]} display="flex" p="20px" height="100%" alignItems="center">
-          <Box display="flex" flexDirection="column" alignItems="center" mr="20px">
-            <FaEnvelope style={{ color: colours.redAccent[500], fontSize: "26px" }} />
-            <Typography variant="h6" color={colours.grey[100]} mt="10px">Pending requests</Typography>
-            <Typography variant="body2" color={colours.grey[400]} mt="5px">Monthly Revenue</Typography>
-          </Box>
-          <StatBox progress={0.6} increase="+35%" subtitle="" />
-        </Box>
-
-        <Box gridColumn="span 3" backgroundColor={colours.primary[400]} display="flex" p="20px" height="100%" alignItems="center">
-          <Box display="flex" flexDirection="column" alignItems="center" mr="20px">
-            <FaChartPie style={{ color: colours.blueAccent[500], fontSize: "26px" }} />
-            <Typography variant="h6" color={colours.grey[100]} mt="10px">Active Societies</Typography>
-            <Typography variant="body2" color={colours.grey[400]} mt="5px">Monthly Revenue</Typography>
-          </Box>
-          <StatBox value={societiesData.length} progress={0.75} increase="+18%" subtitle="" />
-        </Box>
-
-        <Box gridColumn="span 8" gridRow="span 2" backgroundColor={colours.primary[400]} p="20px" height="400px" display="flex" flexDirection="column">
-          <Typography variant="h5" fontWeight="600" color={colours.grey[100]} mb="10px">Society Members Chart</Typography>
-          <BarChart data={chartData} />
-        </Box>
-
-        <Box gridColumn="span 4" gridRow="span 2" backgroundColor={colours.primary[400]} p="20px" overflow="auto">
-          <Typography variant="h5" fontWeight="600" color={colours.grey[100]} mb="10px">
-            <FaBell style={{ color: colours.redAccent[500], fontSize: "26px", paddingBottom: "2px" }} /> Recent Notifications
-          </Typography>
-          {notifications.map((notification) => (
-            <Box key={notification.id} display="flex" justifyContent="space-between" alignItems="center" borderBottom={`2px solid ${colours.primary[500]}`} p="10px 0">
-              <Typography color={colours.grey[100]}>{notification.message}</Typography>
-              <Typography color={colours.greenAccent[500]}>{notification.date}</Typography>
-            </Box>
-          ))}
-        </Box>
-      </Box>
-    </Box>
+            {/* Notifications */}
+            <section className="mb-20">
+              <Typography variant="h5" color={colours.grey[100]} gutterBottom>
+                Notifications
+              </Typography>
+              <div className="space-y-6">
+                {notifications.length === 0 ? (
+                  <Typography color={colours.grey[300]}>
+                    No new notifications.
+                  </Typography>
+                ) : (
+                  notifications.map((notification) => (
+                    <NotificationCard
+                      key={notification.id}
+                      message={notification.message}
+                      isRead={notification.is_read}
+                    />
+                  ))
+                )}
+              </div>
+            </section>
+          </div>
+        )}
+      </div>
+    </div>
   );
 };
 

@@ -1,5 +1,5 @@
 import datetime
-from api.models import User, Student, Admin, Society, Event, Notification, Request, SocietyRequest, SocietyShowreel, SocietyShowreelRequest, EventRequest, UserRequest, SiteSettings
+from api.models import AdminReportRequest, Award, AwardStudent, SiteSettings, User, Student, Admin, Society, Event, Notification, Request, SocietyRequest, SocietyShowreel, SocietyShowreelRequest, EventRequest, UserRequest
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
 
@@ -50,9 +50,10 @@ class StudentSerializer(UserSerializer):
     Serializer for the Student model.
     """
     societies = serializers.PrimaryKeyRelatedField(many=True, queryset=Society.objects.all())
-    president_of = serializers.PrimaryKeyRelatedField(many=True, queryset=Society.objects.all())
+    president_of = serializers.PrimaryKeyRelatedField(queryset=Society.objects.all(), allow_null=True, required=False)
     major = serializers.CharField(required=True)
-
+    is_president = serializers.BooleanField(read_only=True)
+    
     class Meta(UserSerializer.Meta):
         model = Student
         fields = UserSerializer.Meta.fields + ['major', 'societies', 'president_of', 'is_president']
@@ -81,7 +82,7 @@ class StudentSerializer(UserSerializer):
         Override create to handle Student-specific fields.
         """
         societies = validated_data.pop('societies', [])
-        president_of = validated_data.pop('president_of', [])
+        president_of = validated_data.pop('president_of', None)
         major = validated_data.pop('major')
         password = validated_data.pop('password')
 
@@ -93,10 +94,12 @@ class StudentSerializer(UserSerializer):
         if societies:
             student.societies.set(societies)
 
-        if president_of:
-            student.president_of.set(president_of)
+        if president_of:  # Check if president_of is provided before assigning
+            student.president_of_id = president_of.id
+            student.save()
 
         return student
+
 
 
 class AdminSerializer(UserSerializer):
@@ -150,7 +153,7 @@ class SocietyShowreelSerializer(serializers.ModelSerializer):
 class SocietySerializer(serializers.ModelSerializer):
     """ Serializer for objects of the Society model """
     showreel_images = SocietyShowreelSerializer(many=True, required=False)
-
+    tags = serializers.ListField(child=serializers.CharField(), required=False)
 
     class Meta:
         """SocietySerializer meta data"""
@@ -158,20 +161,31 @@ class SocietySerializer(serializers.ModelSerializer):
         fields = [
             'id', 'name', 'society_members', 'roles', 'leader', 'approved_by',
             'status', 'category', 'social_media_links', 'timetable', 'showreel_images',
-            'membership_requirements', 'upcoming_projects_or_plans', 'icon',
+            'membership_requirements', 'upcoming_projects_or_plans', 'icon','tags'
         ]
+        extra_kwargs = {
+            'society_members': {'required': False},  # Allows empty or missing data
+            'roles': {'required': False},
+            'social_media_links': {'required': False},
+            'timetable': {'required': False},
+            'membership_requirements': {'required': False},
+            'upcoming_projects_or_plans': {'required': False},
+        }
 
     def validate_social_media_links(self, value):
         """ Ensure social media links include valid URLs """
-        for key, link in value.items():
-            if not link.startswith("http"):
-                raise serializers.ValidationError(f"{key} link must be a valid URL.")
+        if value:
+            for key, link in value.items():
+                if not link.startswith("http"):
+                    raise serializers.ValidationError(f"{key} link must be a valid URL.")
         return value
 
     def create(self, validated_data):
-        """ Use passing in json dict data to create a new Society """
+        """ Use passing in JSON dict data to create a new Society """
         photos_data = validated_data.pop('showreel_images', [])
         members_data = validated_data.pop('society_members', [])
+        tags_data = validated_data.pop('tags', [])
+
 
         society = Society.objects.create(**validated_data)
 
@@ -180,13 +194,15 @@ class SocietySerializer(serializers.ModelSerializer):
         for photo_data in photos_data:
             SocietyShowreel.objects.create(society=society, **photo_data)
 
+        society.tags = tags_data  # Assign tags
         society.save()
         return society
 
     def update(self, instance, validated_data):
-        """ Use passing in a Society and json dict data to update a Society """
+        """ Use passing in a Society and JSON dict data to update a Society """
         photos_data = validated_data.pop('showreel_images', [])
         members_data = validated_data.pop('society_members', [])
+        tags_data = validated_data.pop('tags', [])
 
         for key, value in validated_data.items():
             setattr(instance, key, value)
@@ -197,6 +213,7 @@ class SocietySerializer(serializers.ModelSerializer):
         for photo_data in photos_data:
             SocietyShowreel.objects.create(society=instance, **photo_data)
 
+        instance.tags = tags_data  # Assign updated tags
         instance.save()
         return instance
 
@@ -325,7 +342,7 @@ class JoinSocietySerializer(serializers.Serializer):
         society_id = self.validated_data['society_id']
         request_user = self.context['request'].user
         society = Society.objects.get(id=society_id)
-        request_user.student.societies.add(society)
+        request_user.student.societies_belongs_to.add(society)
         return society
 
 
@@ -505,22 +522,84 @@ class UserRequestSerializer(RequestSerializer):
         extra_kwargs = RequestSerializer.Meta.extra_kwargs
 
 
-class EventRequestSerializer(RequestSerializer):
-    """
-    Serializer for the EventRequest model
-    """
+class EventRequestSerializer(serializers.ModelSerializer):
+    
+    title = serializers.CharField(
+    required=True,
+    allow_blank=False,
+    error_messages={'blank': 'Title cannot be blank.'}
+    )   
+    hosted_by = serializers.PrimaryKeyRelatedField(
+        queryset=Society.objects.all(),
+        required=False
+    )
+    # Use SerializerMethodField to always include 'event' in the output.
+    event = serializers.SerializerMethodField()
+    # Make 'approved' writable
+    approved = serializers.BooleanField(required=False)
 
     class Meta:
-        """EventRequestSerializer meta data"""
         model = EventRequest
-        fields = (
-            RequestSerializer.Meta.fields
-            + ['title', 'description', 'location', 'date',
-            'start_time', 'duration', 'event', 'hosted_by']
+        fields = [
+            "id", "event", "title", "description", "location", "date",
+            "start_time", "duration", "hosted_by", "from_student", "intent", "approved", "requested_at"
+        ]
+        # These fields are set automatically and should not be provided in input.
+        read_only_fields = ["from_student", "intent", "hosted_by", "event", "requested_at"]
+
+    def get_event(self, obj):
+        return obj.event.id if obj.event else None
+
+    def validate_title(self, value):
+        if not value.strip():
+            raise serializers.ValidationError("Title cannot be blank.")
+        return value
+
+    def create(self, validated_data):
+        # Ensure that 'hosted_by' is provided via extra kwargs (e.g. from the view)
+        hosted_by = validated_data.get("hosted_by")
+        if hosted_by is None:
+            raise serializers.ValidationError({"hosted_by": "This field is required."})
+
+        request = self.context.get("request")
+        if not request:
+            raise serializers.ValidationError("Request is required in serializer context.")
+        user = request.user
+
+        if not hasattr(user, "student"):
+            raise serializers.ValidationError("Only students can request event creation.")
+
+        student = user.student
+        if student.president_of != hosted_by:
+            raise serializers.ValidationError("You can only create events for your own society.")
+
+        # Remove keys that are supplied via extra kwargs so they aren’t duplicated.
+        validated_data.pop("hosted_by", None)
+        validated_data.pop("from_student", None)
+        validated_data.pop("intent", None)
+        validated_data.pop("approved", None)
+
+        # Create the event request with default values.
+        event_request = EventRequest.objects.create(
+            hosted_by=hosted_by,
+            from_student=student,
+            intent="CreateEve",
+            approved=False,
+            **validated_data
         )
-        extra_kwargs = RequestSerializer.Meta.extra_kwargs | {
-            'hosted_by': {'required': True}
-        }
+        return event_request
+
+    def update(self, instance, validated_data):
+        # Allow updating the 'approved' field (and others) as provided.
+        instance.approved = validated_data.get("approved", instance.approved)
+        instance.title = validated_data.get("title", instance.title)
+        instance.description = validated_data.get("description", instance.description)
+        instance.location = validated_data.get("location", instance.location)
+        instance.date = validated_data.get("date", instance.date)
+        instance.start_time = validated_data.get("start_time", instance.start_time)
+        instance.duration = validated_data.get("duration", instance.duration)
+        instance.save()
+        return instance
 
 
 class DashboardStatisticSerializer(serializers.Serializer):
@@ -618,3 +697,44 @@ class EventCalendarSerializer(serializers.ModelSerializer):
             tzinfo=datetime.timezone.utc
         )
         return (start_dt + obj.duration).isoformat()
+
+class AwardSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the Award model
+    """
+    class Meta:
+        model = Award
+        fields = '__all__'
+
+class AwardStudentSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the AwardStudent model
+    """
+    award = AwardSerializer(read_only=True)
+    student = StudentSerializer(read_only=True)
+    student_id = serializers.PrimaryKeyRelatedField(source='student', queryset=Student.objects.all(), write_only=True)
+    award_id = serializers.PrimaryKeyRelatedField(source='award', queryset=Award.objects.all(), write_only=True)
+
+    class Meta:
+        model = AwardStudent
+        fields = ['id', 'award', 'student', 'student_id', 'award_id', 'awarded_at']
+        
+class PendingMemberSerializer(serializers.ModelSerializer):
+    """
+    Serializer for pending membership requests.
+    """
+    student_id = serializers.IntegerField(source="from_student.id")
+    first_name = serializers.CharField(source="from_student.first_name")
+    last_name = serializers.CharField(source="from_student.last_name")
+    username = serializers.CharField(source="from_student.username")
+
+    class Meta:
+        model = UserRequest
+        fields = ["id", "student_id", "first_name", "last_name", "username", "approved"]
+        
+class AdminReportRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AdminReportRequest
+        fields = ["id", "report_type", "subject", "details", "requested_at", "from_student"]
+        extra_kwargs = {"from_student": {"read_only": True}}  # Auto-assign the user
+

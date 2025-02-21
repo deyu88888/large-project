@@ -8,6 +8,7 @@ interface User {
   email: string;
   is_active: boolean;
   role: string;
+  is_president?: boolean;
 }
 
 interface AuthStore {

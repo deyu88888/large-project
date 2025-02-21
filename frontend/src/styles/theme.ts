@@ -151,6 +151,7 @@ export const themeSettings = (mode: ThemeMode) => {
       },
       background: {
         default: mode === "dark" ? colors.primary[500] : "#fcfcfc",
+        paper: mode === "dark" ? "#141b2d" : "#ffffff",
       },
     },
     typography: {
