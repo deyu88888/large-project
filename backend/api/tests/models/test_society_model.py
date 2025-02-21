@@ -1,6 +1,10 @@
+from io import BytesIO
+from PIL import Image
+from django.core.files.base import ContentFile
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 from api.models import Society, Admin, Student
+from api.tests.file_deletion import delete_file
 
 class SocietyModelTestCase(TestCase):
     """ Unit tests for the Society model """
@@ -99,11 +103,32 @@ class SocietyModelTestCase(TestCase):
 
     def test_membership_requirements(self):
         """ Test the membership_requirements field """
-        self.assertEqual(self.society.membership_requirements, "Members must attend at least 3 events per semester")
+        self.assertEqual(
+            self.society.membership_requirements,
+            "Members must attend at least 3 events per semester"
+        )
 
     def test_upcoming_projects_or_plans(self):
         """ Test the upcoming_projects_or_plans field """
         self.assertEqual(self.society.upcoming_projects_or_plans, "Plan to host a Tech Fest in May")
+
+    def test_icon_default(self):
+        """Asserts that when no icon is specified it is initialized to a default"""
+        self.assertNotEqual(self.society.icon.name, None)
+
+    def test_icon_upload(self):
+        """Test that an icon can be uploaded and saved"""
+        image = Image.new("RGB", (100, 100), color="red")
+
+        buffer = BytesIO()
+        image.save(buffer, format='JPEG')
+        buffer.seek(0)
+
+        delete_file(self.society.icon.path)
+        self.society.icon.save("default_icon.jpeg", ContentFile(buffer.getvalue()), save=True)
+        self.society.save()
+
+        self.assertTrue(self.society.icon.name.startswith("society_icons/"))
 
     def _assert_society_is_valid(self):
         try:
@@ -114,3 +139,11 @@ class SocietyModelTestCase(TestCase):
     def _assert_society_is_invalid(self):
         with self.assertRaises(ValidationError):
             self.society.full_clean()
+
+    def tearDown(self):
+        for society in Society.objects.all():
+            if society.icon:
+                delete_file(society.icon.path)
+        for student in Student.objects.all():
+            if student.icon:
+                delete_file(student.icon.path)

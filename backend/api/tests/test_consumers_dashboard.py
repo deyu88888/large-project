@@ -1,14 +1,11 @@
-import json
-import pytest
-from django.test import TestCase, override_settings
-from django.utils import timezone
 from channels.layers import get_channel_layer
 from channels.routing import URLRouter
 from channels.testing import WebsocketCommunicator
+from django.test import TestCase, override_settings
 from django.urls import re_path
-from asgiref.sync import sync_to_async
 from api.consumers import DashboardConsumer
 from api.models import Society, Event, Student
+from api.tests.file_deletion import delete_file
 
 # Build an in-memory routing for tests
 application = URLRouter([
@@ -121,3 +118,11 @@ class TestDashboardConsumer(TestCase):
             "activeMembers": 1,     # 1 student
         }
         self.assertEqual(stats, expected_stats)
+
+    def tearDown(self):
+        for society in Society.objects.all():
+            if society.icon:
+                delete_file(society.icon.path)
+        for student in Student.objects.all():
+            if student.icon:
+                delete_file(student.icon.path)

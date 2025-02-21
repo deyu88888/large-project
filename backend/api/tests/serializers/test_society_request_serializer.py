@@ -1,7 +1,11 @@
+from io import BytesIO
+from PIL import Image
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.utils import timezone
-from api.models import Society, Admin, Student, SocietyRequest
+from api.models import Society, Admin, Student, SocietyRequest, SocietyShowreelRequest
 from api.serializers import SocietyRequestSerializer
+from api.tests.file_deletion import delete_file
 
 # pylint: disable=no-member
 
@@ -58,6 +62,7 @@ class SocietyRequestSerializerTestCase(TestCase):
             category="Technology",
             from_student=self.student1,
             intent="CreateSoc",
+            icon=self.get_image("0"),
         )
 
         # Serializer data
@@ -72,6 +77,7 @@ class SocietyRequestSerializerTestCase(TestCase):
             "approved": True,
             "from_student": self.student1.id,
             "intent": "CreateSoc",
+            "icon": self.society_request.icon,
         }
 
     def test_society_request_serialization(self):
@@ -86,6 +92,7 @@ class SocietyRequestSerializerTestCase(TestCase):
         self.assertEqual(self.society_request.category, data["category"])
         self.assertEqual(self.society_request.approved, data["approved"])
         self.assertEqual(self.society_request.intent, data["intent"])
+        self.assertEqual(self.society_request.icon.url, data["icon"])
         self.assertEqual(
             self.society_request.from_student.id,
             data["from_student"]
@@ -104,6 +111,7 @@ class SocietyRequestSerializerTestCase(TestCase):
         self.assertEqual(society_request["category"], self.data["category"])
         self.assertEqual(society_request["approved"], self.data["approved"])
         self.assertEqual(society_request["intent"], self.data["intent"])
+        self.assertEqual(society_request["icon"], self.data["icon"])
         self.assertEqual(
             society_request["from_student"].id,
             self.data["from_student"],
@@ -122,6 +130,7 @@ class SocietyRequestSerializerTestCase(TestCase):
         self.assertEqual(society_request.category, self.data["category"])
         self.assertEqual(society_request.approved, self.data["approved"])
         self.assertEqual(society_request.intent, self.data["intent"])
+        self.assertEqual(society_request.icon, self.data["icon"])
         self.assertEqual(
             society_request.from_student.id,
             self.data["from_student"]
@@ -140,8 +149,72 @@ class SocietyRequestSerializerTestCase(TestCase):
         self.serializer.save()
 
         self.assertTrue(self.society_request.approved)
+        self.assertIsNotNone(self.society_request.icon)
+
+    def test_serializer_showreel_images(self):
+        """Test that SocietyRequestSerializer returns showreel images correctly."""
+        image1 = self.get_image("1")
+        image2 = self.get_image("2")
+
+        SocietyShowreelRequest.objects.create(
+            society=self.society_request,
+            photo=image1,
+            caption="First image caption"
+        )
+        SocietyShowreelRequest.objects.create(
+            society=self.society_request,
+            photo=image2,
+            caption="Second image caption"
+        )
+
+        serializer = SocietyRequestSerializer(instance=self.society_request)
+        data = serializer.data
+
+        self.assertIn("showreel_images_request", data)
+
+        self.assertEqual(
+            len(data["showreel_images_request"]), 2,
+            f"showreel_images_request : {data["showreel_images_request"]}"
+        )
+
+        photos = {img["photo"] for img in data["showreel_images_request"]}
+        self.assertIn("/society_showreel_request/test_photo1.jpeg", photos)
+        self.assertIn("/society_showreel_request/test_photo2.jpeg", photos)
+
+        captions = {img["caption"] for img in data["showreel_images_request"]}
+        self.assertIn("First image caption", captions)
+        self.assertIn("Second image caption", captions)
 
     def _assert_serializer_is_valid(self):
         if not self.serializer.is_valid():
             print(f'Errors: {self.serializer.errors}')
             self.fail("Test serializer should be valid")
+
+    def get_image(self, s):
+        """Returns an image to be used for testing"""
+        image = Image.new('RGB', (1, 1), color='red')
+        buffer = BytesIO()
+        image.save(buffer, format='JPEG')
+        buffer.seek(0)
+
+        upload_image = SimpleUploadedFile(
+            f"test_photo{s}.jpeg",
+            buffer.getvalue(),
+            content_type="image/jpeg"
+        )
+
+        return upload_image
+
+    def tearDown(self):
+        for society in Society.objects.all():
+            if society.icon:
+                delete_file(society.icon.path)
+        for society in SocietyRequest.objects.all():
+            if society.icon:
+                delete_file(society.icon.path)
+        for student in Student.objects.all():
+            if student.icon:
+                delete_file(student.icon.path)
+        for showreel in SocietyShowreelRequest.objects.all():
+            if showreel.photo:
+                delete_file(showreel.photo.path)

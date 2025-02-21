@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 from api.models import Event, Society, Admin, Student
+from api.tests.file_deletion import delete_file
 
 class EventModelTestCase(TestCase):
     """ Unit tests for the Event model """
@@ -130,3 +131,11 @@ class EventModelTestCase(TestCase):
     def _assert_event_is_invalid(self):
         with self.assertRaises(ValidationError):
             self.event.full_clean()
+
+    def tearDown(self):
+        for society in Society.objects.all():
+            if society.icon:
+                delete_file(society.icon.path)
+        for student in Student.objects.all():
+            if student.icon:
+                delete_file(student.icon.path)

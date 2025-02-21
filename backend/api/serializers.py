@@ -1,5 +1,5 @@
 import datetime
-from api.models import AdminReportRequest, Award, AwardStudent, SiteSettings, User, Student, Admin, Society, Event, Notification, Request, SocietyRequest, EventRequest, UserRequest
+from api.models import AdminReportRequest, Award, AwardStudent, SiteSettings, User, Student, Admin, Society, Event, Notification, Request, SocietyRequest, SocietyShowreel, SocietyShowreelRequest, EventRequest, UserRequest
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
 
@@ -138,19 +138,30 @@ class AdminSerializer(UserSerializer):
         return admin
 
 
+class SocietyShowreelSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the SocietyShowreel model
+    """
+
+
+    class Meta:
+        """SocietyShowreelSerializer meta data"""
+        model = SocietyShowreel
+        fields= ('photo', 'caption')
+
+
 class SocietySerializer(serializers.ModelSerializer):
     """ Serializer for objects of the Society model """
-
-    icon = serializers.ImageField(required=False, allow_null=True)
+    showreel_images = SocietyShowreelSerializer(many=True, required=False)
     tags = serializers.ListField(child=serializers.CharField(), required=False)
 
     class Meta:
+        """SocietySerializer meta data"""
         model = Society
         fields = [
             'id', 'name', 'society_members', 'roles', 'leader', 'approved_by',
-            'status', 'category', 'social_media_links', 'timetable',
-            'membership_requirements', 'upcoming_projects_or_plans',
-            'tags', 'icon',  # Added the new fields
+            'status', 'category', 'social_media_links', 'timetable', 'showreel_images',
+            'membership_requirements', 'upcoming_projects_or_plans', 'icon','tags'
         ]
         extra_kwargs = {
             'society_members': {'required': False},  # Allows empty or missing data
@@ -171,13 +182,17 @@ class SocietySerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         """ Use passing in JSON dict data to create a new Society """
+        photos_data = validated_data.pop('showreel_images', [])
         members_data = validated_data.pop('society_members', [])
         tags_data = validated_data.pop('tags', [])
+
 
         society = Society.objects.create(**validated_data)
 
         if members_data:
             society.society_members.set(members_data)
+        for photo_data in photos_data:
+            SocietyShowreel.objects.create(society=society, **photo_data)
 
         society.tags = tags_data  # Assign tags
         society.save()
@@ -185,14 +200,18 @@ class SocietySerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         """ Use passing in a Society and JSON dict data to update a Society """
+        photos_data = validated_data.pop('showreel_images', [])
         members_data = validated_data.pop('society_members', [])
         tags_data = validated_data.pop('tags', [])
 
         for key, value in validated_data.items():
             setattr(instance, key, value)
 
+        instance.showreel_images.all().delete()
         if members_data:
             instance.society_members.set(members_data)
+        for photo_data in photos_data:
+            SocietyShowreel.objects.create(society=instance, **photo_data)
 
         instance.tags = tags_data  # Assign updated tags
         instance.save()
@@ -437,20 +456,58 @@ class RequestSerializer(serializers.ModelSerializer):
         return instance
 
 
+class SocietyShowreelRequestSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the SocietyShowreelRequest model
+    """
+
+
+    class Meta:
+        """SocietyShowreelRequestSerializer meta data"""
+        model = SocietyShowreelRequest
+        fields= ('photo', 'caption')
+
+
 class SocietyRequestSerializer(RequestSerializer):
     """
     Serializer for the SocietyRequest model
     """
+    showreel_images_request = SocietyShowreelRequestSerializer(many=True, required=False)
+
 
     class Meta:
         """SocietyRequestSerializer meta data"""
         model = SocietyRequest
         fields = (
             RequestSerializer.Meta.fields
-            + ['name', 'roles', 'leader', 'category',
+            + ['name', 'roles', 'leader', 'category', 'icon',
             'social_media_links', 'timetable', 'membership_requirements',
-            'upcoming_projects_or_plans', 'society']
+            'upcoming_projects_or_plans', 'society', 'showreel_images_request']
         )
+
+    def create(self, validated_data):
+        photos_data = validated_data.pop('showreel_images_request', [])
+
+        society = SocietyRequest.objects.create(**validated_data)
+
+        for photo_data in photos_data:
+            SocietyShowreelRequest.objects.create(society=society, **photo_data)
+
+        return society
+
+    def update(self, instance, validated_data):
+        photos_data = validated_data.pop('showreel_images_request', [])
+
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save()
+
+        instance.showreel_images_request.all().delete()
+
+        for photo_data in photos_data:
+            SocietyShowreelRequest.objects.create(society=instance, **photo_data)
+
+        return instance
 
 
 class UserRequestSerializer(RequestSerializer):
@@ -461,12 +518,14 @@ class UserRequestSerializer(RequestSerializer):
     class Meta:
         """UserRequestSerializer meta data"""
         model = UserRequest
-        fields = RequestSerializer.Meta.fields + ['major']
+        fields = RequestSerializer.Meta.fields + ['major', 'icon']
         extra_kwargs = RequestSerializer.Meta.extra_kwargs
 
 
 class EventRequestSerializer(serializers.ModelSerializer):
-    
+    """
+    Serializer for EventRequest model
+    """
     title = serializers.CharField(
     required=True,
     allow_blank=False,
@@ -482,18 +541,22 @@ class EventRequestSerializer(serializers.ModelSerializer):
     approved = serializers.BooleanField(required=False)
 
     class Meta:
+        """EventRequestSerializer meta data"""
         model = EventRequest
         fields = [
             "id", "event", "title", "description", "location", "date",
-            "start_time", "duration", "hosted_by", "from_student", "intent", "approved", "requested_at"
+            "start_time", "duration", "hosted_by", "from_student",
+            "intent", "approved", "requested_at",
         ]
         # These fields are set automatically and should not be provided in input.
         read_only_fields = ["from_student", "intent", "hosted_by", "event", "requested_at"]
 
     def get_event(self, obj):
+        """Returns the id of the event the request is made for"""
         return obj.event.id if obj.event else None
 
     def validate_title(self, value):
+        """Validates that there is more than whitespace in a title"""
         if not value.strip():
             raise serializers.ValidationError("Title cannot be blank.")
         return value
@@ -573,6 +636,7 @@ class DashboardNotificationSerializer(serializers.ModelSerializer):
     student_name = serializers.CharField(source="for_student.full_name", read_only=True)
 
     class Meta:
+        """Dashboard notification meta data"""
         model = Notification
         fields = [
             'id',
@@ -588,20 +652,19 @@ class EventCalendarSerializer(serializers.ModelSerializer):
     """
     Serializer for calendar events on the dashboard.
     """
-    # Convert `date` + `start_time` into a UTC-aware datetime
     start = serializers.SerializerMethodField()
     end = serializers.SerializerMethodField()
-    # Remove `source="title"` since it's the same name
     title = serializers.CharField()
 
     class Meta:
+        """Calender events meta data"""
         model = Event
         fields = ["id", "title", "start", "end", "location"]
         # Mark them read-only if needed:
         read_only_fields = ["start", "end"]
 
     def get_start(self, obj):
-        # Combine date and start_time in UTC
+        """Combine date and start_time in UTC"""
         return (
             datetime.datetime.combine(obj.date, obj.start_time)
             .replace(tzinfo=datetime.timezone.utc)
@@ -609,33 +672,7 @@ class EventCalendarSerializer(serializers.ModelSerializer):
         )
 
     def get_end(self, obj):
-        # Combine date and start_time, add duration
-        start_dt = datetime.datetime.combine(obj.date, obj.start_time).replace(
-            tzinfo=datetime.timezone.utc
-        )
-        return (start_dt + obj.duration).isoformat()
-
-class EventCalendarSerializer(serializers.ModelSerializer):
-    """
-    Serializer for calendar events on the dashboard.
-    """
-    start = serializers.SerializerMethodField()
-    end = serializers.SerializerMethodField()
-    title = serializers.CharField()
-
-    class Meta:
-        model = Event
-        fields = ["id", "title", "start", "end", "location"]
-        read_only_fields = ["start", "end"]
-
-    def get_start(self, obj):
-        return (
-            datetime.datetime.combine(obj.date, obj.start_time)
-            .replace(tzinfo=datetime.timezone.utc)
-            .isoformat()
-        )
-
-    def get_end(self, obj):
+        """Combine date and start_time, add duration"""
         start_dt = datetime.datetime.combine(obj.date, obj.start_time).replace(
             tzinfo=datetime.timezone.utc
         )
@@ -655,8 +692,16 @@ class AwardStudentSerializer(serializers.ModelSerializer):
     """
     award = AwardSerializer(read_only=True)
     student = StudentSerializer(read_only=True)
-    student_id = serializers.PrimaryKeyRelatedField(source='student', queryset=Student.objects.all(), write_only=True)
-    award_id = serializers.PrimaryKeyRelatedField(source='award', queryset=Award.objects.all(), write_only=True)
+    student_id = serializers.PrimaryKeyRelatedField(
+        source='student',
+        queryset=Student.objects.all(),
+        write_only=True
+    )
+    award_id = serializers.PrimaryKeyRelatedField(
+        source='award',
+        queryset=Award.objects.all(),
+        write_only=True
+    )
 
     class Meta:
         model = AwardStudent
@@ -672,11 +717,16 @@ class PendingMemberSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source="from_student.username")
 
     class Meta:
+        """UserRequest meta data"""
         model = UserRequest
         fields = ["id", "student_id", "first_name", "last_name", "username", "approved"]
         
 class AdminReportRequestSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the AdminReportRequest model
+    """
     class Meta:
+        """AdminReportRequest meta data"""
         model = AdminReportRequest
         fields = ["id", "report_type", "subject", "details", "requested_at", "from_student"]
         extra_kwargs = {"from_student": {"read_only": True}}  # Auto-assign the user
