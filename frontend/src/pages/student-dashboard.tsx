@@ -210,7 +210,7 @@ const StudentDashboard: React.FC = () => {
   }
 
   return (
-    <Box minHeight="100vh" bgcolor={colours.primary[400]} py={8}>
+    <Box minHeight="100vh" bgcolor={colours.primary[500]} py={8}>
       <Box maxWidth="1200px" mx="auto" px={4}>
         {/* Header */}
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
