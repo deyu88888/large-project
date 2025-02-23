@@ -84,7 +84,7 @@ const Layout: React.FC<LayoutProps> = () => {
               <SettingsOutlinedIcon />
             </IconButton>
             {/* Profile Icon navigates to the profile page */}
-            <IconButton onClick={() => navigate("/profile")}>
+            <IconButton onClick={() => navigate("/logout/profile")}>
               <PersonOutlinedIcon />
             </IconButton>
           </Box>
