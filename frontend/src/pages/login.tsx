@@ -24,12 +24,6 @@ export default function LoginPage() {
         localStorage.setItem(ACCESS_TOKEN, res.data.access);
         localStorage.setItem(REFRESH_TOKEN, res.data.refresh);
         navigate("/");
-        // if (res.data.role === "admin") {
-        //   navigate("/admin");
-        // }
-        // else if (res.data.role === "student") {    
-        //   navigate("/student");
-        // }
       } catch (error) {
         alert(error);
       } finally {
