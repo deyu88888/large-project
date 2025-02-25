@@ -129,7 +129,7 @@ const routes = [
             element: <RequestEventPage />,
           },
           {
-            path: "view-reports",
+            path: "report-list",
             element: <AdminReportList />,
           },
         ],
