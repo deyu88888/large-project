@@ -68,6 +68,15 @@ const AdminDrawer: React.FC<AdminDrawerProps> = ({
       to: "/admin/request-event",
     },
     {
+      title: "Create Admin",
+      icon: <PersonAddAltIcon />,
+      to: "/admin/create-admin",
+    },
+  ];
+
+  const additionalItems = [
+    { title: "All mail", icon: <MailIcon />, to: "/admin/report-list" },
+    {
       title: "Calendar",
       icon: <CalendarTodayOutlinedIcon />,
       to: "/admin/calendar",
@@ -76,11 +85,6 @@ const AdminDrawer: React.FC<AdminDrawerProps> = ({
       title: "Activity Log",
       icon: <CalendarTodayOutlinedIcon />,
       to: "/admin/admin-dashboard",
-    },
-    {
-      title: "Create Admin",
-      icon: <PersonAddAltIcon />,
-      to: "/admin/create-admin",
     },
   ];
 
@@ -154,13 +158,16 @@ const AdminDrawer: React.FC<AdminDrawerProps> = ({
 
       {/* Additional Items */}
       <List>
-        {["All mail", "Trash"].map((text, index) => (
-          <ListItem key={text} disablePadding>
+        {additionalItems.map((item) => (
+          <ListItem key={item.title} disablePadding>
             <ListItemButton
+              component={Link}
+              to={item.to}
+              selected={selected === item.title}
+              onClick={() => setSelected(item.title)}
               sx={{
-                minHeight: 48,
-                px: 2.5,
                 justifyContent: drawer ? "initial" : "center",
+                px: 2.5,
               }}
             >
               <ListItemIcon
@@ -170,13 +177,14 @@ const AdminDrawer: React.FC<AdminDrawerProps> = ({
                   justifyContent: "center",
                 }}
               >
-                {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
+                {item.icon}
               </ListItemIcon>
-              {drawer && <ListItemText primary={text} />}
+              {drawer && <ListItemText primary={item.title} />}
             </ListItemButton>
           </ListItem>
         ))}
       </List>
+
       <Divider />
 
       {/* Logout Item */}
