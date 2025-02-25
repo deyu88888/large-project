@@ -29,6 +29,7 @@ const ManageSocietyEvents = lazy(() => import("../pages/manage-society-events"))
 const CreateEventPage = lazy(() => import("../pages/create-society-event"));
 const ReportToAdmin = lazy(() => import("../pages/report-to-admin"));
 const ViewSocietyMembers = lazy(() => import("../pages/view-society-members"));
+const RequestDescriptionPage = lazy(() => import("../pages/Admin/PendingDescriptionRequest"));
 
 //Public event page
 const AllEventsPage = lazy(() => import("../pages/allEventsPage"))
@@ -127,6 +128,10 @@ const routes = [
           {
             path: "request-event",
             element: <RequestEventPage />,
+          },
+          {
+            path: "request-description",
+            element: <RequestDescriptionPage />,
           },
           {
             path: "report-list",

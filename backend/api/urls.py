@@ -52,6 +52,8 @@ urlpatterns = [
     path("society/request/<str:society_status>", SocietyRequestView.as_view(), name="request_society"),
     path("society/request/pending/<int:society_id>", SocietyRequestView.as_view(), name="request_society"),
 
+    path("description/request/pending", DescriptionRequestView.as_view(), name="request_description"),
+
     # Student societies endpoints
     path("student-societies", StudentSocietiesView.as_view(), name="student_societies"),
     path("leave-society/<int:society_id>", StudentSocietiesView.as_view(), name="leave_society"),

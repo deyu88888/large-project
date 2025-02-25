@@ -2,12 +2,12 @@
 
 import api.models
 import datetime
+from django.conf import settings
 import django.contrib.auth.models
 import django.core.validators
+from django.db import migrations, models
 import django.db.models.deletion
 import django.utils.timezone
-from django.conf import settings
-from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
@@ -71,7 +71,8 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('name', models.CharField(default='default', max_length=30)),
-                ('description', models.CharField(default='default', max_length=500)),
+                ('description', models.CharField(default='', max_length=500)),
+                ('roles', models.JSONField(blank=True, default=dict)),
                 ('status', models.CharField(choices=[('Pending', 'Pending Approval'), ('Approved', 'Approved'), ('Rejected', 'Rejected')], default='Pending', max_length=20)),
                 ('category', models.CharField(default='General', max_length=50)),
                 ('social_media_links', models.JSONField(blank=True, default=dict)),
@@ -81,6 +82,28 @@ class Migration(migrations.Migration):
                 ('tags', models.JSONField(blank=True, default=list)),
                 ('icon', models.ImageField(blank=True, null=True, upload_to='society_icons/')),
             ],
+        ),
+        migrations.CreateModel(
+            name='SocietyRequest',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('intent', models.CharField(choices=[('CreateSoc', 'Create Society'), ('UpdateSoc', 'Update Society'), ('CreateEve', 'Create Event'), ('UpdateEve', 'Update Event'), ('CreateUse', 'Create User'), ('UpdateUse', 'Update User')], max_length=10)),
+                ('requested_at', models.DateTimeField(auto_now_add=True)),
+                ('approved', models.BooleanField(default=False)),
+                ('name', models.CharField(blank=True, default='', max_length=30)),
+                ('description', models.CharField(blank=True, default='', max_length=300)),
+                ('roles', models.JSONField(blank=True, default=dict)),
+                ('category', models.CharField(blank=True, default='', max_length=50)),
+                ('social_media_links', models.JSONField(blank=True, default=dict, null=True)),
+                ('timetable', models.TextField(blank=True, default='')),
+                ('membership_requirements', models.TextField(blank=True, default='')),
+                ('upcoming_projects_or_plans', models.TextField(blank=True, default='')),
+                ('icon', models.ImageField(blank=True, null=True, upload_to='icon_request/')),
+                ('society', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='society_request', to='api.society')),
+            ],
+            options={
+                'abstract': False,
+            },
         ),
         migrations.CreateModel(
             name='Admin',
@@ -114,6 +137,24 @@ class Migration(migrations.Migration):
             bases=('api.user',),
             managers=[
                 ('objects', django.contrib.auth.models.UserManager()),
+            ],
+        ),
+        migrations.CreateModel(
+            name='SocietyShowreelRequest',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('photo', models.ImageField(upload_to='society_showreel_request/')),
+                ('caption', models.CharField(blank=True, default='', max_length=50)),
+                ('society', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='showreel_images_request', to='api.societyrequest')),
+            ],
+        ),
+        migrations.CreateModel(
+            name='SocietyShowreel',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('photo', models.ImageField(upload_to='society_showreel/')),
+                ('caption', models.CharField(blank=True, default='', max_length=50)),
+                ('society', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='showreel_images', to='api.society')),
             ],
         ),
         migrations.CreateModel(
@@ -220,6 +261,8 @@ class Migration(migrations.Migration):
             model_name='society',
             name='event_manager',
             field=models.ForeignKey(blank=True, help_text='Assigned event manager of the society', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='event_manager_of_society', to='api.student'),
+            name='approved_by',
+            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='approved_societies', to='api.admin'),
         ),
         migrations.AddField(
             model_name='society',
@@ -276,6 +319,18 @@ class Migration(migrations.Migration):
             model_name='event',
             name='current_attendees',
             field=models.ManyToManyField(blank=True, to='api.student'),
+        ),
+        migrations.CreateModel(
+            name='DescriptionRequest',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('new_description', models.TextField()),
+                ('status', models.CharField(choices=[('Pending', 'Pending Approval'), ('Approved', 'Approved'), ('Rejected', 'Rejected')], default='Pending', max_length=20)),
+                ('created_at', models.DateTimeField(auto_now_add=True)),
+                ('society', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='description_requests', to='api.society')),
+                ('requested_by', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='description_requests', to='api.student')),
+                ('reviewed_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='api.admin')),
+            ],
         ),
         migrations.CreateModel(
             name='AwardStudent',
