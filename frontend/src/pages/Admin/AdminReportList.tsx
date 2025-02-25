@@ -10,7 +10,9 @@ import { useSettingsStore } from "../../stores/settings-store";
 interface Report {
     id: number;
     from_student: string;
-    message: string;
+    report_type: string;
+    subject: string;
+    details: string;
     created_at: string;
 }
 
@@ -42,16 +44,17 @@ const AdminReport: React.FC = () => {
           .includes(searchTerm.toLowerCase())
       );        
 
-    const columns = [
-        { field: "id", headerName: "ID", flex: 1 },
+      const columns = [
+        { field: "id", headerName: "ID", flex: 0.5 },
         { field: "from_student", headerName: "Reporter", flex: 1 },
-        { field: "message", headerName: "Message", flex: 2 },
+        { field: "report_type", headerName: "Report Type", flex: 1 },
+        { field: "subject", headerName: "Subject", flex: 1.5 },
+        { field: "details", headerName: "Details", flex: 2 },
         {
           field: "created_at",
           headerName: "Created At",
           flex: 1.5,
-          renderCell: (params: any) =>
-            new Date(params.row.created_at).toLocaleString(),
+          renderCell: (params: any) => new Date(params.row.created_at).toLocaleString(),
         },
       ];
 
