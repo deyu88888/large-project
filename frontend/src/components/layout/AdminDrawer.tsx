@@ -68,6 +68,11 @@ const AdminDrawer: React.FC<AdminDrawerProps> = ({
       to: "/admin/request-event",
     },
     {
+      title: "Pending Descriptions",
+      icon: <GroupAddOutlinedIcon />,
+      to: "/admin/request-description",
+    },
+    {
       title: "Create Admin",
       icon: <PersonAddAltIcon />,
       to: "/admin/create-admin",

@@ -43,6 +43,7 @@ const PendingSocietyRequest = () => {
   const columns: GridColDef[] = [
     { field: "id", headerName: "ID", flex: 0.5 },
     { field: "name", headerName: "Name", flex: 1 },
+    { field: "description", headerName: "Description", flex: 1 },
     {      
       field: "society_members",
       headerName: "Members",

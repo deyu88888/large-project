@@ -168,10 +168,9 @@ class SocietySerializer(serializers.ModelSerializer):
         """SocietySerializer meta data"""
         model = Society
         fields = [
-            'id', 'name', 'society_members','vice_president', 'event_manager', 'treasurer', 'leader', 'approved_by',
-            'status', 'category', 'social_media_links', 'timetable', 'showreel_images', 'leader_id',
-            'membership_requirements', 'upcoming_projects_or_plans', 'icon','tags',
-            'description',
+            'id', 'name', 'description', 'society_members', 'roles', 'leader', 'approved_by',
+            'status', 'category', 'social_media_links', 'timetable', 'showreel_images',
+            'membership_requirements', 'upcoming_projects_or_plans', 'icon','tags'
         ]
         extra_kwargs = {
             'society_members': {'required': False},  # Allows empty or missing data
@@ -497,7 +496,7 @@ class SocietyRequestSerializer(RequestSerializer):
         model = SocietyRequest
         fields = (
             RequestSerializer.Meta.fields
-            + ['name', 'roles', 'leader', 'category', 'icon',
+            + ['name', 'description', 'roles', 'leader', 'category', 'icon',
             'social_media_links', 'timetable', 'membership_requirements',
             'upcoming_projects_or_plans', 'society', 'showreel_images_request']
         )
@@ -775,3 +774,8 @@ class CommentSerializer(serializers.ModelSerializer):
         """get the children comments (if have)"""
         replies = obj.replies.all().order_by("create_at")
         return CommentSerializer(replies, many=True).data
+
+class DescriptionRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DescriptionRequest
+        fields = ['id', 'society', 'new_description', 'status', 'reviewed_by', 'created_at', 'updated_at']
