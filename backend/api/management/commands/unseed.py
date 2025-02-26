@@ -1,3 +1,4 @@
+from django.core.files.storage import default_storage
 from django.core.management.base import BaseCommand
 import api.models as m
 
@@ -17,7 +18,9 @@ class Command(BaseCommand):
             m.Notification,
             m.EventRequest,
             m.Event,
+            m.SocietyShowreelRequest,
             m.SocietyRequest,
+            m.SocietyShowreel,
             m.Society,
             m.UserRequest,
             m.AwardStudent,
@@ -25,7 +28,20 @@ class Command(BaseCommand):
             m.User,
             m.Student,
             m.Admin,
+            m.SocietyShowreel,
+            m.SocietyShowreelRequest,
         ]
+
+        images = list(m.SocietyShowreel.objects.values_list('photo', flat=True))
+        images.extend(list(m.SocietyShowreelRequest.objects.values_list('photo', flat=True)))
+        images.extend(list(m.Student.objects.values_list('icon', flat=True)))
+        images.extend(list(m.UserRequest.objects.values_list('icon', flat=True)))
+        images.extend(list(m.Society.objects.values_list('icon', flat=True)))
+        images.extend(list(m.SocietyRequest.objects.values_list('icon', flat=True)))
+
+        for image in images:
+            if image and default_storage.exists(image):
+                default_storage.delete(image)
 
         for model in models: # Iterate through and clear all models
             model.objects.all().delete()

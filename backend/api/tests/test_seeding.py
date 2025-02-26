@@ -15,11 +15,10 @@ from api.models import (
     AwardStudent,
 )
 from api.management.commands import seed
-
+from api.tests.file_deletion import delete_file
 
 class SeedingTestCase(TransactionTestCase):
     """Unit test for the seed Command"""
-
     def setUp(self):
         """
         This simulates the seeding process, ensuring the data is created as expected.

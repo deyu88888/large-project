@@ -2,6 +2,7 @@ from django.test import TestCase
 from rest_framework.test import APIClient
 from rest_framework import status
 from api.models import Student, Society, Admin
+from api.tests.file_deletion import delete_file
 from rest_framework_simplejwt.tokens import RefreshToken
 
 
@@ -108,3 +109,11 @@ class StudentSocietiesViewTestCase(TestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertIn("error", response.data)
         self.assertEqual(response.data["error"], "Society does not exist.")
+
+    def tearDown(self):
+        for society in Society.objects.all():
+            if society.icon:
+                delete_file(society.icon.path)
+        for student in Student.objects.all():
+            if student.icon:
+                delete_file(student.icon.path)

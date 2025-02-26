@@ -2,7 +2,7 @@ from django.test import TestCase
 from django.contrib.auth import get_user_model
 from api.models import Student, Society
 from api.serializers import StudentSerializer
-from rest_framework.exceptions import ValidationError
+from api.tests.file_deletion import delete_file
 
 User = get_user_model()
 
@@ -159,3 +159,12 @@ class StudentSerializerTestCase(TestCase):
         serializer = StudentSerializer(instance=self.student)
         data = serializer.data
         self.assertNotIn("password", data)
+
+
+    def tearDown(self):
+        for society in Society.objects.all():
+            if society.icon:
+                delete_file(society.icon.path)
+        for student in Student.objects.all():
+            if student.icon:
+                delete_file(student.icon.path)

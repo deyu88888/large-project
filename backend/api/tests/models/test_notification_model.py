@@ -1,7 +1,8 @@
 from django.core.exceptions import ValidationError
 from django.test import TestCase
-from api.models import Notification, Event, Society, Student
 from django.utils.timezone import now, timedelta
+from api.models import Notification, Event, Society, Student
+from api.tests.file_deletion import delete_file
 
 
 class NotificationModelTestCase(TestCase):
@@ -87,3 +88,11 @@ class NotificationModelTestCase(TestCase):
     def _assert_notification_is_invalid(self):
         with self.assertRaises(ValidationError):
             self.notification.full_clean()
+
+    def tearDown(self):
+        for society in Society.objects.all():
+            if society.icon:
+                delete_file(society.icon.path)
+        for student in Student.objects.all():
+            if student.icon:
+                delete_file(student.icon.path)
