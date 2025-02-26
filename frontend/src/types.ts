@@ -1,3 +1,4 @@
+
 export type Society = {
     id: number;
     name: string;
@@ -21,3 +22,24 @@ export type SocietyEvent = {        // avoid naming conflicts with JavaScript's 
     hostedBy: number;
     location: string;
   };
+
+export interface Report {
+    id: number;
+    from_student: string;
+    message: string;
+    created_at: string;
+}
+
+export interface Student {
+    id: number;
+    username: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    isActive: boolean;
+    role: string;
+    major: string;
+    societies: string[];
+    presidentOf: number[];
+    isPresident: boolean;
+  }

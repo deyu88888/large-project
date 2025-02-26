@@ -1,22 +1,20 @@
 import { useContext } from "react";
 import { Box, Typography, useTheme, Button } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
-import { apiClient, apiPaths } from "../../api";
 import { tokens } from "../../theme/theme";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { useSettingsStore } from "../../stores/settings-store";
-import { fetchPendingSocieties } from "./fetchPendingSocieties";
 import { useFetchWebSocket } from "../../hooks/useFetchWebSocket";
-
+import { updateRequestStatus } from "../../api/requestApi";
+import { apiPaths } from "../../api";
+import { fetchPendingRequests } from "./fetchPendingRequests";
 
 const PendingSocietyRequest = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
-
   const { searchTerm } = useContext(SearchContext);
   const { drawer } = useSettingsStore(); 
-  // const societies = useFetchPendingSocieties();
-  const societies = useFetchWebSocket(fetchPendingSocieties, 'society');
+  const societies = useFetchWebSocket(() => fetchPendingRequests(apiPaths.USER.PENDINGSOCIETYREQUEST), 'society');
 
 
   const filteredSocieties = Array.isArray(societies) 
@@ -34,20 +32,11 @@ const PendingSocietyRequest = () => {
     }))
   : [];
 
-
-  const handleAccept = async (id: number) => {    // refactor to combine with handleReject
+  const handleStatusChange = async (id: number, status: "Approved" | "Rejected") => {
     try {
-      await apiClient.put(`${apiPaths.USER.PENDINGSOCIETYREQUEST}/${id}`, { status: "Approved" });
+      await updateRequestStatus(id, status, apiPaths.USER.PENDINGSOCIETYREQUEST);
     } catch (error) {
-      console.error("Error accepting society:", error);
-    }
-  };
-
-  const handleReject = async (id: number) => {
-    try {
-      await apiClient.put(`${apiPaths.USER.PENDINGSOCIETYREQUEST}/${id}`, { status: "Rejected" });
-    } catch (error) {
-      console.error("Error rejecting society:", error);
+      alert(`Failed to ${status.toLowerCase()} society request.`);
     }
   };
 
@@ -72,12 +61,12 @@ const PendingSocietyRequest = () => {
           <Button
             variant="contained"
             color="success"
-            onClick={() => handleAccept(params.row.id)}
+            onClick={() => handleStatusChange(params.row.id, "Approved")}
             sx={{ marginRight: 1 }}
           >
             Accept
           </Button>
-          <Button variant="contained" color="error" onClick={() => handleReject(params.row.id)}>
+          <Button variant="contained" color="error" onClick={() => handleStatusChange(params.row.id, "Rejected")}>
             Reject
           </Button>
         </>

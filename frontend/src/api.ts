@@ -33,13 +33,15 @@ export const apiPaths = {
     REGISTER: "/api/user/register",   // TODO: DONT ADD BACKSLASH
     REFRESH: "/api/user/token/refresh", // TODO: DONT ADD BACKSLASH
     CURRENT: "/api/user/current", // TODO: DONT ADD BACKSLASH
-    SOCIETY: "/api/admin-panel/society",  // TODO: DONT ADD BACKSLASH
-    REJECTEDSOCIETY: "/api/admin-panel/rejected-society", // TODO: DONT ADD BACKSLASH
+    SOCIETY: "/api/society/request/approved",  // TODO: DONT ADD BACKSLASH
+    REJECTEDSOCIETY: "/api/society/request/rejected", // TODO: DONT ADD BACKSLASH
     STUDENTS: "/api/user/student",  // TODO: DONT ADD BACKSLASH
     ADMIN: "/api/user/admin", // TODO: DONT ADD BACKSLASH
     PENDINGSOCIETYREQUEST: "/api/society/request/pending",  // TODO: DONT ADD BACKSLASH
     PROFILE: "/api/user/profile", // TODO: DONT ADD BACKSLASH
     REPORT: "/api/report-to-admin", // TODO: DONT ADD BACKSLASH
+    PENDINGEVENTREQUEST: "/api/event/request/pending",  // TODO: DONT ADD BACKSLASH
+    REJECTEDEVENT: "/api/admin-panel/rejected-event", // TODO: DONT ADD BACKSLASH
   },
   SOCIETY: {
     POPULAR_SOCIETIES: "/api/popular-societies",  // TODO: DONT ADD BACKSLASH

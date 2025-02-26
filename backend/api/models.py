@@ -347,7 +347,7 @@ class Request(models.Model):
         blank=False,
         null=False,
     )
-
+    
     class Meta:
         abstract = True
 
@@ -433,6 +433,7 @@ class EventRequest(Request):
     start_time = models.TimeField(blank=True, null=True)
     duration = models.DurationField(blank=True, null=True)
 
+
 class AdminReportRequest(Request):
     """
     Reports submitted to the admin by students or society presidents.
@@ -449,6 +450,7 @@ class AdminReportRequest(Request):
     report_type = models.CharField(max_length=20, choices=REPORT_TYPES)
     subject = models.CharField(max_length=100, blank=False)
     details = models.TextField(blank=False)
+    date_time = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.get_report_type_display()} - {self.subject} (From {self.from_student.username})"
@@ -503,6 +505,8 @@ class SiteSettings(models.Model):
         """
         obj, created = cls.objects.get_or_create(pk=cls.singleton_instance_id)
         return obj
+
+
 class Award(models.Model):
     """
     Awards to be granted to students
@@ -535,6 +539,7 @@ class Award(models.Model):
 
     def __str__(self):
         return f"{self.title}, {self.rank}"
+
 
 class AwardStudent(models.Model):
     """

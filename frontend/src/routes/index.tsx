@@ -82,6 +82,10 @@ const routes = [
             element: <AdminDashboardPage />,
           },
           {
+            path: "profile",
+            element: <ProfilePage />,
+          },
+          {
             path: "event-list",
             element: <EventListPage />,
           },
@@ -100,10 +104,6 @@ const routes = [
           {
             path: "student-list",
             element: <StudentListPage />,
-          },
-          {
-            path: "profile",
-            element: <ProfilePage />,
           },
           {
             path: "create-admin",
@@ -140,6 +140,10 @@ const routes = [
           {
             index: true,
             element: <StudentDashboard />,
+          },
+          {
+            path: "profile",
+            element: <ProfilePage />,
           },
           {
             path: "my-societies",

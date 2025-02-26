@@ -23,7 +23,7 @@ import {
 import { apiClient } from "../api";
 import { useAuthStore } from "../stores/auth-store";
 
-// TIP: (suggestion) use type instead of interface, advantage is that it could be extend later without modifying the original type
+// TIP: (suggestion) use type instead of interface, advantage is that it could be extended later without modifying the original type
 // TIP: (suggestion) move the types/interfaces into type.ts file for better organization
 
 

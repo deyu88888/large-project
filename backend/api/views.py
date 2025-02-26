@@ -1,4 +1,5 @@
-from datetime import timezone
+# from datetime import timezone // incorrect import
+from django.utils import timezone
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from django.db.models import Count, Sum
@@ -12,7 +13,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from api.models import Admin, Event, Notification, Society, Student, User,Award, AwardStudent, UserRequest
+from api.models import Admin, AdminReportRequest, Event, Notification, Society, Student, User,Award, AwardStudent, UserRequest
 from api.serializers import (
     AdminReportRequestSerializer,
     AdminSerializer,
@@ -375,11 +376,11 @@ class StartSocietyRequestView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class SocietyRequestView(APIView):
+class SocietyRequestView(APIView):      
     """
     GET request to get all the society requests that are pending in status for admins.
     """
-    def get(self, request):
+    def get(self, request, society_status):
         user = request.user
 
         # Ensure the user is an admin
@@ -390,7 +391,9 @@ class SocietyRequestView(APIView):
             )
        
         # Fetch the society requests
-        pending_societies = Society.objects.filter(status='Pending')
+        # TODO: add sort by time, by adding a new field in the model
+        society_status = society_status.capitalize()
+        pending_societies = Society.objects.filter(status=society_status)
         serializer = SocietySerializer(pending_societies, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -399,7 +402,7 @@ class SocietyRequestView(APIView):
         PUT request to update the status of the society request from pending to approved or rejected for admins.
         """
         user = request.user
-
+        print("society_id", society_id, type(society_id))
         # Ensure the user is an admin
         if not hasattr(user, "admin"):
             return Response(
@@ -409,6 +412,7 @@ class SocietyRequestView(APIView):
 
         # Fetch the society request using manual lookup
         society = Society.objects.filter(id=society_id).first()
+        print("society xxx ", society)
         if not society:
             return Response(
                 {"error": "Society request not found."},
@@ -420,47 +424,20 @@ class SocietyRequestView(APIView):
         if serializer.is_valid():
             serializer.save()
 
-            # # Notify WebSocket clients about the update       
+            # # Notify WebSocket clients about the update
             channel_layer = get_channel_layer()
-            # async_to_sync(channel_layer.group_send)(
-            #     "society_requests",
-            #     {
-            #         "type": "send_pending_requests",
-            #         "message": "Society request updated successfully.",
-            #         "data": serializer.data,
-            #     }
-            # )
+
 
             # If society was approved, notify the society view WebSocket clients
-            if serializer.validated_data.get("status") == "Approved":
+            society_status = serializer.validated_data.get("status")
+            if society_status in ["Approved", "Rejected", "Pending"]:
                 async_to_sync(channel_layer.group_send)(
                     "society_updates",
                     {
                         "type": "society_list_update",
-                        "message": "A new society has been approved.",
+                        "message": f"A new society has been {society_status}.",
                         "data": serializer.data,
-                        "status": "Approved"
-                    }
-                )
-            elif serializer.validated_data.get("status") == "Rejected":
-                async_to_sync(channel_layer.group_send)(
-                    "society_updates",
-                    {
-                        "type": "society_list_update",
-                        "message": "A society request has been rejected.",
-                        "data": serializer.data,
-                        "status": "Rejected"
-                    }
-                )
-            
-            elif serializer.validated_data.get("status") == "Pending":
-                async_to_sync(channel_layer.group_send)(
-                    "society_updates",
-                    {
-                        "type": "society_list_update",
-                        "message": "A society request has been updated.",
-                        "data": serializer.data,
-                        "status": "Pending"
+                        "status": society_status,
                     }
                 )
 
@@ -469,47 +446,6 @@ class SocietyRequestView(APIView):
                 status=status.HTTP_200_OK
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class RejectedSocietyRequestView(APIView):      #TODO: societyRequestView works the same as this, remove after
-    """
-    get request to get all the societies that's rejected
-    """ 
-    def get(self, request):
-        user = request.user
-
-        # Ensure the user is a admin
-        if not hasattr(user, "admin"):
-            return Response({"error": "Only admins can view society requests."}, status=status.HTTP_403_FORBIDDEN)
-
-        # Fetch the society requests
-        requests = Society.objects.filter(status='Rejected')
-        serializer = SocietySerializer(requests, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-
-    def put(self, request, society_id):
-        """
-        PUT request to update the status of the society request from pending to approved or rejected for admins
-        """
-        user = request.user
-
-        # Ensure the user is a admin
-        if not hasattr(user, "admin"):
-            return Response({"error": "Only admins can approve or reject society requests."}, status=status.HTTP_403_FORBIDDEN)
-
-        # Fetch the society request
-        society = Society.objects.filter(id=society_id).first()
-        if not society:
-            return Response({"error": "Society request not found."}, status=status.HTTP_404_NOT_FOUND)
-
-        # Update the society request status
-        serializer = SocietySerializer(society, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({"message": "Society request updated successfully.", "data": serializer.data}, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 class ManageSocietyDetailsView(APIView):
     """
@@ -636,9 +572,8 @@ class EventListView(APIView):
 
         serializer = EventSerializer(events, many=True)
         return Response(serializer.data)
-    
-    # 
-    
+  
+
 class PendingMembersView(APIView):
     """
     API View for Society Presidents to manage pending membership requests.
@@ -768,8 +703,8 @@ class AdminView(APIView):
     admin view for admins to view all admins
     """
     permission_classes = [IsAuthenticated]
-    queryset = Admin.objects.all()
-    serializer_class = AdminSerializer
+    # queryset = Admin.objects.all()      # redundant code, remove later 
+    # serializer_class = AdminSerializer      # redundant code, remove later
 
     def get(self, request) -> Response:
         """
@@ -777,7 +712,7 @@ class AdminView(APIView):
         """
         admin = Admin.objects.all()
         serializer = AdminSerializer(admin, many=True)  # serializer ensures its a admin object
-        return Response(serializer.data, status=status.HTTP_200_OK) 
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
         """
@@ -790,22 +725,22 @@ class AdminView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class SocietyView(APIView):
-    """
-    society view for admins to view all societies
-    """
-    permission_classes = [IsAuthenticated]
+# class SocietyView(APIView):   removed with refactoring
+#     """
+#     society view for admins to view all societies
+#     """
+#     permission_classes = [IsAuthenticated]
 
-    def get(self, request) -> Response:
-        """
-        get the list of approved societies for the admin.
-        """
-        # filter the societies that are approved
-        society = Society.objects.filter(status='Approved')
-        # society = Society.objects.all()
-        serializer = SocietySerializer(society, many=True)
-        print("serializer data: ", serializer.data)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+#     def get(self, request) -> Response:
+#         """
+#         get the list of approved societies for the admin.
+#         """
+#         # filter the societies that are approved
+#         society = Society.objects.filter(status='Approved')
+#         # society = Society.objects.all()
+#         serializer = SocietySerializer(society, many=True)
+#         print("serializer data: ", serializer.data)
+#         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class StudentView(APIView):
@@ -929,6 +864,7 @@ def get_sorted_events(request):
     serializer = EventSerializer(events, many=True)
     return Response(serializer.data)
 
+
 class AwardView(APIView):
     """Handles listing, creating, retrieving, updating, and deleting awards"""
     permission_classes = [IsAuthenticated]
@@ -1030,6 +966,7 @@ class AwardStudentView(APIView):
         award_student.delete()
         return Response({"message": "Award assignment deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
 
+
 class AdminReportView(APIView):
     """
     API view for students and society presidents to submit reports to admins.
@@ -1042,3 +979,9 @@ class AdminReportView(APIView):
             serializer.save(from_student=request.user.student)  #  Auto-assign the reporter
             return Response({"message": "Report submitted successfully."}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def get(self, request):
+        reports = AdminReportRequest.objects.all().order_by("-date_time")
+
+        serializer = AdminReportRequestSerializer(reports, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

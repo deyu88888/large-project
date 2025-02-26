@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   Box,
@@ -15,10 +15,11 @@ import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import PersonOutlinedIcon from "@mui/icons-material/PersonOutlined";
 import { useSettingsStore } from "../stores/settings-store";
 import { SearchContext } from "./layout/SearchContext";
+import MenuIcon from "@mui/icons-material/Menu";
 
-// Import separate drawer components
 import AdminDrawer from "./layout/AdminDrawer";
 import StudentDrawer from "./layout/StudentDrawer";
+import { CustomAppBar } from "./layout/drawer/CustomDrawer";
 
 interface LayoutProps {}
 
@@ -40,56 +41,81 @@ const Layout: React.FC<LayoutProps> = () => {
   const currentDrawerWidth = drawer ? drawerOpenWidth : drawerClosedWidth;
 
   return (
-    <Box sx={{ display: "flex" }}>
-      {/* Topbar without the drawer toggle */}
-      <Box
-        component="header"
-        sx={{
-          position: "fixed",
-          width: `calc(100% - ${currentDrawerWidth}px)`,
-          ml: `${currentDrawerWidth}px`,
-          zIndex: 1100,
-          transition: theme.transitions.create(["width", "margin"], {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.enteringScreen,
-          }),
-          backgroundColor: "transparent",
-        }}
-      >
-        <Toolbar>
-          {/* Removed extra toggle button from here */}
-          <Box display="flex" borderRadius="3px">
-            <InputBase
-              sx={{ ml: 2, flex: 1 }}
-              placeholder="Search"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <IconButton type="button" sx={{ p: 1 }}>
-              <SearchIcon />
+      <Box sx={{ display: "flex" }}>
+        <CustomAppBar
+          position="fixed"
+          open={drawer}
+          elevation={0}
+          sx={{
+            backgroundColor: "transparent",
+          }}
+        >
+          <Toolbar>
+            <IconButton
+              color="inherit"
+              aria-label="open drawer"
+              onClick={() => toggleDrawer()}
+              edge="start"
+              sx={[
+                {
+                  marginRight: 5,
+                },
+                drawer && { display: "none" },
+              ]}
+            >
+              <MenuIcon
+                sx={{
+                  color: theme.palette.text.primary,
+                }}
+              />
             </IconButton>
-          </Box>
-          <Box display="flex" marginLeft="auto">
-            <IconButton onClick={() => toggleThemeMode()}>
-              {theme.palette.mode === "dark" ? (
-                <DarkModeOutlinedIcon />
-              ) : (
-                <LightModeOutlinedIcon />
-              )}
-            </IconButton>
-            <IconButton>
-              <NotificationsOutlinedIcon />
-            </IconButton>
-            <IconButton>
-              <SettingsOutlinedIcon />
-            </IconButton>
-            {/* Profile Icon navigates to the profile page */}
-            <IconButton onClick={() => navigate("/logout/profile")}>
-              <PersonOutlinedIcon />
-            </IconButton>
-          </Box>
-        </Toolbar>
-      </Box>
+            <Box display="flex" borderRadius="3px">
+              <InputBase
+                sx={{ ml: 2, flex: 1 }}
+                placeholder="Search"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            
+              <IconButton type="button" sx={{ p: 1 }}>
+                <SearchIcon />
+              </IconButton>
+            </Box>
+            <Box display="flex" marginLeft={"auto"}>
+              <IconButton
+                onClick={() => {
+                  console.log("changing theme");
+                  toggleThemeMode();
+                }}
+              >
+                {theme.palette.mode === "dark" ? (
+                  <DarkModeOutlinedIcon />
+                ) : (
+                  <LightModeOutlinedIcon />
+                )}
+              </IconButton>
+              <IconButton>
+                <NotificationsOutlinedIcon />
+              </IconButton>
+              <IconButton>
+                <SettingsOutlinedIcon />
+              </IconButton>
+              <IconButton
+                onClick={() => {
+                  if (location.pathname.startsWith("/admin")) {
+                    navigate("/admin/profile");
+                  } else if (location.pathname.startsWith("/student")) {
+                    navigate("/student/profile");
+                  } else {
+                    navigate("/profile");
+                  }
+                }}
+              >
+                <PersonOutlinedIcon />
+              </IconButton>
+            </Box>
+          </Toolbar>
+        </CustomAppBar>
 
       {/* Drawer */}
       <DrawerComponent drawer={drawer} toggleDrawer={toggleDrawer} location={location} />
