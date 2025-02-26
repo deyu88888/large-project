@@ -1,3 +1,6 @@
+// TODO: not giving the 'correct' error message to the user, make it dynamic, 
+// should tell the user what type of error they're facing. i.e. missing special character in password
+
 import { Box, Button, TextField } from "@mui/material";
 import { Formik } from "formik";
 import * as yup from "yup";

@@ -78,11 +78,11 @@ class StudentSocietiesViewTestCase(TestCase):
         response = self.client.get("/api/student-societies/")
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-    def test_get_societies_non_student(self):
+    def test_get_societies_non_student(self):   
         """Test retrieving societies for a non-student user."""
         self.client.credentials(HTTP_AUTHORIZATION=self._generate_token(self.admin))
         response = self.client.get("/api/student-societies/")
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)   
         self.assertEqual(response.data["error"], "Only students can manage societies.")
 
     def test_leave_society_valid(self):

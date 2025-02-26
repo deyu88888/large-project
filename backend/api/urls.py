@@ -3,8 +3,8 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from .views import (
     AdminReportView, AwardStudentView, AwardView, EventListView, EventRequestView, PendingMembersView, RegisterView, CurrentUserView,
     StudentNotificationsView, StartSocietyRequestView, ManageSocietyDetailsView,
-    AdminView, StudentView, SocietyView, EventView,
-    RejectedSocietyRequestView, SocietyRequestView, DashboardStatsView,
+    AdminView, StudentView, EventView,
+    SocietyRequestView, DashboardStatsView,
     RecentActivitiesView, NotificationsView, EventCalendarView,
     StudentSocietiesView, JoinSocietyView, RSVPEventView, EventHistoryView,
     get_popular_societies, get_sorted_events, CreateEventRequestView, 
@@ -18,7 +18,8 @@ urlpatterns = [
     path("user/current", CurrentUserView.as_view(), name="current_user"),
 
     # Notification endpoints
-    path("notifications", StudentNotificationsView.as_view(), name="student_notifications"),
+    # trailing backshlash needed in this case, because of the following line
+    path("notifications/", StudentNotificationsView.as_view(), name="student_notifications"), # trailing backshlash needed 
     path("notifications/<int:pk>", StudentNotificationsView.as_view(), name="mark_notification_read"),
 
     # Society creation/management endpoints
@@ -36,17 +37,17 @@ urlpatterns = [
     path('join-society', JoinSocietyView.as_view(), name='join_society'),
 
     # Event endpoints
-    path("events/rsvp", RSVPEventView.as_view(), name="rsvp_event"),
+    path("events/rsvp/", RSVPEventView.as_view(), name="rsvp_event"), # TODO: trailing backshlash needed, do not remove
     path("events/history", EventHistoryView.as_view(), name="event_history"),
     #path("events/", get_sorted_events, name="sorted_events"),
 
     # Admin panel endpoints
-    path("admin-panel/society", SocietyView.as_view(), name="admin"),
+    # path("admin-panel/society", SocietyView.as_view(), name="admin"),
     path("society/event/<str:event_status>", EventView.as_view(), name="event"),
     path("society/event/request/<int:event_id>", EventRequestView.as_view(), name="request_event"),
     # path("societyrejected-event", EventView.as_view(), name="event"), // not used, remove after
-    path("admin-panel/rejected-society", RejectedSocietyRequestView.as_view(), name="rejected_society"),
-    path("society/request/pending", SocietyRequestView.as_view(), name="request_society"),
+    # path("admin-panel/rejected-society", RejectedSocietyRequestView.as_view(), name="rejected_society"),  # refactored
+    path("society/request/<str:society_status>", SocietyRequestView.as_view(), name="request_society"),
     path("society/request/pending/<int:society_id>", SocietyRequestView.as_view(), name="request_society"),
 
     # Student societies endpoints

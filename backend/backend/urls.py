@@ -13,8 +13,8 @@ from api.views import (
 def welcome_view(request):
     return HttpResponse("Welcome to the API!")
 
-urlpatterns = [
-    path("", welcome_view, name="welcome"),
+urlpatterns = [     # TODO: this project only contain api app, so, only keep the last line, move all the rest into the api url
+    # TODO: the main project (backend) url should only direct to respective app urls
     path("admin/", admin.site.urls),
     # Current user endpoint
     path("api/user/current/", CurrentUserView.as_view(), name="get_current_user"),

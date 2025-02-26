@@ -5,20 +5,21 @@ import { apiClient, apiPaths } from "../../api";
 import { tokens } from "../../theme/theme";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { useSettingsStore } from "../../stores/settings-store";
+import { Student } from "../../types.ts"
 
-interface Student {
-  id: number;
-  username: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  isActive: boolean;
-  role: string;
-  major: string;
-  societies: string[];
-  presidentOf: number[];
-  isPresident: boolean;
-}
+// interface Student {
+//   id: number;
+//   username: string;
+//   firstName: string;
+//   lastName: string;
+//   email: string;
+//   isActive: boolean;
+//   role: string;
+//   major: string;
+//   societies: string[];
+//   presidentOf: number[];
+//   isPresident: boolean;
+// }
 
 const StudentList: React.FC = () => {
   const theme = useTheme();

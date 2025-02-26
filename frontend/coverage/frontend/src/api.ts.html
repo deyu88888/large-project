@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">60% </span>
+                <span class="strong">66.66% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>36/60</span>
+                <span class='fraction'>48/72</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">50% </span>
+                <span class="strong">33.33% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>1/2</span>
+                <span class='fraction'>1/3</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/2</span>
+                <span class='fraction'>0/3</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">60% </span>
+                <span class="strong">66.66% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>36/60</span>
+                <span class='fraction'>48/72</span>
             </div>
         
             
@@ -133,7 +133,19 @@
 <a name='L68'></a><a href='#L68'>68</a>
 <a name='L69'></a><a href='#L69'>69</a>
 <a name='L70'></a><a href='#L70'>70</a>
-<a name='L71'></a><a href='#L71'>71</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<a name='L71'></a><a href='#L71'>71</a>
+<a name='L72'></a><a href='#L72'>72</a>
+<a name='L73'></a><a href='#L73'>73</a>
+<a name='L74'></a><a href='#L74'>74</a>
+<a name='L75'></a><a href='#L75'>75</a>
+<a name='L76'></a><a href='#L76'>76</a>
+<a name='L77'></a><a href='#L77'>77</a>
+<a name='L78'></a><a href='#L78'>78</a>
+<a name='L79'></a><a href='#L79'>79</a>
+<a name='L80'></a><a href='#L80'>80</a>
+<a name='L81'></a><a href='#L81'>81</a>
+<a name='L82'></a><a href='#L82'>82</a>
+<a name='L83'></a><a href='#L83'>83</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -148,6 +160,9 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
@@ -159,6 +174,15 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
@@ -206,10 +230,10 @@
 <span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import axios from "axios";
 import { ACCESS_TOKEN } from "./constants";
 &nbsp;
-// ✅ Define base API URL properly
-const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/";
+// Define base API URL properly
+const apiUrl = import.meta.env.<span class="branch-0 cbranch-no" title="branch not covered" >VITE_API_BASE_URL || "http://localhost:8000";</span>
 &nbsp;
-// ✅ Axios instance
+// Axios instance
 export const apiClient = axios.create({
   baseURL: apiUrl,
   headers: {
@@ -217,10 +241,13 @@ export const apiClient = axios.create({
   },
 });
 &nbsp;
-// ✅ Attach Authorization token for every request (only if it exists)
+// Attach Authorization token for every request (only if it exists)
 apiClient.interceptors.request.use(
   (config) =&gt; {
     const token = localStorage.getItem(ACCESS_TOKEN);
+    console.log("Request URL:", config.url);
+    console.log("Full URL:", apiUrl + config.url);
+    console.log("Authorization Token:", token);
     if (token) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
 <span class="cstat-no" title="statement not covered" >      config.headers.Authorization = `Bearer ${token}`;</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
@@ -231,44 +258,53 @@ apiClient.interceptors.request.use(
 &nbsp;
 export const apiPaths = {
   USER: {
-    LOGIN: "/api/user/login",
-    REGISTER: "/api/user/register",
-    REFRESH: "/api/user/token/refresh",
-    CURRENT: "/api/user/current",
-    EVENTS: "api/society/event",
-    SOCIETY: "api/admin-panel/society",
-    REJECTEDSOCIETY: "api/admin-panel/rejected-society",
-    STUDENTS: "api/user/student",
-    ADMIN: "api/user/admin",
-    PENDINGSOCIETYREQUEST: "api/society/request/pending",
-    PENDINGEVENTREQUEST: "api/event/request/pending",
-    PROFILE: "api/user/profile",
-    REJECTEDEVENT: "api/admin-panel/rejected-event",
+    LOGIN: "/api/user/login",  // TODO: DONT ADD BACKSLASH
+    REGISTER: "/api/user/register",   // TODO: DONT ADD BACKSLASH
+    REFRESH: "/api/user/token/refresh", // TODO: DONT ADD BACKSLASH
+    CURRENT: "/api/user/current", // TODO: DONT ADD BACKSLASH
+    SOCIETY: "/api/society/request/approved",  // TODO: DONT ADD BACKSLASH
+    REJECTEDSOCIETY: "/api/society/request/rejected", // TODO: DONT ADD BACKSLASH
+    STUDENTS: "/api/user/student",  // TODO: DONT ADD BACKSLASH
+    ADMIN: "/api/user/admin", // TODO: DONT ADD BACKSLASH
+    PENDINGSOCIETYREQUEST: "/api/society/request/pending",  // TODO: DONT ADD BACKSLASH
+    PROFILE: "/api/user/profile", // TODO: DONT ADD BACKSLASH
+    REPORT: "/api/report-to-admin", // TODO: DONT ADD BACKSLASH
+  },
+  SOCIETY: {
+    POPULAR_SOCIETIES: "/api/popular-societies",  // TODO: DONT ADD BACKSLASH
+    MANAGE_DETAILS: <span class="fstat-no" title="function not covered" >(id: number) =&gt; `/api/manage-society-details/${id}`,  // TODO: DONT ADD BACKSLASH</span>
+  },
+  EVENTS: {
+    ALL: "api/events", // TODO: DONT ADD BACKSLASH
+    PENDINGEVENTREQUEST: "api/society/event/pending",  // TODO: DONT ADD BACKSLASH
+    UPDATEENEVENTREQUEST: "api/society/event/request",  // TODO: DONT ADD BACKSLASH
+    APPROVEDEVENTLIST: "api/society/event/approved", // TODO: DONT ADD BACKSLASH
+    REJECTEDEVENTLIST: "api/society/event/rejected", // TODO: DONT ADD BACKSLASH
   },
 };
 &nbsp;
-// ✅ Fetch Most Popular Societies
+// Fetch Most Popular Societies
 export const getPopularSocieties = <span class="fstat-no" title="function not covered" >async () =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >  try {</span>
 <span class="cstat-no" title="statement not covered" >    const response = await apiClient.get(apiPaths.SOCIETY.POPULAR_SOCIETIES);</span>
 <span class="cstat-no" title="statement not covered" >    return response.data;</span>
 <span class="cstat-no" title="statement not covered" >  } catch (error: any) {</span>
 <span class="cstat-no" title="statement not covered" >    console.error(</span>
-<span class="cstat-no" title="statement not covered" >      "❌ Error fetching popular societies:",</span>
+<span class="cstat-no" title="statement not covered" >      "Error fetching popular societies:",</span>
 <span class="cstat-no" title="statement not covered" >      error.response?.data || error.message</span>
 <span class="cstat-no" title="statement not covered" >    );</span>
 <span class="cstat-no" title="statement not covered" >    throw error;</span>
 <span class="cstat-no" title="statement not covered" >  }</span>
 <span class="cstat-no" title="statement not covered" >};</span>
 &nbsp;
-// ✅ Fetch All Events (Public Access)
+// Fetch All Events (Public Access)
 export const getAllEvents = <span class="fstat-no" title="function not covered" >async () =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >  try {</span>
 <span class="cstat-no" title="statement not covered" >    const response = await apiClient.get(apiPaths.EVENTS.ALL);</span>
 <span class="cstat-no" title="statement not covered" >    return response.data;</span>
 <span class="cstat-no" title="statement not covered" >  } catch (error: any) {</span>
 <span class="cstat-no" title="statement not covered" >    console.error(</span>
-<span class="cstat-no" title="statement not covered" >      "❌ Error fetching events:",</span>
+<span class="cstat-no" title="statement not covered" >      "Error fetching events:",</span>
 <span class="cstat-no" title="statement not covered" >      error.response?.data || error.message</span>
 <span class="cstat-no" title="statement not covered" >    );</span>
 <span class="cstat-no" title="statement not covered" >    throw error;</span>
@@ -280,7 +316,7 @@ export const getAllEvents = <span class="fstat-no" title="function not covered" 
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-02-15T13:50:12.629Z
+                at 2025-02-26T20:35:24.405Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
