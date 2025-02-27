@@ -1,38 +1,50 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { apiClient } from "../api";
-import { useTheme } from "@mui/material/styles";
-import { tokens } from "../styles/theme";
-// Removed: import { useSidebar } from "../components/layout/SidebarContext";
+import { apiClient } from "../../api";
 
-const ViewEvents: React.FC = () => {
+// Import the theme
+import { useTheme } from "@mui/material/styles";
+import { tokens } from "../../styles/theme";
+
+const JoinSocieties: React.FC = () => {
   const navigate = useNavigate();
   const theme = useTheme();
   const colours = tokens(theme.palette.mode);
   const isLight = theme.palette.mode === "light";
 
-  const [events, setEvents] = useState<any[]>([]);
+  const [societies, setSocieties] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchEvents = async () => {
+    const fetchAvailableSocieties = async () => {
       try {
         setLoading(true);
-        const response = await apiClient.get("/api/events/rsvp");
-        setEvents(response.data || []);
+        const response = await apiClient.get("/api/join-society/");
+        setSocieties(response.data);
       } catch (error) {
-        console.error("Error fetching events:", error);
+        console.error("Error fetching societies:", error);
       } finally {
         setLoading(false);
       }
     };
-    fetchEvents();
+    fetchAvailableSocieties();
   }, []);
+
+  const handleJoinSociety = async (societyId: number) => {
+    try {
+      await apiClient.post(`/api/join-society/${societyId}/`);
+      alert("Successfully joined the society!");
+      setSocieties((prev) => prev.filter((society) => society.id !== societyId));
+    } catch (error) {
+      console.error("Error joining society:", error);
+      alert("Failed to join the society. Please try again.");
+    }
+  };
 
   return (
     <div
       style={{
-        marginLeft: "0px", // Removed sidebarWidth dependency; set to "0px"
+        marginLeft: "0px",
         marginTop: "0px",
         transition: "margin-left 0.3s ease-in-out",
         minHeight: "100vh",
@@ -56,7 +68,7 @@ const ViewEvents: React.FC = () => {
               marginBottom: "0.5rem",
             }}
           >
-            All Events
+            Join a Society
           </h1>
           <p
             style={{
@@ -65,7 +77,7 @@ const ViewEvents: React.FC = () => {
               margin: 0,
             }}
           >
-            Check out all upcoming events here!
+            Discover new societies and connect with your peers!
           </p>
         </header>
 
@@ -77,19 +89,9 @@ const ViewEvents: React.FC = () => {
               fontSize: "1.125rem",
             }}
           >
-            Loading events...
+            Loading societies...
           </p>
-        ) : events.length === 0 ? (
-          <p
-            style={{
-              color: isLight ? colours.grey[600] : colours.grey[300],
-              textAlign: "center",
-              fontSize: "1.125rem",
-            }}
-          >
-            No upcoming events.
-          </p>
-        ) : (
+        ) : societies.length > 0 ? (
           <div
             style={{
               display: "grid",
@@ -98,9 +100,9 @@ const ViewEvents: React.FC = () => {
               padding: "1rem 0",
             }}
           >
-            {events.map((event) => (
+            {societies.map((society) => (
               <div
-                key={event.id}
+                key={society.id}
                 style={{
                   backgroundColor: isLight ? colours.primary[400] : colours.primary[400],
                   borderRadius: "12px",
@@ -110,7 +112,7 @@ const ViewEvents: React.FC = () => {
                   cursor: "pointer",
                 }}
               >
-                <h2
+                <h3
                   style={{
                     color: isLight ? colours.grey[100] : colours.grey[100],
                     fontSize: "1.25rem",
@@ -118,35 +120,49 @@ const ViewEvents: React.FC = () => {
                     marginBottom: "0.75rem",
                   }}
                 >
-                  {event.title}
-                </h2>
-                <div style={{ marginBottom: "0.5rem" }}>
-                  <span
-                    style={{
-                      color: isLight ? colours.grey[300] : colours.grey[300],
-                      fontSize: "0.875rem",
-                    }}
-                  >
-                    Date: {event.date}
-                  </span>
-                </div>
-                <div>
-                  <span
-                    style={{
-                      color: isLight ? colours.grey[300] : colours.grey[300],
-                      fontSize: "0.875rem",
-                    }}
-                  >
-                    Location: {event.location || "TBA"}
-                  </span>
-                </div>
+                  {society.name}
+                </h3>
+                <p
+                  style={{
+                    color: isLight ? colours.grey[300] : colours.grey[300],
+                    fontSize: "0.875rem",
+                    lineHeight: "1.5",
+                    marginBottom: "0.75rem",
+                  }}
+                >
+                  {society.description || "No description available."}
+                </p>
+                <button
+                  onClick={() => handleJoinSociety(society.id)}
+                  style={{
+                    backgroundColor: isLight ? colours.blueAccent[400] : colours.blueAccent[500],
+                    color: isLight ? "#ffffff" : colours.grey[100],
+                    padding: "0.5rem 1.5rem",
+                    borderRadius: "0.5rem",
+                    transition: "all 0.2s ease",
+                    border: "none",
+                    cursor: "pointer",
+                  }}
+                >
+                  Join Society
+                </button>
               </div>
             ))}
           </div>
+        ) : (
+          <p
+            style={{
+              color: isLight ? colours.grey[600] : colours.grey[300],
+              textAlign: "center",
+              fontSize: "1.125rem",
+            }}
+          >
+            No societies available to join.
+          </p>
         )}
       </div>
     </div>
   );
 };
 
-export default ViewEvents;
+export default JoinSocieties;

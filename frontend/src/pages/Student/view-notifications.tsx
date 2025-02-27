@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { apiClient } from "../api";
+import { apiClient } from "../../api";
 import { useTheme } from "@mui/material/styles";
-import { tokens } from "../styles/theme";
+import { tokens } from "../../styles/theme";
 
 const ViewNotifications: React.FC = () => {
   const theme = useTheme();

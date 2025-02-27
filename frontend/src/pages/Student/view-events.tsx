@@ -1,50 +1,38 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { apiClient } from "../api";
-
-// Import the theme
+import { apiClient } from "../../api";
 import { useTheme } from "@mui/material/styles";
-import { tokens } from "../styles/theme";
+import { tokens } from "../../styles/theme";
+// Removed: import { useSidebar } from "../components/layout/SidebarContext";
 
-const JoinSocieties: React.FC = () => {
+const ViewEvents: React.FC = () => {
   const navigate = useNavigate();
   const theme = useTheme();
   const colours = tokens(theme.palette.mode);
   const isLight = theme.palette.mode === "light";
 
-  const [societies, setSocieties] = useState<any[]>([]);
+  const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchAvailableSocieties = async () => {
+    const fetchEvents = async () => {
       try {
         setLoading(true);
-        const response = await apiClient.get("/api/join-society/");
-        setSocieties(response.data);
+        const response = await apiClient.get("/api/events/rsvp");
+        setEvents(response.data || []);
       } catch (error) {
-        console.error("Error fetching societies:", error);
+        console.error("Error fetching events:", error);
       } finally {
         setLoading(false);
       }
     };
-    fetchAvailableSocieties();
+    fetchEvents();
   }, []);
-
-  const handleJoinSociety = async (societyId: number) => {
-    try {
-      await apiClient.post(`/api/join-society/${societyId}/`);
-      alert("Successfully joined the society!");
-      setSocieties((prev) => prev.filter((society) => society.id !== societyId));
-    } catch (error) {
-      console.error("Error joining society:", error);
-      alert("Failed to join the society. Please try again.");
-    }
-  };
 
   return (
     <div
       style={{
-        marginLeft: "0px",
+        marginLeft: "0px", // Removed sidebarWidth dependency; set to "0px"
         marginTop: "0px",
         transition: "margin-left 0.3s ease-in-out",
         minHeight: "100vh",
@@ -68,7 +56,7 @@ const JoinSocieties: React.FC = () => {
               marginBottom: "0.5rem",
             }}
           >
-            Join a Society
+            All Events
           </h1>
           <p
             style={{
@@ -77,7 +65,7 @@ const JoinSocieties: React.FC = () => {
               margin: 0,
             }}
           >
-            Discover new societies and connect with your peers!
+            Check out all upcoming events here!
           </p>
         </header>
 
@@ -89,9 +77,19 @@ const JoinSocieties: React.FC = () => {
               fontSize: "1.125rem",
             }}
           >
-            Loading societies...
+            Loading events...
           </p>
-        ) : societies.length > 0 ? (
+        ) : events.length === 0 ? (
+          <p
+            style={{
+              color: isLight ? colours.grey[600] : colours.grey[300],
+              textAlign: "center",
+              fontSize: "1.125rem",
+            }}
+          >
+            No upcoming events.
+          </p>
+        ) : (
           <div
             style={{
               display: "grid",
@@ -100,9 +98,9 @@ const JoinSocieties: React.FC = () => {
               padding: "1rem 0",
             }}
           >
-            {societies.map((society) => (
+            {events.map((event) => (
               <div
-                key={society.id}
+                key={event.id}
                 style={{
                   backgroundColor: isLight ? colours.primary[400] : colours.primary[400],
                   borderRadius: "12px",
@@ -112,7 +110,7 @@ const JoinSocieties: React.FC = () => {
                   cursor: "pointer",
                 }}
               >
-                <h3
+                <h2
                   style={{
                     color: isLight ? colours.grey[100] : colours.grey[100],
                     fontSize: "1.25rem",
@@ -120,49 +118,35 @@ const JoinSocieties: React.FC = () => {
                     marginBottom: "0.75rem",
                   }}
                 >
-                  {society.name}
-                </h3>
-                <p
-                  style={{
-                    color: isLight ? colours.grey[300] : colours.grey[300],
-                    fontSize: "0.875rem",
-                    lineHeight: "1.5",
-                    marginBottom: "0.75rem",
-                  }}
-                >
-                  {society.description || "No description available."}
-                </p>
-                <button
-                  onClick={() => handleJoinSociety(society.id)}
-                  style={{
-                    backgroundColor: isLight ? colours.blueAccent[400] : colours.blueAccent[500],
-                    color: isLight ? "#ffffff" : colours.grey[100],
-                    padding: "0.5rem 1.5rem",
-                    borderRadius: "0.5rem",
-                    transition: "all 0.2s ease",
-                    border: "none",
-                    cursor: "pointer",
-                  }}
-                >
-                  Join Society
-                </button>
+                  {event.title}
+                </h2>
+                <div style={{ marginBottom: "0.5rem" }}>
+                  <span
+                    style={{
+                      color: isLight ? colours.grey[300] : colours.grey[300],
+                      fontSize: "0.875rem",
+                    }}
+                  >
+                    Date: {event.date}
+                  </span>
+                </div>
+                <div>
+                  <span
+                    style={{
+                      color: isLight ? colours.grey[300] : colours.grey[300],
+                      fontSize: "0.875rem",
+                    }}
+                  >
+                    Location: {event.location || "TBA"}
+                  </span>
+                </div>
               </div>
             ))}
           </div>
-        ) : (
-          <p
-            style={{
-              color: isLight ? colours.grey[600] : colours.grey[300],
-              textAlign: "center",
-              fontSize: "1.125rem",
-            }}
-          >
-            No societies available to join.
-          </p>
         )}
       </div>
     </div>
   );
 };
 
-export default JoinSocieties;
+export default ViewEvents;

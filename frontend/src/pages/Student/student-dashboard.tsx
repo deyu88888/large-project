@@ -10,7 +10,7 @@ import {
   Tab,
   CircularProgress,
 } from '@mui/material';
-import { tokens } from '../theme/theme';
+import { tokens } from '../../theme/theme';
 import {
   FaCalendarAlt,
   FaBell,
@@ -20,8 +20,8 @@ import {
   FaRegClock,
   FaTrophy,
 } from "react-icons/fa";
-import { apiClient } from "../api";
-import { useAuthStore } from "../stores/auth-store";
+import { apiClient } from "../../api";
+import { useAuthStore } from "../../stores/auth-store";
 
 // TIP: (suggestion) use type instead of interface, advantage is that it could be extended later without modifying the original type
 // TIP: (suggestion) move the types/interfaces into type.ts file for better organization

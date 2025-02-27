@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 // MUI/theme imports
 import { useTheme } from "@mui/material/styles";
-import { tokens } from "../styles/theme";
+import { tokens } from "../../styles/theme";
 
 const StartSociety: React.FC = () => {
   const navigate = useNavigate();
