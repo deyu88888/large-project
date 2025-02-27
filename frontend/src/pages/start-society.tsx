@@ -51,11 +51,10 @@ const StartSociety: React.FC = () => {
     navigate("/student-dashboard");
   };
 
-
   return (
     <div
       style={{
-        marginLeft: "0px", // Removed sidebarWidth dependency; set to "0px"
+        marginLeft: "0px",
         marginTop: "0px",
         transition: "margin-left 0.3s ease-in-out",
         minHeight: "100vh",
@@ -86,7 +85,14 @@ const StartSociety: React.FC = () => {
 
       <form
         onSubmit={handleSubmit}
-        className="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-md"
+        style={{
+          maxWidth: "640px",
+          margin: "0 auto",
+          backgroundColor: isLight ? "#fcfcfc" : "#141b2d",
+          padding: "2rem",
+          borderRadius: "8px",
+          boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+        }}
       >
         {error && (
           <p style={{ color: colours.redAccent[500], marginBottom: "1rem" }}>
@@ -99,10 +105,15 @@ const StartSociety: React.FC = () => {
           </p>
         )}
 
-        <div className="mb-6">
+        <div style={{ marginBottom: "1.5rem" }}>
           <label
             htmlFor="societyName"
-            className="block text-gray-700 font-medium mb-2"
+            style={{
+              display: "block",
+              color: isLight ? "#000" : "#fff",
+              fontWeight: 500,
+              marginBottom: "0.5rem",
+            }}
           >
             Society Name
           </label>
@@ -111,14 +122,29 @@ const StartSociety: React.FC = () => {
             id="societyName"
             value={societyName}
             onChange={(e) => setSocietyName(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
+            style={{
+              width: "100%",
+              padding: "0.5rem 1rem",
+              border: `1px solid ${colours.grey[300]}`,
+              borderRadius: "4px",
+              boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+              outline: "none",
+              fontSize: "1rem",
+              color: isLight ? "#000" : "#fff",
+              backgroundColor: isLight ? "#fcfcfc" : "#141b2d",
+            }}
           />
         </div>
 
-        <div className="mb-6">
+        <div style={{ marginBottom: "1.5rem" }}>
           <label
             htmlFor="description"
-            className="block text-gray-700 font-medium mb-2"
+            style={{
+              display: "block",
+              color: isLight ? "#000" : "#fff",
+              fontWeight: 500,
+              marginBottom: "0.5rem",
+            }}
           >
             Description
           </label>
@@ -127,21 +153,47 @@ const StartSociety: React.FC = () => {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={5}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
+            style={{
+              width: "100%",
+              padding: "0.5rem 1rem",
+              border: `1px solid ${colours.grey[300]}`,
+              borderRadius: "4px",
+              boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+              outline: "none",
+              fontSize: "1rem",
+              color: isLight ? "#000" : "#fff",
+              backgroundColor: isLight ? "#fcfcfc" : "#141b2d",
+            }}
           />
         </div>
 
-        <div className="flex justify-between items-center">
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <button
             type="submit"
-            className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-all"
+            style={{
+              backgroundColor: colours.blueAccent[500],
+              color: "#fff",
+              padding: "0.5rem 1.5rem",
+              borderRadius: "4px",
+              border: "none",
+              cursor: "pointer",
+              transition: "background-color 0.3s",
+            }}
           >
             Submit Request
           </button>
           <button
             type="button"
             onClick={handleBackToDashboard}
-            className="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400 transition-all"
+            style={{
+              backgroundColor: colours.grey[300],
+              color: colours.grey[700],
+              padding: "0.5rem 1.5rem",
+              borderRadius: "4px",
+              border: "none",
+              cursor: "pointer",
+              transition: "background-color 0.3s",
+            }}
           >
             Go Back
           </button>

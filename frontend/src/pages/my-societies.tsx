@@ -1,13 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { FaArrowLeft } from "react-icons/fa";
 import { apiClient } from "../api";
 import { useTheme } from "@mui/material/styles";
 import { tokens } from "../styles/theme";
-// Removed: import { useSidebar } from "../components/layout/SidebarContext";
 
 const MySocieties: React.FC = () => {
-  const navigate = useNavigate();
   const [societies, setSocieties] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const theme = useTheme();
@@ -21,7 +17,7 @@ const MySocieties: React.FC = () => {
   const fetchSocieties = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get("/api/student-societies/");
+      const response = await apiClient.get("/api/student-societies");
       setSocieties(response.data || []);
     } catch (error) {
       console.error("Error fetching societies:", error);
@@ -30,14 +26,10 @@ const MySocieties: React.FC = () => {
     }
   };
 
-  const handleBackToDashboard = () => {
-    navigate("/student-dashboard");
-  };
-
   return (
     <div
       style={{
-        marginLeft: "0px", // Removed sidebarWidth dependency; set to "0px"
+        marginLeft: "0px",
         marginTop: "0px",
         transition: "margin-left 0.3s ease-in-out",
         minHeight: "100vh",
@@ -50,30 +42,11 @@ const MySocieties: React.FC = () => {
         <header
           style={{
             display: "flex",
-            justifyContent: "space-between",
+            justifyContent: "center",
             alignItems: "center",
             marginBottom: "2rem",
           }}
         >
-          <button
-            onClick={handleBackToDashboard}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              color: isLight ? colours.blueAccent[400] : colours.blueAccent[500],
-              fontWeight: 500,
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              padding: "8px 12px",
-              borderRadius: "4px",
-              transition: "background-color 0.3s",
-            }}
-          >
-            <FaArrowLeft style={{ marginRight: "0.5rem" }} />
-            Back to Dashboard
-          </button>
-
           <h1
             style={{
               color: isLight ? colours.grey[100] : colours.grey[100],
@@ -120,10 +93,14 @@ const MySocieties: React.FC = () => {
               <div
                 key={society.id}
                 style={{
-                  backgroundColor: isLight ? colours.primary[400] : colours.primary[400],
+                  backgroundColor: isLight
+                    ? colours.primary[400]
+                    : colours.primary[400],
                   borderRadius: "12px",
                   padding: "1.5rem",
-                  border: `1px solid ${isLight ? colours.grey[300] : colours.grey[700]}`,
+                  border: `1px solid ${
+                    isLight ? colours.grey[300] : colours.grey[700]
+                  }`,
                   transition: "transform 0.3s, box-shadow 0.3s",
                 }}
               >
