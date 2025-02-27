@@ -84,6 +84,13 @@ const PresidentPage = () => {
         >
           Report to Admin
         </button>
+      {/* All Society Members */}
+      <button
+          onClick={() => navigate("view-society-members")}
+          className="bg-purple-500 text-white px-6 py-3 rounded hover:bg-purple-600 transition"
+        >
+          All Society Members
+        </button>
       </div>
 
       {/* Pending Members Preview */}

@@ -985,3 +985,12 @@ class AdminReportView(APIView):
 
         serializer = AdminReportRequestSerializer(reports, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+class SocietyMembersListView(APIView):
+    
+    def get(self, request, society_id):
+        
+        society = get_object_or_404(Society, pk=society_id)
+        members = society.society_members.all()
+        serializer = StudentSerializer(members, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

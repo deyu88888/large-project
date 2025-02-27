@@ -9,6 +9,7 @@ import CircularLoader from "../components/loading/circular-loader";
 import Layout from "../components/layout";
 import ViewSocietyEvents from "../pages/view-society-events";
 import PendingMembers from "../pages/pending-members";
+import GiveAwardPage from "../pages/give-award-page";
 
 // Lazy-loaded pages
 const LoginPage = lazy(() => import("../pages/login"));
@@ -25,6 +26,7 @@ const ManageSocietyDetails = lazy(() => import("../pages/manage-society-details"
 const ManageSocietyEvents = lazy(() => import("../pages/manage-society-events"));
 const CreateEventPage = lazy(() => import("../pages/create-society-event"));
 const ReportToAdmin = lazy(() => import("../pages/report-to-admin"));
+const ViewSocietyMembers = lazy(() => import("../pages/view-society-members"));
 
 
 // Admin pages
@@ -236,6 +238,22 @@ const routes = [
           element: (
             <Suspense fallback={<LoadingView />}>
               <ReportToAdmin />
+            </Suspense>
+          ),
+        },
+        {
+          path: "view-society-members",
+          element: (
+            <Suspense fallback={<LoadingView />}>
+              <ViewSocietyMembers />
+            </Suspense>
+          ),
+        },
+        {
+          path: "give-award-page/:student_id",
+          element: (
+            <Suspense fallback={<LoadingView />}>
+              <GiveAwardPage />
             </Suspense>
           ),
         },
