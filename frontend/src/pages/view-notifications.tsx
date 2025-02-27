@@ -1,12 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { apiClient } from "../api";
 import { useTheme } from "@mui/material/styles";
 import { tokens } from "../styles/theme";
-// Removed: import { useSidebar } from "../components/layout/SidebarContext";
 
 const ViewNotifications: React.FC = () => {
-  const navigate = useNavigate();
   const theme = useTheme();
   const colours = tokens(theme.palette.mode);
   const isLight = theme.palette.mode === "light";
@@ -24,7 +21,10 @@ const ViewNotifications: React.FC = () => {
       const response = await apiClient.get("/api/notifications");
       setNotifications(response.data || []);
     } catch (error: any) {
-      console.error("Error fetching notifications:", error.response?.data || error);
+      console.error(
+        "Error fetching notifications:",
+        error.response?.data || error
+      );
     } finally {
       setLoading(false);
     }
@@ -46,7 +46,7 @@ const ViewNotifications: React.FC = () => {
   return (
     <div
       style={{
-        marginLeft: "0px", // Removed sidebarWidth dependency; set to "0px"
+        marginLeft: "0px",
         marginTop: "0px",
         transition: "margin-left 0.3s ease-in-out",
         minHeight: "100vh",
@@ -169,33 +169,6 @@ const ViewNotifications: React.FC = () => {
             ))}
           </div>
         )}
-
-        <div
-          style={{
-            textAlign: "center",
-            marginTop: "2.5rem",
-            padding: "2rem 0",
-          }}
-        >
-          <button
-            onClick={() => navigate("/student-dashboard")}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              backgroundColor: isLight ? colours.blueAccent[400] : colours.blueAccent[500],
-              color: isLight ? "#ffffff" : colours.grey[100],
-              padding: "0.75rem 2rem",
-              borderRadius: "6px",
-              border: "none",
-              cursor: "pointer",
-              transition: "all 0.3s ease",
-              fontSize: "1rem",
-              fontWeight: 500,
-            }}
-          >
-            Go Back to Dashboard
-          </button>
-        </div>
       </div>
     </div>
   );

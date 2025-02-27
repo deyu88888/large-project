@@ -144,33 +144,6 @@ const ViewEvents: React.FC = () => {
             ))}
           </div>
         )}
-
-        <div
-          style={{
-            textAlign: "center",
-            marginTop: "2.5rem",
-            padding: "2rem 0",
-          }}
-        >
-          <button
-            onClick={() => navigate("/student-dashboard")}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              backgroundColor: isLight ? colours.blueAccent[400] : colours.blueAccent[500],
-              color: isLight ? "#ffffff" : colours.grey[100],
-              padding: "0.75rem 2rem",
-              borderRadius: "6px",
-              border: "none",
-              cursor: "pointer",
-              transition: "all 0.3s ease",
-              fontSize: "1rem",
-              fontWeight: 500,
-            }}
-          >
-            Go Back to Dashboard
-          </button>
-        </div>
       </div>
     </div>
   );

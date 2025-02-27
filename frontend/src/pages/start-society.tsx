@@ -47,10 +47,6 @@ const StartSociety: React.FC = () => {
     }
   };
 
-  const handleBackToDashboard = () => {
-    navigate("/student-dashboard");
-  };
-
   return (
     <div
       style={{
@@ -167,7 +163,13 @@ const StartSociety: React.FC = () => {
           />
         </div>
 
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
           <button
             type="submit"
             style={{
@@ -181,21 +183,6 @@ const StartSociety: React.FC = () => {
             }}
           >
             Submit Request
-          </button>
-          <button
-            type="button"
-            onClick={handleBackToDashboard}
-            style={{
-              backgroundColor: colours.grey[300],
-              color: colours.grey[700],
-              padding: "0.5rem 1.5rem",
-              borderRadius: "4px",
-              border: "none",
-              cursor: "pointer",
-              transition: "background-color 0.3s",
-            }}
-          >
-            Go Back
           </button>
         </div>
       </form>
