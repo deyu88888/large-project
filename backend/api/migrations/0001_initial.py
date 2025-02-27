@@ -28,14 +28,41 @@ class Migration(migrations.Migration):
                 ('is_superuser', models.BooleanField(default=False, help_text='Designates that this user has all permissions without explicitly assigning them.', verbose_name='superuser status')),
                 ('is_staff', models.BooleanField(default=False, help_text='Designates whether the user can log into this admin site.', verbose_name='staff status')),
                 ('date_joined', models.DateTimeField(default=django.utils.timezone.now, verbose_name='date joined')),
-                ('username', models.CharField(help_text='6-30 chars. Letters, digits, underscores, hyphens, and dots only.', max_length=30, unique=True, validators=[django.core.validators.MinLengthValidator(6), django.core.validators.MaxLengthValidator(30), django.core.validators.RegexValidator(code='invalid_username', message='Usernames must only contain letters, numbers, underscores, hyphens, or dots.', regex='^[a-zA-Z0-9_.-]+$')])),
+                ('username', models.CharField(
+                    help_text='6-30 chars. Letters, digits, underscores, hyphens, and dots only.',
+                    max_length=30,
+                    unique=True,
+                    validators=[
+                        django.core.validators.MinLengthValidator(6),
+                        django.core.validators.MaxLengthValidator(30),
+                        django.core.validators.RegexValidator(
+                            code='invalid_username',
+                            message='Usernames must only contain letters, numbers, underscores, hyphens, or dots.',
+                            regex='^[a-zA-Z0-9_.-]+$'
+                        )
+                    ]
+                )),
                 ('first_name', models.CharField(default='first', max_length=50)),
                 ('last_name', models.CharField(default='last', max_length=50)),
                 ('email', models.EmailField(max_length=254, unique=True)),
                 ('is_active', models.BooleanField(default=True)),
                 ('role', models.CharField(choices=[('student', 'Student'), ('admin', 'Admin')], default='student', max_length=50)),
-                ('groups', models.ManyToManyField(blank=True, help_text='The groups this user belongs to. A user will get all permissions granted to each of their groups.', related_name='user_set', related_query_name='user', to='auth.group', verbose_name='groups')),
-                ('user_permissions', models.ManyToManyField(blank=True, help_text='Specific permissions for this user.', related_name='user_set', related_query_name='user', to='auth.permission', verbose_name='user permissions')),
+                ('groups', models.ManyToManyField(
+                    blank=True,
+                    help_text='The groups this user belongs to. A user will get all permissions granted to each of their groups.',
+                    related_name='user_set',
+                    related_query_name='user',
+                    to='auth.group',
+                    verbose_name='groups'
+                )),
+                ('user_permissions', models.ManyToManyField(
+                    blank=True,
+                    help_text='Specific permissions for this user.',
+                    related_name='user_set',
+                    related_query_name='user',
+                    to='auth.permission',
+                    verbose_name='user permissions'
+                )),
             ],
             options={
                 'ordering': ('first_name', 'last_name'),
@@ -58,8 +85,17 @@ class Migration(migrations.Migration):
             name='SiteSettings',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('introduction_title', models.CharField(default='Welcome to the Universal Student Society Platform!', help_text='The title of the website introduction section.', max_length=255, verbose_name='Introduction Title')),
-                ('introduction_content', models.TextField(default="This platform is designed to help student societies manage their members, share news, organize events, and much more. Whether you're a small club or a large society, we provide the tools you need to connect with your members and thrive.\n\nKey features include: membership management, event calendars, news feeds, notifications, and customizable society pages. Get started by registering your society or logging in!", help_text='The main content of the website introduction. Use newlines to separate paragraphs.', verbose_name='Introduction Content')),
+                ('introduction_title', models.CharField(
+                    default='Welcome to the Universal Student Society Platform!',
+                    help_text='The title of the website introduction section.',
+                    max_length=255,
+                    verbose_name='Introduction Title'
+                )),
+                ('introduction_content', models.TextField(
+                    default="This platform is designed to help student societies manage their members, share news, organize events, and much more. Whether you're a small club or a large society, we provide the tools you need to connect with your members and thrive.\n\nKey features include: membership management, event calendars, news feeds, notifications, and customizable society pages. Get started by registering your society or logging in!",
+                    help_text='The main content of the website introduction. Use newlines to separate paragraphs.',
+                    verbose_name='Introduction Content'
+                )),
             ],
             options={
                 'verbose_name': 'Site Settings',
@@ -85,7 +121,14 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Admin',
             fields=[
-                ('user_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to=settings.AUTH_USER_MODEL)),
+                ('user_ptr', models.OneToOneField(
+                    auto_created=True,
+                    on_delete=django.db.models.deletion.CASCADE,
+                    parent_link=True,
+                    primary_key=True,
+                    serialize=False,
+                    to=settings.AUTH_USER_MODEL
+                )),
             ],
             options={
                 'verbose_name': 'user',
@@ -100,7 +143,14 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Student',
             fields=[
-                ('user_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to=settings.AUTH_USER_MODEL)),
+                ('user_ptr', models.OneToOneField(
+                    auto_created=True,
+                    on_delete=django.db.models.deletion.CASCADE,
+                    parent_link=True,
+                    primary_key=True,
+                    serialize=False,
+                    to=settings.AUTH_USER_MODEL
+                )),
                 ('status', models.CharField(choices=[('Pending', 'Pending Approval'), ('Approved', 'Approved'), ('Rejected', 'Rejected')], default='Pending', max_length=20)),
                 ('major', models.CharField(blank=True, max_length=50)),
                 ('is_president', models.BooleanField(default=False)),
@@ -140,10 +190,18 @@ class Migration(migrations.Migration):
             name='UserRequest',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('intent', models.CharField(choices=[('CreateSoc', 'Create Society'), ('UpdateSoc', 'Update Society'), ('CreateEve', 'Create Event'), ('UpdateEve', 'Update Event'), ('CreateUse', 'Create User'), ('UpdateUse', 'Update User')], max_length=10)),
+                ('intent', models.CharField(choices=[
+                    ('CreateSoc', 'Create Society'),
+                    ('UpdateSoc', 'Update Society'),
+                    ('CreateEve', 'Create Event'),
+                    ('UpdateEve', 'Update Event'),
+                    ('CreateUse', 'Create User'),
+                    ('UpdateUse', 'Update User')
+                ], max_length=10)),
                 ('requested_at', models.DateTimeField(auto_now_add=True)),
                 ('approved', models.BooleanField(default=False)),
                 ('major', models.CharField(blank=True, default='', max_length=50)),
+                ('icon', models.ImageField(blank=True, null=True, upload_to='icon_request/')),
                 ('from_student', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='%(class)ss', to='api.student')),
             ],
             options={
@@ -169,7 +227,14 @@ class Migration(migrations.Migration):
             name='SocietyRequest',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('intent', models.CharField(choices=[('CreateSoc', 'Create Society'), ('UpdateSoc', 'Update Society'), ('CreateEve', 'Create Event'), ('UpdateEve', 'Update Event'), ('CreateUse', 'Create User'), ('UpdateUse', 'Update User')], max_length=10)),
+                ('intent', models.CharField(choices=[
+                    ('CreateSoc', 'Create Society'),
+                    ('UpdateSoc', 'Update Society'),
+                    ('CreateEve', 'Create Event'),
+                    ('UpdateEve', 'Update Event'),
+                    ('CreateUse', 'Create User'),
+                    ('UpdateUse', 'Update User')
+                ], max_length=10)),
                 ('requested_at', models.DateTimeField(auto_now_add=True)),
                 ('approved', models.BooleanField(default=False)),
                 ('name', models.CharField(blank=True, default='', max_length=30)),
@@ -205,41 +270,6 @@ class Migration(migrations.Migration):
             ],
         ),
         migrations.AddField(
-            model_name='society',
-            name='approved_by',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='approved_societies', to='api.admin'),
-        ),
-        migrations.CreateModel(
-            name='UserRequest',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('intent', models.CharField(choices=[('CreateSoc', 'Create Society'), ('UpdateSoc', 'Update Society'), ('CreateEve', 'Create Event'), ('UpdateEve', 'Update Event'), ('CreateUse', 'Create User'), ('UpdateUse', 'Update User')], max_length=10)),
-                ('requested_at', models.DateTimeField(auto_now_add=True)),
-                ('approved', models.BooleanField(default=False)),
-                ('major', models.CharField(blank=True, default='', max_length=50)),
-                ('icon', models.ImageField(blank=True, null=True, upload_to='icon_request/')),
-                ('from_student', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='%(class)ss', to='api.student')),
-            ],
-            options={
-                'abstract': False,
-            },
-        ),
-        migrations.AddField(
-            model_name='student',
-            name='attended_events',
-            field=models.ManyToManyField(blank=True, related_name='attendees', to='api.event'),
-        ),
-        migrations.AddField(
-            model_name='student',
-            name='president_of',
-            field=models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='president', to='api.society'),
-        ),
-        migrations.AddField(
-            model_name='student',
-            name='societies',
-            field=models.ManyToManyField(blank=True, related_name='members', to='api.society'),
-        ),
-        migrations.AddField(
             model_name='societyrequest',
             name='from_student',
             field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='%(class)ss', to='api.student'),
@@ -273,7 +303,14 @@ class Migration(migrations.Migration):
             name='EventRequest',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('intent', models.CharField(choices=[('CreateSoc', 'Create Society'), ('UpdateSoc', 'Update Society'), ('CreateEve', 'Create Event'), ('UpdateEve', 'Update Event'), ('CreateUse', 'Create User'), ('UpdateUse', 'Update User')], max_length=10)),
+                ('intent', models.CharField(choices=[
+                    ('CreateSoc', 'Create Society'),
+                    ('UpdateSoc', 'Update Society'),
+                    ('CreateEve', 'Create Event'),
+                    ('UpdateEve', 'Update Event'),
+                    ('CreateUse', 'Create User'),
+                    ('UpdateUse', 'Update User')
+                ], max_length=10)),
                 ('requested_at', models.DateTimeField(auto_now_add=True)),
                 ('approved', models.BooleanField(default=False)),
                 ('title', models.CharField(blank=True, default='', max_length=20)),
@@ -308,10 +345,23 @@ class Migration(migrations.Migration):
             name='AdminReportRequest',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('intent', models.CharField(choices=[('CreateSoc', 'Create Society'), ('UpdateSoc', 'Update Society'), ('CreateEve', 'Create Event'), ('UpdateEve', 'Update Event'), ('CreateUse', 'Create User'), ('UpdateUse', 'Update User')], max_length=10)),
+                ('intent', models.CharField(choices=[
+                    ('CreateSoc', 'Create Society'),
+                    ('UpdateSoc', 'Update Society'),
+                    ('CreateEve', 'Create Event'),
+                    ('UpdateEve', 'Update Event'),
+                    ('CreateUse', 'Create User'),
+                    ('UpdateUse', 'Update User')
+                ], max_length=10)),
                 ('requested_at', models.DateTimeField(auto_now_add=True)),
                 ('approved', models.BooleanField(default=False)),
-                ('report_type', models.CharField(choices=[('Misconduct', 'Misconduct'), ('System Issue', 'System Issue'), ('Society Issue', 'Society Issue'), ('Event Issue', 'Event Issue'), ('Other', 'Other')], max_length=20)),
+                ('report_type', models.CharField(choices=[
+                    ('Misconduct', 'Misconduct'),
+                    ('System Issue', 'System Issue'),
+                    ('Society Issue', 'Society Issue'),
+                    ('Event Issue', 'Event Issue'),
+                    ('Other', 'Other')
+                ], max_length=20)),
                 ('subject', models.CharField(max_length=100)),
                 ('details', models.TextField()),
                 ('from_student', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='%(class)ss', to='api.student')),
