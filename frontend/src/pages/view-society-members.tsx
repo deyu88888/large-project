@@ -37,6 +37,21 @@ const ViewSocietyMembers = () => {
     fetchMembers();
   }, [society_id, user]);
 
+  // Placeholder handlers for button actions
+  const handleViewProfile = (memberId: number) => {
+    navigate(`/profile/${memberId}`);
+  };
+
+  const handleGiveAward = (memberId: number) => {
+    navigate(`../give-award-page/${memberId}`);
+    console.log(`Give award to user with ID: ${memberId}`);
+  };
+
+  const handleAssignRole = (memberId: number) => {
+    // Show a modal or navigate to a page to assign roles
+    console.log(`Assign role to user with ID: ${memberId}`);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -61,11 +76,36 @@ const ViewSocietyMembers = () => {
         ) : (
           <ul className="divide-y divide-gray-200">
             {members.map((member) => (
-              <li key={member.id} className="py-2">
-                <p className="font-medium">
-                  {member.first_name} {member.last_name}
-                </p>
-                <p className="text-sm text-gray-500">{member.username}</p>
+              <li key={member.id} className="py-4 flex items-center justify-between">
+                <div>
+                  <p className="font-medium">
+                    {member.first_name} {member.last_name}
+                  </p>
+                  <p className="text-sm text-gray-500">{member.username}</p>
+                </div>
+                <div className="flex space-x-2">
+                  {/* View Profile Button */}
+                  <button
+                    onClick={() => handleViewProfile(member.id)}
+                    className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition"
+                  >
+                    View Profile
+                  </button>
+                  {/* Give Award Button */}
+                  <button
+                    onClick={() => handleGiveAward(member.id)}
+                    className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 transition"
+                  >
+                    Give Award
+                  </button>
+                  {/* Assign Role Button */}
+                  <button
+                    onClick={() => handleAssignRole(member.id)}
+                    className="bg-purple-500 text-white px-3 py-1 rounded hover:bg-purple-600 transition"
+                  >
+                    Assign Role
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
@@ -74,7 +114,7 @@ const ViewSocietyMembers = () => {
         <div className="mt-4">
           <button
             onClick={() => navigate(-1)}
-            className="bg-blue-500 text-white px-6 py-3 rounded hover:bg-blue-600 transition"
+            className="bg-gray-500 text-white px-6 py-2 rounded hover:bg-gray-600 transition"
           >
             Back to Dashboard
           </button>
