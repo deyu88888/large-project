@@ -23,11 +23,6 @@ import {
 import { apiClient } from "../../api";
 import { useAuthStore } from "../../stores/auth-store";
 
-// TIP: (suggestion) use type instead of interface, advantage is that it could be extended later without modifying the original type
-// TIP: (suggestion) move the types/interfaces into type.ts file for better organization
-
-
-// Define TypeScript interfaces for your data types
 interface Society {
   id: number;
   name: string;
@@ -56,13 +51,11 @@ interface AwardAssignment {
   };
 }
 
-
 const StudentDashboard: React.FC = () => {
   const navigate = useNavigate();
   const theme = useTheme();
   const colours = tokens(theme.palette.mode);
 
-  // States for societies, events, notifications, awards, and more
   const [societies, setSocieties] = useState<Society[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -73,7 +66,6 @@ const StudentDashboard: React.FC = () => {
 
   useEffect(() => {
     fetchData();
-
   }, []);
 
   const logout = () => {
@@ -82,41 +74,23 @@ const StudentDashboard: React.FC = () => {
     navigate("/");
   };
 
-  // IMPROVE: (suggestion) here are 4 requests, to improve make it into 1 request, 
-  // add a endpoint on the backend that returns all the data
-  // one call to the backend, and the backend will fetch all the data and return it to the frontend
-  // unless pagination is used, then it's necassary to have multiple requests
-
-  // Fetch data from the endpoints
   const fetchData = async () => {
     setLoading(true);
-
-    try {  //NOTE: Fetch societies, not working earlier, and was blocking the following request, so try-catch is necessary
-      // Fetch societies
+    try {
       const societiesResponse = await apiClient.get("/api/student-societies");   
       setSocieties(societiesResponse.data || []);
-      // const presidentSocieties = societiesResponse.data.filter(
-      //   (society: any) => society.is_president
-      // );
-
-      // setIsPresident(presidentSocieties.length > 0);
-
-    }
-    catch (error) {
+    } catch (error) {
       console.error("Error fetching society data:", error);
     }
-
-    try {  //NOTE: Fetch events, not working earlier, and was blocking the following request, so try-catch is necessary
-      const eventsResponse = await apiClient.get(`/api/events/rsvp`); 
+    try {
+      const eventsResponse = await apiClient.get("/api/events/rsvp"); 
       setEvents(eventsResponse.data || []);
-    }
-    catch (error) {
+    } catch (error) {
       console.error("Error fetching event data:", error);
     }
     try {
       const notificationsResponse = await apiClient.get("/api/notifications"); 
       setNotifications(notificationsResponse.data || []);
-
     } catch (error) {
       console.error("Error fetching notification data:", error);
     }
@@ -129,7 +103,6 @@ const StudentDashboard: React.FC = () => {
     setLoading(false);
   };
 
-  // Join a society
   const joinSociety = async (societyId: number) => {
     try {
       await apiClient.post(`/api/join-society/${societyId}`);
@@ -139,7 +112,6 @@ const StudentDashboard: React.FC = () => {
     }
   };
 
-  // Leave a society
   const handleLeaveSociety = async (societyId: number) => {
     try {
       await apiClient.delete(`/api/leave-society/${societyId}`);
@@ -149,7 +121,6 @@ const StudentDashboard: React.FC = () => {
     }
   };
 
-  // Toggle RSVP for an event
   const handleRSVP = async (eventId: number, isAttending: boolean) => {
     try {
       if (isAttending) {
@@ -163,7 +134,6 @@ const StudentDashboard: React.FC = () => {
     }
   };
 
-  // Cancel RSVP for an event
   const cancelRSVP = async (eventId: number) => {
     try {
       await apiClient.delete("/api/events/rsvp", { data: { event_id: eventId } });
@@ -173,7 +143,6 @@ const StudentDashboard: React.FC = () => {
     }
   };
 
-  // Mark a notification as read
   const markNotificationAsRead = async (id: number) => {
     try {
       const response = await apiClient.patch(`/api/notifications/${id}`, { is_read: true });
@@ -212,7 +181,6 @@ const StudentDashboard: React.FC = () => {
   return (
     <Box minHeight="100vh" bgcolor={colours.primary[500]} py={8}>
       <Box maxWidth="1200px" mx="auto" px={4}>
-        {/* Header */}
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
           <Typography variant="h4" sx={{ color: colours.grey[100] }}>
             Dashboard
@@ -243,8 +211,6 @@ const StudentDashboard: React.FC = () => {
             )}
           </Box>
         </Box>
-
-        {/* Stats Overview */}
         <Box
           display="grid"
           gridTemplateColumns={{ xs: '1fr', md: 'repeat(3, 1fr)' }}
@@ -270,8 +236,6 @@ const StudentDashboard: React.FC = () => {
             color={colours.redAccent[500]}
           />
         </Box>
-
-        {/* Main Content Tabs */}
         <Paper
           elevation={3}
           sx={{
@@ -294,11 +258,7 @@ const StudentDashboard: React.FC = () => {
             {activeTab === 0 && (
               <Box
                 display="grid"
-                gridTemplateColumns={{
-                  xs: '1fr',
-                  md: 'repeat(2, 1fr)',
-                  lg: 'repeat(3, 1fr)',
-                }}
+                gridTemplateColumns={{ xs: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' }}
                 gap={3}
               >
                 {societies.map((society) => (
@@ -311,12 +271,7 @@ const StudentDashboard: React.FC = () => {
                       p: 2,
                     }}
                   >
-                    <Box
-                      display="flex"
-                      justifyContent="space-between"
-                      alignItems="center"
-                      mb={2}
-                    >
+                    <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
                       <Typography variant="h6" sx={{ color: colours.grey[100] }}>
                         {society.name}
                       </Typography>
@@ -347,15 +302,10 @@ const StudentDashboard: React.FC = () => {
                 ))}
               </Box>
             )}
-
             {activeTab === 1 && (
               <Box
                 display="grid"
-                gridTemplateColumns={{
-                  xs: '1fr',
-                  md: 'repeat(2, 1fr)',
-                  lg: 'repeat(3, 1fr)',
-                }}
+                gridTemplateColumns={{ xs: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' }}
                 gap={3}
               >
                 {events.map((event) => (
@@ -368,20 +318,13 @@ const StudentDashboard: React.FC = () => {
                       p: 2,
                     }}
                   >
-                    <Box
-                      display="flex"
-                      justifyContent="space-between"
-                      alignItems="center"
-                      mb={2}
-                    >
+                    <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
                       <Box>
                         <Typography variant="h6" sx={{ color: colours.grey[100] }}>
                           {event.title}
                         </Typography>
                         <Box display="flex" alignItems="center" mt={1}>
-                          <FaRegClock
-                            style={{ marginRight: 8, color: colours.grey[300] }}
-                          />
+                          <FaRegClock style={{ marginRight: 8, color: colours.grey[300] }} />
                           <Typography variant="body2" sx={{ color: colours.grey[300] }}>
                             {event.date}
                           </Typography>
@@ -393,9 +336,7 @@ const StudentDashboard: React.FC = () => {
                       variant="contained"
                       onClick={() => handleRSVP(event.id, !event.rsvp)}
                       sx={{
-                        backgroundColor: event.rsvp
-                          ? colours.grey[700]
-                          : colours.blueAccent[500],
+                        backgroundColor: event.rsvp ? colours.grey[700] : colours.blueAccent[500],
                         color: colours.grey[100],
                       }}
                     >
@@ -405,15 +346,10 @@ const StudentDashboard: React.FC = () => {
                 ))}
               </Box>
             )}
-
             {activeTab === 2 && (
               <Box>
                 {notifications.length === 0 ? (
-                  <Typography
-                    variant="body1"
-                    align="center"
-                    sx={{ color: colours.grey[300], py: 4 }}
-                  >
+                  <Typography variant="body1" align="center" sx={{ color: colours.grey[300], py: 4 }}>
                     No notifications
                   </Typography>
                 ) : (
@@ -422,19 +358,13 @@ const StudentDashboard: React.FC = () => {
                       key={notification.id}
                       elevation={2}
                       sx={{
-                        backgroundColor: notification.is_read
-                          ? colours.primary[400]
-                          : colours.primary[500],
+                        backgroundColor: notification.is_read ? colours.primary[400] : colours.primary[500],
                         border: `1px solid ${colours.grey[800]}`,
                         p: 2,
                         mb: 2,
                       }}
                     >
-                      <Box
-                        display="flex"
-                        justifyContent="space-between"
-                        alignItems="center"
-                      >
+                      <Box display="flex" justifyContent="space-between" alignItems="center">
                         <Typography variant="body1" sx={{ color: colours.grey[100] }}>
                           {notification.message}
                         </Typography>
@@ -459,14 +389,7 @@ const StudentDashboard: React.FC = () => {
             )}
           </Box>
         </Paper>
-
-        {/* Quick Actions */}
-        <Box
-          display="grid"
-          gridTemplateColumns={{ xs: '1fr', md: 'repeat(1, 1fr)' }}
-          gap={3}
-          mt={4}
-        >
+        <Box display="grid" gridTemplateColumns={{ xs: '1fr', md: 'repeat(1, 1fr)' }} gap={3} mt={4}>
           <Paper
             elevation={3}
             sx={{
@@ -497,10 +420,7 @@ const StudentDashboard: React.FC = () => {
             </Button>
           </Paper>
         </Box>
-
-        {/* Additional Sections */}
         <Box mt={4}>
-          {/* Calendar Integration */}
           <Paper
             elevation={3}
             sx={{
@@ -516,87 +436,11 @@ const StudentDashboard: React.FC = () => {
                 Calendar
               </Typography>
             </Box>
-            <Box
-              display="flex"
-              alignItems="center"
-              justifyContent="center"
-              p={4}
-              bgcolor={colours.primary[500]}
-            >
+            <Box display="flex" alignItems="center" justifyContent="center" p={4} bgcolor={colours.primary[500]}>
               <Typography variant="body1" sx={{ color: colours.grey[300] }}>
                 Calendar Integration Placeholder
               </Typography>
             </Box>
-          </Paper>
-
-          {/* Achievements Section */}
-          <Paper
-            elevation={3}
-            sx={{
-              backgroundColor: colours.primary[400],
-              border: `1px solid ${colours.grey[800]}`,
-              p: 2,
-            }}
-          >
-            <Box display="flex" alignItems="center" mb={2}>
-              <FaTrophy size={24} style={{ marginRight: 8, color: colours.greenAccent[500] }} />
-              <Typography variant="h6" sx={{ color: colours.grey[100] }}>
-                Achievements
-              </Typography>
-            </Box>
-            {awards.length === 0 ? (
-              <Typography variant="body1" align="center" sx={{ color: colours.grey[300] }}>
-                No achievements yet.
-              </Typography>
-            ) : (
-              <Box
-                display="grid"
-                gridTemplateColumns={{
-                  xs: '1fr',
-                  md: 'repeat(2, 1fr)',
-                  lg: 'repeat(3, 1fr)',
-                }}
-                gap={3}
-              >
-                {/* {awards.map((awardAssignment) => ( */}
-                {Array.isArray(awards) && awards.map((awardAssignment) => (
-                  <Paper
-                    key={awardAssignment.id}
-                    elevation={2}
-                    sx={{
-                      backgroundColor: colours.primary[400],
-                      border: `1px solid ${colours.grey[800]}`,
-                      p: 2,
-                    }}
-                  >
-                    <Typography variant="h6" sx={{ color: colours.grey[100] }}>
-                      {awardAssignment.award.title}
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: colours.grey[300] }}>
-                      {awardAssignment.award.description}
-                    </Typography>
-                    <Box
-                      mt={1}
-                      px={1}
-                      py={0.5}
-                      borderRadius="4px"
-                      bgcolor={
-                        awardAssignment.award.rank === "Gold"
-                          ? "#FFD700"
-                          : awardAssignment.award.rank === "Silver"
-                            ? "#C0C0C0"
-                            : "#CD7F32"
-                      }
-                      color={colours.primary[500]}
-                    >
-                      <Typography variant="caption">
-                        {awardAssignment.award.rank}
-                      </Typography>
-                    </Box>
-                  </Paper>
-                ))}
-              </Box>
-            )}
           </Paper>
         </Box>
       </Box>
