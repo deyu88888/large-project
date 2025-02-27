@@ -25,6 +25,7 @@ const ManageSocietyDetails = lazy(() => import("../pages/manage-society-details"
 const ManageSocietyEvents = lazy(() => import("../pages/manage-society-events"));
 const CreateEventPage = lazy(() => import("../pages/create-society-event"));
 const ReportToAdmin = lazy(() => import("../pages/report-to-admin"));
+const ViewSocietyMembers = lazy(() => import("../pages/view-society-members"));
 
 
 // Admin pages
@@ -236,6 +237,14 @@ const routes = [
           element: (
             <Suspense fallback={<LoadingView />}>
               <ReportToAdmin />
+            </Suspense>
+          ),
+        },
+        {
+          path: "view-society-members",
+          element: (
+            <Suspense fallback={<LoadingView />}>
+              <ViewSocietyMembers />
             </Suspense>
           ),
         },

@@ -1,7 +1,7 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from .views import (
-    AdminReportView, AwardStudentView, AwardView, EventListView, EventRequestView, PendingMembersView, RegisterView, CurrentUserView,
+    AdminReportView, AwardStudentView, AwardView, EventListView, EventRequestView, PendingMembersView, RegisterView, CurrentUserView, SocietyMembersListView,
     StudentNotificationsView, StartSocietyRequestView, ManageSocietyDetailsView,
     AdminView, StudentView, EventView,
     SocietyRequestView, DashboardStatsView,
@@ -72,6 +72,7 @@ urlpatterns = [
     # President page
     path("society/<int:society_id>/pending-members", PendingMembersView.as_view(), name="pending-members"),
     path("society/<int:society_id>/pending-members/<int:request_id>", PendingMembersView.as_view(), name="process-pending-member"),
+    path("society/<int:society_id>/members/", SocietyMembersListView.as_view(), name="society-members"),
     
     # Report to admin
     path("report-to-admin", AdminReportView.as_view(), name="report-to-admin"),
