@@ -1,8 +1,13 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Box, Typography, Button, Select, MenuItem, TextField } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import { apiClient } from "../api";
+import { tokens } from "../theme/theme.ts";
 
 const ReportToAdmin: React.FC = () => {
+  const theme = useTheme();
+  const colors = tokens(theme.palette.mode);
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     report_type: "Misconduct",
@@ -10,7 +15,7 @@ const ReportToAdmin: React.FC = () => {
     details: "",
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | { value: unknown }>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
@@ -19,46 +24,114 @@ const ReportToAdmin: React.FC = () => {
     try {
       await apiClient.post("/api/report-to-admin", formData);
       alert("Report submitted successfully!");
-      navigate(-1);  // ✅ Go back to the previous page
+      navigate(-1);
     } catch (error) {
       console.error("Error submitting report:", error);
     }
   };
 
   return (
-    <div className="container mx-auto p-8">
-      <h1 className="text-3xl font-bold mb-6">Report to Admin</h1>
-      <form onSubmit={handleSubmit} className="space-y-4">
+    <Box
+      minHeight="100vh"
+      p={4}
+      display="flex"
+      flexDirection="column"
+      alignItems="center"
+      sx={{
+        backgroundColor: theme.palette.mode === "dark" ? "#141b2d" : "#ffffff",
+        color: theme.palette.mode === "dark" ? colors.grey[100] : "#000",
+      }}
+    >
+      <Typography variant="h2" fontWeight="bold" mb={3}>
+        Report to Admin
+      </Typography>
+
+      <Box
+        component="form"
+        onSubmit={handleSubmit}
+        sx={{
+          maxWidth: "600px",
+          width: "100%",
+          backgroundColor: theme.palette.mode === "dark" ? colors.primary[500] : "#ffffff",
+          p: 4,
+          borderRadius: "8px",
+          boxShadow: 3,
+        }}
+      >
         {/* Report Type */}
-        <div>
-          <label className="block text-lg font-medium">Type of Report</label>
-          <select name="report_type" value={formData.report_type} onChange={handleChange} className="w-full border p-2 rounded">
-            <option value="Misconduct">Misconduct</option>
-            <option value="System Issue">System Issue</option>
-            <option value="Society Issue">Society Issue</option>
-            <option value="Event Issue">Event Issue</option>
-            <option value="Other">Other</option>
-          </select>
-        </div>
+        <Typography variant="h6" fontWeight="bold" mb={1}>
+          Type of Report
+        </Typography>
+        <Select
+          name="report_type"
+          value={formData.report_type}
+          onChange={handleChange}
+          fullWidth
+          sx={{
+            backgroundColor: theme.palette.mode === "dark" ? colors.grey[300] : "#ffffff",
+            color: "#000",
+            borderRadius: "4px",
+          }}
+        >
+          <MenuItem value="Misconduct">Misconduct</MenuItem>
+          <MenuItem value="System Issue">System Issue</MenuItem>
+          <MenuItem value="Society Issue">Society Issue</MenuItem>
+          <MenuItem value="Event Issue">Event Issue</MenuItem>
+          <MenuItem value="Other">Other</MenuItem>
+        </Select>
 
         {/* Subject */}
-        <div>
-          <label className="block text-lg font-medium">Subject</label>
-          <input type="text" name="subject" value={formData.subject} onChange={handleChange} className="w-full border p-2 rounded" required />
-        </div>
+        <Typography variant="h6" fontWeight="bold" mt={3} mb={1}>
+          Subject
+        </Typography>
+        <TextField
+          name="subject"
+          value={formData.subject}
+          onChange={handleChange}
+          fullWidth
+          required
+          sx={{
+            backgroundColor: theme.palette.mode === "dark" ? colors.primary[600] : "#ffffff",
+            color: theme.palette.mode === "dark" ? colors.grey[100] : "#000",
+            borderRadius: "4px",
+          }}
+        />
 
         {/* Details */}
-        <div>
-          <label className="block text-lg font-medium">Report Details</label>
-          <textarea name="details" value={formData.details} onChange={handleChange} className="w-full border p-2 rounded" rows={5} required></textarea>
-        </div>
+        <Typography variant="h6" fontWeight="bold" mt={3} mb={1}>
+          Report Details
+        </Typography>
+        <TextField
+          name="details"
+          value={formData.details}
+          onChange={handleChange}
+          fullWidth
+          multiline
+          rows={5}
+          required
+          sx={{
+            backgroundColor: theme.palette.mode === "dark" ? colors.primary[600] : "#ffffff",
+            color: theme.palette.mode === "dark" ? colors.grey[100] : "#000",
+            borderRadius: "4px",
+          }}
+        />
 
         {/* Submit Button */}
-        <button type="submit" className="bg-red-500 text-white px-6 py-3 rounded hover:bg-red-600 transition">
+        <Button
+          type="submit"
+          fullWidth
+          sx={{
+            mt: 3,
+            backgroundColor: colors.redAccent[500],
+            color: "#ffffff",
+            fontWeight: "bold",
+            "&:hover": { backgroundColor: colors.redAccent[600] },
+          }}
+        >
           Submit Report
-        </button>
-      </form>
-    </div>
+        </Button>
+      </Box>
+    </Box>
   );
 };
 

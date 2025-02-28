@@ -1,29 +1,38 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import {
+  Box,
+  Typography,
+  Button,
+  CircularProgress,
+  Paper,
+  ToggleButton,
+  ToggleButtonGroup,
+} from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import { apiClient } from "../api";
+import { tokens } from "../theme/theme.ts";
 import { LoadingView } from "../components/loading/loading-view";
 
-// Define the interface for an Event
 interface Event {
   id: number;
   title: string;
   date: string;
   start_time: string;
   status: string;
-  // Add other fields if needed
 }
 
 const ManageSocietyEvents: React.FC = () => {
+  const theme = useTheme();
+  const colors = tokens(theme.palette.mode);
   const navigate = useNavigate();
   const { society_id } = useParams<{ society_id: string }>();
 
-  // Local state for events, filter, loading status, and error message.
   const [events, setEvents] = useState<Event[]>([]);
   const [filter, setFilter] = useState<"upcoming" | "previous" | "pending">("upcoming");
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch events whenever society_id or filter changes.
   useEffect(() => {
     if (!society_id) return;
     const fetchEvents = async () => {
@@ -31,10 +40,7 @@ const ManageSocietyEvents: React.FC = () => {
       setError(null);
       try {
         const response = await apiClient.get("/api/events/", {
-          params: {
-            society_id, 
-            filter, // "upcoming", "previous", or "pending"
-          },
+          params: { society_id, filter },
         });
         setEvents(response.data || []);
       } catch (err: any) {
@@ -49,73 +55,120 @@ const ManageSocietyEvents: React.FC = () => {
   }, [society_id, filter]);
 
   return (
-    <div className="min-h-screen bg-gray-100 py-8 px-4">
+    <Box
+      minHeight="100vh"
+      p={4}
+      sx={{
+        backgroundColor: theme.palette.mode === "dark" ? "#141b2d" : "#ffffff",
+        color: theme.palette.mode === "dark" ? colors.grey[100] : "#000",
+      }}
+    >
       {/* Page Header */}
-      <header className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Manage Society Events</h1>
-        <p className="text-gray-600">
+      <Box textAlign="center" mb={4}>
+        <Typography
+          variant="h2"
+          fontWeight="bold"
+          sx={{
+            color: theme.palette.mode === "dark" ? colors.grey[100] : "#000",
+          }}
+        >
+          Manage Society Events
+        </Typography>
+        <Typography variant="h6" color={colors.grey[500]}>
           {filter.charAt(0).toUpperCase() + filter.slice(1)} events for Society {society_id}
-        </p>
-      </header>
+        </Typography>
+      </Box>
 
-      {/* Action Buttons */}
-      <div className="flex flex-col items-center space-y-6 mb-8">
-        <button
+      {/* Create Event Button */}
+      <Box display="flex" justifyContent="center" mb={3}>
+        <Button
           onClick={() => navigate(`/president-page/${society_id}/create-society-event/`)}
-          className="bg-purple-500 text-white px-6 py-3 rounded-lg hover:bg-purple-600 transition"
+          sx={{
+            backgroundColor: colors.blueAccent[500],
+            color: theme.palette.mode === "dark" ? "#141b2d" : "#ffffff",
+            fontSize: "1rem",
+            fontWeight: "bold",
+            padding: "12px 20px",
+            borderRadius: "8px",
+            "&:hover": { backgroundColor: colors.blueAccent[600] },
+          }}
         >
           Create a New Event
-        </button>
-        <div className="flex space-x-4">
-          <button
-            onClick={() => setFilter("upcoming")}
-            className={`px-4 py-2 rounded ${
-              filter === "upcoming" ? "bg-blue-600 text-white" : "bg-blue-200 text-blue-800"
-            }`}
-          >
-            Upcoming Events
-          </button>
-          <button
-            onClick={() => setFilter("previous")}
-            className={`px-4 py-2 rounded ${
-              filter === "previous" ? "bg-green-600 text-white" : "bg-green-200 text-green-800"
-            }`}
-          >
-            Previous Events
-          </button>
-          <button
-            onClick={() => setFilter("pending")}
-            className={`px-4 py-2 rounded ${
-              filter === "pending" ? "bg-yellow-600 text-white" : "bg-yellow-200 text-yellow-800"
-            }`}
-          >
-            Pending Approval
-          </button>
-        </div>
-      </div>
+        </Button>
+      </Box>
+
+      {/* Filter Toggle */}
+      <Box display="flex" justifyContent="center" mb={4}>
+        <ToggleButtonGroup
+          value={filter}
+          exclusive
+          onChange={(_, newFilter) => newFilter && setFilter(newFilter)}
+          sx={{
+            backgroundColor: colors.primary[500],
+            borderRadius: "8px",
+          }}
+        >
+          {[
+            { label: "Upcoming", value: "upcoming", color: colors.blueAccent[500] },
+            { label: "Previous", value: "previous", color: colors.greenAccent[500] },
+            { label: "Pending Approval", value: "pending", color: colors.redAccent[500] },
+          ].map(({ label, value, color }) => (
+            <ToggleButton
+              key={value}
+              value={value}
+              sx={{
+                backgroundColor: filter === value ? color : colors.grey[600],
+                color: theme.palette.mode === "dark" ? "#ffffff" : "#141b2d",
+                fontWeight: "bold",
+                "&:hover": { backgroundColor: color, opacity: 0.8 },
+                transition: "0.3s",
+              }}
+            >
+              {label}
+            </ToggleButton>
+          ))}
+        </ToggleButtonGroup>
+      </Box>
 
       {/* Events Display */}
       {loading ? (
-        <LoadingView />
+        <Box display="flex" justifyContent="center">
+          <CircularProgress color="secondary" />
+        </Box>
       ) : error ? (
-        <div className="text-center text-red-500">{error}</div>
+        <Typography color={colors.redAccent[500]} textAlign="center">
+          {error}
+        </Typography>
       ) : events.length === 0 ? (
-        <div className="text-center text-gray-700">
+        <Typography textAlign="center" color={colors.grey[500]}>
           No events found for "{filter}".
-        </div>
+        </Typography>
       ) : (
-        <ul className="space-y-4">
+        <Box maxWidth="800px" mx="auto">
           {events.map((event) => (
-            <li key={event.id} className="bg-white p-4 rounded shadow">
-              <h2 className="text-xl font-semibold">{event.title}</h2>
-              <p>Date: {event.date}</p>
-              <p>Start Time: {event.start_time}</p>
-              <p>Status: {event.status}</p>
-            </li>
+            <Paper
+              key={event.id}
+              elevation={3}
+              sx={{
+                p: 3,
+                mb: 2,
+                backgroundColor: colors.primary[500],
+                color: theme.palette.mode === "dark" ? colors.grey[100] : "#000",
+                transition: "0.3s",
+                "&:hover": { backgroundColor: colors.primary[600] },
+              }}
+            >
+              <Typography variant="h5" fontWeight="bold">
+                {event.title}
+              </Typography>
+              <Typography>Date: {event.date}</Typography>
+              <Typography>Start Time: {event.start_time}</Typography>
+              <Typography>Status: {event.status}</Typography>
+            </Paper>
           ))}
-        </ul>
+        </Box>
       )}
-    </div>
+    </Box>
   );
 };
 

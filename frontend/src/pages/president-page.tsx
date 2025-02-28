@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { apiClient } from "../api"; // adjust the import based on your project structure
+import { useTheme, Box, Typography, Button, Paper, CircularProgress } from "@mui/material";
+import { apiClient } from "../api";
 import { useAuthStore } from "../stores/auth-store";
+import { tokens } from "../theme/theme.ts";
 
 const PresidentPage = () => {
+  const theme = useTheme();
+  const colors = tokens(theme.palette.mode);
   const navigate = useNavigate();
   const { society_id } = useParams<{ society_id: string }>();
   const [society, setSociety] = useState<any>(null);
@@ -11,20 +15,15 @@ const PresidentPage = () => {
   const [loading, setLoading] = useState(true);
   const { user } = useAuthStore();
 
-  // Fetch society and pending members on component mount
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Use the society_id from the URL if available; otherwise, fall back to user.president_of.
         const id = society_id || user?.president_of;
-        if (!id) {
-          throw new Error("No society id available");
-        }
-        // Fetch the society the current president is managing
+        if (!id) throw new Error("No society ID available");
+
         const societyResponse = await apiClient.get(`/api/manage-society-details/${id}/`);
         setSociety(societyResponse.data);
 
-        // Fetch pending members for that society
         const pendingResponse = await apiClient.get(`/api/society/${id}/pending-members/`);
         setPendingMembers(pendingResponse.data || []);
       } catch (error) {
@@ -39,89 +38,104 @@ const PresidentPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>Loading President Dashboard...</p>
-      </div>
+      <Box
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+        minHeight="100vh"
+        sx={{ backgroundColor: theme.palette.mode === "dark" ? "#141b2d" : "#ffffff" }}
+      >
+        <CircularProgress color="secondary" />
+      </Box>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 py-8 px-4">
+    <Box
+      minHeight="100vh"
+      p={4}
+      sx={{
+        backgroundColor: theme.palette.mode === "dark" ? "#141b2d" : "#ffffff",
+        color: colors.grey[100],
+      }}
+    >
       {/* Society Name */}
-      <header className="text-center mb-8">
-        <h1 className="text-4xl font-bold text-gray-900">
+      <Box textAlign="center" mb={4}>
+        <Typography variant="h1" fontWeight="bold" color={colors.grey[100]}>
           {society ? society.name : "My Society"}
-        </h1>
-      </header>
+        </Typography>
+      </Box>
 
       {/* Navigation Buttons */}
-      <div className="flex justify-center space-x-4 mb-8">
-        {/* Navigate to the manage society details page (child route of /president-page/:society_id) */}
-        <button
-          onClick={() => navigate("manage-society-details")}
-          className="bg-green-500 text-white px-6 py-3 rounded hover:bg-green-600 transition"
-        >
-          Manage Society Page
-        </button>
-        {/* Navigate to the manage society events page */}
-        <button
-          onClick={() => navigate("manage-society-events")}
-          className="bg-green-500 text-white px-6 py-3 rounded hover:bg-green-600 transition"
-        >
-          Manage Society Events
-        </button>
-        {/* Navigate to pending members page */}
-        <button
-          onClick={() => navigate("pending-members")}
-          className="bg-blue-500 text-white px-6 py-3 rounded hover:bg-blue-600 transition"
-        >
-          Pending Members
-        </button>
-        {/* Navigate to report to admin page; adjust the route if needed */}
-        <button
-          onClick={() => navigate("report-to-admin")}
-          className="bg-red-500 text-white px-6 py-3 rounded hover:bg-red-600 transition"
-        >
-          Report to Admin
-        </button>
-      {/* All Society Members */}
-      <button
-          onClick={() => navigate("view-society-members")}
-          className="bg-purple-500 text-white px-6 py-3 rounded hover:bg-purple-600 transition"
-        >
-          All Society Members
-        </button>
-      </div>
+      <Box display="flex" justifyContent="center" gap={2} flexWrap="wrap" mb={4}>
+        {[
+          { text: "Society Details", path: "manage-society-details", color: colors.greenAccent[500] },
+          { text: "Society Events", path: "manage-society-events", color: colors.greenAccent[500] },
+          { text: "Pending Members", path: "pending-members", color: colors.blueAccent[500] },
+          { text: "Report to Admin", path: "report-to-admin", color: colors.redAccent[500] },
+          { text: "All Members", path: "view-society-members", color: colors.blueAccent[500] },
+        ].map((item) => (
+          <Button
+            key={item.text}
+            onClick={() => navigate(item.path)}
+            sx={{
+              backgroundColor: item.color,
+              color: theme.palette.mode === "dark" ? colors.primary[900] : "#fff",
+              fontSize: "1rem",
+              fontWeight: "bold",
+              padding: "12px 20px",
+              borderRadius: "8px",
+              "&:hover": { backgroundColor: item.color, opacity: 0.8 },
+              transition: "0.3s",
+            }}
+          >
+            {item.text}
+          </Button>
+        ))}
+      </Box>
 
       {/* Pending Members Preview */}
-      <section className="max-w-3xl mx-auto bg-white p-6 rounded shadow">
-        <h2 className="text-2xl font-semibold mb-4">Pending Members (Preview)</h2>
+      <Paper
+        elevation={4}
+        sx={{
+          maxWidth: 600,
+          mx: "auto",
+          p: 4,
+          backgroundColor: colors.primary[500],
+          color: colors.grey[100],
+        }}
+      >
+        <Typography variant="h3" fontWeight="bold" mb={2}>
+          Pending Members (Preview)
+        </Typography>
+
         {pendingMembers.length === 0 ? (
-          <p className="text-gray-600">No pending membership requests.</p>
+          <Typography color={colors.grey[300]}>No pending membership requests.</Typography>
         ) : (
-          <ul className="divide-y divide-gray-200">
+          <Box>
             {pendingMembers.slice(0, 3).map((member) => (
-              <li key={member.id} className="py-2">
-                <p className="font-medium">
+              <Box key={member.id} py={1} borderBottom={`1px solid ${colors.grey[600]}`}>
+                <Typography fontWeight="bold">
                   {member.first_name} {member.last_name}
-                </p>
-                <p className="text-sm text-gray-500">{member.username}</p>
-              </li>
+                </Typography>
+                <Typography variant="body2" color={colors.grey[300]}>
+                  {member.username}
+                </Typography>
+              </Box>
             ))}
-          </ul>
+          </Box>
         )}
+
         {pendingMembers.length > 3 && (
-          <div className="mt-4">
-            <button
-              onClick={() => navigate("pending-members")}
-              className="text-blue-500 hover:underline"
-            >
-              View All Pending Members
-            </button>
-          </div>
+          <Button
+            onClick={() => navigate("pending-members")}
+            sx={{ mt: 2, color: colors.blueAccent[500], textTransform: "none" }}
+          >
+            View All Pending Members
+          </Button>
         )}
-      </section>
-    </div>
+      </Paper>
+    </Box>
   );
 };
 

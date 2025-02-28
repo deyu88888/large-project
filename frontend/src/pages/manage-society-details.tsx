@@ -1,7 +1,17 @@
 import React, { useState, useEffect, ChangeEvent, FormEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import {
+  Box,
+  Typography,
+  Button,
+  TextField,
+  CircularProgress,
+  Paper,
+} from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import { apiClient, apiPaths } from "../api";
 import { useAuthStore } from "../stores/auth-store";
+import { tokens } from "../theme/theme.ts";
 
 interface SocietyData {
   id: number;
@@ -16,6 +26,8 @@ interface SocietyData {
 }
 
 const ManageSocietyDetails: React.FC = () => {
+  const theme = useTheme();
+  const colors = tokens(theme.palette.mode);
   const { user } = useAuthStore();
   const navigate = useNavigate();
   const { society_id } = useParams<{ society_id: string }>();
@@ -27,19 +39,13 @@ const ManageSocietyDetails: React.FC = () => {
   const [saving, setSaving] = useState<boolean>(false);
 
   useEffect(() => {
-    console.log("Debug: society_id from useParams:", society_id);
-    console.log("Debug: converted societyId:", societyId);
     fetchSociety();
   }, []);
 
   const fetchSociety = async () => {
-    console.log("Fetching society details for societyId:", societyId);
     try {
       setLoading(true);
-      // FIX: Include the societyId in the API endpoint
       const response = await apiClient.get(apiPaths.SOCIETY.MANAGE_DETAILS(societyId));
-      console.log("Response received:", response);
-      console.log("Response data:", response.data);
       setSociety(response.data);
       setFormData({
         ...response.data,
@@ -54,7 +60,7 @@ const ManageSocietyDetails: React.FC = () => {
   };
 
   const handleChange = (
-    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
     setFormData((prevFormData) =>
@@ -74,7 +80,7 @@ const ManageSocietyDetails: React.FC = () => {
       formDataToSend.append("timetable", formData.timetable);
       formDataToSend.append("membership_requirements", formData.membership_requirements);
       formDataToSend.append("upcoming_projects_or_plans", formData.upcoming_projects_or_plans);
-      formDataToSend.append("tags", JSON.stringify(formData.tags)); // Convert array to string
+      formDataToSend.append("tags", JSON.stringify(formData.tags));
 
       // Append social media links
       Object.entries(formData.social_media_links).forEach(([platform, link]) => {
@@ -86,15 +92,11 @@ const ManageSocietyDetails: React.FC = () => {
         formDataToSend.append("icon", formData.icon);
       }
 
-      const response = await apiClient.put(`/api/manage-society-details/${societyId}/`, formDataToSend, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+      await apiClient.put(`/api/manage-society-details/${societyId}/`, formDataToSend, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
 
-      setSociety(response.data);
       alert("Society updated successfully!");
-      // FIX: Navigate back using the society ID from the URL
       navigate(`/president-page/${societyId}`);
     } catch (error) {
       console.error("Error updating society", error);
@@ -106,129 +108,106 @@ const ManageSocietyDetails: React.FC = () => {
 
   if (loading || !formData) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>Loading society details...</p>
-      </div>
+      <Box
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+        minHeight="100vh"
+        sx={{ backgroundColor: colors.primary[400] }}
+      >
+        <CircularProgress color="secondary" />
+      </Box>
     );
   }
 
   return (
-    <div className="container mx-auto p-8">
-      <h1 className="text-3xl font-bold mb-6">Manage My Society</h1>
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Society Name */}
-        <div>
-          <label className="block text-lg font-medium mb-1">Society Name</label>
-          <input
-            type="text"
+    <Box
+      minHeight="100vh"
+      p={4}
+      sx={{
+        backgroundColor: theme.palette.mode === "dark" ? "#141b2d" : "#fcfcfc",
+        color: theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d",
+      }}
+    >
+      <Box textAlign="center" mb={4}>
+        <Typography
+          variant="h2"
+          fontWeight="bold"
+          sx={{
+            color: theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d",
+          }}
+        >
+          Manage My Society
+        </Typography>
+      </Box>
+
+      <Paper
+        sx={{
+          maxWidth: "800px",
+          mx: "auto",
+          p: 4,
+          backgroundColor: theme.palette.mode === "dark" ? colors.primary[500] : "#ffffff",
+          color: theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d",
+          borderRadius: "8px",
+          boxShadow: 3,
+        }}
+      >
+        <form onSubmit={handleSubmit}>
+          <TextField
+            fullWidth
+            label="Society Name"
             name="name"
             value={formData.name}
             onChange={handleChange}
-            className="w-full border p-2 rounded"
+            sx={{ mb: 2 }}
           />
-        </div>
 
-        {/* Icon Upload */}
-        <div>
-          <label className="block text-lg font-medium mb-1">Society Icon</label>
-          <input
-            type="file"
-            name="icon"
-            accept="image/*"
-            onChange={(e) => {
-              if (e.target.files && e.target.files[0]) {
-                setFormData((prevFormData) =>
-                  prevFormData ? { ...prevFormData, icon: e.target.files[0] } : null
-                );
-              }
-            }}
-            className="w-full border p-2 rounded"
-          />
-        </div>
-
-        {/* Show existing icon */}
-        {formData?.icon && typeof formData.icon === "string" && (
-          <div className="mt-2">
-            <p className="text-sm text-gray-600">Current Icon:</p>
-            <img src={formData.icon} alt="Society Icon" className="w-24 h-24 rounded-md" />
-          </div>
-        )}
-
-        {/* Category */}
-        <div>
-          <label className="block text-lg font-medium mb-1">Category</label>
-          <input
-            type="text"
+          <TextField
+            fullWidth
+            label="Category"
             name="category"
             value={formData.category}
             onChange={handleChange}
-            className="w-full border p-2 rounded"
+            sx={{ mb: 2 }}
           />
-        </div>
 
-        {/* Social Media Links (Dynamic Fields) */}
-        <div>
-          <label className="block text-lg font-medium mb-1">Social Media Links</label>
-          {Object.entries(formData?.social_media_links || {}).map(([platform, link]) => (
-            <div key={platform} className="mb-2">
-              <label className="block text-sm font-medium text-gray-600">{platform.toUpperCase()} URL</label>
-              <input
-                type="text"
-                name={platform}
-                value={link || ""}
-                onChange={(e) => {
-                  const updatedLinks = {
-                    ...formData.social_media_links,
-                    [platform]: e.target.value,
-                  };
-                  setFormData((prevFormData) =>
-                    prevFormData ? { ...prevFormData, social_media_links: updatedLinks } : null
-                  );
-                }}
-                className="w-full border p-2 rounded"
-              />
-            </div>
-          ))}
-        </div>
-
-        {/* Timetable */}
-        <div>
-          <label className="block text-lg font-medium mb-1">Timetable</label>
-          <textarea
+          <TextField
+            fullWidth
+            label="Timetable"
             name="timetable"
+            multiline
+            rows={3}
             value={formData.timetable}
             onChange={handleChange}
-            className="w-full border p-2 rounded"
-          ></textarea>
-        </div>
+            sx={{ mb: 2 }}
+          />
 
-        {/* Membership Requirements */}
-        <div>
-          <label className="block text-lg font-medium mb-1">Membership Requirements</label>
-          <textarea
+          <TextField
+            fullWidth
+            label="Membership Requirements"
             name="membership_requirements"
+            multiline
+            rows={3}
             value={formData.membership_requirements}
             onChange={handleChange}
-            className="w-full border p-2 rounded"
-          ></textarea>
-        </div>
+            sx={{ mb: 2 }}
+          />
 
-        {/* Upcoming Projects or Plans */}
-        <div>
-          <label className="block text-lg font-medium mb-1">Upcoming Projects or Plans</label>
-          <textarea
+          <TextField
+            fullWidth
+            label="Upcoming Projects or Plans"
             name="upcoming_projects_or_plans"
+            multiline
+            rows={3}
             value={formData.upcoming_projects_or_plans}
             onChange={handleChange}
-            className="w-full border p-2 rounded"
-          ></textarea>
-        </div>
+            sx={{ mb: 2 }}
+          />
 
-        {/* Tags */}
-        <div>
-          <label className="block text-lg font-medium mb-1">Tags (comma separated)</label>
-          <input
-            type="text"
+          {/* Tags */}
+          <TextField
+            fullWidth
+            label="Tags (comma separated)"
             name="tags"
             value={formData.tags.join(", ")}
             onChange={(e) =>
@@ -237,19 +216,25 @@ const ManageSocietyDetails: React.FC = () => {
                 tags: e.target.value.split(",").map((tag) => tag.trim()),
               })
             }
-            className="w-full border p-2 rounded"
+            sx={{ mb: 3 }}
           />
-        </div>
 
-        <button
-          type="submit"
-          disabled={saving}
-          className="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600 transition"
-        >
-          {saving ? "Saving..." : "Save Changes"}
-        </button>
-      </form>
-    </div>
+          <Button
+            type="submit"
+            fullWidth
+            disabled={saving}
+            sx={{
+              backgroundColor: colors.blueAccent[500],
+              color: "#ffffff",
+              fontWeight: "bold",
+              "&:hover": { backgroundColor: colors.blueAccent[600] },
+            }}
+          >
+            {saving ? "Saving..." : "Save Changes"}
+          </Button>
+        </form>
+      </Paper>
+    </Box>
   );
 };
 

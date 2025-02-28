@@ -13,25 +13,30 @@ import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
 import NotificationsOutlinedIcon from "@mui/icons-material/NotificationsOutlined";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import PersonOutlinedIcon from "@mui/icons-material/PersonOutlined";
-import { useSettingsStore } from "../stores/settings-store";
-import { SearchContext } from "./layout/SearchContext";
 import MenuIcon from "@mui/icons-material/Menu";
+import { useSettingsStore } from "../stores/settings-store";
+import { useAuthStore } from "../stores/auth-store";
+import { SearchContext } from "./layout/SearchContext";
 
 import AdminDrawer from "./layout/AdminDrawer";
 import StudentDrawer from "./layout/StudentDrawer";
+import PresidentDrawer from "./layout/PresidentDrawer"; // Import the president drawer
 import { CustomAppBar } from "./layout/drawer/CustomDrawer";
 
-interface LayoutProps {}
-
-const Layout: React.FC<LayoutProps> = () => {
+const Layout: React.FC = () => {
   const theme = useTheme();
   const { drawer, toggleDrawer, toggleThemeMode } = useSettingsStore();
   const { searchTerm, setSearchTerm } = useContext(SearchContext);
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuthStore(); // Get the logged-in user
 
-  // Choose the appropriate drawer based on the current route
-  const DrawerComponent = location.pathname.startsWith("/admin")
+  // Choose the appropriate drawer:
+  // If the user is a president, use the PresidentDrawer.
+  // Otherwise, use the admin drawer if the route starts with "/admin", or student drawer for other routes.
+  const DrawerComponent = user?.is_president
+    ? PresidentDrawer
+    : location.pathname.startsWith("/admin")
     ? AdminDrawer
     : StudentDrawer;
 
@@ -41,81 +46,81 @@ const Layout: React.FC<LayoutProps> = () => {
   const currentDrawerWidth = drawer ? drawerOpenWidth : drawerClosedWidth;
 
   return (
-      <Box sx={{ display: "flex" }}>
-        <CustomAppBar
-          position="fixed"
-          open={drawer}
-          elevation={0}
-          sx={{
-            backgroundColor: "transparent",
-          }}
-        >
-          <Toolbar>
-            <IconButton
-              color="inherit"
-              aria-label="open drawer"
-              onClick={() => toggleDrawer()}
-              edge="start"
-              sx={[
-                {
-                  marginRight: 5,
-                },
-                drawer && { display: "none" },
-              ]}
-            >
-              <MenuIcon
-                sx={{
-                  color: theme.palette.text.primary,
-                }}
-              />
+    <Box sx={{ display: "flex" }}>
+      <CustomAppBar
+        position="fixed"
+        open={drawer}
+        elevation={0}
+        sx={{
+          backgroundColor: "transparent",
+        }}
+      >
+        <Toolbar>
+          <IconButton
+            color="inherit"
+            aria-label="open drawer"
+            onClick={() => toggleDrawer()}
+            edge="start"
+            sx={[
+              {
+                marginRight: 5,
+              },
+              drawer && { display: "none" },
+            ]}
+          >
+            <MenuIcon
+              sx={{
+                color: theme.palette.text.primary,
+              }}
+            />
+          </IconButton>
+          <Box display="flex" borderRadius="3px">
+            <InputBase
+              sx={{ ml: 2, flex: 1 }}
+              placeholder="Search"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <IconButton type="button" sx={{ p: 1 }}>
+              <SearchIcon />
             </IconButton>
-            <Box display="flex" borderRadius="3px">
-              <InputBase
-                sx={{ ml: 2, flex: 1 }}
-                placeholder="Search"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            
-              <IconButton type="button" sx={{ p: 1 }}>
-                <SearchIcon />
-              </IconButton>
-            </Box>
-            <Box display="flex" marginLeft={"auto"}>
-              <IconButton
-                onClick={() => {
-                  console.log("changing theme");
-                  toggleThemeMode();
-                }}
-              >
-                {theme.palette.mode === "dark" ? (
-                  <DarkModeOutlinedIcon />
-                ) : (
-                  <LightModeOutlinedIcon />
-                )}
-              </IconButton>
-              <IconButton>
-                <NotificationsOutlinedIcon />
-              </IconButton>
-              <IconButton>
-                <SettingsOutlinedIcon />
-              </IconButton>
-              <IconButton
-                onClick={() => {
-                  if (location.pathname.startsWith("/admin")) {
-                    navigate("/admin/profile");
-                  } else if (location.pathname.startsWith("/student")) {
-                    navigate("/student/profile");
-                  } else {
-                    navigate("/profile");
-                  }
-                }}
-              >
-                <PersonOutlinedIcon />
-              </IconButton>
-            </Box>
-          </Toolbar>
-        </CustomAppBar>
+          </Box>
+          <Box display="flex" marginLeft={"auto"}>
+            <IconButton
+              onClick={() => {
+                toggleThemeMode();
+              }}
+            >
+              {theme.palette.mode === "dark" ? (
+                <DarkModeOutlinedIcon />
+              ) : (
+                <LightModeOutlinedIcon />
+              )}
+            </IconButton>
+            <IconButton>
+              <NotificationsOutlinedIcon />
+            </IconButton>
+            <IconButton>
+              <SettingsOutlinedIcon />
+            </IconButton>
+            <IconButton
+              onClick={() => {
+                if (location.pathname.startsWith("/admin")) {
+                  navigate("/admin/profile");
+                } else if (location.pathname.startsWith("/student")) {
+                  navigate("/student/profile");
+                } else if (location.pathname.startsWith("/president")) {
+                  navigate("/president/profile");
+                } else {
+                  navigate("/profile");
+                }
+              }}
+            >
+              <PersonOutlinedIcon />
+            </IconButton>
+          </Box>
+        </Toolbar>
+      </CustomAppBar>
 
       {/* Drawer */}
       <DrawerComponent drawer={drawer} toggleDrawer={toggleDrawer} location={location} />
