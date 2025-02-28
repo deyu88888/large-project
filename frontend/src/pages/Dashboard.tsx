@@ -100,6 +100,8 @@ interface TabsProps {
   setActiveTab: (tab: string) => void;
   children: React.ReactNode;
 }
+
+// Define the Tabs component here, making sure it's fully defined before use
 const Tabs: React.FC<TabsProps> = ({ activeTab, setActiveTab, children }) => {
   const tabLabels = React.Children.toArray(children)
     .filter((child) => React.isValidElement(child))
@@ -138,6 +140,8 @@ interface TabPanelProps {
   label: string;
   children: React.ReactNode;
 }
+
+// Define the TabPanel component here, making sure it's fully defined before use
 const TabPanel: React.FC<TabPanelProps> = ({ children, label }) => (
   <div data-testid={`panel-${label.toLowerCase().replace(/\s+/g, '-')}`}>{children}</div>
 );
@@ -794,7 +798,7 @@ const Dashboard: React.FC = () => {
           <SectionCard title="Updates">
             <div ref={updatesRef} data-testid="updates-section">
               <Tabs activeTab={activeTab} setActiveTab={setActiveTab}>
-              <TabPanel label="Recent Activities">
+                <TabPanel label="Recent Activities">
                   {recentActivities.length ? (
                     <ul className="space-y-2 pl-4 list-disc">
                       {recentActivities.map((activity, idx) => (
@@ -818,41 +822,41 @@ const Dashboard: React.FC = () => {
                     <ul className="space-y-2 pl-4 list-disc">
                       {notifications.map((notification, idx) => (
                         <li
-                        key={idx}
-                        className="text-gray-700 dark:text-gray-200 text-base"
-                        data-testid={`notification-item-${idx}`}
-                      >
-                        {notification.message}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-gray-500 dark:text-gray-400 text-base">
-                    No notifications.
-                  </p>
-                )}
-              </TabPanel>
-            </Tabs>
-          </div>
-        </SectionCard>
+                          key={idx}
+                          className="text-gray-700 dark:text-gray-200 text-base"
+                          data-testid={`notification-item-${idx}`}
+                        >
+                          {notification.message}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-gray-500 dark:text-gray-400 text-base">
+                      No notifications.
+                    </p>
+                  )}
+                </TabPanel>
+              </Tabs>
+            </div>
+          </SectionCard>
 
-        {/* Error Message */}
-        {error && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3 }}
-            className="bg-red-100 dark:bg-red-900 border-l-8 border-red-600
+          {/* Error Message */}
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3 }}
+              className="bg-red-100 dark:bg-red-900 border-l-8 border-red-600
                        text-red-800 dark:text-red-200 p-6 rounded-2xl shadow-md"
-            data-testid="error-message"
-          >
-            <strong>Error:</strong> {error}
-          </motion.div>
-        )}
+              data-testid="error-message"
+            >
+              <strong>Error:</strong> {error}
+            </motion.div>
+          )}
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
 };
 
 export default Dashboard;
