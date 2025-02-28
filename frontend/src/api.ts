@@ -4,12 +4,16 @@ import { ACCESS_TOKEN } from "./constants";
 // Define base API URL properly
 const apiUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
-// Axios instance
+// Update your apiClient creation:
 export const apiClient = axios.create({
   baseURL: apiUrl,
   headers: {
     "Content-Type": "application/json",
   },
+  // Add this to prevent trailing slashes
+  paramsSerializer: {
+    indexes: null
+  }
 });
 
 // Attach Authorization token for every request (only if it exists)
@@ -48,7 +52,7 @@ export const apiPaths = {
     MANAGE_DETAILS: (id: number) => `/api/manage-society-details/${id}`,  // TODO: DONT ADD BACKSLASH
   },
   EVENTS: {
-    ALL: "api/events", // TODO: DONT ADD BACKSLASH
+    ALL: "/api/events", // TODO: DONT ADD BACKSLASH
     PENDINGEVENTREQUEST: "api/society/event/pending",  // TODO: DONT ADD BACKSLASH
     UPDATEENEVENTREQUEST: "api/society/event/request",  // TODO: DONT ADD BACKSLASH
     APPROVEDEVENTLIST: "api/society/event/approved", // TODO: DONT ADD BACKSLASH
