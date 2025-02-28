@@ -5,9 +5,10 @@ import { Link } from "react-router-dom";
 import { LoadingView } from "../components/loading/loading-view";
 import PopularSocieties from "../components/PopularSocieties";
 import { getAllEvents } from "../api";
-import Sidebar from "../components/Sidebar";
+import Sidebar from "../components/Sidebar"; // Our advanced Sidebar (with dark mode toggle)
 import { HiMenu } from "react-icons/hi";
 import { motion } from 'framer-motion';
+// Removed duplicate import of RawEvent as it is defined locally.
 
 // -- Type Definitions --
 interface StatData {
@@ -42,7 +43,6 @@ interface RawEvent {
   title: string;
   date: string;
   startTime: string;
-  start_time?: string; // Added for test compatibility
   duration?: string;
 }
 
@@ -66,7 +66,6 @@ const SectionCard: React.FC<{ title: string; children: React.ReactNode }> = ({
                border-l-8 border-transparent hover:border-gradient-to-r
                hover:from-purple-500 hover:to-indigo-500
                transition-all duration-300"
-    data-testid={`section-${title.toLowerCase().replace(/\s+/g, '-')}`}
   >
     <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4">
       {title}
@@ -86,7 +85,6 @@ const StatCard: React.FC<{ title: string; value: number; color: string }> = ({
     transition={{ duration: 0.3 }}
     className={`p-6 rounded-2xl text-white bg-gradient-to-br ${color}
                 shadow-md transition transform hover:scale-105 hover:shadow-lg`}
-    data-testid={`stat-${title.toLowerCase().replace(/\s+/g, '-')}`}
   >
     <p className="text-sm uppercase tracking-wider">{title}</p>
     <p className="text-4xl font-bold mt-2">{value}</p>
@@ -105,7 +103,7 @@ const Tabs: React.FC<TabsProps> = ({ activeTab, setActiveTab, children }) => {
     .map((child) => (child as React.ReactElement).props.label);
 
   return (
-    <div data-testid="tabs-container">
+    <div>
       <div className="flex border-b border-gray-200 dark:border-gray-700">
         {tabLabels.map((label: string) => (
           <button
@@ -116,13 +114,12 @@ const Tabs: React.FC<TabsProps> = ({ activeTab, setActiveTab, children }) => {
                 : "text-gray-500 hover:text-gray-700 dark:text-gray-300"
             }`}
             onClick={() => setActiveTab(label)}
-            data-testid={`tab-${label.toLowerCase().replace(/\s+/g, '-')}`}
           >
             {label}
           </button>
         ))}
       </div>
-      <div className="py-4" data-testid="tab-content">
+      <div className="py-4">
         {React.Children.toArray(children).find(
           (child) =>
             React.isValidElement(child) &&
@@ -137,9 +134,7 @@ interface TabPanelProps {
   label: string;
   children: React.ReactNode;
 }
-const TabPanel: React.FC<TabPanelProps> = ({ children, label }) => (
-  <div data-testid={`panel-${label.toLowerCase().replace(/\s+/g, '-')}`}>{children}</div>
-);
+const TabPanel: React.FC<TabPanelProps> = ({ children }) => <>{children}</>;
 
 // -- Main Dashboard --
 const Dashboard: React.FC = () => {
@@ -165,29 +160,19 @@ const Dashboard: React.FC = () => {
 
   // -- Dark Mode --
   const [darkMode, setDarkMode] = useState(() => {
-    try {
-      // Optional: read from localStorage or system preference
-      const stored = localStorage.getItem("darkMode");
-      if (stored !== null) {
-        return JSON.parse(stored);
-      }
-      // Or default to system preference
-      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      return prefersDark;
-    } catch (e) {
-      // Fallback if localStorage or matchMedia fails
-      return false;
+    // Optional: read from localStorage or system preference
+    const stored = localStorage.getItem("darkMode");
+    if (stored !== null) {
+      return JSON.parse(stored);
     }
+    // Or default to system preference
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    return prefersDark;
   });
 
   // Apply or remove .dark class on <html> or <body>
   useEffect(() => {
-    try {
-      localStorage.setItem("darkMode", JSON.stringify(darkMode));
-    } catch (e) {
-      console.error("Failed to save darkMode to localStorage:", e);
-    }
-    
+    localStorage.setItem("darkMode", JSON.stringify(darkMode));
     if (darkMode) {
       document.documentElement.classList.add("dark");
     } else {
@@ -205,22 +190,21 @@ const Dashboard: React.FC = () => {
   // -- WebSocket --
   const socketRef = useRef<WebSocket | null>(null);
   const reconnectIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const reconnectAttemptsRef = useRef<number>(0);
   const MAX_RECONNECT_ATTEMPTS = 5;
   const RECONNECT_INTERVAL = 5000;
 
   // -- Toggle Sidebar -- (ONLY for the hamburger button)
-  const handleToggleSidebar = useCallback(() => {
+  const handleToggleSidebar = () => {
     setSidebarWidth((prev) => (prev === 'collapsed' ? 'expanded' : 'collapsed'));
-  }, []);
+  };
 
-  const handleCloseSidebar = useCallback(() => {
+  const handleCloseSidebar = () => {
     setSidebarWidth('collapsed');
-  }, []);
+  };
 
-  const handleNavItemClick = useCallback((ref: React.RefObject<HTMLElement> | null) => {
-    scrollToSection(ref);
-  }, []);
+  const handleNavItemClick = (ref: React.RefObject<HTMLElement> | null) => { // Allow null
+    scrollToSection(ref); // Pass the ref (which might be null) directly
+  };
 
   // -- Navigation Items Array --
   const navigationItems = [
@@ -228,42 +212,36 @@ const Dashboard: React.FC = () => {
       label: "Dashboard",
       icon: <span className="text-xl">🏠</span>,
       ref: null,
-      scrollToSection: handleNavItemClick,
     },
     {
       label: "Statistics",
       icon: <span className="text-xl">📊</span>,
       ref: statsRef,
-      scrollToSection: handleNavItemClick,
     },
     {
       label: "Popular Societies",
       icon: <span className="text-xl">🏆</span>,
       ref: popularSocietiesRef,
-      scrollToSection: handleNavItemClick,
     },
     {
       label: "Upcoming Events",
       icon: <span className="text-xl">📅</span>,
       ref: upcomingEventsRef,
-      scrollToSection: handleNavItemClick,
     },
     {
       label: "Event Calendar",
       icon: <span className="text-xl">🗓️</span>,
       ref: eventCalendarRef,
-      scrollToSection: handleNavItemClick,
     },
     {
       label: "Updates",
       icon: <span className="text-xl">🔔</span>,
       ref: updatesRef,
-      scrollToSection: handleNavItemClick,
     },
   ];
 
   // -- Smooth Scroll --
-  const scrollToSection = useCallback((ref: React.RefObject<HTMLElement> | null) => {
+  const scrollToSection = (ref: React.RefObject<HTMLElement> | null) => {  // Allow null
     if (ref === null) {
       // Scroll to the top of the document
       window.scrollTo({
@@ -281,97 +259,67 @@ const Dashboard: React.FC = () => {
         behavior: "smooth",
       });
     }
-  }, []);
+  };
 
-  // -- Helpers for parsing Dates & Durations --
-  const parseEventDateTime = useCallback((dateStr: string, timeStr: string): Date | null => {
-    try {
-      const dateTimeStr = `${dateStr}T${timeStr}`;
-      const date = new Date(dateTimeStr);
-      // Check if date is valid
-      if (isNaN(date.getTime())) {
-        return null;
-      }
-      return date;
-    } catch (e) {
-      console.error("Error parsing date/time:", e);
-      return null;
-    }
-  }, []);
-
-  const calculateEventEnd = useCallback((start: Date | null, durationStr?: string): Date | null => {
-    if (!start || !durationStr) return null;
-    if (!durationStr.includes(":")) return null;
+    // ---- Fetch Events ----
+    useEffect(() => {
+      let isMounted = true;
     
-    try {
-      const [hours, minutes, seconds] = durationStr.split(":").map(Number);
-      const durationMs = (hours * 3600 + minutes * 60 + (seconds || 0)) * 1000;
-      return new Date(start.getTime() + durationMs);
-    } catch (e) {
-      console.error("Error calculating event end time:", e);
-      return null;
-    }
-  }, []);
-
-  // ---- Fetch Events ----
-  useEffect(() => {
-    let isMounted = true;
-  
-    async function fetchEvents() {
-      try {
-        // 1️⃣ Fetch raw events from the API
-        const rawEvents: RawEvent[] = await getAllEvents();
-        console.log("🎉 Raw Events from API:", rawEvents);
-  
-        if (!isMounted) return;
-  
-        // 2️⃣ Convert raw events to formatted events
-        const formattedEvents = rawEvents
-          .map((event): CalendarEvent | null => {
-            // Use the API field names - handle both startTime and start_time for compatibility
-            const timeField = event.startTime || event.start_time || "";
-            const startDateTime = parseEventDateTime(event.date, timeField);
-            // Calculate the end time using the provided duration
-            const endDateTime = calculateEventEnd(startDateTime, event.duration);
-  
-            if (!startDateTime || !endDateTime) {
-              console.warn("⚠️ Skipping invalid event:", event);
-              return null;
-            }
-  
-            return {
-              id: event.id,
-              title: event.title,
-              start: startDateTime,
-              end: endDateTime,
-            };
-          })
-          .filter((evt): evt is CalendarEvent => evt !== null);
-  
-        // 3️⃣ Sort events by start time
-        formattedEvents.sort((a, b) => a.start.getTime() - b.start.getTime());
-        console.log("✅ Formatted Events:", formattedEvents);
-  
-        if (isMounted) {
-          setUpcomingEvents(formattedEvents);
-          setEventCalendar(formattedEvents);
-          setLoading(false);
-        }
-      } catch (err) {
-        console.error("❌ Error fetching events:", err);
-        if (isMounted) {
-          setError("Failed to fetch events.");
-          setLoading(false);
+      async function fetchEvents() {
+        try {
+          // 1️⃣ Fetch raw events from the API
+          const rawEvents: RawEvent[] = await getAllEvents();
+          console.log("🎉 Raw Events from API:", rawEvents);
+    
+          // 2️⃣ Convert raw events to formatted events
+          const formattedEvents = rawEvents
+            .map((event): CalendarEvent | null => {
+              // Use the API field names exactly (e.g. start_time, not startTime)
+              const startDateTime = parseEventDateTime(event.date, event.start_time);
+              // Calculate the end time using the provided duration
+              const endDateTime = calculateEventEnd(startDateTime, event.duration);
+    
+              if (!startDateTime || !endDateTime) {
+                console.warn("⚠️ Skipping invalid event:", event);
+                return null;
+              }
+    
+              return {
+                id: event.id,
+                title: event.title,
+                start: startDateTime,
+                end: endDateTime,
+              };
+            })
+            .filter((evt): evt is CalendarEvent => evt !== null);
+    
+          // 3️⃣ Sort events by start time
+          formattedEvents.sort((a, b) => a.start.getTime() - b.start.getTime());
+          console.log("✅ Formatted Events:", formattedEvents);
+    
+          if (isMounted) {
+            setUpcomingEvents(formattedEvents);
+            setEventCalendar(formattedEvents);
+          }
+        } catch (err) {
+          console.error("❌ Error fetching events:", err);
+          if (isMounted) {
+            setError("Failed to fetch events.");
+          }
+        } finally {
+          if (isMounted) {
+            setLoading(false);
+          }
         }
       }
-    }
-  
-    fetchEvents();
-  
-    return () => {
-      isMounted = false;
-    };
-  }, [parseEventDateTime, calculateEventEnd]);
+    
+      fetchEvents();
+    
+      return () => {
+        isMounted = false;
+      };
+    }, []);
+    
 
   // ---- WebSocket Handlers & Connection ----
   const messageHandler = useCallback((data: WebSocketMessage) => {
@@ -397,68 +345,67 @@ const Dashboard: React.FC = () => {
     }
   }, []);
 
-  const connectWebSocket = useCallback(() => {
-    if (reconnectIntervalRef.current) {
-      clearTimeout(reconnectIntervalRef.current);
-      reconnectIntervalRef.current = null;
-    }
-    
-    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
-      console.warn("[Dashboard] WebSocket already open. Skipping.");
-      return;
-    }
-
-    console.log("[Dashboard] Connecting to WebSocket...");
+  useEffect(() => {
+    console.log("[Dashboard] Initializing WebSocket...");
+    let reconnectAttempts = 0;
     const wsURL =
       process.env.NODE_ENV === "production"
         ? "wss://your-production-domain.com/ws/dashboard/"
         : "ws://127.0.0.1:8000/ws/dashboard/";
 
-    const socket = new WebSocket(wsURL);
-    socketRef.current = socket;
-
-    socket.onopen = () => {
-      console.log("[Dashboard] WebSocket Connected!");
-      setError(null);
-      reconnectAttemptsRef.current = 0;
-    };
-
-    socket.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        messageHandler(data);
-      } catch (parseErr) {
-        console.error("Error parsing WebSocket message:", parseErr, event.data);
-        setError("Error parsing WebSocket message.");
+    const connectWebSocket = () => {
+      if (reconnectIntervalRef.current) {
+        clearTimeout(reconnectIntervalRef.current);
+        reconnectIntervalRef.current = null;
       }
-    };
-
-    socket.onerror = (err) => {
-      console.error("[Dashboard] WebSocket Error:", err);
-      setError("WebSocket connection failed.");
-    };
-
-    socket.onclose = (evt) => {
-      socketRef.current = null;
-      console.warn(`[Dashboard] WebSocket Closed: code ${evt.code}`);
-      if (
-        evt.code !== 1000 &&
-        evt.code !== 1005 &&
-        reconnectAttemptsRef.current < MAX_RECONNECT_ATTEMPTS
-      ) {
-        reconnectAttemptsRef.current++;
-        reconnectIntervalRef.current = setTimeout(
-          connectWebSocket,
-          RECONNECT_INTERVAL
-        );
-      } else {
-        console.warn("[Dashboard] WebSocket closed permanently.");
+      if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+        console.warn("[Dashboard] WebSocket already open. Skipping.");
+        return;
       }
-    };
-  }, [messageHandler]);
 
-  useEffect(() => {
-    console.log("[Dashboard] Initializing WebSocket...");
+      console.log("[Dashboard] Connecting to WebSocket...");
+      const socket = new WebSocket(wsURL);
+      socketRef.current = socket;
+
+      socket.onopen = () => {
+        console.log("[Dashboard] WebSocket Connected!");
+        setError(null);
+        reconnectAttempts = 0;
+      };
+
+      socket.onmessage = (event) => {
+        try {
+          const data: WebSocketMessage = JSON.parse(event.data);
+          messageHandler(data);
+        } catch (parseErr) {
+          console.error("Error parsing WebSocket message:", parseErr, event.data);
+          setError("Error parsing WebSocket message.");
+        }
+      };
+
+      socket.onerror = (err) => {
+        console.error("[Dashboard] WebSocket Error:", err);
+        setError("WebSocket connection failed.");
+      };
+
+      socket.onclose = (evt) => {
+        socketRef.current = null;
+        console.warn(`[Dashboard] WebSocket Closed: code ${evt.code}`);
+        if (
+          evt.code !== 1000 &&
+          evt.code !== 1005 &&
+          reconnectAttempts < MAX_RECONNECT_ATTEMPTS
+        ) {
+          reconnectAttempts++;
+          reconnectIntervalRef.current = setTimeout(
+            connectWebSocket,
+            RECONNECT_INTERVAL
+          );
+        } else {
+          console.warn("[Dashboard] WebSocket closed permanently.");
+        }
+      };
+    };
     connectWebSocket();
 
     return () => {
@@ -471,7 +418,24 @@ const Dashboard: React.FC = () => {
         reconnectIntervalRef.current = null;
       }
     };
-  }, [connectWebSocket]);
+  }, [messageHandler]);
+
+  // -- Helpers for parsing Dates & Durations --
+  const parseEventDateTime = (dateStr: string, timeStr: string): Date | null => {
+    try {
+      return new Date(`${dateStr}T${timeStr}`);
+    } catch {
+      return null;
+    }
+  };
+
+  const calculateEventEnd = (start: Date | null, durationStr?: string): Date | null => {
+    if (!start || !durationStr) return null;
+    if (!durationStr.includes(":")) return null;
+    const [hours, minutes, seconds] = durationStr.split(":").map(Number);
+    const durationMs = (hours * 3600 + minutes * 60 + (seconds || 0)) * 1000;
+    return new Date(start.getTime() + durationMs);
+  };
 
   if (loading) {
     return <LoadingView />;
@@ -479,19 +443,18 @@ const Dashboard: React.FC = () => {
 
   return (
     <div
-      className={`min-h-screen flex ${
+        className={`min-h-screen flex ${
         darkMode ? "dark bg-gray-900" : "bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50"
-      } transition-colors duration-500 grid grid-cols-[auto_1fr]`}
-      style={{
+        } transition-colors duration-500 grid grid-cols-[auto_1fr]`}
+        style={{
         gridTemplateColumns: sidebarWidth === 'collapsed' ? 'auto 1fr' : '288px 1fr',
-      }}
-      data-testid="dashboard-container"
+        }}
     >
       {/* Sidebar */}
       <Sidebar
         isOpen={true}
-        onClose={handleCloseSidebar}
-        onToggle={handleToggleSidebar}
+        onClose={handleCloseSidebar} // Use the new function
+        onToggle={handleToggleSidebar} // Pass handleToggleSidebar
         navigationItems={navigationItems}
         scrollToSection={handleNavItemClick}
         darkMode={darkMode}
@@ -500,82 +463,77 @@ const Dashboard: React.FC = () => {
       />
 
       {/* Main Content */}
-      <div className="flex-grow pt-16" data-testid="main-content">
+      <div className="flex-grow pt-16">
         {/* Header */}
         <motion.header
-          initial={{ opacity: 0, y: -30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="bg-white dark:bg-gray-800 shadow-md fixed top-0 z-10 w-full"
-          style={{
-            gridTemplateColumns: sidebarWidth === 'collapsed' ? 'auto 1fr auto' : '288px 1fr',
-          }}
-          data-testid="dashboard-header"
+            initial={{ opacity: 0, y: -30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="bg-white dark:bg-gray-800 shadow-md fixed top-0 z-10 w-full"
+            style={{
+                gridTemplateColumns: sidebarWidth === 'collapsed' ? 'auto 1fr auto' : '288px 1fr',
+            }}
         >
-          <div className="max-w-7xl mx-auto px-4 py-2 grid grid-cols-[auto_1fr_auto] gap-4 items-center">
-            <div className="flex items-center gap-2">
-              {/* Toggle Button */}
-              <button
-                className="text-gray-600 dark:text-gray-300 hover:text-gray-800
-                          dark:hover:text-white focus:outline-none"
-                onClick={handleToggleSidebar}
-                aria-label="Toggle Menu"
-                data-testid="header-toggle-button"
-              >
-                <motion.span
-                  initial={{ opacity: 0, scale: 0.5 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <HiMenu className="h-6 w-6" />
-                </motion.span>
-              </button>
-              <span role="img" aria-label="sparkles" className="text-3xl">
-                ✨
-              </span>
-              <h1 className="text-xl font-extrabold tracking-wide text-gray-800 dark:text-gray-100">
-                Student Society Dashboard
-              </h1>
-            </div>
+            <div className="max-w-7xl mx-auto px-4 py-2 grid grid-cols-[auto_1fr_auto] gap-4 items-center">
+                <div className="flex items-center gap-2">
+                    {/* Toggle Button */}
+                    <button
+                        className="text-gray-600 dark:text-gray-300 hover:text-gray-800
+                                dark:hover:text-white focus:outline-none"
+                        onClick={handleToggleSidebar}
+                        aria-label="Toggle Menu"
+                    >
+                        <motion.span
+                            initial={{ opacity: 0, scale: 0.5 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.2 }}
+                        >
+                            <HiMenu className="h-6 w-6" />
+                        </motion.span>
+                    </button>
+                    <span role="img" aria-label="sparkles" className="text-3xl">
+                        ✨
+                    </span>
+                    <h1 className="text-xl font-extrabold tracking-wide text-gray-800 dark:text-gray-100">
+                        Student Society Dashboard
+                    </h1>
+                </div>
 
-            {/* Conditionally render Register/Login links */}
-            {sidebarWidth === 'collapsed' && (
-              <div className="flex items-center justify-end gap-4">
-                {/* Search and Buttons */}
-                <input
-                  type="search"
-                  placeholder="Search..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="px-4 py-2 rounded-full border border-gray-300
-                              dark:border-gray-700 dark:bg-gray-700 dark:text-gray-100
-                              focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  style={{ caretColor: "black" }}
-                  data-testid="search-input"
-                />
-                <Link
-                  to="/register"
-                  className="px-4 py-2 bg-purple-600 text-white
-                              rounded-full shadow hover:bg-purple-700 transition whitespace-nowrap"
-                  data-testid="register-link"
-                >
-                  Register
-                </Link>
-                <Link
-                  to="/login"
-                  className="px-4 py-2 bg-purple-600 text-white
-                              rounded-full shadow hover:bg-purple-700 transition whitespace-nowrap"
-                  data-testid="login-link"
-                >
-                  Login
-                </Link>
-              </div>
-            )}
-          </div>
+                {/* Conditionally render Register/Login links */}
+                {sidebarWidth === 'collapsed' && (
+                    <div className="flex items-center justify-end gap-4">
+                        {/* Search and Buttons */}
+                        <input
+                            type="search"
+                            placeholder="Search..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="px-4 py-2 rounded-full border border-gray-300
+                                        dark:border-gray-700 dark:bg-gray-700 dark:text-gray-100
+                                        focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            style={{ caretColor: "black" }}
+                        />
+                        <Link
+                            to="/register"
+                            className="px-4 py-2 bg-purple-600 text-white
+                                        rounded-full shadow hover:bg-purple-700 transition whitespace-nowrap"
+                        >
+                            Register
+                        </Link>
+                        <Link
+                            to="/login"
+                            className="px-4 py-2 bg-purple-600 text-white
+                                        rounded-full shadow hover:bg-purple-700 transition whitespace-nowrap"
+                        >
+                            Login
+                        </Link>
+                    </div>
+                )}
+            </div>
         </motion.header>
 
         {/* Main Content Section */}
-        <div className="max-w-7xl mx-auto px-4 py-8 space-y-10" data-testid="content-container">
+        <div className="max-w-7xl mx-auto px-4 py-8 space-y-10">
           {/* Introduction */}
           <SectionCard title={introduction?.title || "Welcome!"}>
             <div>
@@ -600,7 +558,6 @@ const Dashboard: React.FC = () => {
           <div
             ref={statsRef}
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
-            data-testid="statistics-section"
           >
             <StatCard
               title="Total Societies"
@@ -634,17 +591,13 @@ const Dashboard: React.FC = () => {
                        border-l-8 border-transparent hover:border-gradient-to-r
                        hover:from-purple-500 hover:to-indigo-500
                        transition-all duration-300"
-            data-testid="popular-societies-section"
           >
-            <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4">
-              Popular Societies
-            </h2>
             <PopularSocieties />
           </motion.section>
 
           {/* Upcoming Events */}
           <SectionCard title="Upcoming Events">
-            <div ref={upcomingEventsRef} data-testid="upcoming-events-section">
+            <div ref={upcomingEventsRef}>
               {upcomingEvents.length > 0 ? (
                 <UpcomingEvents events={upcomingEvents} />
               ) : (
@@ -657,7 +610,7 @@ const Dashboard: React.FC = () => {
 
           {/* Event Calendar */}
           <SectionCard title="Event Calendar">
-            <div ref={eventCalendarRef} data-testid="event-calendar-section">
+            <div ref={eventCalendarRef}>
               {eventCalendar.length > 0 ? (
                 <EventCalendar events={eventCalendar} />
               ) : (
@@ -670,7 +623,7 @@ const Dashboard: React.FC = () => {
 
           {/* Updates */}
           <SectionCard title="Updates">
-            <div ref={updatesRef} data-testid="updates-section">
+            <div ref={updatesRef}>
               <Tabs activeTab={activeTab} setActiveTab={setActiveTab}>
                 <TabPanel label="Recent Activities">
                   {recentActivities.length ? (
@@ -679,7 +632,6 @@ const Dashboard: React.FC = () => {
                         <li
                           key={idx}
                           className="text-gray-700 dark:text-gray-200 text-base"
-                          data-testid={`activity-item-${idx}`}
                         >
                           {activity.description}
                         </li>
@@ -698,7 +650,6 @@ const Dashboard: React.FC = () => {
                         <li
                           key={idx}
                           className="text-gray-700 dark:text-gray-200 text-base"
-                          data-testid={`notification-item-${idx}`}
                         >
                           {notification.message}
                         </li>
@@ -722,7 +673,6 @@ const Dashboard: React.FC = () => {
               transition={{ duration: 0.3 }}
               className="bg-red-100 dark:bg-red-900 border-l-8 border-red-600
                          text-red-800 dark:text-red-200 p-6 rounded-2xl shadow-md"
-              data-testid="error-message"
             >
               <strong>Error:</strong> {error}
             </motion.div>
