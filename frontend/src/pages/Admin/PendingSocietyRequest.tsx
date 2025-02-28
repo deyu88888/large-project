@@ -1,113 +1,51 @@
-import React, { useState, useEffect, useRef, useContext } from "react";
+import { useContext } from "react";
 import { Box, Typography, useTheme, Button } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
-import { apiClient, apiPaths } from "../../api";
-import { useNavigate } from "react-router-dom";
 import { tokens } from "../../theme/theme";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { useSettingsStore } from "../../stores/settings-store";
-
-type Society = {
-  id: number;
-  name: string;
-  societyMembers: number[];
-  roles: {};
-  leader: number;
-  category: string;
-  socialMediaLinks: {};
-  timetable: string | null;
-  membershipRequirements: string | null;
-  upcomingProjectsOrPlans: string | null;
-};
+import { useFetchWebSocket } from "../../hooks/useFetchWebSocket";
+import { updateRequestStatus } from "../../api/requestApi";
+import { apiPaths } from "../../api";
+import { fetchPendingRequests } from "./fetchPendingRequests";
 
 const PendingSocietyRequest = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
-  const navigate = useNavigate();
-  const [societies, setSocieties] = useState<Society[]>([]);
-  const ws = useRef<WebSocket | null>(null);
   const { searchTerm } = useContext(SearchContext);
   const { drawer } = useSettingsStore(); 
+  const societies = useFetchWebSocket(() => fetchPendingRequests(apiPaths.USER.PENDINGSOCIETYREQUEST), 'society');
 
-  const fetchPendingSocieties = async () => {
+
+  const filteredSocieties = Array.isArray(societies) 
+  ? societies.filter((society) => {
+      const searchString = Object.entries(society)
+        .map(([key, value]) => Array.isArray(value) ? value.join(", ") : String(value))
+        .join(" ")
+        .toLowerCase();
+      return searchString.includes(searchTerm.toLowerCase());
+    }).map((society) => ({
+      ...society,
+      society_members: Array.isArray(society.society_members) 
+        ? society.society_members.join(", ") 
+        : society.society_members,
+    }))
+  : [];
+
+  const handleStatusChange = async (id: number, status: "Approved" | "Rejected") => {
     try {
-      const res = await apiClient.get(apiPaths.USER.PENDINGSOCIETYREQUEST);
-      setSocieties(res.data);
+      await updateRequestStatus(id, status, apiPaths.USER.PENDINGSOCIETYREQUEST);
     } catch (error) {
-      console.error("Error fetching pending societies:", error);
-    }
-  };
-
-  useEffect(() => {
-    const connectWebSocket = () => {
-      ws.current = new WebSocket("ws://127.0.0.1:8000/ws/admin/society/");
-
-      ws.current.onopen = () => {
-        console.log("WebSocket Connected for Pending Society Requests");
-      };
-
-      ws.current.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          console.log("WebSocket Update Received:", data);
-          fetchPendingSocieties();
-        } catch (error) {
-          console.error("Error parsing WebSocket message:", error);
-        }
-      };
-
-      ws.current.onerror = (event) => {
-        console.error("WebSocket Error:", event);
-      };
-
-      ws.current.onclose = (event) => {
-        console.log("WebSocket Disconnected:", event.reason);
-        setTimeout(() => {
-          connectWebSocket();
-        }, 5000);
-      };
-    };
-
-    fetchPendingSocieties();
-    connectWebSocket();
-
-    return () => {
-      if (ws.current) {
-        ws.current.close();
-      }
-    };
-  }, []);
-
-  const filteredSocieties = societies.filter((society) =>
-    Object.values(society)
-      .join(" ")
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase())
-  );
-
-  const handleAccept = async (id: number) => {
-    try {
-      await apiClient.put(`${apiPaths.USER.PENDINGSOCIETYREQUEST}/${id}`, { status: "Approved" });
-    } catch (error) {
-      console.error("Error accepting society:", error);
-    }
-  };
-
-  const handleReject = async (id: number) => {
-    try {
-      await apiClient.put(`${apiPaths.USER.PENDINGSOCIETYREQUEST}/${id}`, { status: "Rejected" });
-    } catch (error) {
-      console.error("Error rejecting society:", error);
+      alert(`Failed to ${status.toLowerCase()} society request.`);
     }
   };
 
   const columns: GridColDef[] = [
     { field: "id", headerName: "ID", flex: 0.5 },
     { field: "name", headerName: "Name", flex: 1 },
-    {
-      field: "societyMembers",
+    {      
+      field: "society_members",
       headerName: "Members",
-      renderCell: (params: any) => params.row.societyMembers.join(", "),
       flex: 1,
     },
     { field: "leader", headerName: "Leader", flex: 1 },
@@ -123,12 +61,12 @@ const PendingSocietyRequest = () => {
           <Button
             variant="contained"
             color="success"
-            onClick={() => handleAccept(params.row.id)}
+            onClick={() => handleStatusChange(params.row.id, "Approved")}
             sx={{ marginRight: 1 }}
           >
             Accept
           </Button>
-          <Button variant="contained" color="error" onClick={() => handleReject(params.row.id)}>
+          <Button variant="contained" color="error" onClick={() => handleStatusChange(params.row.id, "Rejected")}>
             Reject
           </Button>
         </>
@@ -177,12 +115,13 @@ const PendingSocietyRequest = () => {
           columns={columns}
           initialState={{
             pagination: {
-              paginationModel: { pageSize: 5, page: 0 },
+              paginationModel: { pageSize: 25, page: 0 },
             },
           }}
           pageSizeOptions={[5, 10, 25]}
           checkboxSelection
         />
+        {/* <div> {JSON.stringify(filteredSocieties)} </div> */}
       </Box>
     </Box>
   );

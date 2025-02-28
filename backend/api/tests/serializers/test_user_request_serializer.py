@@ -1,7 +1,11 @@
+from io import BytesIO
+from PIL import Image
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.utils import timezone
 from api.models import Student, UserRequest
 from api.serializers import UserRequestSerializer
+from api.tests.file_deletion import delete_file
 
 # pylint: disable=no-member
 
@@ -26,6 +30,7 @@ class UserRequestSerializerTestCase(TestCase):
             approved=False,
             intent="CreateUse",
             major="Computing",
+            icon=self.get_image("0"),
         )
 
         # Serializer data
@@ -35,7 +40,8 @@ class UserRequestSerializerTestCase(TestCase):
             "requested_at": timezone.now(),
             "approved": True,
             "intent": "CreateUse",
-            "major": "Computing"
+            "major": "Computing",
+            "icon": self.user_request.icon,
         }
 
     def test_user_request_serialization(self):
@@ -46,6 +52,7 @@ class UserRequestSerializerTestCase(TestCase):
         self.assertEqual(self.user_request.approved, data["approved"])
         self.assertEqual(self.user_request.major, data["major"])
         self.assertEqual(self.user_request.intent, data["intent"])
+        self.assertEqual(self.user_request.icon.url, data["icon"])
         self.assertEqual(
             self.user_request.from_student.id,
             data["from_student"]
@@ -61,6 +68,7 @@ class UserRequestSerializerTestCase(TestCase):
         self.assertEqual(user_request.approved, self.data["approved"])
         self.assertEqual(user_request.major, self.data["major"])
         self.assertEqual(user_request.intent, self.data["intent"])
+        self.assertEqual(user_request.icon, self.data["icon"])
         self.assertEqual(
             user_request.from_student.id,
             self.data["from_student"]
@@ -75,6 +83,7 @@ class UserRequestSerializerTestCase(TestCase):
         self.assertEqual(user_request["approved"], self.data["approved"])
         self.assertEqual(user_request["major"], self.data["major"])
         self.assertEqual(user_request["intent"], self.data["intent"])
+        self.assertEqual(user_request["icon"], self.data["icon"])
         self.assertEqual(
             user_request["from_student"].id,
             self.data["from_student"]
@@ -98,3 +107,26 @@ class UserRequestSerializerTestCase(TestCase):
         if not self.serializer.is_valid():
             print(f'Errors: {self.serializer.errors}')
             self.fail("Test serializer should be valid")
+
+    def get_image(self, s):
+        """Returns an image to be used for testing"""
+        image = Image.new('RGB', (1, 1), color='red')
+        buffer = BytesIO()
+        image.save(buffer, format='JPEG')
+        buffer.seek(0)
+
+        upload_image = SimpleUploadedFile(
+            f"test_photo{s}.jpeg",
+            buffer.getvalue(),
+            content_type="image/jpeg"
+        )
+
+        return upload_image
+
+    def tearDown(self):
+        for student in Student.objects.all():
+            if student.icon:
+                delete_file(student.icon.path)
+        for request in UserRequest.objects.all():
+            if request.icon:
+                delete_file(request.icon.path)

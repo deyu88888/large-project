@@ -1,5 +1,8 @@
 from datetime import date, datetime, time, timedelta
 import random
+from io import BytesIO
+from PIL import Image
+from django.core.files.uploadedfile import SimpleUploadedFile
 from random import choice, randint
 from django.contrib.auth.hashers import make_password
 from django.core.management.base import BaseCommand
@@ -7,12 +10,16 @@ from api.models import (
     Admin,
     Student,
     Society,
+    SocietyShowreel,
     Event,
     Notification,
     SocietyRequest,
     EventRequest,
-    UserRequest
+    UserRequest,
+    Award,
+    AwardStudent,
 )
+
 
 class Command(BaseCommand):
     help = "Seed the database with admin, student, and president users"
@@ -93,13 +100,16 @@ class Command(BaseCommand):
         society.approved_by = admin
         society.society_members.add(student)
 
-        president.president_of.add(society)
+        president.president_of = society
+        president.save()
+
 
         self.create_student(50)
         self.create_admin(5)
         self.create_society(20)
         self.create_event(20)
-
+        self.pre_define_awards()
+        self.randomly_assign_awards(50)
         # Broadcast updates to the WebSocket
         self.broadcast_updates()
 
@@ -153,8 +163,14 @@ class Command(BaseCommand):
         for i in range(1, n+1):
             print(f"Seeding society {i}/{n}", end='\r', flush=True)
 
-            student_randomised = Student.objects.order_by("?")
-            society_leader = student_randomised.first()
+            # Only select students who are NOT already leading a society
+            available_students = Student.objects.exclude(president_of__isnull=False).order_by("?")
+        
+            if not available_students.exists():
+                print(self.style.WARNING("No available students left to be society leaders. Skipping."))
+                break
+
+            society_leader = available_students.first()
             approved = self.handle_society_status(
                 society_leader,
                 f"Society{i}",
@@ -169,10 +185,12 @@ class Command(BaseCommand):
                     status="Approved",
                 )
             if created:
-                members = student_randomised.all()[:2]
+                # Ensure the leader is always a member
+                society.society_members.add(society_leader)
+                members = Student.objects.exclude(id=society_leader.id).order_by("?")[:randint(4, 10)]
+                society.society_members.add(*members)
                 self.finalize_society_creation(society, members)
 
-                # ✅ NEW: Create 2-5 events for this society
                 num_events = randint(2, 5)
                 for _ in range(num_events):
                     self.generate_random_event(society)
@@ -181,7 +199,7 @@ class Command(BaseCommand):
 
     def finalize_society_creation(self, society, members):
         """Finishes society creation with proper members and roles"""
-        society.leader.president_of.add(society)
+        society.leader.president_of = society
 
         # Ensure at least 5-15 members
         all_students = list(Student.objects.exclude(id=society.leader.id))
@@ -200,6 +218,8 @@ class Command(BaseCommand):
         admin_randomised = Admin.objects.order_by('?')
         society.approved_by = admin_randomised.first()
         society.save()
+
+        self.seed_society_showreel(society)
 
     def handle_society_status(self, leader, name):
         """Creates society requests if pending, else assigns an admin to approved_by"""
@@ -280,7 +300,6 @@ class Command(BaseCommand):
         )
 
         if created:
-            # ✅ Assign 5-20 random attendees
             all_students = list(Student.objects.exclude(id=society.leader.id))
             num_attendees = min(randint(5, 20), len(all_students))
             selected_attendees = all_students[:num_attendees]
@@ -289,7 +308,6 @@ class Command(BaseCommand):
             event.save()
             print(self.style.SUCCESS(f"📅 Event Created: {event.title} ({event.date})"))
 
-        # ✅ Ensure function returns (event, created) as a tuple
         return event, created
 
     def handle_event_status(self, society, i):
@@ -416,3 +434,126 @@ class Command(BaseCommand):
         from api.signals import broadcast_dashboard_update
         print("Broadcasting updates to WebSocket...")
         broadcast_dashboard_update()
+
+    def pre_define_awards(self):
+        """Pre-define automatic awards"""
+        self.initialise_society_awards()
+        self.initialise_event_awards()
+        self.initialise_organiser_awards()
+
+    def initialise_society_awards(self):
+        """Define automatic society awards"""
+        Award.objects.create(
+            title="Society Novice",
+            description="Belong to 1 or more society!",
+            rank="Bronze",
+        )
+        Award.objects.create(
+            title="Society Enthusiast",
+            description="Belong to 3 or more societies!",
+            rank="Silver",
+        )
+        Award.objects.create(
+            title="Society Veteran",
+            description="Belong to 5 or more societies!",
+            rank="Gold",
+        )
+
+    def initialise_event_awards(self):
+        """Define automatic event awards"""
+        Award.objects.create(
+            title="Event Novice",
+            description="Attend 1 or more event!",
+            rank="Bronze",
+        )
+        Award.objects.create(
+            title="Event Enthusiast",
+            description="Attend 5 or more events!",
+            rank="Silver",
+        )
+        Award.objects.create(
+            title="Event Veteran",
+            description="Attend 20 or more events!",
+            rank="Gold",
+        )
+
+    def initialise_organiser_awards(self):
+        """Define automatic organiser awards"""
+        Award.objects.create(
+            title="Organisation Novice",
+            description="Organise 1 or more events with 10+ attendees!",
+            rank="Bronze",
+        )
+        Award.objects.create(
+            title="Organisation Enthusiast",
+            description="Organise 3 or more events with 10+ attendees!",
+            rank="Silver",
+        )
+        Award.objects.create(
+            title="Organisation Veteran",
+            description="Organise 10 or more events with 10+ attendees!",
+            rank="Gold",
+        )
+
+    def student_has_reward(self, category, rank, student):
+        """True if a student has an award of category of a certain rank"""
+        return AwardStudent.objects.filter(
+            award__title__startswith=category,
+            award__rank=rank,
+            student=student
+        ).exists()
+
+    def enforce_award_validity(self, award, student):
+        """Award in a way so gold for a category relies on bronze & silver"""
+        if award.rank == "Bronze":
+            AwardStudent.objects.get_or_create(
+                award=award,
+                student=student,
+            )
+            return
+
+        lower_ranks = {"Gold": "Silver", "Silver": "Bronze"}
+        lower_rank = lower_ranks[award.rank]
+        category = award.title.split()[0]
+        if self.student_has_reward(category, lower_rank, student):
+            AwardStudent.objects.get_or_create(
+                award=award,
+                student=student,
+            )
+        else:
+            lower_award = Award.objects.filter(
+                title__startswith=category,
+                rank=lower_rank
+            ).first()
+            self.enforce_award_validity(award=lower_award, student=student)
+
+    def randomly_assign_awards(self, n):
+        """Awards n random awards to random students"""
+        students = list(Student.objects.all())
+        awards = list(Award.objects.all())
+        for i in range(1, n+1):
+            print(f"Seeding awards {i}/{n}", end='\r')
+            random_student = choice(students)
+            random_award = choice(awards)
+            self.enforce_award_validity(random_award, random_student)
+        print(self.style.SUCCESS(f"Seeding awards {n}/{n}"))
+
+    def seed_society_showreel(self, society, caption="A sample caption"):
+        """Adds a SocietyShowreel entry to a specific society"""
+        colour = (randint(0, 255), randint(0, 255), randint(0,255))
+        size = (100, 100)
+        image = Image.new('RGB', size=size, color=colour)
+
+        buffer = BytesIO()
+        image.save(buffer, format='JPEG')
+        buffer.seek(0)
+        file_name = f"showreel_{society.id}.jpeg"
+        uploaded_file = SimpleUploadedFile(file_name, buffer.read(), content_type='image/jpeg')
+
+        showreel_entry = SocietyShowreel.objects.create(
+            society=society,
+            photo=uploaded_file,
+            caption=caption
+        )
+
+        return showreel_entry

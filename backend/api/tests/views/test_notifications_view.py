@@ -1,6 +1,8 @@
 from rest_framework.test import APITestCase
 from rest_framework import status
 from api.models import Student, Notification, Event, User
+from api.tests.file_deletion import delete_file
+
 
 class TestNotificationsView(APITestCase):
     def setUp(self):
@@ -31,7 +33,7 @@ class TestNotificationsView(APITestCase):
             message="Notification 2",
         )
 
-        self.url = "/api/dashboard/notifications/"
+        self.url = "/api/dashboard/notifications"
 
     def test_notifications_authenticated_student(self):
         """A logged-in student can view their notifications."""
@@ -62,3 +64,8 @@ class TestNotificationsView(APITestCase):
         self.client.logout()
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def tearDown(self):
+        for student in Student.objects.all():
+            if student.icon:
+                delete_file(student.icon.path)

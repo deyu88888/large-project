@@ -1,0 +1,155 @@
+{
+    "numTotalTestSuites": 8,
+    "numPassedTestSuites": 8,
+    "numFailedTestSuites": 0,
+    "numPendingTestSuites": 0,
+    "numTotalTests": 8,
+    "numPassedTests": 8,
+    "numFailedTests": 0,
+    "numPendingTests": 0,
+    "numTodoTests": 0,
+    "snapshot": {
+        "added": 0,
+        "failure": false,
+        "filesAdded": 0,
+        "filesRemoved": 0,
+        "filesRemovedList": [],
+        "filesUnmatched": 0,
+        "filesUpdated": 0,
+        "matched": 0,
+        "total": 0,
+        "unchecked": 0,
+        "uncheckedKeysByFile": [],
+        "unmatched": 0,
+        "updated": 0,
+        "didUpdate": false
+    },
+    "startTime": 1739472922832,
+    "success": true,
+    "testResults": [
+        {
+            "assertionResults": [
+                {
+                    "ancestorTitles": [
+                        "404 Page"
+                    ],
+                    "fullName": "404 Page should render 404 page",
+                    "status": "passed",
+                    "title": "should render 404 page",
+                    "duration": 47.01345799999996,
+                    "failureMessages": [],
+                    "meta": {}
+                }
+            ],
+            "startTime": 1739472923332,
+            "endTime": 1739472923379.0134,
+            "status": "passed",
+            "message": "",
+            "name": "/Users/derekliu/code/large-project/frontend/src/pages/__test__/404.test.tsx"
+        },
+        {
+            "assertionResults": [
+                {
+                    "ancestorTitles": [
+                        "registration page"
+                    ],
+                    "fullName": "registration page should render registration page",
+                    "status": "passed",
+                    "title": "should render registration page",
+                    "duration": 26.675207999999998,
+                    "failureMessages": [],
+                    "meta": {}
+                }
+            ],
+            "startTime": 1739472923402,
+            "endTime": 1739472923428.6753,
+            "status": "passed",
+            "message": "",
+            "name": "/Users/derekliu/code/large-project/frontend/src/pages/__test__/RegisterPage.test.tsx"
+        },
+        {
+            "assertionResults": [
+                {
+                    "ancestorTitles": [
+                        "LoginPage"
+                    ],
+                    "fullName": "LoginPage renders login form correctly",
+                    "status": "passed",
+                    "title": "renders login form correctly",
+                    "duration": 69.694209,
+                    "failureMessages": [],
+                    "meta": {}
+                },
+                {
+                    "ancestorTitles": [
+                        "LoginPage"
+                    ],
+                    "fullName": "LoginPage allows users to type and submit the form",
+                    "status": "passed",
+                    "title": "allows users to type and submit the form",
+                    "duration": 17.204624999999965,
+                    "failureMessages": [],
+                    "meta": {}
+                },
+                {
+                    "ancestorTitles": [
+                        "LoginPage"
+                    ],
+                    "fullName": "LoginPage handles successful login",
+                    "status": "passed",
+                    "title": "handles successful login",
+                    "duration": 13.45820900000001,
+                    "failureMessages": [],
+                    "meta": {}
+                },
+                {
+                    "ancestorTitles": [
+                        "LoginPage"
+                    ],
+                    "fullName": "LoginPage shows an alert on login failure",
+                    "status": "passed",
+                    "title": "shows an alert on login failure",
+                    "duration": 10.873459000000025,
+                    "failureMessages": [],
+                    "meta": {}
+                },
+                {
+                    "ancestorTitles": [
+                        "LoginPage"
+                    ],
+                    "fullName": "LoginPage shows browser validation error when username and password are empty",
+                    "status": "passed",
+                    "title": "shows browser validation error when username and password are empty",
+                    "duration": 3.776875000000018,
+                    "failureMessages": [],
+                    "meta": {}
+                }
+            ],
+            "startTime": 1739472923392,
+            "endTime": 1739472923506.7769,
+            "status": "passed",
+            "message": "",
+            "name": "/Users/derekliu/code/large-project/frontend/src/pages/__test__/login.test.tsx"
+        },
+        {
+            "assertionResults": [
+                {
+                    "ancestorTitles": [
+                        "Pending Society Request Page"
+                    ],
+                    "fullName": "Pending Society Request Page should render pending society request page",
+                    "status": "passed",
+                    "title": "should render pending society request page",
+                    "duration": 145.68087500000001,
+                    "failureMessages": [],
+                    "meta": {}
+                }
+            ],
+            "startTime": 1739472923964,
+            "endTime": 1739472924109.681,
+            "status": "passed",
+            "message": "",
+            "name": "/Users/derekliu/code/large-project/frontend/src/pages/Admin/__test__/PendinSocietyRequest.test.tsx"
+        }
+    ]
+}

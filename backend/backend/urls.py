@@ -3,21 +3,21 @@ from django.http import HttpResponse
 from django.urls import path, include
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from api.views import (
-    get_current_user,
     JoinSocietyView,
     MySocietiesView,
     RSVPEventView,
     EventHistoryView,
+    CurrentUserView,
 )
 
 def welcome_view(request):
     return HttpResponse("Welcome to the API!")
 
-urlpatterns = [
-    path("", welcome_view, name="welcome"),
+urlpatterns = [     # TODO: this project only contain api app, so, only keep the last line, move all the rest into the api url
+    # TODO: the main project (backend) url should only direct to respective app urls
     path("admin/", admin.site.urls),
     # Current user endpoint
-    path("api/user/current/", get_current_user, name="get_current_user"),
+    path("api/user/current/", CurrentUserView.as_view(), name="get_current_user"),
     path("api-auth/", include("rest_framework.urls")),
     
     # Society endpoints

@@ -1,6 +1,7 @@
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 from api.models import Student, UserRequest
+from api.tests.file_deletion import delete_file
 
 # pylint: disable=no-member
 
@@ -45,3 +46,8 @@ class UserRequestTestCase(TestCase):
     def _assert_user_request_is_invalid(self):
         with self.assertRaises(ValidationError):
             self.user_request.full_clean()
+
+    def tearDown(self):
+        for student in Student.objects.all():
+            if student.icon:
+                delete_file(student.icon.path)

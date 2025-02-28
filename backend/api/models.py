@@ -1,10 +1,15 @@
 from datetime import timedelta
+from random import randint
+from io import BytesIO
+from PIL import Image, ImageDraw, ImageFont
+from django.core.files.base import ContentFile
+from django.core.exceptions import ValidationError
 from django.core.validators import MinLengthValidator, MaxLengthValidator, RegexValidator
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.dispatch import receiver
 from django.utils import timezone
-from django.db.models.signals import m2m_changed
+from django.db.models.signals import pre_save
 from django.utils.translation import gettext_lazy as _  # Import for i18n
 
 
@@ -26,8 +31,8 @@ class User(AbstractUser):
         ],
         help_text="6-30 chars. Letters, digits, underscores, hyphens, and dots only.",
     )
-    first_name = models.CharField(max_length=50, blank=False)
-    last_name = models.CharField(max_length=50, blank=False)
+    first_name = models.CharField(max_length=50, blank=False, default="first")
+    last_name = models.CharField(max_length=50, blank=False, default="last")
     email = models.EmailField(unique=True, blank=False)
     is_active = models.BooleanField(default=True)
 
@@ -55,6 +60,36 @@ class User(AbstractUser):
         return self.role == "admin"
 
 
+def generate_icon(initial1: str, initial2: str) -> BytesIO:
+    """Generates an basic default icon"""
+    # Generates a random RGB value
+    colour = (randint(0, 255), randint(0, 255), randint(0,255))
+    initials = initial1.upper() + initial2.upper()
+    size = (100, 100)
+    image = Image.new('RGB', size=size, color=colour)
+    draw = ImageDraw.Draw(image)
+    try:
+        font = ImageFont.truetype("DejaVuSans.ttf", 50)
+    except IOError:
+        font = ImageFont.load_default()
+    bbox = draw.textbbox((0, 0), initials, font=font)
+    text_width = bbox[2] - bbox[0]
+    text_height = bbox[3] - bbox[1]
+    text_position = ((size[0] - text_width) // 2, (size[1] - text_height) // 2)
+    draw.text(
+        text_position,
+        initials,
+        fill=(255 - colour[0], 255 - colour[1], 255 - colour[2]),
+        font=font
+    )
+
+    buffer = BytesIO()
+    image.save(buffer, format='JPEG')
+    buffer.seek(0)
+
+    return buffer
+
+
 class Student(User):
     """
     A model representing student users
@@ -65,21 +100,19 @@ class Student(User):
         ("Rejected", "Rejected"),
     ]
 
-    major = models.CharField(max_length=50, blank=True)
-
     societies = models.ManyToManyField(
         "Society",
         related_name="members",
         blank=True,
     )
 
-    president_of = models.ManyToManyField(
+    president_of = models.OneToOneField(
         "Society",
-        related_name="presidents",
+        on_delete=models.SET_NULL,
+        null=True,
         blank=True,
+        related_name="president",
     )
-
-    is_president = models.BooleanField(default=False)
 
     attended_events = models.ManyToManyField(
         'Event',
@@ -91,18 +124,27 @@ class Student(User):
         max_length=20, choices=STATUS_CHOICES, default="Pending"
     )
 
+    major = models.CharField(max_length=50, blank=True)
+    is_president = models.BooleanField(default=False)
+    icon = models.ImageField(upload_to="student_icons/", blank=True, null=True)
+
     def save(self, *args, **kwargs):
         self.role = "student"
+
         super().save(*args, **kwargs)
+
+        if not self.icon.name or not self.icon:
+            buffer = generate_icon(self.first_name[0], self.last_name[0])
+            filename = f"default_student_icon_{self.pk}.jpeg"
+            self.icon.save(filename, ContentFile(buffer.getvalue()), save=True)
 
     def __str__(self):
         return self.full_name
 
 # Signal to update `is_president` when `president_of` changes
-@receiver(m2m_changed, sender=Student.president_of.through)
+@receiver(pre_save, sender=Student)
 def update_is_president(sender, instance, **kwargs):
-    instance.is_president = instance.president_of.exists()
-    instance.save()
+    instance.is_president = instance.president_of is not None
 
 
 class Admin(User):
@@ -126,7 +168,7 @@ class Society(models.Model):
         ("Rejected", "Rejected"),
     ]
 
-    name = models.CharField(max_length=30, default="")
+    name = models.CharField(max_length=30, default="default")
     society_members = models.ManyToManyField(
         "Student", related_name="societies_belongs_to", blank=True
     )
@@ -153,13 +195,55 @@ class Society(models.Model):
     )
 
     category = models.CharField(max_length=50, default="General")
-    social_media_links = models.JSONField(default=dict, blank=True)  # {"facebook": "link", "email": "email"}
+    # {"facebook": "link", "email": "email"}
+    social_media_links = models.JSONField(default=dict, blank=True)
     timetable = models.TextField(blank=True, null=True)
     membership_requirements = models.TextField(blank=True, null=True)
     upcoming_projects_or_plans = models.TextField(blank=True, null=True)
+    tags = models.JSONField(default=list, blank=True)  # Stores tags as a list
+    icon = models.ImageField(upload_to="society_icons/", blank=True, null=True)  # Stores an image icon
 
+    def save(self, *args, **kwargs):
+        """Ensure the leader is always a member"""
+        super().save(*args, **kwargs)  # Save the society first
+        if self.leader:
+            self.society_members.add(self.leader) 
+
+        if not self.icon.name or not self.icon:
+            buffer = generate_icon(self.name[0], "S")
+            filename = f"default_society_icon_{self.pk}.jpeg"
+            self.icon.save(filename, ContentFile(buffer.getvalue()), save=True)
     def __str__(self):
         return self.name
+
+
+class SocietyShowreel(models.Model):
+    """
+    A model for each of a societies photos
+    """
+    society = models.ForeignKey(
+        "Society",
+        on_delete=models.CASCADE,
+        related_name="showreel_images",
+        blank=False,
+        null=False,
+    )
+    photo = models.ImageField(
+        upload_to="society_showreel/",
+        blank=False,
+        null=False
+    )
+    caption = models.CharField(max_length=50, default="", blank=True)
+
+    def clean(self):
+        if not self.society_id:
+            raise ValidationError({"society": "society is required"})
+        if not self.pk and self.society.showreel_images.count() >= 10:
+            raise ValidationError({"society": "society can have max 10 showreel images"})
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
 
 
 def get_date():
@@ -263,7 +347,7 @@ class Request(models.Model):
         blank=False,
         null=False,
     )
-
+    
     class Meta:
         abstract = True
 
@@ -283,7 +367,7 @@ class SocietyRequest(Request):
     roles = models.JSONField(default=dict, blank=True)
     leader = models.ForeignKey(
         "Student",
-        on_delete=models.DO_NOTHING,
+        on_delete=models.CASCADE,
         related_name="society_request_leader",
         blank=True,
         null=True,
@@ -294,6 +378,26 @@ class SocietyRequest(Request):
     timetable = models.TextField(blank=True, default="")
     membership_requirements = models.TextField(blank=True, default="")
     upcoming_projects_or_plans = models.TextField(blank=True, default="")
+    icon = models.ImageField(upload_to="icon_request/", blank=True, null=True)
+
+
+class SocietyShowreelRequest(models.Model):
+    """
+    Requests related to societies showreel photos
+    """
+    society = models.ForeignKey(
+        "SocietyRequest",
+        on_delete=models.CASCADE,
+        related_name="showreel_images_request",
+        blank=False,
+        null=False,
+    )
+    photo = models.ImageField(
+        upload_to="society_showreel_request/",
+        blank=False,
+        null=False
+    )
+    caption = models.CharField(max_length=50, default="", blank=True)
 
 
 class UserRequest(Request):
@@ -302,7 +406,7 @@ class UserRequest(Request):
     """
     # username at some point
     major = models.CharField(max_length=50, blank=True, default="")
-
+    icon = models.ImageField(upload_to="icon_request/", blank=True, null=True)
 
 class EventRequest(Request):
     """
@@ -328,6 +432,28 @@ class EventRequest(Request):
     date = models.DateField(blank=True, null=True)
     start_time = models.TimeField(blank=True, null=True)
     duration = models.DurationField(blank=True, null=True)
+
+
+class AdminReportRequest(Request):
+    """
+    Reports submitted to the admin by students or society presidents.
+    """
+
+    REPORT_TYPES = [
+        ("Misconduct", "Misconduct"),
+        ("System Issue", "System Issue"),
+        ("Society Issue", "Society Issue"),
+        ("Event Issue", "Event Issue"),
+        ("Other", "Other"),
+    ]
+
+    report_type = models.CharField(max_length=20, choices=REPORT_TYPES)
+    subject = models.CharField(max_length=100, blank=False)
+    details = models.TextField(blank=False)
+    date_time = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.get_report_type_display()} - {self.subject} (From {self.from_student.username})"
 
 
 class SiteSettings(models.Model):
@@ -379,3 +505,61 @@ class SiteSettings(models.Model):
         """
         obj, created = cls.objects.get_or_create(pk=cls.singleton_instance_id)
         return obj
+
+
+class Award(models.Model):
+    """
+    Awards to be granted to students
+    """
+    RANKS = [
+        ("Bronze", "Bronze"),
+        ("Silver", "Silver"),
+        ("Gold", "Gold"),
+    ]
+    rank = models.CharField(
+        max_length=10,
+        default="Bronze",
+        blank=False,
+        null=False,
+        choices=RANKS,
+    )
+    is_custom = models.BooleanField(default=False)
+    title = models.CharField(
+        max_length=20,
+        default="default_title",
+        blank=False,
+        null=False,
+    )
+    description = models.CharField(
+        max_length=150,
+        default="default_description",
+        blank=False,
+        null=False,
+    )
+
+    def __str__(self):
+        return f"{self.title}, {self.rank}"
+
+
+class AwardStudent(models.Model):
+    """
+    The relation between Award and Student
+    """
+    award = models.ForeignKey(
+        "Award",
+        on_delete=models.CASCADE,
+        related_name="student_awards",
+        blank=False,
+        null=False,
+    )
+    student = models.ForeignKey(
+        "Student",
+        on_delete=models.CASCADE,
+        related_name="award_students",
+        blank=False,
+        null=False,
+    )
+    awarded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.student}, ({self.award})"

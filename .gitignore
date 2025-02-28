@@ -11,7 +11,9 @@ node_modules
 dist
 dist-ssr
 *.local
-
+society_icons
+student_icons
+society_showreel/
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

@@ -1,81 +1,21 @@
-import React, { useState, useEffect, useRef, useContext } from "react";
+import { useContext } from "react";
 import { Box, Typography, useTheme, Button } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
-import { apiClient, apiPaths } from "../../api";
-import { useNavigate } from "react-router-dom";
 import { tokens } from "../../theme/theme";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { useSettingsStore } from "../../stores/settings-store";
-
-type Event = {
-  id: number;
-  title: string;
-  description: string;
-  date: string;
-  startTime: string;
-  duration: string;
-  hostedBy: number;
-  location: string;
-};
+import { useFetchWebSocket } from "../../hooks/useFetchWebSocket";
+import { fetchPendingRequests } from "./fetchPendingRequests"
+import { apiPaths } from "../../api";
+import { updateRequestStatus } from "../../api/requestApi";
 
 const PendingEventRequest = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
-  const navigate = useNavigate();
-  const [events, setEvents] = useState<Event[]>([]);
-  const ws = useRef<WebSocket | null>(null);
   const { searchTerm } = useContext(SearchContext);
   const { drawer } = useSettingsStore(); 
+  const events = useFetchWebSocket(() => fetchPendingRequests(apiPaths.EVENTS.PENDINGEVENTREQUEST), 'event');
 
-
-  const fetchPendingEvents = async () => {
-    try {
-      const res = await apiClient.get(apiPaths.USER.PENDINGEVENTREQUEST);
-      setEvents(res.data);
-    } catch (error) {
-      console.error("Error fetching pending events:", error);
-    }
-  };
-
-  useEffect(() => {
-    const connectWebSocket = () => {
-      ws.current = new WebSocket("ws://127.0.0.1:8000/ws/admin/event/");
-
-      ws.current.onopen = () => {
-        console.log("WebSocket Connected for Pending Events");
-      };
-
-      ws.current.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          console.log("WebSocket Update Received:", data);
-          fetchPendingEvents();
-        } catch (error) {
-          console.error("Error parsing WebSocket message:", error);
-        }
-      };
-
-      ws.current.onerror = (event) => {
-        console.error("WebSocket Error:", event);
-      };
-
-      ws.current.onclose = (event) => {
-        console.log("WebSocket Disconnected:", event.reason);
-        setTimeout(() => {
-          connectWebSocket();
-        }, 5000);
-      };
-    };
-
-    fetchPendingEvents();
-    connectWebSocket();
-
-    return () => {
-      if (ws.current) {
-        ws.current.close();
-      }
-    };
-  }, []);
 
   const filteredEvents = events.filter((event) =>
     Object.values(event)
@@ -84,19 +24,11 @@ const PendingEventRequest = () => {
       .includes(searchTerm.toLowerCase())
   );
 
-  const handleAccept = async (id: number) => {
+  const handleStatusChange = async (id: number, status: "Approved" | "Rejected") => {
     try {
-      await apiClient.put(`${apiPaths.USER.PENDINGEVENTREQUEST}/${id}`, { status: "Approved" });
+      await updateRequestStatus(id, status, apiPaths.EVENTS.UPDATEENEVENTREQUEST);
     } catch (error) {
-      console.error("Error accepting event:", error);
-    }
-  };
-
-  const handleReject = async (id: number) => {
-    try {
-      await apiClient.put(`${apiPaths.USER.PENDINGEVENTREQUEST}/${id}`, { status: "Rejected" });
-    } catch (error) {
-      console.error("Error rejecting event:", error);
+      alert(`Failed to ${status.toLowerCase()} event.`);
     }
   };
 
@@ -117,12 +49,12 @@ const PendingEventRequest = () => {
           <Button
             variant="contained"
             color="success"
-            onClick={() => handleAccept(params.row.id)}
+            onClick={() => handleStatusChange(params.row.id, "Approved")}
             sx={{ marginRight: 1 }}
           >
             Accept
           </Button>
-          <Button variant="contained" color="error" onClick={() => handleReject(params.row.id)}>
+          <Button variant="contained" color="error" onClick={() => handleStatusChange(params.row.id, "Rejected")}>
             Reject
           </Button>
         </>
@@ -171,11 +103,12 @@ const PendingEventRequest = () => {
           columns={columns}
           initialState={{
             pagination: {
-              paginationModel: { pageSize: 5, page: 0 },
+              paginationModel: { pageSize: 25, page: 0 },
             },
           }}
           pageSizeOptions={[5, 10, 25]}
           checkboxSelection
+          disableRowSelectionOnClick  // Disable row selection on row click to temporarily fix accept/reject button issue
         />
       </Box>
     </Box>

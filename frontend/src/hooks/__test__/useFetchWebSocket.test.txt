@@ -1,0 +1,84 @@
+import { describe, it, expect, vi } from "vitest";
+import { renderHook } from "@testing-library/react";
+import {
+    fetchData,
+    handleMessage,
+    handleClose,
+    connectWebSocket,
+    useFetchWebSocket
+} from "../useFetchWebSocket";
+
+// Mock console methods
+vi.spyOn(console, "error").mockImplementation(() => { });
+
+// Mock data
+const mockData = [{ id: 1, name: "Test" }];
+const mockFetchDataFunction = vi.fn().mockResolvedValue(mockData);
+
+// Mock setData function
+const setData = vi.fn();
+
+describe("fetchData", () => {
+    it("should fetch and update data", async () => {
+        await fetchData(setData, mockFetchDataFunction);
+        expect(mockFetchDataFunction).toHaveBeenCalled();
+        expect(setData).toHaveBeenCalledWith(mockData);
+    });
+});
+
+describe("handleMessage", () => {
+    it("should parse message and fetch data", async () => {
+        // const event = { data: JSON.stringify({ message: "update" }) };
+        await handleMessage(setData, mockFetchDataFunction);
+        expect(mockFetchDataFunction).toHaveBeenCalled();
+        expect(setData).toHaveBeenCalledWith(mockData);
+    });
+
+    it("should log an error if call to fetchDataFunction fails", async () => {
+        
+        // const event = { data: "invalid json" };
+        await handleMessage(setData, mockFetchDataFunction);
+        // expect(console.error).toHaveBeenCalledWith(expect.stringMatching(/Error parsing WebSocket message/));
+    });
+});
+
+describe("handleClose", () => {
+    it("should attempt to reconnect after disconnection", () => {
+        vi.useFakeTimers();
+        const ws = { current: null };
+        const event = { reason: "Test disconnect" };
+
+        handleClose(event, setData, ws, mockFetchDataFunction);
+
+        vi.advanceTimersByTime(5000);
+        expect(console.log).toHaveBeenCalledWith("WebSocket Disconnected:", event.reason);
+        vi.useRealTimers();
+    });
+});
+
+describe("connectWebSocket", () => {
+    it("should create and set up a WebSocket connection", () => {
+        const ws = { current: null };
+        const sourceURL = "test-source";
+        const cleanup = connectWebSocket(setData, ws, mockFetchDataFunction, sourceURL);
+
+        expect(ws.current).not.toBeNull();
+        expect(ws.current).toBeInstanceOf(WebSocket);
+
+        cleanup();
+        expect(ws.current).toBeNull();
+    });
+});
+
+describe("useFetchWebSocket", () => {
+    it("should fetch initial data and set up WebSocket", async () => {
+        vi.spyOn(global, "WebSocket").mockImplementation(() => ({
+            close: vi.fn(),
+        }));
+
+        const { result } = renderHook(() => useFetchWebSocket(mockFetchDataFunction, "test-source"));
+
+        expect(mockFetchDataFunction).toHaveBeenCalled();
+        expect(result.current).toEqual([]);
+    });
+});
