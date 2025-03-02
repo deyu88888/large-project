@@ -99,6 +99,7 @@ class Command(BaseCommand):
         )
         society.approved_by = admin
         society.society_members.add(student)
+        self.seed_society_showreel(society)
 
         president.president_of = society
         president.save()
@@ -540,20 +541,21 @@ class Command(BaseCommand):
 
     def seed_society_showreel(self, society, caption="A sample caption"):
         """Adds a SocietyShowreel entry to a specific society"""
-        colour = (randint(0, 255), randint(0, 255), randint(0,255))
-        size = (100, 100)
-        image = Image.new('RGB', size=size, color=colour)
+        for i in range(randint(1,10)):
+            colour = (randint(0, 255), randint(0, 255), randint(0,255))
+            size = (100, 100)
+            image = Image.new('RGB', size=size, color=colour)
 
-        buffer = BytesIO()
-        image.save(buffer, format='JPEG')
-        buffer.seek(0)
-        file_name = f"showreel_{society.id}.jpeg"
-        uploaded_file = SimpleUploadedFile(file_name, buffer.read(), content_type='image/jpeg')
+            buffer = BytesIO()
+            image.save(buffer, format='JPEG')
+            buffer.seek(0)
+            file_name = f"showreel_{society.id}.jpeg"
+            uploaded_file = SimpleUploadedFile(file_name, buffer.read(), content_type='image/jpeg')
 
-        showreel_entry = SocietyShowreel.objects.create(
-            society=society,
-            photo=uploaded_file,
-            caption=caption
-        )
+            showreel_entry = SocietyShowreel.objects.create(
+                society=society,
+                photo=uploaded_file,
+                caption=caption
+            )
 
         return showreel_entry
