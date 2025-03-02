@@ -725,24 +725,6 @@ class AdminView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# class SocietyView(APIView):   removed with refactoring
-#     """
-#     society view for admins to view all societies
-#     """
-#     permission_classes = [IsAuthenticated]
-
-#     def get(self, request) -> Response:
-#         """
-#         get the list of approved societies for the admin.
-#         """
-#         # filter the societies that are approved
-#         society = Society.objects.filter(status='Approved')
-#         # society = Society.objects.all()
-#         serializer = SocietySerializer(society, many=True)
-#         print("serializer data: ", serializer.data)
-#         return Response(serializer.data, status=status.HTTP_200_OK)
-
-
 class StudentView(APIView):
     """
     Student view for admins to view all students.
