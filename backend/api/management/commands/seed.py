@@ -184,6 +184,7 @@ class Command(BaseCommand):
                     leader=society_leader,
                     category="General",
                     status="Approved",
+                    description=self.generic_description()
                 )
             if created:
                 # Ensure the leader is always a member
@@ -197,6 +198,29 @@ class Command(BaseCommand):
                     self.generate_random_event(society)
 
         print(self.style.SUCCESS(f"Seeding society {n}/{n}"), flush=True)
+
+    def generic_description(self):
+        """Returns a generic society description"""
+        return ("A vibrant community dedicated to bringing like-minded individu"
+        + "als together. We organize events, discussions, and activities to fos"
+        + "ter engagement, learning, and collaboration. \n\nWhether you're a beginn"
+        + "er or an expert, there's something for everyone. \nJoin us to connect,"
+        + " grow, and be part of something exciting!")
+
+    def add_random_tags(self, society, n):
+        """Adds n random tags to a society"""
+        tags = [
+            "Networking", "Technology", "Innovation", "Entrepreneurship",
+            "Volunteering", "SocialImpact", "Wellness", "Sustainability",
+            "Education", "Arts&Culture", "Leadership", "Diversity",
+            "MentalHealth", "Gaming", "Sports", "Music", "Debate",
+            "Literature", "Photography", "Sustainability",
+        ]
+
+        for _ in range(min(20, n)):
+            tag = choice(tags)
+            tags.remove(tag)
+            society.tags.append(tag)
 
     def finalize_society_creation(self, society, members):
         """Finishes society creation with proper members and roles"""
@@ -218,9 +242,12 @@ class Command(BaseCommand):
         # Assign an admin
         admin_randomised = Admin.objects.order_by('?')
         society.approved_by = admin_randomised.first()
-        society.save()
+
+        # Assigns tags
+        self.add_random_tags(society, 3)
 
         self.seed_society_showreel(society)
+        society.save()
 
     def handle_society_status(self, leader, name):
         """Creates society requests if pending, else assigns an admin to approved_by"""
