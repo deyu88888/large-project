@@ -10,6 +10,7 @@ import Layout from "../components/layout";
 import ViewSocietyEvents from "../pages/view-society-events";
 import PendingMembers from "../pages/pending-members";
 import GiveAwardPage from "../pages/give-award-page";
+import AssignSocietyRole from "../pages/assign-society-role";
 
 // Lazy-loaded pages
 const LoginPage = lazy(() => import("../pages/login"));
@@ -254,6 +255,14 @@ const routes = [
           element: (
             <Suspense fallback={<LoadingView />}>
               <GiveAwardPage />
+            </Suspense>
+          ),
+        },
+        {
+          path: "assign-society-role/:student_id",
+          element: (
+            <Suspense fallback={<LoadingView />}>
+              <AssignSocietyRole />
             </Suspense>
           ),
         },
