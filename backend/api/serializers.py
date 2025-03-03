@@ -53,10 +53,11 @@ class StudentSerializer(UserSerializer):
     president_of = serializers.PrimaryKeyRelatedField(queryset=Society.objects.all(), allow_null=True, required=False)
     major = serializers.CharField(required=True)
     is_president = serializers.BooleanField(read_only=True)
+    #awards = AwardStudentSerializer(source='award_students', many=True, read_only=True) this will work when files are seperated
     
     class Meta(UserSerializer.Meta):
         model = Student
-        fields = UserSerializer.Meta.fields + ['major', 'societies', 'president_of', 'is_president']
+        fields = UserSerializer.Meta.fields + ['major', 'societies', 'president_of', 'is_president', 'awards']
         read_only_fields = ["is_president"]
 
     def validate_email(self, value):
@@ -160,7 +161,7 @@ class SocietySerializer(serializers.ModelSerializer):
         """SocietySerializer meta data"""
         model = Society
         fields = [
-            'id', 'name', 'society_members', 'roles', 'leader', 'approved_by',
+            'id', 'name', 'society_members','vice_president', 'event_manager', 'treasurer', 'leader', 'approved_by',
             'status', 'category', 'social_media_links', 'timetable', 'showreel_images',
             'membership_requirements', 'upcoming_projects_or_plans', 'icon','tags',
             'description',

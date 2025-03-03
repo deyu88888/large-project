@@ -174,8 +174,30 @@ class Society(models.Model):
         "Student", related_name="societies_belongs_to", blank=True
     )
 
-    roles = models.JSONField(default=dict, blank=True)
-
+    vice_president = models.ForeignKey(
+        "Student",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="vice_president_of_society",
+        help_text="Assigned vice-president of the society",
+    )
+    event_manager = models.ForeignKey(
+        "Student",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="event_manager_of_society",
+        help_text="Assigned event manager of the society",
+    )
+    treasurer = models.ForeignKey(
+        "Student",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="treasurer_of_society",
+        help_text="Assigned treasurer of the society",
+    )
     leader = models.ForeignKey(
         "Student",
         on_delete=models.DO_NOTHING,

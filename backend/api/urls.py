@@ -1,7 +1,7 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from .views import (
-    AdminReportView, AwardStudentView, AwardView, EventListView, EventRequestView, PendingMembersView, RegisterView, CurrentUserView,
+    AdminReportView, AwardStudentView, AwardView, EventListView, EventRequestView, PendingMembersView, RegisterView, CurrentUserView, SocietyMembersListView,
     StudentNotificationsView, StartSocietyRequestView, ManageSocietyDetailsView,
     AdminView, StudentView, EventView,
     SocietyRequestView, DashboardStatsView,
@@ -39,7 +39,7 @@ urlpatterns = [
     # Event endpoints
     path("events/rsvp/", RSVPEventView.as_view(), name="rsvp_event"), # TODO: trailing backshlash needed, do not remove
     path("events/history", EventHistoryView.as_view(), name="event_history"),
-    #path("events/", get_sorted_events, name="sorted_events"),
+    path("events", get_sorted_events, name="sorted_events"),
 
     # Admin panel endpoints
     # path("admin-panel/society", SocietyView.as_view(), name="admin"),
@@ -64,8 +64,8 @@ urlpatterns = [
     path("popular-societies", get_popular_societies, name="popular_societies"),
     
     # Awards Endpoints
-    path("awards", AwardView.as_view(), name="awards"),  # List & Create Awards
-    path("awards/<int:pk>", AwardView.as_view(), name="award_detail"),  # Retrieve, Update, Delete Award
+    path("awards/", AwardView.as_view(), name="awards"),  # List & Create Awards
+    path("awards/<int:pk>/", AwardView.as_view(), name="award_detail"),  # Retrieve, Update, Delete Award
 
     # Award-Student Endpoints
     path("award-students", AwardStudentView.as_view(), name="award_students"),  # List & Assign Awards to Students
@@ -74,6 +74,7 @@ urlpatterns = [
     # President page
     path("society/<int:society_id>/pending-members", PendingMembersView.as_view(), name="pending-members"),
     path("society/<int:society_id>/pending-members/<int:request_id>", PendingMembersView.as_view(), name="process-pending-member"),
+    path("society/<int:society_id>/members/", SocietyMembersListView.as_view(), name="society-members"),
     
     # Report to admin
     path("report-to-admin", AdminReportView.as_view(), name="report-to-admin"),

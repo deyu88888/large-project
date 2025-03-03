@@ -8,6 +8,8 @@ from api.views import (
     RSVPEventView,
     EventHistoryView,
     CurrentUserView,
+    get_sorted_events,
+    get_popular_societies,
 )
 
 def welcome_view(request):
@@ -33,5 +35,9 @@ urlpatterns = [     # TODO: this project only contain api app, so, only keep the
     path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     
     # Include additional URLs from api/urls.py with the '/api/' prefix
+    path("api/events", get_sorted_events, name="api_events"),
+    path("api/events/", get_sorted_events, name="api_events_slash"),
+    path("api/popular-societies", get_popular_societies, name="api_popular_societies"),
+    path("api/popular-societies/", get_popular_societies, name="api_popular_societies_slash"),
     path("api/", include("api.urls")),
 ]

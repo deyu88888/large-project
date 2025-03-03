@@ -727,24 +727,6 @@ class AdminView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# class SocietyView(APIView):   removed with refactoring
-#     """
-#     society view for admins to view all societies
-#     """
-#     permission_classes = [IsAuthenticated]
-
-#     def get(self, request) -> Response:
-#         """
-#         get the list of approved societies for the admin.
-#         """
-#         # filter the societies that are approved
-#         society = Society.objects.filter(status='Approved')
-#         # society = Society.objects.all()
-#         serializer = SocietySerializer(society, many=True)
-#         print("serializer data: ", serializer.data)
-#         return Response(serializer.data, status=status.HTTP_200_OK)
-
-
 class StudentView(APIView):
     """
     Student view for admins to view all students.
@@ -988,6 +970,7 @@ class AdminReportView(APIView):
         serializer = AdminReportRequestSerializer(reports, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+
 class StudentSocietyDataView(APIView):
     """
     API View to inspect a specific society.
@@ -1011,3 +994,13 @@ class StudentSocietyDataView(APIView):
 def custom_media_view(request, path):
     """Used to serve media, i.e. photos to the frontend"""
     return serve(request, path, document_root=settings.MEDIA_ROOT)
+
+
+class SocietyMembersListView(APIView):
+    
+    def get(self, request, society_id):
+        
+        society = get_object_or_404(Society, pk=society_id)
+        members = society.society_members.all()
+        serializer = StudentSerializer(members, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

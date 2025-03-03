@@ -1,3 +1,0 @@
-VITE_WEBSOCKET_URL=ws://127.0.0.1:8000/ws/admin/society/
-
-# TODO: update evironment variables when deploying, change to whichever server used
