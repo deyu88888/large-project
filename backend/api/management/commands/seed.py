@@ -189,9 +189,7 @@ class Command(BaseCommand):
             if created:
                 # Ensure the leader is always a member
                 society.society_members.add(society_leader)
-                members = Student.objects.exclude(id=society_leader.id).order_by("?")[:randint(4, 10)]
-                society.society_members.add(*members)
-                self.finalize_society_creation(society, members)
+                self.finalize_society_creation(society)
 
                 num_events = randint(2, 5)
                 for _ in range(num_events):
@@ -231,22 +229,21 @@ class Command(BaseCommand):
         }
         society.social_media_links = socials_dict
 
-    def finalize_society_creation(self, society, members):
+    def finalize_society_creation(self, society):
         """Finishes society creation with proper members and roles"""
         society.leader.president_of = society
 
         # Ensure at least 5-15 members
-        all_students = list(Student.objects.exclude(id=society.leader.id))
+        all_students = list(Student.objects.exclude(id=society.leader.id).order_by("?"))
         selected_members = all_students[:randint(5, 15)]
 
         society.society_members.add(*selected_members)
 
         # Assign roles (ensure at least 2 roles)
-        if len(selected_members) >= 2:
-            society.roles = {
-                "Treasurer": selected_members[0].id, 
-                "Social Manager": selected_members[1].id
-            }
+        if len(selected_members) >= 3:
+            society.vice_president = selected_members[0]
+            society.treasurer = selected_members[1]
+            society.event_manager = selected_members[2]
 
         # Assign an admin
         admin_randomised = Admin.objects.order_by('?')
