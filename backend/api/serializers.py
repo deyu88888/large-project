@@ -153,6 +153,7 @@ class SocietyShowreelSerializer(serializers.ModelSerializer):
 class SocietySerializer(serializers.ModelSerializer):
     """ Serializer for objects of the Society model """
     showreel_images = SocietyShowreelSerializer(many=True, required=False)
+    leader = StudentSerializer()
     tags = serializers.ListField(child=serializers.CharField(), required=False)
 
     class Meta:
@@ -161,7 +162,8 @@ class SocietySerializer(serializers.ModelSerializer):
         fields = [
             'id', 'name', 'society_members', 'roles', 'leader', 'approved_by',
             'status', 'category', 'social_media_links', 'timetable', 'showreel_images',
-            'membership_requirements', 'upcoming_projects_or_plans', 'icon','tags'
+            'membership_requirements', 'upcoming_projects_or_plans', 'icon','tags',
+            'description',
         ]
         extra_kwargs = {
             'society_members': {'required': False},  # Allows empty or missing data
@@ -171,6 +173,13 @@ class SocietySerializer(serializers.ModelSerializer):
             'membership_requirements': {'required': False},
             'upcoming_projects_or_plans': {'required': False},
         }
+
+    def get_icon(self, obj):
+        """Return full URL for the icon image"""
+        if obj.icon:
+            request = self.context.get("request")
+            return request.build_absolute_uri(obj.icon.url) if request else obj.icon.url
+        return None
 
     def validate_social_media_links(self, value):
         """ Ensure social media links include valid URLs """

@@ -169,6 +169,7 @@ class Society(models.Model):
     ]
 
     name = models.CharField(max_length=30, default="default")
+    description = models.CharField(max_length=500, default="default")
     society_members = models.ManyToManyField(
         "Student", related_name="societies_belongs_to", blank=True
     )
@@ -364,6 +365,7 @@ class SocietyRequest(Request):
         null=True,
     )
     name = models.CharField(max_length=30, blank=True, default="")
+    descritpion = models.CharField(max_length=500, blank=True, default="")
     roles = models.JSONField(default=dict, blank=True)
     leader = models.ForeignKey(
         "Student",
