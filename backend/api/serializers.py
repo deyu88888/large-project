@@ -155,6 +155,9 @@ class SocietySerializer(serializers.ModelSerializer):
     """ Serializer for objects of the Society model """
     showreel_images = SocietyShowreelSerializer(many=True, required=False)
     leader = StudentSerializer()
+    vice_president = StudentSerializer()
+    event_manager = StudentSerializer()
+    treasurer = StudentSerializer()
     tags = serializers.ListField(child=serializers.CharField(), required=False)
 
     class Meta:

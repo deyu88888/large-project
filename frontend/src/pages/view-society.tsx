@@ -121,9 +121,33 @@ const ViewSociety: React.FC = () => {
           }}
         >
         <div style={{flex: 2.5}}>
-          <p style={{fontSize: 20, whiteSpace: "pre-wrap"}}>
+          <p 
+            style={{
+              fontSize: 20,
+              whiteSpace: "pre-wrap",
+              marginBottom: "2.5rem"
+            }}
+          >
             {society.description}
           </p>
+          <p style={{fontSize: 18}}>
+            <b>Society Roles</b>
+          </p>
+          {society.vice_president && (
+            <p>
+              Vice President: {society.vice_president.first_name} {society.vice_president.last_name}
+            </p>
+          )}
+          {society.event_manager && (
+            <p>
+              Event Manager: {society.event_manager.first_name} {society.event_manager.last_name}
+            </p>
+          )}
+          {society.treasurer && (
+            <p>
+              Treasurer: {society.treasurer.first_name} {society.treasurer.last_name}
+            </p>
+          )}
         </div>
         <div style={{flex: 1.5}}>
           {society.showreel_images && society.showreel_images.length > 0 && (
