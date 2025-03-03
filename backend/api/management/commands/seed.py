@@ -99,7 +99,7 @@ class Command(BaseCommand):
         )
         society.approved_by = admin
         society.society_members.add(student)
-        self.seed_society_showreel(society)
+        self.seed_society_showreel(society, n=10)
 
         president.president_of = society
         president.save()
@@ -222,6 +222,15 @@ class Command(BaseCommand):
             tags.remove(tag)
             society.tags.append(tag)
 
+    def set_society_socials(self, society : Society):
+        """Assigns socials to a society (placeholder kclsu)"""
+        socials_dict = {
+            "facebook": "https://www.facebook.com/kclsupage/",
+            "instagram": "https://www.instagram.com/kclsu/",
+            "x": "https://x.com/kclsu",
+        }
+        society.social_media_links = socials_dict
+
     def finalize_society_creation(self, society, members):
         """Finishes society creation with proper members and roles"""
         society.leader.president_of = society
@@ -243,8 +252,9 @@ class Command(BaseCommand):
         admin_randomised = Admin.objects.order_by('?')
         society.approved_by = admin_randomised.first()
 
-        # Assigns tags
+        # Assigns tags and socials
         self.add_random_tags(society, 3)
+        self.set_society_socials(society)
 
         self.seed_society_showreel(society)
         society.save()
@@ -566,9 +576,11 @@ class Command(BaseCommand):
             self.enforce_award_validity(random_award, random_student)
         print(self.style.SUCCESS(f"Seeding awards {n}/{n}"))
 
-    def seed_society_showreel(self, society, caption="A sample caption"):
+    def seed_society_showreel(self, society, caption="A sample caption", n=None):
         """Adds a SocietyShowreel entry to a specific society"""
-        for i in range(randint(1,10)):
+        if not n:
+            n = randint(1, 10)
+        for _ in range(min(n, 10)):
             colour = (randint(0, 255), randint(0, 255), randint(0,255))
             size = (100, 100)
             image = Image.new('RGB', size=size, color=colour)
