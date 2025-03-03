@@ -48,7 +48,7 @@ const ViewSocietyMembers = () => {
   };
 
   const handleAssignRole = (memberId: number) => {
-    // Show a modal or navigate to a page to assign roles
+    navigate(`../assign-society-role/${memberId}`);
     console.log(`Assign role to user with ID: ${memberId}`);
   };
 

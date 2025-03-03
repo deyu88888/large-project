@@ -39,7 +39,7 @@ urlpatterns = [
     # Event endpoints
     path("events/rsvp/", RSVPEventView.as_view(), name="rsvp_event"), # TODO: trailing backshlash needed, do not remove
     path("events/history", EventHistoryView.as_view(), name="event_history"),
-    #path("events/", get_sorted_events, name="sorted_events"),
+    path("events", get_sorted_events, name="sorted_events"),
 
     # Admin panel endpoints
     # path("admin-panel/society", SocietyView.as_view(), name="admin"),
