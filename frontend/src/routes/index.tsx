@@ -22,6 +22,7 @@ const ViewEvents = lazy(() => import("../pages/Student/view-events"));
 const ViewNotifications = lazy(() => import("../pages/Student/view-notifications"));
 const StartSociety = lazy(() => import("../pages/Student/start-society"));
 const JoinSocietiesPage = lazy(() => import("../pages/Student/join-societies"));
+const ViewSocietyPage = lazy(() => import("../pages/view-society"));
 const PresidentPage = lazy(() => import("../pages/president-page"));
 const ManageSocietyDetails = lazy(() => import("../pages/manage-society-details"));
 const ManageSocietyEvents = lazy(() => import("../pages/manage-society-events"));
