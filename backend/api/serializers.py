@@ -154,10 +154,13 @@ class SocietyShowreelSerializer(serializers.ModelSerializer):
 class SocietySerializer(serializers.ModelSerializer):
     """ Serializer for objects of the Society model """
     showreel_images = SocietyShowreelSerializer(many=True, required=False)
-    leader = StudentSerializer()
-    vice_president = StudentSerializer()
-    event_manager = StudentSerializer()
-    treasurer = StudentSerializer()
+    leader = StudentSerializer(read_only=True)
+    leader_id = serializers.PrimaryKeyRelatedField(
+        queryset=Student.objects.all(), write_only=True, source='leader'
+    )
+    vice_president = StudentSerializer(required=False)
+    event_manager = StudentSerializer(required=False)
+    treasurer = StudentSerializer(required=False)
     tags = serializers.ListField(child=serializers.CharField(), required=False)
 
     class Meta:
@@ -165,7 +168,7 @@ class SocietySerializer(serializers.ModelSerializer):
         model = Society
         fields = [
             'id', 'name', 'society_members','vice_president', 'event_manager', 'treasurer', 'leader', 'approved_by',
-            'status', 'category', 'social_media_links', 'timetable', 'showreel_images',
+            'status', 'category', 'social_media_links', 'timetable', 'showreel_images', 'leader_id',
             'membership_requirements', 'upcoming_projects_or_plans', 'icon','tags',
             'description',
         ]

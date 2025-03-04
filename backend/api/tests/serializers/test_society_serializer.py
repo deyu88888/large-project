@@ -42,7 +42,6 @@ class SocietySerializerTestCase(TestCase):
             name="Tech",
             leader=self.student1,
             approved_by=self.admin,
-            roles={"Treasurer": self.student2.id},
         )
         self.society.society_members.add(self.student2)
 
@@ -50,10 +49,9 @@ class SocietySerializerTestCase(TestCase):
         self.serializer = None
         self.data = {
             "name": "Music",
-            "leader": self.student1.id,
+            "leader_id": self.student1.id,
             "society_members": [self.student2.id, self.student1.id],
             "approved_by": self.admin.id,
-            "roles": [],
         }
 
     def test_society_serialization(self):
@@ -63,13 +61,12 @@ class SocietySerializerTestCase(TestCase):
         data = self.serializer.data
 
         self.assertEqual(data["name"], self.society.name)
-        self.assertEqual(data["leader"], self.society.leader.id)
+        self.assertEqual(data["leader"]["id"], self.society.leader.id)
         self.assertEqual(data["approved_by"], self.society.approved_by.id)
         self.assertEqual(
             data["society_members"],
             list(self.society.society_members.values_list("id", flat=True)),
         )
-        self.assertEqual(data["roles"], self.society.roles)
 
     def test_society_deserialization(self):
         """ Test to ensure deserialization functions correctly """
@@ -80,13 +77,12 @@ class SocietySerializerTestCase(TestCase):
         society = self.serializer.save()
 
         self.assertEqual(society.name, self.data["name"])
-        self.assertEqual(society.leader.id, self.data["leader"])
+        self.assertEqual(society.leader.id, self.data["leader_id"])
         self.assertEqual(
             list(society.society_members.values_list("id", flat=True)),
             self.data["society_members"],
         )
         self.assertEqual(society.approved_by.id, self.data["approved_by"])
-        self.assertEqual(society.roles, self.data["roles"])
 
     def test_society_create(self):
         """ Test society creation function correctly """
@@ -97,13 +93,12 @@ class SocietySerializerTestCase(TestCase):
         society = self.serializer.save()
 
         self.assertEqual(society.name, self.data["name"])
-        self.assertEqual(society.leader.id, self.data["leader"])
+        self.assertEqual(society.leader.id, self.data["leader_id"])
         self.assertEqual(
             list(society.society_members.values_list("id", flat=True)),
             self.data["society_members"],
         )
         self.assertEqual(society.approved_by.id, self.data["approved_by"])
-        self.assertEqual(society.roles, self.data["roles"])
 
     def test_society_update(self):
         """ Test society update functions correctly """
@@ -118,13 +113,12 @@ class SocietySerializerTestCase(TestCase):
         self.serializer.save()
 
         self.assertEqual(self.society.name, self.data["name"])
-        self.assertEqual(self.society.leader.id, self.data["leader"])
+        self.assertEqual(self.society.leader.id, self.data["leader_id"])
         self.assertEqual(
             list(self.society.society_members.values_list("id", flat=True)),
             self.data["society_members"],
         )
         self.assertEqual(self.society.approved_by.id, self.data["approved_by"])
-        self.assertEqual(self.society.roles, self.data["roles"])
 
     def test_serializer_showreel_images(self):
         """Test that SocietySerializer returns showreel images correctly."""
@@ -153,8 +147,8 @@ class SocietySerializerTestCase(TestCase):
         )
 
         photos = {img["photo"] for img in data["showreel_images"]}
-        self.assertIn("/society_showreel/test_photo1.jpg", photos)
-        self.assertIn("/society_showreel/test_photo2.jpg", photos)
+        self.assertIn("/media/society_showreel/test_photo1.jpg", photos)
+        self.assertIn("/media/society_showreel/test_photo2.jpg", photos)
 
         captions = {img["caption"] for img in data["showreel_images"]}
         self.assertIn("First image caption", captions)
@@ -162,11 +156,11 @@ class SocietySerializerTestCase(TestCase):
 
     def _assert_serializer_is_valid(self):
         if not self.serializer.is_valid():
-            self.fail("Test serializer should be valid")
+            self.fail(f"Test serializer should be valid: {self.serializer.errors}")
 
     def _assert_serializer_is_invalid(self):
         if self.serializer.is_valid():
-            self.fail("Test serializer should be invalid")
+            self.fail(f"Test serializer should be invalid: {self.serializer.errors}")
 
     def get_image(self, s):
         """Returns an image to be used for testing"""
