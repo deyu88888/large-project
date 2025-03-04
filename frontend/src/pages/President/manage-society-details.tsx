@@ -9,9 +9,9 @@ import {
   Paper,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import { apiClient, apiPaths } from "../api";
-import { useAuthStore } from "../stores/auth-store";
-import { tokens } from "../theme/theme.ts";
+import { apiClient, apiPaths } from "../../api";
+import { useAuthStore } from "../../stores/auth-store";
+import { tokens } from "../../theme/theme.ts";
 
 interface SocietyData {
   id: number;

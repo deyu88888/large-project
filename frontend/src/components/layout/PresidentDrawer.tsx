@@ -156,7 +156,7 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
         <ListItem disablePadding>
           <ListItemButton
             component={Link}
-            to="/president/join-society"
+            to="/student/join-society"
             sx={{ justifyContent: drawer ? "initial" : "center", px: 2.5 }}
           >
             <ListItemIcon sx={{ minWidth: 40 }}>

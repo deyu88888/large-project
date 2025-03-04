@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Box, Typography, Button, Select, MenuItem, TextField } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import { apiClient } from "../api";
-import { tokens } from "../theme/theme.ts";
+import { apiClient } from "../../api";
+import { tokens } from "../../theme/theme.ts";
 
 const ReportToAdmin: React.FC = () => {
   const theme = useTheme();

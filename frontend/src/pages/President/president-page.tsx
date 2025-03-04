@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTheme, Box, Typography, Button, Paper, CircularProgress } from "@mui/material";
-import { apiClient } from "../api";
-import { useAuthStore } from "../stores/auth-store";
-import { tokens } from "../theme/theme.ts";
+import { apiClient } from "../../api";
+import { useAuthStore } from "../../stores/auth-store";
+import { tokens } from "../../theme/theme.ts";
 
 const PresidentPage = () => {
   const theme = useTheme();

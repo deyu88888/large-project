@@ -10,9 +10,9 @@ import {
   ToggleButtonGroup,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import { apiClient } from "../api";
-import { tokens } from "../theme/theme.ts";
-import { LoadingView } from "../components/loading/loading-view";
+import { apiClient } from "../../api";
+import { tokens } from "../../theme/theme";
+import { LoadingView } from "../../components/loading/loading-view";
 
 interface Event {
   id: number;
