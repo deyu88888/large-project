@@ -22,6 +22,7 @@ const ViewEvents = lazy(() => import("../pages/view-events"));
 const ViewNotifications = lazy(() => import("../pages/view-notifications"));
 const StartSociety = lazy(() => import("../pages/start-society"));
 const JoinSocietiesPage = lazy(() => import("../pages/join-societies"));
+const ViewSocietyPage = lazy(() => import("../pages/view-society"));
 const PresidentPage = lazy(() => import("../pages/president-page"));
 const ManageSocietyDetails = lazy(() => import("../pages/manage-society-details"));
 const ManageSocietyEvents = lazy(() => import("../pages/manage-society-events"));
@@ -171,6 +172,10 @@ const routes = [
           {
             path: "join-society/:id",
             element: <JoinSocietiesPage />,
+          },
+          {
+            path: "view-society/:society_id",
+            element: <ViewSocietyPage />,
           },
         ],
       },

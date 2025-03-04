@@ -99,6 +99,7 @@ class Command(BaseCommand):
         )
         society.approved_by = admin
         society.society_members.add(student)
+        self.seed_society_showreel(society, n=10)
 
         president.president_of = society
         president.save()
@@ -183,13 +184,12 @@ class Command(BaseCommand):
                     leader=society_leader,
                     category="General",
                     status="Approved",
+                    description=self.generic_description()
                 )
             if created:
                 # Ensure the leader is always a member
                 society.society_members.add(society_leader)
-                members = Student.objects.exclude(id=society_leader.id).order_by("?")[:randint(4, 10)]
-                society.society_members.add(*members)
-                self.finalize_society_creation(society, members)
+                self.finalize_society_creation(society)
 
                 num_events = randint(2, 5)
                 for _ in range(num_events):
@@ -197,29 +197,64 @@ class Command(BaseCommand):
 
         print(self.style.SUCCESS(f"Seeding society {n}/{n}"), flush=True)
 
-    def finalize_society_creation(self, society, members):
+    def generic_description(self):
+        """Returns a generic society description"""
+        return ("A vibrant community dedicated to bringing like-minded individu"
+        + "als together. We organize events, discussions, and activities to fos"
+        + "ter engagement, learning, and collaboration. \n\nWhether you're a beginn"
+        + "er or an expert, there's something for everyone. \nJoin us to connect,"
+        + " grow, and be part of something exciting!")
+
+    def add_random_tags(self, society, n):
+        """Adds n random tags to a society"""
+        tags = [
+            "Networking", "Technology", "Innovation", "Entrepreneurship",
+            "Volunteering", "SocialImpact", "Wellness", "Sustainability",
+            "Education", "Arts&Culture", "Leadership", "Diversity",
+            "MentalHealth", "Gaming", "Sports", "Music", "Debate",
+            "Literature", "Photography", "Sustainability",
+        ]
+
+        for _ in range(min(20, n)):
+            tag = choice(tags)
+            tags.remove(tag)
+            society.tags.append(tag)
+
+    def set_society_socials(self, society : Society):
+        """Assigns socials to a society (placeholder kclsu)"""
+        socials_dict = {
+            "facebook": "https://www.facebook.com/kclsupage/",
+            "instagram": "https://www.instagram.com/kclsu/",
+            "x": "https://x.com/kclsu",
+        }
+        society.social_media_links = socials_dict
+
+    def finalize_society_creation(self, society):
         """Finishes society creation with proper members and roles"""
         society.leader.president_of = society
 
         # Ensure at least 5-15 members
-        all_students = list(Student.objects.exclude(id=society.leader.id))
+        all_students = list(Student.objects.exclude(id=society.leader.id).order_by("?"))
         selected_members = all_students[:randint(5, 15)]
 
         society.society_members.add(*selected_members)
 
         # Assign roles (ensure at least 2 roles)
-        if len(selected_members) >= 2:
-            society.roles = {
-                "Treasurer": selected_members[0].id, 
-                "Social Manager": selected_members[1].id
-            }
+        if len(selected_members) >= 3:
+            society.vice_president = selected_members[0]
+            society.treasurer = selected_members[1]
+            society.event_manager = selected_members[2]
 
         # Assign an admin
         admin_randomised = Admin.objects.order_by('?')
         society.approved_by = admin_randomised.first()
-        society.save()
+
+        # Assigns tags and socials
+        self.add_random_tags(society, 3)
+        self.set_society_socials(society)
 
         self.seed_society_showreel(society)
+        society.save()
 
     def handle_society_status(self, leader, name):
         """Creates society requests if pending, else assigns an admin to approved_by"""
@@ -538,22 +573,25 @@ class Command(BaseCommand):
             self.enforce_award_validity(random_award, random_student)
         print(self.style.SUCCESS(f"Seeding awards {n}/{n}"))
 
-    def seed_society_showreel(self, society, caption="A sample caption"):
+    def seed_society_showreel(self, society, caption="A sample caption", n=None):
         """Adds a SocietyShowreel entry to a specific society"""
-        colour = (randint(0, 255), randint(0, 255), randint(0,255))
-        size = (100, 100)
-        image = Image.new('RGB', size=size, color=colour)
+        if not n:
+            n = randint(1, 10)
+        for _ in range(min(n, 10)):
+            colour = (randint(0, 255), randint(0, 255), randint(0,255))
+            size = (100, 100)
+            image = Image.new('RGB', size=size, color=colour)
 
-        buffer = BytesIO()
-        image.save(buffer, format='JPEG')
-        buffer.seek(0)
-        file_name = f"showreel_{society.id}.jpeg"
-        uploaded_file = SimpleUploadedFile(file_name, buffer.read(), content_type='image/jpeg')
+            buffer = BytesIO()
+            image.save(buffer, format='JPEG')
+            buffer.seek(0)
+            file_name = f"showreel_{society.id}.jpeg"
+            uploaded_file = SimpleUploadedFile(file_name, buffer.read(), content_type='image/jpeg')
 
-        showreel_entry = SocietyShowreel.objects.create(
-            society=society,
-            photo=uploaded_file,
-            caption=caption
-        )
+            showreel_entry = SocietyShowreel.objects.create(
+                society=society,
+                photo=uploaded_file,
+                caption=caption
+            )
 
         return showreel_entry
