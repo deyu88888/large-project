@@ -814,8 +814,8 @@ class RecentActivitiesView(APIView):
     def get(self, request):
         # Example recent activities (can be extended based on project requirements)
         activities = [
-            {"description": "John Doe joined the Chess Society", "timestamp": timezone.now()},
-            {"description": "A new event was created: 'AI Workshop'", "timestamp": timezone.now()},
+            {"description": "John Doe joined the Chess Society", "timestamp": now()},
+            {"description": "A new event was created: 'AI Workshop'", "timestamp": now()},
         ]
 
         serializer = RecentActivitySerializer(activities, many=True)
@@ -1049,7 +1049,7 @@ class EventCommentsView(APIView):
     """API to get all comments for a specific event"""
     permission_classes = [IsAuthenticatedOrReadOnly]
 
-    def get(self, request, event_id)
+    def get(self, request, event_id):
 
         comments = Comment.objects.filter(event=event_id, parent_comment__isnull=True).order_by("-create_at")
         serializer = CommentSerializer(comments, many=True)
