@@ -128,13 +128,6 @@ class Student(User):
     is_president = models.BooleanField(default=False)
     icon = models.ImageField(upload_to="student_icons/", blank=True, null=True)
 
-    following = models.ManyToManyField(
-        "self",
-        symmetrical=True,
-        related_name="followers",
-        blank=True,
-    )
-
     def save(self, *args, **kwargs):
         self.role = "student"
 

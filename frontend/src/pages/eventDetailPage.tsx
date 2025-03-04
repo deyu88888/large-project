@@ -157,7 +157,6 @@ const EventDetailPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* 只有登录用户才能看到评论区 */}
       <CommentsSectionWrapper isAuthenticated={isAuthenticated}>
         <CommentSection
           eventId={eventId}

@@ -31,17 +31,14 @@ const AllEventsPage: React.FC = () => {
         All Events
       </Typography>
 
-      {/* 加载中状态 */}
       {loading && <CircularProgress style={{ display: "block", margin: "20px auto" }} />}
 
-      {/* 无事件 */}
       {!loading && events.length === 0 && (
         <Typography variant="h6" align="center" color="textSecondary">
           No events available at the moment.
         </Typography>
       )}
 
-      {/* 事件列表 */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "20px" }}>
         {events.map((event) => (
           <Card key={event.id} style={{ padding: "20px", cursor: "pointer" }} onClick={() => navigate(`/event/${event.id}`)}>

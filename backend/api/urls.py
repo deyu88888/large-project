@@ -84,10 +84,4 @@ urlpatterns = [
     path("all-events", AllEventsView.as_view(), name="all_events"),
     path("event/<int:event_id>", EventDetailView.as_view(), name="event-detail"),
     path("event/<int:event_id>/comments", EventCommentsView.as_view(), name="event_comments"),
-
-    # Students page
-    path("student/<int:student_id>", StudentDetailView.as_view(), name="student_detail"),
-
-    # Society page
-    path("society/<int:society_id>", SocietyDetailView.as_view(), name="society_detail"),
 ]

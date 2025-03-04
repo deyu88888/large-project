@@ -9,7 +9,6 @@ import CircularLoader from "../components/loading/circular-loader";
 import Layout from "../components/layout";
 import ViewSocietyEvents from "../pages/view-society-events";
 import PendingMembers from "../pages/pending-members";
-import StudentDetailPage from "../pages/studentDetailPage";
 
 // Lazy-loaded pages
 const LoginPage = lazy(() => import("../pages/login"));
@@ -317,10 +316,6 @@ const routes = [
       {
         path: "event/:eventId",
         element: <EventDetailPage />
-      },
-      {
-        path: "student/:studentId",
-        element: <StudentDetailPage />,
       }
     ]
   },

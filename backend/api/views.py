@@ -1081,8 +1081,8 @@ class EventCommentsView(APIView):
     """API to get all comments for a specific event"""
     permission_classes = [IsAuthenticatedOrReadOnly]
 
-    def get(self, request, event_id):
-        # 只取顶级评论
+    def get(self, request, event_id)
+
         comments = Comment.objects.filter(event=event_id, parent_comment__isnull=True).order_by("-create_at")
         serializer = CommentSerializer(comments, many=True)
         return Response(serializer.data)
@@ -1115,21 +1115,3 @@ class EventCommentsView(APIView):
             return Response(comment_data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-class StudentDetailView(APIView):
-    """API View to get details of the students"""
-    permission_classes = [AllowAny]
-
-    def get(self, request, student_id):
-        student = get_object_or_404(Student, id=student_id)
-        serializer = StudentSerializer(student)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-class SocietyDetailView(APIView):
-    """API View to get details of the students"""
-    permission_classes = [AllowAny]
-
-    def get(self, request, society_id):
-        society = get_object_or_404(Society, id=society_id)
-        serializer = SocietySerializer(society)
-        return Response(serializer.data, status=status.HTTP_200_OK)
