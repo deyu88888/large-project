@@ -28,7 +28,7 @@ const ManageSocietyDetails = lazy(() => import("../pages/President/manage-societ
 const ManageSocietyEvents = lazy(() => import("../pages/President/manage-society-events"));
 const CreateEventPage = lazy(() => import("../pages/create-society-event"));
 const ReportToAdmin = lazy(() => import("../pages/President/report-to-admin"));
-const ViewSocietyMembers = lazy(() => import("../pages/view-society-members"));
+const ViewSocietyMembers = lazy(() => import("../pages/President/view-society-members"));
 
 
 // Admin pages

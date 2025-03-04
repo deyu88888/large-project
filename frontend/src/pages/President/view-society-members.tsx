@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { apiClient } from "../api"; // adjust import as needed
-import { useAuthStore } from "../stores/auth-store";
+import { apiClient } from "../../api"; // adjust import as needed
+import { useAuthStore } from "../../stores/auth-store";
 
 const ViewSocietyMembers = () => {
   const { society_id } = useParams<{ society_id: string }>();
