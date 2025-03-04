@@ -9,6 +9,7 @@ import CircularLoader from "../components/loading/circular-loader";
 import Layout from "../components/layout";
 import ViewSocietyEvents from "../pages/view-society-events";
 import PendingMembers from "../pages/pending-members";
+import StudentDetailPage from "../pages/studentDetailPage";
 
 // Lazy-loaded pages
 const LoginPage = lazy(() => import("../pages/login"));
@@ -26,6 +27,9 @@ const ManageSocietyEvents = lazy(() => import("../pages/manage-society-events"))
 const CreateEventPage = lazy(() => import("../pages/create-society-event"));
 const ReportToAdmin = lazy(() => import("../pages/report-to-admin"));
 
+//Public event page
+const AllEventsPage = lazy(() => import("../pages/allEventsPage"))
+const EventDetailPage = lazy(() => import("../pages/eventDetailPage"))
 
 // Admin pages
 const EventListPage = lazy(() => import("../pages/Admin/EventList"));
@@ -297,6 +301,28 @@ const routes = [
         element: <EventListPage />,
       },
     ],
+  },
+  {
+    path: "/",
+    element: (
+      <Suspense fallback={<LoadingView />}>
+        <Outlet />
+      </Suspense>
+    ),
+    children: [
+      {
+        path: "all-events",
+        element: <AllEventsPage />,
+      },
+      {
+        path: "event/:eventId",
+        element: <EventDetailPage />
+      },
+      {
+        path: "student/:studentId",
+        element: <StudentDetailPage />,
+      }
+    ]
   },
   {
     path: "*",

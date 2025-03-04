@@ -128,6 +128,13 @@ class Student(User):
     is_president = models.BooleanField(default=False)
     icon = models.ImageField(upload_to="student_icons/", blank=True, null=True)
 
+    following = models.ManyToManyField(
+        "self",
+        symmetrical=True,
+        related_name="followers",
+        blank=True,
+    )
+
     def save(self, *args, **kwargs):
         self.role = "student"
 
@@ -558,3 +565,13 @@ class AwardStudent(models.Model):
 
     def __str__(self):
         return f"{self.student}, ({self.award})"
+
+class Comment(models.Model):
+    event = models.ForeignKey("Event", on_delete=models.CASCADE, related_name="comments")
+    user = models.ForeignKey("User", on_delete=models.CASCADE)
+    content = models.TextField()
+    create_at = models.DateTimeField(auto_now_add=True)
+    parent_comment = models.ForeignKey("self", null=True, blank=True, on_delete=models.CASCADE, related_name="replies")
+
+    def __str__(self):
+        return f"{self.user.username}: {self.content[:30]}"

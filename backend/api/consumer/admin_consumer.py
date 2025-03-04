@@ -1,9 +1,9 @@
 from channels.generic.websocket import AsyncWebsocketConsumer
-from .serializers import SocietySerializer
+from ..serializers import SocietySerializer
 from asgiref.sync import sync_to_async
 import json
 from django.contrib.auth.models import AnonymousUser
-from .models import Society, User
+from ..models import Society, User
 from channels.layers import get_channel_layer
 
 class SocietyRequestConsumer(AsyncWebsocketConsumer):

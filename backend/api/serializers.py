@@ -1,5 +1,9 @@
 import datetime
-from api.models import AdminReportRequest, Award, AwardStudent, SiteSettings, User, Student, Admin, Society, Event, Notification, Request, SocietyRequest, SocietyShowreel, SocietyShowreelRequest, EventRequest, UserRequest
+
+from autobahn.wamp.gen.wamp.proto.Serializer import Serializer
+
+from api.models import AdminReportRequest, Award, AwardStudent, SiteSettings, User, Student, Admin, Society, Event, \
+    Notification, Request, SocietyRequest, SocietyShowreel, SocietyShowreelRequest, EventRequest, UserRequest, Comment
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
 
@@ -731,3 +735,30 @@ class AdminReportRequestSerializer(serializers.ModelSerializer):
         fields = ["id", "report_type", "subject", "details", "requested_at", "from_student"]
         extra_kwargs = {"from_student": {"read_only": True}}  # Auto-assign the user
 
+class CommentSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the Comment model
+    """
+    user_data = serializers.SerializerMethodField()
+    replies = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Comment
+        fields = ["id", "content", "create_at", "user_data", "parent_comment", "replies", "event"]
+        read_only_fields = ["id", "create_at", "user_data", "event", "replies"]
+        extra_kwargs = {
+            "parent_comment": {"required": False, "allow_null": True},
+        }
+
+    def get_user_data(self, obj):
+        if obj.user:
+            return {
+                "id": obj.user.id,
+                "username": obj.user.username
+            }
+        return None
+
+    def get_replies(self, obj):
+        """get the children comments (if have)"""
+        replies = obj.replies.all().order_by("create_at")
+        return CommentSerializer(replies, many=True).data

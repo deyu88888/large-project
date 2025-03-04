@@ -1,6 +1,7 @@
 from datetime import timezone
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
+from django.contrib.auth import authenticate
 from django.db.models import Count, Sum
 from django.utils.timezone import now
 from django.http import JsonResponse
@@ -8,11 +9,11 @@ from django.shortcuts import get_object_or_404
 from rest_framework import generics, status
 from rest_framework.decorators import api_view, permission_classes
 from django.views.decorators.csrf import csrf_exempt
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from api.models import Admin, Event, Notification, Society, Student, User,Award, AwardStudent, UserRequest
+from api.models import Admin, Event, Notification, Society, Student, User, Award, AwardStudent, UserRequest, Comment
 from api.serializers import (
     AdminReportRequestSerializer,
     AdminSerializer,
@@ -30,12 +31,11 @@ from api.serializers import (
     StartSocietyRequestSerializer,
     StudentSerializer,
     UserSerializer,
-    AwardSerializer, 
+    AwardSerializer,
     AwardStudentSerializer,
-    PendingMemberSerializer,
-
+    PendingMemberSerializer, CommentSerializer,
 )
-
+from api.utils import *
 
 
 class CreateUserView(generics.CreateAPIView):
@@ -64,12 +64,29 @@ class RegisterView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        serializer = StudentSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({"message": "Student registered successfully."}, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        print("Received data:", request.data)
+        email = request.data['email']
+        otp = request.data['otp']
 
+        print("Stored OTP:", OTP_STORAGE)
+        if not email or not otp:
+            return Response({'error': 'Email and OTP are required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if OTP_STORAGE.get(email) != otp:
+            return Response({'error': 'Invalid OTP or OTP expired.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if User.objects.filter(email=email).exists():
+            return Response({'error': 'This email is already registered.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = StudentSerializer(data=request.data)
+
+        if not serializer.is_valid():
+            print(serializer.errors)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            serializer.save()
+            del OTP_STORAGE[email]
+            return Response({"message": "Student registered successfully"}, status=status.HTTP_201_CREATED)
 
 class CurrentUserView(APIView):
     """
@@ -258,7 +275,7 @@ class RSVPEventView(APIView):
         """
         student = request.user.student
         events = Event.objects.filter(
-            date__gte=timezone.now().date(),  # Future events only
+            date__gte=now().date(),  # Future events only
         ).exclude(
             current_attendees=student  # Exclude already RSVP’d events
         ).filter(
@@ -605,6 +622,23 @@ class CreateEventRequestView(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+class AllEventsView(APIView):
+    """API View to list all approved events for public user"""
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        events = Event.objects.filter(status="Approved").order_by("date", "start_time")
+        serializer = EventSerializer(events, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class EventDetailView(APIView):
+    """API View to get details of an event"""
+    permission_classes = [AllowAny]
+
+    def get(self, request, event_id):
+        event = get_object_or_404(Event, id=event_id, status="Approved")
+        serializer = EventSerializer(event)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class EventListView(APIView):
     """
@@ -855,8 +889,8 @@ class RecentActivitiesView(APIView):
     def get(self, request):
         # Example recent activities (can be extended based on project requirements)
         activities = [
-            {"description": "John Doe joined the Chess Society", "timestamp": timezone.now()},
-            {"description": "A new event was created: 'AI Workshop'", "timestamp": timezone.now()},
+            {"description": "John Doe joined the Chess Society", "timestamp": now()},
+            {"description": "A new event was created: 'AI Workshop'", "timestamp": now()},
         ]
 
         serializer = RecentActivitySerializer(activities, many=True)
@@ -1042,3 +1076,60 @@ class AdminReportView(APIView):
             serializer.save(from_student=request.user.student)  #  Auto-assign the reporter
             return Response({"message": "Report submitted successfully."}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class EventCommentsView(APIView):
+    """API to get all comments for a specific event"""
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+    def get(self, request, event_id):
+        # 只取顶级评论
+        comments = Comment.objects.filter(event=event_id, parent_comment__isnull=True).order_by("-create_at")
+        serializer = CommentSerializer(comments, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, event_id):
+        if not request.user.is_authenticated:
+            return Response({"error": "Authentication required"}, status=status.HTTP_401_UNAUTHORIZED)
+
+        event = get_object_or_404(Event, id=event_id)
+
+        serializer = CommentSerializer(data=request.data)
+        if serializer.is_valid():
+            parent_comment = serializer.validated_data.get("parent_comment")
+            comment = serializer.save(
+                event=event,
+                user=request.user,
+                parent_comment=parent_comment
+            )
+
+            comment_data = CommentSerializer(comment).data
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                f"event_{event_id}",
+                {
+                    "type": "new_comment",
+                    "comment_data": comment_data
+                }
+            )
+
+            return Response(comment_data, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class StudentDetailView(APIView):
+    """API View to get details of the students"""
+    permission_classes = [AllowAny]
+
+    def get(self, request, student_id):
+        student = get_object_or_404(Student, id=student_id)
+        serializer = StudentSerializer(student)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class SocietyDetailView(APIView):
+    """API View to get details of the students"""
+    permission_classes = [AllowAny]
+
+    def get(self, request, society_id):
+        society = get_object_or_404(Society, id=society_id)
+        serializer = SocietySerializer(society)
+        return Response(serializer.data, status=status.HTTP_200_OK)
