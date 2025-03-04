@@ -58,9 +58,9 @@ class DashboardConsumer(AsyncWebsocketConsumer):
         site_settings = await self.get_site_settings()
         await self.send(text_data=json.dumps({
             "type": "update_introduction",
-            "introduction": {  # Send as a dictionary
-                "title": site_settings.introduction_title,
-                "content": site_settings.introduction_content.splitlines()  # Split into paragraphs
+            "introduction": {
+                "title": str(site_settings.introduction_title),
+                "content": [str(line) for line in site_settings.introduction_content.splitlines()]
             }
         }))
     async def disconnect(self, close_code):
@@ -147,6 +147,6 @@ class DashboardConsumer(AsyncWebsocketConsumer):
         """
         Fetches the SiteSettings (singleton) from the database.
         """
-        from .models import SiteSettings  # Do not import globally!
+        from ..models import SiteSettings  # Do not import globally!
         logger.debug("[DashboardConsumer] Fetching site settings.")
         return SiteSettings.load()  # Use the .load() method

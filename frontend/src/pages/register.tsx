@@ -1,4 +1,5 @@
 import { apiClient, apiPaths } from "../api";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import CircularLoader from "../components/loading/circular-loader";
 import { Formik, Field, Form, ErrorMessage } from "formik";
@@ -7,6 +8,8 @@ import * as Yup from "yup";
 
 export default function RegisterPage() {
     const navigate = useNavigate();
+    const [otpSent, setOtpSent] = useState(false);
+    const [email, setEmail] = useState("");
 
     // Validation schema using Yup
     const validationSchema = Yup.object({
@@ -35,9 +38,34 @@ export default function RegisterPage() {
             .required("Major is required"),
     });
 
-    const handleSubmit = async (values: any, { setSubmitting, setFieldError }: any) => {
+    const handleRequestOTP = async (email: string, setFieldError: any) => {
         try {
-            const res = await apiClient.post(apiPaths.USER.REGISTER, values);
+            const res = await apiClient.post(apiPaths.USER.REQUEST_OTP, { email });
+            console.log(res);
+            setOtpSent(true);
+            setEmail(email);
+            alert("OTP has been sent to your email.");
+        } catch (error: any) {
+            if (error.response?.data?.error) {
+                setFieldError("email", error.response.data.error);
+            } else {
+                alert("Error sending OTP. Please try again.");
+            }
+        }
+    };
+
+    const handleSubmit = async (values: any, { setSubmitting, setFieldError }: any) => {
+        if (values.email !== email) {
+            setFieldError("email", "Email must match the one used for OTP.");
+            return;
+        }
+
+        try {
+            const res = await apiClient.post(apiPaths.USER.REGISTER, {
+                ...values,
+                societies: [],
+                president_of: null,
+            });
             console.log(res);
             navigate("/login");
         } catch (error: any) {
@@ -67,11 +95,12 @@ export default function RegisterPage() {
                         username: "",
                         password: "",
                         major: "",
+                        otp: "",
                     }}
                     validationSchema={validationSchema}
                     onSubmit={handleSubmit}
                 >
-                    {({ isSubmitting }) => (
+                    {({ isSubmitting, setFieldError, values }) => (
                         <Form className="grid grid-cols-1 gap-6">
                             <div>
                                 <label htmlFor="first_name" className="block text-sm font-medium text-gray-700">
@@ -84,7 +113,7 @@ export default function RegisterPage() {
                                     placeholder="Enter your first name"
                                     className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                                 />
-                                <ErrorMessage name="first_name" component="div" className="text-red-500 text-sm" />
+                                <ErrorMessage name="first_name" component="div" className="text-red-500 text-sm"/>
                             </div>
 
                             <div>
@@ -98,22 +127,44 @@ export default function RegisterPage() {
                                     placeholder="Enter your last name"
                                     className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                                 />
-                                <ErrorMessage name="last_name" component="div" className="text-red-500 text-sm" />
+                                <ErrorMessage name="last_name" component="div" className="text-red-500 text-sm"/>
                             </div>
 
                             <div>
                                 <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                                     Email
                                 </label>
+                                <div className="flex">
+                                    <Field
+                                        id="email"
+                                        name="email"
+                                        type="email"
+                                        className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                    />
+                                    <button
+                                        type="button"
+                                        className="ml-2 px-4 py-2 bg-blue-500 text-white rounded-md"
+                                        disabled={otpSent}
+                                        onClick={() => handleRequestOTP(values.email, setFieldError)}
+                                    >
+                                        {otpSent ? "OTP Sent" : "Get OTP"}
+                                    </button>
+                                </div>
+                                <ErrorMessage name="email" component="div" className="text-red-500 text-sm"/>
+                            </div>
+                            <div>
+                                <label htmlFor="otp" className="block text-sm font-medium text-gray-700">
+                                    OTP Code
+                                </label>
                                 <Field
-                                    id="email"
-                                    name="email"
-                                    type="email"
-                                    placeholder="Enter your email"
+                                    id="otp"
+                                    name="otp"
+                                    type="text"
                                     className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                                 />
-                                <ErrorMessage name="email" component="div" className="text-red-500 text-sm" />
+                                <ErrorMessage name="otp" component="div" className="text-red-500 text-sm"/>
                             </div>
+
 
                             <div>
                                 <label htmlFor="username" className="block text-sm font-medium text-gray-700">
@@ -126,7 +177,7 @@ export default function RegisterPage() {
                                     placeholder="Enter your username"
                                     className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                                 />
-                                <ErrorMessage name="username" component="div" className="text-red-500 text-sm" />
+                                <ErrorMessage name="username" component="div" className="text-red-500 text-sm"/>
                             </div>
 
                             <div>
@@ -140,7 +191,7 @@ export default function RegisterPage() {
                                     placeholder="Enter your password"
                                     className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                                 />
-                                <ErrorMessage name="password" component="div" className="text-red-500 text-sm" />
+                                <ErrorMessage name="password" component="div" className="text-red-500 text-sm"/>
                             </div>
 
                             <div>
@@ -154,12 +205,12 @@ export default function RegisterPage() {
                                     placeholder="E.g., Computer Science"
                                     className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                                 />
-                                <ErrorMessage name="major" component="div" className="text-red-500 text-sm" />
+                                <ErrorMessage name="major" component="div" className="text-red-500 text-sm"/>
                             </div>
 
                             {isSubmitting && (
                                 <div className="flex justify-center mt-4">
-                                    <CircularLoader />
+                                    <CircularLoader/>
                                 </div>
                             )}
 
@@ -177,252 +228,3 @@ export default function RegisterPage() {
         </div>
     );
 }
-
-
-
-// import { apiClient, apiPaths } from "../api";
-// import { useState } from "react";
-// import { useNavigate } from "react-router-dom";
-// import CircularLoader from "../components/loading/circular-loader";
-
-// export default function RegisterPage() {
-//     const [firstName, setFirstName] = useState("");
-//     const [lastName, setLastName] = useState("");
-//     const [email, setEmail] = useState("");
-//     const [username, setUsername] = useState("");
-//     const [password, setPassword] = useState("");
-//     const [major, setMajor] = useState("");
-//     const [department, setDepartment] = useState("");
-//     const [societies, setSocieties] = useState("");
-//     const [loading, setLoading] = useState(false);
-//     const navigate = useNavigate();
-
-//     const handleSubmit = async (e: any) => {
-//         e.preventDefault();
-//         if (!firstName || !lastName || !email || !username || !password || !major) {
-//             alert("All required fields must be filled out!");
-//             return;
-//         }
-    
-//         if (!email.includes("@")) {
-//             alert("Please provide a valid email address!");
-//             return;
-//         }
-    
-//         setLoading(true);
-
-
-//         try {
-//             const res = await apiClient.post(apiPaths.USER.REGISTER, {
-//                 first_name: firstName,
-//                 last_name: lastName,
-//                 email: email,
-//         setLoading(true);
-//         e.preventDefault();
-
-//         try {
-//             const res = await apiClient.post(apiPaths.USER.REGISTER, {
-//                 username: username,
-//                 password: password,
-//                 major: major,
-//                 department: department || null, // Optional
-//                 societies: societies || null,  // Optional
-//             });
-//             console.log(res);
-
-//             navigate("/login");
-//         } catch (error) {
-//             alert("Error during registration. Please try again.");
-//         } finally {
-//             setLoading(false);
-//         }
-
-//     };
-
-//     return (
-//         <div className="flex justify-center items-center min-h-screen bg-gray-100">
-//             <form
-//                 onSubmit={handleSubmit}
-//                 className="w-full max-w-lg bg-white p-8 rounded-lg shadow-lg"
-//             >
-//                 <h1 className="text-2xl font-bold text-center mb-6 text-indigo-600">
-//                     Register as a Student
-//                 </h1>
-//                 <div className="grid grid-cols-1 gap-6">
-//                     {/* First Name */}
-//                     <div>
-//                         <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
-//                             First Name
-//                         </label>
-//                         <input
-//                             id="firstName"
-//                             type="text"
-//                             value={firstName}
-//                             onChange={(e) => setFirstName(e.target.value)}
-//                             placeholder="Enter your first name"
-//                             className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-//                             required
-//                         />
-//                     </div>
-//                     {/* Last Name */}
-//                     <div>
-//                         <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
-//                             Last Name
-//                         </label>
-//                         <input
-//                             id="lastName"
-//                             type="text"
-//                             value={lastName}
-//                             onChange={(e) => setLastName(e.target.value)}
-//                             placeholder="Enter your last name"
-//                             className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-//                             required
-//                         />
-//                     </div>
-//                     {/* Email */}
-//                     <div>
-//                         <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-//                             Email
-//                         </label>
-//                         <input
-//                             id="email"
-//                             type="email"
-//                             value={email}
-//                             onChange={(e) => setEmail(e.target.value)}
-//                             placeholder="Enter your email"
-//                             className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-//                             required
-//                         />
-//                     </div>
-//                     {/* Username */}
-//                     <div>
-//                         <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-//                             Username
-//                         </label>
-//                         <input
-//                             id="username"
-//                             type="text"
-//                             value={username}
-//                             onChange={(e) => setUsername(e.target.value)}
-//                             placeholder="Enter your username"
-//                             className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-//                             required
-//                         />
-//                     </div>
-//                     {/* Password */}
-//                     <div>
-//                         <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-//                             Password
-//                         </label>
-//                         <input
-//                             id="password"
-//                             type="password"
-//                             value={password}
-//                             onChange={(e) => setPassword(e.target.value)}
-//                             placeholder="Enter your password"
-//                             className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-//                             required
-//                         />
-//                     </div>
-//                     {/* Major */}
-//                     <div>
-//                         <label htmlFor="major" className="block text-sm font-medium text-gray-700">
-//                             Major
-//                         </label>
-//                         <input
-//                             id="major"
-//                             type="text"
-//                             value={major}
-//                             onChange={(e) => setMajor(e.target.value)}
-//                             placeholder="E.g., Computer Science"
-//                             className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-//                             required
-//                         />
-//                     </div>
-//                     {/* Department */}
-//                     <div>
-//                         <label htmlFor="department" className="block text-sm font-medium text-gray-700">
-//                             Department (optional, if advisor)
-//                         </label>
-//                         <input
-//                             id="department"
-//                             type="text"
-//                             value={department}
-//                             onChange={(e) => setDepartment(e.target.value)}
-//                             placeholder="E.g., Computer Engineering"
-//                             className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-//                         />
-//                     </div>
-//                     {/* Societies */}
-//                     <div>
-//                         <label htmlFor="societies" className="block text-sm font-medium text-gray-700">
-//                             Societies (optional, if advisor)
-//                         </label>
-//                         <input
-//                             id="societies"
-//                             type="text"
-//                             value={societies}
-//                             onChange={(e) => setSocieties(e.target.value)}
-//                             placeholder="E.g., Chess Club, Robotics Club"
-//                             className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-//                         />
-//                     </div>
-//                 </div>
-//                 {loading && (
-//                     <div className="flex justify-center mt-4">
-//                         <CircularLoader />
-//                     </div>
-//                 )}
-//                 <button
-//                     type="submit"
-//                     className="mt-6 w-full bg-indigo-600 text-white py-2 px-4 rounded-md shadow hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-//                 >
-//                     Register
-//                 </button>
-//             </form>
-//         </div>
-//     );
-    
-//     };
-
-//     return (
-//         <form onSubmit={handleSubmit} className="form-container">
-//             <h1>Register as a Student</h1>
-//             <input
-//                 type="text"
-//                 value={username}
-//                 onChange={(e) => setUsername(e.target.value)}
-//                 placeholder="Username"
-//                 required
-//             />
-//             <input
-//                 type="password"
-//                 value={password}
-//                 onChange={(e) => setPassword(e.target.value)}
-//                 placeholder="Password"
-//                 required
-//             />
-//             <input
-//                 type="text"
-//                 value={major}
-//                 onChange={(e) => setMajor(e.target.value)}
-//                 placeholder="Major (e.g., Computer Science)"
-//                 required
-//             />
-//             <input
-//                 type="text"
-//                 value={department}
-//                 onChange={(e) => setDepartment(e.target.value)}
-//                 placeholder="Department (optional, if advisor)"
-//             />
-//             <input
-//                 type="text"
-//                 value={societies}
-//                 onChange={(e) => setSocieties(e.target.value)}
-//                 placeholder="Societies (optional, if advisor)"
-//             />
-//             {loading && <CircularLoader />}
-//             <button type="submit">Register</button>
-//         </form>
-//     );
-// }

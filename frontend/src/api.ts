@@ -35,6 +35,8 @@ export const apiPaths = {
   USER: {
     LOGIN: "/api/user/login",  // TODO: DONT ADD BACKSLASH
     REGISTER: "/api/user/register",   // TODO: DONT ADD BACKSLASH
+    REQUEST_OTP: "/api/request-otp",
+    VERIFY_OTP: "/api/verify-otp",
     REFRESH: "/api/user/token/refresh", // TODO: DONT ADD BACKSLASH
     CURRENT: "/api/user/current", // TODO: DONT ADD BACKSLASH
     SOCIETY: "/api/society/request/approved",  // TODO: DONT ADD BACKSLASH

@@ -30,6 +30,9 @@ const CreateEventPage = lazy(() => import("../pages/create-society-event"));
 const ReportToAdmin = lazy(() => import("../pages/report-to-admin"));
 const ViewSocietyMembers = lazy(() => import("../pages/view-society-members"));
 
+//Public event page
+const AllEventsPage = lazy(() => import("../pages/allEventsPage"))
+const EventDetailPage = lazy(() => import("../pages/eventDetailPage"))
 
 // Admin pages
 const EventListPage = lazy(() => import("../pages/Admin/EventList"));
@@ -333,6 +336,24 @@ const routes = [
         element: <EventListPage />,
       },
     ],
+  },
+  {
+    path: "/",
+    element: (
+      <Suspense fallback={<LoadingView />}>
+        <Outlet />
+      </Suspense>
+    ),
+    children: [
+      {
+        path: "all-events",
+        element: <AllEventsPage />,
+      },
+      {
+        path: "event/:eventId",
+        element: <EventDetailPage />
+      }
+    ]
   },
   {
     path: "*",
