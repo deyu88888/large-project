@@ -57,8 +57,8 @@ class StudentSerializer(UserSerializer):
     
     class Meta(UserSerializer.Meta):
         model = Student
-        fields = UserSerializer.Meta.fields + ['major', 'societies', 'president_of', 'is_president', 'awards']
-        read_only_fields = ["is_president"]
+        fields = UserSerializer.Meta.fields + ['major', 'societies', 'president_of', 'is_president', 'award_students']
+        read_only_fields = ["is_president", "award_students"]
 
     def validate_email(self, value):
         """
@@ -154,6 +154,13 @@ class SocietyShowreelSerializer(serializers.ModelSerializer):
 class SocietySerializer(serializers.ModelSerializer):
     """ Serializer for objects of the Society model """
     showreel_images = SocietyShowreelSerializer(many=True, required=False)
+    leader = StudentSerializer(read_only=True)
+    leader_id = serializers.PrimaryKeyRelatedField(
+        queryset=Student.objects.all(), write_only=True, source='leader'
+    )
+    vice_president = StudentSerializer(required=False)
+    event_manager = StudentSerializer(required=False)
+    treasurer = StudentSerializer(required=False)
     tags = serializers.ListField(child=serializers.CharField(), required=False)
 
     class Meta:
@@ -161,8 +168,9 @@ class SocietySerializer(serializers.ModelSerializer):
         model = Society
         fields = [
             'id', 'name', 'society_members','vice_president', 'event_manager', 'treasurer', 'leader', 'approved_by',
-            'status', 'category', 'social_media_links', 'timetable', 'showreel_images',
-            'membership_requirements', 'upcoming_projects_or_plans', 'icon','tags'
+            'status', 'category', 'social_media_links', 'timetable', 'showreel_images', 'leader_id',
+            'membership_requirements', 'upcoming_projects_or_plans', 'icon','tags',
+            'description',
         ]
         extra_kwargs = {
             'society_members': {'required': False},  # Allows empty or missing data
@@ -172,6 +180,13 @@ class SocietySerializer(serializers.ModelSerializer):
             'membership_requirements': {'required': False},
             'upcoming_projects_or_plans': {'required': False},
         }
+
+    def get_icon(self, obj):
+        """Return full URL for the icon image"""
+        if obj.icon:
+            request = self.context.get("request")
+            return request.build_absolute_uri(obj.icon.url) if request else obj.icon.url
+        return None
 
     def validate_social_media_links(self, value):
         """ Ensure social media links include valid URLs """

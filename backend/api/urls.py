@@ -6,8 +6,8 @@ from .views import (
     AdminView, StudentView, EventView,
     SocietyRequestView, DashboardStatsView,
     RecentActivitiesView, NotificationsView, EventCalendarView,
-    StudentSocietiesView, JoinSocietyView, RSVPEventView, EventHistoryView,
-    get_popular_societies, get_sorted_events, CreateEventRequestView, 
+    StudentSocietiesView, JoinSocietyView, RSVPEventView, EventHistoryView, StudentSocietyDataView,
+    get_popular_societies, get_sorted_events, CreateEventRequestView, custom_media_view,
 )
 
 urlpatterns = [
@@ -53,6 +53,8 @@ urlpatterns = [
     # Student societies endpoints
     path("student-societies", StudentSocietiesView.as_view(), name="student_societies"),
     path("leave-society/<int:society_id>", StudentSocietiesView.as_view(), name="leave_society"),
+    path("society-view/<int:society_id>", StudentSocietyDataView.as_view(), name="society_view"),
+    path('media/<path:path>', custom_media_view, name="media"),
 
     # Dashboard API endpoints
     path("dashboard/stats", DashboardStatsView.as_view(), name="dashboard_stats"),

@@ -47,7 +47,6 @@ class SocietyRequestSerializerTestCase(TestCase):
             name="Tech",
             leader=self.student1,
             approved_by=None,
-            roles={"Treasurer": self.student2.id},
             status="Pending",
             category="Informatics",
         )
@@ -57,7 +56,6 @@ class SocietyRequestSerializerTestCase(TestCase):
         self.society_request = SocietyRequest.objects.create(
             society=self.society,
             name="Tech",
-            roles={"Treasurer": self.student2.id},
             leader=self.student1,
             category="Technology",
             from_student=self.student1,
@@ -70,7 +68,6 @@ class SocietyRequestSerializerTestCase(TestCase):
         self.data = {
             "society": self.society.id,
             "name": "Tech",
-            "roles": {"Treasurer": self.student2.id},
             "leader": self.student1.id,
             "category": "Technology",
             "requested_at": timezone.now(),
@@ -87,7 +84,6 @@ class SocietyRequestSerializerTestCase(TestCase):
 
         self.assertEqual(self.society_request.society.id, data["society"])
         self.assertEqual(self.society_request.name, data["name"])
-        self.assertEqual(self.society_request.roles, data["roles"])
         self.assertEqual(self.society_request.leader.id, data["leader"])
         self.assertEqual(self.society_request.category, data["category"])
         self.assertEqual(self.society_request.approved, data["approved"])
@@ -106,7 +102,6 @@ class SocietyRequestSerializerTestCase(TestCase):
 
         self.assertEqual(society_request["society"].id, self.data["society"])
         self.assertEqual(society_request["name"], self.data["name"])
-        self.assertEqual(society_request["roles"], self.data["roles"])
         self.assertEqual(society_request["leader"].id, self.data["leader"])
         self.assertEqual(society_request["category"], self.data["category"])
         self.assertEqual(society_request["approved"], self.data["approved"])
@@ -125,7 +120,6 @@ class SocietyRequestSerializerTestCase(TestCase):
 
         self.assertEqual(society_request.society.id, self.data["society"])
         self.assertEqual(society_request.name, self.data["name"])
-        self.assertEqual(society_request.roles, self.data["roles"])
         self.assertEqual(society_request.leader.id, self.data["leader"])
         self.assertEqual(society_request.category, self.data["category"])
         self.assertEqual(society_request.approved, self.data["approved"])
@@ -178,8 +172,8 @@ class SocietyRequestSerializerTestCase(TestCase):
         )
 
         photos = {img["photo"] for img in data["showreel_images_request"]}
-        self.assertIn("/society_showreel_request/test_photo1.jpeg", photos)
-        self.assertIn("/society_showreel_request/test_photo2.jpeg", photos)
+        self.assertIn("/media/society_showreel_request/test_photo1.jpeg", photos)
+        self.assertIn("/media/society_showreel_request/test_photo2.jpeg", photos)
 
         captions = {img["caption"] for img in data["showreel_images_request"]}
         self.assertIn("First image caption", captions)

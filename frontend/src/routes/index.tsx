@@ -172,6 +172,10 @@ const routes = [
             path: "join-society/:id",
             element: <JoinSocietiesPage />,
           },
+          {
+            path: "view-society/:society_id",
+            element: <ViewSocietyPage />,
+          },
         ],
       },
       {

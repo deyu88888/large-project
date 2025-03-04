@@ -1,14 +1,16 @@
 # from datetime import timezone // incorrect import
 from django.utils import timezone
-from asgiref.sync import async_to_sync
-from channels.layers import get_channel_layer
 from django.db.models import Count, Sum
 from django.utils.timezone import now
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
+from django.views.decorators.csrf import csrf_exempt
+from django.conf import settings
+from django.views.static import serve
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 from rest_framework import generics, status
 from rest_framework.decorators import api_view, permission_classes
-from django.views.decorators.csrf import csrf_exempt
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -967,6 +969,32 @@ class AdminReportView(APIView):
 
         serializer = AdminReportRequestSerializer(reports, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class StudentSocietyDataView(APIView):
+    """
+    API View to inspect a specific society.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, society_id):
+        user = request.user
+        if not hasattr(user, "student"):
+            return Response(
+                {"error": "Only students can view societies."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Manual society access via id
+        society = get_object_or_404(Society, id=society_id)
+        serializer = SocietySerializer(society)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+def custom_media_view(request, path):
+    """Used to serve media, i.e. photos to the frontend"""
+    return serve(request, path, document_root=settings.MEDIA_ROOT)
+
 
 class SocietyMembersListView(APIView):
     
