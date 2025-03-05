@@ -70,17 +70,6 @@ const PendingEventRequest = () => {
         maxWidth: drawer ? `calc(100% - 3px)`: "100%",
       }}
     >
-      <Typography
-        variant="h1"
-        sx={{
-          color: colors.grey[100],
-          fontSize: "2.25rem",
-          fontWeight: 800,
-          marginBottom: "2rem",
-        }}
-      >
-        Pending Event Requests
-      </Typography>
       <Box
         sx={{
           height: "78vh",
@@ -109,6 +98,7 @@ const PendingEventRequest = () => {
           pageSizeOptions={[5, 10, 25]}
           checkboxSelection
           disableRowSelectionOnClick  // Disable row selection on row click to temporarily fix accept/reject button issue
+          resizeThrottleMs={0}
         />
       </Box>
     </Box>

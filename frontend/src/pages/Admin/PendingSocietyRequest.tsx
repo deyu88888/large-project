@@ -43,7 +43,7 @@ const PendingSocietyRequest = () => {
   const columns: GridColDef[] = [
     { field: "id", headerName: "ID", flex: 0.5 },
     { field: "name", headerName: "Name", flex: 1 },
-    { field: "description", headerName: "Description", flex: 1 },
+    // { field: "description", headerName: "Description", flex: 1 },
     {      
       field: "society_members",
       headerName: "Members",
@@ -83,17 +83,7 @@ const PendingSocietyRequest = () => {
         maxWidth: drawer ? `calc(100% - 3px)`: "100%",
       }}
     >
-      <Typography
-        variant="h1"
-        sx={{
-          color: colors.grey[100],
-          fontSize: "2.25rem",
-          fontWeight: 800,
-          marginBottom: "2rem",
-        }}
-      >
-        Pending Society Requests
-      </Typography>
+
       <Box
         sx={{
           height: "78vh",
@@ -121,6 +111,7 @@ const PendingSocietyRequest = () => {
           }}
           pageSizeOptions={[5, 10, 25]}
           checkboxSelection
+          resizeThrottleMs={0}
         />
         {/* <div> {JSON.stringify(filteredSocieties)} </div> */}
       </Box>

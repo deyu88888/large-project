@@ -72,7 +72,7 @@ const StudentList: React.FC = () => {
     {
       field: "presidentOf",
       headerName: "President Of",
-      renderCell: (params: any) => params.row.presidentOf.join(", "),
+      renderCell: (params: { row: Student }) => (params.row.presidentOf ?? []).join(", "),
       flex: 1,
     },
     {
@@ -131,11 +131,12 @@ const StudentList: React.FC = () => {
           columns={columns}
           initialState={{
             pagination: {
-              paginationModel: { pageSize: 5, page: 0 },
+              paginationModel: { pageSize: 25, page: 0 },
             },
           }}
           pageSizeOptions={[5, 10, 25]}
-          checkboxSelection  
+          checkboxSelection
+          resizeThrottleMs={0}
         />
       </Box>
     </Box>

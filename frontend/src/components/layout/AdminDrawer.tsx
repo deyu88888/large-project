@@ -11,7 +11,6 @@ import {
   ListItemIcon,
   ListItemText,
   Typography,
-  Button,
 } from "@mui/material";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
@@ -22,7 +21,6 @@ import GroupAddOutlinedIcon from "@mui/icons-material/GroupAddOutlined";
 import CalendarTodayOutlinedIcon from "@mui/icons-material/CalendarTodayOutlined";
 import PersonAddAltIcon from "@mui/icons-material/PersonAddAlt";
 import InboxIcon from "@mui/icons-material/MoveToInbox";
-import MailIcon from "@mui/icons-material/Mail";
 import LogoutIcon from "@mui/icons-material/Logout";
 import { CustomDrawer, CustomDrawerHeader } from "./drawer/CustomDrawer";
 
@@ -48,14 +46,14 @@ const AdminDrawer: React.FC<AdminDrawerProps> = ({
       to: "/admin/student-list",
     },
     {
-      title: "View All Societies",
+      title: "Manage Societies",
       icon: <EventOutlinedIcon />,
-      to: "/admin/society-list",
+      to: "/admin/society",
     },
     {
-      title: "View All Events",
-      icon: <NotificationsNoneOutlinedIcon />,
-      to: "/admin/event-list",
+      title: "Manage Events",
+      icon: <EventOutlinedIcon />,
+      to: "/admin/event",
     },
     {
       title: "Pending Societies",
@@ -80,7 +78,7 @@ const AdminDrawer: React.FC<AdminDrawerProps> = ({
   ];
 
   const additionalItems = [
-    { title: "All mail", icon: <MailIcon />, to: "/admin/report-list" },
+    { title: "Reports", icon: <InboxIcon />, to: "/admin/report-list" },
     {
       title: "Calendar",
       icon: <CalendarTodayOutlinedIcon />,
@@ -122,7 +120,7 @@ const AdminDrawer: React.FC<AdminDrawerProps> = ({
               Ed Roh
             </Typography>
             <Typography variant="body2" color="textSecondary">
-              VP Fancy Admin
+              University Admin
             </Typography>
           </Box>
         ) : (
