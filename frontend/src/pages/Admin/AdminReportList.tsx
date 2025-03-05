@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { Box, Typography, useTheme } from "@mui/material";
-import { DataGrid } from "@mui/x-data-grid";
+import { DataGrid, GridToolbar } from "@mui/x-data-grid";
 import { tokens } from "../../theme/theme";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { useSettingsStore } from "../../stores/settings-store";
@@ -99,11 +99,15 @@ const AdminReportList: React.FC = () => {
           "& .MuiCheckbox-root": {
             color: `${colors.blueAccent[400]} !important`,
           },
+          "& .MuiDataGrid-toolbarContainer .MuiButton-text": {
+            color: `${colors.blueAccent[500]} !important`,
+          },
         }}
       >
         <DataGrid
           rows={reports}
           columns={columns}
+          slots={{ toolbar: GridToolbar }}
           getRowId={(row) => row.id}
           initialState={{
             pagination: {

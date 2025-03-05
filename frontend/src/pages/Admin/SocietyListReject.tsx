@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useContext, useMemo } from "react";
 import { Box, useTheme } from "@mui/material";
-import { DataGrid, GridColDef } from "@mui/x-data-grid";
+import { DataGrid, GridColDef, GridToolbar } from "@mui/x-data-grid";
 import { apiClient, apiPaths } from "../../api";
 import { tokens } from "../../theme/theme";
 import { useSettingsStore } from "../../stores/settings-store";
@@ -122,11 +122,15 @@ const SocietyListRejected = () => {
           "& .MuiCheckbox-root": {
             color: `${colors.greenAccent[200]} !important`,
           },
+          "& .MuiDataGrid-toolbarContainer .MuiButton-text": {
+            color: `${colors.blueAccent[500]} !important`,
+          },
         }}
       >
         <DataGrid
           rows={filteredSocieties}
           columns={columns}
+          slots={{ toolbar: GridToolbar }}
           initialState={{
             pagination: {
               paginationModel: { pageSize: 25, page: 0 },

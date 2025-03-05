@@ -46,7 +46,7 @@ const ManageEvents = () => {
         variant="h1"
         sx={[
           { color: colors.grey[100] },
-          { fontSize: "2.25rem", fontWeight: 800, mb: 2 },
+          { fontSize: "1.75rem", fontWeight: 800, mb: 2 },
         ]}
       >
         Manage Events
