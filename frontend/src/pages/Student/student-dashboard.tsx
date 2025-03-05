@@ -68,12 +68,6 @@ const StudentDashboard: React.FC = () => {
     fetchData();
   }, []);
 
-  const logout = () => {
-    localStorage.removeItem("access");
-    localStorage.removeItem("refresh");
-    navigate("/");
-  };
-
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -83,7 +77,7 @@ const StudentDashboard: React.FC = () => {
       console.error("Error fetching society data:", error);
     }
     try {
-      const eventsResponse = await apiClient.get("/api/events/rsvp"); 
+      const eventsResponse = await apiClient.get("/api/events/"); 
       setEvents(eventsResponse.data || []);
     } catch (error) {
       console.error("Error fetching event data:", error);
@@ -180,22 +174,12 @@ const StudentDashboard: React.FC = () => {
 
   return (
     <Box minHeight="100vh" bgcolor={colours.primary[500]} py={8}>
-      <Box maxWidth="1200px" mx="auto" px={4}>
+      <Box maxWidth="1920px" mx="auto" px={4}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
           <Typography variant="h4" sx={{ color: colours.grey[100] }}>
             Dashboard
           </Typography>
           <Box display="flex" gap={2}>
-            <Button
-              variant="contained"
-              onClick={logout}
-              sx={{
-                backgroundColor: colours.redAccent[500],
-                color: colours.grey[100],
-              }}
-            >
-              Logout
-            </Button>
             {user?.is_president === true && (
               <Button
                 variant="contained"
