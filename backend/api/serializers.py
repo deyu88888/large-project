@@ -1,6 +1,6 @@
 import datetime
 from api.models import AdminReportRequest, Award, AwardStudent, SiteSettings, User, Student, Admin, Society, Event, \
-    Notification, Request, SocietyRequest, SocietyShowreel, SocietyShowreelRequest, EventRequest, UserRequest, Comment
+    Notification, Request, SocietyRequest, SocietyShowreel, SocietyShowreelRequest, EventRequest, UserRequest, Comment, DescriptionRequest
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
 

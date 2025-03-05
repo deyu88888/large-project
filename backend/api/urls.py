@@ -9,7 +9,7 @@ from .views import (
     RecentActivitiesView, NotificationsView, EventCalendarView,
     StudentSocietiesView, JoinSocietyView, RSVPEventView, EventHistoryView,
     get_popular_societies, CreateEventRequestView, custom_media_view, get_sorted_events, StudentSocietyDataView,
-    AllEventsView, EventDetailView, EventCommentsView,
+    AllEventsView, EventDetailView, EventCommentsView, DescriptionRequestView
 )
 
 urlpatterns = [
