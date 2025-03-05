@@ -331,46 +331,88 @@ const StudentDashboard: React.FC = () => {
               </Box>
             )}
             {activeTab === 2 && (
-              <Box>
-                {notifications.length === 0 ? (
-                  <Typography variant="body1" align="center" sx={{ color: colours.grey[300], py: 4 }}>
-                    No notifications
+  <Box>
+    {/* When there are no notifications */}
+    {notifications.length === 0 ? (
+      <Typography variant="body1" align="center" sx={{ color: colours.grey[300], py: 4 }}>
+        No notifications
+      </Typography>
+    ) : (
+      // When there are notifications
+      <div className="space-y-6">
+        {notifications.map((notification) => (
+          <Paper
+            key={notification.id}
+            elevation={2}
+            sx={{
+              // Background color changes based on read status
+              backgroundColor: notification.is_read
+                ? colours.primary[400]  // Light background when read
+                : colours.blueAccent[700],  // Blue background when unread
+              
+              // Border color also changes based on read status
+              border: `1px solid ${notification.is_read 
+                ? colours.grey[300]  // Light border when read
+                : colours.blueAccent[400]  // Blue border when unread
+              }`,
+              p: 2,  // Adds padding
+            }}
+          >
+            <Box 
+              display="flex" 
+              justifyContent="space-between" 
+              alignItems="center"
+            >
+              {/* Notification message */}
+              <Typography 
+                variant="body1" 
+                sx={{ 
+                  color: colours.grey[100],
+                  fontSize: "1rem",
+                }}
+              >
+                {notification.message}
+              </Typography>
+
+              {/* Mark as read/Read status */}
+              <Box sx={{ display: "flex", gap: "1rem" }}>
+                {notification.is_read ? (
+                  // Show "Read" text when notification is read
+                  <Typography
+                    sx={{
+                      color: colours.greenAccent[500],
+                      fontSize: "0.875rem",
+                      fontWeight: 500,
+                    }}
+                  >
+                    Read
                   </Typography>
                 ) : (
-                  notifications.map((notification) => (
-                    <Paper
-                      key={notification.id}
-                      elevation={2}
-                      sx={{
-                        backgroundColor: notification.is_read ? colours.primary[400] : colours.primary[500],
-                        border: `1px solid ${colours.grey[800]}`,
-                        p: 2,
-                        mb: 2,
-                      }}
-                    >
-                      <Box display="flex" justifyContent="space-between" alignItems="center">
-                        <Typography variant="body1" sx={{ color: colours.grey[100] }}>
-                          {notification.message}
-                        </Typography>
-                        {!notification.is_read && (
-                          <Button
-                            variant="contained"
-                            size="small"
-                            onClick={() => markNotificationAsRead(notification.id)}
-                            sx={{
-                              backgroundColor: colours.grey[800],
-                              color: colours.grey[100],
-                            }}
-                          >
-                            Mark as read
-                          </Button>
-                        )}
-                      </Box>
-                    </Paper>
-                  ))
+                  // Show "Mark as Read" button when notification is unread
+                  <Button
+                    variant="text"
+                    size="small"
+                    onClick={() => markNotificationAsRead(notification.id)}
+                    sx={{
+                      color: colours.blueAccent[400],
+                      fontSize: "0.875rem",
+                      fontWeight: 500,
+                      textDecoration: "underline",
+                      padding: 0,
+                      minWidth: 0,
+                    }}
+                  >
+                    Mark as Read
+                  </Button>
                 )}
               </Box>
-            )}
+            </Box>
+          </Paper>
+        ))}
+      </div>
+    )}
+  </Box>
+)}
           </Box>
         </Paper>
         <Box display="grid" gridTemplateColumns={{ xs: '1fr', md: 'repeat(1, 1fr)' }} gap={3} mt={4}>
