@@ -1,13 +1,15 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from .views import (
-    AdminReportView, AwardStudentView, AwardView, EventListView, EventRequestView, PendingMembersView, RegisterView, CurrentUserView, SocietyMembersListView,
+    AdminReportView, AwardStudentView, AwardView, EventListView, EventRequestView, PendingMembersView, RegisterView,
+    CurrentUserView, SocietyMembersListView,
     StudentNotificationsView, StartSocietyRequestView, ManageSocietyDetailsView,
     AdminView, StudentView, EventView,
     SocietyRequestView, DashboardStatsView,
     RecentActivitiesView, NotificationsView, EventCalendarView,
-    StudentSocietiesView, JoinSocietyView, RSVPEventView, EventHistoryView, StudentSocietyDataView,
-    get_popular_societies, get_sorted_events, CreateEventRequestView, custom_media_view,
+    StudentSocietiesView, JoinSocietyView, RSVPEventView, EventHistoryView,
+    get_popular_societies, CreateEventRequestView, custom_media_view, get_sorted_events, StudentSocietyDataView,
+    AllEventsView, EventDetailView, EventCommentsView,
 )
 
 urlpatterns = [
@@ -19,7 +21,7 @@ urlpatterns = [
 
     # Notification endpoints
     # trailing backshlash needed in this case, because of the following line
-    path("notifications/", StudentNotificationsView.as_view(), name="student_notifications"), # trailing backshlash needed 
+    path("notifications/", StudentNotificationsView.as_view(), name="student_notifications"), # trailing backshlash needed
     path("notifications/<int:pk>", StudentNotificationsView.as_view(), name="mark_notification_read"),
 
     # Society creation/management endpoints
@@ -75,8 +77,12 @@ urlpatterns = [
     path("society/<int:society_id>/pending-members", PendingMembersView.as_view(), name="pending-members"),
     path("society/<int:society_id>/pending-members/<int:request_id>", PendingMembersView.as_view(), name="process-pending-member"),
     path("society/<int:society_id>/members/", SocietyMembersListView.as_view(), name="society-members"),
-    
+
     # Report to admin
     path("report-to-admin", AdminReportView.as_view(), name="report-to-admin"),
 
+    # Events page
+    path("all-events", AllEventsView.as_view(), name="all_events"),
+    path("event/<int:event_id>", EventDetailView.as_view(), name="event-detail"),
+    path("event/<int:event_id>/comments", EventCommentsView.as_view(), name="event_comments"),
 ]

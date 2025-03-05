@@ -370,7 +370,7 @@ class Request(models.Model):
         blank=False,
         null=False,
     )
-    
+
     class Meta:
         abstract = True
 
@@ -457,7 +457,6 @@ class EventRequest(Request):
     start_time = models.TimeField(blank=True, null=True)
     duration = models.DurationField(blank=True, null=True)
 
-
 class AdminReportRequest(Request):
     """
     Reports submitted to the admin by students or society presidents.
@@ -474,7 +473,6 @@ class AdminReportRequest(Request):
     report_type = models.CharField(max_length=20, choices=REPORT_TYPES)
     subject = models.CharField(max_length=100, blank=False)
     details = models.TextField(blank=False)
-    date_time = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.get_report_type_display()} - {self.subject} (From {self.from_student.username})"
@@ -587,3 +585,13 @@ class AwardStudent(models.Model):
 
     def __str__(self):
         return f"{self.student}, ({self.award})"
+
+class Comment(models.Model):
+    event = models.ForeignKey("Event", on_delete=models.CASCADE, related_name="comments")
+    user = models.ForeignKey("User", on_delete=models.CASCADE)
+    content = models.TextField()
+    create_at = models.DateTimeField(auto_now_add=True)
+    parent_comment = models.ForeignKey("self", null=True, blank=True, on_delete=models.CASCADE, related_name="replies")
+
+    def __str__(self):
+        return f"{self.user.username}: {self.content[:30]}"
