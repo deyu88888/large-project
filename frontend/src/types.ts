@@ -36,6 +36,7 @@ export interface Student {
     presidentOf: number[];
     isPresident: boolean;
   }
+  
   export interface Report {
     id: number;
     from_student: string;
