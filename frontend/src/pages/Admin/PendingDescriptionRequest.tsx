@@ -165,6 +165,7 @@ const PendingDescriptionRequest: React.FC = () => {
           }}
           pageSizeOptions={[5, 10, 25]}
           checkboxSelection
+          resizeThrottleMs={0}
         />
       </Box>
     </Box>

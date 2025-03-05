@@ -21,7 +21,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticate
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from api.models import Admin, AdminReportRequest, Event, Notification, Society, Student, User,Award, AwardStudent, UserRequest
+from api.models import Admin, AdminReportRequest, Event, Notification, Society, Student, User,Award, AwardStudent, UserRequest,  DescriptionRequest, AdminReportRequest
 from api.serializers import (
     AdminReportRequestSerializer,
     AdminSerializer,
@@ -1005,7 +1005,7 @@ class AdminReportView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def get(self, request):
-        reports = AdminReportRequest.objects.all().order_by("-date_time")
+        reports = AdminReportRequest.objects.all().order_by("-requested_at")
 
         serializer = AdminReportRequestSerializer(reports, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

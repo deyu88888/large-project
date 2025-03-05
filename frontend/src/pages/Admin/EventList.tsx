@@ -109,41 +109,6 @@ const EventList = () => {
         maxWidth: drawer ? `calc(100% - 3px)` : "100%",
       }}
     >
-      <Button
-        variant="contained"
-        color="error"
-        onClick={handleRejectPageNavigation}
-        sx={{
-          position: "absolute",
-          top: 85,
-          right: 30,
-          backgroundColor: colors.blueAccent[500],
-          "&:hover": {
-            backgroundColor: colors.blueAccent[700],
-          },
-          display: "flex",
-          alignItems: "center",
-          padding: "8px 16px",
-          marginTop: {
-            xs: "3rem", // Top margin for small screens
-            md: "0rem", // No margin for medium and larger screens
-          },
-        }}
-      >
-        Rejected Events
-        <span style={{ marginLeft: "8px", fontSize: "18px" }}>→</span>
-      </Button>
-      <Typography
-        variant="h1"
-        sx={{
-          color: colors.grey[100],
-          fontSize: "2.25rem",
-          fontWeight: 800,
-          marginBottom: "2rem",
-        }}
-      >
-        Event List
-      </Typography>
       <Box
         sx={{
           height: "78vh",
@@ -179,6 +144,7 @@ const EventList = () => {
           }}
           pageSizeOptions={[5, 10, 25]}
           checkboxSelection
+          resizeThrottleMs={0}
         />
       </Box>
     </Box>

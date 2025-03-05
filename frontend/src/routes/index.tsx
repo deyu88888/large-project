@@ -59,6 +59,12 @@ const RequestEventPage = lazy(
 const AdminReportList = lazy(
   () => import("../pages/Admin/AdminReportList")
 );
+const ManageSocietiesPage = lazy(
+  () => import("../pages/Admin/ManageSocieties")
+);
+const ManageEventsPage = lazy(
+  () => import("../pages/Admin/ManageEvents")
+);
 
 const routes = [
   {
@@ -96,6 +102,14 @@ const routes = [
           {
             path: "event-list",
             element: <EventListPage />,
+          },
+          {
+            path: "society",
+            element: <ManageSocietiesPage />,
+          },
+          {
+            path: "event",
+            element: <ManageEventsPage />,
           },
           {
             path: "society-list",
