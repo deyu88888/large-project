@@ -9,8 +9,8 @@ import CircularLoader from "../components/loading/circular-loader";
 import Layout from "../components/layout";
 import ViewSocietyEvents from "../pages/view-society-events";
 import PendingMembers from "../pages/President/pending-members";
-import GiveAwardPage from "../pages/give-award-page";
-import AssignSocietyRole from "../pages/assign-society-role";
+import GiveAwardPage from "../pages/President/give-award-page";
+import AssignSocietyRole from "../pages/President/assign-society-role";
 
 // Lazy-loaded pages
 const LoginPage = lazy(() => import("../pages/login"));

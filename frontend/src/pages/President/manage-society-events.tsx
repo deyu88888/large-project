@@ -59,8 +59,8 @@ const ManageSocietyEvents: React.FC = () => {
       minHeight="100vh"
       p={4}
       sx={{
-        backgroundColor: theme.palette.mode === "dark" ? "#141b2d" : "#ffffff",
-        color: theme.palette.mode === "dark" ? colors.grey[100] : "#000",
+        backgroundColor: theme.palette.mode === "dark" ? "#141b2d" : "#fcfcfc",
+        color: theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d",
       }}
     >
       {/* Page Header */}
@@ -69,12 +69,17 @@ const ManageSocietyEvents: React.FC = () => {
           variant="h2"
           fontWeight="bold"
           sx={{
-            color: theme.palette.mode === "dark" ? colors.grey[100] : "#000",
+            color: theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d",
           }}
         >
           Manage Society Events
         </Typography>
-        <Typography variant="h6" color={colors.grey[500]}>
+        <Typography 
+          variant="h6" 
+          sx={{
+            color: colors.grey[500],
+          }}
+        >
           {filter.charAt(0).toUpperCase() + filter.slice(1)} events for Society {society_id}
         </Typography>
       </Box>
@@ -152,10 +157,12 @@ const ManageSocietyEvents: React.FC = () => {
               sx={{
                 p: 3,
                 mb: 2,
-                backgroundColor: colors.primary[500],
-                color: theme.palette.mode === "dark" ? colors.grey[100] : "#000",
+                backgroundColor: theme.palette.mode === "dark" ? colors.primary[500] : "#ffffff",
+                color: theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d",
+                borderRadius: "8px",
+                boxShadow: 3,
                 transition: "0.3s",
-                "&:hover": { backgroundColor: colors.primary[600] },
+                "&:hover": { backgroundColor: theme.palette.mode === "dark" ? colors.primary[600] : "#f5f5f5" },
               }}
             >
               <Typography variant="h5" fontWeight="bold">

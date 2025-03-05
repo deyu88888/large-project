@@ -43,7 +43,7 @@ const PresidentPage = () => {
         alignItems="center"
         justifyContent="center"
         minHeight="100vh"
-        sx={{ backgroundColor: theme.palette.mode === "dark" ? "#141b2d" : "#ffffff" }}
+        sx={{ backgroundColor: colors.primary[400] }}
       >
         <CircularProgress color="secondary" />
       </Box>
@@ -55,13 +55,19 @@ const PresidentPage = () => {
       minHeight="100vh"
       p={4}
       sx={{
-        backgroundColor: theme.palette.mode === "dark" ? "#141b2d" : "#ffffff",
-        color: colors.grey[100],
+        backgroundColor: theme.palette.mode === "dark" ? "#141b2d" : "#fcfcfc",
+        color: theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d",
       }}
     >
       {/* Society Name */}
       <Box textAlign="center" mb={4}>
-        <Typography variant="h1" fontWeight="bold" color={colors.grey[100]}>
+        <Typography 
+          variant="h1" 
+          fontWeight="bold"
+          sx={{
+            color: theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d",
+          }}
+        >
           {society ? society.name : "My Society"}
         </Typography>
       </Box>
@@ -101,8 +107,10 @@ const PresidentPage = () => {
           maxWidth: 600,
           mx: "auto",
           p: 4,
-          backgroundColor: colors.primary[500],
-          color: colors.grey[100],
+          backgroundColor: theme.palette.mode === "dark" ? colors.primary[500] : "#ffffff",
+          color: theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d",
+          borderRadius: "8px",
+          boxShadow: 3,
         }}
       >
         <Typography variant="h3" fontWeight="bold" mb={2}>

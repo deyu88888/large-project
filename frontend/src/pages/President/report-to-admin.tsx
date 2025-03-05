@@ -38,11 +38,18 @@ const ReportToAdmin: React.FC = () => {
       flexDirection="column"
       alignItems="center"
       sx={{
-        backgroundColor: theme.palette.mode === "dark" ? "#141b2d" : "#ffffff",
-        color: theme.palette.mode === "dark" ? colors.grey[100] : "#000",
+        backgroundColor: theme.palette.mode === "dark" ? "#141b2d" : "#fcfcfc",
+        color: theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d",
       }}
     >
-      <Typography variant="h2" fontWeight="bold" mb={3}>
+      <Typography 
+        variant="h2" 
+        fontWeight="bold" 
+        mb={3}
+        sx={{
+          color: theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d",
+        }}
+      >
         Report to Admin
       </Typography>
 
@@ -59,7 +66,14 @@ const ReportToAdmin: React.FC = () => {
         }}
       >
         {/* Report Type */}
-        <Typography variant="h6" fontWeight="bold" mb={1}>
+        <Typography 
+          variant="h6" 
+          fontWeight="bold" 
+          mb={1}
+          sx={{
+            color: theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d",
+          }}
+        >
           Type of Report
         </Typography>
         <Select
@@ -81,7 +95,15 @@ const ReportToAdmin: React.FC = () => {
         </Select>
 
         {/* Subject */}
-        <Typography variant="h6" fontWeight="bold" mt={3} mb={1}>
+        <Typography 
+          variant="h6" 
+          fontWeight="bold" 
+          mt={3} 
+          mb={1}
+          sx={{
+            color: theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d",
+          }}
+        >
           Subject
         </Typography>
         <TextField
@@ -98,7 +120,15 @@ const ReportToAdmin: React.FC = () => {
         />
 
         {/* Details */}
-        <Typography variant="h6" fontWeight="bold" mt={3} mb={1}>
+        <Typography 
+          variant="h6" 
+          fontWeight="bold" 
+          mt={3} 
+          mb={1}
+          sx={{
+            color: theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d",
+          }}
+        >
           Report Details
         </Typography>
         <TextField
