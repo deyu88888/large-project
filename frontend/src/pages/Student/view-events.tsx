@@ -18,7 +18,7 @@ const ViewEvents: React.FC = () => {
     const fetchEvents = async () => {
       try {
         setLoading(true);
-        const response = await apiClient.get("/api/events/rsvp");
+        const response = await apiClient.get("/api/events/");
         setEvents(response.data || []);
       } catch (error) {
         console.error("Error fetching events:", error);
