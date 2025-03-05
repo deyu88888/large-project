@@ -32,12 +32,16 @@ const ViewNotifications: React.FC = () => {
 
   const markNotificationAsRead = async (id: number) => {
     try {
-      await apiClient.patch(`/api/notifications/${id}/`, { is_read: true });
-      setNotifications((prev) =>
-        prev.map((notification) =>
-          notification.id === id ? { ...notification, is_read: true } : notification
-        )
-      );
+      const response = await apiClient.patch(`/api/notifications/${id}`, { is_read: true });
+      if (response.status === 200) {
+        setNotifications((prevNotifications) =>
+          prevNotifications.map((notification) =>
+            notification.id === id ? { ...notification, is_read: true } : notification
+          )
+        );
+      } else {
+        console.error("Failed to mark notification as read");
+      }
     } catch (error) {
       console.error("Error marking notification as read:", error);
     }
