@@ -6,17 +6,8 @@ import { useNavigate } from "react-router-dom";
 import { tokens } from "../../theme/theme";
 import { useSettingsStore } from "../../stores/settings-store";
 import { SearchContext } from "../../components/layout/SearchContext";
+import { Event } from '../../types'
 
-interface Event {
-  id: number;
-  title: string;
-  description: string;
-  date: string;
-  startTime: string;
-  duration: string;
-  hostedBy: number;
-  location: string;
-}
 
 const EventList = () => {
   const theme = useTheme();

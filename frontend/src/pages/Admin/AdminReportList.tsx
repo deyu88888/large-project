@@ -5,16 +5,8 @@ import { tokens } from "../../theme/theme";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { useSettingsStore } from "../../stores/settings-store";
 import { fetchReports } from './fetchReports';
+import { Report } from '../../types'
 
-
-interface Report {
-  id: number;
-  from_student: string;
-  report_type: string;
-  subject: string;
-  details: string;
-  created_at: string;
-}
 
 const AdminReportList: React.FC = () => {
   const theme = useTheme();
