@@ -2,11 +2,14 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { apiClient } from "../../api"; // adjust import as needed
 import { useAuthStore } from "../../stores/auth-store";
+import { useTheme } from "@mui/material/styles";
+import { Box, Typography, Button, CircularProgress, Paper, List, ListItem, ListItemText, ListItemSecondaryAction } from "@mui/material";
 
 const ViewSocietyMembers = () => {
   const { society_id } = useParams<{ society_id: string }>();
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const theme = useTheme();
   
   const [society, setSociety] = useState<any>(null);
   const [members, setMembers] = useState<any[]>([]);
@@ -37,90 +40,159 @@ const ViewSocietyMembers = () => {
     fetchMembers();
   }, [society_id, user]);
 
-  // Placeholder handlers for button actions
+  // Handlers for button actions
   const handleViewProfile = (memberId: number) => {
     navigate(`/profile/${memberId}`);
   };
 
   const handleGiveAward = (memberId: number) => {
     navigate(`../give-award-page/${memberId}`);
-    console.log(`Give award to user with ID: ${memberId}`);
   };
 
   const handleAssignRole = (memberId: number) => {
     navigate(`../assign-society-role/${memberId}`);
-    console.log(`Assign role to user with ID: ${memberId}`);
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>Loading Society Members...</p>
-      </div>
+      <Box 
+        sx={{ 
+          minHeight: '100vh', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          backgroundColor: theme.palette.background.default 
+        }}
+      >
+        <CircularProgress />
+      </Box>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 py-8 px-4">
+    <Box 
+      sx={{ 
+        minHeight: '100vh', 
+        backgroundColor: theme.palette.background.default,
+        py: 4,
+        px: 2 
+      }}
+    >
       {/* Header with Society Name */}
-      <header className="text-center mb-8">
-        <h1 className="text-4xl font-bold text-gray-900">
+      <Box 
+        sx={{ 
+          textAlign: 'center', 
+          mb: 4 
+        }}
+      >
+        <Typography 
+          variant="h1" 
+          sx={{ 
+            color: theme.palette.primary.main,
+            fontWeight: 'bold' 
+          }}
+        >
           {society ? society.name : "Society"} Members
-        </h1>
-      </header>
+        </Typography>
+      </Box>
 
       {/* Members List */}
-      <section className="max-w-3xl mx-auto bg-white p-6 rounded shadow">
+      <Paper 
+        elevation={3}
+        sx={{ 
+          maxWidth: 800, 
+          mx: 'auto', 
+          p: 3,
+          backgroundColor: theme.palette.mode === 'dark' ? '#141b2d' : theme.palette.background.paper
+        }}
+      >
         {members.length === 0 ? (
-          <p className="text-gray-600">No members found.</p>
+          <Typography 
+            color="textSecondary" 
+            sx={{ textAlign: 'center' }}
+          >
+            No members found.
+          </Typography>
         ) : (
-          <ul className="divide-y divide-gray-200">
+          <List>
             {members.map((member) => (
-              <li key={member.id} className="py-4 flex items-center justify-between">
-                <div>
-                  <p className="font-medium">
-                    {member.first_name} {member.last_name}
-                  </p>
-                  <p className="text-sm text-gray-500">{member.username}</p>
-                </div>
-                <div className="flex space-x-2">
+              <ListItem 
+                key={member.id}
+                sx={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center',
+                  borderBottom: `1px solid ${theme.palette.divider}`
+                }}
+              >
+                <ListItemText
+                  primary={`${member.first_name} ${member.last_name}`}
+                  secondary={member.username}
+                  primaryTypographyProps={{ 
+                    color: 'textPrimary',
+                    fontWeight: 'medium' 
+                  }}
+                  secondaryTypographyProps={{ 
+                    color: 'textSecondary' 
+                  }}
+                />
+                <ListItemSecondaryAction 
+                  sx={{ 
+                    display: 'flex', 
+                    gap: 1 
+                  }}
+                >
                   {/* View Profile Button */}
-                  <button
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    size="small"
                     onClick={() => handleViewProfile(member.id)}
-                    className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition"
                   >
                     View Profile
-                  </button>
+                  </Button>
                   {/* Give Award Button */}
-                  <button
+                  <Button
+                    variant="contained"
+                    color="secondary"
+                    size="small"
                     onClick={() => handleGiveAward(member.id)}
-                    className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 transition"
                   >
                     Give Award
-                  </button>
+                  </Button>
                   {/* Assign Role Button */}
-                  <button
+                  <Button
+                    variant="contained"
+                    color="info"
+                    size="small"
                     onClick={() => handleAssignRole(member.id)}
-                    className="bg-purple-500 text-white px-3 py-1 rounded hover:bg-purple-600 transition"
                   >
                     Assign Role
-                  </button>
-                </div>
-              </li>
+                  </Button>
+                </ListItemSecondaryAction>
+              </ListItem>
             ))}
-          </ul>
+          </List>
         )}
+        
         {/* Back button */}
-        <div className="mt-4">
-          <button
+        <Box 
+          sx={{ 
+            mt: 2, 
+            display: 'flex', 
+            justifyContent: 'center' 
+          }}
+        >
+          <Button
+            variant="contained"
+            color="neutral"
             onClick={() => navigate(-1)}
-            className="bg-gray-500 text-white px-6 py-2 rounded hover:bg-gray-600 transition"
           >
             Back to Dashboard
-          </button>
-        </div>
-      </section>
-    </div>
+          </Button>
+        </Box>
+      </Paper>
+    </Box>
   );
 };
 
