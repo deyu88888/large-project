@@ -47,7 +47,10 @@ const Layout: React.FC<LayoutProps> = () => {
           open={drawer}
           elevation={0}
           sx={{
-            backgroundColor: "transparent",
+            backgroundColor:
+              theme.palette.mode === "dark"
+                ? theme.palette.background.default
+                : theme.palette.background.default,
           }}
         >
           <Toolbar>
