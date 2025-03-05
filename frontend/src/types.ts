@@ -44,3 +44,14 @@ export interface Student {
     details: string;
     created_at: string;
 };
+
+export interface Event {
+    id: number;
+    title: string;
+    description: string;
+    date: string;
+    startTime: string;
+    duration: string;
+    hostedBy: number;
+    location: string;
+  };

@@ -112,6 +112,7 @@ const PendingSocietyRequest = () => {
           pageSizeOptions={[5, 10, 25]}
           checkboxSelection
           resizeThrottleMs={0}
+          disableRowSelectionOnClick  // Disable row selection on row click to temporarily fix accept/reject button issue
         />
         {/* <div> {JSON.stringify(filteredSocieties)} </div> */}
       </Box>
