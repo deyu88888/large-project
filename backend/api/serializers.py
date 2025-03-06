@@ -168,13 +168,13 @@ class SocietySerializer(serializers.ModelSerializer):
         """SocietySerializer meta data"""
         model = Society
         fields = [
-            'id', 'name', 'description', 'society_members', 'roles', 'leader', 'approved_by',
-            'status', 'category', 'social_media_links', 'timetable', 'showreel_images',
-            'membership_requirements', 'upcoming_projects_or_plans', 'icon','tags'
+            'id', 'name', 'description', 'society_members', 'leader', 'leader_id', 'vice_president' ,
+            'treasurer', 'event_manager', 'approved_by','status', 'category', 'social_media_links',
+            'timetable', 'showreel_images', 'membership_requirements', 'upcoming_projects_or_plans',
+            'icon','tags',
         ]
         extra_kwargs = {
             'society_members': {'required': False},  # Allows empty or missing data
-            'roles': {'required': False},
             'social_media_links': {'required': False},
             'timetable': {'required': False},
             'membership_requirements': {'required': False},

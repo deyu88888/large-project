@@ -179,14 +179,6 @@ const ManageSocietyEvents: React.FC = () => {
         </Typography>
       </Box>
 
-      {/* Debug Info */}
-      {process.env.NODE_ENV === "development" && (
-        <Box mb={2} p={2} bgcolor={colors.grey[900]} color="white" borderRadius="4px">
-          <Typography variant="body2">Debug: Society ID = {numericSocietyId}, Filter = {filter}</Typography>
-          <Typography variant="body2">Showing {events.length} events</Typography>
-        </Box>
-      )}
-
       {/* Create Event Button */}
       <Box display="flex" justifyContent="center" mb={3}>
         <Button
