@@ -11,6 +11,7 @@ import {
   ListItemIcon,
   ListItemText,
   Typography,
+
 } from "@mui/material";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
@@ -26,6 +27,7 @@ import EventNoteOutlinedIcon from "@mui/icons-material/EventNoteOutlined";
 import PeopleOutlineIcon from "@mui/icons-material/PeopleOutline";
 import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
 import ReportProblemOutlinedIcon from "@mui/icons-material/ReportProblemOutlined";
+
 import { CustomDrawer, CustomDrawerHeader } from "./drawer/CustomDrawer";
 
 interface PresidentDrawerProps {
@@ -51,11 +53,11 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
   ];
 
   const manageMySocietiesItems = [
-    { title: "Society Details", icon: <DescriptionOutlinedIcon />, to: "http://localhost:3000/president-page/1/manage-society-details" },
-    { title: "Society Events", icon: <EventNoteOutlinedIcon />, to: "http://localhost:3000/president-page/1/manage-society-events" },
-    { title: "Pending Members", icon: <PeopleOutlineIcon />, to: "http://localhost:3000/president-page/1/pending-members" },
-    { title: "All Members", icon: <GroupOutlinedIcon />, to: "http://localhost:3000/president-page/1/view-society-members" },
-    { title: "Report to Admin", icon: <ReportProblemOutlinedIcon />, to: "http://localhost:3000/president-page/1/report-to-admin" },
+    { title: "Society Details", icon: <DescriptionOutlinedIcon />, to: "/president-page/1/manage-society-details" },
+    { title: "Society Events", icon: <EventNoteOutlinedIcon />, to: "/president-page/1/manage-society-events" },
+    { title: "Pending Members", icon: <PeopleOutlineIcon />, to: "/president-page/1/pending-members" },
+    { title: "All Members", icon: <GroupOutlinedIcon />, to: "/president-page/1/view-society-members" },
+    { title: "Report to Admin", icon: <ReportProblemOutlinedIcon />, to: "/president-page/1/report-to-admin" },
   ];
 
   const logout = () => {
@@ -63,6 +65,8 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
     localStorage.removeItem("refresh");
     navigate("/login");
   };
+
+
 
   return (
     <CustomDrawer variant="permanent" open={drawer}>
@@ -102,7 +106,15 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
               onClick={() => setSelected(item.title)}
               sx={{ justifyContent: drawer ? "initial" : "center", px: 2.5 }}
             >
-              <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
+              <ListItemIcon
+                sx={{
+                  minWidth: 0,
+                  mr: drawer ? 3 : "auto",
+                  justifyContent: "center",
+                }}
+              >
+                {item.icon}
+              </ListItemIcon>
               {drawer && <ListItemText primary={item.title} />}
             </ListItemButton>
           </ListItem>
@@ -118,26 +130,44 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
             to="/president-page/1"
             selected={selected === "Manage My Societies"}
             onClick={() => setSelected("Manage My Societies")}
-            sx={{ justifyContent: "initial", px: 2.5 }}
+            sx={{ justifyContent: drawer ? "initial" : "center", px: 2.5 }}
           >
-            <ListItemIcon sx={{ minWidth: 40 }}>
+            <ListItemIcon
+              sx={{
+                minWidth: 0,
+                mr: drawer ? 3 : "auto",
+                justifyContent: "center",
+              }}
+            >
               <ManageAccountsOutlinedIcon />
             </ListItemIcon>
-            <ListItemText primary="Manage My Societies" />
+            {drawer && <ListItemText primary="Manage My Societies" />}
           </ListItemButton>
         </ListItem>
 
+        {/* Society Management Items */}
         {manageMySocietiesItems.map((item) => (
           <ListItem key={item.title} disablePadding>
             <ListItemButton
-              component="a"
-              href={item.to}
+              component={Link}
+              to={item.to}
               selected={selected === item.title}
               onClick={() => setSelected(item.title)}
-              sx={{ justifyContent: "initial", px: 2.5 }}
+              sx={{ 
+                justifyContent: drawer ? "initial" : "center", 
+                px: 2.5
+              }}
             >
-              <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.title} />
+              <ListItemIcon
+                sx={{
+                  minWidth: 0,
+                  mr: drawer ? 3 : "auto",
+                  justifyContent: "center",
+                }}
+              >
+                {item.icon}
+              </ListItemIcon>
+              {drawer && <ListItemText primary={item.title} />}
             </ListItemButton>
           </ListItem>
         ))}
@@ -159,7 +189,13 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
             to="/student/join-society"
             sx={{ justifyContent: drawer ? "initial" : "center", px: 2.5 }}
           >
-            <ListItemIcon sx={{ minWidth: 40 }}>
+            <ListItemIcon
+              sx={{
+                minWidth: 0,
+                mr: drawer ? 3 : "auto",
+                justifyContent: "center",
+              }}
+            >
               <AddCircleOutlineIcon />
             </ListItemIcon>
             {drawer && <ListItemText primary="Join Societies" />}
@@ -180,7 +216,13 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
             }}
             onClick={logout}
           >
-            <ListItemIcon sx={{ minWidth: 40 }}>
+            <ListItemIcon
+              sx={{
+                minWidth: 0,
+                mr: drawer ? 3 : "auto",
+                justifyContent: "center",
+              }}
+            >
               <LogoutIcon sx={{ color: "red" }} />
             </ListItemIcon>
             {drawer && <ListItemText primary="Logout" />}
