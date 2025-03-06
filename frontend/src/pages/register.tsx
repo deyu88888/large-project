@@ -112,6 +112,8 @@ export default function RegisterPage() {
                 setFieldError("email", error.response.data.email[0]);
             } else if (error.response?.data?.username) {
                 setFieldError("username", error.response.data.username[0]);
+            } else if (error.response?.data?.error && error.response.data.error.includes("already registered")) {
+                alert("This email is already registered.")
             } else {
                 alert("Error during registration. Please try again.");
             }
