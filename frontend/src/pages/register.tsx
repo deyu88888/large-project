@@ -2,14 +2,39 @@ import { apiClient, apiPaths } from "../api";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import CircularLoader from "../components/loading/circular-loader";
-import { Formik, Field, Form, ErrorMessage } from "formik";
+import { Formik, Form, ErrorMessage } from "formik";
+import Stepper from '@mui/material/Stepper';
+import Step from '@mui/material/Step';
+import StepLabel from '@mui/material/StepLabel';
 import * as Yup from "yup";
+import {
+    Box,
+    Typography,
+    TextField,
+    Button,
+    Snackbar,
+    Alert,
+    CircularProgress,
+    useTheme,
+  } from "@mui/material";
+  import { tokens } from "../theme/theme";
 
+
+const steps = ["Register", "Verification", "Your Details"];
 
 export default function RegisterPage() {
     const navigate = useNavigate();
+    const theme = useTheme();
+    const colors = tokens(theme.palette.mode);
     const [otpSent, setOtpSent] = useState(false);
     const [email, setEmail] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [activeStep, setActiveStep] = useState(0);
+
+    const handleCloseSnackbar = () => setSnackbarOpen(false);
+    const handleNext = () => setActiveStep((prev) => prev + 1);
+
 
     // Validation schema using Yup
     const validationSchema = Yup.object({
@@ -44,7 +69,8 @@ export default function RegisterPage() {
             console.log(res);
             setOtpSent(true);
             setEmail(email);
-            alert("OTP has been sent to your email.");
+            setSnackbarOpen(true);
+            handleNext();
         } catch (error: any) {
             if (error.response?.data?.error) {
                 setFieldError("email", error.response.data.error);
@@ -54,12 +80,25 @@ export default function RegisterPage() {
         }
     };
 
+    const handleVerifyOTP = async (email: string, otp: string, setFieldError: any) => {
+        try {
+          const res = await apiClient.post(apiPaths.USER.VERIFY_OTP, { email, otp });
+          console.log(res);
+          handleNext();
+        } catch (error: any) {
+          if (error.response?.data?.error) {
+            setFieldError("otp", error.response.data.error);
+          } else {
+            setFieldError("otp", "Error verifying OTP. Please try again.");
+          }
+        }
+      };
+
     const handleSubmit = async (values: any, { setSubmitting, setFieldError }: any) => {
         if (values.email !== email) {
             setFieldError("email", "Email must match the one used for OTP.");
             return;
         }
-
         try {
             const res = await apiClient.post(apiPaths.USER.REGISTER, {
                 ...values,
@@ -82,11 +121,42 @@ export default function RegisterPage() {
     };
 
     return (
-        <div className="flex justify-center items-center min-h-screen bg-gray-100">
-            <div className="w-full max-w-lg bg-white p-8 rounded-lg shadow-lg">
-                <h1 className="text-2xl font-bold text-center mb-6 text-indigo-600">
-                    Register as a Student
-                </h1>
+        <Box
+        sx={{
+          minHeight: "100vh",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: colors.primary[400],
+          padding: 2,
+        }}
+      >
+        <Box
+          sx={{
+            width: "100%",
+            maxWidth: 600,
+            backgroundColor:
+              theme.palette.mode === "dark"
+                ? theme.palette.background.default
+                : theme.palette.background.default,
+            padding: 4,
+            borderRadius: 2,
+            boxShadow: 3,
+          }}
+        >
+            <Typography
+                variant="h4"
+                sx={{ textAlign: "center", fontWeight: "bold", color: colors.grey[100] }}
+                >
+                Register as a Student
+            </Typography>
+            <Stepper activeStep={activeStep} sx={{p: 2.5}}>
+                {steps.map((label) => (
+                <Step key={label}>
+                    <StepLabel>{label}</StepLabel>
+                </Step>
+                ))}
+            </Stepper>
                 <Formik
                     initialValues={{
                         first_name: "",
@@ -100,131 +170,163 @@ export default function RegisterPage() {
                     validationSchema={validationSchema}
                     onSubmit={handleSubmit}
                 >
-                    {({ isSubmitting, setFieldError, values }) => (
+                    {({ isSubmitting,  handleChange, setFieldError, values }) => (
                         <Form className="grid grid-cols-1 gap-6">
-                            <div>
-                                <label htmlFor="first_name" className="block text-sm font-medium text-gray-700">
-                                    First Name
-                                </label>
-                                <Field
-                                    id="first_name"
-                                    name="first_name"
-                                    type="text"
-                                    placeholder="Enter your first name"
-                                    className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                                />
+                            {activeStep === 0 && (
+                            <>
+                            <TextField
+                                fullWidth
+                                id="first_name"
+                                name="first_name"
+                                label="First name"
+                                value={values.first_name}
+                                onChange={handleChange}
+                                InputLabelProps={{ style: { color: colors.grey[300] } }}
+                                InputProps={{ style: { color: colors.grey[100] } }}
+                            />
                                 <ErrorMessage name="first_name" component="div" className="text-red-500 text-sm"/>
-                            </div>
 
-                            <div>
-                                <label htmlFor="last_name" className="block text-sm font-medium text-gray-700">
-                                    Last Name
-                                </label>
-                                <Field
-                                    id="last_name"
-                                    name="last_name"
-                                    type="text"
-                                    placeholder="Enter your last name"
-                                    className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                            <TextField
+                                fullWidth
+                                id="last_name"
+                                name="last_name"
+                                label="Last name"
+                                value={values.last_name}
+                                onChange={handleChange}
+                                InputLabelProps={{ style: { color: colors.grey[300] } }}
+                                InputProps={{ style: { color: colors.grey[100] } }}
+                            />
+                            <ErrorMessage name="last_name" component="div" className="text-red-500 text-sm"/>
+
+                            <TextField
+                                fullWidth
+                                id="email"
+                                name="email"
+                                label="Email"
+                                value={values.email}
+                                onChange={handleChange}
+                                InputLabelProps={{ style: { color: colors.grey[300] } }}
+                                InputProps={{ style: { color: colors.grey[100] } }}
+                            />
+                            <ErrorMessage name="email" component="div" className="text-red-500 text-sm"/>
+                            <Button
+                                variant="contained"
+                                onClick={() => handleRequestOTP(values.email, setFieldError)}
+                                sx={{
+                                    backgroundColor: colors.blueAccent[500],
+                                    color: "#fff",
+                                    "&:hover": { backgroundColor: colors.blueAccent[700] },
+                                  }}
+                                disabled={otpSent}
+                            >
+                                {otpSent ? "OTP Sent" : "Get OTP"}
+                            </Button>
+                            <Typography sx={{ marginTop: 2, textAlign: "center", color: colors.grey[100] }}>
+                                Already signed up?{" "}
+                                <a href="/login" style={{ color: colors.blueAccent[300], textDecoration: "underline" }}>
+                                    Please login.
+                                </a>
+                                </Typography>
+                            </>
+                            )}
+                            {activeStep === 1 && (
+                            <>
+                                <TextField
+                                fullWidth
+                                id="otp"
+                                name="otp"
+                                label="Temporary password"
+                                value={values.otp}
+                                onChange={handleChange}
+                                className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                                 />
-                                <ErrorMessage name="last_name" component="div" className="text-red-500 text-sm"/>
-                            </div>
+                                <ErrorMessage name="otp" component="div" className="text-red-500 text-sm" />
 
-                            <div>
-                                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                                    Email
-                                </label>
-                                <div className="flex">
-                                    <Field
-                                        id="email"
-                                        name="email"
-                                        type="email"
-                                        className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                                    />
-                                    <button
-                                        type="button"
-                                        className="ml-2 px-4 py-2 bg-blue-500 text-white rounded-md"
-                                        disabled={otpSent}
-                                        onClick={() => handleRequestOTP(values.email, setFieldError)}
-                                    >
-                                        {otpSent ? "OTP Sent" : "Get OTP"}
-                                    </button>
-                                </div>
-                                <ErrorMessage name="email" component="div" className="text-red-500 text-sm"/>
-                            </div>
-                            <div>
-                                <label htmlFor="otp" className="block text-sm font-medium text-gray-700">
-                                    OTP Code
-                                </label>
-                                <Field
-                                    id="otp"
-                                    name="otp"
-                                    type="text"
-                                    className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                                />
-                                <ErrorMessage name="otp" component="div" className="text-red-500 text-sm"/>
-                            </div>
+                                <Button
+                                variant="contained"
+                                onClick={() => handleVerifyOTP(values.email, values.otp, setFieldError)}
+                                sx={{
+                                    backgroundColor: colors.blueAccent[500],
+                                    color: "#fff",
+                                    "&:hover": { backgroundColor: colors.blueAccent[700] },
+                                  }}
+                                >
+                                Verify OTP
+                                </Button>
+                            </>
+                            )}
 
+                            {activeStep === 2 && (
+                                <>
+                            <TextField
+                                fullWidth
+                                id="username"
+                                name="username"
+                                label="Username"
+                                value={values.username}
+                                onChange={handleChange}
+                                InputLabelProps={{ style: { color: colors.grey[300] } }}
+                                InputProps={{ style: { color: colors.grey[100] } }}
+                            />
+                            <ErrorMessage name="username" component="div" className="text-red-500 text-sm"/>
 
-                            <div>
-                                <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-                                    Username
-                                </label>
-                                <Field
-                                    id="username"
-                                    name="username"
-                                    type="text"
-                                    placeholder="Enter your username"
-                                    className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                                />
-                                <ErrorMessage name="username" component="div" className="text-red-500 text-sm"/>
-                            </div>
+                            <TextField
+                                fullWidth
+                                id="password"
+                                name="password"
+                                label="Pasword"
+                                value={values.password}
+                                onChange={handleChange}
+                                InputLabelProps={{ style: { color: colors.grey[300] } }}
+                                InputProps={{ style: { color: colors.grey[100] } }}
+                            />
+                            <ErrorMessage name="password" component="div" className="text-red-500 text-sm"/>
 
-                            <div>
-                                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                                    Password
-                                </label>
-                                <Field
-                                    id="password"
-                                    name="password"
-                                    type="password"
-                                    placeholder="Enter your password"
-                                    className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                                />
-                                <ErrorMessage name="password" component="div" className="text-red-500 text-sm"/>
-                            </div>
-
-                            <div>
-                                <label htmlFor="major" className="block text-sm font-medium text-gray-700">
-                                    Major
-                                </label>
-                                <Field
-                                    id="major"
-                                    name="major"
-                                    type="text"
-                                    placeholder="E.g., Computer Science"
-                                    className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                                />
-                                <ErrorMessage name="major" component="div" className="text-red-500 text-sm"/>
-                            </div>
-
+                            <TextField
+                                fullWidth
+                                id="major"
+                                name="major"
+                                label="Major"
+                                value={values.major}
+                                onChange={handleChange}
+                                InputLabelProps={{ style: { color: colors.grey[300] } }}
+                                InputProps={{ style: { color: colors.grey[100] } }}
+                            />
+                            <ErrorMessage name="major" component="div" className="text-red-500 text-sm"/>
                             {isSubmitting && (
                                 <div className="flex justify-center mt-4">
                                     <CircularLoader/>
                                 </div>
                             )}
-
-                            <button
+                            <Button
+                                fullWidth
                                 type="submit"
-                                disabled={isSubmitting}
-                                className="mt-6 w-full bg-indigo-600 text-white py-2 px-4 rounded-md shadow hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                variant="contained"
+                                sx={{
+                                    backgroundColor: colors.blueAccent[500],
+                                    color: "#fff",
+                                    "&:hover": { backgroundColor: colors.blueAccent[700] },
+                                  }}
                             >
-                                Register
-                            </button>
+                                {loading ? <CircularProgress size={24} /> : "Register"}
+                            </Button>
+                            </>
+                            )}
                         </Form>
                     )}
                 </Formik>
-            </div>
-        </div>
+            </Box>
+            {/* Snackbar for OTP Message */}
+            <Snackbar
+                open={snackbarOpen}
+                autoHideDuration={4000}
+                onClose={handleCloseSnackbar}
+                anchorOrigin={{ vertical: "top", horizontal: "center" }}
+            >
+                <Alert onClose={handleCloseSnackbar} severity="success">
+                Check your email for a temporary password.
+                </Alert>
+            </Snackbar>
+        </Box>
     );
 }

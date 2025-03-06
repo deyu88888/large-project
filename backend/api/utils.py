@@ -49,7 +49,6 @@ def verify_otp(request):
             email = data.get("email")
             otp = data.get("otp")
             if OTP_STORAGE.get(email) == otp:
-                del OTP_STORAGE[email]
                 return JsonResponse({"message": "OTP verified"}, status=status.HTTP_200_OK)
             else:
                 return JsonResponse({"error": "Invalid OTP"}, status=status.HTTP_400_BAD_REQUEST)
