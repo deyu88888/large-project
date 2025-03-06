@@ -59,7 +59,6 @@ const ManageSocietyEvents: React.FC = () => {
   // Convert society_id to number
   const numericSocietyId = society_id ? parseInt(society_id, 10) : null;
   
-
   // Sync URL when filter state changes
   useEffect(() => {
     if (!society_id) return;
@@ -81,15 +80,39 @@ const ManageSocietyEvents: React.FC = () => {
       setLoading(true);
       setError(null);
       try {
+        // Fetch all events for the society first
         const response = await apiClient.get("/api/events/", {
-          params: { society_id: numericSocietyId, filter },
+          params: { society_id: numericSocietyId },
         });
         
         console.log(`[DEBUG] Filter: ${filter}, Society ID: ${numericSocietyId}`);
         console.log(`[DEBUG] Raw response:`, response.data);
         
-        // Defensive filtering on front-end (optional)
-        const filteredEvents = response.data.filter((event: Event) => event.hosted_by === numericSocietyId);
+        // Filter events on the frontend based on the current filter
+        const allSocietyEvents = response.data.filter((event: Event) => event.hosted_by === numericSocietyId);
+        
+        let filteredEvents: Event[] = [];
+        const currentDate = new Date();
+        
+        // Apply appropriate filter logic
+        if (filter === "upcoming") {
+          // Events with future dates and approved status
+          filteredEvents = allSocietyEvents.filter((event: Event) => {
+            const eventDate = new Date(`${event.date}T${event.start_time}`);
+            return eventDate > currentDate && event.status === "Approved";
+          });
+        } else if (filter === "previous") {
+          // Events with past dates
+          filteredEvents = allSocietyEvents.filter((event: Event) => {
+            const eventDate = new Date(`${event.date}T${event.start_time}`);
+            return eventDate < currentDate && event.status === "Approved";
+          });
+        } else if (filter === "pending") {
+          // Events with "Pending" status
+          filteredEvents = allSocietyEvents.filter((event: Event) => 
+            event.status === "Pending"
+          );
+        }
         
         console.log(`[DEBUG] Filtered events (${filteredEvents.length}):`, filteredEvents);
         setEvents(filteredEvents);
