@@ -1,6 +1,6 @@
 import { useContext } from "react";
 import { Box, Typography, useTheme, Button } from "@mui/material";
-import { DataGrid, GridColDef } from "@mui/x-data-grid";
+import { DataGrid, GridColDef, GridToolbar } from "@mui/x-data-grid";
 import { tokens } from "../../theme/theme";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { useSettingsStore } from "../../stores/settings-store";
@@ -43,6 +43,7 @@ const PendingSocietyRequest = () => {
   const columns: GridColDef[] = [
     { field: "id", headerName: "ID", flex: 0.5 },
     { field: "name", headerName: "Name", flex: 1 },
+    // { field: "description", headerName: "Description", flex: 1 },
     {      
       field: "society_members",
       headerName: "Members",
@@ -82,17 +83,7 @@ const PendingSocietyRequest = () => {
         maxWidth: drawer ? `calc(100% - 3px)`: "100%",
       }}
     >
-      <Typography
-        variant="h1"
-        sx={{
-          color: colors.grey[100],
-          fontSize: "2.25rem",
-          fontWeight: 800,
-          marginBottom: "2rem",
-        }}
-      >
-        Pending Society Requests
-      </Typography>
+
       <Box
         sx={{
           height: "78vh",
@@ -108,11 +99,15 @@ const PendingSocietyRequest = () => {
             borderTop: "none",
             backgroundColor: colors.blueAccent[700],
           },
+          "& .MuiDataGrid-toolbarContainer .MuiButton-text": {
+            color: `${colors.blueAccent[500]} !important`,
+          },
         }}
       >
         <DataGrid
           rows={filteredSocieties}
           columns={columns}
+          slots={{ toolbar: GridToolbar }}
           initialState={{
             pagination: {
               paginationModel: { pageSize: 25, page: 0 },
@@ -120,6 +115,8 @@ const PendingSocietyRequest = () => {
           }}
           pageSizeOptions={[5, 10, 25]}
           checkboxSelection
+          resizeThrottleMs={0}
+          disableRowSelectionOnClick  // Disable row selection on row click to temporarily fix accept/reject button issue
         />
         {/* <div> {JSON.stringify(filteredSocieties)} </div> */}
       </Box>

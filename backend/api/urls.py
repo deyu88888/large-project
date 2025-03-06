@@ -9,7 +9,7 @@ from .views import (
     RecentActivitiesView, NotificationsView, EventCalendarView,
     StudentSocietiesView, JoinSocietyView, RSVPEventView, EventHistoryView,
     get_popular_societies, CreateEventRequestView, custom_media_view, get_sorted_events, StudentSocietyDataView,
-    AllEventsView, EventDetailView, EventCommentsView,
+    AllEventsView, EventDetailView, EventCommentsView, DescriptionRequestView
 )
 
 urlpatterns = [
@@ -51,6 +51,8 @@ urlpatterns = [
     # path("admin-panel/rejected-society", RejectedSocietyRequestView.as_view(), name="rejected_society"),  # refactored
     path("society/request/<str:society_status>", SocietyRequestView.as_view(), name="request_society"),
     path("society/request/pending/<int:society_id>", SocietyRequestView.as_view(), name="request_society"),
+
+    path("description/request/pending", DescriptionRequestView.as_view(), name="request_description"),
 
     # Student societies endpoints
     path("student-societies", StudentSocietiesView.as_view(), name="student_societies"),

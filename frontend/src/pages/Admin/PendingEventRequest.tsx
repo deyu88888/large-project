@@ -1,6 +1,6 @@
 import { useContext } from "react";
 import { Box, Typography, useTheme, Button } from "@mui/material";
-import { DataGrid, GridColDef } from "@mui/x-data-grid";
+import { DataGrid, GridColDef, GridToolbar } from "@mui/x-data-grid";
 import { tokens } from "../../theme/theme";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { useSettingsStore } from "../../stores/settings-store";
@@ -70,17 +70,6 @@ const PendingEventRequest = () => {
         maxWidth: drawer ? `calc(100% - 3px)`: "100%",
       }}
     >
-      <Typography
-        variant="h1"
-        sx={{
-          color: colors.grey[100],
-          fontSize: "2.25rem",
-          fontWeight: 800,
-          marginBottom: "2rem",
-        }}
-      >
-        Pending Event Requests
-      </Typography>
       <Box
         sx={{
           height: "78vh",
@@ -96,11 +85,15 @@ const PendingEventRequest = () => {
             borderTop: "none",
             backgroundColor: colors.blueAccent[700],
           },
+          "& .MuiDataGrid-toolbarContainer .MuiButton-text": {
+            color: `${colors.blueAccent[500]} !important`,
+          },
         }}
       >
         <DataGrid
           rows={filteredEvents}
           columns={columns}
+          slots={{ toolbar: GridToolbar }}
           initialState={{
             pagination: {
               paginationModel: { pageSize: 25, page: 0 },
@@ -109,6 +102,7 @@ const PendingEventRequest = () => {
           pageSizeOptions={[5, 10, 25]}
           checkboxSelection
           disableRowSelectionOnClick  // Disable row selection on row click to temporarily fix accept/reject button issue
+          resizeThrottleMs={0}
         />
       </Box>
     </Box>

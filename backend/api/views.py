@@ -21,8 +21,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticate
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from api.models import Admin, AdminReportRequest, Event, Notification, Society, Student, User,Award, AwardStudent, UserRequest
-from api.models import Admin, Event, Notification, Society, Student, User, Award, AwardStudent, UserRequest, Comment
+from api.models import Admin, AdminReportRequest, Event, Notification, Society, Student, User,Award, AwardStudent, UserRequest,  DescriptionRequest, AdminReportRequest
 from api.serializers import (
     AdminReportRequestSerializer,
     AdminSerializer,
@@ -42,7 +41,8 @@ from api.serializers import (
     UserSerializer,
     AwardSerializer,
     AwardStudentSerializer,
-    PendingMemberSerializer, CommentSerializer,
+    PendingMemberSerializer,
+    DescriptionRequestSerializer,
 )
 from api.utils import *
 
@@ -1005,7 +1005,7 @@ class AdminReportView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def get(self, request):
-        reports = AdminReportRequest.objects.all().order_by("-date_time")
+        reports = AdminReportRequest.objects.all().order_by("-requested_at")
 
         serializer = AdminReportRequestSerializer(reports, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -1083,3 +1083,65 @@ class EventCommentsView(APIView):
             return Response(comment_data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class DescriptionRequestView(APIView):
+    """
+    Description request view for admins to approve/reject descriptions
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """Get all pending description requests (Admins only)."""
+        user = request.user
+
+        if not hasattr(user, "admin"):
+            return Response(
+                {"error": "Only admins can view pending description requests."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        pending_requests = DescriptionRequest.objects.filter(status="Pending")
+        serializer = DescriptionRequestSerializer(pending_requests, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def put(self, request, request_id):
+        """Approve or reject a pending description request."""
+        user = request.user
+
+        # ensure the user is an admin
+        if not hasattr(user, "admin"):
+            return Response(
+                {"error": "Only admins can approve or reject description requests."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        description_request = get_object_or_404(DescriptionRequest, id=request_id)
+
+        status_update = request.data.get("status")
+        if status_update not in ["Approved", "Rejected"]:
+            return Response({"error": "Invalid status update."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if status_update == "Approved":
+            society = description_request.society
+            society.description = description_request.new_description
+            society.save()
+
+        description_request.status = status_update
+        description_request.reviewed_by = user.admin
+        description_request.save()
+
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            "society_updates",
+            {
+                "type": "society_list_update",
+                "message": f"Description request for {description_request.society.name} has been {status_update.lower()}.",
+                "data": DescriptionRequestSerializer(description_request).data,
+                "status": status_update
+            }
+        )
+
+        return Response(
+            {"message": f"Description request {status_update.lower()} successfully."},
+            status=status.HTTP_200_OK
+        )

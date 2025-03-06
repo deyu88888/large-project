@@ -1,22 +1,13 @@
 import React, { useEffect, useState, useContext, useRef } from "react";
 import { Box, Typography, useTheme, Button } from "@mui/material";
-import { DataGrid, GridColDef } from "@mui/x-data-grid";
+import { DataGrid, GridColDef, GridToolbar } from "@mui/x-data-grid";
 import { apiClient, apiPaths } from "../../api";
 import { useNavigate } from "react-router-dom";
 import { tokens } from "../../theme/theme";
 import { useSettingsStore } from "../../stores/settings-store";
 import { SearchContext } from "../../components/layout/SearchContext";
+import { Event } from '../../types'
 
-interface Event {
-  id: number;
-  title: string;
-  description: string;
-  date: string;
-  startTime: string;
-  duration: string;
-  hostedBy: number;
-  location: string;
-}
 
 const EventList = () => {
   const theme = useTheme();
@@ -82,6 +73,7 @@ const EventList = () => {
 }, []);
 
   const columns: GridColDef[] = [
+    { field: "id", headerName: "ID", flex: 0.3 },
     { field: "title", headerName: "Title", flex: 1 },
     { field: "description", headerName: "Description", flex: 2 },
     { field: "date", headerName: "Date", flex: 1 },
@@ -89,7 +81,59 @@ const EventList = () => {
     { field: "duration", headerName: "Duration", flex: 1 },
     { field: "hostedBy", headerName: "Hosted By", flex: 1 },
     { field: "location", headerName: "Location", flex: 1 },
+    {
+      field: "actions",
+      headerName: "Actions",
+      flex: 3,
+      renderCell: (params) => {
+        const eventId = params.row.id;
+        return (
+          <Box>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => handleViewEvent(eventId)}
+              sx={{ marginRight: "8px" }}
+            >
+              View
+            </Button>
+            <Button
+              variant="outlined"
+              color="warning"
+              onClick={() => handleEditEvent(eventId)}
+              sx={{ marginRight: "8px" }}
+            >
+              Edit
+            </Button>
+            <Button
+              variant="contained"
+              color="error"
+              onClick={() => handleDeleteEvent(eventId)}
+            >
+              Delete
+            </Button>
+          </Box>
+        );
+      },
+    },
   ];
+
+  const handleViewEvent = (eventId: string) => {
+    navigate(`/admin/event/${eventId}`);
+  };
+
+  const handleEditEvent = (eventId: string) => {
+    navigate(`/admin/edit-event/${eventId}`);
+  };
+
+  const handleDeleteEvent = async (eventId: string) => {
+    try {
+      await apiClient.delete(`${apiPaths.EVENTS.APPROVEDEVENTLIST}/${eventId}`);
+      fetchEvents(); 
+    } catch (error) {
+      console.error("Error deleting event:", error);
+    }
+  };
 
   const filteredEvents = events.filter((event) =>
     Object.values(event)
@@ -98,9 +142,6 @@ const EventList = () => {
       .includes(searchTerm.toLowerCase())
   );
 
-  const handleRejectPageNavigation = () => {
-    navigate("/admin/event-list-rejected");
-  };
 
   return (
     <Box
@@ -109,41 +150,6 @@ const EventList = () => {
         maxWidth: drawer ? `calc(100% - 3px)` : "100%",
       }}
     >
-      <Button
-        variant="contained"
-        color="error"
-        onClick={handleRejectPageNavigation}
-        sx={{
-          position: "absolute",
-          top: 85,
-          right: 30,
-          backgroundColor: colors.blueAccent[500],
-          "&:hover": {
-            backgroundColor: colors.blueAccent[700],
-          },
-          display: "flex",
-          alignItems: "center",
-          padding: "8px 16px",
-          marginTop: {
-            xs: "3rem", // Top margin for small screens
-            md: "0rem", // No margin for medium and larger screens
-          },
-        }}
-      >
-        Rejected Events
-        <span style={{ marginLeft: "8px", fontSize: "18px" }}>→</span>
-      </Button>
-      <Typography
-        variant="h1"
-        sx={{
-          color: colors.grey[100],
-          fontSize: "2.25rem",
-          fontWeight: 800,
-          marginBottom: "2rem",
-        }}
-      >
-        Event List
-      </Typography>
       <Box
         sx={{
           height: "78vh",
@@ -167,11 +173,15 @@ const EventList = () => {
           "& .MuiCheckbox-root": {
             color: `${colors.greenAccent[200]} !important`,
           },
+          "& .MuiDataGrid-toolbarContainer .MuiButton-text": {
+            color: `${colors.blueAccent[500]} !important`,
+          },
         }}
       >
         <DataGrid
           rows={filteredEvents}
           columns={columns}
+          slots={{ toolbar: GridToolbar }}
           initialState={{
             pagination: {
               paginationModel: { pageSize: 25, page: 0 },
@@ -179,6 +189,7 @@ const EventList = () => {
           }}
           pageSizeOptions={[5, 10, 25]}
           checkboxSelection
+          resizeThrottleMs={0}
         />
       </Box>
     </Box>

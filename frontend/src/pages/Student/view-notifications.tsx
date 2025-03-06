@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { apiClient } from "../../api";
 import { useTheme } from "@mui/material/styles";
-import { tokens } from "../../styles/theme";
+import { tokens } from "../theme/theme";
+// Removed: import { useSidebar } from "../components/layout/SidebarContext";
 
 const ViewNotifications: React.FC = () => {
   const theme = useTheme();

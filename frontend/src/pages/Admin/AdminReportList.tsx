@@ -1,10 +1,20 @@
-import React, { useEffect, useState } from "react";
-import { fetchReports } from "./fetchReports";
-import { Report } from "../../types"
+import React, { useEffect, useState, useContext } from 'react';
+import { Box, Typography, useTheme } from "@mui/material";
+import { DataGrid, GridToolbar } from "@mui/x-data-grid";
+import { tokens } from "../../theme/theme";
+import { SearchContext } from "../../components/layout/SearchContext";
+import { useSettingsStore } from "../../stores/settings-store";
+import { fetchReports } from './fetchReports';
+import { Report } from '../../types'
 
-const AdminReport: React.FC = () => {
+
+const AdminReportList: React.FC = () => {
+  const theme = useTheme();
+  const colors = tokens(theme.palette.mode);
   const [reports, setReports] = useState<Report[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const { searchTerm } = useContext(SearchContext);
+  const { drawer } = useSettingsStore(); 
 
   useEffect(() => {
     const loadReports = async () => {
@@ -23,31 +33,94 @@ const AdminReport: React.FC = () => {
     return <div>Error: {error}</div>;
   }
 
+  const filteredReports = reports.filter((report) =>
+    Object.values(report)
+      .join(" ")
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase())
+  );   
+  
+  const columns = [
+    { field: "id", headerName: "ID", flex: 0.5 },
+    { field: "from_student", headerName: "Reporter", flex: 1 },
+    { field: "report_type", headerName: "Report Type", flex: 1 },
+    { field: "subject", headerName: "Subject", flex: 1.5 },
+    { field: "details", headerName: "Details", flex: 2 },
+    {
+      field: "created_at",
+      headerName: "Created At",
+      flex: 1.5,
+      renderCell: (params: any) => new Date(params.row.created_at).toLocaleString(),
+    },
+  ];
+
   return (
-    <div>
-      <h1>Admin Reports</h1>
-      <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Reporter</th>
-            <th>Message</th>
-            <th>Created At</th>
-          </tr>
-        </thead>
-        <tbody>
-          {reports.map((report) => (
-            <tr key={report.id}>
-              <td>{report.id}</td>
-              <td>{report.from_student}</td>
-              <td>{report.message}</td>
-              <td>{new Date(report.created_at).toLocaleString()}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <Box
+      sx={{
+        height: "calc(100vh - 64px)",
+        maxWidth: drawer ? `calc(100% - 3px)`: "100%",
+      }}
+    >
+      <Typography
+        variant="h1"
+        sx={{
+          color:
+            theme.palette.mode === "light"
+              ? colors.grey[100]
+              : colors.grey[100],
+          fontSize: "2.25rem",
+          fontWeight: 800,
+          marginBottom: "1rem",
+        }}
+      >
+        Reports
+      </Typography>
+
+      <Box
+        sx={{
+          height: "78vh",
+          "& .MuiDataGrid-root": { border: "none" },
+          "& .MuiDataGrid-cell": { borderBottom: "none" },
+          "& .MuiDataGrid-columnHeaders": {
+            backgroundColor: colors.blueAccent[700],
+            borderBottom: "none",
+          },
+          "& .MuiDataGrid-columnHeader": {
+            whiteSpace: "normal",
+            wordBreak: "break-word",
+          },
+          "& .MuiDataGrid-virtualScroller": {
+            backgroundColor: colors.primary[400],
+          },
+          "& .MuiDataGrid-footerContainer": {
+            borderTop: "none",
+            backgroundColor: colors.blueAccent[700],
+          },
+          "& .MuiCheckbox-root": {
+            color: `${colors.blueAccent[400]} !important`,
+          },
+          "& .MuiDataGrid-toolbarContainer .MuiButton-text": {
+            color: `${colors.blueAccent[500]} !important`,
+          },
+        }}
+      >
+        <DataGrid
+          rows={reports}
+          columns={columns}
+          slots={{ toolbar: GridToolbar }}
+          getRowId={(row) => row.id}
+          initialState={{
+            pagination: {
+              paginationModel: { pageSize: 25, page: 0 },
+            },
+          }}
+          pageSizeOptions={[5, 10, 25]}
+          checkboxSelection
+          resizeThrottleMs={0}
+        />
+      </Box>
+    </Box>
   );
 };
 
-export default AdminReport;
+export default AdminReportList;

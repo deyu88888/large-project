@@ -29,6 +29,7 @@ const ManageSocietyEvents = lazy(() => import("../pages/President/manage-society
 const CreateEventPage = lazy(() => import("../pages/create-society-event"));
 const ReportToAdmin = lazy(() => import("../pages/President/report-to-admin"));
 const ViewSocietyMembers = lazy(() => import("../pages/President/view-society-members"));
+const RequestDescriptionPage = lazy(() => import("../pages/Admin/PendingDescriptionRequest"));
 
 //Public event page
 const AllEventsPage = lazy(() => import("../pages/allEventsPage"))
@@ -57,6 +58,12 @@ const RequestEventPage = lazy(
 );
 const AdminReportList = lazy(
   () => import("../pages/Admin/AdminReportList")
+);
+const ManageSocietiesPage = lazy(
+  () => import("../pages/Admin/ManageSocieties")
+);
+const ManageEventsPage = lazy(
+  () => import("../pages/Admin/ManageEvents")
 );
 
 const routes = [
@@ -97,6 +104,14 @@ const routes = [
             element: <EventListPage />,
           },
           {
+            path: "society",
+            element: <ManageSocietiesPage />,
+          },
+          {
+            path: "event",
+            element: <ManageEventsPage />,
+          },
+          {
             path: "society-list",
             element: <SocietyListPage />,
           },
@@ -129,7 +144,11 @@ const routes = [
             element: <RequestEventPage />,
           },
           {
-            path: "view-reports",
+            path: "request-description",
+            element: <RequestDescriptionPage />,
+          },
+          {
+            path: "report-list",
             element: <AdminReportList />,
           },
         ],

@@ -11,7 +11,6 @@ import {
   ListItemIcon,
   ListItemText,
   Typography,
-  Button,
 } from "@mui/material";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
@@ -22,7 +21,6 @@ import GroupAddOutlinedIcon from "@mui/icons-material/GroupAddOutlined";
 import CalendarTodayOutlinedIcon from "@mui/icons-material/CalendarTodayOutlined";
 import PersonAddAltIcon from "@mui/icons-material/PersonAddAlt";
 import InboxIcon from "@mui/icons-material/MoveToInbox";
-import MailIcon from "@mui/icons-material/Mail";
 import LogoutIcon from "@mui/icons-material/Logout";
 import { CustomDrawer, CustomDrawerHeader } from "./drawer/CustomDrawer";
 
@@ -48,14 +46,14 @@ const AdminDrawer: React.FC<AdminDrawerProps> = ({
       to: "/admin/student-list",
     },
     {
-      title: "View All Societies",
+      title: "Manage Societies",
       icon: <EventOutlinedIcon />,
-      to: "/admin/society-list",
+      to: "/admin/society",
     },
     {
-      title: "View All Events",
-      icon: <NotificationsNoneOutlinedIcon />,
-      to: "/admin/event-list",
+      title: "Manage Events",
+      icon: <EventOutlinedIcon />,
+      to: "/admin/event",
     },
     {
       title: "Pending Societies",
@@ -68,6 +66,20 @@ const AdminDrawer: React.FC<AdminDrawerProps> = ({
       to: "/admin/request-event",
     },
     {
+      title: "Pending Descriptions",
+      icon: <GroupAddOutlinedIcon />,
+      to: "/admin/request-description",
+    },
+    {
+      title: "Create Admin",
+      icon: <PersonAddAltIcon />,
+      to: "/admin/create-admin",
+    },
+  ];
+
+  const additionalItems = [
+    { title: "Reports", icon: <InboxIcon />, to: "/admin/report-list" },
+    {
       title: "Calendar",
       icon: <CalendarTodayOutlinedIcon />,
       to: "/admin/calendar",
@@ -76,11 +88,6 @@ const AdminDrawer: React.FC<AdminDrawerProps> = ({
       title: "Activity Log",
       icon: <CalendarTodayOutlinedIcon />,
       to: "/admin/admin-dashboard",
-    },
-    {
-      title: "Create Admin",
-      icon: <PersonAddAltIcon />,
-      to: "/admin/create-admin",
     },
   ];
 
@@ -113,7 +120,7 @@ const AdminDrawer: React.FC<AdminDrawerProps> = ({
               Ed Roh
             </Typography>
             <Typography variant="body2" color="textSecondary">
-              VP Fancy Admin
+              University Admin
             </Typography>
           </Box>
         ) : (
@@ -154,13 +161,16 @@ const AdminDrawer: React.FC<AdminDrawerProps> = ({
 
       {/* Additional Items */}
       <List>
-        {["All mail", "Trash"].map((text, index) => (
-          <ListItem key={text} disablePadding>
+        {additionalItems.map((item) => (
+          <ListItem key={item.title} disablePadding>
             <ListItemButton
+              component={Link}
+              to={item.to}
+              selected={selected === item.title}
+              onClick={() => setSelected(item.title)}
               sx={{
-                minHeight: 48,
-                px: 2.5,
                 justifyContent: drawer ? "initial" : "center",
+                px: 2.5,
               }}
             >
               <ListItemIcon
@@ -170,13 +180,14 @@ const AdminDrawer: React.FC<AdminDrawerProps> = ({
                   justifyContent: "center",
                 }}
               >
-                {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
+                {item.icon}
               </ListItemIcon>
-              {drawer && <ListItemText primary={text} />}
+              {drawer && <ListItemText primary={item.title} />}
             </ListItemButton>
           </ListItem>
         ))}
       </List>
+
       <Divider />
 
       {/* Logout Item */}

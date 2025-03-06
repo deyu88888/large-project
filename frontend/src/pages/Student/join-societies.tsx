@@ -4,7 +4,7 @@ import { apiClient } from "../../api";
 
 // Import the theme
 import { useTheme } from "@mui/material/styles";
-import { tokens } from "../../styles/theme";
+import { tokens } from "../theme/theme";
 
 const JoinSocieties: React.FC = () => {
   const navigate = useNavigate();

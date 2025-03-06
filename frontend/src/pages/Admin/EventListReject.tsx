@@ -1,26 +1,19 @@
 import { useState, useEffect, useContext, useRef } from "react";
 import { Box, Typography, Button, useTheme } from "@mui/material";
-import { DataGrid, GridColDef } from "@mui/x-data-grid";
+import { DataGrid, GridColDef, GridToolbar } from "@mui/x-data-grid";
 import { apiClient, apiPaths } from "../../api";
 import { useNavigate } from "react-router-dom";
 import { tokens } from "../../theme/theme";
 import { SearchContext } from "../../components/layout/SearchContext";
+import { useSettingsStore } from "../../stores/settings-store";
+import { Event } from '../../types'
 
-type Event = { 
-  id: number; 
-  title: string; 
-  description: string; 
-  date: string; 
-  startTime: string; 
-  duration: string; 
-  hostedBy: number; 
-  location: string; 
-};
 
 const EventListRejected = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const navigate = useNavigate();
+  const { drawer } = useSettingsStore();
   const [events, setEvents] = useState<Event[]>([]);
   const { searchTerm } = useContext(SearchContext);
   const ws = useRef<WebSocket | null>(null);
@@ -104,42 +97,11 @@ const EventListRejected = () => {
 
   return (
     <Box
-      sx={{
-        height: "calc(100vh - 64px)", 
-        maxWidth: "100%",
-      }}
+    sx={{
+      height: "calc(100vh - 64px)", // Full height minus AppBar height
+      maxWidth: drawer ? `calc(100% - 3px)` : "100%",
+    }}
     >
-      <Button
-        variant="contained"
-        color="error"
-        onClick={handleBackToEvents}
-        sx={{
-          position: "absolute",
-          top: 85,
-          right: 30,
-          backgroundColor: colors.blueAccent[500],
-          "&:hover": {
-            backgroundColor: colors.blueAccent[700],
-          },
-          display: "flex",
-          alignItems: "center",
-          padding: "8px 16px",
-        }}
-      >
-        <span style={{ marginRight: "8px", fontSize: "18px" }}>←</span>
-        Back to Events
-      </Button>
-      <Typography
-        variant="h1"
-        sx={{
-          color: colors.grey[100],
-          fontSize: "2.25rem",
-          fontWeight: 800,
-          marginBottom: "2rem",
-        }}
-      >
-        Rejected Event List
-      </Typography>
       <Box
         sx={{
           height: "78vh",
@@ -163,11 +125,15 @@ const EventListRejected = () => {
           "& .MuiCheckbox-root": {
             color: `${colors.greenAccent[200]} !important`,
           },
+          "& .MuiDataGrid-toolbarContainer .MuiButton-text": {
+            color: `${colors.blueAccent[500]} !important`,
+          },
         }}
       >
         <DataGrid
           rows={filteredEvents}
           columns={columns}
+          slots={{ toolbar: GridToolbar }}
           initialState={{
             pagination: {
               paginationModel: { pageSize: 25, page: 0 },
@@ -175,6 +141,7 @@ const EventListRejected = () => {
           }}
           pageSizeOptions={[5, 10, 25]}
           checkboxSelection
+          resizeThrottleMs={0}
         />
       </Box>
     </Box>

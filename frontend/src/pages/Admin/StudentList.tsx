@@ -1,25 +1,12 @@
 import React, { useState, useEffect, useContext } from "react";
 import { Box, Typography, useTheme } from "@mui/material";
-import { DataGrid } from "@mui/x-data-grid";
+import { DataGrid, GridToolbar } from "@mui/x-data-grid";
 import { apiClient, apiPaths } from "../../api";
 import { tokens } from "../../theme/theme";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { useSettingsStore } from "../../stores/settings-store";
 import { Student } from "../../types.ts"
 
-// interface Student {
-//   id: number;
-//   username: string;
-//   firstName: string;
-//   lastName: string;
-//   email: string;
-//   isActive: boolean;
-//   role: string;
-//   major: string;
-//   societies: string[];
-//   presidentOf: number[];
-//   isPresident: boolean;
-// }
 
 const StudentList: React.FC = () => {
   const theme = useTheme();
@@ -72,7 +59,7 @@ const StudentList: React.FC = () => {
     {
       field: "presidentOf",
       headerName: "President Of",
-      renderCell: (params: any) => params.row.presidentOf.join(", "),
+      renderCell: (params: { row: Student }) => (params.row.presidentOf ?? []).join(", "),
       flex: 1,
     },
     {
@@ -95,7 +82,7 @@ const StudentList: React.FC = () => {
         variant="h1"
         sx={{
           color: theme.palette.mode === "light" ? colors.grey[100] : colors.grey[100],
-          fontSize: "2.25rem",
+          fontSize: "1.75rem",
           fontWeight: 800,
           marginBottom: "1rem",
         }}
@@ -124,18 +111,22 @@ const StudentList: React.FC = () => {
             "& .MuiCheckbox-root": {
               color: `${colors.blueAccent[400]} !important`,
             },
+            "& .MuiDataGrid-toolbarContainer .MuiButton-text": {
+            color: `${colors.blueAccent[500]} !important`,
+          },
           }}
         >
         <DataGrid
           rows={filteredStudents}
           columns={columns}
+          slots={{ toolbar: GridToolbar }}
           initialState={{
             pagination: {
-              paginationModel: { pageSize: 5, page: 0 },
+              paginationModel: { pageSize: 25, page: 0 },
             },
           }}
           pageSizeOptions={[5, 10, 25]}
-          checkboxSelection  
+          resizeThrottleMs={0}
         />
       </Box>
     </Box>

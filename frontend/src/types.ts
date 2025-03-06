@@ -23,13 +23,6 @@ export type SocietyEvent = {        // avoid naming conflicts with JavaScript's 
     location: string;
   };
 
-export interface Report {
-    id: number;
-    from_student: string;
-    message: string;
-    created_at: string;
-}
-
 export interface Student {
     id: number;
     username: string;
@@ -43,3 +36,23 @@ export interface Student {
     presidentOf: number[];
     isPresident: boolean;
   }
+  
+  export interface Report {
+    id: number;
+    from_student: string;
+    report_type: string;
+    subject: string;
+    details: string;
+    created_at: string;
+};
+
+export interface Event {
+    id: number;
+    title: string;
+    description: string;
+    date: string;
+    startTime: string;
+    duration: string;
+    hostedBy: number;
+    location: string;
+  };
