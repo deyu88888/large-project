@@ -3,8 +3,10 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { vi } from 'vitest';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import ManageSocietyEvents from '..';
+import ManageSocietyEvents from '../manage-society-events';
 import { apiClient } from '../../../api';
+
+const mockNavigate = vi.fn();
 
 // Mock dependencies
 vi.mock('../../../api', () => ({

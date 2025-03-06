@@ -7,6 +7,18 @@ import { apiClient } from '../../../api'; // Adjust the import path as needed
 import ViewSocietyMembers from '../view-society-members'; // Adjust the import path as needed
 import { useAuthStore } from '../../../stores/auth-store'; // Adjust the import path as needed
 
+// Create mock navigate function
+const mockNavigate = vi.fn();
+
+// Mock react-router-dom before other imports
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
+
 // Mock the dependencies
 vi.mock('../../../api', () => ({
   apiClient: {
@@ -37,21 +49,14 @@ describe('ViewSocietyMembers Component', () => {
     }
   ];
 
-  const mockNavigate = vi.fn();
   const mockUser = { president_of: 123 };
 
   beforeEach(() => {
     // Reset mocks
     vi.clearAllMocks();
-
-    // Mock useNavigate
-    vi.mock('react-router-dom', async () => {
-      const actual = await vi.importActual('react-router-dom');
-      return {
-        ...actual,
-        useNavigate: () => mockNavigate,
-      };
-    });
+    
+    // Reset navigate mock
+    mockNavigate.mockReset();
 
     // Mock useAuthStore
     (useAuthStore as vi.Mock).mockReturnValue({ user: mockUser });
@@ -87,7 +92,7 @@ describe('ViewSocietyMembers Component', () => {
   it('renders loading state initially', async () => {
     renderComponent();
 
-    expect(screen.getByText(/Loading Society Members.../i)).toBeInTheDocument();
+    expect(screen.getByRole('progressbar')).toBeInTheDocument();
   });
 
   it('fetches and renders society members', async () => {

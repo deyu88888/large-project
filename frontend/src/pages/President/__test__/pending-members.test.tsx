@@ -3,7 +3,9 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { vi } from 'vitest';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { apiClient } from '../../../api';
-import PendingMembers from '..';
+import PendingMembers from '../pending-members';
+
+const mockNavigate = vi.fn();
 
 // Mock dependencies
 vi.mock('../../../api', () => ({

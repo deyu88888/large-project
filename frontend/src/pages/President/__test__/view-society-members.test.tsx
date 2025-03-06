@@ -3,9 +3,21 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { vi } from 'vitest';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import ViewSocietyMembers from '..';
+import ViewSocietyMembers from '../view-society-members';
 import { apiClient } from '../../../api';
 import { useAuthStore } from '../../../stores/auth-store';
+
+// Create mock navigate function
+const mockNavigate = vi.fn();
+
+// Mock react-router-dom before other imports
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
 
 // Mock dependencies
 vi.mock('../../../api', () => ({
@@ -37,21 +49,14 @@ describe('ViewSocietyMembers Component', () => {
     }
   ];
 
-  const mockNavigate = vi.fn();
   const mockUser = { president_of: 123 };
 
   beforeEach(() => {
     // Reset mocks
     vi.clearAllMocks();
-
-    // Mock useNavigate
-    vi.mock('react-router-dom', async () => {
-      const actual = await vi.importActual('react-router-dom');
-      return {
-        ...actual,
-        useNavigate: () => mockNavigate,
-      };
-    });
+    
+    // Reset navigate mock
+    mockNavigate.mockReset();
 
     // Mock useAuthStore
     (useAuthStore as vi.Mock).mockReturnValue({ user: mockUser });
