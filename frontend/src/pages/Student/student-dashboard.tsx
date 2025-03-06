@@ -9,6 +9,7 @@ import {
   Tabs,
   Tab,
   CircularProgress,
+  styled,
 } from '@mui/material';
 import { tokens } from '../../theme/theme';
 import {
@@ -22,6 +23,13 @@ import {
 } from "react-icons/fa";
 import { apiClient } from "../../api";
 import { useAuthStore } from "../../stores/auth-store";
+
+// Custom styled Tabs component for color-specific indicators
+const CustomTabs = styled(Tabs)(({ theme, activecolor }) => ({
+  '& .MuiTabs-indicator': {
+    backgroundColor: activecolor,
+  },
+}));
 
 interface Society {
   id: number;
@@ -63,6 +71,13 @@ const StudentDashboard: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<number>(0);
   const { user } = useAuthStore();
+
+  // Colors for the tabs
+  const tabColors = [
+    colours.greenAccent[500], // Societies - green
+    colours.blueAccent[500],  // Events - purple/blue
+    colours.redAccent[500],   // Notifications - red
+  ];
 
   useEffect(() => {
     fetchData();
@@ -227,17 +242,18 @@ const StudentDashboard: React.FC = () => {
             border: `1px solid ${colours.grey[800]}`,
           }}
         >
-          <Tabs
+          {/* Replace the standard Tabs with our CustomTabs component */}
+          <CustomTabs
             value={activeTab}
             onChange={handleTabChange}
             textColor="inherit"
-            indicatorColor="secondary"
+            activecolor={tabColors[activeTab]} // Pass the active tab's color
             variant="fullWidth"
           >
             <Tab label="Societies" />
             <Tab label="Events" />
             <Tab label="Notifications" />
-          </Tabs>
+          </CustomTabs>
           <Box p={3}>
             {activeTab === 0 && (
               <Box

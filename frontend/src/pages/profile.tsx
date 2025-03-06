@@ -4,6 +4,7 @@ import { useAuthStore } from "../stores/auth-store";
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
 import { apiClient, apiPaths } from "../api";
+import { tokens } from "../theme/theme";
 
 // MUI imports
 import { useTheme } from "@mui/material/styles";
@@ -15,7 +16,11 @@ import {
   Button,
   Divider,
   TextField,
+  Avatar,
+  Card,
+  Grid,
 } from "@mui/material";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 
 const validationSchema = Yup.object().shape({
   first_name: Yup.string()
@@ -40,45 +45,52 @@ export default function ProfilePage() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const theme = useTheme();
+  const colors = tokens(theme.palette.mode);
 
   const handleGoBack = () => {
     navigate(-1);
   };
 
+  // Get user initials for avatar
+  const getInitials = (firstName, lastName) => {
+    return `${firstName?.charAt(0) || ""}${lastName?.charAt(0) || ""}`.toUpperCase();
+  };
+
   if (!user) {
     return (
       <Container maxWidth="sm" sx={{ mt: 4 }}>
-        <Button variant="contained" onClick={handleGoBack} sx={{ mb: 4 }}>
-          Back
-        </Button>
-        <Paper
-          elevation={3}
-          sx={{
-            p: 4,
-            textAlign: "center",
-            backgroundColor: theme.palette.background.default,
+        <Button 
+          variant="outlined" 
+          startIcon={<ArrowBackIcon />}
+          onClick={handleGoBack} 
+          sx={{ 
+            mb: 4, 
+            color: colors.grey[100], 
+            borderColor: colors.grey[400] 
           }}
         >
-          <Box
-            sx={{
-              width: 64,
-              height: 64,
-              bgcolor: theme.palette.grey[600],
-              borderRadius: "50%",
-              margin: "0 auto",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
+          Back
+        </Button>
+        <Paper 
+          elevation={2} 
+          sx={{ 
+            p: 4, 
+            textAlign: "center",
+            backgroundColor: colors.primary[400]
+          }}
+        >
+          <Avatar 
+            sx={{ 
+              width: 64, 
+              height: 64, 
+              mx: "auto", 
+              bgcolor: colors.blueAccent[500],
+              color: colors.grey[100]
             }}
           >
-            <Typography variant="h4" color={theme.palette.grey[300]}>
-              ?
-            </Typography>
-          </Box>
-          <Typography
-            variant="h6"
-            sx={{ mt: 2, color: theme.palette.text.secondary }}
-          >
+            ?
+          </Avatar>
+          <Typography variant="h6" sx={{ mt: 2, color: colors.grey[100] }}>
             No user found
           </Typography>
         </Paper>
@@ -87,133 +99,151 @@ export default function ProfilePage() {
   }
 
   return (
-    <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
-      <Button variant="contained" onClick={handleGoBack} sx={{ mb: 2 }}>
-        ← Back
+    <Container maxWidth="md" sx={{ py: 4 }}>
+      <Button 
+        variant="outlined" 
+        startIcon={<ArrowBackIcon />}
+        onClick={handleGoBack} 
+        sx={{ 
+          mb: 3, 
+          color: colors.grey[100], 
+          borderColor: colors.grey[400] 
+        }}
+      >
+        Back
       </Button>
-      <Paper elevation={3} sx={{ mb: 4 }}>
+      
+      <Paper 
+        elevation={2} 
+        sx={{ 
+          mb: 4, 
+          overflow: 'hidden',
+          backgroundColor: colors.primary[400],
+          borderRadius: 1
+        }}
+      >
+        {/* Header */}
         <Box
           sx={{
-            p: 4,
-            backgroundColor: theme.palette.primary.main,
+            p: 3,
+            backgroundColor: colors.blueAccent[700],
+            color: colors.grey[100],
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2
           }}
         >
-          <Typography
-            variant="h3"
-            sx={{
-              color: theme.palette.getContrastText(theme.palette.primary.main),
+          <Avatar 
+            sx={{ 
+              bgcolor: colors.grey[900],
+              color: colors.blueAccent[400],
+              fontWeight: 'bold',
+              width: 56,
+              height: 56
             }}
           >
-            Welcome back, {user.firstName}!
-          </Typography>
-          <Typography
-            variant="subtitle1"
-            sx={{
-              mt: 1,
-              color: theme.palette.getContrastText(theme.palette.primary.main),
-            }}
-          >
-            Manage your profile information below
-          </Typography>
+            {getInitials(user.firstName, user.lastName)}
+          </Avatar>
+          <Box>
+            <Typography variant="h4" color={colors.grey[100]}>
+              {user.firstName} {user.lastName}
+            </Typography>
+            <Typography variant="body1" color={colors.grey[200]}>
+              Manage your profile information
+            </Typography>
+          </Box>
         </Box>
-        <Box sx={{ p: 4 }}>
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-around",
-              flexWrap: "wrap",
-              mb: 4,
-              gap: 2,
-            }}
-          >
-            <Paper
-              elevation={2}
-              sx={{
-                p: 2,
-                flex: "1 1 30%",
-                textAlign: "center",
-                backgroundColor: theme.palette.info.light,
-              }}
-            >
-              <Typography
-                variant="caption"
-                sx={{
-                  textTransform: "uppercase",
-                  color: theme.palette.text.secondary,
+        
+        {/* User info cards */}
+        <Box sx={{ p: 3 }}>
+          <Grid container spacing={2} sx={{ mb: 3 }}>
+            <Grid item xs={12} sm={4}>
+              <Card 
+                elevation={1} 
+                sx={{ 
+                  p: 2, 
+                  textAlign: 'center',
+                  height: '100%',
+                  backgroundColor: colors.primary[500]
                 }}
               >
-                Username
-              </Typography>
-              <Typography variant="body1" sx={{ mt: 1, fontWeight: "bold" }}>
-                {user.username}
-              </Typography>
-            </Paper>
-            <Paper
-              elevation={2}
-              sx={{
-                p: 2,
-                flex: "1 1 30%",
-                textAlign: "center",
-                backgroundColor: theme.palette.success.light,
-              }}
-            >
-              <Typography
-                variant="caption"
-                sx={{
-                  textTransform: "uppercase",
-                  color: theme.palette.text.secondary,
+                <Typography variant="h6" color={colors.grey[300]} gutterBottom>
+                  Username
+                </Typography>
+                <Typography variant="h5" color={colors.grey[100]}>
+                  {user.username}
+                </Typography>
+              </Card>
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <Card 
+                elevation={1} 
+                sx={{ 
+                  p: 2, 
+                  textAlign: 'center',
+                  height: '100%',
+                  backgroundColor: colors.greenAccent[700]
                 }}
               >
-                Role
-              </Typography>
-              <Typography variant="body1" sx={{ mt: 1, fontWeight: "bold" }}>
-                {user.role}
-              </Typography>
-            </Paper>
-            <Paper
-              elevation={2}
-              sx={{
-                p: 2,
-                flex: "1 1 30%",
-                textAlign: "center",
-                backgroundColor: theme.palette.warning.light,
-              }}
-            >
-              <Typography
-                variant="caption"
-                sx={{
-                  textTransform: "uppercase",
-                  color: theme.palette.text.secondary,
+                <Typography variant="h6" color={colors.grey[900]} gutterBottom>
+                  Role
+                </Typography>
+                <Typography variant="h5" color={colors.grey[100]}>
+                  {user.role}
+                </Typography>
+              </Card>
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <Card 
+                elevation={1} 
+                sx={{ 
+                  p: 2, 
+                  textAlign: 'center',
+                  height: '100%',
+                  backgroundColor: user.isActive ? colors.blueAccent[700] : colors.grey[600]
                 }}
               >
-                Status
-              </Typography>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  mt: 1,
-                }}
-              >
-                <Box
+                <Typography variant="h6" color={user.isActive ? colors.grey[100] : colors.grey[300]} gutterBottom>
+                  Status
+                </Typography>
+                <Typography 
+                  variant="h5" 
                   sx={{
-                    width: 10,
-                    height: 10,
-                    borderRadius: "50%",
-                    bgcolor: user.isActive
-                      ? theme.palette.success.main
-                      : theme.palette.grey[400],
-                    mr: 1,
+                    color: user.isActive ? colors.grey[100] : colors.grey[400],
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 1
                   }}
-                />
-                <Typography variant="body1" sx={{ fontWeight: "bold" }}>
+                >
+                  <Box 
+                    sx={{ 
+                      width: 10, 
+                      height: 10, 
+                      borderRadius: '50%', 
+                      bgcolor: user.isActive ? colors.greenAccent[400] : colors.grey[500],
+                      display: 'inline-block'
+                    }}
+                  />
                   {user.isActive ? "Verified" : "Not Verified"}
                 </Typography>
-              </Box>
-            </Paper>
-          </Box>
-          <Divider sx={{ mb: 4 }}>Profile Information</Divider>
+              </Card>
+            </Grid>
+          </Grid>
+          
+          <Divider 
+            sx={{ 
+              my: 3, 
+              "&::before, &::after": {
+                borderColor: colors.grey[500],
+              },
+              color: colors.grey[100]
+            }}
+          >
+            <Typography variant="h5">Profile Information</Typography>
+          </Divider>
+          
+          {/* Form */}
           <Formik
             initialValues={{
               first_name: user.firstName,
@@ -224,20 +254,25 @@ export default function ProfilePage() {
             }}
             validationSchema={validationSchema}
             onSubmit={async (values, { setSubmitting }) => {
-              const res = await apiClient.put(apiPaths.USER.CURRENT, {
-                first_name:
-                  user.firstName === values.first_name
-                    ? undefined
-                    : values.first_name,
-                last_name:
-                  user.lastName === values.last_name ? undefined : values.last_name,
-                username:
-                  user.username === values.username ? undefined : values.username,
-                email: user.email === values.email ? undefined : values.email,
-                role: user.role === values.role ? undefined : values.role,
-              });
-              console.log(res);
-              setSubmitting(false);
+              try {
+                const res = await apiClient.put(apiPaths.USER.CURRENT, {
+                  first_name:
+                    user.firstName === values.first_name
+                      ? undefined
+                      : values.first_name,
+                  last_name:
+                    user.lastName === values.last_name ? undefined : values.last_name,
+                  username:
+                    user.username === values.username ? undefined : values.username,
+                  email: user.email === values.email ? undefined : values.email,
+                  role: user.role === values.role ? undefined : values.role,
+                });
+                console.log(res);
+              } catch (error) {
+                console.error("Error updating profile:", error);
+              } finally {
+                setSubmitting(false);
+              }
             }}
           >
             {({
@@ -249,55 +284,131 @@ export default function ProfilePage() {
               touched,
             }) => (
               <Form>
-                <Box
-                  sx={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 2,
-                  }}
-                >
-                  <TextField
-                    fullWidth
-                    name="first_name"
-                    label="First Name"
-                    variant="outlined"
-                    value={values.first_name}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    error={touched.first_name && Boolean(errors.first_name)}
-                    helperText={touched.first_name && errors.first_name}
-                  />
-                  <TextField
-                    fullWidth
-                    name="last_name"
-                    label="Last Name"
-                    variant="outlined"
-                    value={values.last_name}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    error={touched.last_name && Boolean(errors.last_name)}
-                    helperText={touched.last_name && errors.last_name}
-                  />
-                  <TextField
-                    fullWidth
-                    name="email"
-                    label="Email"
-                    variant="outlined"
-                    value={values.email}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    error={touched.email && Boolean(errors.email)}
-                    helperText={touched.email && errors.email}
-                  />
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    disabled={isSubmitting}
-                    sx={{ mt: 2 }}
-                  >
-                    Update Profile
-                  </Button>
-                </Box>
+                <Grid container spacing={3}>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      name="first_name"
+                      label="First Name"
+                      variant="filled"
+                      value={values.first_name}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      error={touched.first_name && Boolean(errors.first_name)}
+                      helperText={touched.first_name && errors.first_name}
+                      InputLabelProps={{ style: { color: colors.grey[300] } }}
+                      InputProps={{ 
+                        style: { 
+                          color: colors.grey[100],
+                          backgroundColor: colors.primary[600]
+                        } 
+                      }}
+                      sx={{
+                        "& .MuiFilledInput-root": {
+                          backgroundColor: colors.primary[600],
+                          "&:hover": {
+                            backgroundColor: colors.primary[500],
+                          },
+                          "&.Mui-focused": {
+                            backgroundColor: colors.primary[500],
+                          }
+                        },
+                        "& .MuiFormHelperText-root": {
+                          color: colors.redAccent[400]
+                        }
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      name="last_name"
+                      label="Last Name"
+                      variant="filled"
+                      value={values.last_name}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      error={touched.last_name && Boolean(errors.last_name)}
+                      helperText={touched.last_name && errors.last_name}
+                      InputLabelProps={{ style: { color: colors.grey[300] } }}
+                      InputProps={{ 
+                        style: { 
+                          color: colors.grey[100],
+                          backgroundColor: colors.primary[600]
+                        } 
+                      }}
+                      sx={{
+                        "& .MuiFilledInput-root": {
+                          backgroundColor: colors.primary[600],
+                          "&:hover": {
+                            backgroundColor: colors.primary[500],
+                          },
+                          "&.Mui-focused": {
+                            backgroundColor: colors.primary[500],
+                          }
+                        },
+                        "& .MuiFormHelperText-root": {
+                          color: colors.redAccent[400]
+                        }
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      name="email"
+                      label="Email"
+                      variant="filled"
+                      value={values.email}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      error={touched.email && Boolean(errors.email)}
+                      helperText={touched.email && errors.email}
+                      InputLabelProps={{ style: { color: colors.grey[300] } }}
+                      InputProps={{ 
+                        style: { 
+                          color: colors.grey[100],
+                          backgroundColor: colors.primary[600]
+                        } 
+                      }}
+                      sx={{
+                        "& .MuiFilledInput-root": {
+                          backgroundColor: colors.primary[600],
+                          "&:hover": {
+                            backgroundColor: colors.primary[500],
+                          },
+                          "&.Mui-focused": {
+                            backgroundColor: colors.primary[500],
+                          }
+                        },
+                        "& .MuiFormHelperText-root": {
+                          color: colors.redAccent[400]
+                        }
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                      <Button
+                        type="submit"
+                        variant="contained"
+                        disabled={isSubmitting}
+                        sx={{
+                          backgroundColor: colors.blueAccent[600],
+                          color: colors.grey[100],
+                          fontSize: "14px",
+                          fontWeight: "bold",
+                          padding: "10px 20px",
+                          "&:hover": {
+                            backgroundColor: colors.blueAccent[500],
+                          },
+                        }}
+                      >
+                        Update Profile
+                      </Button>
+                    </Box>
+                  </Grid>
+                </Grid>
               </Form>
             )}
           </Formik>
