@@ -1,7 +1,7 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from .views import (
-    AdminReportView, AwardStudentView, AwardView, EventListView, EventRequestView, PendingMembersView, RegisterView,
+    AdminReportView, AwardStudentView, AwardView, EventListView, EventRequestView, ManageEventDetailsView, PendingMembersView, RegisterView,
     CurrentUserView, SocietyMembersListView,
     StudentNotificationsView, StartSocietyRequestView, ManageSocietyDetailsView,
     AdminView, StudentView, EventView,
@@ -87,4 +87,5 @@ urlpatterns = [
     path("all-events", AllEventsView.as_view(), name="all_events"),
     path("event/<int:event_id>", EventDetailView.as_view(), name="event-detail"),
     path("event/<int:event_id>/comments", EventCommentsView.as_view(), name="event_comments"),
+    path("event/<int:event_id>/manage", ManageEventDetailsView.as_view(), name="manage_event_detail"),
 ]

@@ -25,6 +25,7 @@ const JoinSocietiesPage = lazy(() => import("../pages/Student/join-societies"));
 const ViewSocietyPage = lazy(() => import("../pages/view-society"));
 const PresidentPage = lazy(() => import("../pages/President/president-page"));
 const ManageSocietyDetails = lazy(() => import("../pages/President/manage-society-details"));
+const EditEventDetails = lazy(() => import("../pages/President/edit-event-details"));
 const ManageSocietyEvents = lazy(() => import("../pages/President/manage-society-events"));
 const CreateEventPage = lazy(() => import("../pages/create-society-event"));
 const ReportToAdmin = lazy(() => import("../pages/President/report-to-admin"));
@@ -230,7 +231,7 @@ const routes = [
           ),
         },
         {
-          path: "manage-society-events",
+          path: "manage-society-events/:filter?",
           element: (
             <Suspense fallback={<LoadingView />}>
               <ManageSocietyEvents />
@@ -242,6 +243,14 @@ const routes = [
           element: (
             <Suspense fallback={<LoadingView />}>
               <CreateEventPage />
+            </Suspense>
+          ),
+        },
+        {
+          path: "edit-event-details/:event_id",
+          element: (
+            <Suspense fallback={<LoadingView />}>
+              <EditEventDetails />
             </Suspense>
           ),
         },

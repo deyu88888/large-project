@@ -579,7 +579,7 @@ class EventRequestSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         # Ensure that 'hosted_by' is provided via extra kwargs (e.g. from the view)
-        hosted_by = validated_data.get("hosted_by")
+        hosted_by = validated_data.get("hosted_by") or self.context.get("hosted_by")
         if hosted_by is None:
             raise serializers.ValidationError({"hosted_by": "This field is required."})
 

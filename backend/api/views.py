@@ -1,6 +1,7 @@
 # from datetime import timezone // incorrect import
+import logging
 from django.utils import timezone
-from datetime import timezone
+from datetime import datetime, timezone
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from django.contrib.auth import authenticate
@@ -21,7 +22,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticate
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from api.models import Admin, AdminReportRequest, Event, Notification, Society, Student, User,Award, AwardStudent, UserRequest,  DescriptionRequest, AdminReportRequest
+from api.models import Admin, AdminReportRequest, Event, EventRequest, Notification, Society, Student, User,Award, AwardStudent, UserRequest,  DescriptionRequest, AdminReportRequest
 from api.serializers import (
     AdminReportRequestSerializer,
     AdminSerializer,
@@ -584,6 +585,7 @@ class EventDetailView(APIView):
         serializer = EventSerializer(event)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+logger = logging.getLogger(__name__)
 class EventListView(APIView):
     """
     API View to list events based on filters (upcoming, previous, pending).
@@ -592,29 +594,166 @@ class EventListView(APIView):
 
     def get(self, request):
         society_id = request.query_params.get("society_id")
-        filter_type = request.query_params.get("filter")
+        filter_type = request.query_params.get("filter", "upcoming")
 
         if not society_id:
             return Response({"error": "Missing society_id"}, status=400)
 
-        events = Event.objects.filter(hosted_by_id=society_id)
+        try:
+            # Convert society_id to integer
+            society_id = int(society_id)
+        except ValueError:
+            return Response({"error": "Invalid society_id format"}, status=400)
+
+        # Debug - print request parameters
+        logger.info(f"Request for events: society_id={society_id}, filter={filter_type}")
+        
+        # IMPORTANT FIX: Make sure to filter by hosted_by_id, not hosted_by
+        # Check your Event model to confirm the correct field name
+        events = Event.objects.filter(hosted_by=society_id)
+        
+        # Debug - log events before time-based filtering
+        logger.info(f"Found {events.count()} events for society {society_id} before time filtering")
+        logger.info(f"Event IDs: {[e.id for e in events]}")
+        
+        # If no events found, return empty list early
+        if not events.exists():
+            logger.warning(f"No events found for society_id={society_id}")
+            return Response([])
 
         today = now().date()
         current_time = now().time()
 
         if filter_type == "upcoming":
-            events = events.filter(date__gt=today, status="Approved") | events.filter(date=today, start_time__gt=current_time, status="Approved")
+            # Future dates OR current date with future time
+            filtered_events = (events.filter(date__gt=today, status="Approved") | 
+                            events.filter(date=today, start_time__gt=current_time, status="Approved"))
         
         elif filter_type == "previous":
-            events = events.filter(date__lt=today, status="Approved") | events.filter(date=today, start_time__lt=current_time, status="Approved")
+            # Past dates OR current date with past time
+            filtered_events = (events.filter(date__lt=today, status="Approved") | 
+                            events.filter(date=today, start_time__lt=current_time, status="Approved"))
         
         elif filter_type == "pending":
-            print("Pending events xxx", events)
-            events = events.filter(status="Pending")
+            # Only pending events for this society
+            filtered_events = events.filter(status="Pending")
+        
+        else:
+            # Default to all events if filter is invalid
+            filtered_events = events
+        
+        # Debug - log the filtered events
+        logger.info(f"Returning {filtered_events.count()} {filter_type} events for society {society_id}")
+        logger.info(f"Filtered Event IDs: {[e.id for e in filtered_events]}")
+        
+        # For each event, log the society ID to verify it matches
+        for event in filtered_events:
+            logger.info(f"Event {event.id}: '{event.title}', hosted_by={event.hosted_by}, status={event.status}")
 
-        serializer = EventSerializer(events, many=True)
+        serializer = EventSerializer(filtered_events, many=True)
         return Response(serializer.data)
 
+class ManageEventDetailsView(APIView):
+    """
+    API View to edit (request changes for) or delete an event.
+    
+    PATCH:
+      - Allowed only for upcoming or pending events.
+      - Instead of updating the event immediately, an EventRequest is created with
+        the proposed changes; an admin will later approve or reject them.
+    
+    DELETE:
+      - Allowed only for upcoming or pending events.
+      - Deletion is performed immediately without admin approval.
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get_event(self, event_id):
+        return get_object_or_404(Event, pk=event_id)
+
+    def is_event_editable(self, event: Event):
+        """
+        Determines if an event is editable.
+        Editable if:
+         - The event status is "Pending", or
+         - The event's datetime (date + start_time) is in the future.
+        """
+        current_datetime = now()
+        # If event is pending, allow edits regardless of date/time.
+        if event.status == "Pending":
+            return True
+
+        # Combine the event's date and start_time.
+        event_datetime = datetime.combine(event.date, event.start_time)
+        if current_datetime.tzinfo:
+            event_datetime = make_aware(event_datetime)
+        return event_datetime > current_datetime
+
+    def get(self, request, event_id):
+        event = self.get_event(event_id)
+        serializer = EventSerializer(event)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    
+    def patch(self, request, event_id):
+        user = request.user
+        # Ensure the user is a valid student and a society president.
+        try:
+            student = Student.objects.get(pk=user.pk)
+        except Student.DoesNotExist:
+            return Response({"error": "User is not a valid student."}, status=status.HTTP_403_FORBIDDEN)
+        if not student.is_president:
+            return Response({"error": "Only society presidents can edit events."}, status=status.HTTP_403_FORBIDDEN)
+
+        event = self.get_event(event_id)
+        if not self.is_event_editable(event):
+            return Response({"error": "Only upcoming or pending events can be edited."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Prepare data for the update request.
+        data = request.data.copy()
+        data.setdefault("title", event.title)
+        data.setdefault("description", event.description)
+        data.setdefault("location", event.location)
+        data.setdefault("date", event.date)
+        data.setdefault("start_time", event.start_time)
+        data.setdefault("duration", event.duration)
+
+        # Instantiate the serializer.
+        serializer = EventRequestSerializer(
+            data=data,
+            context={
+                "request": request,
+                "hosted_by": event.hosted_by,
+                "event": event,  # Optionally, if you want to reference the event in create.
+            }
+        )
+        if serializer.is_valid():
+            event_request = serializer.save()
+            return Response(
+                {
+                    "message": "Event update requested. Await admin approval.",
+                    "event_request_id": event_request.id,
+                },
+                status=status.HTTP_200_OK,
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, event_id):
+        user = request.user
+        # Ensure the user is a valid student and a society president.
+        try:
+            student = Student.objects.get(pk=user.pk)
+        except Student.DoesNotExist:
+            return Response({"error": "User is not a valid student."}, status=status.HTTP_403_FORBIDDEN)
+        if not student.is_president:
+            return Response({"error": "Only society presidents can delete events."}, status=status.HTTP_403_FORBIDDEN)
+
+        event = self.get_event(event_id)
+        if not self.is_event_editable(event):
+            return Response({"error": "Only upcoming or pending events can be deleted."}, status=status.HTTP_400_BAD_REQUEST)
+
+        event.delete()
+        return Response({"message": "Event deleted successfully."}, status=status.HTTP_200_OK)
 
 class PendingMembersView(APIView):
     """
