@@ -693,6 +693,38 @@ class ManageSocietyDetailsView(APIView):
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+class ManageSocietyDetailsAdminView(APIView):
+    """
+    API View for admins to manage any society's details.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, society_id):
+        user = request.user
+        if not hasattr(user, 'admin'):
+            return Response({"error": "Only admins can access this endpoint."}, status=status.HTTP_403_FORBIDDEN)
+        society = Society.objects.filter(id=society_id).first()
+        if not society:
+            return Response({"error": "Society not found."}, status=status.HTTP_404_NOT_FOUND)
+        serializer = SocietySerializer(society)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def patch(self, request, society_id):
+        user = request.user
+        if not hasattr(user, 'admin'):
+            return Response({"error": "Only admins can update society details."}, status=status.HTTP_403_FORBIDDEN)
+
+        society = Society.objects.filter(id=society_id).first()
+        if not society:
+            return Response({"error": "Society not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = SocietySerializer(society, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "Society details updated successfully.", "data": serializer.data}, status=status.HTTP_200_OK)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class CreateEventRequestView(APIView):
     """

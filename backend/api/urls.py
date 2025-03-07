@@ -9,8 +9,8 @@ from .views import (
     RecentActivitiesView, NotificationsView, EventCalendarView,
     StudentSocietiesView, JoinSocietyView, RSVPEventView, EventHistoryView,
     get_popular_societies, CreateEventRequestView, custom_media_view, get_sorted_events, StudentSocietyDataView,
-    AllEventsView, EventDetailView, DescriptionRequestView, toggle_follow, StudentProfileView,
-    like_comment, dislike_comment, EventCommentsView
+    AllEventsView, EventDetailView, EventCommentsView, DescriptionRequestView, ManageSocietyDetailsAdminView, 
+    like_comment, dislike_comment, EventCommentsView, toggle_follow, StudentProfileView
 )
 from .utils import request_otp, verify_otp
 from .recommendation_views import RecommendedSocietiesView, SocietyRecommendationExplanationView
@@ -63,6 +63,8 @@ urlpatterns = [
     path("society/request/pending/<int:society_id>", SocietyRequestView.as_view(), name="request_society"),
 
     path("description/request/pending", DescriptionRequestView.as_view(), name="request_description"),
+    path("admin-manage-society-details/<int:society_id>", ManageSocietyDetailsAdminView.as_view(), name="manage_society_details_admin"),
+
 
     # Student societies endpoints
     path("student-societies/", StudentSocietiesView.as_view(), name="student_societies"),
