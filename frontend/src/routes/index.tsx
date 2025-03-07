@@ -45,7 +45,7 @@ const EventListRejectPage = lazy(
   () => import("../pages/Admin/EventListReject")
 );
 const AdminDashboardPage = lazy(() => import("../pages/Admin/AdminDashboard"));
-const CalendarPage = lazy(() => import("../pages/Admin/Calendar"));
+const CalendarPage = lazy(() => import("../pages/Admin/AdminCalendar"));
 
 const StudentListPage = lazy(() => import("../pages/Admin/StudentList"));
 const DashboardPage = lazy(() => import("../pages/Dashboard"));
