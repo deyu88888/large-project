@@ -43,7 +43,7 @@ const PendingSocietyRequest = () => {
   const columns: GridColDef[] = [
     { field: "id", headerName: "ID", flex: 0.5 },
     { field: "name", headerName: "Name", flex: 1 },
-    // { field: "description", headerName: "Description", flex: 1 },
+    { field: "description", headerName: "Description", flex: 1 },
     {      
       field: "society_members",
       headerName: "Members",
@@ -51,12 +51,15 @@ const PendingSocietyRequest = () => {
     },
     { field: "president", headerName: "president", flex: 1 },
     { field: "category", headerName: "Category", flex: 1 },
-    { field: "timetable", headerName: "Timetable", flex: 1 },
     { field: "membershipRequirements", headerName: "Membership Requirements", flex: 1 },
     { field: "upcomingProjectsOrPlans", headerName: "Upcoming Projects", flex: 1 },
     {
       field: "actions",
       headerName: "Actions",
+      width: 190,
+      minWidth: 190,
+      sortable: false,
+      filterable: false, 
       renderCell: (params: any) => (
         <>
           <Button
@@ -114,7 +117,6 @@ const PendingSocietyRequest = () => {
             },
           }}
           pageSizeOptions={[5, 10, 25]}
-          checkboxSelection
           resizeThrottleMs={0}
           disableRowSelectionOnClick  // Disable row selection on row click to temporarily fix accept/reject button issue
         />
