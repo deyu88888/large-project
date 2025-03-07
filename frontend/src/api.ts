@@ -28,41 +28,42 @@ return config;
  (error) => Promise.reject(error)
 );
 export const apiPaths = {
-USER: {
-LOGIN: "/api/user/login", // TODO: DONT ADD BACKSLASH
-REGISTER: "/api/user/register", // TODO: DONT ADD BACKSLASH
-REQUEST_OTP: "/api/request-otp",
-VERIFY_OTP: "/api/verify-otp",
-REFRESH: "/api/user/token/refresh", // TODO: DONT ADD BACKSLASH
-CURRENT: "/api/user/current", // TODO: DONT ADD BACKSLASH
-SOCIETY: "/api/society/request/approved", // TODO: DONT ADD BACKSLASH
-REJECTEDSOCIETY: "/api/society/request/rejected", // TODO: DONT ADD BACKSLASH
-STUDENTS: "/api/user/student", // TODO: DONT ADD BACKSLASH
-ADMIN: "/api/user/admin", // TODO: DONT ADD BACKSLASH
-PENDINGSOCIETYREQUEST: "/api/society/request/pending", // TODO: DONT ADD BACKSLASH
-PROFILE: "/api/user/profile", // TODO: DONT ADD BACKSLASH
-REPORT: "/api/report-to-admin", // TODO: DONT ADD BACKSLASH
-PENDINGEVENTREQUEST: "/api/event/request/pending", // TODO: DONT ADD BACKSLASH
-REJECTEDEVENT: "/api/admin-panel/rejected-event", // TODO: DONT ADD BACKSLASH
-PENDINGDESCRIPTIONREQUEST: "/api/description/request/pending",
-BASE: "/api/users",
- },
-SOCIETY: {
-POPULAR_SOCIETIES: "/api/popular-societies", // TODO: DONT ADD BACKSLASH
-RECOMMENDED_SOCIETIES: "/api/recommended-societies", // New endpoint for recommendations
-RECOMMENDATION_EXPLANATION: (id: number) => `/api/society-recommendation/${id}/explanation/`,
-RECOMMENDATION_FEEDBACK: (id: number) => `/api/society-recommendation/${id}/feedback/`,
-RECOMMENDATION_FEEDBACK_LIST: "/api/society-recommendation/feedback/",
-RECOMMENDATION_FEEDBACK_ANALYTICS: "/api/recommendation-feedback/analytics/",
-MANAGE_DETAILS: (id: number) => `/api/manage-society-details/${id}`, // TODO: DONT ADD BACKSLASH
- },
-EVENTS: {
-ALL: "/api/events", // TODO: DONT ADD BACKSLASH
-PENDINGEVENTREQUEST: "api/society/event/pending", // TODO: DONT ADD BACKSLASH
-UPDATEENEVENTREQUEST: "api/society/event/request", // TODO: DONT ADD BACKSLASH
-APPROVEDEVENTLIST: "api/society/event/approved", // TODO: DONT ADD BACKSLASH
-REJECTEDEVENTLIST: "api/society/event/rejected", // TODO: DONT ADD BACKSLASH
- },
+  USER: {
+    LOGIN: "/api/user/login",  // TODO: DONT ADD BACKSLASH
+    REGISTER: "/api/user/register",   // TODO: DONT ADD BACKSLASH
+    REQUEST_OTP: "/api/request-otp",
+    VERIFY_OTP: "/api/verify-otp",
+    REFRESH: "/api/user/token/refresh", // TODO: DONT ADD BACKSLASH
+    CURRENT: "/api/user/current", // TODO: DONT ADD BACKSLASH
+    SOCIETY: "/api/society/request/approved",  // TODO: DONT ADD BACKSLASH
+    REJECTEDSOCIETY: "/api/society/request/rejected", // TODO: DONT ADD BACKSLASH
+    STUDENTS: "/api/user/student",  // TODO: DONT ADD BACKSLASH
+    ADMIN: "/api/user/admin", // TODO: DONT ADD BACKSLASH
+    PENDINGSOCIETYREQUEST: "/api/society/request/pending",  // TODO: DONT ADD BACKSLASH
+    PROFILE: "/api/user/profile", // TODO: DONT ADD BACKSLASH
+    REPORT: "/api/report-to-admin", // TODO: DONT ADD BACKSLASH
+    PENDINGEVENTREQUEST: "/api/event/request/pending",  // TODO: DONT ADD BACKSLASH
+    REJECTEDEVENT: "/api/admin-panel/rejected-event", // TODO: DONT ADD BACKSLASH
+    PENDINGDESCRIPTIONREQUEST: "/api/description/request/pending",
+    BASE: "/api/users",
+    ADMINSOCIETYVIEW: (societyId: number) => `/api/admin-manage-society-details/${societyId}`, // admin society view
+  },
+  SOCIETY: {
+    POPULAR_SOCIETIES: "/api/popular-societies",  // TODO: DONT ADD BACKSLASH
+    MANAGE_DETAILS: (id: number) => `/api/manage-society-details/${id}`,  // TODO: DONT ADD BACKSLASH
+    RECOMMENDED_SOCIETIES: "/api/recommended-societies", // New endpoint for recommendations
+    RECOMMENDATION_EXPLANATION: (id: number) => `/api/society-recommendation/${id}/explanation/`,
+    RECOMMENDATION_FEEDBACK: (id: number) => `/api/society-recommendation/${id}/feedback/`,
+    RECOMMENDATION_FEEDBACK_LIST: "/api/society-recommendation/feedback/",
+    RECOMMENDATION_FEEDBACK_ANALYTICS: "/api/recommendation-feedback/analytics/",
+  },
+  EVENTS: {
+    ALL: "/api/events", // TODO: DONT ADD BACKSLASH
+    PENDINGEVENTREQUEST: "api/society/event/pending",  // TODO: DONT ADD BACKSLASH
+    UPDATEENEVENTREQUEST: "api/society/event/request",  // TODO: DONT ADD BACKSLASH
+    APPROVEDEVENTLIST: "api/society/event/approved", // TODO: DONT ADD BACKSLASH
+    REJECTEDEVENTLIST: "api/society/event/rejected", // TODO: DONT ADD BACKSLASH
+  },
 };
 
 // Enhanced Society interface with category
