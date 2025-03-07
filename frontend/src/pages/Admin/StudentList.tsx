@@ -181,17 +181,12 @@ const StudentList: React.FC = () => {
           rows={filteredStudents}
           columns={columns}
           slots={{ toolbar: GridToolbar }}
-          initialState={{
-            pagination: {
-              paginationModel: { pageSize: 25, page: 0 },
-            },
-          }}
-          pageSizeOptions={[5, 10, 25]}
           resizeThrottleMs={0}
+          autoHeight
         />
       </Box>
       <Dialog open={openDialog} onClose={handleCloseDialog}>
-        <DialogTitle>Please confirm that you would like to permanently delete {selectedStudent?.firstName} {selectedStudent?.lastName}.</DialogTitle>
+        <DialogTitle>Please confirm that you would like to permanently delete {selectedStudent?.first_name} {selectedStudent?.lastName}.</DialogTitle>
         <DialogContent>
           <DialogContentText>
             You may undo this action in Activity Log.

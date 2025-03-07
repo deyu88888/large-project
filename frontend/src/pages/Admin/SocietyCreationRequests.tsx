@@ -111,12 +111,7 @@ const PendingSocietyRequest = () => {
           rows={filteredSocieties}
           columns={columns}
           slots={{ toolbar: GridToolbar }}
-          initialState={{
-            pagination: {
-              paginationModel: { pageSize: 25, page: 0 },
-            },
-          }}
-          pageSizeOptions={[5, 10, 25]}
+          autoHeight
           resizeThrottleMs={0}
           disableRowSelectionOnClick  // Disable row selection on row click to temporarily fix accept/reject button issue
         />

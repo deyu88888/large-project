@@ -109,14 +109,8 @@ const AdminReportList: React.FC = () => {
           columns={columns}
           slots={{ toolbar: GridToolbar }}
           getRowId={(row) => row.id}
-          initialState={{
-            pagination: {
-              paginationModel: { pageSize: 25, page: 0 },
-            },
-          }}
-          pageSizeOptions={[5, 10, 25]}
-          checkboxSelection
           resizeThrottleMs={0}
+          autoHeight
         />
       </Box>
     </Box>
