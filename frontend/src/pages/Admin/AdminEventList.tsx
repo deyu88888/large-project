@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useContext, useRef } from "react";
-import { Box, Typography, useTheme, Button } from "@mui/material";
+import { Box, Typography, useTheme, Button, DialogTitle, DialogContent, DialogContentText, Dialog, DialogActions } from "@mui/material";
 import { DataGrid, GridColDef, GridToolbar } from "@mui/x-data-grid";
 import { apiClient, apiPaths } from "../../api";
 import { useNavigate } from "react-router-dom";
@@ -17,6 +17,8 @@ const EventList = () => {
   const { searchTerm } = useContext(SearchContext);
   const ws = useRef<WebSocket | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
 
   const fetchEvents = async () => {
     try {
@@ -84,7 +86,10 @@ const EventList = () => {
     {
       field: "actions",
       headerName: "Actions",
-      flex: 3,
+      width: 170,
+      minWidth: 170,
+      sortable: false,
+      filterable: false, 
       renderCell: (params) => {
         const eventId = params.row.id;
         return (
@@ -98,17 +103,9 @@ const EventList = () => {
               View
             </Button>
             <Button
-              variant="outlined"
-              color="warning"
-              onClick={() => handleEditEvent(eventId)}
-              sx={{ marginRight: "8px" }}
-            >
-              Edit
-            </Button>
-            <Button
               variant="contained"
               color="error"
-              onClick={() => handleDeleteEvent(eventId)}
+              onClick={() => handleOpenDialog(params.row)}
             >
               Delete
             </Button>
@@ -119,19 +116,28 @@ const EventList = () => {
   ];
 
   const handleViewEvent = (eventId: string) => {
-    navigate(`/admin/event/${eventId}`);
+    navigate(`/admin/view-event/${eventId}`);
+  };
+  
+  const handleOpenDialog = (event: Event) => {
+    setSelectedEvent(event);
+    setOpenDialog(true);
   };
 
-  const handleEditEvent = (eventId: string) => {
-    navigate(`/admin/edit-event/${eventId}`);
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+    setSelectedEvent(null);
   };
 
-  const handleDeleteEvent = async (eventId: string) => {
-    try {
-      await apiClient.delete(`${apiPaths.EVENTS.APPROVEDEVENTLIST}/${eventId}`);
-      fetchEvents(); 
-    } catch (error) {
-      console.error("Error deleting event:", error);
+  const handleDeleteConfirmed = async () => {
+    if (selectedEvent !== null) {
+      try {
+        await apiClient.delete(apiPaths.USER.DELETEEVENT(selectedEvent.id));
+        fetchEvents();
+      } catch (error) {
+        console.error("Error deleting society:", error);
+      }
+      handleCloseDialog();
     }
   };
 
@@ -186,6 +192,22 @@ const EventList = () => {
           autoHeight
         />
       </Box>
+      <Dialog open={openDialog} onClose={handleCloseDialog}>
+        <DialogTitle>Please confirm that you would like to permanently delete {selectedEvent?.title}.</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            You may undo this action in Activity Log.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleDeleteConfirmed} color="error">
+            Confirm
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

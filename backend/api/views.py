@@ -549,7 +549,7 @@ class DeleteStudentView(APIView):
             target_name=f"{student.first_name} {student.last_name}",
             description=f"Deleted student {student.first_name} {student.last_name}",
             performed_by=user,
-            timestamp=timezone.now(),  # Correct usage of timezone.now()
+            timestamp=timezone.now(),
             expiration_date=timezone.now() + timedelta(days=30),
         )
         ActivityLog.delete_expired_logs()
@@ -793,6 +793,53 @@ class ManageSocietyDetailsAdminView(APIView):
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+class ManageEventDetailsAdminView(APIView):
+    """
+    API View for admins to manage any event's details.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, event_id):
+        user = request.user
+        if not hasattr(user, 'admin'):
+            return Response({"error": "Only admins can access this endpoint."}, status=status.HTTP_403_FORBIDDEN)
+        event = Event.objects.filter(id=event_id).first()
+        if not event:
+            return Response({"error": "Event not found."}, status=status.HTTP_404_NOT_FOUND)
+        serializer = EventSerializer(event)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def patch(self, request, event_id):
+        user = request.user
+        if not hasattr(user, 'admin'):
+            return Response({"error": "Only admins can update event details."}, status=status.HTTP_403_FORBIDDEN)
+        event = Event.objects.filter(id=event_id).first()
+        if not event:
+            return Response({"error": "Event not found."}, status=status.HTTP_404_NOT_FOUND)
+        data = request.data.copy()
+        current_attendees_data = data.pop("current_attendees", None)
+        serializer = EventSerializer(event, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            if current_attendees_data is not None:
+                event.current_attendees.set(current_attendees_data)
+
+            ActivityLog.objects.create(
+                action_type="Update",
+                target_type="Event",
+                target_id=event.id,
+                target_name=event.title,
+                description=f"Updated event {event.title}",
+                performed_by=user,
+                timestamp=timezone.now(),
+                expiration_date=timezone.now() + timedelta(days=30),
+            )
+            ActivityLog.delete_expired_logs()
+
+            return Response({"message": "Event details updated successfully.", "data": serializer.data}, status=status.HTTP_200_OK)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 class DeleteSocietyView(APIView):
     """
     API View for admins to permanently delete a society.
@@ -806,8 +853,49 @@ class DeleteSocietyView(APIView):
         society = Society.objects.filter(id=society_id).first()
         if not society:
             return Response({"error": "Society not found."}, status=status.HTTP_404_NOT_FOUND)
+        
+        ActivityLog.objects.create(
+            action_type="Delete",
+            target_type="Society",
+            target_id=society.id,
+            target_name=f"{society.name}",
+            description=f"Deleted society {society.name}",
+            performed_by=user,
+            timestamp=timezone.now(),
+            expiration_date=timezone.now() + timedelta(days=30),
+        )
+        ActivityLog.delete_expired_logs()
         society.delete()
-        return Response({"message": "Society deleted permanently."}, status=status.HTTP_200_OK)
+        return Response({"message": "Deleted society moved to Activity Log."}, status=status.HTTP_200_OK)
+
+class DeleteEventView(APIView):
+    """
+    API View for admins to permanently delete an event.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, event_id):
+        user = request.user
+        if not hasattr(user, 'admin'):
+            return Response({"error": "Only admins can delete events."}, status=status.HTTP_403_FORBIDDEN)
+        event = Event.objects.filter(id=event_id).first()
+        if not event:
+            return Response({"error": "Event not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        ActivityLog.objects.create(
+            action_type="Delete",
+            target_type="Event",
+            target_id=event.id,
+            target_name=event.title,
+            description=f"Deleted event {event.title}",
+            performed_by=user,
+            timestamp=timezone.now(),
+            expiration_date=timezone.now() + timedelta(days=30),
+        )
+        ActivityLog.delete_expired_logs()
+        event.delete()
+
+        return Response({"message": "Deleted event moved to Activity Log."}, status=status.HTTP_200_OK)
 
 
 class CreateEventRequestView(APIView):

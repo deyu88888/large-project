@@ -296,9 +296,11 @@ class EventSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         """ Update 'instance' object according to provided json data """
+        current_attendees_data = validated_data.pop('current_attendees', None)
         for key, value in validated_data.items():
             setattr(instance, key, value)
-
+        if current_attendees_data is not None:
+            instance.current_attendees.set(current_attendees_data)
         instance.save()
         return instance
 
