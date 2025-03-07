@@ -57,6 +57,7 @@ const ManageEventsPage = lazy(() => import("../pages/Admin/AdminEventManagement"
 const AdminViewSocietyPage = lazy(() => import("../pages/Admin/ViewSociety"));
 const RequestDescriptionPage = lazy(() => import("../pages/Admin/SocietyDesChangeRequest"));
 const AdminViewStudentPage = lazy(() => import("../pages/Admin/ViewStudent"));
+const AdminViewEventPage = lazy(() => import("../pages/Admin/ViewEvent"));
 const ActivityLogPage = lazy(() => import("../pages/Admin/ActivityLog"));
 
 
@@ -152,6 +153,10 @@ const routes = [
           {
             path: "view-society/:society_id",
             element: <AdminViewSocietyPage />,
+          },
+          {
+            path: "view-event/:event_id",
+            element: <AdminViewEventPage />,
           },
           {
             path: "activity-log",

@@ -19,7 +19,6 @@ const ActivityLog: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedLog, setSelectedLog] = useState<ActivityLog | null>(null);
-
   
     const fetchData = async () => {
       try {
