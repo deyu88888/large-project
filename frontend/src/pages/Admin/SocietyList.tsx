@@ -198,12 +198,7 @@ const SocietyList = () => {
           rows={filteredSocieties}
           columns={columns}
           slots={{ toolbar: GridToolbar }}
-          initialState={{
-            pagination: {
-              paginationModel: { pageSize: 25, page: 0 },
-            },
-          }}
-          pageSizeOptions={[5, 10, 25]}
+          autoHeight
           resizeThrottleMs={0}
         />
       </Box>

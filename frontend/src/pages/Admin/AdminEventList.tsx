@@ -182,14 +182,8 @@ const EventList = () => {
           rows={filteredEvents}
           columns={columns}
           slots={{ toolbar: GridToolbar }}
-          initialState={{
-            pagination: {
-              paginationModel: { pageSize: 25, page: 0 },
-            },
-          }}
-          pageSizeOptions={[5, 10, 25]}
-          checkboxSelection
           resizeThrottleMs={0}
+          autoHeight
         />
       </Box>
     </Box>
