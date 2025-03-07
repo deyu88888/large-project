@@ -47,6 +47,7 @@ export const apiPaths = {
     PENDINGDESCRIPTIONREQUEST: "/api/description/request/pending",
     BASE: "/api/users",
     ADMINSOCIETYVIEW: (societyId: number) => `/api/admin-manage-society-details/${societyId}`, // admin society view
+    DELETESOCIETY: (societyId: number) => `/api/delete-society/${societyId}`,
   },
   SOCIETY: {
     POPULAR_SOCIETIES: "/api/popular-societies",  // TODO: DONT ADD BACKSLASH

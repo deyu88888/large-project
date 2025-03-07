@@ -1,12 +1,16 @@
 import { useState, useEffect, useRef, useContext, useMemo } from "react";
-import { Box, Typography, useTheme, Button } from "@mui/material";
+import { Box, Typography, useTheme, Button, Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle, } from "@mui/material";
 import { DataGrid, GridColDef, GridToolbar } from "@mui/x-data-grid";
 import { apiClient, apiPaths } from "../../api";
 import { tokens } from "../../theme/theme";
 import { useSettingsStore } from "../../stores/settings-store";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { Society } from '../../types'
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 
 const SocietyList = () => {
@@ -18,6 +22,8 @@ const SocietyList = () => {
   const [socket, setSocket] = useState<WebSocket | null>(null);
   const { drawer } = useSettingsStore();
   const { searchTerm } = useContext(SearchContext);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [selectedSociety, setSelectedSociety] = useState<Society | null>(null);
 
   const fetchSocieties = async () => {
     try {
@@ -105,7 +111,7 @@ const SocietyList = () => {
               <Button
                 variant="contained"
                 color="error"
-                onClick={() => handleDeleteSociety(societyId)}
+                onClick={() => handleOpenDialog(params.row)}
               >
                 Delete
               </Button>
@@ -119,12 +125,25 @@ const SocietyList = () => {
       navigate(`/admin/view-society/${societyId}`);
     };
     
-    const handleDeleteSociety = async (societyId: string) => {
-      try {
-        await apiClient.delete(`${apiPaths.USER.SOCIETY}/${societyId}`);  // Adjusted API endpoint
-        fetchSocieties();
-      } catch (error) {
-        console.error("Error deleting society:", error);
+    const handleOpenDialog = (society: Society) => {
+      setSelectedSociety(society);
+      setOpenDialog(true);
+    };
+  
+    const handleCloseDialog = () => {
+      setOpenDialog(false);
+      setSelectedSociety(null);
+    };
+
+    const handleDeleteConfirmed = async () => {
+      if (selectedSociety !== null) {
+        try {
+          await apiClient.delete(apiPaths.USER.DELETESOCIETY(selectedSociety.id));
+          fetchSocieties();
+        } catch (error) {
+          console.error("Error deleting society:", error);
+        }
+        handleCloseDialog();
       }
     };
 
@@ -188,6 +207,22 @@ const SocietyList = () => {
           resizeThrottleMs={0}
         />
       </Box>
+      <Dialog open={openDialog} onClose={handleCloseDialog}>
+        <DialogTitle>Please confirm that you would like to permanently delete {selectedSociety?.name}.</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            You may undo this action in Activity Log.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleDeleteConfirmed} color="error">
+            Confirm
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
