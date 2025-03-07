@@ -4,6 +4,7 @@ import { tokens } from "../../theme/theme";
 import SocietyList from "./SocietyList";
 import SocietyListRejected from "./RejectedSocietiesList";
 import PendingSocietyRequest from "./SocietyCreationRequests";
+import PendingDescriptionRequest from "./SocietyDesChangeRequest";
 
 const CustomTabPanel = ({ children, value, index }: { children: ReactNode, value: number, index: number }) => (
   value === index ? (
@@ -14,9 +15,10 @@ const CustomTabPanel = ({ children, value, index }: { children: ReactNode, value
 );
 
 const tabs = [
-  { label: "Approved", component: <SocietyList /> },
-  { label: "Rejected", component: <SocietyListRejected /> },
-  { label: "Pending", component: <PendingSocietyRequest /> },
+  { label: "Current societies", component: <SocietyList /> },
+  { label: "Pending societies", component: <PendingSocietyRequest /> },
+  { label: "Rejected societies", component: <SocietyListRejected /> },
+  { label: "Description requests", component: <PendingDescriptionRequest /> },
 ];
 
 const ManageSocieties = () => {
