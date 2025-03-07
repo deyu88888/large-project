@@ -36,6 +36,7 @@ from api.serializers import (
     NotificationSerializer,
     RecentActivitySerializer,
     RSVPEventSerializer,
+    SocietyRequestSerializer,
     SocietySerializer,
     StartSocietyRequestSerializer,
     StudentSerializer,
@@ -505,23 +506,32 @@ class ManageSocietyDetailsView(APIView):
 
     def patch(self, request, society_id):
         user = request.user
-
-        # Ensure the user is a society president
+        # Ensure the user is a valid student and a society president.
         if not user.is_student() or not user.student.is_president:
-            return Response({"error": "Only society presidents can manage their societies."}, status=status.HTTP_403_FORBIDDEN)
+            return Response(
+                {"error": "Only society presidents can manage their societies."},
+                status=status.HTTP_403_FORBIDDEN
+            )
 
-        # Fetch the society
-        society = Society.objects.filter(
-            id=society_id).first()
+        society = Society.objects.filter(id=society_id).first()
         if not society:
-            return Response({"error": "Society not found or you are not the president of this society."}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"error": "Society not found or you are not the president of this society."},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
-        # Update the society details
-        serializer = SocietySerializer(
-            society, data=request.data, partial=True)
+        # Pass the request context so the serializer can access the current user.
+        serializer = SocietyRequestSerializer(data=request.data, context={"request": request})
         if serializer.is_valid():
-            serializer.save()
-            return Response({"message": "Society details updated successfully.", "data": serializer.data}, status=status.HTTP_200_OK)
+            # Pass the society instance explicitly to the serializer's save() method.
+            society_request = serializer.save(society=society)
+            return Response(
+                {
+                    "message": "Society update request submitted. Await admin approval.",
+                    "request_id": society_request.id,
+                },
+                status=status.HTTP_200_OK,
+            )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -1157,13 +1167,6 @@ class StudentSocietyDataView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, society_id):
-        user = request.user
-        if not hasattr(user, "student"):
-            return Response(
-                {"error": "Only students can view societies."},
-                status=status.HTTP_403_FORBIDDEN
-            )
-
         # Manual society access via id
         society = get_object_or_404(Society, id=society_id)
         serializer = SocietySerializer(society)

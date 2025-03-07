@@ -25,6 +25,7 @@ const JoinSocietiesPage = lazy(() => import("../pages/Student/join-societies"));
 const ViewSocietyPage = lazy(() => import("../pages/view-society"));
 const PresidentPage = lazy(() => import("../pages/President/president-page"));
 const ManageSocietyDetails = lazy(() => import("../pages/President/manage-society-details"));
+const SocietyPreviewModal = lazy(() => import("../pages/President/society-preview-modal"));
 const EditEventDetails = lazy(() => import("../pages/President/edit-event-details"));
 const ManageSocietyEvents = lazy(() => import("../pages/President/manage-society-events"));
 const CreateEventPage = lazy(() => import("../pages/create-society-event"));
@@ -227,6 +228,14 @@ const routes = [
           element: (
             <Suspense fallback={<LoadingView />}>
               <ManageSocietyDetails />
+            </Suspense>
+          ),
+        },
+        {
+          path: "society-preview-modal",
+          element: (
+            <Suspense fallback={<LoadingView />}>
+              <SocietyPreviewModal />
             </Suspense>
           ),
         },

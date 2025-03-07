@@ -12,13 +12,13 @@ import { useTheme } from "@mui/material/styles";
 import { apiClient, apiPaths } from "../../api";
 import { useAuthStore } from "../../stores/auth-store";
 import { tokens } from "../../theme/theme.ts";
+import SocietyPreviewModal from "./society-preview-modal";  
 
 interface SocietyData {
   id: number;
   name: string;
   category: string;
   social_media_links: Record<string, string>;
-  timetable: string;
   membership_requirements: string;
   upcoming_projects_or_plans: string;
   tags: string[];
@@ -37,6 +37,7 @@ const ManageSocietyDetails: React.FC = () => {
   const [formData, setFormData] = useState<SocietyData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
+  const [openPreview, setOpenPreview] = useState<boolean>(false);
 
   useEffect(() => {
     fetchSociety();
@@ -59,9 +60,7 @@ const ManageSocietyDetails: React.FC = () => {
     }
   };
 
-  const handleChange = (
-    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prevFormData) =>
       prevFormData ? { ...prevFormData, [name]: value } : null
@@ -77,7 +76,6 @@ const ManageSocietyDetails: React.FC = () => {
       const formDataToSend = new FormData();
       formDataToSend.append("name", formData.name);
       formDataToSend.append("category", formData.category);
-      formDataToSend.append("timetable", formData.timetable);
       formDataToSend.append("membership_requirements", formData.membership_requirements);
       formDataToSend.append("upcoming_projects_or_plans", formData.upcoming_projects_or_plans);
       formDataToSend.append("tags", JSON.stringify(formData.tags));
@@ -92,18 +90,27 @@ const ManageSocietyDetails: React.FC = () => {
         formDataToSend.append("icon", formData.icon);
       }
 
-      await apiClient.put(`/api/manage-society-details/${societyId}/`, formDataToSend, {
+      // Use PATCH request so that the backend creates a SocietyRequest for admin approval.
+      await apiClient.patch(`/api/manage-society-details/${societyId}/`, formDataToSend, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      alert("Society updated successfully!");
+      alert("Society update request submitted. Await admin approval.");
       navigate(`/president-page/${societyId}`);
     } catch (error) {
       console.error("Error updating society", error);
-      alert("There was an error updating your society.");
+      alert("There was an error submitting your update request.");
     } finally {
       setSaving(false);
     }
+  };
+
+  const handlePreviewOpen = () => {
+    setOpenPreview(true);
+  };
+
+  const handlePreviewClose = () => {
+    setOpenPreview(false);
   };
 
   if (loading || !formData) {
@@ -133,9 +140,7 @@ const ManageSocietyDetails: React.FC = () => {
         <Typography
           variant="h2"
           fontWeight="bold"
-          sx={{
-            color: theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d",
-          }}
+          sx={{ color: theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d" }}
         >
           Manage My Society
         </Typography>
@@ -167,17 +172,6 @@ const ManageSocietyDetails: React.FC = () => {
             label="Category"
             name="category"
             value={formData.category}
-            onChange={handleChange}
-            sx={{ mb: 2 }}
-          />
-
-          <TextField
-            fullWidth
-            label="Timetable"
-            name="timetable"
-            multiline
-            rows={3}
-            value={formData.timetable}
             onChange={handleChange}
             sx={{ mb: 2 }}
           />
@@ -219,21 +213,40 @@ const ManageSocietyDetails: React.FC = () => {
             sx={{ mb: 3 }}
           />
 
-          <Button
-            type="submit"
-            fullWidth
-            disabled={saving}
-            sx={{
-              backgroundColor: colors.blueAccent[500],
-              color: "#ffffff",
-              fontWeight: "bold",
-              "&:hover": { backgroundColor: colors.blueAccent[600] },
-            }}
-          >
-            {saving ? "Saving..." : "Save Changes"}
-          </Button>
+          <Box display="flex" justifyContent="space-between" mt={3}>
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              disabled={saving}
+              sx={{
+                backgroundColor: colors.blueAccent[500],
+                color: "#ffffff",
+                fontWeight: "bold",
+                "&:hover": { backgroundColor: colors.blueAccent[600] },
+              }}
+            >
+              {saving ? "Submitting..." : "Submit Update Request"}
+            </Button>
+            <Button
+              variant="outlined"
+              onClick={handlePreviewOpen}
+              disabled={saving}
+              sx={{
+                fontWeight: "bold",
+                borderColor: colors.blueAccent[500],
+                color: colors.blueAccent[500],
+                "&:hover": { borderColor: colors.blueAccent[600], color: colors.blueAccent[600] },
+              }}
+            >
+              Preview
+            </Button>
+          </Box>
         </form>
       </Paper>
+
+      {/* Preview Modal */}
+      <SocietyPreviewModal open={openPreview} onClose={handlePreviewClose} formData={formData} />
     </Box>
   );
 };

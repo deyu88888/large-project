@@ -170,13 +170,12 @@ class SocietySerializer(serializers.ModelSerializer):
         fields = [
             'id', 'name', 'description', 'society_members', 'leader', 'leader_id', 'vice_president' ,
             'treasurer', 'event_manager', 'approved_by','status', 'category', 'social_media_links',
-            'timetable', 'showreel_images', 'membership_requirements', 'upcoming_projects_or_plans',
+            'showreel_images', 'membership_requirements', 'upcoming_projects_or_plans',
             'icon','tags',
         ]
         extra_kwargs = {
             'society_members': {'required': False},  # Allows empty or missing data
             'social_media_links': {'required': False},
-            'timetable': {'required': False},
             'membership_requirements': {'required': False},
             'upcoming_projects_or_plans': {'required': False},
         }
@@ -497,7 +496,7 @@ class SocietyRequestSerializer(RequestSerializer):
         fields = (
             RequestSerializer.Meta.fields
             + ['name', 'description', 'roles', 'leader', 'category', 'icon',
-            'social_media_links', 'timetable', 'membership_requirements',
+            'social_media_links', 'membership_requirements',
             'upcoming_projects_or_plans', 'society', 'showreel_images_request']
         )
 

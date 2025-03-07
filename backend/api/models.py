@@ -220,7 +220,6 @@ class Society(models.Model):
     category = models.CharField(max_length=50, default="General")
     # {"facebook": "link", "email": "email"}
     social_media_links = models.JSONField(default=dict, blank=True)
-    timetable = models.TextField(blank=True, null=True)
     membership_requirements = models.TextField(blank=True, null=True)
     upcoming_projects_or_plans = models.TextField(blank=True, null=True)
     tags = models.JSONField(default=list, blank=True)  # Stores tags as a list
@@ -399,7 +398,6 @@ class SocietyRequest(Request):
     category = models.CharField(max_length=50, blank=True, default="")
     # {"facebook": "link", "email": "email"}
     social_media_links = models.JSONField(default=dict, blank=True, null=True)
-    timetable = models.TextField(blank=True, default="")
     membership_requirements = models.TextField(blank=True, default="")
     upcoming_projects_or_plans = models.TextField(blank=True, default="")
     icon = models.ImageField(upload_to="icon_request/", blank=True, null=True)
