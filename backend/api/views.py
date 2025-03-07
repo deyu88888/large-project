@@ -488,6 +488,59 @@ class StudentNotificationsView(APIView):
 
         return Response({"message": "Notification marked as read.", "id": pk}, status=status.HTTP_200_OK)
 
+class ManageStudentDetailsAdminView(APIView):
+    """
+    API View for admins to manage any student's details.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, student_id):
+        user = request.user
+        if not hasattr(user, 'admin'):
+            return Response({"error": "Only admins can access this endpoint."}, status=status.HTTP_403_FORBIDDEN)
+        
+        student = Student.objects.filter(id=student_id).first()
+        if not student:
+            return Response({"error": "Student not found."}, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = StudentSerializer(student)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def patch(self, request, student_id):
+        user = request.user
+        if not hasattr(user, 'admin'):
+            return Response({"error": "Only admins can update student details."}, status=status.HTTP_403_FORBIDDEN)
+
+        # Fetch student by ID
+        student = Student.objects.filter(id=student_id).first()
+        if not student:
+            return Response({"error": "Student not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Update student details using serializer
+        serializer = StudentSerializer(student, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "Student details updated successfully.", "data": serializer.data}, status=status.HTTP_200_OK)
+
+        # If validation fails, return error
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class DeleteStudentView(APIView):
+    """
+    API View for admins to permanently delete a student.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, student_id):
+        user = request.user
+        if not hasattr(user, 'admin'):
+            return Response({"error": "Only admins can delete students."}, status=status.HTTP_403_FORBIDDEN)
+        student = Student.objects.filter(id=student_id).first()
+        if not student:
+            return Response({"error": "Student not found."}, status=status.HTTP_404_NOT_FOUND)
+        student.delete()
+        return Response({"message": "Student deleted permanently."}, status=status.HTTP_200_OK)
+
 
 class StudentInboxView(StudentNotificationsView):
     """

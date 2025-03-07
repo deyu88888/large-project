@@ -56,7 +56,7 @@ const ManageSocietiesPage = lazy(() => import("../pages/Admin/AdminSocietyManage
 const ManageEventsPage = lazy(() => import("../pages/Admin/AdminEventManagement"));
 const AdminViewSocietyPage = lazy(() => import("../pages/Admin/ViewSociety"));
 const RequestDescriptionPage = lazy(() => import("../pages/Admin/SocietyDesChangeRequest"));
-
+const AdminViewStudentPage = lazy(() => import("../pages/Admin/ViewStudent"));
 
 
 const routes = [
@@ -143,6 +143,10 @@ const routes = [
           {
             path: "report-list",
             element: <AdminReportList />,
+          },
+          {
+            path: "view-student/:student_id",
+            element: <AdminViewStudentPage />,
           },
           {
             path: "view-society/:society_id",

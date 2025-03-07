@@ -41,7 +41,7 @@ const PendingSocietyRequest = () => {
   };
 
   const columns: GridColDef[] = [
-    { field: "id", headerName: "ID", flex: 0.5 },
+    { field: "id", headerName: "ID", flex: 0.3 },
     { field: "name", headerName: "Name", flex: 1 },
     { field: "description", headerName: "Description", flex: 1 },
     {      
@@ -56,8 +56,8 @@ const PendingSocietyRequest = () => {
     {
       field: "actions",
       headerName: "Actions",
-      width: 190,
-      minWidth: 190,
+      width: 188,
+      minWidth: 188,
       sortable: false,
       filterable: false, 
       renderCell: (params: any) => (
