@@ -79,7 +79,7 @@ const SocietyList = () => {
   }, []);
 
   const columns: GridColDef[] = [
-      { field: "id", headerName: "ID", flex: 0.5 },
+      { field: "id", headerName: "ID", flex: 0.3 },
       { field: "name", headerName: "Name", flex: 1 },
       { field: "description", headerName: "Description", flex: 1},
       { field: "president", headerName: "president", flex: 1 },
@@ -92,8 +92,8 @@ const SocietyList = () => {
       {
         field: "actions",
         headerName: "Actions",
-        width: 240,
-        minWidth: 240,
+        width: 170,
+        minWidth: 170,
         sortable: false,
         filterable: false, 
         renderCell: (params) => {

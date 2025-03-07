@@ -176,6 +176,9 @@ class Student(User):
     def __str__(self):
         return self.full_name
 
+    def get_societies(self, obj):
+        return [society.name for society in obj.societies.all()]
+
 # Signal to update `is_president` when `president_of` changes
 @receiver(pre_save, sender=Student)
 def update_is_president(sender, instance, **kwargs):
@@ -228,7 +231,7 @@ class Society(models.Model):
 
     vice_president = models.ForeignKey(
         "Student",
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
         null=True,
         blank=True,
         related_name="vice_president_of_society",
@@ -236,13 +239,13 @@ class Society(models.Model):
     )
     event_manager = models.ForeignKey(
         "Student",
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
         null=True,
         blank=True,
         related_name="event_manager_of_society",
         help_text="Assigned event manager of the society",
     )
-    president = models.ForeignKey(
+        president = models.ForeignKey(
         "Student",
         on_delete=models.DO_NOTHING,
         related_name="society",

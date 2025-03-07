@@ -315,7 +315,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='society',
             name='event_manager',
-            field=models.ForeignKey(blank=True, help_text='Assigned event manager of the society', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='event_manager_of_society', to='api.student'),
+            field=models.ForeignKey(blank=True, help_text='Assigned event manager of the society', null=True, on_delete=django.db.models.deletion.CASCADE, related_name='event_manager_of_society', to='api.student'),
         ),
         migrations.AddField(
             model_name='society',
@@ -330,7 +330,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='society',
             name='vice_president',
-            field=models.ForeignKey(blank=True, help_text='Assigned vice-president of the society', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='vice_president_of_society', to='api.student'),
+            field=models.ForeignKey(blank=True, help_text='Assigned vice-president of the society', null=True, on_delete=django.db.models.deletion.CASCADE, related_name='vice_president_of_society', to='api.student'),
         ),
         migrations.CreateModel(
             name='EventRequest',

@@ -1,30 +1,35 @@
 import React, { useState, useEffect, useContext } from "react";
-import { Box, Typography, useTheme } from "@mui/material";
+import { Box, Typography, useTheme, Button, DialogContent, DialogTitle, Dialog, DialogContentText, DialogActions } from "@mui/material";
 import { DataGrid, GridToolbar } from "@mui/x-data-grid";
 import { apiClient, apiPaths } from "../../api";
 import { tokens } from "../../theme/theme";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { useSettingsStore } from "../../stores/settings-store";
 import { Student } from "../../types.ts"
+import { useNavigate } from "react-router-dom";
 
 
 const StudentList: React.FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
+  const navigate = useNavigate();
   const [students, setStudents] = useState<Student[]>([]);
   const { searchTerm } = useContext(SearchContext);
   const { drawer } = useSettingsStore(); 
+  const [openDialog, setOpenDialog] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
 
+
+  const getData = async () => {
+    try {
+      const res = await apiClient.get(apiPaths.USER.STUDENTS);
+      setStudents(res.data || []);
+    } catch (error) {
+      console.error("Error fetching students:", error);
+    }
+  };
 
   useEffect(() => {
-    const getData = async () => {
-      try {
-        const res = await apiClient.get(apiPaths.USER.STUDENTS);
-        setStudents(res.data || []);
-      } catch (error) {
-        console.error("Error fetching students:", error);
-      }
-    };
     getData();
   }, []);
 
@@ -37,7 +42,7 @@ const StudentList: React.FC = () => {
   );        
 
   const columns = [
-    { field: "id", headerName: "ID", flex: 1 },
+    { field: "id", headerName: "ID", flex: 0.3 },
     { field: "username", headerName: "Username", flex: 1 },
     { field: "firstName", headerName: "First Name", flex: 1 },
     { field: "lastName", headerName: "Last Name", flex: 1 },
@@ -68,9 +73,65 @@ const StudentList: React.FC = () => {
       renderCell: (params: any) => (params.row.isPresident ? "Yes" : "No"),
       flex: 1,
     },
+    {
+      field: "actions",
+      headerName: "Actions",
+      width: 170,
+      minWidth: 170,
+      sortable: false,
+      filterable: false, 
+      renderCell: (params: any) => {
+        const studentId = params.row.id;
+        return (
+          <Box>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => handleViewStudent(studentId)}
+              sx={{ marginRight: "8px" }}
+            >
+              View
+            </Button>
+            <Button
+              variant="contained"
+              color="error"
+              onClick={() => handleOpenDialog(params.row)}
+            >
+              Delete
+            </Button>
+          </Box>
+        );
+      },
+    },
   ];
 
+  const handleViewStudent = (studentId: string) => {
+    navigate(`/admin/view-student/${studentId}`);
+  };
+  
+  const handleOpenDialog = (student: Student) => {
+    setSelectedStudent(student);
+    setOpenDialog(true);
+  };
 
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+    setSelectedStudent(null);
+  };
+
+  const handleDeleteConfirmed = async () => {
+    if (selectedStudent !== null) {
+      try {
+        await apiClient.delete(apiPaths.USER.DELETESTUDENT(selectedStudent.id));
+        getData();
+      } catch (error) {
+        console.error("Error deleting student:", error);
+      }
+      handleCloseDialog();
+    }
+  };
+
+  
   return (
     <Box
       sx={{
@@ -129,6 +190,22 @@ const StudentList: React.FC = () => {
           resizeThrottleMs={0}
         />
       </Box>
+      <Dialog open={openDialog} onClose={handleCloseDialog}>
+        <DialogTitle>Please confirm that you would like to permanently delete {selectedStudent?.firstName} {selectedStudent?.lastName}.</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            You may undo this action in Activity Log.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleDeleteConfirmed} color="error">
+            Confirm
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
