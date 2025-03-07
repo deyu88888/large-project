@@ -1,25 +1,18 @@
-import React, { useState, useEffect, useRef, useContext, useMemo } from "react";
+import { useState, useEffect, useRef, useContext, useMemo } from "react";
 import { Box, Typography, useTheme, Button } from "@mui/material";
 import { DataGrid, GridColDef, GridToolbar } from "@mui/x-data-grid";
 import { apiClient, apiPaths } from "../../api";
 import { tokens } from "../../theme/theme";
 import { useSettingsStore } from "../../stores/settings-store";
 import { SearchContext } from "../../components/layout/SearchContext";
+import { Society } from '../../types'
+import { useNavigate } from "react-router-dom";
 
-// Consistent Society type
-interface Society {
-  id: number;
-  name: string;
-  description: string;
-  president: string;
-  members: string[]; // Assuming members is an array of strings
-  roles: Record<string, string>; // Assuming roles is a key-value object
-  approvedBy: string;
-}
 
 const SocietyList = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
+  const navigate = useNavigate();
   const [societies, setSocieties] = useState<Society[]>([]);
   const ws = useRef<WebSocket | null>(null);
   const [socket, setSocket] = useState<WebSocket | null>(null);
@@ -79,17 +72,61 @@ const SocietyList = () => {
     };
   }, []);
 
-  const columns = useMemo<GridColDef[]>(
-    () => [
+  const columns: GridColDef[] = [
+      { field: "id", headerName: "ID", flex: 0.5 },
       { field: "name", headerName: "Name", flex: 1 },
       { field: "description", headerName: "Description", flex: 1},
       { field: "president", headerName: "president", flex: 1 },
       { field: "members", headerName: "Members", flex: 1 },
       { field: "roles", headerName: "Roles", flex: 1 },
       { field: "approvedBy", headerName: "Approved By", flex: 1 },
-    ],
-    []
-  );
+      { field: "category", headerName: "Category", flex: 1 },
+      { field: "membershipRequirements", headerName: "Membership Requirements", flex: 1 },
+      { field: "upcomingProjectsOrPlans", headerName: "Upcoming Projects", flex: 1 },
+      {
+        field: "actions",
+        headerName: "Actions",
+        width: 240,
+        minWidth: 240,
+        sortable: false,
+        filterable: false, 
+        renderCell: (params) => {
+          const societyId = params.row.id;
+          return (
+            <Box>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={() => handleViewSociety(societyId)}
+                sx={{ marginRight: "8px" }}
+              >
+                View
+              </Button>
+              <Button
+                variant="contained"
+                color="error"
+                onClick={() => handleDeleteSociety(societyId)}
+              >
+                Delete
+              </Button>
+            </Box>
+          );
+        },
+      },
+    ];
+
+    const handleViewSociety = (societyId: string) => {
+      navigate(`/admin/view-society/${societyId}`);
+    };
+    
+    const handleDeleteSociety = async (societyId: string) => {
+      try {
+        await apiClient.delete(`${apiPaths.USER.SOCIETY}/${societyId}`);  // Adjusted API endpoint
+        fetchSocieties();
+      } catch (error) {
+        console.error("Error deleting society:", error);
+      }
+    };
 
   const filteredSocieties = useMemo(
     () =>
@@ -148,7 +185,6 @@ const SocietyList = () => {
             },
           }}
           pageSizeOptions={[5, 10, 25]}
-          checkboxSelection
           resizeThrottleMs={0}
         />
       </Box>

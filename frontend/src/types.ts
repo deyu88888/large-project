@@ -1,16 +1,22 @@
-
 export type Society = {
     id: number;
     name: string;
     societyMembers: number[];
-    roles: {};
+    // roles: {};
     president: number;
+    description: string;
     category: string;
-    socialMediaLinks: {};
-    timetable: string | null;
-    membershipRequirements: string | null;
-    upcomingProjectsOrPlans: string | null;
-};
+    social_media_links: Record<string, string>;
+    timetable: string;
+    membership_requirements: string;
+    upcoming_projects_or_plans: string;
+    tags: string[];
+    icon: string | File | null;
+    leader: string;
+    roles: string[];
+    status: string;
+    approved_by: string;
+  }
 
 export type SocietyEvent = {        // avoid naming conflicts with JavaScript's built-in Event type
     id: number;
@@ -23,7 +29,18 @@ export type SocietyEvent = {        // avoid naming conflicts with JavaScript's 
     location: string;
   };
 
-export interface Student {
+  export type Event = {   // TODO: change name of this event
+    id: number;
+    title: string;
+    description: string;
+    date: string;
+    startTime: string;
+    duration: string;
+    hostedBy: number;
+    location: string;
+  };
+
+export type Student = {
     id: number;
     username: string;
     firstName: string;
@@ -35,9 +52,9 @@ export interface Student {
     societies: string[];
     presidentOf: number[];
     isPresident: boolean;
-  }
+  };
   
-  export interface Report {
+  export type Report = {
     id: number;
     from_student: string;
     report_type: string;
@@ -45,17 +62,6 @@ export interface Student {
     details: string;
     created_at: string;
 };
-
-export interface Event {
-    id: number;
-    title: string;
-    description: string;
-    date: string;
-    startTime: string;
-    duration: string;
-    hostedBy: number;
-    location: string;
-  };
 
   export type News = {
     id: number;

@@ -5,16 +5,8 @@ import { apiClient, apiPaths } from "../../api";
 import { tokens } from "../../theme/theme";
 import { useSettingsStore } from "../../stores/settings-store";
 import { SearchContext } from "../../components/layout/SearchContext";
+import { Society } from '../../types'
 
-interface Society {
-  id: number;
-  name: string;
-  description: string;
-  president: string;
-  members: string[]; 
-  roles: Record<string, string>; 
-  approvedBy: string;
-}
 
 const SocietyListRejected = () => {
   const theme = useTheme();
@@ -72,12 +64,16 @@ const SocietyListRejected = () => {
   }, []);
 
   const columns: GridColDef[] = [
+    { field: "id", headerName: "ID", flex: 0.5 },
     { field: "name", headerName: "Name", flex: 1 },
     { field: "description", headerName: "Description", flex: 1 },
     { field: "president", headerName: "president", flex: 1 },
     { field: "members", headerName: "Members", flex: 1 },
     { field: "roles", headerName: "Roles", flex: 1  },
     { field: "approvedBy", headerName: "Approved By", flex: 1  },
+    { field: "category", headerName: "Category", flex: 1 },
+    { field: "membershipRequirements", headerName: "Membership Requirements", flex: 1 },
+    { field: "upcomingProjectsOrPlans", headerName: "Upcoming Projects", flex: 1 },
   ];  
 
   const filteredSocieties = useMemo(
@@ -137,7 +133,6 @@ const SocietyListRejected = () => {
             },
           }}
           pageSizeOptions={[5, 10, 25]}
-          checkboxSelection
           resizeThrottleMs={0}
         />
       </Box>
