@@ -141,7 +141,7 @@ class Student(User):
 
     president_of = models.OneToOneField(
         "Society",
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
         null=True,
         blank=True,
         related_name="society_president",
@@ -503,7 +503,7 @@ class SocietyRequest(Request):
     """
     society = models.ForeignKey(
         "Society",
-        on_delete=models.DO_NOTHING,
+        on_delete=models.CASCADE,
         related_name="society_request",
         blank=True,
         null=True,
@@ -588,7 +588,7 @@ class EventRequest(Request):
     )
     hosted_by = models.ForeignKey(
         "Society",
-        on_delete=models.DO_NOTHING,
+        on_delete=models.CASCADE,
         related_name="event_request_society",
         blank=False,
         null=False,

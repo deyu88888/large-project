@@ -189,7 +189,7 @@ class Migration(migrations.Migration):
                 ('membership_requirements', models.TextField(blank=True, default='')),
                 ('upcoming_projects_or_plans', models.TextField(blank=True, default='')),
                 ('icon', models.ImageField(blank=True, null=True, upload_to='icon_request/')),
-                ('society', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='society_request', to='api.society')),
+                ('society', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='society_request', to='api.society')),
             ],
             options={
                 'abstract': False,
@@ -232,6 +232,35 @@ class Migration(migrations.Migration):
                 ('photo', models.ImageField(upload_to='society_showreel/')),
                 ('caption', models.CharField(blank=True, default='', max_length=50)),
                 ('society', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='showreel_images', to='api.society')),
+                ('user_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to=settings.AUTH_USER_MODEL)),
+            ],
+            options={
+                'verbose_name': 'user',
+                'verbose_name_plural': 'users',
+                'abstract': False,
+            },
+            bases=('api.user',),
+            managers=[
+                ('objects', django.contrib.auth.models.UserManager()),
+            ],
+        ),
+        migrations.CreateModel(
+            name='Student',
+            fields=[
+                ('user_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to=settings.AUTH_USER_MODEL)),
+                ('status', models.CharField(choices=[('Pending', 'Pending Approval'), ('Approved', 'Approved'), ('Rejected', 'Rejected')], default='Pending', max_length=20)),
+                ('major', models.CharField(blank=True, max_length=50)),
+                ('is_president', models.BooleanField(default=False)),
+                ('icon', models.ImageField(blank=True, null=True, upload_to='student_icons/')),
+            ],
+            options={
+                'verbose_name': 'user',
+                'verbose_name_plural': 'users',
+                'abstract': False,
+            },
+            bases=('api.user',),
+            managers=[
+                ('objects', django.contrib.auth.models.UserManager()),
             ],
         ),
         migrations.CreateModel(
@@ -266,7 +295,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='student',
             name='president_of',
-            field=models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='society_president', to='api.society'),
+            field=models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='president', to='api.society'),
         ),
         migrations.AddField(
             model_name='student',
@@ -317,7 +346,7 @@ class Migration(migrations.Migration):
                 ('start_time', models.TimeField(blank=True, null=True)),
                 ('duration', models.DurationField(blank=True, null=True)),
                 ('event', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='event_request', to='api.event')),
-                ('hosted_by', models.ForeignKey(on_delete=django.db.models.deletion.DO_NOTHING, related_name='event_request_society', to='api.society')),
+                ('hosted_by', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='event_request_society', to='api.society')),
                 ('from_student', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='%(class)ss', to='api.student')),
             ],
             options={

@@ -725,6 +725,22 @@ class ManageSocietyDetailsAdminView(APIView):
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+class DeleteSocietyView(APIView):
+    """
+    API View for admins to permanently delete a society.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, society_id):
+        user = request.user
+        if not hasattr(user, 'admin'):
+            return Response({"error": "Only admins can delete societies."}, status=status.HTTP_403_FORBIDDEN)
+        society = Society.objects.filter(id=society_id).first()
+        if not society:
+            return Response({"error": "Society not found."}, status=status.HTTP_404_NOT_FOUND)
+        society.delete()
+        return Response({"message": "Society deleted permanently."}, status=status.HTTP_200_OK)
+
 
 class CreateEventRequestView(APIView):
     """
