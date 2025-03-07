@@ -1,6 +1,6 @@
 import datetime
-from api.models import AdminReportRequest, Award, AwardStudent, BroadcastMessage, SiteSettings, User, Student, Society, Event, \
-    Notification, Request, SocietyRequest, SocietyShowreel, SocietyShowreelRequest, EventRequest, UserRequest, Comment, DescriptionRequest
+from api.models import AdminReportRequest, Award, AwardStudent, SiteSettings, User, Student, Admin, Society, Event, \
+    Notification, Request, SocietyRequest, SocietyShowreel, SocietyShowreelRequest, EventRequest, UserRequest, Comment, DescriptionRequest, ActivityLog
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 from django.utils.translation import gettext_lazy as _
@@ -880,3 +880,8 @@ class BroadcastSerializer(serializers.ModelSerializer):
         model = BroadcastMessage
         fields = ['id', 'sender', 'societies', 'events', 'recipients', 'message', 'created_at']
         read_only_fields = ['id', 'created_at', 'sender']
+class ActivityLogSerializer(serializers.ModelSerializer):
+    timestamp = serializers.DateTimeField(format='%d-%m-%Y %H:%M:%S')
+    class Meta:
+        model = ActivityLog
+        fields = '__all__'

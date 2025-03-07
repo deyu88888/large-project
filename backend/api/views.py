@@ -1,6 +1,7 @@
 import logging
 from django.utils import timezone
 from datetime import datetime, timezone
+from datetime import timedelta
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from django.contrib.auth import authenticate
@@ -42,7 +43,9 @@ from api.serializers import (
     AwardSerializer,
     AwardStudentSerializer,
     PendingMemberSerializer,
-    DescriptionRequestSerializer, CommentSerializer,
+    DescriptionRequestSerializer, 
+    CommentSerializer,
+    ActivityLogSerializer,
 )
 from api.utils import *
 from django.db.models import Q
@@ -538,8 +541,20 @@ class DeleteStudentView(APIView):
         student = Student.objects.filter(id=student_id).first()
         if not student:
             return Response({"error": "Student not found."}, status=status.HTTP_404_NOT_FOUND)
+        
+        ActivityLog.objects.create(
+            action_type="Delete",
+            target_type="Student",
+            target_id=student.id,
+            target_name=f"{student.first_name} {student.last_name}",
+            description=f"Deleted student {student.first_name} {student.last_name}",
+            performed_by=user,
+            timestamp=timezone.now(),  # Correct usage of timezone.now()
+            expiration_date=timezone.now() + timedelta(days=30),
+        )
+        ActivityLog.delete_expired_logs()
         student.delete()
-        return Response({"message": "Student deleted permanently."}, status=status.HTTP_200_OK)
+        return Response({"message": "Deleted student moved to Activity Log."}, status=status.HTTP_200_OK)
 
 
 class StudentInboxView(StudentNotificationsView):
@@ -1721,3 +1736,20 @@ class BroadcastListAPIView(APIView):
 
         serializer = BroadcastSerializer(broadcasts, many=True)
         return Response(serializer.data)
+class ActivityLogView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, log_id=None):
+        logs = ActivityLog.objects.all().order_by('-timestamp')
+        serializer = ActivityLogSerializer(logs, many=True)
+        return Response(serializer.data)
+    
+    def delete(self, request, log_id):
+        user = request.user
+        if not hasattr(user, 'admin'):
+            return Response({"error": "Only admins can delete activity logs."}, status=status.HTTP_403_FORBIDDEN)
+        activity_log = ActivityLog.objects.filter(id=log_id).first()
+        if not activity_log:
+            return Response({"error": "Activity log not found."}, status=status.HTTP_404_NOT_FOUND)
+        activity_log.delete()
+        return Response({"message": "Activity log deleted successfully."}, status=status.HTTP_200_OK)

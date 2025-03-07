@@ -100,7 +100,7 @@ const AdminDrawer: React.FC<AdminDrawerProps> = ({
     {
       title: "Activity Log",
       icon: <CalendarTodayOutlinedIcon />,
-      to: "/admin/admin-dashboard",
+      to: "/admin/activity-log",
     },
   ];
 

@@ -273,6 +273,20 @@ class Migration(migrations.Migration):
             ],
         ),
         migrations.CreateModel(
+            name='ActivityLog',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('action_type', models.CharField(choices=[('Delete', 'Delete'), ('Approve', 'Approve'), ('Reject', 'Reject'), ('Update', 'Update'), ('Create', 'Create'), ('Reply', 'Reply')], max_length=20)),
+                ('target_type', models.CharField(choices=[('Society', 'Society'), ('Student', 'Student'), ('Event', 'Event'), ('Request', 'Request')], max_length=20)),
+                ('target_id', models.IntegerField()),
+                ('target_name', models.CharField(max_length=255)),
+                ('description', models.TextField(blank=True, null=True)),
+                ('timestamp', models.DateTimeField(auto_now_add=True)),
+                ('expiration_date', models.DateTimeField(blank=True, null=True)),
+                ('performed_by', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
+            ],
+        ),
+        migrations.CreateModel(
             name='UserRequest',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),

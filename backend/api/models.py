@@ -793,3 +793,41 @@ class BroadcastMessage(models.Model):
     recipients = models.ManyToManyField(User, related_name="received_broadcasts", blank=True)
     message = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
+        return f"{self.user.username}: {self.content[:30]}"
+
+class ActivityLog(models.Model):
+    ACTION_CHOICES = [
+        ("Delete", "Delete"),
+        ("Approve", "Approve"),
+        ("Reject", "Reject"),
+        ("Update", "Update"),
+        ("Create", "Create"),
+        ("Reply", "Reply"),
+    ]
+
+    TARGET_CHOICES = [
+        ("Society", "Society"),
+        ("Student", "Student"),
+        ("Event", "Event"),
+        ("Request", "Request"),
+    ]
+    
+    action_type = models.CharField(max_length=20, choices=ACTION_CHOICES)
+    target_type = models.CharField(max_length=20, choices=TARGET_CHOICES)
+    target_id = models.IntegerField()
+    target_name = models.CharField(max_length=255)
+    description = models.TextField(null=True, blank=True)
+    performed_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    expiration_date = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.action_type} - {self.target_name} on {self.timestamp}"
+    
+    @classmethod
+    def delete_expired_logs(cls):
+        """Delete activity logs older than 30 days."""
+        expiration_threshold = timezone.now() - timedelta(days=30)
+        expired_logs = cls.objects.filter(expiration_date__lt=expiration_threshold)
+        deleted_count, _ = expired_logs.delete()
+        return deleted_count

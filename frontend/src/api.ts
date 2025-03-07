@@ -50,6 +50,8 @@ export const apiPaths = {
     ADMINSOCIETYVIEW: (societyId: number) => `/api/admin-manage-society-details/${societyId}`, // admin society view
     DELETESOCIETY: (societyId: number) => `/api/delete-society/${societyId}`,
     DELETESTUDENT: (studentId: number) => `/api/delete-student/${studentId}`,
+    ACTIVITYLOG: "/api/activity-log",
+    DELETEACTIVITYLOG: (logId: number) => `/api/delete-activity-log/${logId}`,
   },
   SOCIETY: {
     POPULAR_SOCIETIES: "/api/popular-societies",  // TODO: DONT ADD BACKSLASH

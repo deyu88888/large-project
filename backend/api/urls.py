@@ -11,6 +11,7 @@ from .views import (
     get_popular_societies, CreateEventRequestView, custom_media_view, get_sorted_events, StudentSocietyDataView,
     AllEventsView, EventDetailView, EventCommentsView, DescriptionRequestView, ManageSocietyDetailsAdminView, 
     like_comment, dislike_comment, EventCommentsView, toggle_follow, StudentProfileView, DeleteSocietyView, DeleteStudentView,
+    ActivityLogView
 )
 from .utils import request_otp, verify_otp
 from .recommendation_views import RecommendedSocietiesView, SocietyRecommendationExplanationView
@@ -67,7 +68,8 @@ urlpatterns = [
     path("admin-manage-student-details/<int:student_id>", ManageStudentDetailsAdminView.as_view(), name="manage_student_details_admin"),
     path("delete-society/<int:society_id>", DeleteSocietyView.as_view(), name="delete_society"),
     path("delete-student/<int:student_id>", DeleteStudentView.as_view(), name="delete_student"),
-
+    path("activity-log", ActivityLogView.as_view(), name="activity_log"),
+    path("delete-activity-log/<int:log_id>", ActivityLogView.as_view(), name="delete_activity_log"),
 
     # Student societies endpoints
     path("student-societies/", StudentSocietiesView.as_view(), name="student_societies"),
