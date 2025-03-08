@@ -50,13 +50,12 @@ useEffect(() => {
         sortable: false,
         filterable: false,
         renderCell: (params: any) => {
-          if (params.row.action_type === "Delete") {
             return (
               <Box>
                 <Button
                   variant="contained"
                   color="primary"
-                  onClick={() => handleUndo(params.row.id)} // Make sure to pass the correct studentId
+                  onClick={() => handleUndo(params.row.id)}
                   sx={{ marginRight: "8px" }}
                 >
                   Undo
@@ -70,8 +69,6 @@ useEffect(() => {
                 </Button>
               </Box>
             );
-          }
-          return null; // Return null if the action type is not 'Delete'
         },
       }
     ];
