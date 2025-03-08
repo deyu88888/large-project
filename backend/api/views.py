@@ -645,6 +645,25 @@ class SocietyRequestView(APIView):
 
             # If society was approved, notify the society view WebSocket clients
             society_status = serializer.validated_data.get("status")
+            action_type_map = {
+                "Approved": "Approve",
+                "Rejected": "Reject",
+                "Pending": "Update",
+            }
+            action_type = action_type_map.get(society_status, "Update")
+
+            ActivityLog.objects.create(
+                action_type=action_type,
+                target_type="Society",
+                target_id=society.id,
+                target_name=society.name,
+                description=f"{society.name} Society has been {society_status.lower()}.",
+                performed_by=user,
+                timestamp=timezone.now(),
+                expiration_date=timezone.now() + timedelta(days=30),
+            )
+            ActivityLog.delete_expired_logs()
+
             if society_status in ["Approved", "Rejected", "Pending"]:
                 async_to_sync(channel_layer.group_send)(
                     "society_updates",
@@ -789,6 +808,17 @@ class ManageSocietyDetailsAdminView(APIView):
         serializer = SocietySerializer(society, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
+            ActivityLog.objects.create(
+                action_type="Update",
+                target_type="Society",
+                target_id=society.id,
+                target_name=society.name,
+                description=f"Updated society details for {society.name}.",
+                performed_by=user,
+                timestamp=timezone.now(),
+                expiration_date=timezone.now() + timedelta(days=30),
+            )
+            ActivityLog.delete_expired_logs()
             return Response({"message": "Society details updated successfully.", "data": serializer.data}, status=status.HTTP_200_OK)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
