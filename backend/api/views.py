@@ -22,7 +22,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticate
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from api.models import Admin, AdminReportRequest, Event, EventRequest, Notification, Society, Student, User,Award, AwardStudent, UserRequest,  DescriptionRequest, AdminReportRequest
+from api.models import Admin, AdminReportRequest, Event, Notification, Society, Student, User, Award, AwardStudent, \
+    UserRequest, DescriptionRequest, AdminReportRequest, Comment
 from api.serializers import (
     AdminReportRequestSerializer,
     AdminSerializer,
@@ -44,7 +45,7 @@ from api.serializers import (
     AwardSerializer,
     AwardStudentSerializer,
     PendingMemberSerializer,
-    DescriptionRequestSerializer,
+    DescriptionRequestSerializer, CommentSerializer,
 )
 from api.utils import *
 
@@ -71,33 +72,27 @@ class CreateUserView(generics.CreateAPIView):
 
 
 class RegisterView(APIView):
-    # Otherwise it won't allow anonymous access
     permission_classes = [AllowAny]
 
     def post(self, request):
-        print("Received data:", request.data)
-        email = request.data['email']
-        otp = request.data['otp']
+        email = request.data.get("email")
 
-        print("Stored OTP:", OTP_STORAGE)
-        if not email or not otp:
-            return Response({'error': 'Email and OTP are required.'}, status=status.HTTP_400_BAD_REQUEST)
-
-        if OTP_STORAGE.get(email) != otp:
-            return Response({'error': 'Invalid OTP or OTP expired.'}, status=status.HTTP_400_BAD_REQUEST)
+        if not email:
+            return Response({"error": "Email is required."}, status=status.HTTP_400_BAD_REQUEST)
 
         if User.objects.filter(email=email).exists():
-            return Response({'error': 'This email is already registered.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "This email is already registered."}, status=status.HTTP_400_BAD_REQUEST)
 
         serializer = StudentSerializer(data=request.data)
 
         if not serializer.is_valid():
             print(serializer.errors)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            serializer.save()
-            del OTP_STORAGE[email]
-            return Response({"message": "Student registered successfully"}, status=status.HTTP_201_CREATED)
+
+        serializer.save()
+
+        return Response({"message": "Student registered successfully"}, status=status.HTTP_201_CREATED)
+
 
 class CurrentUserView(APIView):
     """
@@ -936,6 +931,7 @@ class StudentView(APIView):
         students = Student.objects.all()
         serializer = StudentSerializer(students, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 class DashboardStatsView(APIView):
     """

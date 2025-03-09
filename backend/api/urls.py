@@ -11,6 +11,8 @@ from .views import (
     get_popular_societies, CreateEventRequestView, custom_media_view, get_sorted_events, StudentSocietyDataView,
     AllEventsView, EventDetailView, EventCommentsView, DescriptionRequestView
 )
+from .utils import request_otp, verify_otp
+
 
 urlpatterns = [
     # Authentication endpoints
@@ -18,6 +20,10 @@ urlpatterns = [
     path("user/register", RegisterView.as_view(), name="register"),
     path("user/login", TokenObtainPairView.as_view(), name="get_token"),
     path("user/current", CurrentUserView.as_view(), name="current_user"),
+
+    # OTP verification
+    path("request-otp", request_otp, name="request_otp"),
+    path("verify-otp", verify_otp, name="verify_otp"),
 
     # Notification endpoints
     # trailing backshlash needed in this case, because of the following line
