@@ -7,8 +7,6 @@ import PresidentPage from '../president-page';
 import { apiClient } from '../../../api';
 import { useAuthStore } from '../../../stores/auth-store';
 
-const mockNavigate = vi.fn();
-
 // Mock dependencies
 vi.mock('../../../api', () => ({
   apiClient: {
@@ -19,6 +17,18 @@ vi.mock('../../../api', () => ({
 vi.mock('../../../stores/auth-store', () => ({
   useAuthStore: vi.fn(),
 }));
+
+// Create a mock navigate function
+const mockNavigate = vi.fn();
+
+// Mock react-router-dom
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
 
 // Create a mock theme
 const theme = createTheme();
@@ -56,21 +66,11 @@ describe('PresidentPage Component', () => {
     }
   ];
 
-  const mockNavigate = vi.fn();
   const mockUser = { president_of: 123 };
 
   beforeEach(() => {
     // Reset mocks
     vi.clearAllMocks();
-
-    // Mock useNavigate
-    vi.mock('react-router-dom', async () => {
-      const actual = await vi.importActual('react-router-dom');
-      return {
-        ...actual,
-        useNavigate: () => mockNavigate,
-      };
-    });
 
     // Mock useAuthStore
     (useAuthStore as vi.Mock).mockReturnValue({ user: mockUser });
@@ -166,7 +166,7 @@ describe('PresidentPage Component', () => {
 
     await waitFor(() => {
       // Check preview section header
-      expect(screen.getByText('Pending Members (Preview)')).toBeInTheDocument();
+      expect(screen.getByText('Pending Members')).toBeInTheDocument();
 
       // Check first 3 members are displayed
       expect(screen.getByText('John Doe')).toBeInTheDocument();

@@ -6,8 +6,6 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import ReportToAdmin from '../report-to-admin';
 import { apiClient } from '../../../api';
 
-const mockNavigate = vi.fn();
-
 // Mock dependencies
 vi.mock('../../../api', () => ({
   apiClient: {
@@ -15,24 +13,25 @@ vi.mock('../../../api', () => ({
   },
 }));
 
+// Create a mock navigate function
+const mockNavigate = vi.fn();
+
+// Mock react-router-dom
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
+
 // Create a mock theme
 const theme = createTheme();
 
 describe('ReportToAdmin Component', () => {
-  const mockNavigate = vi.fn();
-
   beforeEach(() => {
     // Reset mocks
     vi.clearAllMocks();
-
-    // Mock useNavigate
-    vi.mock('react-router-dom', async () => {
-      const actual = await vi.importActual('react-router-dom');
-      return {
-        ...actual,
-        useNavigate: () => mockNavigate,
-      };
-    });
 
     // Reset API client mock
     (apiClient.post as vi.Mock).mockResolvedValue({});
@@ -63,33 +62,37 @@ describe('ReportToAdmin Component', () => {
     expect(screen.getByText('Submit Report')).toBeInTheDocument();
   });
 
-  it('allows selecting different report types', () => {
+  it('allows selecting different report types', async () => {
     renderComponent();
 
-    // Open select dropdown
-    const selectElement = screen.getByRole('button', { name: /Misconduct/i });
+    // Open select dropdown - use getByRole with more specific query
+    const selectElement = screen.getByRole('combobox', { name: /type of report/i });
     fireEvent.mouseDown(selectElement);
 
     // Check all menu items
     const reportTypes = ['Misconduct', 'System Issue', 'Society Issue', 'Event Issue', 'Other'];
-    reportTypes.forEach(type => {
-      expect(screen.getByText(type)).toBeInTheDocument();
+    await waitFor(() => {
+      reportTypes.forEach(type => {
+        expect(screen.getByText(type)).toBeInTheDocument();
+      });
     });
 
     // Select a different report type
     const systemIssueOption = screen.getByText('System Issue');
     fireEvent.click(systemIssueOption);
 
-    // Verify selection
-    expect(screen.getByRole('button', { name: /System Issue/i })).toBeInTheDocument();
+    // Verify selection - use more flexible text matching
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('System Issue')).toBeInTheDocument();
+    });
   });
 
   it('allows entering subject and details', () => {
     renderComponent();
 
-    // Find input fields
-    const subjectInput = screen.getByRole('textbox', { name: /subject/i });
-    const detailsInput = screen.getByRole('textbox', { name: /report details/i });
+    // Find input fields using more robust selection
+    const subjectInput = screen.getByLabelText(/subject/i);
+    const detailsInput = screen.getByLabelText(/report details/i);
 
     // Enter text
     fireEvent.change(subjectInput, { target: { value: 'Test Subject' } });
@@ -106,16 +109,19 @@ describe('ReportToAdmin Component', () => {
 
     renderComponent();
 
-    // Fill out the form
-    const subjectInput = screen.getByRole('textbox', { name: /subject/i });
-    const detailsInput = screen.getByRole('textbox', { name: /report details/i });
-    const submitButton = screen.getByText('Submit Report');
+    // Find inputs and submit button with more robust selection
+    const subjectInput = screen.getByLabelText(/subject/i);
+    const detailsInput = screen.getByLabelText(/report details/i);
+    const submitButton = screen.getByRole('button', { name: /submit report/i });
 
+    // Fill out form
     fireEvent.change(subjectInput, { target: { value: 'Test Subject' } });
     fireEvent.change(detailsInput, { target: { value: 'Test Details' } });
 
     // Submit the form
-    fireEvent.click(submitButton);
+    await waitFor(() => {
+      fireEvent.click(submitButton);
+    });
 
     // Wait for API call
     await waitFor(() => {
@@ -144,16 +150,19 @@ describe('ReportToAdmin Component', () => {
 
     renderComponent();
 
-    // Fill out the form
-    const subjectInput = screen.getByRole('textbox', { name: /subject/i });
-    const detailsInput = screen.getByRole('textbox', { name: /report details/i });
-    const submitButton = screen.getByText('Submit Report');
+    // Find inputs and submit button with more robust selection
+    const subjectInput = screen.getByLabelText(/subject/i);
+    const detailsInput = screen.getByLabelText(/report details/i);
+    const submitButton = screen.getByRole('button', { name: /submit report/i });
 
+    // Fill out form
     fireEvent.change(subjectInput, { target: { value: 'Test Subject' } });
     fireEvent.change(detailsInput, { target: { value: 'Test Details' } });
 
     // Submit the form
-    fireEvent.click(submitButton);
+    await waitFor(() => {
+      fireEvent.click(submitButton);
+    });
 
     // Wait for error handling
     await waitFor(() => {
@@ -175,9 +184,9 @@ describe('ReportToAdmin Component', () => {
   it('requires subject and details', () => {
     renderComponent();
 
-    const submitButton = screen.getByText('Submit Report');
-    const subjectInput = screen.getByRole('textbox', { name: /subject/i });
-    const detailsInput = screen.getByRole('textbox', { name: /report details/i });
+    const submitButton = screen.getByRole('button', { name: /submit report/i });
+    const subjectInput = screen.getByLabelText(/subject/i);
+    const detailsInput = screen.getByLabelText(/report details/i);
 
     // Check HTML5 required attribute
     expect(subjectInput).toBeRequired();

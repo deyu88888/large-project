@@ -6,6 +6,7 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import ManageSocietyEvents from '../manage-society-events';
 import { apiClient } from '../../../api';
 
+// Create a mock navigate function
 const mockNavigate = vi.fn();
 
 // Mock dependencies
@@ -14,6 +15,15 @@ vi.mock('../../../api', () => ({
     get: vi.fn(),
   },
 }));
+
+// Mock react-router-dom
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
 
 // Create a mock theme
 const theme = createTheme();
@@ -36,28 +46,17 @@ describe('ManageSocietyEvents Component', () => {
     }
   ];
 
-  const mockNavigate = vi.fn();
-
   beforeEach(() => {
     // Reset mocks
     vi.clearAllMocks();
 
-    // Mock useNavigate
-    vi.mock('react-router-dom', async () => {
-      const actual = await vi.importActual('react-router-dom');
-      return {
-        ...actual,
-        useNavigate: () => mockNavigate,
-      };
-    });
-
     // Mock API client
-    (apiClient.get as vi.Mock).mockResolvedValue({
+    (apiClient.get).mockResolvedValue({
       data: mockEvents
     });
   });
 
-  const renderComponent = (societyId: string = '123') => {
+  const renderComponent = (societyId = '123') => {
     return render(
       <ThemeProvider theme={theme}>
         <MemoryRouter initialEntries={[`/president-page/${societyId}/events`]}>
@@ -99,7 +98,7 @@ describe('ManageSocietyEvents Component', () => {
   });
 
   it('handles empty events list', async () => {
-    (apiClient.get as vi.Mock).mockResolvedValueOnce({ data: [] });
+    (apiClient.get).mockResolvedValueOnce({ data: [] });
 
     renderComponent();
 
@@ -109,7 +108,7 @@ describe('ManageSocietyEvents Component', () => {
   });
 
   it('handles API error', async () => {
-    (apiClient.get as vi.Mock).mockRejectedValueOnce(new Error('Fetch failed'));
+    (apiClient.get).mockRejectedValueOnce(new Error('Fetch failed'));
 
     renderComponent();
 

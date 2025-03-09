@@ -81,6 +81,7 @@ const ReportToAdmin: React.FC = () => {
           value={formData.report_type}
           onChange={handleChange}
           fullWidth
+          aria-label="Type of Report"
           sx={{
             backgroundColor: theme.palette.mode === "dark" ? colors.grey[300] : "#ffffff",
             color: "#000",
@@ -112,6 +113,8 @@ const ReportToAdmin: React.FC = () => {
           onChange={handleChange}
           fullWidth
           required
+          label="Subject"
+          aria-label="Subject"
           sx={{
             backgroundColor: theme.palette.mode === "dark" ? colors.primary[600] : "#ffffff",
             color: theme.palette.mode === "dark" ? colors.grey[100] : "#000",
@@ -139,6 +142,8 @@ const ReportToAdmin: React.FC = () => {
           multiline
           rows={5}
           required
+          label="Report Details"
+          aria-label="Report Details"
           sx={{
             backgroundColor: theme.palette.mode === "dark" ? colors.primary[600] : "#ffffff",
             color: theme.palette.mode === "dark" ? colors.grey[100] : "#000",
