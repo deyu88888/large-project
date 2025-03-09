@@ -386,7 +386,7 @@ class SocietyRequest(Request):
         null=True,
     )
     name = models.CharField(max_length=30, blank=True, default="")
-    descritpion = models.CharField(max_length=500, blank=True, default="")
+    description = models.CharField(max_length=500, blank=True, default="")
     roles = models.JSONField(default=dict, blank=True)
     leader = models.ForeignKey(
         "Student",

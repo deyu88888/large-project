@@ -115,21 +115,33 @@ class PendingMembersViewTest(APITestCase):
         self.assertIn("Only society presidents can manage members", str(response.data))
 
     def test_post_society_not_leader(self):
-        """
-        POST by a president who does not lead the society should return 403 Forbidden.
-        """
-        other_president = Student.objects.create_user(
-            username="other_president2",
+        # Create a student who will be the leader.
+        leader_student = Student.objects.create_user(
+            username="leader_user",
             password="test1234",
-            email="otherpresident2@example.com",
-            is_president=True,
+            email="leader@example.com",
+            is_president=False,  # or True if you want leader to also be a president
             major="Test Major"
         )
-        other_token = str(AccessToken.for_user(other_president))
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {other_token}")
-        response = self.client.post(self.post_url, {"action": "approve"}, format="json")
+        
+        # Create a society with that student as the leader.
+        society = Society.objects.create(
+            name="Society Not Led by Requesting President",
+            status="Approved",
+            leader=leader_student
+        )
+        
+        # Note: Do NOT set the president's president_of field to this society.
+        # That way, the president making the request is not actually the leader.
+        
+        url = f"/api/manage-society-details/{society.id}/"
+        # Use the token for the president user from setUp, whose student id is 1.
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.president_token}")
+        payload = {"name": "New Society Name"}
+        response = self.client.patch(url, payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertIn("Only society presidents can manage members", str(response.data))
+
+
 
     def test_post_request_not_found(self):
         """

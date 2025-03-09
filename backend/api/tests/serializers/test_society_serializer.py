@@ -143,7 +143,7 @@ class SocietySerializerTestCase(TestCase):
 
         self.assertEqual(
             len(data["showreel_images"]), 2,
-            f"showreel_images : {data["showreel_images"]}"
+            f"showreel_images : {data['showreel_images']}"
         )
 
         photos = {img["photo"] for img in data["showreel_images"]}

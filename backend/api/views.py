@@ -521,7 +521,7 @@ class ManageSocietyDetailsView(APIView):
             )
 
         # Pass the request context so the serializer can access the current user.
-        serializer = SocietyRequestSerializer(data=request.data, context={"request": request})
+        serializer = SocietyRequestSerializer(data=request.data, context={"request": request}, partial=True)
         if serializer.is_valid():
             # Pass the society instance explicitly to the serializer's save() method.
             society_request = serializer.save(society=society)
@@ -804,9 +804,15 @@ class PendingMembersView(APIView):
         if not hasattr(user, "student") or not user.student.is_president:
             return Response({"error": "Only society presidents can manage members."}, status=status.HTTP_403_FORBIDDEN)
 
-        society = Society.objects.filter(id=society_id, leader=user.student).first()
+        society = Society.objects.filter(id=society_id).first()
         if not society:
+            return Response({"error": "Society not found."}, status=status.HTTP_404_NOT_FOUND)
+        print(f"Society leader id: {society.leader.id}, Request user student id: {request.user.student.id}")
+
+        # Compare by primary key (ID)
+        if society.leader.id != request.user.student.id:
             return Response({"error": "You are not the president of this society."}, status=status.HTTP_403_FORBIDDEN)
+
 
         # Find the pending request
         pending_request = UserRequest.objects.filter(id=request_id, intent="JoinSoc", approved=False).first()
