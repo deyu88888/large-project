@@ -782,6 +782,7 @@ class StudentView(APIView):
         serializer = StudentSerializer(students, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+
 class DashboardStatsView(APIView):
     """
     View to provide aggregated statistics for the dashboard.
