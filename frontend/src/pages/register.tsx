@@ -1,5 +1,5 @@
 import { apiClient, apiPaths } from "../api";
-import { useState } from "react";
+import {useEffect, useState} from "react";
 import { useNavigate } from "react-router-dom";
 import CircularLoader from "../components/loading/circular-loader";
 import { Formik, Form, ErrorMessage } from "formik";
@@ -16,8 +16,10 @@ import {
     Alert,
     CircularProgress,
     useTheme,
+    InputAdornment,
   } from "@mui/material";
   import { tokens } from "../theme/theme";
+  import { ErrorOutline, CheckCircle } from "@mui/icons-material";
 
 
 const steps = ["Register", "Verification", "Your Details"];
@@ -29,39 +31,85 @@ export default function RegisterPage() {
     const [otpSent, setOtpSent] = useState(false);
     const [email, setEmail] = useState("");
     const [loading, setLoading] = useState(false);
-    const [snackbarOpen, setSnackbarOpen] = useState(false);
     const [activeStep, setActiveStep] = useState(0);
+    const [resendDisabled, setResendDisabled] = useState(true);
+    const [timer, setTimer] = useState(60);
+    const [snackbarData, setSnackbarData] = useState<{
+        open: boolean;
+        message: string;
+        severity: "success" | "error" | "warning" | "info";
+    }>({
+        open: false,
+        message: "",
+        severity: "info",
+    });
 
-    const handleCloseSnackbar = () => setSnackbarOpen(false);
+
+
+    const handleSnackbarClose = () => {
+        setSnackbarData({ ...snackbarData, open: false });
+    };
     const handleNext = () => setActiveStep((prev) => prev + 1);
 
 
     // Validation schema using Yup
-    const validationSchema = Yup.object({
-        first_name: Yup.string()
-            .max(50, "First name must be at most 50 characters")
-            .required("First name is required"),
-        last_name: Yup.string()
-            .max(50, "Last name must be at most 50 characters")
-            .required("Last name is required"),
-        email: Yup.string()
-            .email("Invalid email address")
-            .required("Email is required"),
-        username: Yup.string()
-            .min(6, "Username must be at least 6 characters")
-            .max(30, "Username must be at most 30 characters")
-            .matches(
-                /^[a-zA-Z0-9_.-]+$/,
-                "Username must only contain letters, numbers, underscores, hyphens, and dots"
-            )
-            .required("Username is required"),
-        password: Yup.string()
-            .min(8, "Password must be at least 8 characters")
-            .required("Password is required"),
-        major: Yup.string()
-            .max(50, "Major must be at most 50 characters")
-            .required("Major is required"),
-    });
+    const getValidationSchema = (activeStep: number) => {
+        switch (activeStep) {
+            case 0:
+                return Yup.object({
+                    first_name: Yup.string()
+                        .max(50, "First name must be at most 50 characters")
+                        .required("First name is required"),
+                    last_name: Yup.string()
+                        .max(50, "Last name must be at most 50 characters")
+                        .required("Last name is required"),
+                    email: Yup.string()
+                        .email("Invalid email address")
+                        .test("is-kcl-email", "Email must end with @kcl.ac.uk", (value) =>
+                            value?.endsWith("@kcl.ac.uk") ?? false)
+                        .required("Email is required"),
+                })
+            case 1:
+                return Yup.object({
+                    otp: Yup.string().required("OTP is required"),
+                })
+            case 2:
+                return Yup.object({
+                    username: Yup.string()
+                        .min(6, "Username must be at least 6 characters")
+                        .max(30, "Username must be at most 30 characters")
+                        .matches(
+                            /^[a-zA-Z0-9_.-]+$/,
+                            "Username must only contain letters, numbers, underscores, hyphens, and dots"
+                        )
+                        .required("Username is required"),
+                    password: Yup.string()
+                        .min(8, "Password must be at least 8 characters")
+                        .required("Password is required"),
+                    confirm_password: Yup.string()
+                        .oneOf([Yup.ref("password")], "Passwords do not match")
+                        .required("Please confirm your password"),
+                    major: Yup.string()
+                        .max(50, "Major must be at most 50 characters")
+                        .required("Major is required"),
+                })
+            default:
+                return Yup.object();
+        }
+    }
+
+    useEffect(() => {
+        let interval: NodeJS.Timeout;
+        if (resendDisabled && timer > 0) {
+            interval = setInterval(() => {
+                setTimer((prev) => prev - 1);
+            }, 1000);
+        } else {
+            setResendDisabled(false);
+        }
+
+        return () => clearInterval(interval);
+    }, [resendDisabled, timer]);
 
     const handleRequestOTP = async (email: string, setFieldError: any) => {
         try {
@@ -69,8 +117,14 @@ export default function RegisterPage() {
             console.log(res);
             setOtpSent(true);
             setEmail(email);
-            setSnackbarOpen(true);
+            setSnackbarData({
+                open: true,
+                message: "Check your email for a one-time password.",
+                severity: "success",
+            });
             handleNext();
+            setResendDisabled(true);
+            setTimer(60);
         } catch (error: any) {
             if (error.response?.data?.error) {
                 setFieldError("email", error.response.data.error);
@@ -80,17 +134,42 @@ export default function RegisterPage() {
         }
     };
 
-    const handleVerifyOTP = async (email: string, otp: string, setFieldError: any) => {
+    const handleResendOTP = async () => {
+        setResendDisabled(true);
+        setTimer(60);
+
+        try {
+            const res = await apiClient.post(apiPaths.USER.REQUEST_OTP, { email });
+            console.log(res);
+            setSnackbarData({
+                open: true,
+                message: "Check your email for a one-time password.",
+                severity: "success",
+            });
+        } catch (error) {
+            console.log(error);
+        }
+    }
+
+    const handleVerifyOTP = async (email: string, otp: string) => {
         try {
           const res = await apiClient.post(apiPaths.USER.VERIFY_OTP, { email, otp });
           console.log(res);
           handleNext();
         } catch (error: any) {
-          if (error.response?.data?.error) {
-            setFieldError("otp", error.response.data.error);
-          } else {
-            setFieldError("otp", "Error verifying OTP. Please try again.");
-          }
+            if (error.response?.data?.error) {
+                setSnackbarData({
+                    open: true,
+                    message: error.response.data.error,
+                    severity: "error",
+                });
+            } else {
+                setSnackbarData({
+                    open: true,
+                    message: "Error verifying OTP. Please try again.",
+                    severity: "error",
+                });
+            }
         }
       };
 
@@ -100,8 +179,10 @@ export default function RegisterPage() {
             return;
         }
         try {
+            const { otp, ...userData } = values;
+
             const res = await apiClient.post(apiPaths.USER.REGISTER, {
-                ...values,
+                ...userData,
                 societies: [],
                 president_of: null,
             });
@@ -113,14 +194,23 @@ export default function RegisterPage() {
             } else if (error.response?.data?.username) {
                 setFieldError("username", error.response.data.username[0]);
             } else if (error.response?.data?.error && error.response.data.error.includes("already registered")) {
-                alert("This email is already registered.")
+                setSnackbarData({
+                    open: true,
+                    message: "This email is already registered. Please log in.",
+                    severity: "error",
+                });
             } else {
-                alert("Error during registration. Please try again.");
+                setSnackbarData({
+                    open: true,
+                    message: "An unexpected error occurred. Please try again.",
+                    severity: "error",
+                });
             }
         } finally {
             setSubmitting(false);
         }
     };
+
 
     return (
         <Box
@@ -166,13 +256,14 @@ export default function RegisterPage() {
                         email: "",
                         username: "",
                         password: "",
+                        confirm_password: "",
                         major: "",
                         otp: "",
                     }}
-                    validationSchema={validationSchema}
+                    validationSchema={getValidationSchema(activeStep)}
                     onSubmit={handleSubmit}
                 >
-                    {({ isSubmitting,  handleChange, setFieldError, values }) => (
+                    {({ isSubmitting,  handleChange, setFieldError, values, errors, handleBlur, isValid, dirty }) => (
                         <Form className="grid grid-cols-1 gap-6">
                             {activeStep === 0 && (
                             <>
@@ -207,10 +298,31 @@ export default function RegisterPage() {
                                 label="Email"
                                 value={values.email}
                                 onChange={handleChange}
+                                onBlur={handleBlur}
                                 InputLabelProps={{ style: { color: colors.grey[300] } }}
-                                InputProps={{ style: { color: colors.grey[100] } }}
+                                slotProps={{
+                                    input: {
+                                        style: { color: colors.grey[100] },
+                                        endAdornment: (
+                                            <InputAdornment position="end">
+                                                {values.email && !errors.email ? (
+                                                    <CheckCircle sx={{ color: "green" }} />
+                                                ) : (
+                                                    values.email && <ErrorOutline sx={{ color: "red" }} />
+                                                )}
+                                            </InputAdornment>
+                                        ),
+                                    }
+                                }}
                             />
-                            <ErrorMessage name="email" component="div" className="text-red-500 text-sm"/>
+                            <ErrorMessage name="email">
+                                {(msg) => (
+                                <Typography sx={{ color: "red", fontSize: "0.85rem", mt: 0.5 }}>
+                                  {msg}
+                                </Typography>
+                                )}
+                            </ErrorMessage>
+
                             <Button
                                 variant="contained"
                                 onClick={() => handleRequestOTP(values.email, setFieldError)}
@@ -219,7 +331,7 @@ export default function RegisterPage() {
                                     color: "#fff",
                                     "&:hover": { backgroundColor: colors.blueAccent[700] },
                                   }}
-                                disabled={otpSent}
+                                disabled={otpSent || !isValid || !dirty}
                             >
                                 {otpSent ? "OTP Sent" : "Get OTP"}
                             </Button>
@@ -237,7 +349,7 @@ export default function RegisterPage() {
                                 fullWidth
                                 id="otp"
                                 name="otp"
-                                label="Temporary password"
+                                label="One-time Password"
                                 value={values.otp}
                                 onChange={handleChange}
                                 className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
@@ -254,6 +366,18 @@ export default function RegisterPage() {
                                   }}
                                 >
                                 Verify OTP
+                                </Button>
+
+                                <Button
+                                    variant="contained"
+                                    onClick={handleResendOTP}
+                                    disabled={resendDisabled}
+                                    sx={{
+                                        color: resendDisabled ? colors.grey[500] : colors.blueAccent[500],
+                                        borderColor: resendDisabled ? colors.grey[500] : colors.blueAccent[500],
+                                    }}
+                                >
+                                    {resendDisabled ? `Resend OTP (${timer}s)` : "Resend OTP"}
                                 </Button>
                             </>
                             )}
@@ -277,12 +401,52 @@ export default function RegisterPage() {
                                 id="password"
                                 name="password"
                                 label="Pasword"
+                                type="password"
                                 value={values.password}
                                 onChange={handleChange}
                                 InputLabelProps={{ style: { color: colors.grey[300] } }}
-                                InputProps={{ style: { color: colors.grey[100] } }}
+                                slotProps={{
+                                    input: {
+                                        style: { color: colors.grey[100] },
+                                        endAdornment: (
+                                            <InputAdornment position="end">
+                                                {values.password && !errors.password ? (
+                                                    <CheckCircle sx={{ color: "green" }} />
+                                                ) : (
+                                                    values.password && <ErrorOutline sx={{ color: "red" }} />
+                                                )}
+                                            </InputAdornment>
+                                        )
+                                    }
+                                }}
                             />
                             <ErrorMessage name="password" component="div" className="text-red-500 text-sm"/>
+
+                            <TextField
+                                fullWidth
+                                id="confirm_password"
+                                name="confirm_password"
+                                label="Confirm Password"
+                                type="password"
+                                value={values.confirm_password}
+                                onChange={handleChange}
+                                InputLabelProps={{ style: { color: colors.grey[300] } }}
+                                slotProps={{
+                                    input: {
+                                        style: { color: colors.grey[100] },
+                                        endAdornment: (
+                                            <InputAdornment position="end">
+                                                {values.confirm_password && values.confirm_password === values.password ? (
+                                                    <CheckCircle sx={{ color: "green" }} />
+                                                ) : (
+                                                    values.confirm_password && <ErrorOutline sx={{ color: "red" }} />
+                                                )}
+                                            </InputAdornment>
+                                        )
+                                    }
+                                }}
+                            />
+                            <ErrorMessage name="confirm_password" component="div" className="text-red-500 text-sm"/>
 
                             <TextField
                                 fullWidth
@@ -309,6 +473,7 @@ export default function RegisterPage() {
                                     color: "#fff",
                                     "&:hover": { backgroundColor: colors.blueAccent[700] },
                                   }}
+                                disabled={!isValid || !dirty}
                             >
                                 {loading ? <CircularProgress size={24} /> : "Register"}
                             </Button>
@@ -318,17 +483,19 @@ export default function RegisterPage() {
                     )}
                 </Formik>
             </Box>
-            {/* Snackbar for OTP Message */}
+            {/* Snackbar for OTP Message and error message */}
             <Snackbar
-                open={snackbarOpen}
+                open={snackbarData.open}
                 autoHideDuration={4000}
-                onClose={handleCloseSnackbar}
+                onClose={handleSnackbarClose}
                 anchorOrigin={{ vertical: "top", horizontal: "center" }}
             >
-                <Alert onClose={handleCloseSnackbar} severity="success">
-                Check your email for a temporary password.
+                <Alert onClose={handleSnackbarClose} severity={snackbarData.severity}>
+                    {snackbarData.message}
                 </Alert>
             </Snackbar>
+
+
         </Box>
     );
 }

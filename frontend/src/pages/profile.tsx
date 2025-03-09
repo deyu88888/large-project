@@ -104,7 +104,7 @@ export default function ProfilePage() {
               color: theme.palette.getContrastText(theme.palette.primary.main),
             }}
           >
-            Welcome back, {user.firstName}!
+            Welcome back, {user.first_name}!
           </Typography>
           <Typography
             variant="subtitle1"
@@ -201,14 +201,14 @@ export default function ProfilePage() {
                     width: 10,
                     height: 10,
                     borderRadius: "50%",
-                    bgcolor: user.isActive
+                    bgcolor: user.is_active
                       ? theme.palette.success.main
                       : theme.palette.grey[400],
                     mr: 1,
                   }}
                 />
                 <Typography variant="body1" sx={{ fontWeight: "bold" }}>
-                  {user.isActive ? "Verified" : "Not Verified"}
+                  {user.is_active ? "Verified" : "Not Verified"}
                 </Typography>
               </Box>
             </Paper>
@@ -216,8 +216,8 @@ export default function ProfilePage() {
           <Divider sx={{ mb: 4 }}>Profile Information</Divider>
           <Formik
             initialValues={{
-              first_name: user.firstName,
-              last_name: user.lastName,
+              first_name: user.first_name,
+              last_name: user.last_name,
               username: user.username,
               email: user.email,
               role: user.role,
@@ -226,11 +226,11 @@ export default function ProfilePage() {
             onSubmit={async (values, { setSubmitting }) => {
               const res = await apiClient.put(apiPaths.USER.CURRENT, {
                 first_name:
-                  user.firstName === values.first_name
+                  user.first_name === values.first_name
                     ? undefined
                     : values.first_name,
                 last_name:
-                  user.lastName === values.last_name ? undefined : values.last_name,
+                  user.last_name === values.last_name ? undefined : values.last_name,
                 username:
                   user.username === values.username ? undefined : values.username,
                 email: user.email === values.email ? undefined : values.email,
