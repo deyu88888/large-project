@@ -29,7 +29,7 @@ const ViewSociety: React.FC = () => {
         const response = await apiClient.get("/api/society-view/" + societyId);
         setSociety(response.data);
         setJoined(response.data.is_member)
-        console.log(response);
+        /*console.log("Society data: ", response);*/
       } catch (error) {
         console.error("Error retrieving society:", error);
         alert("Failed to load society. Please try again.");
@@ -69,7 +69,7 @@ const ViewSociety: React.FC = () => {
               fontSize: "1.125rem",
             }}
           >
-            Loading societies...
+            Loading society...
           </p>
         ) : (
           <>
@@ -196,7 +196,7 @@ const ViewSociety: React.FC = () => {
         <div style={{display: "flex"}}>
           <div style={{flex: 3.0}}>
             <p style={{marginBottom: "1.5rem", color: isLight ? colours.grey[600] : colours.grey[300]}}>
-              {society.tags.map((tag: string) => "#" + tag).join(", ")}
+              {society.tags?.map((tag: string) => "#" + tag || "No society tags!").join(", ")}
             </p>
             <p>Contact us: <Link 
               href={"mailto:" + society.leader.email}
