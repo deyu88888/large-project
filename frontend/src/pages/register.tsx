@@ -358,7 +358,7 @@ export default function RegisterPage() {
 
                                 <Button
                                 variant="contained"
-                                onClick={() => handleVerifyOTP(values.email, values.otp, setFieldError)}
+                                onClick={() => handleVerifyOTP(values.email, values.otp)}
                                 sx={{
                                     backgroundColor: colors.blueAccent[500],
                                     color: "#fff",
