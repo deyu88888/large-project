@@ -18,6 +18,7 @@ const ViewSociety: React.FC = () => {
 
   const [society, setSociety] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [joined, setJoined] = useState(true)
 
   const { society_id } = useParams<{ society_id: string }>();
 
@@ -27,6 +28,7 @@ const ViewSociety: React.FC = () => {
         setLoading(true);
         const response = await apiClient.get("/api/society-view/" + societyId);
         setSociety(response.data);
+        setJoined(response.data.is_member)
         console.log(response);
       } catch (error) {
         console.error("Error retrieving society:", error);
@@ -38,6 +40,16 @@ const ViewSociety: React.FC = () => {
   fetchSocietyData(Number(society_id));
   }, [society_id]);
 
+  const handleJoinSociety = async (societyId: number) => {
+    try {
+      await apiClient.post("/api/join-society/" + societyId);
+      setJoined(true)
+      alert("Successfully joined the society!");
+    } catch (error) {
+      console.error("Error joining society:", error);
+      alert("Failed to join the society. Please try again.");
+    }
+  };
 
   return (
     <div
@@ -148,6 +160,21 @@ const ViewSociety: React.FC = () => {
               Treasurer: {society.treasurer.first_name} {society.treasurer.last_name}
             </p>
           )}
+          {!joined && (<button
+            onClick={() => handleJoinSociety(society.id)}
+            style={{
+              backgroundColor: isLight ? colours.blueAccent[400] : colours.blueAccent[500],
+              color: isLight ? "#ffffff" : colours.grey[100],
+              padding: "0.5rem 1.5rem",
+              borderRadius: "0.5rem",
+              transition: "all 0.2s ease",
+              border: "none",
+              cursor: "pointer",
+              marginTop: "2.5rem",
+            }}
+          >
+            Join Society
+          </button>)}
         </div>
         <div style={{flex: 1.5}}>
           {society.showreel_images && society.showreel_images.length > 0 && (
