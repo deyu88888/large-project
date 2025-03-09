@@ -133,99 +133,117 @@ export default function ProfilePage() {
             gap: 2
           }}
         >
-          <Avatar 
-            sx={{ 
-              bgcolor: colors.grey[900],
-              color: colors.blueAccent[400],
-              fontWeight: 'bold',
-              width: 56,
-              height: 56
+          <Typography
+            variant="h3"
+            sx={{
+              color: theme.palette.getContrastText(theme.palette.primary.main),
             }}
           >
-            {getInitials(user.firstName, user.lastName)}
-          </Avatar>
-          <Box>
-            <Typography variant="h4" color={colors.grey[100]}>
-              {user.firstName} {user.lastName}
-            </Typography>
-            <Typography variant="body1" color={colors.grey[200]}>
-              Manage your profile information
-            </Typography>
-          </Box>
+            Welcome back, {user.first_name}!
+          </Typography>
+          <Typography
+            variant="subtitle1"
+            sx={{
+              mt: 1,
+              color: theme.palette.getContrastText(theme.palette.primary.main),
+            }}
+          >
+            Manage your profile information below
+          </Typography>
         </Box>
-        
-        {/* User info cards */}
-        <Box sx={{ p: 3 }}>
-          <Grid container spacing={2} sx={{ mb: 3 }}>
-            <Grid item xs={12} sm={4}>
-              <Card 
-                elevation={1} 
-                sx={{ 
-                  p: 2, 
-                  textAlign: 'center',
-                  height: '100%',
-                  backgroundColor: colors.primary[500]
+        <Box sx={{ p: 4 }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-around",
+              flexWrap: "wrap",
+              mb: 4,
+              gap: 2,
+            }}
+          >
+            <Paper
+              elevation={2}
+              sx={{
+                p: 2,
+                flex: "1 1 30%",
+                textAlign: "center",
+                backgroundColor: theme.palette.info.light,
+              }}
+            >
+              <Typography
+                variant="caption"
+                sx={{
+                  textTransform: "uppercase",
+                  color: theme.palette.text.secondary,
                 }}
               >
-                <Typography variant="h6" color={colors.grey[300]} gutterBottom>
-                  Username
-                </Typography>
-                <Typography variant="h5" color={colors.grey[100]}>
-                  {user.username}
-                </Typography>
-              </Card>
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <Card 
-                elevation={1} 
-                sx={{ 
-                  p: 2, 
-                  textAlign: 'center',
-                  height: '100%',
-                  backgroundColor: colors.greenAccent[700]
+                Username
+              </Typography>
+              <Typography variant="body1" sx={{ mt: 1, fontWeight: "bold" }}>
+                {user.username}
+              </Typography>
+            </Paper>
+            <Paper
+              elevation={2}
+              sx={{
+                p: 2,
+                flex: "1 1 30%",
+                textAlign: "center",
+                backgroundColor: theme.palette.success.light,
+              }}
+            >
+              <Typography
+                variant="caption"
+                sx={{
+                  textTransform: "uppercase",
+                  color: theme.palette.text.secondary,
                 }}
               >
-                <Typography variant="h6" color={colors.grey[900]} gutterBottom>
-                  Role
-                </Typography>
-                <Typography variant="h5" color={colors.grey[100]}>
-                  {user.role}
-                </Typography>
-              </Card>
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <Card 
-                elevation={1} 
-                sx={{ 
-                  p: 2, 
-                  textAlign: 'center',
-                  height: '100%',
-                  backgroundColor: user.isActive ? colors.blueAccent[700] : colors.grey[600]
+                Role
+              </Typography>
+              <Typography variant="body1" sx={{ mt: 1, fontWeight: "bold" }}>
+                {user.role}
+              </Typography>
+            </Paper>
+            <Paper
+              elevation={2}
+              sx={{
+                p: 2,
+                flex: "1 1 30%",
+                textAlign: "center",
+                backgroundColor: theme.palette.warning.light,
+              }}
+            >
+              <Typography
+                variant="caption"
+                sx={{
+                  textTransform: "uppercase",
+                  color: theme.palette.text.secondary,
                 }}
               >
-                <Typography variant="h6" color={user.isActive ? colors.grey[100] : colors.grey[300]} gutterBottom>
-                  Status
-                </Typography>
-                <Typography 
-                  variant="h5" 
+                Status
+              </Typography>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  mt: 1,
+                }}
+              >
+                <Box
                   sx={{
-                    color: user.isActive ? colors.grey[100] : colors.grey[400],
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 1
+                    width: 10,
+                    height: 10,
+                    borderRadius: "50%",
+                    bgcolor: user.is_active
+                      ? theme.palette.success.main
+                      : theme.palette.grey[400],
+                    mr: 1,
                   }}
-                >
-                  <Box 
-                    sx={{ 
-                      width: 10, 
-                      height: 10, 
-                      borderRadius: '50%', 
-                      bgcolor: user.isActive ? colors.greenAccent[400] : colors.grey[500],
-                      display: 'inline-block'
-                    }}
-                  />
-                  {user.isActive ? "Verified" : "Not Verified"}
+                />
+                <Typography variant="body1" sx={{ fontWeight: "bold" }}>
+                  {user.is_active ? "Verified" : "Not Verified"}
                 </Typography>
               </Card>
             </Grid>
@@ -246,33 +264,28 @@ export default function ProfilePage() {
           {/* Form */}
           <Formik
             initialValues={{
-              first_name: user.firstName,
-              last_name: user.lastName,
+              first_name: user.first_name,
+              last_name: user.last_name,
               username: user.username,
               email: user.email,
               role: user.role,
             }}
             validationSchema={validationSchema}
             onSubmit={async (values, { setSubmitting }) => {
-              try {
-                const res = await apiClient.put(apiPaths.USER.CURRENT, {
-                  first_name:
-                    user.firstName === values.first_name
-                      ? undefined
-                      : values.first_name,
-                  last_name:
-                    user.lastName === values.last_name ? undefined : values.last_name,
-                  username:
-                    user.username === values.username ? undefined : values.username,
-                  email: user.email === values.email ? undefined : values.email,
-                  role: user.role === values.role ? undefined : values.role,
-                });
-                console.log(res);
-              } catch (error) {
-                console.error("Error updating profile:", error);
-              } finally {
-                setSubmitting(false);
-              }
+              const res = await apiClient.put(apiPaths.USER.CURRENT, {
+                first_name:
+                  user.first_name === values.first_name
+                    ? undefined
+                    : values.first_name,
+                last_name:
+                  user.last_name === values.last_name ? undefined : values.last_name,
+                username:
+                  user.username === values.username ? undefined : values.username,
+                email: user.email === values.email ? undefined : values.email,
+                role: user.role === values.role ? undefined : values.role,
+              });
+              console.log(res);
+              setSubmitting(false);
             }}
           >
             {({
