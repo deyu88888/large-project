@@ -4,7 +4,7 @@ import { apiClient } from "../../api";
 
 // Import the theme
 import { useTheme } from "@mui/material/styles";
-import { tokens } from "../theme/theme";
+import { tokens } from "../../theme/theme";
 
 const JoinSocieties: React.FC = () => {
   const navigate = useNavigate();
@@ -20,6 +20,7 @@ const JoinSocieties: React.FC = () => {
       try {
         setLoading(true);
         const response = await apiClient.get("/api/join-society");
+        console.log("Response:", response);
         setSocieties(response.data);
       } catch (error) {
         console.error("Error fetching societies:", error);
