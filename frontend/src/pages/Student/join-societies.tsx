@@ -31,19 +31,13 @@ const JoinSocieties: React.FC = () => {
     fetchAvailableSocieties();
   }, []);
 
-  const handleJoinSociety = async (societyId: number) => {
-    try {
-      await apiClient.post(`/api/join-society/${societyId}/`);
-      alert("Successfully joined the society!");
-      setSocieties((prev) => prev.filter((society) => society.id !== societyId));
-    } catch (error) {
-      console.error("Error joining society:", error);
-      alert("Failed to join the society. Please try again.");
-    }
-  };
-
   const handleViewSociety = async (societyId: number) => {
-    navigate("/student/view-society/" +societyId);
+    try {
+      navigate("/student/view-society/"+societyId);
+    }
+    catch (error) {
+      console.error("Error viewing society:", error);
+    }
   };
 
   return (
@@ -137,20 +131,6 @@ const JoinSocieties: React.FC = () => {
                 >
                   {society.description || "No description available."}
                 </p>
-                <button
-                  onClick={() => handleJoinSociety(society.id)}
-                  style={{
-                    backgroundColor: isLight ? colours.blueAccent[400] : colours.blueAccent[500],
-                    color: isLight ? "#ffffff" : colours.grey[100],
-                    padding: "0.5rem 1.5rem",
-                    borderRadius: "0.5rem",
-                    transition: "all 0.2s ease",
-                    border: "none",
-                    cursor: "pointer",
-                  }}
-                >
-                  Join Society
-                </button>
                 <button
                   onClick={() => handleViewSociety(society.id)}
                   style={{
