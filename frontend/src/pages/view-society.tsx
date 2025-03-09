@@ -145,6 +145,9 @@ const ViewSociety: React.FC = () => {
           <p style={{fontSize: 18}}>
             <b>Society Roles</b>
           </p>
+          <p>
+              President: {society.leader.first_name} {society.leader.last_name}
+            </p>
           {society.vice_president && (
             <p>
               Vice President: {society.vice_president.first_name} {society.vice_president.last_name}
