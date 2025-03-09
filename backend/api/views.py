@@ -11,17 +11,13 @@ from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from django.views.static import serve
-from asgiref.sync import async_to_sync
-from channels.layers import get_channel_layer
 from rest_framework import generics, status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from django.views.decorators.csrf import csrf_exempt
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from api.models import Admin, AdminReportRequest, Event, Notification, Society, Student, User,Award, AwardStudent, UserRequest,  DescriptionRequest, AdminReportRequest
+from api.models import Admin, AdminReportRequest, Event, Notification, Society, Student, User,Award, AwardStudent, UserRequest,  DescriptionRequest
 from api.serializers import (
     AdminReportRequestSerializer,
     AdminSerializer,
@@ -1028,7 +1024,14 @@ class StudentSocietyDataView(APIView):
         # Manual society access via id
         society = get_object_or_404(Society, id=society_id)
         serializer = SocietySerializer(society)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+
+        # Return extra data indicating membership
+        serializer_data = serializer.data
+        serializer_data["is_member"] = society.society_members.filter(
+            id=user.student.id
+        ).exists()
+
+        return Response(serializer_data, status=status.HTTP_200_OK)
 
 
 def custom_media_view(request, path):
