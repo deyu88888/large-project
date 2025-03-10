@@ -115,31 +115,37 @@ class PendingMembersViewTest(APITestCase):
         self.assertIn("Only society presidents can manage members", str(response.data))
 
     def test_post_society_not_leader(self):
-        # Create a student who will be the leader.
+    # Create a student who will serve as the actual leader.
         leader_student = Student.objects.create_user(
             username="leader_user",
             password="test1234",
             email="leader@example.com",
-            is_president=False,  # or True if you want leader to also be a president
+            is_president=True,  # You may set this to True if you want a leader who is also a president.
             major="Test Major"
         )
         
-        # Create a society with that student as the leader.
+        # Create a society with leader_student as the leader.
         society = Society.objects.create(
             name="Society Not Led by Requesting President",
             status="Approved",
             leader=leader_student
         )
         
-        # Note: Do NOT set the president's president_of field to this society.
-        # That way, the president making the request is not actually the leader.
+        # Create a pending membership request for the society.
+        pending_request = UserRequest.objects.create(
+            intent="JoinSoc",
+            approved=False,
+            from_student=self.applicant_student
+        )
         
-        url = f"/api/manage-society-details/{society.id}/"
-        # Use the token for the president user from setUp, whose student id is 1.
+        # Build the URL based on the PendingMembersView URL pattern.
+        url = f"/api/society/{society.id}/pending-members/{pending_request.id}/"
+        
+        # Use the token for the president user from setUp (whose student id is different from leader_student).
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.president_token}")
-        payload = {"name": "New Society Name"}
-        response = self.client.patch(url, payload, format="json")
+        response = self.client.post(url, {"action": "approve"}, format="json")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
 
 
 
