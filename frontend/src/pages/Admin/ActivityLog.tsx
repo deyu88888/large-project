@@ -37,8 +37,9 @@ useEffect(() => {
 
   const columns: GridColDef[] = [
     { field: "action_type", headerName: "Action Type", flex: 1 },
-    { field: "target_type", headerName: "Target Type", flex: 1 },
-    { field: "target_name", headerName: "Target Name", flex: 1 },
+    { field: "target_type", headerName: "Type", flex: 1 },
+    { field: "target_name", headerName: "Name", flex: 1 },
+    { field: "target_email", headerName: "Email", flex: 1 },
     { field: "performed_by", headerName: "Performed By", flex: 1 },
     { field: "timestamp", headerName: "Timestamp", flex: 1 },
     { field: "description", headerName: "Description", flex: 2 },
@@ -95,15 +96,16 @@ useEffect(() => {
         }
       };
 
-  const handleUndo = async (id: number) => {
-    try {
-      await apiClient.post(`/api/undo-delete/${id}`);
-      alert("Action undone successfully!");
-      setData((prev) => prev.filter((item) => item.id !== id));
-    } catch (error) {
-      console.error("Error undoing action", error);
-    }
-  };
+      const handleUndo = async (id: number) => {
+        try {
+          await apiClient.post(apiPaths.USER.UNDO_DELETE(id));
+          alert("Action undone successfully!");
+          setData((prev) => prev.filter((item) => item.id !== id));
+        } catch (error) {
+          console.error("Error undoing action", error);
+        }
+      };
+      
 
   return (
     <Box p={4}>

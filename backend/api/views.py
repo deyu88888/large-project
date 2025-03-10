@@ -514,47 +514,16 @@ class ManageStudentDetailsAdminView(APIView):
         if not hasattr(user, 'admin'):
             return Response({"error": "Only admins can update student details."}, status=status.HTTP_403_FORBIDDEN)
 
-        # Fetch student by ID
         student = Student.objects.filter(id=student_id).first()
         if not student:
             return Response({"error": "Student not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Update student details using serializer
         serializer = StudentSerializer(student, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response({"message": "Student details updated successfully.", "data": serializer.data}, status=status.HTTP_200_OK)
 
-        # If validation fails, return error
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-class DeleteStudentView(APIView):
-    """
-    API View for admins to permanently delete a student.
-    """
-    permission_classes = [IsAuthenticated]
-
-    def delete(self, request, student_id):
-        user = request.user
-        if not hasattr(user, 'admin'):
-            return Response({"error": "Only admins can delete students."}, status=status.HTTP_403_FORBIDDEN)
-        student = Student.objects.filter(id=student_id).first()
-        if not student:
-            return Response({"error": "Student not found."}, status=status.HTTP_404_NOT_FOUND)
-        
-        ActivityLog.objects.create(
-            action_type="Delete",
-            target_type="Student",
-            target_id=student.id,
-            target_name=f"{student.first_name} {student.last_name}",
-            description=f"Deleted student {student.first_name} {student.last_name}",
-            performed_by=user,
-            timestamp=timezone.now(),
-            expiration_date=timezone.now() + timedelta(days=30),
-        )
-        ActivityLog.delete_expired_logs()
-        student.delete()
-        return Response({"message": "Deleted student moved to Activity Log."}, status=status.HTTP_200_OK)
 
 
 class StudentInboxView(StudentNotificationsView):
@@ -870,62 +839,96 @@ class ManageEventDetailsAdminView(APIView):
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class DeleteSocietyView(APIView):
+
+class DeleteView(APIView):
     """
-    API View for admins to permanently delete a society.
+    View for admins to delete students, societies, and events
     """
     permission_classes = [IsAuthenticated]
 
-    def delete(self, request, society_id):
+    model_mapping = {
+        "Student": Student,
+        "Society": Society,
+        "Event": Event,
+    }
+
+    def delete(self, request, target_type, target_id):
         user = request.user
         if not hasattr(user, 'admin'):
-            return Response({"error": "Only admins can delete societies."}, status=status.HTTP_403_FORBIDDEN)
-        society = Society.objects.filter(id=society_id).first()
-        if not society:
-            return Response({"error": "Society not found."}, status=status.HTTP_404_NOT_FOUND)
-        
+            return Response({"error": "Only admins can delete resources."}, status=status.HTTP_403_FORBIDDEN)
+
+        model = self.model_mapping.get(target_type)
+        if not model:
+            return Response({"error": "Invalid target type."}, status=status.HTTP_400_BAD_REQUEST)
+
+        target = model.objects.filter(id=target_id).first()
+        if not target:
+            return Response({"error": f"{target_type} not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        serialized_data = {
+            field.name: getattr(target, field.name)
+            for field in model._meta.fields
+            if field.name != "id" 
+        }
+
         ActivityLog.objects.create(
             action_type="Delete",
-            target_type="Society",
-            target_id=society.id,
-            target_name=f"{society.name}",
-            description=f"Deleted society {society.name}",
+            target_type=target_type,
+            target_id=target_id,
+            target_name=str(target),
             performed_by=user,
             timestamp=timezone.now(),
             expiration_date=timezone.now() + timedelta(days=30),
         )
+        target.delete()
         ActivityLog.delete_expired_logs()
-        society.delete()
-        return Response({"message": "Deleted society moved to Activity Log."}, status=status.HTTP_200_OK)
 
-class DeleteEventView(APIView):
-    """
-    API View for admins to permanently delete an event.
-    """
-    permission_classes = [IsAuthenticated]
+        return Response({"message": f"Deleted {target_type.lower()} moved to Activity Log."}, status=status.HTTP_200_OK)
 
-    def delete(self, request, event_id):
-        user = request.user
-        if not hasattr(user, 'admin'):
-            return Response({"error": "Only admins can delete events."}, status=status.HTTP_403_FORBIDDEN)
-        event = Event.objects.filter(id=event_id).first()
-        if not event:
-            return Response({"error": "Event not found."}, status=status.HTTP_404_NOT_FOUND)
+    def post(self, request, log_id):
+        """
+        Handle undo-delete requests
+        """
+        try:
+            log_entry = ActivityLog.objects.get(id=log_id)
 
-        ActivityLog.objects.create(
-            action_type="Delete",
-            target_type="Event",
-            target_id=event.id,
-            target_name=event.title,
-            description=f"Deleted event {event.title}",
-            performed_by=user,
-            timestamp=timezone.now(),
-            expiration_date=timezone.now() + timedelta(days=30),
-        )
-        ActivityLog.delete_expired_logs()
-        event.delete()
+            if log_entry.action_type == "Delete":
+                target_type = log_entry.target_type
+                deleted_data = {}
 
-        return Response({"message": "Deleted event moved to Activity Log."}, status=status.HTTP_200_OK)
+                if log_entry.description:
+                    try:
+                        deleted_data = json.loads(log_entry.description)
+                    except json.JSONDecodeError:
+                        return Response({"error": "Error decoding description."}, status=status.HTTP_400_BAD_REQUEST)
+
+                model_mapping = {
+                    "Student": Student,
+                    "Society": Society,
+                    "Event": Event,
+                }
+
+                model = model_mapping.get(target_type)
+
+                if model:
+                    restored_object = model.objects.create(**deleted_data)
+
+                    if restored_object:
+                        log_entry.delete()
+
+                        return Response({"message": f"{target_type} restored successfully!"}, status=status.HTTP_200_OK)
+                    else:
+                        return Response({"error": f"Failed to restore {target_type}."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                else:
+                    return Response({"error": "Unsupported target type."}, status=status.HTTP_400_BAD_REQUEST)
+
+            else:
+                return Response({"error": "Invalid action type."}, status=status.HTTP_400_BAD_REQUEST)
+
+        except ActivityLog.DoesNotExist:
+            return Response({"error": "Log entry not found."}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class CreateEventRequestView(APIView):

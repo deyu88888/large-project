@@ -280,6 +280,7 @@ class Migration(migrations.Migration):
                 ('target_type', models.CharField(choices=[('Society', 'Society'), ('Student', 'Student'), ('Event', 'Event'), ('Request', 'Request')], max_length=20)),
                 ('target_id', models.IntegerField()),
                 ('target_name', models.CharField(max_length=255)),
+                ('target_email', models.CharField(blank=True, max_length=255, null=True)),
                 ('description', models.TextField(blank=True, null=True)),
                 ('timestamp', models.DateTimeField(auto_now_add=True)),
                 ('expiration_date', models.DateTimeField(blank=True, null=True)),

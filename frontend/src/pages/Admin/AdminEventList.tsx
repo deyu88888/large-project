@@ -132,7 +132,7 @@ const EventList = () => {
   const handleDeleteConfirmed = async () => {
     if (selectedEvent !== null) {
       try {
-        await apiClient.delete(apiPaths.USER.DELETEEVENT(selectedEvent.id));
+        await apiClient.delete(apiPaths.USER.DELETE("Event", selectedEvent.id));
         fetchEvents();
       } catch (error) {
         console.error("Error deleting society:", error);
