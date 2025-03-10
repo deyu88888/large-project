@@ -1,11 +1,12 @@
 from datetime import date, datetime, time, timedelta
 import random
+from random import choice, randint
 from io import BytesIO
 from PIL import Image
 from django.core.files.uploadedfile import SimpleUploadedFile
-from random import choice, randint
 from django.contrib.auth.hashers import make_password
 from django.core.management.base import BaseCommand
+from api.management.commands.data.society_generator import RandomSocietyDataGenerator
 from api.models import (
     Admin,
     Student,
@@ -171,20 +172,23 @@ class Command(BaseCommand):
                 print(self.style.WARNING("No available students left to be society leaders. Skipping."))
                 break
 
+            generator = RandomSocietyDataGenerator()
+            data = generator.generate()
             society_leader = available_students.first()
             approved = self.handle_society_status(
                 society_leader,
-                f"Society{i}",
+                data["name"],
             )
             created = False
             society = None
             if approved:
                 society, created = Society.objects.get_or_create(
-                    name=f"Society{i}",
+                    name=data["name"],
                     leader=society_leader,
-                    category="General",
+                    category=data["category"],
                     status="Approved",
-                    description=self.generic_description()
+                    description=data["description"],
+                    tags=data["tags"],
                 )
             if created:
                 # Ensure the leader is always a member
@@ -196,29 +200,6 @@ class Command(BaseCommand):
                     self.generate_random_event(society)
 
         print(self.style.SUCCESS(f"Seeding society {n}/{n}"), flush=True)
-
-    def generic_description(self):
-        """Returns a generic society description"""
-        return ("A vibrant community dedicated to bringing like-minded individu"
-        + "als together. We organize events, discussions, and activities to fos"
-        + "ter engagement, learning, and collaboration. \n\nWhether you're a beginn"
-        + "er or an expert, there's something for everyone. \nJoin us to connect,"
-        + " grow, and be part of something exciting!")
-
-    def add_random_tags(self, society, n):
-        """Adds n random tags to a society"""
-        tags = [
-            "Networking", "Technology", "Innovation", "Entrepreneurship",
-            "Volunteering", "SocialImpact", "Wellness", "Sustainability",
-            "Education", "Arts&Culture", "Leadership", "Diversity",
-            "MentalHealth", "Gaming", "Sports", "Music", "Debate",
-            "Literature", "Photography", "Sustainability",
-        ]
-
-        for _ in range(min(20, n)):
-            tag = choice(tags)
-            tags.remove(tag)
-            society.tags.append(tag)
 
     def set_society_socials(self, society : Society):
         """Assigns socials to a society (placeholder kclsu)"""
@@ -250,7 +231,6 @@ class Command(BaseCommand):
         society.approved_by = admin_randomised.first()
 
         # Assigns tags and socials
-        self.add_random_tags(society, 3)
         self.set_society_socials(society)
 
         self.seed_society_showreel(society)
