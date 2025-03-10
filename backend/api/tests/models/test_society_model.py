@@ -46,7 +46,6 @@ class SocietyModelTestCase(TestCase):
             approved_by=self.admin,
             category='Technology',
             social_media_links={"email": "techsociety@example.com"},
-            timetable="Weekly meetings on Fridays at 5 PM",
             membership_requirements="Members must attend at least 3 events per semester",
             upcoming_projects_or_plans="Plan to host a Tech Fest in May",
         )
@@ -97,10 +96,6 @@ class SocietyModelTestCase(TestCase):
         """ Test the social_media_links JSON field """
         self.assertEqual(self.society.social_media_links["email"], "techsociety@example.com")
 
-    def test_timetable(self):
-        """ Test the timetable field """
-        self.assertEqual(self.society.timetable, "Weekly meetings on Fridays at 5 PM")
-
     def test_membership_requirements(self):
         """ Test the membership_requirements field """
         self.assertEqual(
@@ -147,3 +142,80 @@ class SocietyModelTestCase(TestCase):
         for student in Student.objects.all():
             if student.icon:
                 delete_file(student.icon.path)
+    def test_leader_always_member(self):
+        """
+        Test that after saving, the society's leader is always included in society_members.
+        """
+        # Create a new society without manually adding the leader.
+        society = Society.objects.create(
+            name="Leader Membership Test",
+            leader=self.student1,
+            approved_by=self.admin,
+            status="Approved",
+            category="General",
+            social_media_links={},
+            membership_requirements="",
+            upcoming_projects_or_plans="",
+        )
+        # After saving, the leader should be in society_members.
+        self.assertIn(self.student1, society.society_members.all())
+
+    def test_default_icon_generated(self):
+        """
+        Test that if no icon is provided when creating a society, the save() method generates a default icon.
+        """
+        # Create a society without specifying an icon.
+        society = Society.objects.create(
+            name="Icon Generation Test",
+            leader=self.student1,
+            approved_by=self.admin,
+            status="Approved",
+            category="General",
+            social_media_links={},
+            membership_requirements="",
+            upcoming_projects_or_plans="",
+        )
+        # The society.save() call in the model should have generated an icon.
+        self.assertIsNotNone(society.icon)
+        self.assertNotEqual(society.icon.name, "")
+        # Optionally, check that the generated icon filename contains the expected prefix.
+        self.assertTrue(society.icon.name.startswith("society_icons/default_society_icon_"))
+
+    def test_icon_not_overwritten_if_provided(self):
+        """
+        Test that if an icon is provided during society creation, it is not overwritten by the default icon generation.
+        """
+        # Create a custom icon file.
+        from io import BytesIO
+        from PIL import Image
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        image = Image.new("RGB", (50, 50), color="blue")
+        buffer = BytesIO()
+        image.save(buffer, format="JPEG")
+        buffer.seek(0)
+        custom_icon = SimpleUploadedFile("custom_icon.jpg", buffer.getvalue(), content_type="image/jpeg")
+
+        society = Society.objects.create(
+            name="Custom Icon Test",
+            leader=self.student1,
+            approved_by=self.admin,
+            status="Approved",
+            category="General",
+            social_media_links={},
+            membership_requirements="",
+            upcoming_projects_or_plans="",
+            icon=custom_icon
+        )
+        # The provided custom icon should remain.
+        self.assertIn("custom_icon", society.icon.name)
+
+    def test_social_media_links_update(self):
+        """
+        Test updating the social_media_links JSON field and ensuring it is saved correctly.
+        """
+        # Use the society from setUp.
+        new_links = {"facebook": "https://facebook.com/techsociety", "email": "newemail@example.com"}
+        self.society.social_media_links = new_links
+        self.society.save()
+        self.assertEqual(self.society.social_media_links, new_links)

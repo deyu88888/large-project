@@ -46,7 +46,6 @@ class SocietyShowreelModelTestCase(TestCase):
             approved_by=self.admin,
             category='Technology',
             social_media_links={"email": "techsociety@example.com"},
-            timetable="Weekly meetings on Fridays at 5 PM",
             membership_requirements="Members must attend at least 3 events per semester",
             upcoming_projects_or_plans="Plan to host a Tech Fest in May",
         )
@@ -137,3 +136,139 @@ class SocietyShowreelModelTestCase(TestCase):
         for showreel in SocietyShowreel.objects.all():
             if showreel.photo:
                 delete_file(showreel.photo.path)
+
+    def test_clean_missing_society(self):
+        """
+        Test that calling full_clean on a SocietyShowreel without a society
+        raises a ValidationError with an error message for 'society'.
+        """
+        # Create a showreel instance without a society.
+        showreel = SocietyShowreel(
+            photo=self.default_photo,
+            caption="Test caption"
+        )
+        with self.assertRaises(ValidationError) as cm:
+            showreel.full_clean()
+        self.assertEqual(cm.exception.message_dict["society"][0], "This field cannot be null.")
+
+    def test_update_existing_showreel_allows_more_images(self):
+        """
+        Test that updating an existing SocietyShowreel (with a primary key)
+        does not trigger the max 10 images validation.
+        """
+        # Create and save a valid showreel.
+        showreel = SocietyShowreel(
+            society=self.society,
+            caption="Initial caption",
+            photo=self.default_photo
+        )
+        showreel.save()  # Now it has a primary key.
+
+        # Add 9 additional showreel images, making a total of 10.
+        for i in range(9):
+            new_showreel = SocietyShowreel(
+                society=self.society,
+                caption=f"Dummy image {i+1}",
+                photo=self.default_photo
+            )
+            new_showreel.save()  # This should pass since the society now has 10 images exactly.
+
+        # Verify that the society now has 10 images.
+        self.assertEqual(self.society.showreel_images.count(), 10)
+
+        # Now update the original showreel.
+        showreel.caption = "Updated caption"
+        try:
+            # Since showreel already exists (has a pk), the max images check should not trigger.
+            showreel.full_clean()
+            showreel.save()
+        except Exception as e:
+            self.fail("Updating an existing showreel should not trigger max images validation: " + str(e))
+
+    def test_create_showreel_when_max_not_exceeded(self):
+        """
+        Test that creating a new SocietyShowreel succeeds if the society
+        currently has fewer than 10 images.
+        """
+        # Clear any existing images.
+        SocietyShowreel.objects.all().delete()
+        
+        # Add 9 images to the society.
+        for i in range(9):
+            img = SocietyShowreel(
+                society=self.society,
+                caption=f"Image {i+1}",
+                photo=self.default_photo
+            )
+            # Each image should be valid.
+            try:
+                img.full_clean()
+                img.save()
+            except Exception as e:
+                self.fail(f"Unexpected validation error when creating image {i+1}: {e}")
+
+        self.assertEqual(self.society.showreel_images.count(), 9)
+        
+        # Now create one more image. Since the society will have 10 images, this should be allowed for an existing instance?
+        # Note: The max images check only applies to new instances (i.e., without a primary key).
+        new_showreel = SocietyShowreel(
+            society=self.society,
+            caption="Tenth Image",
+            photo=self.default_photo
+        )
+        # This new instance should pass validation since its creation will make the total count exactly 10.
+        try:
+            new_showreel.full_clean()
+            new_showreel.save()
+        except Exception as e:
+            self.fail(f"New showreel should be valid when count is exactly 10: {e}")
+        
+        self.assertEqual(self.society.showreel_images.count(), 10)
+
+
+    def test_create_showreel_when_max_exceeded(self):
+        """
+        Test that creating a new SocietyShowreel fails if the society
+        already has 10 images.
+        """
+        # Clear any existing images.
+        SocietyShowreel.objects.all().delete()
+        
+        # Add 10 images to the society.
+        for i in range(10):
+            img = SocietyShowreel(
+                society=self.society,
+                caption=f"Image {i+1}",
+                photo=self.default_photo
+            )
+            img.full_clean()
+            img.save()
+        self.assertEqual(self.society.showreel_images.count(), 10)
+        
+        # Now, attempt to create a new showreel. Since the instance is new (has no pk),
+        # the clean() method should trigger the max images validation.
+        extra_showreel = SocietyShowreel(
+            society=self.society,
+            caption="Extra Image",
+            photo=self.default_photo
+        )
+        with self.assertRaises(ValidationError) as cm:
+            extra_showreel.full_clean()
+        # Optionally, check that the error message contains the expected text.
+        self.assertIn("society can have max 10 showreel images", str(cm.exception.message_dict.get("society", [])))
+
+
+    def test_save_calls_full_clean(self):
+        """
+        Test that calling save() on a SocietyShowreel instance calls full_clean()
+        and raises a ValidationError if required fields are missing.
+        """
+        # Create a showreel without a photo (which is required)
+        showreel = SocietyShowreel(
+            society=self.society,
+            caption="No Photo"
+        )
+        with self.assertRaises(ValidationError):
+            # save() calls full_clean(), so this should raise an error
+            showreel.save()
+

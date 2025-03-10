@@ -147,8 +147,6 @@ class PendingMembersViewTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 
-
-
     def test_post_request_not_found(self):
         """
         POST to process a membership request that doesn't exist should return 404 Not Found.
@@ -199,3 +197,37 @@ class PendingMembersViewTest(APITestCase):
         self.assertIn("Request has been rejected", str(response.data))
         with self.assertRaises(UserRequest.DoesNotExist):
             UserRequest.objects.get(id=self.pending_request.id)
+
+    def test_get_no_pending_requests(self):
+        """
+        GET should return an empty list if there are no pending membership requests.
+        """
+        # Remove the existing pending request.
+        self.pending_request.delete()
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.president_token}")
+        response = self.client.get(self.get_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # The expected data is an empty list.
+        self.assertEqual(response.data, [])
+
+    def test_post_missing_action(self):
+        """
+        POST without an "action" in the payload should return 400 Bad Request.
+        """
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.president_token}")
+        response = self.client.post(self.post_url, {}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("Invalid action", str(response.data))
+
+    def test_post_already_approved_request(self):
+        """
+        POST on a membership request that has already been approved should return 404 Not Found.
+        """
+        # First, approve the pending request.
+        self.pending_request.approved = True
+        self.pending_request.save()
+        
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.president_token}")
+        response = self.client.post(self.post_url, {"action": "approve"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertIn("Request not found", response.content.decode("utf-8"))

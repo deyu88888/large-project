@@ -117,3 +117,70 @@ class StudentSocietiesViewTestCase(TestCase):
         for student in Student.objects.all():
             if student.icon:
                 delete_file(student.icon.path)
+
+    def test_get_societies_empty(self):
+        """
+        Test retrieving societies for a student who hasn't joined any society.
+        The response should be an empty list.
+        """
+        # Create a new student who is not associated with any society.
+        student = Student.objects.create_user(
+            username="new_student",
+            email="new_student@example.com",
+            password="password123",
+            first_name="New",
+            last_name="Student",
+            major="Test Major"
+        )
+        token = self._generate_token(student)
+        self.client.credentials(HTTP_AUTHORIZATION=token)
+        
+        response = self.client.get("/api/student-societies/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, [])
+
+    def test_leave_society_already_left(self):
+        """
+        Test that when a student tries to leave a society they are no longer a member of,
+        the response returns a 400 error indicating the student is not a member.
+        """
+        # First, have student1 leave society1 successfully.
+        self.client.credentials(HTTP_AUTHORIZATION=self.student1_token)
+        response = self.client.delete(f"/api/leave-society/{self.society1.id}/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        # Now, try leaving the same society again.
+        response = self.client.delete(f"/api/leave-society/{self.society1.id}/")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["error"], "You are not a member of this society.")
+
+    def test_leave_society_non_existent(self):
+        """
+        Test that trying to leave a society that doesn't exist returns a 404 Not Found.
+        """
+        self.client.credentials(HTTP_AUTHORIZATION=self.student1_token)
+        response = self.client.delete("/api/leave-society/9999/")  # Non-existent society
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.data["error"], "Society does not exist.")
+
+    def test_get_societies_authenticated_student_multiple(self):
+        """
+        Test retrieving societies for an authenticated student who has joined multiple societies.
+        """
+        # Create another society and add student1 as a member.
+        society3 = Society.objects.create(
+            name="Art Club",
+            status="Approved",
+            leader=self.student2  # Different leader; doesn't affect GET for joined societies.
+        )
+        self.student1.societies_belongs_to.add(society3)
+        
+        self.client.credentials(HTTP_AUTHORIZATION=self.student1_token)
+        response = self.client.get("/api/student-societies/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # Now student1 should have 3 societies.
+        self.assertEqual(len(response.data), 3)
+        society_names = {soc["name"] for soc in response.data}
+        self.assertIn("Science Club", society_names)
+        self.assertIn("Math Club", society_names)
+        self.assertIn("Art Club", society_names)
