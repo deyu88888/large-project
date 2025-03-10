@@ -9,7 +9,8 @@ from .views import (
     RecentActivitiesView, NotificationsView, EventCalendarView,
     StudentSocietiesView, JoinSocietyView, RSVPEventView, EventHistoryView,
     get_popular_societies, CreateEventRequestView, custom_media_view, get_sorted_events, StudentSocietyDataView,
-    AllEventsView, EventDetailView, EventCommentsView, DescriptionRequestView
+    AllEventsView, EventDetailView, DescriptionRequestView, toggle_follow, StudentProfileView,
+    like_comment, dislike_comment, EventCommentsView
 )
 from .utils import request_otp, verify_otp
 
@@ -94,4 +95,11 @@ urlpatterns = [
     path("event/<int:event_id>", EventDetailView.as_view(), name="event-detail"),
     path("event/<int:event_id>/comments", EventCommentsView.as_view(), name="event_comments"),
     path("event/<int:event_id>/manage/", ManageEventDetailsView.as_view(), name="manage_event_detail"),
+    path("comments/", EventCommentsView.as_view(), name="comment_list_create"),
+    path("comments/<int:comment_id>/like", like_comment, name="like_comment"),
+    path("comments/<int:comment_id>/dislike", dislike_comment, name="dislike_comment"),
+
+    # Follow
+    path("users/<int:user_id>/follow", toggle_follow, name="toggle_follow"),
+    path("users/<int:user_id>", StudentProfileView.as_view(), name="user_profile"),
 ]

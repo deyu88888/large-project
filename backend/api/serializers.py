@@ -17,18 +17,27 @@ class UserSerializer(serializers.ModelSerializer):
     """
     Serializer for the base User model.
     """
+    is_following = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = [
             'id', 'username', 'password', 'first_name',
-            'last_name', 'email', 'is_active', 'role'
+            'last_name', 'email', 'is_active', 'role', 'following',
+            'is_following'
         ]
         extra_kwargs = {
             'password': {'write_only': True, 'min_length': 8},
             'username': {'validators': []},
             'email': {'validators': []},
         }
+
+    def get_is_following(self, obj):
+        """Check if the user is following."""
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return request.user.following.filter(id=obj.id).exists()
+        return False
 
     def create(self, validated_data):
         user = User.objects.create_user(**validated_data)
@@ -235,6 +244,7 @@ class SocietySerializer(serializers.ModelSerializer):
 
 class EventSerializer(serializers.ModelSerializer):
     """ Serializer for objects of the Event model """
+    current_attendees = StudentSerializer(many=True, read_only=True)
 
     class Meta:
         """ EventSerializer meta data """
@@ -765,29 +775,64 @@ class CommentSerializer(serializers.ModelSerializer):
     """
     Serializer for the Comment model
     """
-    user_data = serializers.SerializerMethodField()
     replies = serializers.SerializerMethodField()
+    user_data = serializers.SerializerMethodField()
+    likes = serializers.SerializerMethodField()
+    dislikes = serializers.SerializerMethodField()
+    liked_by_user = serializers.SerializerMethodField()
+    disliked_by_user = serializers.SerializerMethodField()
 
     class Meta:
         model = Comment
-        fields = ["id", "content", "create_at", "user_data", "parent_comment", "replies", "event"]
-        read_only_fields = ["id", "create_at", "user_data", "event", "replies"]
-        extra_kwargs = {
-            "parent_comment": {"required": False, "allow_null": True},
-        }
-
-    def get_user_data(self, obj):
-        if obj.user:
-            return {
-                "id": obj.user.id,
-                "username": obj.user.username
-            }
-        return None
+        fields = [
+            "id",
+            "content",
+            "create_at",
+            "user_data",
+            "parent_comment",
+            "replies",
+            "likes",
+            "dislikes",
+            "liked_by_user",
+            "disliked_by_user"
+        ]
 
     def get_replies(self, obj):
-        """get the children comments (if have)"""
-        replies = obj.replies.all().order_by("create_at")
-        return CommentSerializer(replies, many=True).data
+        """Get all the replies of the comment"""
+        request = self.context.get("request", None)
+        serializer = CommentSerializer(
+            obj.replies.all().order_by("create_at"),
+            many=True,
+            context={"request": request}
+        )
+        return serializer.data
+
+    def get_user_data(self, obj):
+        return {
+            "id": obj.user.id,
+            "username": obj.user.username,
+        }
+
+    def get_likes(self, obj):
+        return obj.total_likes()
+
+    def get_dislikes(self, obj):
+        return obj.total_dislikes()
+
+    def get_liked_by_user(self, obj):
+        """Check if the user liked this comment"""
+        request = self.context.get("request", None)
+        if request and request.user.is_authenticated:
+            return obj.likes.filter(id=request.user.id).exists()
+        return False
+
+    def get_disliked_by_user(self, obj):
+        """Check if the user disliked this comment"""
+        request = self.context.get("request", None)
+        if request and request.user.is_authenticated:
+            return obj.dislikes.filter(id=request.user.id).exists()
+        return False
+
 
 class DescriptionRequestSerializer(serializers.ModelSerializer):
     class Meta:

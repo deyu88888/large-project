@@ -46,6 +46,13 @@ class User(AbstractUser):
         default="student"
     )
 
+    following = models.ManyToManyField(
+        "self",
+        symmetrical=False,
+        related_name="followers",
+        blank=True,
+    )
+
     class Meta:
         ordering = ("first_name", "last_name")
 
@@ -612,7 +619,21 @@ class Comment(models.Model):
     user = models.ForeignKey("User", on_delete=models.CASCADE)
     content = models.TextField()
     create_at = models.DateTimeField(auto_now_add=True)
-    parent_comment = models.ForeignKey("self", null=True, blank=True, on_delete=models.CASCADE, related_name="replies")
+    parent_comment = models.ForeignKey(
+        "self",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="replies"
+    )
+    likes = models.ManyToManyField(User, related_name="liked_comments", blank=True)
+    dislikes = models.ManyToManyField(User, related_name="disliked_comments", blank=True)
+
+    def total_likes(self):
+        return self.likes.count()
+
+    def total_dislikes(self):
+        return self.dislikes.count()
 
     def __str__(self):
-        return f"{self.user.username}: {self.content[:30]}"
+            return f"{self.user.username}: {self.content[:30]}"

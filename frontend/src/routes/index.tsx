@@ -174,6 +174,10 @@ const routes = [
             element: <ProfilePage />,
           },
           {
+            path: "profile/:student_id",
+            element: <ProfilePage />,
+          },
+          {
             path: "my-societies",
             element: <MySocieties />,
           },
