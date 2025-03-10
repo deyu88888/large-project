@@ -13,7 +13,6 @@ vi.mock('../../../api', () => ({
   },
 }));
 
-
 const mockNavigate = vi.fn();
 const mockParams = { society_id: '123', event_id: '456' };
 
@@ -26,11 +25,9 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
-
 const theme = createTheme();
 
 describe('EditEventDetails Component', () => {
-  
   const mockEventDetail = {
     id: 456,
     title: 'Annual Conference',
@@ -68,7 +65,6 @@ describe('EditEventDetails Component', () => {
   }
 
   it('renders loading state initially', async () => {
-   
     (apiClient.get as vi.Mock).mockImplementationOnce(
       () =>
         new Promise((resolve) => {
@@ -78,10 +74,8 @@ describe('EditEventDetails Component', () => {
 
     renderComponent();
 
-    
     expect(await screen.findByRole('progressbar')).toBeInTheDocument();
 
-   
     await waitFor(() => {
       expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
@@ -90,7 +84,6 @@ describe('EditEventDetails Component', () => {
   it('fetches and displays event details', async () => {
     renderComponent();
 
-    
     await waitFor(() => {
       expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
@@ -116,7 +109,6 @@ describe('EditEventDetails Component', () => {
 
     renderComponent();
 
-   
     expect(await screen.findByText('Event not found.')).toBeInTheDocument();
     expect(screen.getByText('Go Back')).toBeInTheDocument();
   });
@@ -124,7 +116,6 @@ describe('EditEventDetails Component', () => {
   it('submits changes successfully', async () => {
     renderComponent();
 
-    
     await waitFor(() => {
       expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
@@ -143,7 +134,6 @@ describe('EditEventDetails Component', () => {
       fireEvent.click(submitButton);
     });
 
-    
     expect(apiClient.patch).toHaveBeenCalledWith('/api/event/456/manage', {
       title: 'Updated Conference Title',
       description: 'Society annual conference with industry speakers',
@@ -153,10 +143,8 @@ describe('EditEventDetails Component', () => {
       duration: '03:00:00',
     });
 
-   
     expect(await screen.findByText(/Event update requested/i)).toBeInTheDocument();
 
-    
     expect(mockNavigate).toHaveBeenCalledWith(-1);
   });
 
@@ -165,28 +153,23 @@ describe('EditEventDetails Component', () => {
 
     renderComponent();
 
-    
     await waitFor(() => {
       expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
 
-    
     const submitButton = screen.getByRole('button', { name: /submit changes/i });
     await act(async () => {
       fireEvent.click(submitButton);
     });
 
-   
     expect(await screen.findByText(/Failed to submit update request/i)).toBeInTheDocument();
 
-    
     expect(mockNavigate).not.toHaveBeenCalled();
   });
 
   it('cancels editing and navigates back', async () => {
     renderComponent();
 
-    
     await waitFor(() => {
       expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
@@ -202,7 +185,6 @@ describe('EditEventDetails Component', () => {
   it('validates required fields', async () => {
     renderComponent();
 
-    
     await waitFor(() => {
       expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
@@ -216,7 +198,6 @@ describe('EditEventDetails Component', () => {
       fireEvent.change(locationInput, { target: { value: '' } });
     });
 
-    
     expect(titleInput).toHaveAttribute('required');
     expect(locationInput).toHaveAttribute('required');
   });

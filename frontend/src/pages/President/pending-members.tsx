@@ -9,8 +9,12 @@ interface PendingMember {
   username: string;
 }
 
+interface RouteParams {
+  society_id: string;
+}
+
 const PendingMembers: React.FC = () => {
-  const { society_id } = useParams();
+  const { society_id } = useParams<RouteParams>();
   const [pendingMembers, setPendingMembers] = useState<PendingMember[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -18,7 +22,7 @@ const PendingMembers: React.FC = () => {
     fetchPendingMembers();
   }, [society_id]); 
 
-  const fetchPendingMembers = async () => {
+  const fetchPendingMembers = async (): Promise<void> => {
     try {
       const response = await apiClient.get(`/api/society/${society_id}/pending-members/`);
       setPendingMembers(response.data);
@@ -29,13 +33,12 @@ const PendingMembers: React.FC = () => {
     }
   };
 
-  const handleApproval = async (memberId: number, approved: boolean) => {
+  const handleApproval = async (memberId: number, approved: boolean): Promise<void> => {
     try {
       await apiClient.post(`/api/society/${society_id}/pending-members/${memberId}/`, {
         approved: approved,
       });
 
-      
       fetchPendingMembers();
     } catch (error) {
       console.error("Error updating member status:", error);

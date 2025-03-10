@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-// MUI/theme imports
 import { useTheme } from "@mui/material/styles";
 import { tokens } from "../../theme/theme";
 
@@ -18,22 +17,17 @@ const StartSociety: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!societyName || !description) {
       setError("Please fill out all fields.");
       return;
     }
-
     try {
       setError("");
       setSuccess("");
-
-      // Replace this with your actual API endpoint for creating a society
       const response = await axios.post("/api/start-society/", {
         name: societyName,
         description,
       });
-
       if (response.status === 201) {
         setSuccess("Society creation request submitted successfully!");
         setSocietyName("");
@@ -78,7 +72,6 @@ const StartSociety: React.FC = () => {
           Fill out the form below to submit your request for creating a new society.
         </p>
       </header>
-
       <form
         onSubmit={handleSubmit}
         style={{
@@ -100,7 +93,6 @@ const StartSociety: React.FC = () => {
             {success}
           </p>
         )}
-
         <div style={{ marginBottom: "1.5rem" }}>
           <label
             htmlFor="societyName"
@@ -131,7 +123,6 @@ const StartSociety: React.FC = () => {
             }}
           />
         </div>
-
         <div style={{ marginBottom: "1.5rem" }}>
           <label
             htmlFor="description"
@@ -162,7 +153,6 @@ const StartSociety: React.FC = () => {
             }}
           />
         </div>
-
         <div
           style={{
             display: "flex",

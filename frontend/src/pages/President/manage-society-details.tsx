@@ -12,7 +12,7 @@ import { useTheme } from "@mui/material/styles";
 import { apiClient, apiPaths } from "../../api";
 import { useAuthStore } from "../../stores/auth-store";
 import { tokens } from "../../theme/theme.ts";
-import SocietyPreviewModal from "./society-preview-modal";  
+import SocietyPreviewModal from "./society-preview-modal";
 
 interface SocietyData {
   id: number;
@@ -25,12 +25,16 @@ interface SocietyData {
   icon: string | File | null;
 }
 
+interface RouteParams {
+  society_id: string;
+}
+
 const ManageSocietyDetails: React.FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const { user } = useAuthStore();
   const navigate = useNavigate();
-  const { society_id } = useParams<{ society_id: string }>();
+  const { society_id } = useParams<RouteParams>();
   const societyId = Number(society_id);
 
   const [society, setSociety] = useState<SocietyData | null>(null);
@@ -43,7 +47,7 @@ const ManageSocietyDetails: React.FC = () => {
     fetchSociety();
   }, []);
 
-  const fetchSociety = async () => {
+  const fetchSociety = async (): Promise<void> => {
     try {
       setLoading(true);
       const response = await apiClient.get(apiPaths.SOCIETY.MANAGE_DETAILS(societyId));
@@ -60,14 +64,14 @@ const ManageSocietyDetails: React.FC = () => {
     }
   };
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void => {
     const { name, value } = e.target;
     setFormData((prevFormData) =>
       prevFormData ? { ...prevFormData, [name]: value } : null
     );
   };
 
-  const handleSubmit = async (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent): Promise<void> => {
     e.preventDefault();
     if (!formData || !society) return;
     try {
@@ -80,17 +84,14 @@ const ManageSocietyDetails: React.FC = () => {
       formDataToSend.append("upcoming_projects_or_plans", formData.upcoming_projects_or_plans);
       formDataToSend.append("tags", JSON.stringify(formData.tags));
 
-      
       Object.entries(formData.social_media_links).forEach(([platform, link]) => {
         formDataToSend.append(`social_media_links[${platform}]`, link);
       });
 
-      
       if (formData.icon && formData.icon instanceof File) {
         formDataToSend.append("icon", formData.icon);
       }
 
-      
       await apiClient.patch(`/api/manage-society-details/${societyId}/`, formDataToSend, {
         headers: { "Content-Type": "multipart/form-data" },
       });
@@ -105,13 +106,17 @@ const ManageSocietyDetails: React.FC = () => {
     }
   };
 
-  const handlePreviewOpen = () => {
+  const handlePreviewOpen = (): void => {
     setOpenPreview(true);
   };
 
-  const handlePreviewClose = () => {
+  const handlePreviewClose = (): void => {
     setOpenPreview(false);
   };
+
+  const backgroundColor = theme.palette.mode === "dark" ? "#141b2d" : "#fcfcfc";
+  const textColor = theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d";
+  const paperBackgroundColor = theme.palette.mode === "dark" ? colors.primary[500] : "#ffffff";
 
   if (loading || !formData) {
     return (
@@ -132,15 +137,15 @@ const ManageSocietyDetails: React.FC = () => {
       minHeight="100vh"
       p={4}
       sx={{
-        backgroundColor: theme.palette.mode === "dark" ? "#141b2d" : "#fcfcfc",
-        color: theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d",
+        backgroundColor,
+        color: textColor,
       }}
     >
       <Box textAlign="center" mb={4}>
         <Typography
           variant="h2"
           fontWeight="bold"
-          sx={{ color: theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d" }}
+          sx={{ color: textColor }}
         >
           Manage My Society
         </Typography>
@@ -151,8 +156,8 @@ const ManageSocietyDetails: React.FC = () => {
           maxWidth: "800px",
           mx: "auto",
           p: 4,
-          backgroundColor: theme.palette.mode === "dark" ? colors.primary[500] : "#ffffff",
-          color: theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d",
+          backgroundColor: paperBackgroundColor,
+          color: textColor,
           borderRadius: "8px",
           boxShadow: 3,
         }}
@@ -198,7 +203,6 @@ const ManageSocietyDetails: React.FC = () => {
             sx={{ mb: 2 }}
           />
 
-          
           <TextField
             fullWidth
             label="Tags (comma separated)"
@@ -245,7 +249,6 @@ const ManageSocietyDetails: React.FC = () => {
         </form>
       </Paper>
 
-      
       <SocietyPreviewModal open={openPreview} onClose={handlePreviewClose} formData={formData} />
     </Box>
   );

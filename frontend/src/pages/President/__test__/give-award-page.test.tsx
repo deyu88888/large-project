@@ -4,10 +4,19 @@ import { vi } from 'vitest';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import GiveAwardPage from '../give-award-page';
+import { apiClient } from '../../../api';
 
+const theme = createTheme({
+  palette: {
+    mode: 'light',
+  }
+});
 
-const theme = createTheme();
-
+const darkTheme = createTheme({
+  palette: {
+    mode: 'dark',
+  }
+});
 
 vi.mock('../../../api', () => ({
   apiClient: {
@@ -16,19 +25,15 @@ vi.mock('../../../api', () => ({
   },
 }));
 
-
-import { apiClient } from '../../../api';
-
-
 const mockNavigate = vi.fn();
-
+const mockUseParams = vi.fn().mockReturnValue({ student_id: '456' });
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return {
     ...actual,
     useNavigate: () => mockNavigate,
-    useParams: () => ({ student_id: '456' }),
+    useParams: () => mockUseParams(),
   };
 });
 
@@ -61,12 +66,11 @@ describe('GiveAwardPage Component', () => {
   ];
 
   beforeEach(() => {
-    
     vi.clearAllMocks();
-
+    
+    mockUseParams.mockReturnValue({ student_id: '456' });
     
     global.alert = mockAlert;
-
     
     (apiClient.get).mockResolvedValue({
       data: mockAwards
@@ -77,13 +81,12 @@ describe('GiveAwardPage Component', () => {
     });
   });
 
- 
-  const setup = async () => {
+  const setup = async (useDarkTheme = false) => {
     let renderResult;
     
     await act(async () => {
       renderResult = render(
-        <ThemeProvider theme={theme}>
+        <ThemeProvider theme={useDarkTheme ? darkTheme : theme}>
           <MemoryRouter initialEntries={[`/give-award/${mockStudentId}`]}>
             <Routes>
               <Route path="/give-award/:student_id" element={<GiveAwardPage />} />
@@ -92,7 +95,6 @@ describe('GiveAwardPage Component', () => {
         </ThemeProvider>
       );
       
-     
       await new Promise(resolve => setTimeout(resolve, 0));
     });
     
@@ -100,10 +102,8 @@ describe('GiveAwardPage Component', () => {
   };
 
   it('renders loading state initially', async () => {
-    
     const originalGet = apiClient.get;
     (apiClient.get).mockImplementation(() => new Promise(resolve => {
-     
       setTimeout(() => resolve({ data: mockAwards }), 1000);
     }));
     
@@ -119,54 +119,54 @@ describe('GiveAwardPage Component', () => {
       );
     });
     
-   
     expect(screen.getByRole('progressbar')).toBeInTheDocument();
     
-   
     (apiClient.get).mockImplementation(originalGet);
   });
 
   it('fetches and displays awards correctly', async () => {
     await setup();
-
     
     await waitFor(() => {
       expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
-
-   
+    
     expect(screen.getByText('Select an Award')).toBeInTheDocument();
     expect(screen.getByText('Choose an award to give to the student.')).toBeInTheDocument();
-
     
-    expect(screen.getByText('Outstanding Achievement (Gold)')).toBeInTheDocument();
-    expect(screen.getByText('Excellence Award (Silver)')).toBeInTheDocument();
-    expect(screen.getByText('Participation Award (Bronze)')).toBeInTheDocument();
-
+    expect(screen.getByText(/Outstanding Achievement.*Gold/)).toBeInTheDocument();
+    expect(screen.getByText(/Excellence Award.*Silver/)).toBeInTheDocument();
+    expect(screen.getByText(/Participation Award.*Bronze/)).toBeInTheDocument();
     
     expect(screen.getByText('Awarded for exceptional contributions')).toBeInTheDocument();
     expect(screen.getByText('Recognizes excellence in performance')).toBeInTheDocument();
     expect(screen.getByText('For active participation in society events')).toBeInTheDocument();
-
-   
+    
     expect(apiClient.get).toHaveBeenCalledWith('/api/awards');
   });
 
-  it('handles giving an award successfully', async () => {
-    await setup();
+  it('renders correctly in dark theme', async () => {
+    await setup(true);
 
-    
     await waitFor(() => {
       expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
 
+    expect(screen.getByText('Select an Award')).toBeInTheDocument();
+  });
+
+  it('handles giving an award successfully', async () => {
+    await setup();
+    
+    await waitFor(() => {
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    });
     
     const giveAwardButtons = screen.getAllByText('Give Award');
     
     await act(async () => {
       fireEvent.click(giveAwardButtons[0]);
     });
-
     
     await waitFor(() => {
       expect(apiClient.post).toHaveBeenCalledWith('/api/award-students', {
@@ -174,50 +174,86 @@ describe('GiveAwardPage Component', () => {
         award_id: 1
       });
     });
-
     
     expect(mockAlert).toHaveBeenCalledWith('Award assigned successfully!');
     expect(mockNavigate).toHaveBeenCalledWith(-1);
   });
 
   it('handles API error when giving award', async () => {
-    
     (apiClient.post).mockRejectedValueOnce(new Error('Failed to assign award'));
     
-   
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     await setup();
-
     
     await waitFor(() => {
       expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
-
-   
+    
     const giveAwardButtons = screen.getAllByText('Give Award');
     
     await act(async () => {
       fireEvent.click(giveAwardButtons[0]);
     });
-
     
     await waitFor(() => {
       expect(consoleErrorSpy).toHaveBeenCalled();
       expect(mockAlert).toHaveBeenCalledWith('Failed to assign award.');
     });
-
     
     expect(mockNavigate).not.toHaveBeenCalled();
+    
+    consoleErrorSpy.mockRestore();
+  });
 
+  it('handles non-numeric student ID', async () => {
+    mockUseParams.mockReturnValue({ student_id: 'non-numeric' });
+    
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    
+    (apiClient.post).mockRejectedValueOnce(new Error('Failed to assign award'));
+    
+    await act(async () => {
+      render(
+        <ThemeProvider theme={theme}>
+          <MemoryRouter initialEntries={['/give-award/non-numeric']}>
+            <Routes>
+              <Route path="/give-award/:student_id" element={<GiveAwardPage />} />
+            </Routes>
+          </MemoryRouter>
+        </ThemeProvider>
+      );
+      
+      await new Promise(resolve => setTimeout(resolve, 0));
+    });
+    
+    await waitFor(() => {
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    });
+    
+    const giveAwardButtons = screen.getAllByText('Give Award');
+    
+    await act(async () => {
+      fireEvent.click(giveAwardButtons[0]);
+    });
+    
+    await waitFor(() => {
+      expect(apiClient.post).toHaveBeenCalledWith('/api/award-students', {
+        student_id: NaN,
+        award_id: 1
+      });
+    });
+    
+    await waitFor(() => {
+      expect(consoleErrorSpy).toHaveBeenCalled();
+      expect(mockAlert).toHaveBeenCalledWith('Failed to assign award.');
+    });
     
     consoleErrorSpy.mockRestore();
   });
 
   it('handles API error when fetching awards', async () => {
-    
     (apiClient.get).mockRejectedValueOnce(new Error('Failed to load awards'));
-    
     
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
@@ -232,51 +268,66 @@ describe('GiveAwardPage Component', () => {
         </ThemeProvider>
       );
     });
-
-   
+    
     await waitFor(() => {
       expect(screen.getByText('Failed to load awards.')).toBeInTheDocument();
     });
-
     
     expect(consoleErrorSpy).toHaveBeenCalled();
+    
+    consoleErrorSpy.mockRestore();
+  });
 
+  it('displays error state correctly in dark theme', async () => {
+    (apiClient.get).mockRejectedValueOnce(new Error('Failed to load awards'));
+    
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    await act(async () => {
+      render(
+        <ThemeProvider theme={darkTheme}>
+          <MemoryRouter initialEntries={[`/give-award/${mockStudentId}`]}>
+            <Routes>
+              <Route path="/give-award/:student_id" element={<GiveAwardPage />} />
+            </Routes>
+          </MemoryRouter>
+        </ThemeProvider>
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Failed to load awards.')).toBeInTheDocument();
+    });
     
     consoleErrorSpy.mockRestore();
   });
 
   it('displays message when no awards are available', async () => {
-    
     (apiClient.get).mockResolvedValueOnce({
       data: []
     });
 
     await setup();
-
     
     await waitFor(() => {
       expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
-
     
     expect(screen.getByText('No awards available.')).toBeInTheDocument();
   });
 
   it('navigates back when back button is clicked', async () => {
     await setup();
-
-   
+    
     await waitFor(() => {
       expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
-
-   
+    
     const backButton = screen.getByText('Back');
     
     await act(async () => {
       fireEvent.click(backButton);
     });
-
     
     expect(mockNavigate).toHaveBeenCalledWith(-1);
   });

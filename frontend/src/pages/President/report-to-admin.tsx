@@ -5,21 +5,37 @@ import { useTheme } from "@mui/material/styles";
 import { apiClient } from "../../api";
 import { tokens } from "../../theme/theme.ts";
 
+interface ReportFormData {
+  report_type: string;
+  subject: string;
+  details: string;
+}
+
+type SelectChangeEvent = {
+  target: {
+    name: string;
+    value: unknown;
+  };
+};
+
 const ReportToAdmin: React.FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
+  
+  const [formData, setFormData] = useState<ReportFormData>({
     report_type: "Misconduct",
     subject: "",
     details: "",
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | { value: unknown }>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | SelectChangeEvent
+  ): void => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
     try {
       await apiClient.post("/api/report-to-admin", formData);
@@ -30,6 +46,20 @@ const ReportToAdmin: React.FC = () => {
     }
   };
 
+  const backgroundColor = theme.palette.mode === "dark" ? "#141b2d" : "#fcfcfc";
+  const textColor = theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d";
+  const formBackgroundColor = theme.palette.mode === "dark" ? colors.primary[500] : "#ffffff";
+  const inputBackgroundColor = theme.palette.mode === "dark" ? colors.primary[600] : "#ffffff";
+  const selectBackgroundColor = theme.palette.mode === "dark" ? colors.grey[300] : "#ffffff";
+
+  const reportTypes = [
+    { value: "Misconduct", label: "Misconduct" },
+    { value: "System Issue", label: "System Issue" },
+    { value: "Society Issue", label: "Society Issue" },
+    { value: "Event Issue", label: "Event Issue" },
+    { value: "Other", label: "Other" }
+  ];
+
   return (
     <Box
       minHeight="100vh"
@@ -38,17 +68,15 @@ const ReportToAdmin: React.FC = () => {
       flexDirection="column"
       alignItems="center"
       sx={{
-        backgroundColor: theme.palette.mode === "dark" ? "#141b2d" : "#fcfcfc",
-        color: theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d",
+        backgroundColor,
+        color: textColor,
       }}
     >
       <Typography 
         variant="h2" 
         fontWeight="bold" 
         mb={3}
-        sx={{
-          color: theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d",
-        }}
+        sx={{ color: textColor }}
       >
         Report to Admin
       </Typography>
@@ -59,20 +87,17 @@ const ReportToAdmin: React.FC = () => {
         sx={{
           maxWidth: "600px",
           width: "100%",
-          backgroundColor: theme.palette.mode === "dark" ? colors.primary[500] : "#ffffff",
+          backgroundColor: formBackgroundColor,
           p: 4,
           borderRadius: "8px",
           boxShadow: 3,
         }}
       >
-        
         <Typography 
           variant="h6" 
           fontWeight="bold" 
           mb={1}
-          sx={{
-            color: theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d",
-          }}
+          sx={{ color: textColor }}
         >
           Type of Report
         </Typography>
@@ -83,27 +108,24 @@ const ReportToAdmin: React.FC = () => {
           fullWidth
           aria-label="Type of Report"
           sx={{
-            backgroundColor: theme.palette.mode === "dark" ? colors.grey[300] : "#ffffff",
+            backgroundColor: selectBackgroundColor,
             color: "#000",
             borderRadius: "4px",
           }}
         >
-          <MenuItem value="Misconduct">Misconduct</MenuItem>
-          <MenuItem value="System Issue">System Issue</MenuItem>
-          <MenuItem value="Society Issue">Society Issue</MenuItem>
-          <MenuItem value="Event Issue">Event Issue</MenuItem>
-          <MenuItem value="Other">Other</MenuItem>
+          {reportTypes.map(type => (
+            <MenuItem key={type.value} value={type.value}>
+              {type.label}
+            </MenuItem>
+          ))}
         </Select>
 
-        
         <Typography 
           variant="h6" 
           fontWeight="bold" 
           mt={3} 
           mb={1}
-          sx={{
-            color: theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d",
-          }}
+          sx={{ color: textColor }}
         >
           Subject
         </Typography>
@@ -116,21 +138,18 @@ const ReportToAdmin: React.FC = () => {
           label="Subject"
           aria-label="Subject"
           sx={{
-            backgroundColor: theme.palette.mode === "dark" ? colors.primary[600] : "#ffffff",
-            color: theme.palette.mode === "dark" ? colors.grey[100] : "#000",
+            backgroundColor: inputBackgroundColor,
+            color: textColor,
             borderRadius: "4px",
           }}
         />
 
-        
         <Typography 
           variant="h6" 
           fontWeight="bold" 
           mt={3} 
           mb={1}
-          sx={{
-            color: theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d",
-          }}
+          sx={{ color: textColor }}
         >
           Report Details
         </Typography>
@@ -145,13 +164,12 @@ const ReportToAdmin: React.FC = () => {
           label="Report Details"
           aria-label="Report Details"
           sx={{
-            backgroundColor: theme.palette.mode === "dark" ? colors.primary[600] : "#ffffff",
-            color: theme.palette.mode === "dark" ? colors.grey[100] : "#000",
+            backgroundColor: inputBackgroundColor,
+            color: textColor,
             borderRadius: "4px",
           }}
         />
 
-        
         <Button
           type="submit"
           fullWidth

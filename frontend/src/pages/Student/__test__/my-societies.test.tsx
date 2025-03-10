@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor, act } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
@@ -11,8 +11,6 @@ vi.mock('../../../api', () => ({
     get: vi.fn(),
   },
 }));
-
-const theme = createTheme();
 
 describe('MySocieties', () => {
   beforeEach(() => {
@@ -30,14 +28,20 @@ describe('MySocieties', () => {
     });
   });
 
-  const renderComponent = () =>
-    render(
+  const renderComponent = (mode = 'light') => {
+    const theme = createTheme({
+      palette: {
+        mode: mode as 'light' | 'dark',
+      },
+    });
+    return render(
       <ThemeProvider theme={theme}>
         <MemoryRouter>
           <MySocieties />
         </MemoryRouter>
       </ThemeProvider>
     );
+  };
 
   it('displays a loading message initially', async () => {
     renderComponent();
@@ -55,12 +59,7 @@ describe('MySocieties', () => {
   });
 
   it('renders empty state when no societies are returned', async () => {
-    (apiClient.get as vi.Mock).mockImplementationOnce((url: string) => {
-      if (url === '/api/student-societies') {
-        return Promise.resolve({ data: [] });
-      }
-      return Promise.resolve({ data: [] });
-    });
+    (apiClient.get as vi.Mock).mockResolvedValueOnce({ data: [] });
     renderComponent();
     await waitFor(() => expect(screen.getByText(/My Societies/i)).toBeInTheDocument());
     expect(screen.getByText(/You haven't joined any societies yet/i)).toBeInTheDocument();
@@ -68,17 +67,19 @@ describe('MySocieties', () => {
 
   it('logs an error and shows empty state when API call fails', async () => {
     const errorMessage = 'Network Error';
-    (apiClient.get as vi.Mock).mockImplementationOnce((url: string) => {
-      if (url === '/api/student-societies') {
-        return Promise.reject(new Error(errorMessage));
-      }
-      return Promise.resolve({ data: [] });
-    });
+    (apiClient.get as vi.Mock).mockResolvedValueOnce(Promise.reject(new Error(errorMessage)));
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     renderComponent();
     await waitFor(() => expect(screen.getByText(/My Societies/i)).toBeInTheDocument());
     expect(consoleErrorSpy).toHaveBeenCalledWith('Error fetching societies:', expect.any(Error));
     expect(screen.getByText(/You haven't joined any societies yet/i)).toBeInTheDocument();
     consoleErrorSpy.mockRestore();
+  });
+
+  it('renders correctly in dark mode', async () => {
+    renderComponent('dark');
+    await waitFor(() => expect(screen.getByText(/My Societies/i)).toBeInTheDocument());
+    expect(screen.getByText('Science Club')).toBeInTheDocument();
+    expect(screen.getByText('A club about science.')).toBeInTheDocument();
   });
 });

@@ -16,16 +16,30 @@ interface EventDetail {
   title: string;
   description: string;
   location: string;
-  date: string; 
-  start_time: string; 
-  duration: string;   
+  date: string;
+  start_time: string;
+  duration: string;
   status: string;
+}
+
+interface RouteParams {
+  society_id: string;
+  event_id: string;
+}
+
+interface FormData {
+  title: string;
+  description: string;
+  location: string;
+  date: string;
+  start_time: string;
+  duration: string;
 }
 
 const EditEventDetails: React.FC = () => {
   const theme = useTheme();
   const navigate = useNavigate();
-  const { society_id, event_id } = useParams<{ society_id: string; event_id: string }>();
+  const { society_id, event_id } = useParams<RouteParams>();
 
   const [eventDetail, setEventDetail] = useState<EventDetail | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -33,30 +47,42 @@ const EditEventDetails: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  
-  const [title, setTitle] = useState<string>("");
-  const [description, setDescription] = useState<string>("");
-  const [location, setLocation] = useState<string>("");
-  const [date, setDate] = useState<string>("");
-  const [startTime, setStartTime] = useState<string>("");
-  const [duration, setDuration] = useState<string>("");
+  const [formData, setFormData] = useState<FormData>({
+    title: "",
+    description: "",
+    location: "",
+    date: "",
+    start_time: "",
+    duration: ""
+  });
+
+  const handleInputChange = (field: keyof FormData) => (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ): void => {
+    setFormData({
+      ...formData,
+      [field]: e.target.value
+    });
+  };
 
   useEffect(() => {
     if (!event_id) return;
-    const fetchEventDetail = async () => {
+    
+    const fetchEventDetail = async (): Promise<void> => {
       try {
         setLoading(true);
         const response = await apiClient.get(`/api/event/${event_id}/manage`);
         const data: EventDetail = response.data;
         setEventDetail(data);
 
-        
-        setTitle(data.title);
-        setDescription(data.description);
-        setLocation(data.location);
-        setDate(data.date);
-        setStartTime(data.start_time);
-        setDuration(data.duration);
+        setFormData({
+          title: data.title,
+          description: data.description,
+          location: data.location,
+          date: data.date,
+          start_time: data.start_time,
+          duration: data.duration
+        });
       } catch (err: any) {
         console.error("Error fetching event details:", err);
         setError("Failed to load event details.");
@@ -68,7 +94,7 @@ const EditEventDetails: React.FC = () => {
     fetchEventDetail();
   }, [event_id]);
 
-  const handleSubmit = async (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent): Promise<void> => {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
@@ -76,19 +102,17 @@ const EditEventDetails: React.FC = () => {
 
     try {
       const payload = {
-        title: title.trim() || eventDetail?.title,
-        description: description.trim() || eventDetail?.description,
-        location: location.trim() || eventDetail?.location,
-        date: date || eventDetail?.date,
-        start_time: startTime || eventDetail?.start_time,
-        duration: duration || eventDetail?.duration,
+        title: formData.title.trim() || eventDetail?.title,
+        description: formData.description.trim() || eventDetail?.description,
+        location: formData.location.trim() || eventDetail?.location,
+        date: formData.date || eventDetail?.date,
+        start_time: formData.start_time || eventDetail?.start_time,
+        duration: formData.duration || eventDetail?.duration,
       };
+      
       await apiClient.patch(`/api/event/${event_id}/manage`, payload);
-
       setSuccess("Event update requested. Await admin approval.");
 
-      
-      
       if (import.meta.env.MODE === "test") {
         navigate(-1);
       } else {
@@ -121,13 +145,17 @@ const EditEventDetails: React.FC = () => {
     );
   }
 
+  const backgroundColorMain = theme.palette.mode === "dark" ? "#141b2d" : "#fcfcfc";
+  const textColorMain = theme.palette.mode === "dark" ? "#fff" : "#141b2d";
+  const backgroundColorForm = theme.palette.mode === "dark" ? "#1e293b" : "#ffffff";
+
   return (
     <Box
       minHeight="100vh"
       p={4}
       sx={{
-        backgroundColor: theme.palette.mode === "dark" ? "#141b2d" : "#fcfcfc",
-        color: theme.palette.mode === "dark" ? "#fff" : "#141b2d",
+        backgroundColor: backgroundColorMain,
+        color: textColorMain,
       }}
     >
       <Box textAlign="center" mb={4}>
@@ -145,7 +173,7 @@ const EditEventDetails: React.FC = () => {
         mx="auto"
         p={3}
         sx={{
-          backgroundColor: theme.palette.mode === "dark" ? "#1e293b" : "#ffffff",
+          backgroundColor: backgroundColorForm,
           borderRadius: "8px",
           boxShadow: 3,
         }}
@@ -162,16 +190,16 @@ const EditEventDetails: React.FC = () => {
         )}
         <TextField
           label="Title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          value={formData.title}
+          onChange={handleInputChange("title")}
           fullWidth
           margin="normal"
           required
         />
         <TextField
           label="Description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          value={formData.description}
+          onChange={handleInputChange("description")}
           fullWidth
           margin="normal"
           multiline
@@ -179,8 +207,8 @@ const EditEventDetails: React.FC = () => {
         />
         <TextField
           label="Location"
-          value={location}
-          onChange={(e) => setLocation(e.target.value)}
+          value={formData.location}
+          onChange={handleInputChange("location")}
           fullWidth
           margin="normal"
           required
@@ -188,8 +216,8 @@ const EditEventDetails: React.FC = () => {
         <TextField
           label="Date"
           type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
+          value={formData.date}
+          onChange={handleInputChange("date")}
           fullWidth
           margin="normal"
           InputLabelProps={{ shrink: true }}
@@ -198,8 +226,8 @@ const EditEventDetails: React.FC = () => {
         <TextField
           label="Start Time"
           type="time"
-          value={startTime}
-          onChange={(e) => setStartTime(e.target.value)}
+          value={formData.start_time}
+          onChange={handleInputChange("start_time")}
           fullWidth
           margin="normal"
           InputLabelProps={{ shrink: true }}
@@ -208,8 +236,8 @@ const EditEventDetails: React.FC = () => {
         <TextField
           label="Duration"
           type="text"
-          value={duration}
-          onChange={(e) => setDuration(e.target.value)}
+          value={formData.duration}
+          onChange={handleInputChange("duration")}
           fullWidth
           margin="normal"
           helperText="Enter duration (e.g., '01:00:00' for 1 hour)"

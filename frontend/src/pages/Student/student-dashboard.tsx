@@ -19,12 +19,10 @@ import {
   FaUserPlus,
   FaCogs,
   FaRegClock,
-  FaTrophy,
 } from "react-icons/fa";
 import { apiClient } from "../../api";
 import { useAuthStore } from "../../stores/auth-store";
 
-// Custom styled Tabs component for color-specific indicators
 const CustomTabs = styled(Tabs)(({ theme, activecolor }) => ({
   '& .MuiTabs-indicator': {
     backgroundColor: activecolor,
@@ -63,7 +61,6 @@ const StudentDashboard: React.FC = () => {
   const navigate = useNavigate();
   const theme = useTheme();
   const colours = tokens(theme.palette.mode);
-
   const [societies, setSocieties] = useState<Society[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -72,11 +69,10 @@ const StudentDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<number>(0);
   const { user } = useAuthStore();
 
-  // Colors for the tabs
   const tabColors = [
-    colours.greenAccent[500], // Societies - green
-    colours.blueAccent[500],  // Events - purple/blue
-    colours.redAccent[500],   // Notifications - red
+    colours.greenAccent[500],
+    colours.blueAccent[500],
+    colours.redAccent[500],
   ];
 
   useEffect(() => {
@@ -86,25 +82,25 @@ const StudentDashboard: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const societiesResponse = await apiClient.get("/api/student-societies");   
+      const societiesResponse = await apiClient.get("/api/student-societies");
       setSocieties(societiesResponse.data || []);
     } catch (error) {
       console.error("Error fetching society data:", error);
     }
     try {
-      const eventsResponse = await apiClient.get("/api/events"); 
+      const eventsResponse = await apiClient.get("/api/events");
       setEvents(eventsResponse.data || []);
     } catch (error) {
       console.error("Error fetching event data:", error);
     }
     try {
-      const notificationsResponse = await apiClient.get("/api/notifications/"); 
+      const notificationsResponse = await apiClient.get("/api/notifications/");
       setNotifications(notificationsResponse.data || []);
     } catch (error) {
       console.error("Error fetching notification data:", error);
     }
     try {
-      const awardsResponse = await apiClient.get(`/api/award-students/${user?.id}`); 
+      const awardsResponse = await apiClient.get(`/api/award-students/${user?.id}`);
       setAwards([awardsResponse.data]);
     } catch (error) {
       console.error("Error fetching award assignments:", error);
@@ -156,8 +152,8 @@ const StudentDashboard: React.FC = () => {
     try {
       const response = await apiClient.patch(`/api/notifications/${id}`, { is_read: true });
       if (response.status === 200) {
-        setNotifications((prevNotifications) =>
-          prevNotifications.map((notification) =>
+        setNotifications((prev) =>
+          prev.map((notification) =>
             notification.id === id ? { ...notification, is_read: true } : notification
           )
         );
@@ -242,12 +238,11 @@ const StudentDashboard: React.FC = () => {
             border: `1px solid ${colours.grey[800]}`,
           }}
         >
-          {/* Replace the standard Tabs with our CustomTabs component */}
           <CustomTabs
             value={activeTab}
             onChange={handleTabChange}
             textColor="inherit"
-            activecolor={tabColors[activeTab]} // Pass the active tab's color
+            activecolor={tabColors[activeTab]}
             variant="fullWidth"
           >
             <Tab label="Societies" />
@@ -347,88 +342,76 @@ const StudentDashboard: React.FC = () => {
               </Box>
             )}
             {activeTab === 2 && (
-  <Box>
-    {/* When there are no notifications */}
-    {notifications.length === 0 ? (
-      <Typography variant="body1" align="center" sx={{ color: colours.grey[300], py: 4 }}>
-        No notifications
-      </Typography>
-    ) : (
-      // When there are notifications
-      <div className="space-y-6">
-        {notifications.map((notification) => (
-          <Paper
-            key={notification.id}
-            elevation={2}
-            sx={{
-              // Background color changes based on read status
-              backgroundColor: notification.is_read
-                ? colours.primary[400]  // Light background when read
-                : colours.blueAccent[700],  // Blue background when unread
-              
-              // Border color also changes based on read status
-              border: `1px solid ${notification.is_read 
-                ? colours.grey[300]  // Light border when read
-                : colours.blueAccent[400]  // Blue border when unread
-              }`,
-              p: 2,  // Adds padding
-            }}
-          >
-            <Box 
-              display="flex" 
-              justifyContent="space-between" 
-              alignItems="center"
-            >
-              {/* Notification message */}
-              <Typography 
-                variant="body1" 
-                sx={{ 
-                  color: colours.grey[100],
-                  fontSize: "1rem",
-                }}
-              >
-                {notification.message}
-              </Typography>
-
-              {/* Mark as read/Read status */}
-              <Box sx={{ display: "flex", gap: "1rem" }}>
-                {notification.is_read ? (
-                  // Show "Read" text when notification is read
-                  <Typography
-                    sx={{
-                      color: colours.greenAccent[500],
-                      fontSize: "0.875rem",
-                      fontWeight: 500,
-                    }}
-                  >
-                    Read
+              <Box>
+                {notifications.length === 0 ? (
+                  <Typography variant="body1" align="center" sx={{ color: colours.grey[300], py: 4 }}>
+                    No notifications
                   </Typography>
                 ) : (
-                  // Show "Mark as Read" button when notification is unread
-                  <Button
-                    variant="text"
-                    size="small"
-                    onClick={() => markNotificationAsRead(notification.id)}
-                    sx={{
-                      color: colours.blueAccent[400],
-                      fontSize: "0.875rem",
-                      fontWeight: 500,
-                      textDecoration: "underline",
-                      padding: 0,
-                      minWidth: 0,
-                    }}
-                  >
-                    Mark as Read
-                  </Button>
+                  <div>
+                    {notifications.map((notification) => (
+                      <Paper
+                        key={notification.id}
+                        elevation={2}
+                        sx={{
+                          backgroundColor: notification.is_read
+                            ? colours.primary[400]
+                            : colours.blueAccent[700],
+                          border: `1px solid ${
+                            notification.is_read
+                              ? colours.grey[300]
+                              : colours.blueAccent[400]
+                          }`,
+                          p: 2,
+                          mb: 2,
+                        }}
+                      >
+                        <Box display="flex" justifyContent="space-between" alignItems="center">
+                          <Typography
+                            variant="body1"
+                            sx={{
+                              color: colours.grey[100],
+                              fontSize: "1rem",
+                            }}
+                          >
+                            {notification.message}
+                          </Typography>
+                          <Box sx={{ display: "flex", gap: "1rem" }}>
+                            {notification.is_read ? (
+                              <Typography
+                                sx={{
+                                  color: colours.greenAccent[500],
+                                  fontSize: "0.875rem",
+                                  fontWeight: 500,
+                                }}
+                              >
+                                Read
+                              </Typography>
+                            ) : (
+                              <Button
+                                variant="text"
+                                size="small"
+                                onClick={() => markNotificationAsRead(notification.id)}
+                                sx={{
+                                  color: colours.blueAccent[400],
+                                  fontSize: "0.875rem",
+                                  fontWeight: 500,
+                                  textDecoration: "underline",
+                                  padding: 0,
+                                  minWidth: 0,
+                                }}
+                              >
+                                Mark as Read
+                              </Button>
+                            )}
+                          </Box>
+                        </Box>
+                      </Paper>
+                    ))}
+                  </div>
                 )}
               </Box>
-            </Box>
-          </Paper>
-        ))}
-      </div>
-    )}
-  </Box>
-)}
+            )}
           </Box>
         </Paper>
         <Box display="grid" gridTemplateColumns={{ xs: '1fr', md: 'repeat(1, 1fr)' }} gap={3} mt={4}>

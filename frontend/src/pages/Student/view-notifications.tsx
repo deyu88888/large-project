@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { apiClient } from "../../api";
 import { useTheme } from "@mui/material/styles";
 import { tokens } from "../../theme/theme";
-// Removed: import { useSidebar } from "../components/layout/SidebarContext";
 
 const ViewNotifications: React.FC = () => {
   const theme = useTheme();
@@ -13,30 +12,26 @@ const ViewNotifications: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        setLoading(true);
+        const response = await apiClient.get("/api/notifications");
+        setNotifications(response.data || []);
+      } catch (error: any) {
+        console.error("Error fetching notifications:", error.response?.data || error);
+      } finally {
+        setLoading(false);
+      }
+    };
     fetchNotifications();
   }, []);
-
-  const fetchNotifications = async () => {
-    try {
-      setLoading(true);
-      const response = await apiClient.get("/api/notifications");
-      setNotifications(response.data || []);
-    } catch (error: any) {
-      console.error(
-        "Error fetching notifications:",
-        error.response?.data || error
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const markNotificationAsRead = async (id: number) => {
     try {
       const response = await apiClient.patch(`/api/notifications/${id}`, { is_read: true });
       if (response.status === 200) {
-        setNotifications((prevNotifications) =>
-          prevNotifications.map((notification) =>
+        setNotifications((prev) =>
+          prev.map((notification) =>
             notification.id === id ? { ...notification, is_read: true } : notification
           )
         );
@@ -138,7 +133,11 @@ const ViewNotifications: React.FC = () => {
                     alignItems: "center",
                   }}
                 >
-                  <p style={{ color: isLight ? colours.grey[100] : colours.grey[100] }}>
+                  <p
+                    style={{
+                      color: isLight ? colours.grey[100] : colours.grey[100],
+                    }}
+                  >
                     {notification.message}
                   </p>
                   <div style={{ display: "flex", gap: "1rem" }}>
