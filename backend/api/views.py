@@ -1042,43 +1042,75 @@ class SocietyMembersListView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 class EventCommentsView(APIView):
-    """API to get all comments for a specific event"""
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    """
+    API view for create and manage event comments
+    """
+    def get(self, request):
+        event_id = request.query_params.get("event_id")
+        if not event_id:
+            return Response({"error": "event_id is required"}, status=status.HTTP_400_BAD_REQUEST)
 
-    def get(self, request, event_id):
+        comments = Comment.objects.filter(event_id=event_id, parent_comment__isnull=True).order_by("create_at")
+        serializer = CommentSerializer(comments, many=True, context={"request": request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
-        comments = Comment.objects.filter(event=event_id, parent_comment__isnull=True).order_by("-create_at")
-        serializer = CommentSerializer(comments, many=True)
-        return Response(serializer.data)
+    def post(self, request):
+        """
+        Allow user to create the comments
+        """
+        event_id = request.data.get("event")
+        content = request.data.get("content")
+        parent_comment_id = request.data.get("parent_comment", None)
 
-    def post(self, request, event_id):
-        if not request.user.is_authenticated:
-            return Response({"error": "Authentication required"}, status=status.HTTP_401_UNAUTHORIZED)
+        if not event_id or not content:
+            return Response({"error": "event and content are required."}, status=status.HTTP_400_BAD_REQUEST)
 
-        event = get_object_or_404(Event, id=event_id)
+        event = get_object_or_404(Event, pk=event_id)
+        parent_comment = None
+        if parent_comment_id:
+            parent_comment = get_object_or_404(Comment, pk=parent_comment_id)
 
-        serializer = CommentSerializer(data=request.data)
-        if serializer.is_valid():
-            parent_comment = serializer.validated_data.get("parent_comment")
-            comment = serializer.save(
-                event=event,
-                user=request.user,
-                parent_comment=parent_comment
-            )
+        user = request.user
+        if not user or not user.is_authenticated:
+            return Response({"error": "User must be logged in to comment."}, status=status.HTTP_401_UNAUTHORIZED)
 
-            comment_data = CommentSerializer(comment).data
-            channel_layer = get_channel_layer()
-            async_to_sync(channel_layer.group_send)(
-                f"event_{event_id}",
-                {
-                    "type": "new_comment",
-                    "comment_data": comment_data
-                }
-            )
+        comment = Comment.objects.create(
+            event=event,
+            user=user,
+            content=content,
+            parent_comment=parent_comment
+        )
 
-            return Response(comment_data, status=status.HTTP_201_CREATED)
+        serializer = CommentSerializer(comment, context={"request": request})
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+@api_view(["POST"])
+def like_comment(request, comment_id):
+    """Allow user to like a comment"""
+    comment = Comment.objects.get(id=comment_id)
+    user = request.user
+
+    if user in comment.likes.all():
+        comment.likes.remove(user)
+        return Response({"status": "unliked"}, status=status.HTTP_200_OK)
+    else:
+        comment.likes.add(user)
+        comment.dislikes.remove(user)
+        return Response({"status": "liked"}, status=status.HTTP_200_OK)
+
+@api_view(["POST"])
+def dislike_comment(request, comment_id):
+    """Allow user to dislike a comment"""
+    comment = Comment.objects.get(id=comment_id)
+    user = request.user
+
+    if user in comment.dislikes.all():
+        comment.dislikes.remove(user)
+        return Response({"status": "undisliked"}, status=status.HTTP_200_OK)
+    else:
+        comment.dislikes.add(user)
+        comment.likes.remove(user)
+        return Response({"status": "disliked"}, status=status.HTTP_200_OK)
 
 class DescriptionRequestView(APIView):
     """
@@ -1164,6 +1196,7 @@ def toggle_follow(request, user_id):
         return Response({"message": "Followed successfully."}, status=status.HTTP_200_OK)
 
 class StudentProfileView(APIView):
+    """API view to show Student's Profile"""
     permission_classes = [AllowAny]
 
     def get(self, request, user_id):
