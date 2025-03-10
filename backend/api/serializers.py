@@ -17,18 +17,27 @@ class UserSerializer(serializers.ModelSerializer):
     """
     Serializer for the base User model.
     """
+    is_following = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = [
             'id', 'username', 'password', 'first_name',
-            'last_name', 'email', 'is_active', 'role'
+            'last_name', 'email', 'is_active', 'role', 'following',
+            'is_following'
         ]
         extra_kwargs = {
             'password': {'write_only': True, 'min_length': 8},
             'username': {'validators': []},
             'email': {'validators': []},
         }
+
+    def get_is_following(self, obj):
+        """Check if the user is following."""
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return request.user.following.filter(id=obj.id).exists()
+        return False
 
     def create(self, validated_data):
         user = User.objects.create_user(**validated_data)
@@ -236,6 +245,7 @@ class SocietySerializer(serializers.ModelSerializer):
 
 class EventSerializer(serializers.ModelSerializer):
     """ Serializer for objects of the Event model """
+    current_attendees = StudentSerializer(many=True, read_only=True)
 
     class Meta:
         """ EventSerializer meta data """

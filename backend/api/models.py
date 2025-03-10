@@ -46,6 +46,13 @@ class User(AbstractUser):
         default="student"
     )
 
+    following = models.ManyToManyField(
+        "self",
+        symmetrical=False,
+        related_name="followers",
+        blank=True,
+    )
+
     class Meta:
         ordering = ("first_name", "last_name")
 

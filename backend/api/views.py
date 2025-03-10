@@ -1140,3 +1140,32 @@ class DescriptionRequestView(APIView):
             {"message": f"Description request {status_update.lower()} successfully."},
             status=status.HTTP_200_OK
         )
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def toggle_follow(request, user_id):
+    """
+    Process User's follow/unfollow request
+    - only can follow other users
+    - if followed then just can unfollow, vice versa
+    """
+    current_user = request.user
+    target_user = get_object_or_404(User, id=user_id)
+
+    if current_user == target_user:
+        return Response({"error": "You cannot follow yourself."}, status=status.HTTP_400_BAD_REQUEST)
+
+    if current_user.following.filter(id=target_user.id).exists():
+        current_user.following.remove(target_user)
+        return Response({"message": "Unfollowed successfully."}, status=status.HTTP_200_OK)
+    else:
+        current_user.following.add(target_user)
+        return Response({"message": "Followed successfully."}, status=status.HTTP_200_OK)
+
+class StudentProfileView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, user_id):
+        student = get_object_or_404(Student, id=user_id)
+        serializer = StudentSerializer(student, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)

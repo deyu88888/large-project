@@ -49,6 +49,7 @@ export const apiPaths = {
     PENDINGEVENTREQUEST: "/api/event/request/pending",  // TODO: DONT ADD BACKSLASH
     REJECTEDEVENT: "/api/admin-panel/rejected-event", // TODO: DONT ADD BACKSLASH
     PENDINGDESCRIPTIONREQUEST: "/api/description/request/pending",
+    BASE: "/api/users",
   },
   SOCIETY: {
     POPULAR_SOCIETIES: "/api/popular-societies",  // TODO: DONT ADD BACKSLASH
