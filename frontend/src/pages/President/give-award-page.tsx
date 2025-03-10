@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { apiClient } from "../../api"; // adjust import as needed
+import { apiClient } from "../../api";
 import {
   Box,
   Typography,
@@ -12,7 +12,7 @@ import {
   Divider,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import { tokens } from "../../theme/theme"; // adjust path as needed
+import { tokens } from "../../theme/theme"; 
 
 interface Award {
   id: number;
@@ -31,7 +31,7 @@ const GiveAwardPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch all available awards on component mount
+ 
   useEffect(() => {
     const fetchAwards = async () => {
       try {
@@ -48,17 +48,17 @@ const GiveAwardPage = () => {
     fetchAwards();
   }, []);
 
-  // Handler to assign an award to the student
+  
   const handleGiveAward = async (awardId: number) => {
     try {
-      // POST to assign the award to the student
+      
       const studentIdNumber = Number(student_id);
       await apiClient.post("/api/award-students", {
         student_id: studentIdNumber,
         award_id: awardId,
       });
       alert("Award assigned successfully!");
-      // Navigate back or to another page as needed
+      
       navigate(-1);
     } catch (err) {
       console.error("Error giving award", err);

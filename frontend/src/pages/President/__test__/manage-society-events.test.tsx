@@ -1,157 +1,290 @@
 import React from 'react';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
 import { vi } from 'vitest';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import ManageSocietyEvents from '../manage-society-events';
 import { apiClient } from '../../../api';
 
-// Create a mock navigate function
-const mockNavigate = vi.fn();
 
-// Mock dependencies
+const mockNavigate = vi.fn();
+const mockParams = { society_id: '123', filter: 'upcoming' };
+const mockLocation = { 
+  pathname: '/president-page/123/manage-society-events/upcoming',
+  search: '',
+  hash: '',
+  state: null,
+  key: 'default'
+};
+
+
 vi.mock('../../../api', () => ({
   apiClient: {
     get: vi.fn(),
+    delete: vi.fn(),
   },
 }));
 
-// Mock react-router-dom
+
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return {
     ...actual,
     useNavigate: () => mockNavigate,
+    useParams: () => mockParams,
+    useLocation: () => mockLocation,
   };
 });
 
-// Create a mock theme
+
+global.confirm = vi.fn(() => true);
+global.alert = vi.fn();
+
+
 const theme = createTheme();
 
 describe('ManageSocietyEvents Component', () => {
+  
   const mockEvents = [
     {
       id: 1,
       title: 'Annual Meetup',
-      date: '2024-06-15',
+      date: '2025-06-15', 
       start_time: '14:00',
-      status: 'upcoming'
+      status: 'Approved',
+      hosted_by: 123, 
+      description: 'Annual society gathering',
+      location: 'Main Hall',
+      duration: '2 hours',
+      max_capacity: 100,
+      current_attendees: [1, 2, 3]
     },
     {
       id: 2,
       title: 'Workshop',
-      date: '2024-05-20',
+      date: '2023-05-20', 
       start_time: '10:00',
-      status: 'previous'
+      status: 'Approved',
+      hosted_by: 123,
+      description: 'Programming workshop',
+      location: 'Computer Lab',
+      duration: '3 hours',
+      max_capacity: 30,
+      current_attendees: [4, 5]
+    },
+    {
+      id: 3,
+      title: 'Pending Event',
+      date: '2025-07-10',
+      start_time: '15:30',
+      status: 'Pending',
+      hosted_by: 123,
+      description: 'New event waiting approval',
+      location: 'Conference Room',
+      duration: '1 hour',
+      max_capacity: 50,
+      current_attendees: []
     }
   ];
 
   beforeEach(() => {
-    // Reset mocks
+    
     vi.clearAllMocks();
 
-    // Mock API client
+    
+    mockParams.society_id = '123';
+    mockParams.filter = 'upcoming';
+    mockLocation.pathname = '/president-page/123/manage-society-events/upcoming';
+
+   
     (apiClient.get).mockResolvedValue({
       data: mockEvents
     });
   });
 
-  const renderComponent = (societyId = '123') => {
-    return render(
-      <ThemeProvider theme={theme}>
-        <MemoryRouter initialEntries={[`/president-page/${societyId}/events`]}>
-          <Routes>
-            <Route 
-              path="/president-page/:society_id/events" 
-              element={<ManageSocietyEvents />} 
-            />
-          </Routes>
-        </MemoryRouter>
-      </ThemeProvider>
-    );
+  const renderComponent = async (societyId = '123', filter = 'upcoming') => {
+   
+    mockParams.society_id = societyId;
+    mockParams.filter = filter;
+    mockLocation.pathname = `/president-page/${societyId}/manage-society-events/${filter}`;
+    
+    let component;
+    
+    await act(async () => {
+      component = render(
+        <ThemeProvider theme={theme}>
+          <MemoryRouter initialEntries={[`/president-page/${societyId}/manage-society-events/${filter}`]}>
+            <Routes>
+              <Route 
+                path="/president-page/:society_id/manage-society-events/:filter" 
+                element={<ManageSocietyEvents />} 
+              />
+            </Routes>
+          </MemoryRouter>
+        </ThemeProvider>
+      );
+      
+      
+      await new Promise(resolve => setTimeout(resolve, 0));
+    });
+    
+    return component;
   };
 
   it('renders page title and initial loading state', async () => {
-    renderComponent();
+    await renderComponent();
 
     expect(screen.getByText('Manage Society Events')).toBeInTheDocument();
+    
     expect(screen.getByText('Upcoming events for Society 123')).toBeInTheDocument();
   });
 
   it('renders loading spinner while fetching events', async () => {
-    renderComponent();
-
+    
+    (apiClient.get).mockImplementationOnce(() => new Promise(() => {}));
+    
+    await renderComponent();
+    
     expect(screen.getByRole('progressbar')).toBeInTheDocument();
   });
 
   it('fetches and displays events successfully', async () => {
-    renderComponent();
+    await renderComponent();
 
+   
     await waitFor(() => {
-      expect(screen.getByText('Annual Meetup')).toBeInTheDocument();
-      expect(screen.getByText('Workshop')).toBeInTheDocument();
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
 
+   
+    expect(screen.getByText('Annual Meetup')).toBeInTheDocument();
+    
+    
+    expect(screen.queryByText('Workshop')).not.toBeInTheDocument();
+    expect(screen.queryByText('Pending Event')).not.toBeInTheDocument();
+
+    
     expect(apiClient.get).toHaveBeenCalledWith('/api/events/', {
-      params: { society_id: '123', filter: 'upcoming' }
+      params: { society_id: 123 } 
     });
   });
 
   it('handles empty events list', async () => {
     (apiClient.get).mockResolvedValueOnce({ data: [] });
 
-    renderComponent();
+    await renderComponent();
 
     await waitFor(() => {
-      expect(screen.getByText('No events found for "upcoming".')).toBeInTheDocument();
+      
+      expect(screen.getByText('No upcoming events found for society 123.')).toBeInTheDocument();
     });
   });
 
   it('handles API error', async () => {
-    (apiClient.get).mockRejectedValueOnce(new Error('Fetch failed'));
+    const errorMessage = 'Fetch failed';
+    (apiClient.get).mockRejectedValueOnce(new Error(errorMessage));
 
-    renderComponent();
+    await renderComponent();
 
     await waitFor(() => {
-      expect(screen.getByText('Failed to load events.')).toBeInTheDocument();
+      
+      expect(screen.getByText('Failed to load upcoming events: Fetch failed')).toBeInTheDocument();
     });
   });
 
   it('navigates to create event page', async () => {
-    renderComponent();
+    await renderComponent();
+
+    
+    await waitFor(() => {
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    });
 
     const createEventButton = screen.getByText('Create a New Event');
-    fireEvent.click(createEventButton);
+    await act(async () => {
+      fireEvent.click(createEventButton);
+    });
 
     expect(mockNavigate).toHaveBeenCalledWith('/president-page/123/create-society-event/');
   });
 
-  it('changes filter and refetches events', async () => {
-    renderComponent();
+  it('changes filter and updates events displayed', async () => {
+    await renderComponent();
 
-    // Wait for initial events to load
+    
     await waitFor(() => {
-      expect(screen.getByText('Annual Meetup')).toBeInTheDocument();
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
 
-    // Click on "Previous" filter
-    const previousButton = screen.getByText('Previous');
-    fireEvent.click(previousButton);
-
-    // Verify API call with new filter
-    await waitFor(() => {
-      expect(apiClient.get).toHaveBeenCalledWith('/api/events/', {
-        params: { society_id: '123', filter: 'previous' }
-      });
+    
+    expect(screen.getByText('Annual Meetup')).toBeInTheDocument();
+    
+    
+    mockParams.filter = 'previous';
+    
+    
+    const previousButton = screen.getByRole('button', { name: 'Previous' });
+    await act(async () => {
+      fireEvent.click(previousButton);
     });
+
+    
+    await waitFor(() => {
+      
+      expect(screen.getByText('Workshop')).toBeInTheDocument();
+    });
+    
+    
+    expect(screen.queryByText('Annual Meetup')).not.toBeInTheDocument();
   });
 
-  it('renders different filter labels', async () => {
-    renderComponent();
+  it('displays pending events when Pending Approval filter is selected', async () => {
+    await renderComponent();
 
-    // Check all filter buttons are present
-    expect(screen.getByText('Upcoming')).toBeInTheDocument();
-    expect(screen.getByText('Previous')).toBeInTheDocument();
-    expect(screen.getByText('Pending Approval')).toBeInTheDocument();
+    
+    await waitFor(() => {
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    });
+
+    
+    mockParams.filter = 'pending';
+    
+   
+    const pendingButton = screen.getByRole('button', { name: 'Pending Approval' });
+    await act(async () => {
+      fireEvent.click(pendingButton);
+    });
+
+   
+    await waitFor(() => {
+      
+      expect(screen.getByText('Pending Event')).toBeInTheDocument();
+    });
+    
+    
+    expect(screen.queryByText('Annual Meetup')).not.toBeInTheDocument();
+  });
+  
+  it('allows deleting an event', async () => {
+    
+    (apiClient.delete).mockResolvedValueOnce({ success: true });
+    
+    await renderComponent('123', 'pending');
+    
+   
+    await waitFor(() => {
+      expect(screen.getByText('Pending Event')).toBeInTheDocument();
+    });
+    
+   
+    const deleteButton = screen.getByText('Delete');
+    await act(async () => {
+      fireEvent.click(deleteButton);
+    });
+    
+    
+    expect(window.confirm).toHaveBeenCalledWith('Are you sure you want to delete this event?');
+    expect(apiClient.delete).toHaveBeenCalledWith('/api/events/3/');
+    expect(window.alert).toHaveBeenCalledWith('Event deleted successfully.');
   });
 });

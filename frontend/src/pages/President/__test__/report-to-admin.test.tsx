@@ -1,22 +1,22 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { vi } from 'vitest';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import ReportToAdmin from '../report-to-admin';
 import { apiClient } from '../../../api';
 
-// Mock dependencies
+
 vi.mock('../../../api', () => ({
   apiClient: {
     post: vi.fn(),
   },
 }));
 
-// Create a mock navigate function
+
 const mockNavigate = vi.fn();
 
-// Mock react-router-dom
+
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return {
@@ -25,80 +25,103 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
-// Create a mock theme
+
 const theme = createTheme();
 
 describe('ReportToAdmin Component', () => {
   beforeEach(() => {
-    // Reset mocks
+    
     vi.clearAllMocks();
 
-    // Reset API client mock
-    (apiClient.post as vi.Mock).mockResolvedValue({});
+    
+    (apiClient.post).mockResolvedValue({});
   });
 
-  const renderComponent = () => {
-    return render(
-      <ThemeProvider theme={theme}>
-        <MemoryRouter initialEntries={['/president/report-to-admin']}>
-          <Routes>
-            <Route path="/president/report-to-admin" element={<ReportToAdmin />} />
-          </Routes>
-        </MemoryRouter>
-      </ThemeProvider>
-    );
+  const renderComponent = async () => {
+    let renderedComponent;
+    
+    await act(async () => {
+      renderedComponent = render(
+        <ThemeProvider theme={theme}>
+          <MemoryRouter initialEntries={['/president/report-to-admin']}>
+            <Routes>
+              <Route path="/president/report-to-admin" element={<ReportToAdmin />} />
+            </Routes>
+          </MemoryRouter>
+        </ThemeProvider>
+      );
+      
+      
+      await new Promise(resolve => setTimeout(resolve, 0));
+    });
+    
+    return renderedComponent;
   };
 
-  it('renders the report to admin page correctly', () => {
-    renderComponent();
+  it('renders the report to admin page correctly', async () => {
+    await renderComponent();
 
-    // Check page title
-    expect(screen.getByText('Report to Admin')).toBeInTheDocument();
+   
+    expect(screen.getByRole('heading', { name: 'Report to Admin' })).toBeInTheDocument();
 
-    // Check form elements
-    expect(screen.getByText('Type of Report')).toBeInTheDocument();
-    expect(screen.getByText('Subject')).toBeInTheDocument();
-    expect(screen.getByText('Report Details')).toBeInTheDocument();
-    expect(screen.getByText('Submit Report')).toBeInTheDocument();
+   
+    expect(screen.getByRole('heading', { name: 'Type of Report' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Subject' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Report Details' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Submit Report' })).toBeInTheDocument();
   });
 
   it('allows selecting different report types', async () => {
-    renderComponent();
+    await renderComponent();
 
-    // Open select dropdown - use getByRole with more specific query
-    const selectElement = screen.getByRole('combobox', { name: /type of report/i });
-    fireEvent.mouseDown(selectElement);
+   
+    const selectElement = screen.getByRole('combobox');
+    
+    await act(async () => {
+      fireEvent.mouseDown(selectElement);
+    });
 
-    // Check all menu items
+    
     const reportTypes = ['Misconduct', 'System Issue', 'Society Issue', 'Event Issue', 'Other'];
     await waitFor(() => {
       reportTypes.forEach(type => {
-        expect(screen.getByText(type)).toBeInTheDocument();
+        
+        const option = screen.getByRole('option', { name: type });
+        expect(option).toBeInTheDocument();
       });
     });
 
-    // Select a different report type
-    const systemIssueOption = screen.getByText('System Issue');
-    fireEvent.click(systemIssueOption);
+   
+    const systemIssueOption = screen.getByRole('option', { name: 'System Issue' });
+    
+    await act(async () => {
+      fireEvent.click(systemIssueOption);
+    });
 
-    // Verify selection - use more flexible text matching
+    
     await waitFor(() => {
-      expect(screen.getByDisplayValue('System Issue')).toBeInTheDocument();
+      
+      expect(selectElement.textContent).toBe('System Issue');
     });
   });
 
-  it('allows entering subject and details', () => {
-    renderComponent();
+  it('allows entering subject and details', async () => {
+    await renderComponent();
 
-    // Find input fields using more robust selection
-    const subjectInput = screen.getByLabelText(/subject/i);
-    const detailsInput = screen.getByLabelText(/report details/i);
+   
+    const subjectInput = screen.getByRole('textbox', { name: /Subject/i });
+    const detailsInput = screen.getByRole('textbox', { name: /Report Details/i });
 
-    // Enter text
-    fireEvent.change(subjectInput, { target: { value: 'Test Subject' } });
-    fireEvent.change(detailsInput, { target: { value: 'Test Details' } });
+    
+    await act(async () => {
+      fireEvent.change(subjectInput, { target: { value: 'Test Subject' } });
+    });
+    
+    await act(async () => {
+      fireEvent.change(detailsInput, { target: { value: 'Test Details' } });
+    });
 
-    // Verify input
+    
     expect(subjectInput).toHaveValue('Test Subject');
     expect(detailsInput).toHaveValue('Test Details');
   });
@@ -107,23 +130,25 @@ describe('ReportToAdmin Component', () => {
     const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-    renderComponent();
+    await renderComponent();
 
-    // Find inputs and submit button with more robust selection
-    const subjectInput = screen.getByLabelText(/subject/i);
-    const detailsInput = screen.getByLabelText(/report details/i);
+    
+    const subjectInput = screen.getByRole('textbox', { name: /Subject/i });
+    const detailsInput = screen.getByRole('textbox', { name: /Report Details/i });
     const submitButton = screen.getByRole('button', { name: /submit report/i });
 
-    // Fill out form
-    fireEvent.change(subjectInput, { target: { value: 'Test Subject' } });
-    fireEvent.change(detailsInput, { target: { value: 'Test Details' } });
+   
+    await act(async () => {
+      fireEvent.change(subjectInput, { target: { value: 'Test Subject' } });
+      fireEvent.change(detailsInput, { target: { value: 'Test Details' } });
+    });
 
-    // Submit the form
-    await waitFor(() => {
+    
+    await act(async () => {
       fireEvent.click(submitButton);
     });
 
-    // Wait for API call
+    
     await waitFor(() => {
       expect(apiClient.post).toHaveBeenCalledWith('/api/report-to-admin', {
         report_type: 'Misconduct',
@@ -132,11 +157,11 @@ describe('ReportToAdmin Component', () => {
       });
     });
 
-    // Verify navigation and alert
+   
     expect(mockNavigate).toHaveBeenCalledWith(-1);
     expect(alertSpy).toHaveBeenCalledWith('Report submitted successfully!');
 
-    // Cleanup spies
+    
     alertSpy.mockRestore();
     consoleErrorSpy.mockRestore();
   });
@@ -145,26 +170,28 @@ describe('ReportToAdmin Component', () => {
     const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-    // Mock API error
-    (apiClient.post as vi.Mock).mockRejectedValueOnce(new Error('Submission failed'));
+    
+    (apiClient.post).mockRejectedValueOnce(new Error('Submission failed'));
 
-    renderComponent();
+    await renderComponent();
 
-    // Find inputs and submit button with more robust selection
-    const subjectInput = screen.getByLabelText(/subject/i);
-    const detailsInput = screen.getByLabelText(/report details/i);
+    
+    const subjectInput = screen.getByRole('textbox', { name: /Subject/i });
+    const detailsInput = screen.getByRole('textbox', { name: /Report Details/i });
     const submitButton = screen.getByRole('button', { name: /submit report/i });
 
-    // Fill out form
-    fireEvent.change(subjectInput, { target: { value: 'Test Subject' } });
-    fireEvent.change(detailsInput, { target: { value: 'Test Details' } });
+    
+    await act(async () => {
+      fireEvent.change(subjectInput, { target: { value: 'Test Subject' } });
+      fireEvent.change(detailsInput, { target: { value: 'Test Details' } });
+    });
 
-    // Submit the form
-    await waitFor(() => {
+    
+    await act(async () => {
       fireEvent.click(submitButton);
     });
 
-    // Wait for error handling
+    
     await waitFor(() => {
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         'Error submitting report:', 
@@ -172,23 +199,23 @@ describe('ReportToAdmin Component', () => {
       );
     });
 
-    // Verify no navigation or alert on error
+    
     expect(mockNavigate).not.toHaveBeenCalled();
     expect(alertSpy).not.toHaveBeenCalled();
 
-    // Cleanup spies
+    
     alertSpy.mockRestore();
     consoleErrorSpy.mockRestore();
   });
 
-  it('requires subject and details', () => {
-    renderComponent();
+  it('requires subject and details', async () => {
+    await renderComponent();
 
     const submitButton = screen.getByRole('button', { name: /submit report/i });
-    const subjectInput = screen.getByLabelText(/subject/i);
-    const detailsInput = screen.getByLabelText(/report details/i);
+    const subjectInput = screen.getByRole('textbox', { name: /Subject/i });
+    const detailsInput = screen.getByRole('textbox', { name: /Report Details/i });
 
-    // Check HTML5 required attribute
+    
     expect(subjectInput).toBeRequired();
     expect(detailsInput).toBeRequired();
   });

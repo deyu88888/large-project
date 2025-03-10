@@ -7,7 +7,7 @@ import PendingMembers from '../pending-members';
 
 const mockNavigate = vi.fn();
 
-// Mock dependencies
+
 vi.mock('../../../api', () => ({
   apiClient: {
     get: vi.fn(),
@@ -32,15 +32,15 @@ describe('PendingMembers Component', () => {
   ];
 
   beforeEach(() => {
-    // Reset mocks
+    
     vi.clearAllMocks();
 
-    // Mock API client get method
+    
     (apiClient.get as vi.Mock).mockResolvedValue({
       data: mockPendingMembers
     });
 
-    // Mock API client post method
+    
     (apiClient.post as vi.Mock).mockResolvedValue({});
   });
 
@@ -116,7 +116,7 @@ describe('PendingMembers Component', () => {
         approved: true
       });
       
-      // Verify that fetchPendingMembers was called again after approval
+      
       expect(apiClient.get).toHaveBeenCalledTimes(2);
     });
   });
@@ -136,7 +136,7 @@ describe('PendingMembers Component', () => {
         approved: false
       });
       
-      // Verify that fetchPendingMembers was called again after rejection
+      
       expect(apiClient.get).toHaveBeenCalledTimes(2);
     });
   });

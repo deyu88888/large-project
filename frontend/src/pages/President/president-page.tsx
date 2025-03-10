@@ -59,7 +59,7 @@ const PresidentPage = () => {
         color: theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d",
       }}
     >
-      {/* Society Name */}
+      
       <Box textAlign="center" mb={4}>
         <Typography 
           variant="h1" 
@@ -72,7 +72,7 @@ const PresidentPage = () => {
         </Typography>
       </Box>
 
-      {/* Navigation Buttons */}
+      
       <Box display="flex" justifyContent="center" gap={2} flexWrap="wrap" mb={4}>
         {[
           { text: "Society Details", path: "manage-society-details", color: colors.greenAccent[500] },
@@ -100,7 +100,7 @@ const PresidentPage = () => {
         ))}
       </Box>
 
-      {/* Pending Members Preview */}
+      
       <Paper
         elevation={4}
         sx={{

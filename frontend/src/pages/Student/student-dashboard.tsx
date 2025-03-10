@@ -98,7 +98,7 @@ const StudentDashboard: React.FC = () => {
       console.error("Error fetching event data:", error);
     }
     try {
-      const notificationsResponse = await apiClient.get("/api/notifications"); 
+      const notificationsResponse = await apiClient.get("/api/notifications/"); 
       setNotifications(notificationsResponse.data || []);
     } catch (error) {
       console.error("Error fetching notification data:", error);

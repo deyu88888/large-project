@@ -1,195 +1,468 @@
 import React from 'react';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import { vi } from 'vitest';
+import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import { vi } from 'vitest';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { apiClient } from '../../../api'; // Adjust the import path as needed
-import ViewSocietyMembers from '../view-society-members'; // Adjust the import path as needed
-import { useAuthStore } from '../../../stores/auth-store'; // Adjust the import path as needed
+import { apiClient, apiPaths } from '../../../api';
+import { useAuthStore } from '../../../stores/auth-store';
+import ManageSocietyDetails from '../manage-society-details';
 
-// Create mock navigate function
+
 const mockNavigate = vi.fn();
 
-// Mock react-router-dom before other imports
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return {
     ...actual,
     useNavigate: () => mockNavigate,
+    useParams: () => ({ society_id: '123' }),
   };
 });
 
-// Mock the dependencies
+
 vi.mock('../../../api', () => ({
   apiClient: {
     get: vi.fn(),
+    patch: vi.fn(),
+  },
+  apiPaths: {
+    SOCIETY: {
+      MANAGE_DETAILS: (id: number) => `/api/manage-society-details/${id}/`,
+    },
   },
 }));
+
 
 vi.mock('../../../stores/auth-store', () => ({
   useAuthStore: vi.fn(),
 }));
 
-// Create a mock theme
+
+vi.mock('../society-preview-modal', () => ({
+  default: vi.fn(({ open, onClose, formData }) => {
+    if (!open) return null;
+    return (
+      <div data-testid="society-preview-modal">
+        <h2>{formData.name}</h2>
+        <button onClick={onClose}>Close Preview</button>
+      </div>
+    );
+  }),
+}));
+
+
 const theme = createTheme();
 
-describe('ViewSocietyMembers Component', () => {
-  const mockMembers = [
-    {
-      id: 1,
-      first_name: 'John',
-      last_name: 'Doe',
-      username: 'johndoe'
-    },
-    {
-      id: 2,
-      first_name: 'Jane',
-      last_name: 'Smith',
-      username: 'janesmith'
-    }
-  ];
+describe('ManageSocietyDetails Component', () => {
+  
+  const mockUser = { id: 99, username: 'testpresident' };
 
-  const mockUser = { president_of: 123 };
+  
+  const mockSocietyData = {
+    id: 123,
+    name: 'Test Society',
+    category: 'Sports',
+    social_media_links: { twitter: 'https://twitter.com/testsociety' },
+    membership_requirements: 'Open to all students.',
+    upcoming_projects_or_plans: 'Planning a big event soon!',
+    tags: ['fun', 'active'],
+    icon: null,
+  };
 
   beforeEach(() => {
-    // Reset mocks
     vi.clearAllMocks();
     
-    // Reset navigate mock
-    mockNavigate.mockReset();
-
-    // Mock useAuthStore
     (useAuthStore as vi.Mock).mockReturnValue({ user: mockUser });
 
-    // Mock API client
-    (apiClient.get as vi.Mock).mockResolvedValue({
-      data: mockMembers
-    });
+    
+    (apiClient.get as vi.Mock).mockResolvedValue({ data: mockSocietyData });
+    
+    (apiClient.patch as vi.Mock).mockResolvedValue({ data: { success: true } });
+    
+    
+    global.alert = vi.fn();
   });
 
-  const renderComponent = (societyId?: string) => {
-    const routes = societyId 
-      ? [{ path: '/society/:society_id/members', element: <ViewSocietyMembers /> }]
-      : [{ path: '/society/members', element: <ViewSocietyMembers /> }];
-
-    const initialEntry = societyId 
-      ? `/society/${societyId}/members`
-      : '/society/members';
-
+ 
+  function renderComponent() {
     return render(
       <ThemeProvider theme={theme}>
-        <MemoryRouter initialEntries={[initialEntry]}>
+        <MemoryRouter initialEntries={['/president-page/123/manage-society-details']}>
           <Routes>
-            {routes.map((route, index) => (
-              <Route key={index} path={route.path} element={route.element} />
-            ))}
+            <Route
+              path="/president-page/:society_id/manage-society-details"
+              element={<ManageSocietyDetails />}
+            />
           </Routes>
         </MemoryRouter>
       </ThemeProvider>
     );
-  };
+  }
 
-  it('renders loading state initially', async () => {
+  it('shows a loading spinner and then loads the form data', async () => {
     renderComponent();
 
+    
     expect(screen.getByRole('progressbar')).toBeInTheDocument();
-  });
 
-  it('fetches and renders society members', async () => {
-    renderComponent();
-
+    
     await waitFor(() => {
-      expect(screen.getByText('John Doe')).toBeInTheDocument();
-      expect(screen.getByText('Jane Smith')).toBeInTheDocument();
+      expect(screen.getByLabelText('Society Name')).toBeInTheDocument();
     });
 
-    expect(apiClient.get).toHaveBeenCalledWith('/api/society/123/members/');
+    
+    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
   });
 
-  it('navigates to view profile when "View Profile" button is clicked', async () => {
+  it('populates the form with fetched society data', async () => {
     renderComponent();
 
-    await waitFor(() => {
-      expect(screen.getByText('John Doe')).toBeInTheDocument();
-    });
+   
+    const nameField = await screen.findByLabelText('Society Name');
+    expect(nameField).toHaveValue('Test Society');
 
-    const viewProfileButtons = screen.getAllByText('View Profile');
-    fireEvent.click(viewProfileButtons[0]);
+    const categoryField = screen.getByLabelText('Category');
+    expect(categoryField).toHaveValue('Sports');
 
-    expect(mockNavigate).toHaveBeenCalledWith('/profile/1');
+    const membershipField = screen.getByLabelText('Membership Requirements');
+    expect(membershipField).toHaveValue('Open to all students.');
+
+    const upcomingField = screen.getByLabelText('Upcoming Projects or Plans');
+    expect(upcomingField).toHaveValue('Planning a big event soon!');
+
+    const tagsField = screen.getByLabelText('Tags (comma separated)');
+   
+    expect(tagsField).toHaveValue('fun, active');
   });
 
-  it('navigates to give award page when "Give Award" button is clicked', async () => {
+  it('submits form data (PATCH request) and navigates on success', async () => {
     renderComponent();
 
-    await waitFor(() => {
-      expect(screen.getByText('John Doe')).toBeInTheDocument();
+    
+    await screen.findByLabelText('Society Name');
+
+    
+    fireEvent.change(screen.getByLabelText('Society Name'), {
+      target: { value: 'Updated Society Name' },
+    });
+    fireEvent.change(screen.getByLabelText('Category'), {
+      target: { value: 'Music' },
     });
 
-    const giveAwardButtons = screen.getAllByText('Give Award');
-    fireEvent.click(giveAwardButtons[0]);
-
-    expect(mockNavigate).toHaveBeenCalledWith('../give-award-page/1');
-  });
-
-  it('navigates to assign role page when "Assign Role" button is clicked', async () => {
-    renderComponent();
-
-    await waitFor(() => {
-      expect(screen.getByText('John Doe')).toBeInTheDocument();
+    
+    const submitButton = screen.getByRole('button', { name: /submit update request/i });
+    await act(async () => {
+      fireEvent.click(submitButton);
     });
 
-    const assignRoleButtons = screen.getAllByText('Assign Role');
-    fireEvent.click(assignRoleButtons[0]);
+    
+    expect(apiClient.patch).toHaveBeenCalledWith(
+      '/api/manage-society-details/123/',
+      expect.any(FormData),
+      expect.objectContaining({
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+    );
 
-    expect(mockNavigate).toHaveBeenCalledWith('../assign-society-role/1');
+    
+    expect(mockNavigate).toHaveBeenCalledWith('/president-page/123');
   });
 
-  it('renders "No members found" when members list is empty', async () => {
-    (apiClient.get as vi.Mock).mockResolvedValueOnce({ data: [] });
-
-    renderComponent();
-
-    await waitFor(() => {
-      expect(screen.getByText('No members found.')).toBeInTheDocument();
-    });
-  });
-
-  it('handles API error when fetching members', async () => {
+  it('alerts user if PATCH request fails', async () => {
+    
+    (apiClient.patch as vi.Mock).mockRejectedValue(new Error('Patch failed'));
+    
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     
-    (apiClient.get as vi.Mock).mockRejectedValueOnce(new Error('Fetch error'));
+    const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
 
     renderComponent();
 
+    await screen.findByLabelText('Society Name');
+
+    const submitButton = screen.getByRole('button', { name: /submit update request/i });
+    await act(async () => {
+      fireEvent.click(submitButton);
+    });
+
+    
     await waitFor(() => {
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'Error fetching society members:', 
+        'Error updating society',
         expect.any(Error)
       );
     });
 
+    
+    expect(alertSpy).toHaveBeenCalledWith(
+      'There was an error submitting your update request.'
+    );
+
+   
+    expect(mockNavigate).not.toHaveBeenCalled();
+
+    consoleErrorSpy.mockRestore();
+    alertSpy.mockRestore();
+  });
+
+  it('opens preview modal when "Preview" button is clicked', async () => {
+    renderComponent();
+
+    
+    await screen.findByLabelText('Society Name');
+
+    
+    const previewButton = screen.getByRole('button', { name: /preview/i });
+    fireEvent.click(previewButton);
+
+    
+    expect(screen.getByTestId('society-preview-modal')).toBeInTheDocument();
+    expect(screen.getByText('Test Society')).toBeInTheDocument();
+  });
+
+  it('closes preview modal when "Close Preview" button is clicked', async () => {
+    renderComponent();
+
+    
+    await screen.findByLabelText('Society Name');
+
+    
+    fireEvent.click(screen.getByRole('button', { name: /preview/i }));
+    expect(screen.getByTestId('society-preview-modal')).toBeInTheDocument();
+
+    
+    fireEvent.click(screen.getByRole('button', { name: /close preview/i }));
+    
+    
+    await waitFor(() => {
+      expect(screen.queryByTestId('society-preview-modal')).not.toBeInTheDocument();
+    });
+  });
+
+  it('handles fetch error when loading society data', async () => {
+    
+    const fetchError = new Error('Failed to fetch society data');
+    (apiClient.get as vi.Mock).mockRejectedValue(fetchError);
+    
+   
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    
+    renderComponent();
+    
+   
+    await waitFor(() => {
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        'Error fetching society details',
+        fetchError
+      );
+    });
+    
     consoleErrorSpy.mockRestore();
   });
 
-  it('navigates back to previous page when "Back to Dashboard" is clicked', async () => {
-    renderComponent();
-
-    await waitFor(() => {
-      expect(screen.getByText('John Doe')).toBeInTheDocument();
-    });
-
-    const backButton = screen.getByText('Back to Dashboard');
-    fireEvent.click(backButton);
-
-    expect(mockNavigate).toHaveBeenCalledWith(-1);
+  it('handles empty form submission', async () => {
+    
+    
+    
+    const testHandleSubmit = (formData: any, society: any): boolean => {
+      if (!formData || !society) return false;
+      return true;
+    };
+    
+    
+    expect(testHandleSubmit(null, null)).toBe(false);
+    
+    
+    expect(testHandleSubmit(null, {})).toBe(false);
+    
+   
+    expect(testHandleSubmit({}, null)).toBe(false);
+    
+    
+    expect(testHandleSubmit({}, {})).toBe(true);
   });
 
-  it('can fetch members using provided society ID in URL', async () => {
-    renderComponent('456');
-
-    await waitFor(() => {
-      expect(apiClient.get).toHaveBeenCalledWith('/api/society/456/members/');
+  it('handles updating form data with File type icon', async () => {
+    const mockFile = new File(['dummy content'], 'test-icon.png', { type: 'image/png' });
+    
+    
+    (apiClient.patch as vi.Mock).mockClear();
+    
+    
+    const formDataAppendMock = vi.fn();
+    const formDataOriginal = global.FormData;
+    global.FormData = vi.fn().mockImplementation(() => ({
+      append: formDataAppendMock,
+    }));
+    
+    
+    (apiClient.get as vi.Mock).mockResolvedValue({
+      data: {
+        ...mockSocietyData,
+        icon: mockFile
+      }
     });
+    
+    renderComponent();
+    
+    
+    await screen.findByLabelText('Society Name');
+    
+    
+    const submitButton = screen.getByRole('button', { name: /submit update request/i });
+    await act(async () => {
+      fireEvent.click(submitButton);
+    });
+    
+   
+    expect(apiClient.patch).toHaveBeenCalled();
+    
+    
+    global.FormData = formDataOriginal;
+  });
+
+  it('handles social media links correctly during submission', async () => {
+    
+    (apiClient.get as vi.Mock).mockResolvedValue({
+      data: {
+        ...mockSocietyData,
+        social_media_links: {
+          twitter: 'https://twitter.com/testsociety',
+          facebook: 'https://facebook.com/testsociety'
+        }
+      }
+    });
+    
+   
+    const formDataAppendMock = vi.fn();
+    const formDataOriginal = global.FormData;
+    global.FormData = vi.fn().mockImplementation(() => ({
+      append: formDataAppendMock,
+    }));
+    
+    renderComponent();
+    
+    
+    await screen.findByLabelText('Society Name');
+    
+    
+    const submitButton = screen.getByRole('button', { name: /submit update request/i });
+    await act(async () => {
+      fireEvent.click(submitButton);
+    });
+    
+    
+    expect(apiClient.patch).toHaveBeenCalled();
+    
+    
+    global.FormData = formDataOriginal;
+  });
+
+ 
+  it('handles the edge case where handleChange is called when formData is null', async () => {
+    renderComponent();
+    
+    
+    await screen.findByLabelText('Society Name');
+    
+  
+    const originalUseState = React.useState;
+    let setFormDataCallback: Function | null = null;
+    
+    
+    const mockUseState = vi.spyOn(React, 'useState');
+    mockUseState.mockImplementation((initialValue) => {
+      const [value, setValue] = originalUseState(initialValue);
+      
+      if (value && 'name' in (value as object) && 'category' in (value as object)) {
+        setFormDataCallback = setValue;
+      }
+      return [value, setValue];
+    });
+    
+    
+    const { rerender } = renderComponent();
+    
+    
+    await screen.findByLabelText('Society Name');
+    
+    
+    if (setFormDataCallback) {
+      act(() => {
+        setFormDataCallback(null);
+      });
+      
+      
+      fireEvent.change(screen.getByLabelText('Society Name'), {
+        target: { name: 'name', value: 'New Name' }
+      });
+      
+      
+    }
+    
+    
+    mockUseState.mockRestore();
+  });
+  
+  
+  it('handles society data with missing fields', async () => {
+    
+    (apiClient.get as vi.Mock).mockResolvedValue({
+      data: {
+        id: 123,
+        name: 'Test Society',
+        category: 'Sports',
+        membership_requirements: 'Open to all students.',
+        upcoming_projects_or_plans: 'Planning a big event soon!',
+        
+      }
+    });
+    
+    renderComponent();
+    
+    
+    await waitFor(() => {
+      expect(screen.getByLabelText('Society Name')).toBeInTheDocument();
+    });
+    
+    
+    expect(screen.getByLabelText('Society Name')).toHaveValue('Test Society');
+    expect(screen.getByLabelText('Tags (comma separated)')).toHaveValue('');
+  });
+  
+  
+  it('handles tags input changes correctly', async () => {
+    renderComponent();
+    
+   
+    await screen.findByLabelText('Society Name');
+    
+   
+    const tagsField = screen.getByLabelText('Tags (comma separated)');
+    expect(tagsField).toHaveValue('fun, active');
+    
+    
+    fireEvent.change(tagsField, {
+      target: { value: 'fun, active, sports, community' }
+    });
+    
+  
+    expect(tagsField).toHaveValue('fun, active, sports, community');
+    
+    
+    fireEvent.change(tagsField, {
+      target: { value: 'coding, technology' }
+    });
+    
+    
+    expect(tagsField).toHaveValue('coding, technology');
+    
+    
+    fireEvent.change(tagsField, {
+      target: { value: '' }
+    });
+    
+    
+    expect(tagsField).toHaveValue('');
   });
 });

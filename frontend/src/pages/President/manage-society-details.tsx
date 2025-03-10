@@ -80,17 +80,17 @@ const ManageSocietyDetails: React.FC = () => {
       formDataToSend.append("upcoming_projects_or_plans", formData.upcoming_projects_or_plans);
       formDataToSend.append("tags", JSON.stringify(formData.tags));
 
-      // Append social media links
+      
       Object.entries(formData.social_media_links).forEach(([platform, link]) => {
         formDataToSend.append(`social_media_links[${platform}]`, link);
       });
 
-      // Append icon if it's a file
+      
       if (formData.icon && formData.icon instanceof File) {
         formDataToSend.append("icon", formData.icon);
       }
 
-      // Use PATCH request so that the backend creates a SocietyRequest for admin approval.
+      
       await apiClient.patch(`/api/manage-society-details/${societyId}/`, formDataToSend, {
         headers: { "Content-Type": "multipart/form-data" },
       });
@@ -198,7 +198,7 @@ const ManageSocietyDetails: React.FC = () => {
             sx={{ mb: 2 }}
           />
 
-          {/* Tags */}
+          
           <TextField
             fullWidth
             label="Tags (comma separated)"
@@ -245,7 +245,7 @@ const ManageSocietyDetails: React.FC = () => {
         </form>
       </Paper>
 
-      {/* Preview Modal */}
+      
       <SocietyPreviewModal open={openPreview} onClose={handlePreviewClose} formData={formData} />
     </Box>
   );

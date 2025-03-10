@@ -1,4 +1,4 @@
-// SocietyPreviewModal.tsx
+
 import React from "react";
 import {
   Dialog,
@@ -59,7 +59,7 @@ const SocietyPreviewModal: React.FC<SocietyPreviewModalProps> = ({ open, onClose
             </Typography>
           ))}
         </Box>
-        {/* Optionally, show the icon preview if available */}
+        
         {formData.icon && typeof formData.icon === "string" && (
           <Box mb={2}>
             <Typography variant="subtitle2">Icon:</Typography>

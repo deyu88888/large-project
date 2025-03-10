@@ -7,10 +7,10 @@ import ViewSocietyMembers from '../view-society-members';
 import { apiClient } from '../../../api';
 import { useAuthStore } from '../../../stores/auth-store';
 
-// Create mock navigate function
+
 const mockNavigate = vi.fn();
 
-// Mock react-router-dom before other imports
+
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return {
@@ -19,7 +19,7 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
-// Mock dependencies
+
 vi.mock('../../../api', () => ({
   apiClient: {
     get: vi.fn(),
@@ -30,7 +30,7 @@ vi.mock('../../../stores/auth-store', () => ({
   useAuthStore: vi.fn(),
 }));
 
-// Create a mock theme
+
 const theme = createTheme();
 
 describe('ViewSocietyMembers Component', () => {
@@ -52,16 +52,16 @@ describe('ViewSocietyMembers Component', () => {
   const mockUser = { president_of: 123 };
 
   beforeEach(() => {
-    // Reset mocks
+
     vi.clearAllMocks();
     
-    // Reset navigate mock
+
     mockNavigate.mockReset();
 
-    // Mock useAuthStore
+
     (useAuthStore as vi.Mock).mockReturnValue({ user: mockUser });
 
-    // Mock API client
+
     (apiClient.get as vi.Mock).mockResolvedValue({
       data: mockMembers
     });

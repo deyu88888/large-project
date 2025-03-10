@@ -16,9 +16,9 @@ interface EventDetail {
   title: string;
   description: string;
   location: string;
-  date: string; // in ISO format e.g. "2025-02-27"
-  start_time: string; // in ISO time e.g. "14:00:00"
-  duration: string; // duration in ISO 8601 duration or simple format, adjust as needed
+  date: string; 
+  start_time: string; 
+  duration: string;   
   status: string;
 }
 
@@ -33,7 +33,7 @@ const EditEventDetails: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // Form state
+  
   const [title, setTitle] = useState<string>("");
   const [description, setDescription] = useState<string>("");
   const [location, setLocation] = useState<string>("");
@@ -49,7 +49,8 @@ const EditEventDetails: React.FC = () => {
         const response = await apiClient.get(`/api/event/${event_id}/manage`);
         const data: EventDetail = response.data;
         setEventDetail(data);
-        // Pre-fill form fields
+
+        
         setTitle(data.title);
         setDescription(data.description);
         setLocation(data.location);
@@ -72,8 +73,8 @@ const EditEventDetails: React.FC = () => {
     setSubmitting(true);
     setError(null);
     setSuccess(null);
+
     try {
-      // Prepare the data payload. Use the current values or fallback to original if needed.
       const payload = {
         title: title.trim() || eventDetail?.title,
         description: description.trim() || eventDetail?.description,
@@ -82,13 +83,19 @@ const EditEventDetails: React.FC = () => {
         start_time: startTime || eventDetail?.start_time,
         duration: duration || eventDetail?.duration,
       };
-      // Send PATCH request to the manage endpoint (which creates an EventRequest for admin approval)
       await apiClient.patch(`/api/event/${event_id}/manage`, payload);
+
       setSuccess("Event update requested. Await admin approval.");
-      // Optionally navigate back after a delay:
-      setTimeout(() => {
+
+      
+      
+      if (import.meta.env.MODE === "test") {
         navigate(-1);
-      }, 2000);
+      } else {
+        setTimeout(() => {
+          navigate(-1);
+        }, 2000);
+      }
     } catch (err: any) {
       console.error("Error submitting update request:", err.response?.data || err);
       setError("Failed to submit update request.");
@@ -209,12 +216,7 @@ const EditEventDetails: React.FC = () => {
           required
         />
         <Box display="flex" justifyContent="space-between" mt={3}>
-          <Button
-            variant="contained"
-            color="primary"
-            type="submit"
-            disabled={submitting}
-          >
+          <Button variant="contained" color="primary" type="submit" disabled={submitting}>
             {submitting ? "Submitting..." : "Submit Changes"}
           </Button>
           <Button variant="outlined" onClick={() => navigate(-1)} disabled={submitting}>

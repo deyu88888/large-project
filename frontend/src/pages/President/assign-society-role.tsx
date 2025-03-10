@@ -10,7 +10,7 @@ import {
   Stack,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import { tokens } from "../../theme/theme"; // adjust path as needed
+import { tokens } from "../../theme/theme";
 
 const roles = [
   { key: "vice_president", label: "Vice President" },
@@ -29,11 +29,11 @@ const AssignSocietyRole = () => {
   const handleAssignRole = async (roleKey: string) => {
     try {
       setLoading(true);
-      // Prepare payload. The key is the role field name and the value is the student id (as a number).
+      
       const payload: Record<string, any> = {};
       payload[roleKey] = Number(student_id);
 
-      // Make a PATCH request to update the society with the new role assignment.
+      
       await apiClient.patch(`/api/manage-society-details/${society_id}`, payload);
       alert(`Assigned ${roleKey.replace("_", " ")} role to student ${student_id}`);
       navigate(-1);

@@ -13,7 +13,7 @@ import { useTheme } from "@mui/material/styles";
 import { apiClient } from "../../api";
 import { tokens } from "../../theme/theme";
 
-// Helper functions for date/time formatting
+
 const formatDate = (dateString: string): string => {
   const options: Intl.DateTimeFormatOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
   return new Date(dateString).toLocaleDateString(undefined, options);
@@ -47,28 +47,28 @@ const ManageSocietyEvents: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Read both society_id and filter from URL params
+ 
   const { society_id, filter: filterParam } = useParams<{ society_id: string; filter?: "upcoming" | "previous" | "pending" }>();
 
-  // Set the filter state to the URL filter, defaulting to "upcoming"
+  
   const [filter, setFilter] = useState<"upcoming" | "previous" | "pending">(filterParam || "upcoming");
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Convert society_id to number
+  
   const numericSocietyId = society_id ? parseInt(society_id, 10) : null;
   
-  // Sync URL when filter state changes
+  
   useEffect(() => {
     if (!society_id) return;
-    // Only update if the URL filter is different from state
+    
     if (filter !== filterParam) {
       navigate(`/president-page/${society_id}/manage-society-events/${filter}`, { replace: true });
     }
   }, [filter, filterParam, society_id, navigate]);
 
-  // Fetch events when society_id or filter changes.
+ 
   useEffect(() => {
     if (!numericSocietyId) {
       setError("Invalid society ID");
@@ -80,7 +80,7 @@ const ManageSocietyEvents: React.FC = () => {
       setLoading(true);
       setError(null);
       try {
-        // Fetch all events for the society first
+        
         const response = await apiClient.get("/api/events/", {
           params: { society_id: numericSocietyId },
         });
@@ -88,27 +88,27 @@ const ManageSocietyEvents: React.FC = () => {
         console.log(`[DEBUG] Filter: ${filter}, Society ID: ${numericSocietyId}`);
         console.log(`[DEBUG] Raw response:`, response.data);
         
-        // Filter events on the frontend based on the current filter
+        
         const allSocietyEvents = response.data.filter((event: Event) => event.hosted_by === numericSocietyId);
         
         let filteredEvents: Event[] = [];
         const currentDate = new Date();
         
-        // Apply appropriate filter logic
+        
         if (filter === "upcoming") {
-          // Events with future dates and approved status
+          
           filteredEvents = allSocietyEvents.filter((event: Event) => {
             const eventDate = new Date(`${event.date}T${event.start_time}`);
             return eventDate > currentDate && event.status === "Approved";
           });
         } else if (filter === "previous") {
-          // Events with past dates
+      
           filteredEvents = allSocietyEvents.filter((event: Event) => {
             const eventDate = new Date(`${event.date}T${event.start_time}`);
             return eventDate < currentDate && event.status === "Approved";
           });
         } else if (filter === "pending") {
-          // Events with "Pending" status
+          
           filteredEvents = allSocietyEvents.filter((event: Event) => 
             event.status === "Pending"
           );
@@ -127,7 +127,7 @@ const ManageSocietyEvents: React.FC = () => {
     fetchEvents();
   }, [numericSocietyId, filter]);
 
-  // Helper: determine if an event is editable (upcoming or pending)
+  
   const isEditable = (event: Event): boolean => {
     if (event.status === "Pending") return true;
     const nowDate = new Date();
@@ -135,7 +135,7 @@ const ManageSocietyEvents: React.FC = () => {
     return eventDateTime > nowDate;
   };
 
-  // Handler for deleting an event
+  
   const handleDelete = async (eventId: number) => {
     if (window.confirm("Are you sure you want to delete this event?")) {
       try {
@@ -149,7 +149,7 @@ const ManageSocietyEvents: React.FC = () => {
     }
   };
 
-  // Handler for editing an event
+  
   const handleEdit = (eventId: number) => {
     navigate(`/president-page/${society_id}/edit-event-details/${eventId}`);
   };
@@ -163,7 +163,7 @@ const ManageSocietyEvents: React.FC = () => {
         color: theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d",
       }}
     >
-      {/* Page Header */}
+      
       <Box textAlign="center" mb={4}>
         <Typography
           variant="h2"
@@ -179,7 +179,7 @@ const ManageSocietyEvents: React.FC = () => {
         </Typography>
       </Box>
 
-      {/* Create Event Button */}
+     
       <Box display="flex" justifyContent="center" mb={3}>
         <Button
           onClick={() => navigate(`/president-page/${society_id}/create-society-event/`)}
@@ -197,7 +197,7 @@ const ManageSocietyEvents: React.FC = () => {
         </Button>
       </Box>
 
-      {/* Filter Toggle */}
+      
       <Box display="flex" justifyContent="center" mb={4}>
         <ToggleButtonGroup
           value={filter}
@@ -232,7 +232,7 @@ const ManageSocietyEvents: React.FC = () => {
         </ToggleButtonGroup>
       </Box>
 
-      {/* Events Display */}
+      
       {loading ? (
         <Box display="flex" justifyContent="center">
           <CircularProgress color="secondary" />

@@ -10,13 +10,13 @@ interface PendingMember {
 }
 
 const PendingMembers: React.FC = () => {
-  const { society_id } = useParams(); // Get society_id from URL
+  const { society_id } = useParams();
   const [pendingMembers, setPendingMembers] = useState<PendingMember[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     fetchPendingMembers();
-  }, [society_id]); // Refetch when society_id changes
+  }, [society_id]); 
 
   const fetchPendingMembers = async () => {
     try {
@@ -35,7 +35,7 @@ const PendingMembers: React.FC = () => {
         approved: approved,
       });
 
-      // Refresh the pending members list after approval/rejection
+      
       fetchPendingMembers();
     } catch (error) {
       console.error("Error updating member status:", error);

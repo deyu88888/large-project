@@ -65,7 +65,7 @@ const ReportToAdmin: React.FC = () => {
           boxShadow: 3,
         }}
       >
-        {/* Report Type */}
+        
         <Typography 
           variant="h6" 
           fontWeight="bold" 
@@ -95,7 +95,7 @@ const ReportToAdmin: React.FC = () => {
           <MenuItem value="Other">Other</MenuItem>
         </Select>
 
-        {/* Subject */}
+        
         <Typography 
           variant="h6" 
           fontWeight="bold" 
@@ -122,7 +122,7 @@ const ReportToAdmin: React.FC = () => {
           }}
         />
 
-        {/* Details */}
+        
         <Typography 
           variant="h6" 
           fontWeight="bold" 
@@ -151,7 +151,7 @@ const ReportToAdmin: React.FC = () => {
           }}
         />
 
-        {/* Submit Button */}
+        
         <Button
           type="submit"
           fullWidth
