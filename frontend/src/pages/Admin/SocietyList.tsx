@@ -138,7 +138,7 @@ const SocietyList = () => {
     const handleDeleteConfirmed = async () => {
       if (selectedSociety !== null) {
         try {
-          await apiClient.delete(apiPaths.USER.DELETESOCIETY(selectedSociety.id));
+          await apiClient.delete(apiPaths.USER.DELETE("Society", selectedSociety.id));
           fetchSocieties();
         } catch (error) {
           console.error("Error deleting society:", error);

@@ -816,6 +816,7 @@ class ActivityLog(models.Model):
     target_type = models.CharField(max_length=20, choices=TARGET_CHOICES)
     target_id = models.IntegerField()
     target_name = models.CharField(max_length=255)
+    target_email = models.CharField(max_length=255, null=True, blank=True)
     description = models.TextField(null=True, blank=True)
     performed_by = models.ForeignKey(User, on_delete=models.CASCADE)
     timestamp = models.DateTimeField(auto_now_add=True)
