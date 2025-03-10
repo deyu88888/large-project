@@ -2,12 +2,12 @@
 
 import api.models
 import datetime
+from django.conf import settings
 import django.contrib.auth.models
 import django.core.validators
+from django.db import migrations, models
 import django.db.models.deletion
 import django.utils.timezone
-from django.conf import settings
-from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
@@ -54,20 +54,6 @@ class Migration(migrations.Migration):
                 ('is_custom', models.BooleanField(default=False)),
                 ('title', models.CharField(default='default_title', max_length=20)),
                 ('description', models.CharField(default='default_description', max_length=150)),
-            ],
-        ),
-        migrations.CreateModel(
-            name='Event',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(default='', max_length=20)),
-                ('description', models.CharField(default='', max_length=300)),
-                ('date', models.DateField(default=api.models.get_date)),
-                ('start_time', models.TimeField(default=api.models.get_time)),
-                ('duration', models.DurationField(default=datetime.timedelta(seconds=3600))),
-                ('location', models.CharField(default='', max_length=300)),
-                ('max_capacity', models.PositiveIntegerField(default=0)),
-                ('status', models.CharField(choices=[('Pending', 'Pending Approval'), ('Approved', 'Approved'), ('Rejected', 'Rejected')], default='Pending', max_length=20)),
             ],
         ),
         migrations.CreateModel(
@@ -228,10 +214,6 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='SocietyShowreel',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('photo', models.ImageField(upload_to='society_showreel/')),
-                ('caption', models.CharField(blank=True, default='', max_length=50)),
-                ('society', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='showreel_images', to='api.society')),
                 ('user_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to=settings.AUTH_USER_MODEL)),
             ],
             options={
@@ -329,6 +311,11 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='society',
+            name='approved_by',
+            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='approved_societies', to='api.admin'),
+        ),
+        migrations.AddField(
+            model_name='society',
             name='event_manager',
             field=models.ForeignKey(blank=True, help_text='Assigned event manager of the society', null=True, on_delete=django.db.models.deletion.CASCADE, related_name='event_manager_of_society', to='api.student'),
         ),
@@ -383,6 +370,7 @@ class Migration(migrations.Migration):
                 ('reviewed_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
                 ('society', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='description_requests', to='api.society')),
                 ('requested_by', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='description_requests', to='api.student')),
+                ('reviewed_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='api.admin')),
             ],
         ),
         migrations.CreateModel(
