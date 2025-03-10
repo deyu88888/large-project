@@ -16,7 +16,7 @@ import AssignSocietyRole from "../pages/President/assign-society-role";
 const LoginPage = lazy(() => import("../pages/login"));
 const RegisterPage = lazy(() => import("../pages/register"));
 const ProfilePage = lazy(() => import("../pages/profile"));
-const StudentDashboard = lazy(() => import("../pages/Student/student-dashboard"));
+const StudentDashboard = lazy(() => import("../pages/Student/StudentDashboard"));
 const MySocieties = lazy(() => import("../pages/Student/my-societies"));
 const ViewEvents = lazy(() => import("../pages/Student/view-events"));
 const ViewNotifications = lazy(() => import("../pages/Student/view-notifications"));
