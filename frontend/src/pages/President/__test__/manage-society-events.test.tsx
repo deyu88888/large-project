@@ -287,4 +287,87 @@ describe('ManageSocietyEvents Component', () => {
     expect(apiClient.delete).toHaveBeenCalledWith('/api/events/3/');
     expect(window.alert).toHaveBeenCalledWith('Event deleted successfully.');
   });
+
+  // NEW TEST: Test for delete failure case (lines 146-148)
+  it('handles error when deleting an event fails', async () => {
+    // Mock the delete API to reject with an error
+    const deleteError = new Error('Network error');
+    (apiClient.delete).mockRejectedValueOnce(deleteError);
+    
+    await renderComponent('123', 'pending');
+    
+    await waitFor(() => {
+      expect(screen.getByText('Pending Event')).toBeInTheDocument();
+    });
+    
+    const deleteButton = screen.getByText('Delete');
+    await act(async () => {
+      fireEvent.click(deleteButton);
+    });
+    
+    expect(window.confirm).toHaveBeenCalledWith('Are you sure you want to delete this event?');
+    expect(apiClient.delete).toHaveBeenCalledWith('/api/events/3/');
+    
+    // Verify the error alert was shown
+    expect(window.alert).toHaveBeenCalledWith('Failed to delete event.');
+  });
+
+  // NEW TEST: Test for edit event functionality (lines 154-155)
+  it('navigates to edit event page when edit button is clicked', async () => {
+    await renderComponent('123', 'pending');
+    
+    await waitFor(() => {
+      expect(screen.getByText('Pending Event')).toBeInTheDocument();
+    });
+    
+    const editButton = screen.getByText('Edit');
+    await act(async () => {
+      fireEvent.click(editButton);
+    });
+    
+    expect(mockNavigate).toHaveBeenCalledWith('/president-page/123/edit-event-details/3');
+  });
+
+  // NEW TEST: Test navigation when filter doesn't match filterParam (lines 67-68)
+  it('navigates to correct URL when filter is different from filterParam', async () => {
+    // Set up with a different filter in state than in URL params
+    mockParams.filter = 'upcoming';
+    
+    await renderComponent();
+    
+    // Wait for the initial render to complete
+    await waitFor(() => {
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    });
+
+    // Now manually trigger the effect with a different filter state
+    const pendingButton = screen.getByRole('button', { name: 'Pending Approval' });
+    
+    // Change the state but keep the param the same
+    await act(async () => {
+      fireEvent.click(pendingButton);
+    });
+
+    // Verify the navigate was called with replace: true
+    expect(mockNavigate).toHaveBeenCalledWith(
+      '/president-page/123/manage-society-events/pending', 
+      { replace: true }
+    );
+  });
+
+  // NEW TEST: Test invalid society ID (lines 74-77)
+  it('handles invalid society ID', async () => {
+    // Render with an invalid society ID (like non-numeric)
+    mockParams.society_id = 'invalid';
+    
+    await renderComponent('invalid', 'upcoming');
+    
+    await waitFor(() => {
+      expect(screen.getByText('Invalid society ID')).toBeInTheDocument();
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    });
+    
+    // Verify API was not called
+    expect(apiClient.get).not.toHaveBeenCalled();
+  });
 });

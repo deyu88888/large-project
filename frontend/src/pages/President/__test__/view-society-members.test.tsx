@@ -106,6 +106,31 @@ describe('ViewSocietyMembers Component', () => {
     expect(apiClient.get).toHaveBeenCalledWith('/api/society/123/members/');
   });
 
+  it('handles the case when no society id is available', async () => {
+    // Mock the user store to return a user without president_of
+    (useAuthStore as vi.Mock).mockReturnValue({ user: {} });
+    
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    
+    // Render without society_id in the URL
+    renderComponent();
+
+    // Wait for the component to process and catch the error
+    await waitFor(() => {
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        'Error fetching society members:', 
+        expect.objectContaining({ message: 'No society id available' })
+      );
+    });
+
+    // Ensure the loading state is cleared
+    await waitFor(() => {
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    });
+
+    consoleErrorSpy.mockRestore();
+  });
+
   it('navigates to view profile when "View Profile" button is clicked', async () => {
     renderComponent();
 
