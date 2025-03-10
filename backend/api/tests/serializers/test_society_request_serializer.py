@@ -168,7 +168,7 @@ class SocietyRequestSerializerTestCase(TestCase):
 
         self.assertEqual(
             len(data["showreel_images_request"]), 2,
-            f"showreel_images_request : {data["showreel_images_request"]}"
+            f"showreel_images_request : {data['showreel_images_request']}"
         )
 
         photos = {img["photo"] for img in data["showreel_images_request"]}

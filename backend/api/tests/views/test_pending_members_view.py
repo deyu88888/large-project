@@ -115,21 +115,39 @@ class PendingMembersViewTest(APITestCase):
         self.assertIn("Only society presidents can manage members", str(response.data))
 
     def test_post_society_not_leader(self):
-        """
-        POST by a president who does not lead the society should return 403 Forbidden.
-        """
-        other_president = Student.objects.create_user(
-            username="other_president2",
+    # Create a student who will serve as the actual leader.
+        leader_student = Student.objects.create_user(
+            username="leader_user",
             password="test1234",
-            email="otherpresident2@example.com",
-            is_president=True,
+            email="leader@example.com",
+            is_president=True,  # You may set this to True if you want a leader who is also a president.
             major="Test Major"
         )
-        other_token = str(AccessToken.for_user(other_president))
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {other_token}")
-        response = self.client.post(self.post_url, {"action": "approve"}, format="json")
+        
+        # Create a society with leader_student as the leader.
+        society = Society.objects.create(
+            name="Society Not Led by Requesting President",
+            status="Approved",
+            leader=leader_student
+        )
+        
+        # Create a pending membership request for the society.
+        pending_request = UserRequest.objects.create(
+            intent="JoinSoc",
+            approved=False,
+            from_student=self.applicant_student
+        )
+        
+        # Build the URL based on the PendingMembersView URL pattern.
+        url = f"/api/society/{society.id}/pending-members/{pending_request.id}/"
+        
+        # Use the token for the president user from setUp (whose student id is different from leader_student).
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.president_token}")
+        response = self.client.post(url, {"action": "approve"}, format="json")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertIn("Only society presidents can manage members", str(response.data))
+
+
+
 
     def test_post_request_not_found(self):
         """

@@ -9,7 +9,7 @@ import Link from "@mui/material/Link";
 import FacebookIcon from '@mui/icons-material/Facebook';
 import InstagramIcon from '@mui/icons-material/Instagram';
 import XIcon from '@mui/icons-material/X';
-import { tokens } from "../styles/theme";
+import { tokens } from "../theme/theme";
 
 const ViewSociety: React.FC = () => {
   const theme = useTheme();

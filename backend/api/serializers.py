@@ -168,15 +168,14 @@ class SocietySerializer(serializers.ModelSerializer):
         """SocietySerializer meta data"""
         model = Society
         fields = [
-            'id', 'name', 'description', 'society_members', 'roles', 'leader', 'approved_by',
-            'status', 'category', 'social_media_links', 'timetable', 'showreel_images',
-            'membership_requirements', 'upcoming_projects_or_plans', 'icon','tags'
+            'id', 'name', 'description', 'society_members', 'leader', 'leader_id', 'vice_president' ,
+            'treasurer', 'event_manager', 'approved_by','status', 'category', 'social_media_links',
+            'showreel_images', 'membership_requirements', 'upcoming_projects_or_plans',
+            'icon','tags',
         ]
         extra_kwargs = {
             'society_members': {'required': False},  # Allows empty or missing data
-            'roles': {'required': False},
             'social_media_links': {'required': False},
-            'timetable': {'required': False},
             'membership_requirements': {'required': False},
             'upcoming_projects_or_plans': {'required': False},
         }
@@ -497,19 +496,34 @@ class SocietyRequestSerializer(RequestSerializer):
         fields = (
             RequestSerializer.Meta.fields
             + ['name', 'description', 'roles', 'leader', 'category', 'icon',
-            'social_media_links', 'timetable', 'membership_requirements',
+            'social_media_links', 'membership_requirements',
             'upcoming_projects_or_plans', 'society', 'showreel_images_request']
         )
 
     def create(self, validated_data):
         photos_data = validated_data.pop('showreel_images_request', [])
-
-        society = SocietyRequest.objects.create(**validated_data)
-
+        
+        # Retrieve the request from context
+        request_obj = self.context.get("request")
+        if not request_obj:
+            raise serializers.ValidationError("Request is required in serializer context.")
+        user = request_obj.user
+        if not hasattr(user, "student"):
+            raise serializers.ValidationError("Only students can request society updates.")
+        
+        # Set the required from_student field from the current user’s student instance.
+        validated_data["from_student"] = user.student
+        
+        # Optionally, set default intent and approved flag if not provided.
+        validated_data.setdefault("intent", "UpdateSoc")
+        validated_data.setdefault("approved", False)
+        
+        society_request = SocietyRequest.objects.create(**validated_data)
+        
         for photo_data in photos_data:
-            SocietyShowreelRequest.objects.create(society=society, **photo_data)
-
-        return society
+            SocietyShowreelRequest.objects.create(society=society_request, **photo_data)
+        
+        return society_request
 
     def update(self, instance, validated_data):
         photos_data = validated_data.pop('showreel_images_request', [])

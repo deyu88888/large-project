@@ -4,7 +4,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 from django.contrib.auth import get_user_model
 
-from api.models import Student, Society
+from api.models import SocietyRequest, Student, Society
 from api.serializers import SocietySerializer
 from rest_framework_simplejwt.tokens import AccessToken
 
@@ -112,18 +112,26 @@ class ManageSocietyDetailsViewTest(APITestCase):
 
     def test_patch_valid_data(self):
         """
-        PATCH with valid data by a president user should return 200 and update the society.
+        PATCH with valid data by a president user should return 200 and create a SocietyRequest
+        without immediately updating the Society.
         """
         url = f"{self.base_url}{self.society.id}/"
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.president_user_token}")
         payload = {"name": "Updated Society Name"}
         response = self.client.patch(url, payload, format="json")
+        
+        # Check that the response is 200 OK and contains the correct message.
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn("Society details updated successfully.", str(response.data))
-
-        # Check the updated data in the database
+        self.assertIn("Society update request submitted. Await admin approval.", str(response.data))
+        
+        # Refresh the society from the database. Its name should remain unchanged.
         self.society.refresh_from_db()
-        self.assertEqual(self.society.name, "Updated Society Name")
+        self.assertEqual(self.society.name, "Test Society")
+        
+        # Verify that a SocietyRequest was created with the new name.
+        society_request = SocietyRequest.objects.get(society=self.society)
+        self.assertEqual(society_request.name, "Updated Society Name")
+
 
     def test_patch_invalid_data(self):
         """
