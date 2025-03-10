@@ -92,7 +92,7 @@ const StudentDashboard: React.FC = () => {
       console.error("Error fetching society data:", error);
     }
     try {
-      const eventsResponse = await apiClient.get("/api/events/"); 
+      const eventsResponse = await apiClient.get("/api/events"); 
       setEvents(eventsResponse.data || []);
     } catch (error) {
       console.error("Error fetching event data:", error);
