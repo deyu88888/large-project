@@ -10,9 +10,8 @@ from .views import (
     StudentSocietiesView, JoinSocietyView, RSVPEventView, EventHistoryView,
     get_popular_societies, CreateEventRequestView, custom_media_view, get_sorted_events, StudentSocietyDataView,
     AllEventsView, EventDetailView, EventCommentsView, DescriptionRequestView, ManageSocietyDetailsAdminView, 
-    like_comment, dislike_comment, EventCommentsView, toggle_follow, StudentProfileView, DeleteSocietyView, DeleteStudentView,
-    ActivityLogView, ManageEventDetailsAdminView, DeleteView,
-    DeleteSocietyView, DeleteStudentView, DeleteEventView, ManageStudentDetailsAdminView,)
+    like_comment, dislike_comment, EventCommentsView, toggle_follow, StudentProfileView,
+    ActivityLogView, ManageEventDetailsAdminView, DeleteView, ManageStudentDetailsAdminView,)
 from .utils import request_otp, verify_otp
 from .recommendation_views import RecommendedSocietiesView, SocietyRecommendationExplanationView
 from .recommendation_feedback_views import RecommendationFeedbackView, RecommendationFeedbackAnalyticsView
