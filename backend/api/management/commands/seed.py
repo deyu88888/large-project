@@ -7,6 +7,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.contrib.auth.hashers import make_password
 from django.core.management.base import BaseCommand
 from api.management.commands.data.society_generator import RandomSocietyDataGenerator
+from api.management.commands.data.student_generator import RandomStudentDataGenerator
 from api.models import (
     Admin,
     Student,
@@ -63,18 +64,18 @@ class Command(BaseCommand):
             Admin,
             username="admin_user",
             email="admin@example.com",
-            first_name="Admin",
-            last_name="User",
+            first_name="Jane",
+            last_name="Smith",
             defaults={"password": make_password("adminpassword")},
         )
         admin.save()
 
-        student, _ = get_or_create_user(
+        get_or_create_user(
             Student,
             username="student_user",
             email="student@example.com",
-            first_name="Student",
-            last_name="User",
+            first_name="John",
+            last_name="Smith",
             defaults={
                 "password": make_password("studentpassword"),
                 "major": "Computer Science",
@@ -85,30 +86,22 @@ class Command(BaseCommand):
             Student,
             username="president_user",
             email="president@example.com",
-            first_name="President",
-            last_name="User",
+            first_name="John",
+            last_name="Doe",
             defaults={
                 "password": make_password("presidentpassword"), 
                 "major": "Mechanical Engineering"
             },
         )
 
-        society, _ = get_or_create_object(
-            Society,
-            name="Robotics Club",
-            leader=president,
-        )
-        society.approved_by = admin
-        society.society_members.add(student)
-        self.seed_society_showreel(society, n=10)
-
-        president.president_of = society
-        president.save()
-
-
         self.create_student(50)
         self.create_admin(5)
         self.create_society(20)
+        self.create_society(
+            name="Robotics Club",
+            president_force=president,
+        )
+
         self.create_event(20)
         self.pre_define_awards()
         self.randomly_assign_awards(50)
@@ -119,17 +112,18 @@ class Command(BaseCommand):
 
     def create_student(self, n):
         """Create n different students"""
-        majors = ["Computer Science", "Maths", "Music"]
+        generator = RandomStudentDataGenerator()
         for i in range(1, n+1):
             print(f"Seeding student {i}/{n}", end='\r', flush=True)
+            data = generator.generate()
             student, created = Student.objects.get_or_create(
-                username=f"student{i}",
-                email=f"student{i}@example.com",
-                first_name=f"student{i}",
-                last_name="User",
+                username=data["username"],
+                first_name=data["first_name"],
+                last_name=data["last_name"],
+                email=f"{data["username"]}@kcl.ac.uk",
+                major=data["major"],
                 defaults={
                     "password": make_password("studentpassword"),  
-                    "major": choice(majors),
                 },
             )
             if created:
@@ -160,39 +154,48 @@ class Command(BaseCommand):
             )
         print(self.style.SUCCESS(f"Seeding admin {n}/{n}"), flush=True)
 
-    def create_society(self, n):
-        """Create n different societies owned by random students"""
+    def create_society(self, n=1, name=None, president_force=None):
+        """
+        Create n different societies owned by random students
+        or creates a society with the name 'name'
+        """
+        generator = RandomSocietyDataGenerator()
         for i in range(1, n+1):
             print(f"Seeding society {i}/{n}", end='\r', flush=True)
 
-            # Only select students who are NOT already leading a society
-            available_students = Student.objects.exclude(president_of__isnull=False).order_by("?")
-        
+            available_students = Student.objects.order_by("?")
+
             if not available_students.exists():
                 print(self.style.WARNING("No available students left to be society leaders. Skipping."))
                 break
 
-            generator = RandomSocietyDataGenerator()
             data = generator.generate()
-            society_leader = available_students.first()
-            approved = self.handle_society_status(
-                society_leader,
-                data["name"],
-            )
+            approved = True
             created = False
             society = None
+            president = president_force
+            if not president_force:
+                for student in available_students:
+                    if not student.president_of:
+                        president = available_students.first()
+                        break
+            if not name:
+                approved = self.handle_society_status(
+                    president,
+                    data["name"],
+                )
+            else:
+                data["name"] = name
             if approved:
                 society, created = Society.objects.get_or_create(
                     name=data["name"],
-                    leader=society_leader,
+                    leader=president,
                     category=data["category"],
                     status="Approved",
                     description=data["description"],
                     tags=data["tags"],
                 )
             if created:
-                # Ensure the leader is always a member
-                society.society_members.add(society_leader)
                 self.finalize_society_creation(society)
 
                 num_events = randint(2, 5)
@@ -218,6 +221,8 @@ class Command(BaseCommand):
         all_students = list(Student.objects.exclude(id=society.leader.id).order_by("?"))
         selected_members = all_students[:randint(5, 15)]
 
+        # Ensure the leader is always a member
+        society.society_members.add(society.leader)
         society.society_members.add(*selected_members)
 
         # Assign roles (ensure at least 2 roles)
@@ -235,6 +240,7 @@ class Command(BaseCommand):
 
         self.seed_society_showreel(society)
         society.save()
+        society.leader.save()
 
     def handle_society_status(self, leader, name):
         """Creates society requests if pending, else assigns an admin to approved_by"""
@@ -249,6 +255,7 @@ class Command(BaseCommand):
                 category="Tech",
                 from_student=leader,
                 intent="CreateSoc",
+                approved=False
             )
         else:
             SocietyRequest.objects.get_or_create(
