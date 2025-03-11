@@ -136,7 +136,7 @@ const ManageSocietyDetails: React.FC = () => {
       });
 
       alert("Society update request submitted. Await admin approval.");
-      navigate(`/president-page/${societyId}`);
+      navigate(`/president/${societyId}`);
     } catch (error) {
       console.error("Error updating society", error);
       alert("There was an error submitting your update request.");
