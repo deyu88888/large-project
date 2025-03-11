@@ -43,7 +43,6 @@ const EventDetailPage: React.FC = () => {
   const [, setComments] = useState<any[]>([]);
   const wsRef = useRef<WebSocket | null>(null);
 
-  // ✅ 获取活动详情
   useEffect(() => {
     const fetchEvent = async () => {
       if (!numericEventId) return;
@@ -61,7 +60,6 @@ const EventDetailPage: React.FC = () => {
     fetchEvent();
   }, [numericEventId]);
 
-  // ✅ 获取用户登录状态
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -77,7 +75,6 @@ const EventDetailPage: React.FC = () => {
     checkAuth();
   }, []);
 
-  // ✅ 仅在用户已登录时获取评论
   useEffect(() => {
     const fetchComments = async () => {
       if (!numericEventId || !isAuthenticated) return;
@@ -92,7 +89,6 @@ const EventDetailPage: React.FC = () => {
     fetchComments();
   }, [numericEventId, isAuthenticated]);
 
-  // ✅ 仅在用户已登录时连接 WebSocket
   useEffect(() => {
     if (!numericEventId || !isAuthenticated) return;
 
@@ -159,7 +155,6 @@ const EventDetailPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* ✅ 只有登录的用户才能看到评论区 */}
       <CommentsSectionWrapper isAuthenticated={isAuthenticated}>
         <CommentSection eventId={numericEventId as number} />
       </CommentsSectionWrapper>
