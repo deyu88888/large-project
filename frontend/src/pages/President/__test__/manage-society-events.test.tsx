@@ -242,11 +242,8 @@ describe('ManageSocietyEvents Component', () => {
     // Click create button
     const createEventButton = screen.getByText('Create a New Event');
     fireEvent.click(createEventButton);
-    
-    // Check navigation
-    expect(mockNavigate).toHaveBeenCalledWith(
-      '/president-page/123/create-society-event/'
-    );
+
+    expect(mockNavigate).toHaveBeenCalledWith('/president/123/create-society-event/');
   });
 
   it('changes filter and updates events displayed', async () => {
