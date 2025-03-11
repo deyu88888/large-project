@@ -266,6 +266,7 @@ class Migration(migrations.Migration):
                 ('description', models.TextField(blank=True, null=True)),
                 ('timestamp', models.DateTimeField(auto_now_add=True)),
                 ('expiration_date', models.DateTimeField(blank=True, null=True)),
+                ('original_data', models.TextField(blank=True, null=True)),
                 ('performed_by', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
             ],
         ),

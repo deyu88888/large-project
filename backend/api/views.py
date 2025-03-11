@@ -1,7 +1,10 @@
 import logging
+import json
 from django.utils import timezone
-from datetime import datetime, timezone
-from datetime import timedelta
+from datetime import datetime, date, timedelta, time
+from django.db.models.fields.files import ImageFieldFile
+from django.db.models import ForeignKey, ManyToManyField
+from django.forms.models import model_to_dict
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from django.contrib.auth import authenticate
@@ -20,8 +23,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticate
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from api.models import  AdminReportRequest, BroadcastMessage, Event, Notification, Society, SocietyRequest, Student, User, Award, AwardStudent, \
-    UserRequest, DescriptionRequest, AdminReportRequest, Comment
+from api.models import Admin, AdminReportRequest, Event, Notification, Society, Student, User, Award, AwardStudent, \
+    UserRequest, DescriptionRequest, AdminReportRequest, Comment, ActivityLog
 from api.serializers import (
     AdminReportRequestSerializer,
     BroadcastSerializer,
@@ -865,11 +868,42 @@ class DeleteView(APIView):
         if not target:
             return Response({"error": f"{target_type} not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        serialized_data = {
-            field.name: getattr(target, field.name)
-            for field in model._meta.fields
-            if field.name != "id" 
-        }
+        original_data = model_to_dict(target)
+        
+        serializable_data = {}
+        for key, value in original_data.items():
+            if value is None:
+                serializable_data[key] = None
+            elif isinstance(value, (datetime, date)):
+                serializable_data[key] = value.isoformat()
+            elif isinstance(value, time):
+                serializable_data[key] = value.strftime("%H:%M:%S")
+            elif isinstance(value, timedelta):
+                serializable_data[key] = str(value)
+            elif isinstance(value, ImageFieldFile):
+                serializable_data[key] = value.url if value else None
+            elif isinstance(value, (list, tuple)) and value and hasattr(value[0], 'email'):
+                serializable_data[key] = [item.email if hasattr(item, 'email') else str(item) for item in value]
+            elif hasattr(value, 'email'):
+                serializable_data[key] = value.email
+            elif hasattr(value, 'all'):
+                related_items = list(value.all())
+                if related_items and hasattr(related_items[0], 'email'):
+                    serializable_data[key] = [item.email for item in related_items]
+                else:
+                    serializable_data[key] = [str(item) for item in related_items]
+            elif hasattr(value, 'pk'):
+                serializable_data[key] = str(value)
+            else:
+                serializable_data[key] = value
+        
+        try:
+            original_data_json = json.dumps(serializable_data)
+        except TypeError as e:
+            return Response({
+                "error": f"Serialization error: {str(e)}",
+                "details": "Cannot serialize data for activity log"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         ActivityLog.objects.create(
             action_type="Delete",
@@ -879,6 +913,7 @@ class DeleteView(APIView):
             performed_by=user,
             timestamp=timezone.now(),
             expiration_date=timezone.now() + timedelta(days=30),
+            original_data=original_data_json,
         )
         target.delete()
         ActivityLog.delete_expired_logs()
@@ -892,44 +927,37 @@ class DeleteView(APIView):
         try:
             log_entry = ActivityLog.objects.get(id=log_id)
 
-            if log_entry.action_type == "Delete":
-                target_type = log_entry.target_type
-                deleted_data = {}
-
-                if log_entry.description:
-                    try:
-                        deleted_data = json.loads(log_entry.description)
-                    except json.JSONDecodeError:
-                        return Response({"error": "Error decoding description."}, status=status.HTTP_400_BAD_REQUEST)
-
-                model_mapping = {
-                    "Student": Student,
-                    "Society": Society,
-                    "Event": Event,
-                }
-
-                model = model_mapping.get(target_type)
-
-                if model:
-                    restored_object = model.objects.create(**deleted_data)
-
-                    if restored_object:
-                        log_entry.delete()
-
-                        return Response({"message": f"{target_type} restored successfully!"}, status=status.HTTP_200_OK)
-                    else:
-                        return Response({"error": f"Failed to restore {target_type}."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-                else:
-                    return Response({"error": "Unsupported target type."}, status=status.HTTP_400_BAD_REQUEST)
-
-            else:
+            if log_entry.action_type != "Delete":
                 return Response({"error": "Invalid action type."}, status=status.HTTP_400_BAD_REQUEST)
+
+            target_type = log_entry.target_type
+            original_data_json = log_entry.original_data  # Get JSON string
+
+            if not original_data_json:
+                return Response({"error": "No original data found for restoration."}, status=status.HTTP_400_BAD_REQUEST)
+
+            try:
+                original_data = json.loads(original_data_json)  # Convert back to dict
+            except json.JSONDecodeError:
+                return Response({"error": "Error decoding original data."}, status=status.HTTP_400_BAD_REQUEST)
+
+            model = self.model_mapping.get(target_type)
+
+            if model:
+                restored_object = model.objects.create(**original_data)
+
+                if restored_object:
+                    log_entry.delete()  # Remove log after restoration
+                    return Response({"message": f"{target_type} restored successfully!"}, status=status.HTTP_200_OK)
+                else:
+                    return Response({"error": f"Failed to restore {target_type}."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            else:
+                return Response({"error": "Unsupported target type."}, status=status.HTTP_400_BAD_REQUEST)
 
         except ActivityLog.DoesNotExist:
             return Response({"error": "Log entry not found."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
 
 class CreateEventRequestView(APIView):
     """
