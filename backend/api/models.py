@@ -1,3 +1,4 @@
+from django.contrib.postgres.fields import JSONField
 from datetime import timedelta
 from random import randint
 from io import BytesIO
@@ -821,6 +822,7 @@ class ActivityLog(models.Model):
     performed_by = models.ForeignKey(User, on_delete=models.CASCADE)
     timestamp = models.DateTimeField(auto_now_add=True)
     expiration_date = models.DateTimeField(null=True, blank=True)
+    original_data = models.TextField(null=True, blank=True) 
 
     def __str__(self):
         return f"{self.action_type} - {self.target_name} on {self.timestamp}"
