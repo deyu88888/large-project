@@ -265,6 +265,7 @@ const routes = [
       { index: true, element: <PageWithTitle title="Home"><DashboardPage /></PageWithTitle> },
       { path: "login", element: <PageWithTitle title="Login"><LoginPage /></PageWithTitle> },
       { path: "register", element: <PageWithTitle title="Register"><RegisterPage /></PageWithTitle> },
+      { path: "all-events", element: <PageWithTitle title="All Events"><AllEventsPage /></PageWithTitle>},
       { path: "event-list", element: <PageWithTitle title="All Events"><EventListPage /></PageWithTitle> },
     ],
   },
