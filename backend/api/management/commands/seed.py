@@ -93,7 +93,7 @@ class Command(BaseCommand):
             first_name="John",
             last_name="Doe",
             defaults={
-                "password": make_password("presidentpassword"), 
+                "password": make_password("presidentpassword"),
                 "major": "Mechanical Engineering"
             },
         )

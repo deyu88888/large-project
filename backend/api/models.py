@@ -46,6 +46,13 @@ class User(AbstractUser):
         default="student"
     )
 
+    following = models.ManyToManyField(
+        "self",
+        symmetrical=False,
+        related_name="followers",
+        blank=True,
+    )
+
     class Meta:
         ordering = ("first_name", "last_name")
 
@@ -220,7 +227,6 @@ class Society(models.Model):
     category = models.CharField(max_length=50, default="General")
     # {"facebook": "link", "email": "email"}
     social_media_links = models.JSONField(default=dict, blank=True)
-    timetable = models.TextField(blank=True, null=True)
     membership_requirements = models.TextField(blank=True, null=True)
     upcoming_projects_or_plans = models.TextField(blank=True, null=True)
     tags = models.JSONField(default=list, blank=True)  # Stores tags as a list
@@ -387,7 +393,7 @@ class SocietyRequest(Request):
         null=True,
     )
     name = models.CharField(max_length=30, blank=True, default="")
-    descritpion = models.CharField(max_length=500, blank=True, default="")
+    description = models.CharField(max_length=500, blank=True, default="")
     roles = models.JSONField(default=dict, blank=True)
     leader = models.ForeignKey(
         "Student",
@@ -399,7 +405,6 @@ class SocietyRequest(Request):
     category = models.CharField(max_length=50, blank=True, default="")
     # {"facebook": "link", "email": "email"}
     social_media_links = models.JSONField(default=dict, blank=True, null=True)
-    timetable = models.TextField(blank=True, default="")
     membership_requirements = models.TextField(blank=True, default="")
     upcoming_projects_or_plans = models.TextField(blank=True, default="")
     icon = models.ImageField(upload_to="icon_request/", blank=True, null=True)
@@ -614,7 +619,21 @@ class Comment(models.Model):
     user = models.ForeignKey("User", on_delete=models.CASCADE)
     content = models.TextField()
     create_at = models.DateTimeField(auto_now_add=True)
-    parent_comment = models.ForeignKey("self", null=True, blank=True, on_delete=models.CASCADE, related_name="replies")
+    parent_comment = models.ForeignKey(
+        "self",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="replies"
+    )
+    likes = models.ManyToManyField(User, related_name="liked_comments", blank=True)
+    dislikes = models.ManyToManyField(User, related_name="disliked_comments", blank=True)
+
+    def total_likes(self):
+        return self.likes.count()
+
+    def total_dislikes(self):
+        return self.dislikes.count()
 
     def __str__(self):
-        return f"{self.user.username}: {self.content[:30]}"
+            return f"{self.user.username}: {self.content[:30]}"

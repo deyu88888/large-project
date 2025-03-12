@@ -114,7 +114,7 @@ const PresidentPage = () => {
         }}
       >
         <Typography variant="h3" fontWeight="bold" mb={2}>
-          Pending Members (Preview)
+          Pending Members
         </Typography>
 
         {pendingMembers.length === 0 ? (

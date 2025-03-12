@@ -18,7 +18,7 @@ class RegisterViewTestCase(APITestCase):
             "password": "Password123",
             "major": "Computer Science",
             "societies": [self.society1.id],
-            "president_of": [self.society2.id],
+            "president_of": self.society2.id,
         }
 
         self.existing_user = User.objects.create_user(
@@ -37,7 +37,7 @@ class RegisterViewTestCase(APITestCase):
         response = self.client.post(reverse("register"), data=self.valid_payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertIn("message", response.data)
-        self.assertEqual(response.data["message"], "Student registered successfully.")
+        self.assertEqual(response.data["message"], "Student registered successfully")
         self.assertTrue(Student.objects.filter(username=self.valid_payload["username"]).exists())
 
     def test_register_student_missing_required_fields(self):
@@ -45,10 +45,10 @@ class RegisterViewTestCase(APITestCase):
         Test registering a student fails when required fields are missing.
         """
         invalid_payload = self.valid_payload.copy()
-        del invalid_payload["email"]  
+        del invalid_payload["email"]
         response = self.client.post(reverse("register"), data=invalid_payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("email", response.data)
+        self.assertIn("Email", response.data.get("error", ""))
 
     def test_register_student_duplicate_email(self):
         """
@@ -57,8 +57,10 @@ class RegisterViewTestCase(APITestCase):
         self.valid_payload["email"] = self.existing_user.email  
         response = self.client.post(reverse("register"), data=self.valid_payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("email", response.data)
-        self.assertEqual(response.data["email"][0], "user with this email already exists.")
+        # Check that the error message mentions email; adjust case as needed.
+        self.assertIn("email", response.data.get("error", "").lower())
+        self.assertEqual(response.data.get("error"), "This email is already registered.")
+
 
     def test_register_student_duplicate_username(self):
         """

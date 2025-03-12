@@ -1,23 +1,29 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { apiClient } from "../api";
 import { CircularProgress, Typography, Card, CardContent } from "@mui/material";
 import { format } from "date-fns";
-import CommentSection from "../components/CommentSection";
 import { Link } from "react-router-dom";
+import { CommentSection } from "../components/CommentSection";
 
-function CommentsSectionWrapper({ isAuthenticated, children }: {
-  isAuthenticated: boolean;
-  children: React.ReactNode;
-}) {
+const CommentsSectionWrapper: React.FC<{ isAuthenticated: boolean; children: React.ReactNode }> = ({
+  isAuthenticated,
+  children,
+}) => {
   if (!isAuthenticated) {
     return (
-      <Typography variant="body2" color="text.primary">
+      <Typography
+          variant="body2"
+          color="text.primary"
+          align="center"
+          marginTop="20px"
+          fontSize="14px"
+      >
         Please{" "}
         <Link to="/login" style={{ textDecoration: "underline", color: "blue" }}>
           login
         </Link>{" "}
-        to view the comments (don&apos;t have an account? click{" "}
+        to view the comments (don't have an account? click{" "}
         <Link to="/register" style={{ textDecoration: "underline", color: "blue" }}>
           here
         </Link>
@@ -26,74 +32,67 @@ function CommentsSectionWrapper({ isAuthenticated, children }: {
     );
   }
   return <>{children}</>;
-}
+};
 
 const EventDetailPage: React.FC = () => {
   const { eventId } = useParams();
+  const numericEventId = eventId ? parseInt(eventId, 10) : undefined;
   const [event, setEvent] = useState<any>(null);
-  const [loadingEvent, setLoadingEvent] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  const [comments, setComments] = useState<any[]>([]);
-  const [loadingComments, setLoadingComments] = useState(true);
+  const [, setComments] = useState<any[]>([]);
   const wsRef = useRef<WebSocket | null>(null);
 
-  // get the event detail
   useEffect(() => {
     const fetchEvent = async () => {
-      setLoadingEvent(true);
+      if (!numericEventId) return;
+      setLoading(true);
       try {
-        const response = await apiClient.get(`/api/event/${eventId}`);
-        setEvent(response.data);
+        const eventRes = await apiClient.get(`/api/event/${numericEventId}`);
+        setEvent(eventRes.data);
       } catch (error) {
         console.error("Error fetching event:", error);
       } finally {
-        setLoadingEvent(false);
+        setLoading(false);
       }
     };
-    if (eventId) {
-      fetchEvent();
-    }
-  }, [eventId]);
 
-  // get all the comments
-  useEffect(() => {
-    const fetchComments = async () => {
-      setLoadingComments(true);
-      try {
-        const response = await apiClient.get(`/api/event/${eventId}/comments`);
-        setComments(response.data);
-      } catch (error) {
-        console.error("Error fetching comments:", error);
-      } finally {
-        setLoadingComments(false);
-      }
-    };
-    if (eventId) {
-      fetchComments();
-    }
-  }, [eventId]);
+    fetchEvent();
+  }, [numericEventId]);
 
-  // check if user is logged in
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const response = await apiClient.get("/api/user/current");
-        if (response.status === 200) {
+        const authRes = await apiClient.get("/api/user/current");
+        if (authRes.status === 200) {
           setIsAuthenticated(true);
-        } else {
-          setIsAuthenticated(false);
         }
-      } catch (error) {
-        setIsAuthenticated(false);
+      } catch {
+        setIsAuthenticated(false); // 401 Unauthorized
       }
     };
+
     checkAuth();
   }, []);
 
   useEffect(() => {
-    if (!eventId) return;
-    const wsUrl = `ws://127.0.0.1:8000/ws/event/${eventId}/`;
+    const fetchComments = async () => {
+      if (!numericEventId || !isAuthenticated) return;
+      try {
+        const commentsRes = await apiClient.get(`/api/comments/?event_id=${numericEventId}`);
+        setComments(commentsRes.data);
+      } catch (error) {
+        console.error("Error fetching comments:", error);
+      }
+    };
+
+    fetchComments();
+  }, [numericEventId, isAuthenticated]);
+
+  useEffect(() => {
+    if (!numericEventId || !isAuthenticated) return;
+
+    const wsUrl = `ws://127.0.0.1:8000/ws/event/${numericEventId}/`;
     wsRef.current = new WebSocket(wsUrl);
 
     wsRef.current.onopen = () => {
@@ -103,8 +102,7 @@ const EventDetailPage: React.FC = () => {
     wsRef.current.onmessage = (e) => {
       const data = JSON.parse(e.data);
       if (data.type === "NEW_COMMENT") {
-        console.log("Received new comment:", data.payload);
-        setComments((prevComments) => [data.payload, ...prevComments]);
+        setComments((prev) => [data.payload, ...prev]);
       }
     };
 
@@ -121,9 +119,9 @@ const EventDetailPage: React.FC = () => {
         wsRef.current.close();
       }
     };
-  }, [eventId]);
+  }, [numericEventId, isAuthenticated]);
 
-  if (loadingEvent) {
+  if (loading) {
     return <CircularProgress style={{ display: "block", margin: "20px auto" }} />;
   }
 
@@ -158,12 +156,7 @@ const EventDetailPage: React.FC = () => {
       </Card>
 
       <CommentsSectionWrapper isAuthenticated={isAuthenticated}>
-        <CommentSection
-          eventId={eventId}
-          comments={comments}
-          setComments={setComments}
-          loading={loadingComments}
-        />
+        <CommentSection eventId={numericEventId as number} />
       </CommentsSectionWrapper>
     </div>
   );

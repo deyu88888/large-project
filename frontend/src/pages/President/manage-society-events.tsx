@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -12,7 +12,20 @@ import {
 import { useTheme } from "@mui/material/styles";
 import { apiClient } from "../../api";
 import { tokens } from "../../theme/theme";
-import { LoadingView } from "../../components/loading/loading-view";
+
+// Helper functions for date/time formatting
+const formatDate = (dateString: string): string => {
+  const options: Intl.DateTimeFormatOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+  return new Date(dateString).toLocaleDateString(undefined, options);
+};
+
+const formatTime = (timeString: string): string => {
+  const [hours, minutes] = timeString.split(':');
+  const date = new Date();
+  date.setHours(parseInt(hours, 10));
+  date.setMinutes(parseInt(minutes, 10));
+  return date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+};
 
 interface Event {
   id: number;
@@ -20,39 +33,126 @@ interface Event {
   date: string;
   start_time: string;
   status: string;
+  hosted_by: number;
+  description: string;
+  location: string;
+  duration: string;
+  max_capacity: number;
+  current_attendees: number[];
 }
 
 const ManageSocietyEvents: React.FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const navigate = useNavigate();
-  const { society_id } = useParams<{ society_id: string }>();
+  const location = useLocation();
 
+  // Read both society_id and filter from URL params
+  const { society_id, filter: filterParam } = useParams<{ society_id: string; filter?: "upcoming" | "previous" | "pending" }>();
+
+  // Set the filter state to the URL filter, defaulting to "upcoming"
+  const [filter, setFilter] = useState<"upcoming" | "previous" | "pending">(filterParam || "upcoming");
   const [events, setEvents] = useState<Event[]>([]);
-  const [filter, setFilter] = useState<"upcoming" | "previous" | "pending">("upcoming");
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Convert society_id to number
+  const numericSocietyId = society_id ? parseInt(society_id, 10) : null;
+  
+  // Sync URL when filter state changes
   useEffect(() => {
     if (!society_id) return;
+    // Only update if the URL filter is different from state
+    if (filter !== filterParam) {
+      navigate(`/president-page/${society_id}/manage-society-events/${filter}`, { replace: true });
+    }
+  }, [filter, filterParam, society_id, navigate]);
+
+  // Fetch events when society_id or filter changes.
+  useEffect(() => {
+    if (!numericSocietyId) {
+      setError("Invalid society ID");
+      setLoading(false);
+      return;
+    }
+    
     const fetchEvents = async () => {
       setLoading(true);
       setError(null);
       try {
+        // Fetch all events for the society first
         const response = await apiClient.get("/api/events/", {
-          params: { society_id, filter },
+          params: { society_id: numericSocietyId },
         });
-        setEvents(response.data || []);
+        
+        console.log(`[DEBUG] Filter: ${filter}, Society ID: ${numericSocietyId}`);
+        console.log(`[DEBUG] Raw response:`, response.data);
+        
+        // Filter events on the frontend based on the current filter
+        const allSocietyEvents = response.data.filter((event: Event) => event.hosted_by === numericSocietyId);
+        
+        let filteredEvents: Event[] = [];
+        const currentDate = new Date();
+        
+        // Apply appropriate filter logic
+        if (filter === "upcoming") {
+          // Events with future dates and approved status
+          filteredEvents = allSocietyEvents.filter((event: Event) => {
+            const eventDate = new Date(`${event.date}T${event.start_time}`);
+            return eventDate > currentDate && event.status === "Approved";
+          });
+        } else if (filter === "previous") {
+          // Events with past dates
+          filteredEvents = allSocietyEvents.filter((event: Event) => {
+            const eventDate = new Date(`${event.date}T${event.start_time}`);
+            return eventDate < currentDate && event.status === "Approved";
+          });
+        } else if (filter === "pending") {
+          // Events with "Pending" status
+          filteredEvents = allSocietyEvents.filter((event: Event) => 
+            event.status === "Pending"
+          );
+        }
+        
+        console.log(`[DEBUG] Filtered events (${filteredEvents.length}):`, filteredEvents);
+        setEvents(filteredEvents);
       } catch (err: any) {
-        console.error("Error fetching events:", err);
-        setError("Failed to load events.");
+        console.error(`Error fetching ${filter} events:`, err);
+        setError(`Failed to load ${filter} events: ${err.message || "Unknown error"}`);
       } finally {
         setLoading(false);
       }
     };
 
     fetchEvents();
-  }, [society_id, filter]);
+  }, [numericSocietyId, filter]);
+
+  // Helper: determine if an event is editable (upcoming or pending)
+  const isEditable = (event: Event): boolean => {
+    if (event.status === "Pending") return true;
+    const nowDate = new Date();
+    const eventDateTime = new Date(`${event.date}T${event.start_time}`);
+    return eventDateTime > nowDate;
+  };
+
+  // Handler for deleting an event
+  const handleDelete = async (eventId: number) => {
+    if (window.confirm("Are you sure you want to delete this event?")) {
+      try {
+        await apiClient.delete(`/api/events/${eventId}/`);
+        alert("Event deleted successfully.");
+        setEvents((prev) => prev.filter((e) => e.id !== eventId));
+      } catch (err) {
+        console.error("Error deleting event:", err);
+        alert("Failed to delete event.");
+      }
+    }
+  };
+
+  // Handler for editing an event
+  const handleEdit = (eventId: number) => {
+    navigate(`/president-page/${society_id}/edit-event-details/${eventId}`);
+  };
 
   return (
     <Box
@@ -74,12 +174,7 @@ const ManageSocietyEvents: React.FC = () => {
         >
           Manage Society Events
         </Typography>
-        <Typography 
-          variant="h6" 
-          sx={{
-            color: colors.grey[500],
-          }}
-        >
+        <Typography variant="h6" sx={{ color: colors.grey[500] }}>
           {filter.charAt(0).toUpperCase() + filter.slice(1)} events for Society {society_id}
         </Typography>
       </Box>
@@ -107,7 +202,9 @@ const ManageSocietyEvents: React.FC = () => {
         <ToggleButtonGroup
           value={filter}
           exclusive
-          onChange={(_, newFilter) => newFilter && setFilter(newFilter)}
+          onChange={(_, newFilter) => {
+            if (newFilter) setFilter(newFilter);
+          }}
           sx={{
             backgroundColor: colors.primary[500],
             borderRadius: "8px",
@@ -146,7 +243,7 @@ const ManageSocietyEvents: React.FC = () => {
         </Typography>
       ) : events.length === 0 ? (
         <Typography textAlign="center" color={colors.grey[500]}>
-          No events found for "{filter}".
+          No {filter} events found for society {society_id}.
         </Typography>
       ) : (
         <Box maxWidth="800px" mx="auto">
@@ -168,9 +265,21 @@ const ManageSocietyEvents: React.FC = () => {
               <Typography variant="h5" fontWeight="bold">
                 {event.title}
               </Typography>
-              <Typography>Date: {event.date}</Typography>
-              <Typography>Start Time: {event.start_time}</Typography>
+              <Typography>Date: {formatDate(event.date)}</Typography>
+              <Typography>Time: {formatTime(event.start_time)}</Typography>
+              <Typography>Location: {event.location}</Typography>
               <Typography>Status: {event.status}</Typography>
+
+              {isEditable(event) && (
+                <Box mt={2} display="flex" gap={2}>
+                  <Button variant="contained" color="primary" onClick={() => handleEdit(event.id)}>
+                    Edit
+                  </Button>
+                  <Button variant="contained" color="error" onClick={() => handleDelete(event.id)}>
+                    Delete
+                  </Button>
+                </Box>
+              )}
             </Paper>
           ))}
         </Box>

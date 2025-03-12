@@ -17,18 +17,27 @@ class UserSerializer(serializers.ModelSerializer):
     """
     Serializer for the base User model.
     """
+    is_following = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = [
             'id', 'username', 'password', 'first_name',
-            'last_name', 'email', 'is_active', 'role'
+            'last_name', 'email', 'is_active', 'role', 'following',
+            'is_following'
         ]
         extra_kwargs = {
             'password': {'write_only': True, 'min_length': 8},
             'username': {'validators': []},
             'email': {'validators': []},
         }
+
+    def get_is_following(self, obj):
+        """Check if the user is following."""
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return request.user.following.filter(id=obj.id).exists()
+        return False
 
     def create(self, validated_data):
         user = User.objects.create_user(**validated_data)
@@ -175,9 +184,7 @@ class SocietySerializer(serializers.ModelSerializer):
         ]
         extra_kwargs = {
             'society_members': {'required': False},  # Allows empty or missing data
-            'roles': {'required': False},
             'social_media_links': {'required': False},
-            'timetable': {'required': False},
             'membership_requirements': {'required': False},
             'upcoming_projects_or_plans': {'required': False},
         }
@@ -237,6 +244,7 @@ class SocietySerializer(serializers.ModelSerializer):
 
 class EventSerializer(serializers.ModelSerializer):
     """ Serializer for objects of the Event model """
+    current_attendees = StudentSerializer(many=True, read_only=True)
 
     class Meta:
         """ EventSerializer meta data """
@@ -498,19 +506,34 @@ class SocietyRequestSerializer(RequestSerializer):
         fields = (
             RequestSerializer.Meta.fields
             + ['name', 'description', 'roles', 'leader', 'category', 'icon',
-            'social_media_links', 'timetable', 'membership_requirements',
+            'social_media_links', 'membership_requirements',
             'upcoming_projects_or_plans', 'society', 'showreel_images_request']
         )
 
     def create(self, validated_data):
         photos_data = validated_data.pop('showreel_images_request', [])
-
-        society = SocietyRequest.objects.create(**validated_data)
-
+        
+        # Retrieve the request from context
+        request_obj = self.context.get("request")
+        if not request_obj:
+            raise serializers.ValidationError("Request is required in serializer context.")
+        user = request_obj.user
+        if not hasattr(user, "student"):
+            raise serializers.ValidationError("Only students can request society updates.")
+        
+        # Set the required from_student field from the current user’s student instance.
+        validated_data["from_student"] = user.student
+        
+        # Optionally, set default intent and approved flag if not provided.
+        validated_data.setdefault("intent", "UpdateSoc")
+        validated_data.setdefault("approved", False)
+        
+        society_request = SocietyRequest.objects.create(**validated_data)
+        
         for photo_data in photos_data:
-            SocietyShowreelRequest.objects.create(society=society, **photo_data)
-
-        return society
+            SocietyShowreelRequest.objects.create(society=society_request, **photo_data)
+        
+        return society_request
 
     def update(self, instance, validated_data):
         photos_data = validated_data.pop('showreel_images_request', [])
@@ -580,7 +603,7 @@ class EventRequestSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         # Ensure that 'hosted_by' is provided via extra kwargs (e.g. from the view)
-        hosted_by = validated_data.get("hosted_by")
+        hosted_by = validated_data.get("hosted_by") or self.context.get("hosted_by")
         if hosted_by is None:
             raise serializers.ValidationError({"hosted_by": "This field is required."})
 
@@ -752,29 +775,64 @@ class CommentSerializer(serializers.ModelSerializer):
     """
     Serializer for the Comment model
     """
-    user_data = serializers.SerializerMethodField()
     replies = serializers.SerializerMethodField()
+    user_data = serializers.SerializerMethodField()
+    likes = serializers.SerializerMethodField()
+    dislikes = serializers.SerializerMethodField()
+    liked_by_user = serializers.SerializerMethodField()
+    disliked_by_user = serializers.SerializerMethodField()
 
     class Meta:
         model = Comment
-        fields = ["id", "content", "create_at", "user_data", "parent_comment", "replies", "event"]
-        read_only_fields = ["id", "create_at", "user_data", "event", "replies"]
-        extra_kwargs = {
-            "parent_comment": {"required": False, "allow_null": True},
-        }
-
-    def get_user_data(self, obj):
-        if obj.user:
-            return {
-                "id": obj.user.id,
-                "username": obj.user.username
-            }
-        return None
+        fields = [
+            "id",
+            "content",
+            "create_at",
+            "user_data",
+            "parent_comment",
+            "replies",
+            "likes",
+            "dislikes",
+            "liked_by_user",
+            "disliked_by_user"
+        ]
 
     def get_replies(self, obj):
-        """get the children comments (if have)"""
-        replies = obj.replies.all().order_by("create_at")
-        return CommentSerializer(replies, many=True).data
+        """Get all the replies of the comment"""
+        request = self.context.get("request", None)
+        serializer = CommentSerializer(
+            obj.replies.all().order_by("create_at"),
+            many=True,
+            context={"request": request}
+        )
+        return serializer.data
+
+    def get_user_data(self, obj):
+        return {
+            "id": obj.user.id,
+            "username": obj.user.username,
+        }
+
+    def get_likes(self, obj):
+        return obj.total_likes()
+
+    def get_dislikes(self, obj):
+        return obj.total_dislikes()
+
+    def get_liked_by_user(self, obj):
+        """Check if the user liked this comment"""
+        request = self.context.get("request", None)
+        if request and request.user.is_authenticated:
+            return obj.likes.filter(id=request.user.id).exists()
+        return False
+
+    def get_disliked_by_user(self, obj):
+        """Check if the user disliked this comment"""
+        request = self.context.get("request", None)
+        if request and request.user.is_authenticated:
+            return obj.dislikes.filter(id=request.user.id).exists()
+        return False
+
 
 class DescriptionRequestSerializer(serializers.ModelSerializer):
     class Meta:

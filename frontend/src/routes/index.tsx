@@ -16,7 +16,7 @@ import AssignSocietyRole from "../pages/President/assign-society-role";
 const LoginPage = lazy(() => import("../pages/login"));
 const RegisterPage = lazy(() => import("../pages/register"));
 const ProfilePage = lazy(() => import("../pages/profile"));
-const StudentDashboard = lazy(() => import("../pages/Student/student-dashboard"));
+const StudentDashboard = lazy(() => import("../pages/Student/StudentDashboard"));
 const MySocieties = lazy(() => import("../pages/Student/my-societies"));
 const ViewEvents = lazy(() => import("../pages/Student/view-events"));
 const ViewNotifications = lazy(() => import("../pages/Student/view-notifications"));
@@ -25,6 +25,8 @@ const JoinSocietiesPage = lazy(() => import("../pages/Student/join-societies"));
 const ViewSocietyPage = lazy(() => import("../pages/view-society"));
 const PresidentPage = lazy(() => import("../pages/President/president-page"));
 const ManageSocietyDetails = lazy(() => import("../pages/President/manage-society-details"));
+const SocietyPreviewModal = lazy(() => import("../pages/President/society-preview-modal"));
+const EditEventDetails = lazy(() => import("../pages/President/edit-event-details"));
 const ManageSocietyEvents = lazy(() => import("../pages/President/manage-society-events"));
 const CreateEventPage = lazy(() => import("../pages/create-society-event"));
 const ReportToAdmin = lazy(() => import("../pages/President/report-to-admin"));
@@ -45,7 +47,7 @@ const EventListRejectPage = lazy(
   () => import("../pages/Admin/EventListReject")
 );
 const AdminDashboardPage = lazy(() => import("../pages/Admin/AdminDashboard"));
-const CalendarPage = lazy(() => import("../pages/Admin/Calendar"));
+const CalendarPage = lazy(() => import("../pages/Admin/AdminCalendar"));
 
 const StudentListPage = lazy(() => import("../pages/Admin/StudentList"));
 const DashboardPage = lazy(() => import("../pages/Dashboard"));
@@ -172,6 +174,10 @@ const routes = [
             element: <ProfilePage />,
           },
           {
+            path: "profile/:student_id",
+            element: <ProfilePage />,
+          },
+          {
             path: "my-societies",
             element: <MySocieties />,
           },
@@ -230,7 +236,15 @@ const routes = [
           ),
         },
         {
-          path: "manage-society-events",
+          path: "society-preview-modal",
+          element: (
+            <Suspense fallback={<LoadingView />}>
+              <SocietyPreviewModal />
+            </Suspense>
+          ),
+        },
+        {
+          path: "manage-society-events/:filter?",
           element: (
             <Suspense fallback={<LoadingView />}>
               <ManageSocietyEvents />
@@ -242,6 +256,14 @@ const routes = [
           element: (
             <Suspense fallback={<LoadingView />}>
               <CreateEventPage />
+            </Suspense>
+          ),
+        },
+        {
+          path: "edit-event-details/:event_id",
+          element: (
+            <Suspense fallback={<LoadingView />}>
+              <EditEventDetails />
             </Suspense>
           ),
         },

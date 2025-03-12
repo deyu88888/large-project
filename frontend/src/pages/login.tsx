@@ -1,13 +1,17 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useFormik } from "formik";
-import { Box, Typography, TextField, Button, CircularProgress, useTheme } from "@mui/material";
+import {
+  Box, Typography, TextField, Button, CircularProgress, useTheme, InputAdornment, IconButton
+} from "@mui/material";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { apiClient, apiPaths } from "../api";
 import { tokens } from "../theme/theme";
 import { ACCESS_TOKEN, REFRESH_TOKEN } from "../constants";
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
@@ -39,7 +43,7 @@ export default function LoginPage() {
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        backgroundColor: colors.primary[400], 
+        backgroundColor: colors.primary[400],
         padding: 2,
       }}
     >
@@ -57,11 +61,11 @@ export default function LoginPage() {
       >
         <Typography
           variant="h4"
-          sx={{ 
-            textAlign: "center", 
-            fontWeight: "bold", 
-            color: colors.grey[100], 
-            marginBottom: 2 
+          sx={{
+            textAlign: "center",
+            fontWeight: "bold",
+            color: colors.grey[100],
+            marginBottom: 2
           }}
         >
           Login
@@ -85,13 +89,22 @@ export default function LoginPage() {
           id="password"
           name="password"
           label="Password"
-          type="password"
+          type={showPassword ? "text" : "password"}
           placeholder="Enter your password here"
           value={loginFormik.values.password}
           onChange={loginFormik.handleChange}
           sx={{ marginBottom: 2 }}
           InputLabelProps={{ style: { color: colors.grey[300] } }}
-          InputProps={{ style: { color: colors.grey[100] } }}
+          InputProps={{
+            style: { color: colors.grey[100] },
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
+                  {showPassword ? <VisibilityOff /> : <Visibility />}
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
         />
 
         {loading && (

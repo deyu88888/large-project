@@ -6,6 +6,7 @@ from django.utils import timezone
 from api.models import Society, Admin, Student, SocietyRequest, SocietyShowreelRequest
 from api.serializers import SocietyRequestSerializer
 from api.tests.file_deletion import delete_file
+from rest_framework.test import APIRequestFactory
 
 # pylint: disable=no-member
 
@@ -114,7 +115,13 @@ class SocietyRequestSerializerTestCase(TestCase):
 
     def test_society_requests_create(self):
         """Test society request creation function correctly"""
-        self.serializer = SocietyRequestSerializer(data=self.data)
+        factory = APIRequestFactory()
+        # Create a dummy POST request
+        request = factory.post("/")
+        # Set the user on the request so that the serializer can retrieve it.
+        request.user = self.student1  # Or whichever student should be used for the request.
+
+        self.serializer = SocietyRequestSerializer(data=self.data, context={"request": request})
         self._assert_serializer_is_valid()
         society_request = self.serializer.save()
 
@@ -125,10 +132,7 @@ class SocietyRequestSerializerTestCase(TestCase):
         self.assertEqual(society_request.approved, self.data["approved"])
         self.assertEqual(society_request.intent, self.data["intent"])
         self.assertEqual(society_request.icon, self.data["icon"])
-        self.assertEqual(
-            society_request.from_student.id,
-            self.data["from_student"]
-        )
+        self.assertEqual(society_request.from_student.id, self.data["from_student"])
 
     def test_society_request_update(self):
         """Test society request update functions correctly"""
@@ -168,7 +172,7 @@ class SocietyRequestSerializerTestCase(TestCase):
 
         self.assertEqual(
             len(data["showreel_images_request"]), 2,
-            f"showreel_images_request : {data["showreel_images_request"]}"
+            f"showreel_images_request : {data['showreel_images_request']}"
         )
 
         photos = {img["photo"] for img in data["showreel_images_request"]}
