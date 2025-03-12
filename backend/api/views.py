@@ -947,78 +947,349 @@ class DeleteView(APIView):
 
             model = self.model_mapping.get(target_type)
 
-            if model:
-                if target_type == "Student":
-                    # Get the original User ID from the original data
-                    user_id = original_data.get('id')  # Assuming 'id' was stored in the original data
-                    user_instance = None
-                    
-                    # Attempt to restore the User with the original ID
-                    if user_id:
-                        try:
-                            user_instance = User.objects.get(id=user_id)
-                        except User.DoesNotExist:
-                            # If the User doesn't exist, create the User instance using the original data
-                            user_instance = User.objects.create(
-                                id=user_id,  # Ensure the original ID is used
-                                username=original_data.get('username'),
-                                email=original_data.get('email'),
-                                first_name=original_data.get('first_name'),
-                                last_name=original_data.get('last_name'),
-                                is_active=original_data.get('is_active', True),
-                            )
-                    
-                    # Proceed with restoring the Student
-                    restored_student = model.objects.create(**original_data)
-                    
-                    # Assign the restored User to the Student's user_ptr field
-                    if user_instance:
-                        restored_student.user_ptr = user_instance
-                    else:
-                        # Handle the case where the User doesn't exist and we created it manually
-                        return Response({"error": f"Failed to restore User with ID {user_id}."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-                    # Handle the restoration of ManyToMany fields (societies, attended_events, etc.)
-                    societies_ids = original_data.get('societies', [])
-                    if societies_ids:
-                        societies = Society.objects.filter(id__in=societies_ids)
-                        restored_student.societies.set(societies)
-
-                    attended_events_ids = original_data.get('attended_events', [])
-                    if attended_events_ids:
-                        attended_events = Event.objects.filter(id__in=attended_events_ids)
-                        restored_student.attended_events.set(attended_events)
-
-                    followers_ids = original_data.get('followers', [])
-                    if followers_ids:
-                        followers = User.objects.filter(id__in=followers_ids)
-                        restored_student.followers.set(followers)
-
-                    president_of_id = original_data.get('president_of')
-                    if president_of_id:
-                        try:
-                            society = Society.objects.get(id=president_of_id)
-                            restored_student.president_of = society
-                        except Society.DoesNotExist:
-                            restored_student.president_of = None
-
-                    restored_student.save()
-
-                else:
-                    restored_object = model.objects.create(**original_data)
-
-                if restored_student:
-                    log_entry.delete()  # Remove log after restoration
-                    return Response({"message": f"{target_type} restored successfully!"}, status=status.HTTP_200_OK)
-                else:
-                    return Response({"error": f"Failed to restore {target_type}."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            else:
+            if not model:
                 return Response({"error": "Unsupported target type."}, status=status.HTTP_400_BAD_REQUEST)
 
+            # Process model-specific restoration logic
+            if target_type == "Student":
+                return self._restore_student(original_data, log_entry)
+            elif target_type == "Society":
+                return self._restore_society(original_data, log_entry)
+            elif target_type == "Event":
+                return self._restore_event(original_data, log_entry)
+            else:
+                return Response({"error": "Unsupported target type."}, status=status.HTTP_400_BAD_REQUEST)
+                
         except ActivityLog.DoesNotExist:
             return Response({"error": "Log entry not found."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    def _restore_student(self, original_data, log_entry):
+        """Handle student restoration"""
+        try:
+            # Extract basic fields for the User model
+            user_data = {
+                'username': original_data.get('username'),
+                'email': original_data.get('email'),
+                'first_name': original_data.get('first_name'),
+                'last_name': original_data.get('last_name'),
+                'is_active': original_data.get('is_active', True),
+            }
+            
+            # Create a new User first
+            user_id = original_data.get('id')
+            email = user_data.get('email')
+            username = user_data.get('username')
+            
+            # Try to find existing user
+            user = None
+            if user_id:
+                try:
+                    user = User.objects.filter(id=int(user_id)).first()
+                except (ValueError, TypeError):
+                    pass
+                    
+            if not user and email:
+                user = User.objects.filter(email=email).first()
+                
+            if not user and username:
+                user = User.objects.filter(username=username).first()
+            
+            # If user doesn't exist, create a new one
+            if not user:
+                # Make email unique if needed
+                if email:
+                    while User.objects.filter(email=email).exists():
+                        timestamp = int(time.time())
+                        email_parts = email.split('@')
+                        if len(email_parts) == 2:
+                            email = f"{email_parts[0]}+{timestamp}@{email_parts[1]}"
+                        else:
+                            email = f"restored_{timestamp}@example.com"
+                    user_data['email'] = email
+                
+                # Make username unique if needed
+                if username:
+                    while User.objects.filter(username=username).exists():
+                        timestamp = int(time.time())
+                        username = f"{username}_{timestamp}"
+                    user_data['username'] = username
+                    
+                # Create new user
+                user = User.objects.create(**user_data)
+            
+            # Prepare student-specific data
+            student_data = {k: v for k, v in original_data.items() if k not in [
+                'id', 'username', 'email', 'first_name', 'last_name', 'is_active',
+                'password', 'last_login', 'is_superuser', 'is_staff', 'date_joined',
+                'groups', 'user_permissions', 'societies', 'attended_events', 'followers',
+                'following', 'president_of', 'user_ptr'
+            ]}
+            
+            # Check if student already exists for this user
+            student = Student.objects.filter(user_ptr=user).first()
+            
+            if not student:
+                # Create new student using the OneToOneField inheritance
+                # We need to use a different approach since Student inherits from User
+                student = Student()
+                
+                # Copy all attributes from the user to the student
+                for field in user._meta.fields:
+                    setattr(student, field.name, getattr(user, field.name))
+                    
+                # Now apply the student-specific fields
+                for key, value in student_data.items():
+                    setattr(student, key, value)
+                    
+                # Save the student
+                student.save_base(raw=True)
+            else:
+                # Update existing student
+                for key, value in student_data.items():
+                    setattr(student, key, value)
+                student.save()
+            
+            # Handle M2M relationships using .set() method
+            society_ids = original_data.get('societies', [])
+            if society_ids:
+                try:
+                    societies = []
+                    for society_id in society_ids:
+                        try:
+                            society = Society.objects.get(id=int(society_id))
+                            societies.append(society)
+                        except (Society.DoesNotExist, ValueError, TypeError):
+                            pass
+                    student.societies.set(societies)
+                except Exception:
+                    pass
+            
+            event_ids = original_data.get('attended_events', [])
+            if event_ids:
+                try:
+                    events = []
+                    for event_id in event_ids:
+                        try:
+                            event = Event.objects.get(id=int(event_id))
+                            events.append(event)
+                        except (Event.DoesNotExist, ValueError, TypeError):
+                            pass
+                    student.attended_events.set(events)
+                except Exception:
+                    pass
+            
+            follower_ids = original_data.get('followers', [])
+            if follower_ids:
+                try:
+                    followers = []
+                    for follower_id in follower_ids:
+                        try:
+                            follower = User.objects.get(id=int(follower_id))
+                            followers.append(follower)
+                        except (User.DoesNotExist, ValueError, TypeError):
+                            pass
+                    student.followers.set(followers)
+                except Exception:
+                    pass
+            
+            # Add handling for following relationship
+            following_ids = original_data.get('following', [])
+            if following_ids:
+                try:
+                    following = []
+                    for following_id in following_ids:
+                        try:
+                            follow_user = User.objects.get(id=int(following_id))
+                            following.append(follow_user)
+                        except (User.DoesNotExist, ValueError, TypeError):
+                            pass
+                    student.following.set(following)
+                except Exception:
+                    pass
+            
+            # Handle president_of relationship
+            president_of_id = original_data.get('president_of')
+            if president_of_id:
+                try:
+                    society = Society.objects.get(id=int(president_of_id))
+                    student.president_of = society
+                    student.save()
+                except (Society.DoesNotExist, ValueError, TypeError):
+                    pass
+            
+            log_entry.delete()  # Remove log after restoration
+            return Response({"message": "Student restored successfully!"}, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({"error": f"Failed to restore Student: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+
+    def _restore_society(self, original_data, log_entry):
+        """Handle society restoration"""
+        try:
+            # Extract basic fields for Society
+            society_data = {k: v for k, v in original_data.items() if k not in [
+                'id', 'president', 'vice_president', 'treasurer', 'event_manager', 
+                'leader', 'approved_by', 'members', 'society_members', 'events'
+            ]}
+            
+            # Create the society without relationship fields first
+            society = Society.objects.create(**society_data)
+            
+            # Handle ForeignKey relationships
+            president_id = original_data.get('president')
+            if president_id:
+                try:
+                    president = Student.objects.get(id=int(president_id))
+                    society.president = president
+                except (Student.DoesNotExist, ValueError, TypeError):
+                    pass
+            
+            vice_president_id = original_data.get('vice_president')
+            if vice_president_id:
+                try:
+                    vice_president = Student.objects.get(id=int(vice_president_id))
+                    society.vice_president = vice_president
+                except (Student.DoesNotExist, ValueError, TypeError):
+                    pass
+            
+            treasurer_id = original_data.get('treasurer')
+            if treasurer_id:
+                try:
+                    treasurer = Student.objects.get(id=int(treasurer_id))
+                    society.treasurer = treasurer
+                except (Student.DoesNotExist, ValueError, TypeError):
+                    pass
+            
+            event_manager_id = original_data.get('event_manager')
+            if event_manager_id:
+                try:
+                    event_manager = Student.objects.get(id=int(event_manager_id))
+                    society.event_manager = event_manager
+                except (Student.DoesNotExist, ValueError, TypeError):
+                    pass
+            
+            leader_id = original_data.get('leader')
+            if leader_id:
+                try:
+                    leader = Student.objects.get(id=int(leader_id))
+                    society.leader = leader
+                except (Student.DoesNotExist, ValueError, TypeError):
+                    pass
+            
+            approved_by_id = original_data.get('approved_by')
+            if approved_by_id:
+                try:
+                    approved_by = Admin.objects.get(id=int(approved_by_id))
+                    society.approved_by = approved_by
+                except (Admin.DoesNotExist, ValueError, TypeError):
+                    pass
+            
+            society.save()
+            
+            # Handle M2M relationships using .set() method
+            member_ids = original_data.get('members', [])
+            if member_ids:
+                try:
+                    members = []
+                    for member_id in member_ids:
+                        try:
+                            member = Student.objects.get(id=int(member_id))
+                            members.append(member)
+                        except (Student.DoesNotExist, ValueError, TypeError):
+                            pass
+                    society.members.set(members)
+                except Exception:
+                    pass  # If this fails, continue with restoration
+            
+            # Handle society_members if it exists
+            society_member_ids = original_data.get('society_members', [])
+            if society_member_ids:
+                try:
+                    society_members = []
+                    for member_id in society_member_ids:
+                        try:
+                            member = Student.objects.get(id=int(member_id))
+                            society_members.append(member)
+                        except (Student.DoesNotExist, ValueError, TypeError):
+                            pass
+                    society.society_members.set(society_members)
+                except Exception:
+                    pass  # If this fails, continue with restoration
+            
+            event_ids = original_data.get('events', [])
+            if event_ids:
+                try:
+                    events = []
+                    for event_id in event_ids:
+                        try:
+                            event = Event.objects.get(id=int(event_id))
+                            events.append(event)
+                        except (Event.DoesNotExist, ValueError, TypeError):
+                            pass
+                    society.events.set(events)
+                except Exception:
+                    pass  # If this fails, continue with restoration
+            
+            log_entry.delete()  # Remove log after restoration
+            return Response({"message": "Society restored successfully!"}, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({"error": f"Failed to restore Society: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def _restore_event(self, original_data, log_entry):
+        """Handle event restoration"""
+        try:
+            # Extract basic fields for Event
+            event_data = {k: v for k, v in original_data.items() if k not in [
+                'id', 'society', 'attendees'
+            ]}
+            
+            # Handle date and time fields
+            for field in ['date', 'start_time', 'end_time']:
+                if field in event_data:
+                    if event_data[field] and isinstance(event_data[field], str):
+                        if field == 'date':
+                            try:
+                                event_data[field] = datetime.strptime(event_data[field], '%Y-%m-%d').date()
+                            except ValueError:
+                                event_data[field] = None
+                        else:  # For time fields
+                            try:
+                                event_data[field] = datetime.strptime(event_data[field], '%H:%M:%S').time()
+                            except ValueError:
+                                event_data[field] = None
+            
+            # Create the event without relationship fields first
+            event = Event.objects.create(**event_data)
+            
+            # Handle ForeignKey relationships
+            society_id = original_data.get('society')
+            if society_id:
+                try:
+                    society = Society.objects.get(id=int(society_id))
+                    event.society = society
+                    event.save()
+                except (Society.DoesNotExist, ValueError, TypeError):
+                    pass
+            
+            # Handle M2M relationships
+            attendee_ids = original_data.get('attendees', [])
+            if attendee_ids:
+                for attendee_id in attendee_ids:
+                    try:
+                        attendee = Student.objects.get(id=int(attendee_id))
+                        event.attendees.add(attendee)
+                    except (Student.DoesNotExist, ValueError, TypeError):
+                        pass
+            
+            log_entry.delete()  # Remove log after restoration
+            return Response({"message": "Event restored successfully!"}, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({"error": f"Failed to restore Event: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 
