@@ -112,37 +112,50 @@ class RandomSocietyDataGenerator():
             "Personal Development",
         ]
 
-        self.tags = [
-            "community",
-            "education",
-            "culture",
-            "sports",
-            "technology",
-            "gaming",
-            "arts",
-            "creative",
-            "innovation",
-            "learning",
-            "discussion",
-            "networking",
-            "environment",
-            "adventure",
-            "spirituality",
-            "diversity",
-            "media",
-            "volunteering",
-            "culinary",
-            "business",
-            "fashion",
-            "wellbeing",
-            "history",
-            "language",
-            "philosophy",
-            "stem",
-            "development",
-            "friendship",
-            "collaboration"
-        ]
+        self.tags = {
+            "community": [],
+            "education": [],
+            "culture": [],
+            "sports": [
+                "Football",
+                "Rugby",
+                "Tennis",
+                "Badminton",
+                "Swimming",
+                "Sailing"
+            ],
+            "technology": ["Gaming"],
+            "gaming": ["Gaming", "Tabletop"],
+            "arts": ["Fashion", "Art", "Music", "Literature"],
+            "creative": ["Fashion", "Art", "Music", "Literature", "Sewing", "Knitting"],
+            "innovation": [],
+            "learning": [],
+            "discussion": ["Philosophy", "Politics"],
+            "networking": [],
+            "environment": [],
+            "adventure": [],
+            "spirituality": [],
+            "diversity": [],
+            "media": [],
+            "volunteering": [],
+            "culinary": [],
+            "business": ["Economics"],
+            "fashion": ["Fashion"],
+            "wellbeing": [],
+            "history": [],
+            "language": [],
+            "philosophy": ["Philosophy", "Politics"],
+            "stem": [
+                "Mathematics",
+                "Physics",
+                "Chemistry",
+                "Biology",
+                "Computing"
+            ],
+            "development": ["Economics"],
+            "friendship": [],
+            "collaboration": [],
+        }
 
     def generate(self) -> dict:
         """Generates artificial data for a society and returns in a dict"""
@@ -151,7 +164,7 @@ class RandomSocietyDataGenerator():
         return_dict["name"] = self.generate_name()
         return_dict["description"] = self.generate_description()
         return_dict["category"] = choice(self.categories)
-        return_dict["tags"] = sample(self.tags, k=3)
+        return_dict["tags"] = self.generate_tags(return_dict["name"].split()[0])
 
         return return_dict
 
@@ -176,3 +189,17 @@ class RandomSocietyDataGenerator():
         d = choice(self.final_paragraphs)
 
         return f"{a} {b}\n{c}\n\n{d}"
+
+    def generate_tags(self, prename) -> list:
+        """Generates tags for a society"""
+        r_tags = []
+        for tag, tag_list in self.tags.items():
+            if prename in tag_list:
+                r_tags.append(tag)
+            if len(r_tags) >= 3:
+                break
+
+        if len(r_tags) < 3:
+            remaining_tags = list(set(self.tags.keys()) - set(r_tags))
+            r_tags.extend(sample(remaining_tags, k=3-len(r_tags)))
+        return r_tags

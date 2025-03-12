@@ -8,6 +8,7 @@ from django.contrib.auth.hashers import make_password
 from django.core.management.base import BaseCommand
 from api.management.commands.data.society_generator import RandomSocietyDataGenerator
 from api.management.commands.data.student_generator import RandomStudentDataGenerator
+from api.management.commands.data.event_generator import RandomEventDataGenerator
 from api.models import (
     Admin,
     Student,
@@ -21,6 +22,9 @@ from api.models import (
     Award,
     AwardStudent,
 )
+
+from api.signals import broadcast_dashboard_update
+
 
 
 class Command(BaseCommand):
@@ -94,9 +98,9 @@ class Command(BaseCommand):
             },
         )
 
-        self.create_student(50)
+        self.create_student(100)
         self.create_admin(5)
-        self.create_society(20)
+        self.create_society(35)
         self.create_society(
             name="Robotics Club",
             president_force=president,
@@ -219,7 +223,13 @@ class Command(BaseCommand):
 
         # Ensure at least 5-15 members
         all_students = list(Student.objects.exclude(id=society.leader.id).order_by("?"))
-        selected_members = all_students[:randint(5, 15)]
+        members_num = 5
+        while members_num < Student.objects.count():
+            if random.random() <= 0.912:
+                members_num += 1
+            else:
+                break
+        selected_members = all_students[:members_num]
 
         # Ensure the leader is always a member
         society.society_members.add(society.leader)
@@ -309,10 +319,12 @@ class Command(BaseCommand):
         # Use generate_reasonable_time to ensure that the start time is in the future.
         # If the event is scheduled for today, this function will pick a time after now.
         event_time = self.generate_reasonable_time(event_date)
-        
+
+        generator = RandomEventDataGenerator()
+        data = generator.generate(society.name)
         event, created = Event.objects.get_or_create(
-            title=f"{society.name} Event",
-            description=f"An exciting event by {society.name}",
+            title=data["name"],
+            description=data["description"],
             date=event_date,
             start_time=event_time,
             duration=self.generate_random_duration(),
@@ -328,7 +340,7 @@ class Command(BaseCommand):
 
             event.current_attendees.add(*selected_attendees)
             event.save()
-            print(self.style.SUCCESS(f"📅 Event Created: {event.title} ({event.date})"))
+            print(self.style.SUCCESS(f"Event Created: {event.title} ({event.date})"))
 
         return event, created
 
@@ -337,8 +349,8 @@ class Command(BaseCommand):
         random_status = choice(["Pending", "Approved", "Rejected"])
         location = self.get_random_location()
         
-        event_date = self.generate_random_date()  # ✅ Generate event date first
-        event_time = self.generate_reasonable_time(event_date)  # ✅ Pass event_date
+        event_date = self.generate_random_date()
+        event_time = self.generate_reasonable_time(event_date)
 
         if random_status == "Approved":
             return True
@@ -346,8 +358,8 @@ class Command(BaseCommand):
             EventRequest.objects.get_or_create(
                 title=f'Event{i}',
                 description=f'Event{i} organised by {society.name}',
-                date=event_date,  # ✅ Use generated event_date
-                start_time=event_time,  # ✅ Use generated event_time
+                date=event_date,
+                start_time=event_time,
                 duration=self.generate_random_duration(),
                 hosted_by=society,
                 from_student=society.leader,
@@ -358,8 +370,8 @@ class Command(BaseCommand):
             EventRequest.objects.get_or_create(
                 title=f'Event{i}',
                 description=f'Event{i} organised by {society.name}',
-                date=event_date,  # ✅ Use generated event_date
-                start_time=event_time,  # ✅ Use generated event_time
+                date=event_date,
+                start_time=event_time,
                 duration=self.generate_random_duration(),
                 hosted_by=society,
                 from_student=society.leader,
@@ -411,7 +423,7 @@ class Command(BaseCommand):
             ]
 
             if possible_times:
-                return choice(possible_times)  # ✅ Randomly select a valid future time today
+                return choice(possible_times)
 
             # If no valid times remain, schedule the event for tomorrow at 9:00 AM
             return time(hour=9, minute=0)
@@ -425,7 +437,7 @@ class Command(BaseCommand):
     def create_event_notifications(self, events):
         """Creates notifications from a list of events"""
         count = 0
-        # Instead of building a dictionary, simply iterate over the events.
+
         for event in events:
             print(f"Seeding notifications for {event.title}", end='\r')
             self.create_event_notification(event)
@@ -441,7 +453,7 @@ class Command(BaseCommand):
 
     def create_event_notification(self, event):
         """Create notifications only for students attending"""
-        members = event.current_attendees.all()  # ✅ Get attendees dynamically
+        members = event.current_attendees.all()
 
         for member in members:
             Notification.objects.create(
@@ -453,7 +465,6 @@ class Command(BaseCommand):
 
     def broadcast_updates(self):
         """Broadcast updates to the WebSocket"""
-        from api.signals import broadcast_dashboard_update
         print("Broadcasting updates to WebSocket...")
         broadcast_dashboard_update()
 
