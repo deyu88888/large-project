@@ -133,10 +133,18 @@ class Student(User):
 
     major = models.CharField(max_length=50, blank=True)
     is_president = models.BooleanField(default=False)
+    is_vice_president = models.BooleanField(default=False)  # New field to track vice president status
     icon = models.ImageField(upload_to="student_icons/", blank=True, null=True)
-
+    
+    def check_is_vice_president(self):
+        """Check if the student is a vice president of any society"""
+        return hasattr(self, 'vice_president_of_society') and self.vice_president_of_society is not None
+    
     def save(self, *args, **kwargs):
         self.role = "student"
+        
+        # Update is_vice_president flag
+        self.is_vice_president = self.check_is_vice_president()
 
         super().save(*args, **kwargs)
 
@@ -493,6 +501,7 @@ class AdminReportRequest(Request):
     subject = models.CharField(max_length=100, blank=False)
     details = models.TextField(blank=False)
     requested_at = models.DateTimeField(auto_now_add=True)
+    is_from_society_officer = models.BooleanField(default=False) # President or vice-president
 
     def __str__(self):
         return f"{self.get_report_type_display()} - {self.subject} (From {self.from_student.username})"

@@ -9,6 +9,8 @@ interface User {
   is_active: boolean;
   role: string;
   is_president?: boolean;
+  is_vice_president: boolean;
+  vice_president_of_society?: number;
 }
 
 interface AuthStore {

@@ -61,14 +61,21 @@ class StudentSerializer(UserSerializer):
     """
     societies = serializers.PrimaryKeyRelatedField(many=True, queryset=Society.objects.all())
     president_of = serializers.PrimaryKeyRelatedField(queryset=Society.objects.all(), allow_null=True, required=False)
+    vice_president_of_society = serializers.PrimaryKeyRelatedField(read_only=True)
     major = serializers.CharField(required=True)
     is_president = serializers.BooleanField(read_only=True)
     #awards = AwardStudentSerializer(source='award_students', many=True, read_only=True) this will work when files are seperated
+    is_vice_president = serializers.SerializerMethodField()
 
     class Meta(UserSerializer.Meta):
         model = Student
-        fields = UserSerializer.Meta.fields + ['major', 'societies', 'president_of', 'is_president', 'award_students']
-        read_only_fields = ["is_president", "award_students"]
+        fields = UserSerializer.Meta.fields + ['major', 'societies', 'president_of', 'is_president',
+                                               'award_students', 'vice_president_of_society', 'is_vice_president']
+        read_only_fields = ["is_president", "is_vice_president", "award_students"]
+        
+        def get_is_vice_president(self, obj):
+            """Get whether the student is a vice president"""
+            return hasattr(obj, 'vice_president_of_society') and obj.vice_president_of_society is not None
 
     def validate_email(self, value):
         """
@@ -168,16 +175,23 @@ class SocietySerializer(serializers.ModelSerializer):
     leader_id = serializers.PrimaryKeyRelatedField(
         queryset=Student.objects.all(), write_only=True, source='leader'
     )
-    vice_president = StudentSerializer(required=False)
+    vice_president = StudentSerializer(read_only=True)
+    vice_president_id = serializers.PrimaryKeyRelatedField(
+        queryset=Student.objects.all(), write_only=True, source='vice_president', required=False
+    )
     event_manager = StudentSerializer(required=False)
+    event_manager_id = serializers.PrimaryKeyRelatedField(
+        queryset=Student.objects.all(), write_only=True, source='event_manager', required=False
+    )
     tags = serializers.ListField(child=serializers.CharField(), required=False)
 
     class Meta:
         """SocietySerializer meta data"""
         model = Society
         fields = [
-            'id', 'name', 'description', 'society_members', 'leader', 'leader_id', 'vice_president' ,
-            'event_manager', 'approved_by','status', 'category', 'social_media_links',
+            'id', 'name', 'description', 'society_members', 'leader', 'leader_id',
+            'vice_president', 'vice_president_id', 'event_manager', 'event_manager_id', 
+            'approved_by','status', 'category', 'social_media_links',
             'showreel_images', 'membership_requirements', 'upcoming_projects_or_plans',
             'icon','tags',
         ]

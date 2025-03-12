@@ -469,30 +469,54 @@ class SocietyRequestView(APIView):
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+def has_society_management_permission(student, society):
+    """
+    Check if a student has management permissions for a society.
+    This includes being either the president or vice president.
+    
+    Args:
+        student: The Student instance to check
+        society: The Society instance to check against
+        
+    Returns:
+        bool: True if the student has management permissions, False otherwise
+    """
+    # Check if student is president (leader)
+    is_president = student.is_president and hasattr(society, 'leader') and society.leader.id == student.id
+    
+    # Check if student is vice president
+    is_vice_president = hasattr(society, 'vice_president') and society.vice_president and society.vice_president.id == student.id
+    
+    return is_president or is_vice_president
+
 class ManageSocietyDetailsView(APIView):
     """
-    API View for society presidents to manage their societies.
+    API View for society presidents and vice presidents to manage their societies.
     """
     permission_classes = [IsAuthenticated]
 
     def get(self, request, society_id):
         user = request.user
 
-        # Ensure the user is a society president
+        # Ensure the user is a student
         try:
             student = Student.objects.get(pk=user.pk)
         except Student.DoesNotExist:
-            return Response({"error": "Only society presidents can manage their societies."}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"error": "Only society presidents and vice presidents can manage their societies."}, 
+                           status=status.HTTP_403_FORBIDDEN)
+        
         print("Logged-in student id:", student.id)
         print("Requested society id:", society_id)
-        if not student.is_president:
-            return Response({"error": "Only society presidents can manage their societies."}, status=status.HTTP_403_FORBIDDEN)
-
+        
         # Fetch the society
-        society = Society.objects.filter(
-            id=society_id).first()
+        society = Society.objects.filter(id=society_id).first()
         if not society:
-            return Response({"error": "Society not found or you are not the president of this society."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "Society not found."}, status=status.HTTP_404_NOT_FOUND)
+            
+        # Check for management permissions using utility function
+        if not has_society_management_permission(student, society):
+            return Response({"error": "Only the society president or vice president can manage this society."}, 
+                           status=status.HTTP_403_FORBIDDEN)
 
         # Serialize the society details
         serializer = SocietySerializer(society)
@@ -501,18 +525,25 @@ class ManageSocietyDetailsView(APIView):
 
     def patch(self, request, society_id):
         user = request.user
-        # Ensure the user is a valid student and a society president.
-        if not user.is_student() or not user.student.is_president:
+        
+        if not user.is_student():
             return Response(
-                {"error": "Only society presidents can manage their societies."},
+                {"error": "Only society presidents and vice presidents can manage their societies."},
                 status=status.HTTP_403_FORBIDDEN
             )
-
+            
         society = Society.objects.filter(id=society_id).first()
         if not society:
             return Response(
-                {"error": "Society not found or you are not the president of this society."},
+                {"error": "Society not found."},
                 status=status.HTTP_404_NOT_FOUND
+            )
+            
+        # Check for management permissions using utility function
+        if not has_society_management_permission(user.student, society):
+            return Response(
+                {"error": "Only the society president or vice president can manage this society."},
+                status=status.HTTP_403_FORBIDDEN
             )
 
         # Pass the request context so the serializer can access the current user.
@@ -532,7 +563,7 @@ class ManageSocietyDetailsView(APIView):
 
 class CreateEventRequestView(APIView):
     """
-    API View for society presidents to create events that require admin approval.
+    API View for society presidents and vice presidents to create events that require admin approval.
     """
     permission_classes = [IsAuthenticated]
 
@@ -542,22 +573,25 @@ class CreateEventRequestView(APIView):
         """
         user = request.user
 
-        # Ensure the user is a society president
-        if not user.is_student() or not user.student.is_president:
+        if not user.is_student():
             return Response(
-                {"error": "Only society presidents can create events."},
+                {"error": "Only society presidents and vice presidents can create events."},
                 status=status.HTTP_403_FORBIDDEN
             )
 
         # Fetch the society
-        society = Society.objects.filter(
-            id=society_id, leader=user.student
-        ).first()
-
+        society = Society.objects.filter(id=society_id).first()
         if not society:
             return Response(
-                {"error": "Society not found or you are not the president of this society."},
+                {"error": "Society not found."},
                 status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Check for management permissions using utility function
+        if not has_society_management_permission(user.student, society):
+            return Response(
+                {"error": "Only the society president or vice president can create events for this society."},
+                status=status.HTTP_403_FORBIDDEN
             )
 
         # Validate and save the event request instead of creating an event directly
@@ -660,16 +694,7 @@ class EventListView(APIView):
 
 class ManageEventDetailsView(APIView):
     """
-    API View to edit (request changes for) or delete an event.
-    
-    PATCH:
-      - Allowed only for upcoming or pending events.
-      - Instead of updating the event immediately, an EventRequest is created with
-        the proposed changes; an admin will later approve or reject them.
-    
-    DELETE:
-      - Allowed only for upcoming or pending events.
-      - Deletion is performed immediately without admin approval.
+    API View for society presidents and vice presidents to edit or delete events.
     """
     permission_classes = [IsAuthenticated]
     
@@ -699,20 +724,22 @@ class ManageEventDetailsView(APIView):
         serializer = EventSerializer(event)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
-    
     def patch(self, request, event_id):
         user = request.user
-        # Ensure the user is a valid student and a society president.
+        # Ensure the user is a valid student
         try:
             student = Student.objects.get(pk=user.pk)
         except Student.DoesNotExist:
             return Response({"error": "User is not a valid student."}, status=status.HTTP_403_FORBIDDEN)
-        if not student.is_president:
-            return Response({"error": "Only society presidents can edit events."}, status=status.HTTP_403_FORBIDDEN)
-
+        
         event = self.get_event(event_id)
         if not self.is_event_editable(event):
             return Response({"error": "Only upcoming or pending events can be edited."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Check if the user has management permissions for the society
+        if not has_society_management_permission(student, event.hosted_by):
+            return Response({"error": "Only society presidents and vice presidents can edit events."}, 
+                           status=status.HTTP_403_FORBIDDEN)
 
         # Prepare data for the update request.
         data = request.data.copy()
@@ -729,7 +756,7 @@ class ManageEventDetailsView(APIView):
             context={
                 "request": request,
                 "hosted_by": event.hosted_by,
-                "event": event,  # Optionally, if you want to reference the event in create.
+                "event": event, 
             }
         )
         if serializer.is_valid():
@@ -745,24 +772,27 @@ class ManageEventDetailsView(APIView):
 
     def delete(self, request, event_id):
         user = request.user
-        # Ensure the user is a valid student and a society president.
+        # Ensure the user is a valid student
         try:
             student = Student.objects.get(pk=user.pk)
         except Student.DoesNotExist:
             return Response({"error": "User is not a valid student."}, status=status.HTTP_403_FORBIDDEN)
-        if not student.is_president:
-            return Response({"error": "Only society presidents can delete events."}, status=status.HTTP_403_FORBIDDEN)
-
+        
         event = self.get_event(event_id)
         if not self.is_event_editable(event):
             return Response({"error": "Only upcoming or pending events can be deleted."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Check if the user has management permissions for the society
+        if not has_society_management_permission(student, event.hosted_by):
+            return Response({"error": "Only society presidents and vice presidents can delete events."}, 
+                           status=status.HTTP_403_FORBIDDEN)
 
         event.delete()
         return Response({"message": "Event deleted successfully."}, status=status.HTTP_200_OK)
 
 class PendingMembersView(APIView):
     """
-    API View for Society Presidents to manage pending membership requests.
+    API View for Society Presidents and Vice Presidents to manage pending membership requests.
     """
     permission_classes = [IsAuthenticated]
 
@@ -772,14 +802,18 @@ class PendingMembersView(APIView):
         """
         user = request.user
 
-        # Ensure the user is a president
-        if not hasattr(user, "student") or not user.student.is_president:
-            return Response({"error": "Only society presidents can manage members."}, status=status.HTTP_403_FORBIDDEN)
+        if not hasattr(user, "student"):
+            return Response({"error": "Only society presidents and vice presidents can manage members."}, 
+                           status=status.HTTP_403_FORBIDDEN)
 
-        # Ensure the president owns this society
-        society = Society.objects.filter(id=society_id, leader=user.student).first()
+        society = Society.objects.filter(id=society_id).first()
         if not society:
-            return Response({"error": "You are not the president of this society."}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"error": "Society not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Check for management permissions using utility function
+        if not has_society_management_permission(user.student, society):
+            return Response({"error": "Only the society president or vice president can manage members."}, 
+                           status=status.HTTP_403_FORBIDDEN)
 
         # Get all pending membership requests
         pending_requests = UserRequest.objects.filter(
@@ -795,19 +829,18 @@ class PendingMembersView(APIView):
         """
         user = request.user
 
-        # Ensure the user is a president
-        if not hasattr(user, "student") or not user.student.is_president:
-            return Response({"error": "Only society presidents can manage members."}, status=status.HTTP_403_FORBIDDEN)
+        if not hasattr(user, "student"):
+            return Response({"error": "Only society presidents and vice presidents can manage members."}, 
+                           status=status.HTTP_403_FORBIDDEN)
 
         society = Society.objects.filter(id=society_id).first()
         if not society:
             return Response({"error": "Society not found."}, status=status.HTTP_404_NOT_FOUND)
-        print(f"Society leader id: {society.leader.id}, Request user student id: {request.user.student.id}")
 
-        # Compare by primary key (ID)
-        if society.leader.id != request.user.student.id:
-            return Response({"error": "You are not the president of this society."}, status=status.HTTP_403_FORBIDDEN)
-
+        # Check for management permissions using utility function
+        if not has_society_management_permission(user.student, society):
+            return Response({"error": "Only the society president or vice president can manage members."}, 
+                           status=status.HTTP_403_FORBIDDEN)
 
         # Find the pending request
         pending_request = UserRequest.objects.filter(id=request_id, intent="JoinSoc", approved=False).first()

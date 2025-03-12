@@ -91,6 +91,17 @@ class Command(BaseCommand):
                 "major": "Mechanical Engineering"
             },
         )
+        vice_president, _ = get_or_create_user(
+            Student,
+            username="vice_president_user",
+            email="vicepresident@example.com",
+            first_name="Vice",
+            last_name="President",
+            defaults={
+                "password": make_password("vicepresidentpassword"),
+                "major": "Electrical Engineering"
+            },
+        )
 
         society, _ = get_or_create_object(
             Society,
@@ -99,10 +110,18 @@ class Command(BaseCommand):
         )
         society.approved_by = admin
         society.society_members.add(student)
+        
+        society.vice_president = vice_president
+        society.society_members.add(vice_president)
+        
         self.seed_society_showreel(society, n=10)
 
         president.president_of = society
         president.save()
+        
+        vice_president.is_vice_president = True
+        vice_president.save()
+        
 
 
         self.create_student(50)
@@ -241,7 +260,11 @@ class Command(BaseCommand):
 
         # Assign roles (ensure at least 2 roles)
         if len(selected_members) >= 2:
+            # Assign vice president and set flag
             society.vice_president = selected_members[0]
+            if society.vice_president:
+                society.vice_president.is_vice_president = True
+                society.vice_president.save()
             society.event_manager = selected_members[2]
 
         # Assign an admin
