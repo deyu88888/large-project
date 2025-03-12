@@ -10,30 +10,40 @@ import {
   Stack,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import { tokens } from "../../theme/theme"; // adjust path as needed
+import { tokens } from "../../theme/theme";
 
-const roles = [
+interface RoleOption {
+  key: string;
+  label: string;
+}
+
+interface RouteParams {
+  society_id: string;
+  student_id: string;
+}
+
+const ROLE_OPTIONS: RoleOption[] = [
   { key: "vice_president", label: "Vice President" },
   { key: "event_manager", label: "Event Manager" },
   { key: "treasurer", label: "Treasurer" },
 ];
 
-const AssignSocietyRole = () => {
+const AssignSocietyRole: React.FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
-  const { society_id, student_id } = useParams<{ society_id: string; student_id: string }>();
+  const { society_id, student_id } = useParams<RouteParams>();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleAssignRole = async (roleKey: string) => {
+  const handleAssignRole = async (roleKey: string): Promise<void> => {
     try {
       setLoading(true);
-      // Prepare payload. The key is the role field name and the value is the student id (as a number).
-      const payload: Record<string, any> = {};
-      payload[roleKey] = Number(student_id);
-
-      // Make a PATCH request to update the society with the new role assignment.
+      
+      const payload: Record<string, number> = {
+        [roleKey]: Number(student_id)
+      };
+      
       await apiClient.patch(`/api/manage-society-details/${society_id}`, payload);
       alert(`Assigned ${roleKey.replace("_", " ")} role to student ${student_id}`);
       navigate(-1);
@@ -45,30 +55,31 @@ const AssignSocietyRole = () => {
     }
   };
 
+  const backgroundColor = theme.palette.mode === "dark" ? "#141b2d" : "#fcfcfc";
+  const textColor = theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d";
+  const paperBackgroundColor = theme.palette.mode === "dark" ? colors.primary[500] : "#ffffff";
+  const subtitleColor = theme.palette.mode === "dark" ? colors.grey[300] : colors.grey[700];
+
   return (
     <Box
       minHeight="100vh"
       p={4}
       sx={{
-        backgroundColor: theme.palette.mode === "dark" ? "#141b2d" : "#fcfcfc",
-        color: theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d",
+        backgroundColor,
+        color: textColor,
       }}
     >
       <Box textAlign="center" mb={4}>
         <Typography
           variant="h2"
           fontWeight="bold"
-          sx={{
-            color: theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d",
-          }}
+          sx={{ color: textColor }}
         >
           Assign Society Role
         </Typography>
         <Typography
           variant="body1"
-          sx={{
-            color: theme.palette.mode === "dark" ? colors.grey[300] : colors.grey[700],
-          }}
+          sx={{ color: subtitleColor }}
         >
           Choose a role to assign to student with ID: {student_id}
         </Typography>
@@ -86,14 +97,14 @@ const AssignSocietyRole = () => {
           maxWidth: "500px",
           mx: "auto",
           p: 4,
-          backgroundColor: theme.palette.mode === "dark" ? colors.primary[500] : "#ffffff",
-          color: theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d",
+          backgroundColor: paperBackgroundColor,
+          color: textColor,
           borderRadius: "8px",
           boxShadow: 3,
         }}
       >
         <Stack spacing={2}>
-          {roles.map((role) => (
+          {ROLE_OPTIONS.map((role) => (
             <Button
               key={role.key}
               onClick={() => handleAssignRole(role.key)}

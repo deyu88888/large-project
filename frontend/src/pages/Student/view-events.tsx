@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { apiClient } from "../../api";
 import { useTheme } from "@mui/material/styles";
 import { tokens } from "../../theme/theme";
-// Removed: import { useSidebar } from "../components/layout/SidebarContext";
 
 const ViewEvents: React.FC = () => {
   const navigate = useNavigate();
@@ -18,7 +17,7 @@ const ViewEvents: React.FC = () => {
     const fetchEvents = async () => {
       try {
         setLoading(true);
-        const response = await apiClient.get("/api/events/");
+        const response = await apiClient.get("/api/events");
         setEvents(response.data || []);
       } catch (error) {
         console.error("Error fetching events:", error);
@@ -32,7 +31,7 @@ const ViewEvents: React.FC = () => {
   return (
     <div
       style={{
-        marginLeft: "0px", // Removed sidebarWidth dependency; set to "0px"
+        marginLeft: "0px",
         marginTop: "0px",
         transition: "margin-left 0.3s ease-in-out",
         minHeight: "100vh",
@@ -105,7 +104,9 @@ const ViewEvents: React.FC = () => {
                   backgroundColor: isLight ? colours.primary[400] : colours.primary[400],
                   borderRadius: "12px",
                   padding: "1.5rem",
-                  border: `1px solid ${isLight ? colours.grey[300] : colours.grey[700]}`,
+                  border: `1px solid ${
+                    isLight ? colours.grey[300] : colours.grey[700]
+                  }`,
                   transition: "transform 0.3s, box-shadow 0.3s",
                   cursor: "pointer",
                 }}

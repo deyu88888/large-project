@@ -14,13 +14,13 @@ import {
 } from "@mui/material";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
-import GroupAddOutlinedIcon from "@mui/icons-material/GroupAddOutlined";
-import EventOutlinedIcon from "@mui/icons-material/EventOutlined";
+import PeopleOutlineIcon from "@mui/icons-material/PeopleOutline";
+import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
+import EventAvailableIcon from "@mui/icons-material/EventAvailable";
 import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";
-import PersonOutlinedIcon from "@mui/icons-material/PersonOutlined";
 import InboxIcon from "@mui/icons-material/MoveToInbox";
 import MailIcon from "@mui/icons-material/Mail";
-import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
+import GroupAddOutlinedIcon from "@mui/icons-material/GroupAddOutlined";
 import LogoutIcon from '@mui/icons-material/Logout';
 import { CustomDrawer, CustomDrawerHeader } from "./drawer/CustomDrawer";
 
@@ -40,10 +40,10 @@ const StudentDrawer: React.FC<StudentDrawerProps> = ({
 
   const menuItems = [
     { title: "Dashboard", icon: <HomeOutlinedIcon />, to: "/student" },
-    { title: "My Societies", icon: <GroupAddOutlinedIcon />, to: "/student/my-societies" },
-    { title: "Start Society", icon: <EventOutlinedIcon />, to: "/student/start-society" },
-    { title: "View Events", icon: <NotificationsNoneOutlinedIcon />, to: "/student/view-events" },
-    { title: "Notifications", icon: <PersonOutlinedIcon />, to: "/student/view-notifications" },
+    { title: "My Societies", icon: <PeopleOutlineIcon />, to: "/student/my-societies" },
+    { title: "Start Society", icon: <AddCircleOutlineIcon />, to: "/student/start-society" },
+    { title: "View Events", icon: <EventAvailableIcon />, to: "/student/view-events" },
+    { title: "Notifications", icon: <NotificationsNoneOutlinedIcon />, to: "/student/view-notifications" },
   ];
 
   const logout = () => {
@@ -133,7 +133,7 @@ const StudentDrawer: React.FC<StudentDrawerProps> = ({
                   justifyContent: "center",
                 }}
               >
-                <AddCircleOutlineIcon />
+                <GroupAddOutlinedIcon />
               </ListItemIcon>
               {drawer && <ListItemText primary="Join Societies" />}
             </ListItemButton>

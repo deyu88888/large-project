@@ -1,15 +1,12 @@
 import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import { vi } from 'vitest';
+import { vi, expect } from 'vitest';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import PresidentPage from '../president-page';
 import { apiClient } from '../../../api';
 import { useAuthStore } from '../../../stores/auth-store';
 
-const mockNavigate = vi.fn();
-
-// Mock dependencies
 vi.mock('../../../api', () => ({
   apiClient: {
     get: vi.fn(),
@@ -20,7 +17,18 @@ vi.mock('../../../stores/auth-store', () => ({
   useAuthStore: vi.fn(),
 }));
 
-// Create a mock theme
+const mockNavigate = vi.fn();
+let mockParams = { society_id: '123' };
+
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+    useParams: () => mockParams,
+  };
+});
+
 const theme = createTheme();
 
 describe('PresidentPage Component', () => {
@@ -34,180 +42,221 @@ describe('PresidentPage Component', () => {
       id: 1,
       first_name: 'John',
       last_name: 'Doe',
-      username: 'johndoe'
+      username: 'johndoe',
     },
     {
       id: 2,
       first_name: 'Jane',
       last_name: 'Smith',
-      username: 'janesmith'
+      username: 'janesmith',
     },
     {
       id: 3,
       first_name: 'Alice',
       last_name: 'Johnson',
-      username: 'alicejohnson'
+      username: 'alicejohnson',
     },
     {
       id: 4,
       first_name: 'Bob',
       last_name: 'Brown',
-      username: 'bobbrown'
-    }
+      username: 'bobbrown',
+    },
   ];
 
-  const mockNavigate = vi.fn();
   const mockUser = { president_of: 123 };
 
   beforeEach(() => {
-    // Reset mocks
     vi.clearAllMocks();
-
-    // Mock useNavigate
-    vi.mock('react-router-dom', async () => {
-      const actual = await vi.importActual('react-router-dom');
-      return {
-        ...actual,
-        useNavigate: () => mockNavigate,
-      };
-    });
-
-    // Mock useAuthStore
+    mockParams = { society_id: '123' };
     (useAuthStore as vi.Mock).mockReturnValue({ user: mockUser });
-
-    // Mock API client
-    (apiClient.get as vi.Mock)
-      .mockImplementationOnce(() => Promise.resolve({ data: mockSociety })) // Society details
-      .mockImplementationOnce(() => Promise.resolve({ data: mockPendingMembers })); // Pending members
+    (apiClient.get as vi.Mock).mockImplementation((url: string) => {
+      if (url.includes('manage-society-details')) {
+        return Promise.resolve({ data: mockSociety });
+      } else if (url.includes('pending-members')) {
+        return Promise.resolve({ data: mockPendingMembers });
+      }
+      return Promise.resolve({ data: {} });
+    });
   });
 
-  const renderComponent = (societyId?: string) => {
-    const routes = societyId 
-      ? [{ path: '/president-page/:society_id', element: <PresidentPage /> }]
-      : [{ path: '/president-page', element: <PresidentPage /> }];
-
-    const initialEntry = societyId 
-      ? `/president-page/${societyId}`
-      : '/president-page';
-
+  function renderComponent() {
     return render(
       <ThemeProvider theme={theme}>
-        <MemoryRouter initialEntries={[initialEntry]}>
+        <MemoryRouter initialEntries={['/president-page/123']}>
           <Routes>
-            {routes.map((route, index) => (
-              <Route key={index} path={route.path} element={route.element} />
-            ))}
+            <Route path="/president-page/:society_id" element={<PresidentPage />} />
           </Routes>
         </MemoryRouter>
       </ThemeProvider>
     );
-  };
+  }
 
-  it('renders loading state initially', async () => {
+  it('renders loading state initially', () => {
     renderComponent();
-
     expect(screen.getByRole('progressbar')).toBeInTheDocument();
   });
 
   it('fetches and displays society details', async () => {
     renderComponent();
-
     await waitFor(() => {
-      expect(screen.getByText('Test Society')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Test Society', level: 1 })).toBeInTheDocument();
     });
-
-    // Verify API calls
     expect(apiClient.get).toHaveBeenCalledWith('/api/manage-society-details/123/');
     expect(apiClient.get).toHaveBeenCalledWith('/api/society/123/pending-members/');
   });
 
   it('renders navigation buttons', async () => {
     renderComponent();
-
     await waitFor(() => {
-      const navigationButtons = [
-        'Society Details',
-        'Society Events',
-        'Pending Members',
-        'Report to Admin',
-        'All Members'
-      ];
-
-      navigationButtons.forEach(buttonText => {
-        expect(screen.getByText(buttonText)).toBeInTheDocument();
-      });
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
+    const navigationButtons = ['Society Details', 'Society Events', 'Report to Admin', 'All Members'];
+    navigationButtons.forEach((buttonText) => {
+      expect(screen.getByRole('button', { name: buttonText })).toBeInTheDocument();
+    });
+    expect(screen.getByRole('button', { name: 'Pending Members' })).toBeInTheDocument();
   });
 
   it('navigates to correct pages when buttons are clicked', async () => {
     renderComponent();
-
     await waitFor(() => {
-      expect(screen.getByText('Test Society')).toBeInTheDocument();
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
-
     const navigationTests = [
-      { text: 'Society Details', expectedPath: 'manage-society-details' },
-      { text: 'Society Events', expectedPath: 'manage-society-events' },
-      { text: 'Pending Members', expectedPath: 'pending-members' },
-      { text: 'Report to Admin', expectedPath: 'report-to-admin' },
-      { text: 'All Members', expectedPath: 'view-society-members' }
+      { buttonName: 'Society Details', expectedPath: 'manage-society-details' },
+      { buttonName: 'Society Events', expectedPath: 'manage-society-events' },
+      { buttonName: 'Pending Members', expectedPath: 'pending-members' },
+      { buttonName: 'Report to Admin', expectedPath: 'report-to-admin' },
+      { buttonName: 'All Members', expectedPath: 'view-society-members' },
     ];
-
-    navigationTests.forEach(({ text, expectedPath }) => {
-      const button = screen.getByText(text);
+    for (const { buttonName, expectedPath } of navigationTests) {
+      const button = screen.getByRole('button', { name: buttonName });
       fireEvent.click(button);
       expect(mockNavigate).toHaveBeenCalledWith(expectedPath);
-    });
+      mockNavigate.mockClear();
+    }
   });
 
   it('displays pending members preview', async () => {
     renderComponent();
-
     await waitFor(() => {
-      // Check preview section header
-      expect(screen.getByText('Pending Members (Preview)')).toBeInTheDocument();
-
-      // Check first 3 members are displayed
-      expect(screen.getByText('John Doe')).toBeInTheDocument();
-      expect(screen.getByText('Jane Smith')).toBeInTheDocument();
-      expect(screen.getByText('Alice Johnson')).toBeInTheDocument();
-
-      // Verify "View All" button appears when more than 3 members
-      expect(screen.getByText('View All Pending Members')).toBeInTheDocument();
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
+    expect(screen.getByRole('heading', { name: 'Pending Members', level: 3 })).toBeInTheDocument();
+    expect(screen.getByText('John Doe')).toBeInTheDocument();
+    expect(screen.getByText('Jane Smith')).toBeInTheDocument();
+    expect(screen.getByText('Alice Johnson')).toBeInTheDocument();
+    expect(screen.getByText('View All Pending Members')).toBeInTheDocument();
   });
 
   it('handles scenario with no pending members', async () => {
-    // Reset mock to return empty array
-    (apiClient.get as vi.Mock)
-      .mockImplementationOnce(() => Promise.resolve({ data: mockSociety }))
-      .mockImplementationOnce(() => Promise.resolve({ data: [] }));
-
-    renderComponent();
-
-    await waitFor(() => {
-      expect(screen.getByText('No pending membership requests.')).toBeInTheDocument();
+    (apiClient.get as vi.Mock).mockImplementation((url: string) => {
+      if (url.includes('manage-society-details')) {
+        return Promise.resolve({ data: mockSociety });
+      } else if (url.includes('pending-members')) {
+        return Promise.resolve({ data: [] });
+      }
+      return Promise.resolve({ data: {} });
     });
+    renderComponent();
+    await waitFor(() => {
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    });
+    expect(screen.getByText('No pending membership requests.')).toBeInTheDocument();
   });
 
   it('handles error when fetching data', async () => {
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    
-    // Mock API calls to fail
-    (apiClient.get as vi.Mock)
-      .mockRejectedValueOnce(new Error('Society fetch failed'))
-      .mockRejectedValueOnce(new Error('Pending members fetch failed'));
-
+    (apiClient.get as vi.Mock).mockRejectedValue(new Error('API error'));
     renderComponent();
+    await waitFor(() => {
+      expect(consoleErrorSpy).toHaveBeenCalledWith('Error fetching president data:', expect.any(Error));
+    });
+    consoleErrorSpy.mockRestore();
+  });
 
+  it('uses user.president_of when no society_id is provided in URL', async () => {
+    mockParams = {};
+    renderComponent();
+    await waitFor(() => {
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    });
+    expect(apiClient.get).toHaveBeenCalledWith('/api/manage-society-details/123/');
+  });
+
+  it('handles error when no society ID is available', async () => {
+    mockParams = {};
+    (useAuthStore as vi.Mock).mockReturnValue({ user: {} });
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    renderComponent();
     await waitFor(() => {
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'Error fetching president data:', 
-        expect.any(Error)
+        'Error fetching president data:',
+        expect.objectContaining({ message: 'No society ID available' })
       );
     });
-
     consoleErrorSpy.mockRestore();
+  });
+
+  it('handles the case where pending members API returns null', async () => {
+    (apiClient.get as vi.Mock).mockImplementation((url: string) => {
+      if (url.includes('manage-society-details')) {
+        return Promise.resolve({ data: mockSociety });
+      } else if (url.includes('pending-members')) {
+        return Promise.resolve({ data: null });
+      }
+      return Promise.resolve({ data: {} });
+    });
+    renderComponent();
+    await waitFor(() => {
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    });
+    expect(screen.getByText('No pending membership requests.')).toBeInTheDocument();
+  });
+
+  it('displays exact number of pending members when less than 3', async () => {
+    const fewMembers = mockPendingMembers.slice(0, 2);
+    (apiClient.get as vi.Mock).mockImplementation((url: string) => {
+      if (url.includes('manage-society-details')) {
+        return Promise.resolve({ data: mockSociety });
+      } else if (url.includes('pending-members')) {
+        return Promise.resolve({ data: fewMembers });
+      }
+      return Promise.resolve({ data: {} });
+    });
+    renderComponent();
+    await waitFor(() => {
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    });
+    expect(screen.getByText('John Doe')).toBeInTheDocument();
+    expect(screen.getByText('Jane Smith')).toBeInTheDocument();
+    expect(screen.queryByText('View All Pending Members')).not.toBeInTheDocument();
+  });
+
+  it('navigates to pending-members page when View All button is clicked', async () => {
+    renderComponent();
+    await waitFor(() => {
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    });
+    const viewAllButton = screen.getByText('View All Pending Members');
+    fireEvent.click(viewAllButton);
+    expect(mockNavigate).toHaveBeenCalledWith('pending-members');
+  });
+
+  it('displays default society name when society data is null', async () => {
+    (apiClient.get as vi.Mock).mockImplementation((url: string) => {
+      if (url.includes('manage-society-details')) {
+        return Promise.resolve({ data: null });
+      } else if (url.includes('pending-members')) {
+        return Promise.resolve({ data: mockPendingMembers });
+      }
+      return Promise.resolve({ data: {} });
+    });
+    renderComponent();
+    await waitFor(() => {
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    });
+    expect(screen.getByRole('heading', { name: 'My Society', level: 1 })).toBeInTheDocument();
   });
 });

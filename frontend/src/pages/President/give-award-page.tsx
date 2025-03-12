@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { apiClient } from "../../api"; // adjust import as needed
+import { apiClient } from "../../api";
 import {
   Box,
   Typography,
@@ -12,7 +12,7 @@ import {
   Divider,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import { tokens } from "../../theme/theme"; // adjust path as needed
+import { tokens } from "../../theme/theme";
 
 interface Award {
   id: number;
@@ -22,18 +22,21 @@ interface Award {
   is_custom: boolean;
 }
 
-const GiveAwardPage = () => {
+interface RouteParams {
+  student_id: string;
+}
+
+const GiveAwardPage: React.FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
-  const { student_id } = useParams<{ student_id: string }>();
+  const { student_id } = useParams<RouteParams>();
   const navigate = useNavigate();
   const [awards, setAwards] = useState<Award[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch all available awards on component mount
   useEffect(() => {
-    const fetchAwards = async () => {
+    const fetchAwards = async (): Promise<void> => {
       try {
         const response = await apiClient.get("/api/awards");
         setAwards(response.data);
@@ -48,23 +51,25 @@ const GiveAwardPage = () => {
     fetchAwards();
   }, []);
 
-  // Handler to assign an award to the student
-  const handleGiveAward = async (awardId: number) => {
+  const handleGiveAward = async (awardId: number): Promise<void> => {
     try {
-      // POST to assign the award to the student
       const studentIdNumber = Number(student_id);
       await apiClient.post("/api/award-students", {
         student_id: studentIdNumber,
         award_id: awardId,
       });
       alert("Award assigned successfully!");
-      // Navigate back or to another page as needed
       navigate(-1);
     } catch (err) {
       console.error("Error giving award", err);
       alert("Failed to assign award.");
     }
   };
+
+  const backgroundColor = theme.palette.mode === "dark" ? "#141b2d" : "#fcfcfc";
+  const textColor = theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d";
+  const subtitleColor = theme.palette.mode === "dark" ? colors.grey[300] : colors.grey[700];
+  const paperBackgroundColor = theme.palette.mode === "dark" ? colors.primary[500] : "#ffffff";
 
   if (loading) {
     return (
@@ -88,8 +93,8 @@ const GiveAwardPage = () => {
         justifyContent="center"
         minHeight="100vh"
         sx={{
-          backgroundColor: theme.palette.mode === "dark" ? "#141b2d" : "#fcfcfc",
-          color: theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d",
+          backgroundColor,
+          color: textColor,
         }}
       >
         <Typography color={colors.redAccent[500]}>{error}</Typography>
@@ -102,25 +107,21 @@ const GiveAwardPage = () => {
       minHeight="100vh"
       p={4}
       sx={{
-        backgroundColor: theme.palette.mode === "dark" ? "#141b2d" : "#fcfcfc",
-        color: theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d",
+        backgroundColor,
+        color: textColor,
       }}
     >
       <Box textAlign="center" mb={4}>
         <Typography
           variant="h2"
           fontWeight="bold"
-          sx={{
-            color: theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d",
-          }}
+          sx={{ color: textColor }}
         >
           Select an Award
         </Typography>
         <Typography
           variant="body1"
-          sx={{
-            color: theme.palette.mode === "dark" ? colors.grey[300] : colors.grey[700],
-          }}
+          sx={{ color: subtitleColor }}
         >
           Choose an award to give to the student.
         </Typography>
@@ -132,18 +133,14 @@ const GiveAwardPage = () => {
           maxWidth: "800px",
           mx: "auto",
           p: 4,
-          backgroundColor: theme.palette.mode === "dark" ? colors.primary[500] : "#ffffff",
-          color: theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d",
+          backgroundColor: paperBackgroundColor,
+          color: textColor,
           borderRadius: "8px",
           boxShadow: 3,
         }}
       >
         {awards.length === 0 ? (
-          <Typography
-            sx={{
-              color: theme.palette.mode === "dark" ? colors.grey[300] : colors.grey[700],
-            }}
-          >
+          <Typography sx={{ color: subtitleColor }}>
             No awards available.
           </Typography>
         ) : (
@@ -161,17 +158,13 @@ const GiveAwardPage = () => {
                   <Box>
                     <Typography
                       fontWeight="medium"
-                      sx={{
-                        color: theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d",
-                      }}
+                      sx={{ color: textColor }}
                     >
                       {award.title} ({award.rank})
                     </Typography>
                     <Typography
                       variant="body2"
-                      sx={{
-                        color: theme.palette.mode === "dark" ? colors.grey[300] : colors.grey[700],
-                      }}
+                      sx={{ color: subtitleColor }}
                     >
                       {award.description}
                     </Typography>

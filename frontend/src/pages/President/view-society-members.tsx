@@ -1,33 +1,55 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { apiClient } from "../../api"; // adjust import as needed
+import { apiClient } from "../../api"; 
 import { useAuthStore } from "../../stores/auth-store";
 import { useTheme } from "@mui/material/styles";
-import { Box, Typography, Button, CircularProgress, Paper, List, ListItem, ListItemText, ListItemSecondaryAction } from "@mui/material";
+import { 
+  Box, 
+  Typography, 
+  Button, 
+  CircularProgress, 
+  Paper, 
+  List, 
+  ListItem, 
+  ListItemText, 
+  ListItemSecondaryAction 
+} from "@mui/material";
 
-const ViewSocietyMembers = () => {
-  const { society_id } = useParams<{ society_id: string }>();
+interface Society {
+  id: number;
+  name: string;
+  [key: string]: any;
+}
+
+interface Member {
+  id: number;
+  first_name: string;
+  last_name: string;
+  username: string;
+}
+
+interface RouteParams {
+  society_id: string;
+}
+
+const ViewSocietyMembers: React.FC = () => {
+  const { society_id } = useParams<RouteParams>();
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const theme = useTheme();
   
-  const [society, setSociety] = useState<any>(null);
-  const [members, setMembers] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [society, setSociety] = useState<Society | null>(null);
+  const [members, setMembers] = useState<Member[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    const fetchMembers = async () => {
+    const fetchMembers = async (): Promise<void> => {
       try {
-        // Determine society id either from the URL or the logged in user
         const id = society_id || user?.president_of;
         if (!id) {
           throw new Error("No society id available");
         }
-        // Fetch society details (if needed)
-        // const societyResponse = await apiClient.get(`/api/manage-society-details/${id}/`);
-        // setSociety(societyResponse.data);
 
-        // Fetch all members of the society using an assumed endpoint
         const membersResponse = await apiClient.get(`/api/society/${id}/members/`);
         setMembers(membersResponse.data || []);
       } catch (error) {
@@ -40,16 +62,15 @@ const ViewSocietyMembers = () => {
     fetchMembers();
   }, [society_id, user]);
 
-  // Handlers for button actions
-  const handleViewProfile = (memberId: number) => {
+  const handleViewProfile = (memberId: number): void => {
     navigate(`/profile/${memberId}`);
   };
 
-  const handleGiveAward = (memberId: number) => {
+  const handleGiveAward = (memberId: number): void => {
     navigate(`../give-award-page/${memberId}`);
   };
 
-  const handleAssignRole = (memberId: number) => {
+  const handleAssignRole = (memberId: number): void => {
     navigate(`../assign-society-role/${memberId}`);
   };
 
@@ -78,7 +99,6 @@ const ViewSocietyMembers = () => {
         px: 2 
       }}
     >
-      {/* Header with Society Name */}
       <Box 
         sx={{ 
           textAlign: 'center', 
@@ -96,7 +116,6 @@ const ViewSocietyMembers = () => {
         </Typography>
       </Box>
 
-      {/* Members List */}
       <Paper 
         elevation={3}
         sx={{ 
@@ -142,7 +161,6 @@ const ViewSocietyMembers = () => {
                     gap: 1 
                   }}
                 >
-                  {/* View Profile Button */}
                   <Button
                     variant="contained"
                     color="primary"
@@ -151,7 +169,6 @@ const ViewSocietyMembers = () => {
                   >
                     View Profile
                   </Button>
-                  {/* Give Award Button */}
                   <Button
                     variant="contained"
                     color="secondary"
@@ -160,7 +177,6 @@ const ViewSocietyMembers = () => {
                   >
                     Give Award
                   </Button>
-                  {/* Assign Role Button */}
                   <Button
                     variant="contained"
                     color="info"
@@ -174,8 +190,7 @@ const ViewSocietyMembers = () => {
             ))}
           </List>
         )}
-        
-        {/* Back button */}
+      
         <Box 
           sx={{ 
             mt: 2, 

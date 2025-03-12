@@ -5,18 +5,41 @@ import { apiClient } from "../../api";
 import { useAuthStore } from "../../stores/auth-store";
 import { tokens } from "../../theme/theme.ts";
 
-const PresidentPage = () => {
+interface Society {
+  id: number;
+  name: string;
+  [key: string]: any;
+}
+
+interface Member {
+  id: number;
+  first_name: string;
+  last_name: string;
+  username: string;
+}
+
+interface RouteParams {
+  society_id: string;
+}
+
+interface NavigationItem {
+  text: string;
+  path: string;
+  color: string;
+}
+
+const PresidentPage: React.FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const navigate = useNavigate();
-  const { society_id } = useParams<{ society_id: string }>();
-  const [society, setSociety] = useState<any>(null);
-  const [pendingMembers, setPendingMembers] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { society_id } = useParams<RouteParams>();
+  const [society, setSociety] = useState<Society | null>(null);
+  const [pendingMembers, setPendingMembers] = useState<Member[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
   const { user } = useAuthStore();
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchData = async (): Promise<void> => {
       try {
         const id = society_id || user?.president_of;
         if (!id) throw new Error("No society ID available");
@@ -35,6 +58,18 @@ const PresidentPage = () => {
 
     fetchData();
   }, [society_id, user]);
+
+  const navigationItems: NavigationItem[] = [
+    { text: "Society Details", path: "manage-society-details", color: colors.greenAccent[500] },
+    { text: "Society Events", path: "manage-society-events", color: colors.greenAccent[500] },
+    { text: "Pending Members", path: "pending-members", color: colors.blueAccent[500] },
+    { text: "Report to Admin", path: "report-to-admin", color: colors.redAccent[500] },
+    { text: "All Members", path: "view-society-members", color: colors.blueAccent[500] },
+  ];
+
+  const backgroundColor = theme.palette.mode === "dark" ? "#141b2d" : "#fcfcfc";
+  const textColor = theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d";
+  const paperBackgroundColor = theme.palette.mode === "dark" ? colors.primary[500] : "#ffffff";
 
   if (loading) {
     return (
@@ -55,32 +90,22 @@ const PresidentPage = () => {
       minHeight="100vh"
       p={4}
       sx={{
-        backgroundColor: theme.palette.mode === "dark" ? "#141b2d" : "#fcfcfc",
-        color: theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d",
+        backgroundColor,
+        color: textColor,
       }}
     >
-      {/* Society Name */}
       <Box textAlign="center" mb={4}>
         <Typography 
           variant="h1" 
           fontWeight="bold"
-          sx={{
-            color: theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d",
-          }}
+          sx={{ color: textColor }}
         >
           {society ? society.name : "My Society"}
         </Typography>
       </Box>
 
-      {/* Navigation Buttons */}
       <Box display="flex" justifyContent="center" gap={2} flexWrap="wrap" mb={4}>
-        {[
-          { text: "Society Details", path: "manage-society-details", color: colors.greenAccent[500] },
-          { text: "Society Events", path: "manage-society-events", color: colors.greenAccent[500] },
-          { text: "Pending Members", path: "pending-members", color: colors.blueAccent[500] },
-          { text: "Report to Admin", path: "report-to-admin", color: colors.redAccent[500] },
-          { text: "All Members", path: "view-society-members", color: colors.blueAccent[500] },
-        ].map((item) => (
+        {navigationItems.map((item) => (
           <Button
             key={item.text}
             onClick={() => navigate(item.path)}
@@ -100,15 +125,14 @@ const PresidentPage = () => {
         ))}
       </Box>
 
-      {/* Pending Members Preview */}
       <Paper
         elevation={4}
         sx={{
           maxWidth: 600,
           mx: "auto",
           p: 4,
-          backgroundColor: theme.palette.mode === "dark" ? colors.primary[500] : "#ffffff",
-          color: theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d",
+          backgroundColor: paperBackgroundColor,
+          color: textColor,
           borderRadius: "8px",
           boxShadow: 3,
         }}

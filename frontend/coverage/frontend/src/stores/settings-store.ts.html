@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">58.62% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>17/29</span>
+                <span class='fraction'>0/41</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>2/2</span>
+                <span class='fraction'>0/1</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">25% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>1/4</span>
+                <span class='fraction'>0/1</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">58.62% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>17/29</span>
+                <span class='fraction'>0/41</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line medium'></div>
+    <div class='status-line low'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -104,88 +104,88 @@
 <a name='L39'></a><a href='#L39'>39</a>
 <a name='L40'></a><a href='#L40'>40</a>
 <a name='L41'></a><a href='#L41'>41</a>
-<a name='L42'></a><a href='#L42'>42</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
+<a name='L42'></a><a href='#L42'>42</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { create } from "zustand";
-import { createJSONStorage, persist } from "zustand/middleware";
-&nbsp;
-type SettingsState = {
-  drawer: boolean;
-  toggleDrawer: VoidFunction;
-  //
-  themeMode: "light" | "dark";
-  setThemeMode: (mode: "light" | "dark") =&gt; void;
-  toggleThemeMode: VoidFunction;
-};
-&nbsp;
-export const useSettingsStore = create&lt;SettingsState&gt;()(
-  persist(
-    (set, get) =&gt; ({
-      // Drawer
-      drawer: true,
-      toggleDrawer: <span class="fstat-no" title="function not covered" >() =&gt; {</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" >import { create } from "zustand";</span></span></span>
+<span class="cstat-no" title="statement not covered" >import { createJSONStorage, persist } from "zustand/middleware";</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >type SettingsState = {</span>
+<span class="cstat-no" title="statement not covered" >  drawer: boolean;</span>
+<span class="cstat-no" title="statement not covered" >  toggleDrawer: VoidFunction;</span>
+<span class="cstat-no" title="statement not covered" >  //</span>
+<span class="cstat-no" title="statement not covered" >  themeMode: "light" | "dark";</span>
+<span class="cstat-no" title="statement not covered" >  setThemeMode: (mode: "light" | "dark") =&gt; void;</span>
+<span class="cstat-no" title="statement not covered" >  toggleThemeMode: VoidFunction;</span>
+<span class="cstat-no" title="statement not covered" >};</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >export const useSettingsStore = create&lt;SettingsState&gt;()(</span>
+<span class="cstat-no" title="statement not covered" >  persist(</span>
+<span class="cstat-no" title="statement not covered" >    (set, get) =&gt; ({</span>
+<span class="cstat-no" title="statement not covered" >      // Drawer</span>
+<span class="cstat-no" title="statement not covered" >      drawer: true,</span>
+<span class="cstat-no" title="statement not covered" >      toggleDrawer: () =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >        const { drawer } = get();</span>
 <span class="cstat-no" title="statement not covered" >        set({</span>
 <span class="cstat-no" title="statement not covered" >          drawer: !drawer,</span>
 <span class="cstat-no" title="statement not covered" >        });</span>
 <span class="cstat-no" title="statement not covered" >      },</span>
-      // Theme
-      themeMode: "light",
-      setThemeMode: <span class="fstat-no" title="function not covered" >(mode: "light" | "dark") =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >      // Theme</span>
+<span class="cstat-no" title="statement not covered" >      themeMode: "light",</span>
+<span class="cstat-no" title="statement not covered" >      setThemeMode: (mode: "light" | "dark") =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >        set({</span>
 <span class="cstat-no" title="statement not covered" >          themeMode: mode,</span>
 <span class="cstat-no" title="statement not covered" >        });</span>
 <span class="cstat-no" title="statement not covered" >      },</span>
-      toggleThemeMode: <span class="fstat-no" title="function not covered" >() =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >      toggleThemeMode: () =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >        const { themeMode } = get();</span>
 <span class="cstat-no" title="statement not covered" >        set({ themeMode: themeMode === "dark" ? "light" : "dark" });</span>
 <span class="cstat-no" title="statement not covered" >      },</span>
-    }),
-    {
-      name: "app-settings",
-      storage: createJSONStorage(() =&gt; localStorage),
-    }
-  )
-);
+<span class="cstat-no" title="statement not covered" >    }),</span>
+<span class="cstat-no" title="statement not covered" >    {</span>
+<span class="cstat-no" title="statement not covered" >      name: "app-settings",</span>
+<span class="cstat-no" title="statement not covered" >      storage: createJSONStorage(() =&gt; localStorage),</span>
+<span class="cstat-no" title="statement not covered" >    }</span>
+<span class="cstat-no" title="statement not covered" >  )</span>
+<span class="cstat-no" title="statement not covered" >);</span>
 &nbsp;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
@@ -193,7 +193,7 @@ export const useSettingsStore = create&lt;SettingsState&gt;()(
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-03-02T20:45:08.821Z
+                at 2025-03-10T21:31:58.011Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

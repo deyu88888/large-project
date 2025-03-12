@@ -9,6 +9,7 @@ import {
   Tabs,
   Tab,
   CircularProgress,
+  styled,
 } from '@mui/material';
 import { tokens } from '../../theme/theme';
 import {
@@ -22,6 +23,12 @@ import {
 import { apiClient } from "../../api";
 import { useAuthStore } from "../../stores/auth-store";
 import StudentCalendar from './StudentCalendar'; // Import the new StudentCalendar component
+
+const CustomTabs = styled(Tabs)(({ theme, activecolor }) => ({
+  '& .MuiTabs-indicator': {
+    backgroundColor: activecolor,
+  },
+}));
 
 interface Society {
   id: number;
@@ -61,7 +68,6 @@ const StudentDashboard: React.FC = () => {
   const navigate = useNavigate();
   const theme = useTheme();
   const colours = tokens(theme.palette.mode);
-
   const [societies, setSocieties] = useState<Society[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -71,6 +77,12 @@ const StudentDashboard: React.FC = () => {
   const [showCalendar, setShowCalendar] = useState<boolean>(false);
   const { user } = useAuthStore();
 
+  const tabColors = [
+    colours.greenAccent[500],
+    colours.blueAccent[500],
+    colours.redAccent[500],
+  ];
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -78,7 +90,7 @@ const StudentDashboard: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const societiesResponse = await apiClient.get("/api/student-societies");   
+      const societiesResponse = await apiClient.get("/api/student-societies");
       setSocieties(societiesResponse.data || []);
     } catch (error) {
       console.error("Error fetching society data:", error);
@@ -102,13 +114,13 @@ const StudentDashboard: React.FC = () => {
       console.error("Error fetching event data:", error);
     }
     try {
-      const notificationsResponse = await apiClient.get("/api/notifications"); 
+      const notificationsResponse = await apiClient.get("/api/notifications/");
       setNotifications(notificationsResponse.data || []);
     } catch (error) {
       console.error("Error fetching notification data:", error);
     }
     try {
-      const awardsResponse = await apiClient.get(`/api/award-students/${user?.id}`); 
+      const awardsResponse = await apiClient.get(`/api/award-students/${user?.id}`);
       setAwards([awardsResponse.data]);
     } catch (error) {
       console.error("Error fetching award assignments:", error);
@@ -151,8 +163,8 @@ const StudentDashboard: React.FC = () => {
     try {
       const response = await apiClient.patch(`/api/notifications/${id}`, { is_read: true });
       if (response.status === 200) {
-        setNotifications((prevNotifications) =>
-          prevNotifications.map((notification) =>
+        setNotifications((prev) =>
+          prev.map((notification) =>
             notification.id === id ? { ...notification, is_read: true } : notification
           )
         );
@@ -251,17 +263,17 @@ const StudentDashboard: React.FC = () => {
             border: `1px solid ${colours.grey[800]}`,
           }}
         >
-          <Tabs
+          <CustomTabs
             value={activeTab}
             onChange={handleTabChange}
             textColor="inherit"
-            indicatorColor="secondary"
+            activecolor={tabColors[activeTab]}
             variant="fullWidth"
           >
             <Tab label="Societies" />
             <Tab label="Events" />
             <Tab label="Notifications" />
-          </Tabs>
+          </CustomTabs>
           <Box p={3}>
             {activeTab === 0 && (
               <Box

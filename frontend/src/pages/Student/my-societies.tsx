@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { apiClient } from "../../api";
 import { useTheme } from "@mui/material/styles";
 import { tokens } from "../../theme/theme";
-// Removed: import { useSidebar } from "../components/layout/SidebarContext";
 
 const MySocieties: React.FC = () => {
   const [societies, setSocieties] = useState<any[]>([]);
@@ -12,20 +11,19 @@ const MySocieties: React.FC = () => {
   const isLight = theme.palette.mode === "light";
 
   useEffect(() => {
+    const fetchSocieties = async () => {
+      try {
+        setLoading(true);
+        const response = await apiClient.get("/api/student-societies");
+        setSocieties(response.data || []);
+      } catch (error) {
+        console.error("Error fetching societies:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
     fetchSocieties();
   }, []);
-
-  const fetchSocieties = async () => {
-    try {
-      setLoading(true);
-      const response = await apiClient.get("/api/student-societies");
-      setSocieties(response.data || []);
-    } catch (error) {
-      console.error("Error fetching societies:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div
@@ -39,7 +37,6 @@ const MySocieties: React.FC = () => {
       }}
     >
       <div style={{ maxWidth: "1920px", margin: "0 auto" }}>
-        {/* Header */}
         <header
           style={{
             display: "flex",
@@ -59,8 +56,6 @@ const MySocieties: React.FC = () => {
             My Societies
           </h1>
         </header>
-
-        {/* Content */}
         {loading ? (
           <p
             style={{

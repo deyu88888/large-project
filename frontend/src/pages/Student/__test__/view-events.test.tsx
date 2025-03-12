@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, waitFor, act } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent, act } from "@testing-library/react";
 import { vi } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
@@ -12,13 +12,19 @@ vi.mock("../../../api", () => ({
   },
 }));
 
-const theme = createTheme();
+const lightTheme = createTheme({
+  palette: { mode: "light" },
+});
+
+const darkTheme = createTheme({
+  palette: { mode: "dark" },
+});
 
 describe("ViewEvents", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     (apiClient.get as vi.Mock).mockImplementation((url: string) => {
-      if (url === "/api/events/rsvp") {
+      if (url === "/api/events") {
         return Promise.resolve({
           data: [
             {
@@ -31,7 +37,7 @@ describe("ViewEvents", () => {
               id: 2,
               title: "Event 2",
               date: "2023-10-01",
-              location: "", // No location provided, should display "TBA"
+              location: "",
             },
           ],
         });
@@ -40,7 +46,7 @@ describe("ViewEvents", () => {
     });
   });
 
-  const renderComponent = () =>
+  const renderComponent = (theme = lightTheme) =>
     render(
       <ThemeProvider theme={theme}>
         <MemoryRouter>
@@ -62,25 +68,54 @@ describe("ViewEvents", () => {
     );
   });
 
-  it("renders a list of events when available", async () => {
-    renderComponent();
-    await waitFor(() => expect(screen.getByText(/All Events/i)).toBeInTheDocument());
-    expect(screen.getByText("Event 1")).toBeInTheDocument();
+  it("renders a list of events when available in light theme", async () => {
+    renderComponent(lightTheme);
+    await waitFor(() =>
+      expect(screen.queryByText(/Loading events.../i)).not.toBeInTheDocument()
+    );
+    const eventTitles = screen.getAllByRole("heading", { level: 2 });
+    const titles = eventTitles.map((el) => el.textContent);
+    expect(titles).toContain("Event 1");
+    expect(titles).toContain("Event 2");
     expect(screen.getByText(/Date: 2023-09-15/i)).toBeInTheDocument();
     expect(screen.getByText(/Location: Location A/i)).toBeInTheDocument();
-    expect(screen.getByText("Event 2")).toBeInTheDocument();
     expect(screen.getByText(/Date: 2023-10-01/i)).toBeInTheDocument();
     expect(screen.getByText(/Location: TBA/i)).toBeInTheDocument();
   });
 
-  it('renders "No upcoming events." when there are no events', async () => {
+  it("renders a list of events when available in dark theme", async () => {
+    renderComponent(darkTheme);
+    await waitFor(() =>
+      expect(screen.queryByText(/Loading events.../i)).not.toBeInTheDocument()
+    );
+    const eventTitles = screen.getAllByRole("heading", { level: 2 });
+    const titles = eventTitles.map((el) => el.textContent);
+    expect(titles).toContain("Event 1");
+    expect(titles).toContain("Event 2");
+    expect(screen.getByText(/Date: 2023-09-15/i)).toBeInTheDocument();
+    expect(screen.getByText(/Location: TBA/i)).toBeInTheDocument();
+  });
+
+  it('renders "No upcoming events." when there are no events in light theme', async () => {
     (apiClient.get as vi.Mock).mockImplementationOnce((url: string) => {
-      if (url === "/api/events/rsvp") {
+      if (url === "/api/events") {
         return Promise.resolve({ data: [] });
       }
       return Promise.resolve({ data: [] });
     });
-    renderComponent();
+    renderComponent(lightTheme);
+    await waitFor(() => expect(screen.getByText(/All Events/i)).toBeInTheDocument());
+    expect(screen.getByText(/No upcoming events./i)).toBeInTheDocument();
+  });
+
+  it('renders "No upcoming events." when there are no events in dark theme', async () => {
+    (apiClient.get as vi.Mock).mockImplementationOnce((url: string) => {
+      if (url === "/api/events") {
+        return Promise.resolve({ data: [] });
+      }
+      return Promise.resolve({ data: [] });
+    });
+    renderComponent(darkTheme);
     await waitFor(() => expect(screen.getByText(/All Events/i)).toBeInTheDocument());
     expect(screen.getByText(/No upcoming events./i)).toBeInTheDocument();
   });
