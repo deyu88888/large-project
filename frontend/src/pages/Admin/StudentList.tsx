@@ -18,7 +18,7 @@ const StudentList: React.FC = () => {
   const { drawer } = useSettingsStore(); 
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
-  const [reason, setReason] = React.useState('');
+  const [reason, setReason] = useState('');
 
 
   const getData = async () => {
@@ -120,10 +120,14 @@ const StudentList: React.FC = () => {
     setSelectedStudent(null);
   };
 
-  const handleDeleteConfirmed = async () => {
+  const handleDeleteConfirmed = async (reason: string) => {
     if (selectedStudent !== null) {
       try {
-        await apiClient.delete(apiPaths.USER.DELETE("Student", selectedStudent.id));
+        await apiClient.request({
+          method: "DELETE",
+          url: apiPaths.USER.DELETE("Student", selectedStudent.id),
+          data: { reason: reason },
+        });
         getData();
       } catch (error) {
         console.error("Error deleting student:", error);
@@ -131,15 +135,14 @@ const StudentList: React.FC = () => {
       handleCloseDialog();
     }
   };
+  
 
-  const handleReasonChange = (event) => {
+  const handleReasonChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setReason(event.target.value);
   };
 
   const handleConfirmDelete = () => {
-    // Pass the reason to the delete handler if needed
     handleDeleteConfirmed(reason);
-    handleCloseDialog();
   };
 
   
@@ -197,33 +200,33 @@ const StudentList: React.FC = () => {
         />
       </Box>
       <Dialog open={openDialog} onClose={handleCloseDialog}>
-      <DialogTitle>
-        Please confirm that you would like to delete {selectedStudent?.first_name} {selectedStudent?.last_name}.
-      </DialogTitle>
-      <DialogContent>
-        <DialogContentText>
-          You may undo this action in the Activity Log. <br />
-          <strong>Optional:</strong> Please provide a reason for deleting this student.
-        </DialogContentText>
-        <TextField
-          autoFocus
-          margin="dense"
-          label="Reason for Deletion"
-          fullWidth
-          variant="standard"
-          value={reason}
-          onChange={handleReasonChange}
-        />
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={handleCloseDialog} color="primary">
-          Cancel
-        </Button>
-        <Button onClick={handleConfirmDelete} color="error">
-          Confirm
-        </Button>
-      </DialogActions>
-    </Dialog>
+        <DialogTitle>
+          Please confirm that you would like to delete {selectedStudent?.firstName} {selectedStudent?.lastName}.
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            You may undo this action in the Activity Log. <br />
+            <strong>Compulsory:</strong> Provide a reason for deleting this student.
+          </DialogContentText>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Reason for Deletion"
+            fullWidth
+            variant="standard"
+            value={reason}
+            onChange={handleReasonChange}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleConfirmDelete} color="error">
+            Confirm
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

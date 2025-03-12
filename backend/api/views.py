@@ -629,7 +629,6 @@ class SocietyRequestView(APIView):
                 target_type="Society",
                 target_id=society.id,
                 target_name=society.name,
-                description=f"{society.name} Society has been {society_status.lower()}.",
                 performed_by=user,
                 timestamp=timezone.now(),
                 expiration_date=timezone.now() + timedelta(days=30),
@@ -785,7 +784,6 @@ class ManageSocietyDetailsAdminView(APIView):
                 target_type="Society",
                 target_id=society.id,
                 target_name=society.name,
-                description=f"Updated society details for {society.name}.",
                 performed_by=user,
                 timestamp=timezone.now(),
                 expiration_date=timezone.now() + timedelta(days=30),
@@ -831,7 +829,6 @@ class ManageEventDetailsAdminView(APIView):
                 target_type="Event",
                 target_id=event.id,
                 target_name=event.title,
-                description=f"Updated event {event.title}",
                 performed_by=user,
                 timestamp=timezone.now(),
                 expiration_date=timezone.now() + timedelta(days=30),
@@ -869,6 +866,11 @@ class DeleteView(APIView):
             return Response({"error": f"{target_type} not found."}, status=status.HTTP_404_NOT_FOUND)
 
         original_data = model_to_dict(target)
+
+        reason = request.data.get('reason', None)  # Extract the reason (it might be optional)
+        if not reason:
+            return Response({"error": "Reason for deletion is required."}, status=status.HTTP_400_BAD_REQUEST)
+
         
         serializable_data = {}
         for key, value in original_data.items():
@@ -912,6 +914,7 @@ class DeleteView(APIView):
             target_name=str(target),
             performed_by=user,
             timestamp=timezone.now(),
+            reason=reason,
             expiration_date=timezone.now() + timedelta(days=30),
             original_data=original_data_json,
         )
@@ -920,6 +923,7 @@ class DeleteView(APIView):
 
         return Response({"message": f"Deleted {target_type.lower()} moved to Activity Log."}, status=status.HTTP_200_OK)
 
+    
     def post(self, request, log_id):
         """
         Handle undo-delete requests
@@ -944,9 +948,66 @@ class DeleteView(APIView):
             model = self.model_mapping.get(target_type)
 
             if model:
-                restored_object = model.objects.create(**original_data)
+                if target_type == "Student":
+                    # Get the original User ID from the original data
+                    user_id = original_data.get('id')  # Assuming 'id' was stored in the original data
+                    user_instance = None
+                    
+                    # Attempt to restore the User with the original ID
+                    if user_id:
+                        try:
+                            user_instance = User.objects.get(id=user_id)
+                        except User.DoesNotExist:
+                            # If the User doesn't exist, create the User instance using the original data
+                            user_instance = User.objects.create(
+                                id=user_id,  # Ensure the original ID is used
+                                username=original_data.get('username'),
+                                email=original_data.get('email'),
+                                first_name=original_data.get('first_name'),
+                                last_name=original_data.get('last_name'),
+                                is_active=original_data.get('is_active', True),
+                            )
+                    
+                    # Proceed with restoring the Student
+                    restored_student = model.objects.create(**original_data)
+                    
+                    # Assign the restored User to the Student's user_ptr field
+                    if user_instance:
+                        restored_student.user_ptr = user_instance
+                    else:
+                        # Handle the case where the User doesn't exist and we created it manually
+                        return Response({"error": f"Failed to restore User with ID {user_id}."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-                if restored_object:
+                    # Handle the restoration of ManyToMany fields (societies, attended_events, etc.)
+                    societies_ids = original_data.get('societies', [])
+                    if societies_ids:
+                        societies = Society.objects.filter(id__in=societies_ids)
+                        restored_student.societies.set(societies)
+
+                    attended_events_ids = original_data.get('attended_events', [])
+                    if attended_events_ids:
+                        attended_events = Event.objects.filter(id__in=attended_events_ids)
+                        restored_student.attended_events.set(attended_events)
+
+                    followers_ids = original_data.get('followers', [])
+                    if followers_ids:
+                        followers = User.objects.filter(id__in=followers_ids)
+                        restored_student.followers.set(followers)
+
+                    president_of_id = original_data.get('president_of')
+                    if president_of_id:
+                        try:
+                            society = Society.objects.get(id=president_of_id)
+                            restored_student.president_of = society
+                        except Society.DoesNotExist:
+                            restored_student.president_of = None
+
+                    restored_student.save()
+
+                else:
+                    restored_object = model.objects.create(**original_data)
+
+                if restored_student:
                     log_entry.delete()  # Remove log after restoration
                     return Response({"message": f"{target_type} restored successfully!"}, status=status.HTTP_200_OK)
                 else:
@@ -958,6 +1019,8 @@ class DeleteView(APIView):
             return Response({"error": "Log entry not found."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 
 class CreateEventRequestView(APIView):
     """

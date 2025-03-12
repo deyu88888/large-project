@@ -1,9 +1,5 @@
 import { useState, useEffect, useRef, useContext, useMemo } from "react";
-import { Box, Typography, useTheme, Button, Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle, } from "@mui/material";
+import { Box, Typography, useTheme, Button, DialogContent, DialogTitle, Dialog, DialogContentText, DialogActions, TextField } from "@mui/material";
 import { DataGrid, GridColDef, GridToolbar } from "@mui/x-data-grid";
 import { apiClient, apiPaths } from "../../api";
 import { tokens } from "../../theme/theme";
@@ -24,6 +20,8 @@ const SocietyList = () => {
   const { searchTerm } = useContext(SearchContext);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedSociety, setSelectedSociety] = useState<Society | null>(null);
+  const [reason, setReason] = useState('');
+
 
   const fetchSocieties = async () => {
     try {
@@ -135,16 +133,28 @@ const SocietyList = () => {
       setSelectedSociety(null);
     };
 
-    const handleDeleteConfirmed = async () => {
+    const handleDeleteConfirmed = async (reason: string) => {
       if (selectedSociety !== null) {
         try {
-          await apiClient.delete(apiPaths.USER.DELETE("Society", selectedSociety.id));
+          await apiClient.request({
+            method: "DELETE",
+            url: apiPaths.USER.DELETE("Society", selectedSociety.id),
+            data: { reason: reason },
+          });
           fetchSocieties();
         } catch (error) {
           console.error("Error deleting society:", error);
         }
         handleCloseDialog();
       }
+    };
+
+    const handleReasonChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+      setReason(event.target.value);
+    };
+  
+    const handleConfirmDelete = () => {
+      handleDeleteConfirmed(reason);
     };
 
   const filteredSocieties = useMemo(
@@ -203,17 +213,29 @@ const SocietyList = () => {
         />
       </Box>
       <Dialog open={openDialog} onClose={handleCloseDialog}>
-        <DialogTitle>Please confirm that you would like to permanently delete {selectedSociety?.name}.</DialogTitle>
+        <DialogTitle>
+          Please confirm that you would like to delete {selectedSociety?.name}.
+        </DialogTitle>
         <DialogContent>
           <DialogContentText>
-            You may undo this action in Activity Log.
+            You may undo this action in the Activity Log. <br />
+            <strong>Compulsory:</strong> Provide a reason for deleting this society.
           </DialogContentText>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Reason for Deletion"
+            fullWidth
+            variant="standard"
+            value={reason}
+            onChange={handleReasonChange}
+          />
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog} color="primary">
             Cancel
           </Button>
-          <Button onClick={handleDeleteConfirmed} color="error">
+          <Button onClick={handleConfirmDelete} color="error">
             Confirm
           </Button>
         </DialogActions>

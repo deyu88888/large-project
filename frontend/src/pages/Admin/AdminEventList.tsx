@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useContext, useRef } from "react";
-import { Box, Typography, useTheme, Button, DialogTitle, DialogContent, DialogContentText, Dialog, DialogActions } from "@mui/material";
+import { Box, Typography, useTheme, Button, DialogTitle, DialogContent, DialogContentText, Dialog, DialogActions, TextField } from "@mui/material";
 import { DataGrid, GridColDef, GridToolbar } from "@mui/x-data-grid";
 import { apiClient, apiPaths } from "../../api";
 import { useNavigate } from "react-router-dom";
@@ -19,6 +19,8 @@ const EventList = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [reason, setReason] = useState('');
+
 
   const fetchEvents = async () => {
     try {
@@ -129,16 +131,28 @@ const EventList = () => {
     setSelectedEvent(null);
   };
 
-  const handleDeleteConfirmed = async () => {
+  const handleDeleteConfirmed = async (reason: string) => {
     if (selectedEvent !== null) {
       try {
-        await apiClient.delete(apiPaths.USER.DELETE("Event", selectedEvent.id));
+        await apiClient.request({
+          method: "DELETE",
+          url: apiPaths.USER.DELETE("Event", selectedEvent.id),
+          data: { reason: reason },
+        });
         fetchEvents();
       } catch (error) {
-        console.error("Error deleting society:", error);
+        console.error("Error deleting event:", error);
       }
       handleCloseDialog();
     }
+  };
+
+  const handleReasonChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setReason(event.target.value);
+  };
+
+  const handleConfirmDelete = () => {
+    handleDeleteConfirmed(reason);
   };
 
   const filteredEvents = events.filter((event) =>
@@ -193,17 +207,29 @@ const EventList = () => {
         />
       </Box>
       <Dialog open={openDialog} onClose={handleCloseDialog}>
-        <DialogTitle>Please confirm that you would like to permanently delete {selectedEvent?.title}.</DialogTitle>
+        <DialogTitle>
+          Please confirm that you would like to delete {selectedEvent?.title}.
+        </DialogTitle>
         <DialogContent>
           <DialogContentText>
-            You may undo this action in Activity Log.
+            You may undo this action in the Activity Log. <br />
+            <strong>Compulsory:</strong> Provide a reason for deleting this event.
           </DialogContentText>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Reason for Deletion"
+            fullWidth
+            variant="standard"
+            value={reason}
+            onChange={handleReasonChange}
+          />
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog} color="primary">
             Cancel
           </Button>
-          <Button onClick={handleDeleteConfirmed} color="error">
+          <Button onClick={handleConfirmDelete} color="error">
             Confirm
           </Button>
         </DialogActions>

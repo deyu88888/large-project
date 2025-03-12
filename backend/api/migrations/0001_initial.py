@@ -263,7 +263,7 @@ class Migration(migrations.Migration):
                 ('target_id', models.IntegerField()),
                 ('target_name', models.CharField(max_length=255)),
                 ('target_email', models.CharField(blank=True, max_length=255, null=True)),
-                ('description', models.TextField(blank=True, null=True)),
+                ('reason', models.TextField(blank=True, null=True)),
                 ('timestamp', models.DateTimeField(auto_now_add=True)),
                 ('expiration_date', models.DateTimeField(blank=True, null=True)),
                 ('original_data', models.TextField(blank=True, null=True)),

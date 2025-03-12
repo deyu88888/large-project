@@ -11,7 +11,7 @@ interface ActivityLog {
   performed_by: string;
   timestamp: string;
   expiration_date?: string;
-  description?: string;
+  reason?: string;
 }
 
 const ActivityLog: React.FC = () => {
@@ -19,6 +19,7 @@ const ActivityLog: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedLog, setSelectedLog] = useState<ActivityLog | null>(null);
+  const [reason, setReason] = useState<string>('');
   
     const fetchData = async () => {
       try {
@@ -42,7 +43,7 @@ useEffect(() => {
     { field: "target_email", headerName: "Email", flex: 1 },
     { field: "performed_by", headerName: "Performed By", flex: 1 },
     { field: "timestamp", headerName: "Timestamp", flex: 1 },
-    { field: "description", headerName: "Description", flex: 2 },
+    { field: "reason", headerName: "Reason", flex: 2 },
     {
         field: "actions",
         headerName: "Actions",
