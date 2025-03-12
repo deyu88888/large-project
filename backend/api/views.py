@@ -775,11 +775,58 @@ class ManageSocietyDetailsAdminView(APIView):
         society = Society.objects.filter(id=society_id).first()
         if not society:
             return Response({"error": "Society not found."}, status=status.HTTP_404_NOT_FOUND)
-
+        
+        # IMPORTANT: Store the original data BEFORE making any changes
+        original_data = {}
+        
+        # Handle regular fields first
+        for field in society._meta.fields:
+            field_name = field.name
+            if field_name not in ['id', 'user_ptr']:  # Skip certain fields
+                value = getattr(society, field_name)
+                
+                # Handle date/time objects
+                if isinstance(value, (date, datetime)):
+                    original_data[field_name] = value.isoformat()
+                # Handle foreign keys - store the ID instead of the object
+                elif hasattr(value, 'id') and not isinstance(value, (list, dict)):
+                    original_data[field_name] = value.id
+                # Handle ImageField and FileField objects
+                elif hasattr(value, 'url') and hasattr(value, 'name'):
+                    # Store the filename or URL path instead of the file object
+                    original_data[field_name] = value.name if value.name else None
+                else:
+                    original_data[field_name] = value
+        
+        # Handle many-to-many fields separately
+        for field in society._meta.many_to_many:
+            field_name = field.name
+            # Get IDs of related objects instead of objects themselves
+            related_ids = [item.id for item in getattr(society, field_name).all()]
+            original_data[field_name] = related_ids
+        
+        # Store the original data as JSON
+        try:
+            original_data_json = json.dumps(original_data)
+        except TypeError as e:
+            # Debug info if serialization fails
+            problematic_fields = {}
+            for key, value in original_data.items():
+                try:
+                    json.dumps({key: value})
+                except TypeError:
+                    problematic_fields[key] = str(type(value))
+            
+            return Response({
+                "error": f"JSON serialization error: {str(e)}",
+                "problematic_fields": problematic_fields
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        # Process the update
         serializer = SocietySerializer(society, data=request.data, partial=True)
         if serializer.is_valid():
-            serializer.save()
-            ActivityLog.objects.create(
+            # Create log entry with original data
+            log_entry = ActivityLog.objects.create(
                 action_type="Update",
                 target_type="Society",
                 target_id=society.id,
@@ -787,9 +834,17 @@ class ManageSocietyDetailsAdminView(APIView):
                 performed_by=user,
                 timestamp=timezone.now(),
                 expiration_date=timezone.now() + timedelta(days=30),
+                original_data=original_data_json  # Store original data here
             )
+            
+            # Now save the changes
+            serializer.save()
             ActivityLog.delete_expired_logs()
-            return Response({"message": "Society details updated successfully.", "data": serializer.data}, status=status.HTTP_200_OK)
+            
+            return Response({
+                "message": "Society details updated successfully.",
+                "data": serializer.data
+            }, status=status.HTTP_200_OK)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -926,20 +981,20 @@ class DeleteView(APIView):
     
     def post(self, request, log_id):
         """
-        Handle undo requests for various actions (Delete, Approve, Reject)
+        Handle undo requests for various actions (Delete, Approve, Reject, Update)
         """
         try:
             log_entry = ActivityLog.objects.get(id=log_id)
 
             # Check if the action type is supported
-            supported_actions = ["Delete", "Approve", "Reject"]
+            supported_actions = ["Delete", "Approve", "Reject", "Update"]  # Added "Update"
             if log_entry.action_type not in supported_actions:
                 return Response({"error": "Invalid action type."}, status=status.HTTP_400_BAD_REQUEST)
 
             target_type = log_entry.target_type
             
-            # For Delete actions, we need original data
-            if log_entry.action_type == "Delete":
+            # For Delete and Update actions, we need original data
+            if log_entry.action_type in ["Delete", "Update"]:  # Added "Update"
                 original_data_json = log_entry.original_data  # Get JSON string
 
                 if not original_data_json:
@@ -974,6 +1029,12 @@ class DeleteView(APIView):
                     return self._restore_event(original_data, log_entry)
                 else:
                     return Response({"error": "Unsupported target type."}, status=status.HTTP_400_BAD_REQUEST)
+            elif log_entry.action_type == "Update":  # New condition for Update
+                # Handle update undos
+                if target_type == "Society":
+                    return self._undo_society_update(original_data, log_entry)
+                else:
+                    return Response({"error": "Unsupported target type for this action."}, status=status.HTTP_400_BAD_REQUEST)
             elif log_entry.action_type in ["Approve", "Reject"]:
                 # Handle approve/reject undos
                 if target_type == "Society":
@@ -987,6 +1048,121 @@ class DeleteView(APIView):
             return Response({"error": "Log entry not found."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def _undo_society_update(self, original_data, log_entry):
+        """Handle undoing society detail updates with comprehensive relationship handling"""
+        try:
+            # Find the society
+            society_id = log_entry.target_id
+            society = Society.objects.filter(id=society_id).first()
+            
+            if not society:
+                society_name = log_entry.target_name
+                society = Society.objects.filter(name=society_name).first()
+                
+            if not society:
+                return Response({"error": "Society not found."}, status=status.HTTP_404_NOT_FOUND)
+            
+            # Define all special fields that need specialized treatment
+            many_to_many_fields = ['society_members', 'tags', 'showreel_images']
+            foreign_key_fields = ['leader', 'vice_president', 'event_manager', 'treasurer', 'approved_by']
+            complex_json_fields = ['social_media_links']
+            
+            # Create a working copy of the original data
+            data = original_data.copy()
+            
+            # First, apply simple fields that don't involve relationships
+            for key, value in data.items():
+                if (key not in many_to_many_fields and 
+                    key not in foreign_key_fields and 
+                    key not in complex_json_fields):
+                    if hasattr(society, key) and value is not None:
+                        setattr(society, key, value)
+            
+            # Handle complex JSON fields
+            if 'social_media_links' in data and isinstance(data['social_media_links'], dict):
+                society.social_media_links = data['social_media_links']
+            
+            # Save basic field changes
+            society.save()
+            
+            # Handle the approved_by field specifically
+            if 'approved_by' in data and data['approved_by']:
+                admin_id = data['approved_by']
+                try:
+                    from users.models import Admin
+                    admin_obj = Admin.objects.get(id=admin_id)
+                    society.approved_by = admin_obj
+                    society.save()
+                except Exception as e:
+                    print(f"Error setting approved_by: {str(e)}")
+            
+            # Handle student role foreign keys
+            for role in ['leader', 'vice_president', 'event_manager', 'treasurer']:
+                if role in data and data[role] and isinstance(data[role], dict):
+                    role_id = data[role].get('id')
+                    if role_id:
+                        setattr(society, f"{role}_id", role_id)
+            
+            # Save after setting foreign keys
+            society.save()
+            
+            # Handle society_members (many-to-many)
+            if 'society_members' in data and isinstance(data['society_members'], list):
+                society.society_members.clear()
+                for member_id in data['society_members']:
+                    try:
+                        # Assuming Student model is imported or accessible
+                        from users.models import Student
+                        student = Student.objects.get(id=member_id)
+                        society.society_members.add(student)
+                    except Exception as e:
+                        print(f"Error adding member {member_id}: {str(e)}")
+            
+            # Handle tags (many-to-many)
+            if 'tags' in data and isinstance(data['tags'], list):
+                society.tags.clear()
+                for tag_value in data['tags']:
+                    # Tags might be complex - handle different possible formats
+                    try:
+                        # If it's a JSON string within the list (unusual but possible)
+                        if isinstance(tag_value, str) and tag_value.startswith('['):
+                            import json
+                            tag_objects = json.loads(tag_value)
+                            # Now handle tag_objects appropriately...
+                            # This depends on your tag model structure
+                        # If it's a direct tag ID
+                        else:
+                            society.tags.add(tag_value)
+                    except Exception as e:
+                        print(f"Error adding tag {tag_value}: {str(e)}")
+            
+            # Handle showreel_images (many-to-many or similar)
+            if 'showreel_images' in data:
+                # You may need specialized handling depending on exactly what showreel_images is
+                try:
+                    # If it's a clear/add situation:
+                    society.showreel_images.clear()
+                    if data['showreel_images'] and isinstance(data['showreel_images'], list):
+                        for image in data['showreel_images']:
+                            society.showreel_images.add(image)
+                except Exception as e:
+                    print(f"Error handling showreel_images: {str(e)}")
+            
+            # Final save after all relationships are set
+            society.save()
+            
+            # Delete the log entry
+            log_entry.delete()
+            
+            return Response({"message": "Society update undone successfully!"}, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                "error": f"Failed to undo Society update: {str(e)}",
+                "original_data_content": original_data
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
     def _undo_society_status_change(self, original_data, log_entry):
         """Handle undoing society status changes (approve/reject)"""
