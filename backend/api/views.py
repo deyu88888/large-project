@@ -968,21 +968,21 @@ class DeleteView(APIView):
     def _restore_student(self, original_data, log_entry):
         """Handle student restoration"""
         try:
-            # Extract basic fields for the User model
+            # Extract basic fields for the User model - INCLUDE ROLE HERE
             user_data = {
                 'username': original_data.get('username'),
                 'email': original_data.get('email'),
                 'first_name': original_data.get('first_name'),
                 'last_name': original_data.get('last_name'),
                 'is_active': original_data.get('is_active', True),
+                'role': original_data.get('role', 'student'),  # Make sure role goes in User model
             }
             
-            # Create a new User first
+            # Try to find existing user
             user_id = original_data.get('id')
             email = user_data.get('email')
             username = user_data.get('username')
             
-            # Try to find existing user
             user = None
             if user_id:
                 try:
@@ -1019,36 +1019,37 @@ class DeleteView(APIView):
                 # Create new user
                 user = User.objects.create(**user_data)
             
-            # Prepare student-specific data
+            # Check if student already exists for this user
+            student = Student.objects.filter(user_ptr=user).first()
+            
+            # Prepare student-specific data - EXCLUDE ROLE
             student_data = {k: v for k, v in original_data.items() if k not in [
                 'id', 'username', 'email', 'first_name', 'last_name', 'is_active',
                 'password', 'last_login', 'is_superuser', 'is_staff', 'date_joined',
                 'groups', 'user_permissions', 'societies', 'attended_events', 'followers',
-                'following', 'president_of', 'user_ptr'
+                'following', 'president_of', 'user_ptr', 'role'  # Exclude role from student data
             ]}
             
-            # Check if student already exists for this user
-            student = Student.objects.filter(user_ptr=user).first()
-            
             if not student:
-                # Create new student using the OneToOneField inheritance
-                # We need to use a different approach since Student inherits from User
-                student = Student()
+                # Create new student using the proper inheritance approach
+                from django.contrib.contenttypes.models import ContentType
                 
-                # Copy all attributes from the user to the student
-                for field in user._meta.fields:
-                    setattr(student, field.name, getattr(user, field.name))
-                    
-                # Now apply the student-specific fields
+                # Create student with proper User inheritance
+                student = Student(user_ptr_id=user.id)
+                student.__dict__.update(user.__dict__)
+                
+                # Apply student-specific fields
                 for key, value in student_data.items():
-                    setattr(student, key, value)
-                    
-                # Save the student
+                    if value is not None:  # Only set non-None values
+                        setattr(student, key, value)
+                
+                # Save with raw=True to avoid problems with inheritance
                 student.save_base(raw=True)
             else:
-                # Update existing student
+                # Update existing student with student-specific fields
                 for key, value in student_data.items():
-                    setattr(student, key, value)
+                    if value is not None:  # Only set non-None values
+                        setattr(student, key, value)
                 student.save()
             
             # Handle M2M relationships using .set() method
@@ -1124,7 +1125,6 @@ class DeleteView(APIView):
             
         except Exception as e:
             return Response({"error": f"Failed to restore Student: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            
 
     def _restore_society(self, original_data, log_entry):
         """Handle society restoration"""
