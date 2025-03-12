@@ -1,4 +1,5 @@
 # backend/api/recommendation_views.py
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -33,12 +34,19 @@ class RecommendedSocietiesView(APIView):
         # Get limit from query params, default to 5
         limit = int(request.query_params.get('limit', 5))
         
-        # Get recommendations
+        # Get raw recommended societies from your custom recommender
         recommended_societies = recommender.get_recommendations_for_student(student.id, limit)
         
-        # Generate recommendation explanations
+        # EXCLUDE societies the student has already joined
+        joined_society_ids = student.societies_belongs_to.values_list("id", flat=True)
+        filtered_societies = [
+            soc for soc in recommended_societies
+            if soc.id not in joined_society_ids
+        ]
+        
+        # Build the final response array with explanation data
         recommendations = []
-        for society in recommended_societies:
+        for society in filtered_societies:
             explanation = recommender.get_recommendation_explanation(student.id, society.id)
             recommendations.append({
                 'society': SocietySerializer(society).data,

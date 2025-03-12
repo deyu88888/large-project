@@ -1,6 +1,5 @@
-// src/components/RecommendationFeedback.tsx
 import React, { useState, useEffect } from "react";
-import { submitRecommendationFeedback, getRecommendationFeedback } from "../../api";
+import { submitRecommendationFeedback, getRecommendationFeedback } from "../api";
 
 interface RecommendationFeedbackProps {
   societyId: number;
@@ -189,8 +188,8 @@ const RecommendationFeedback: React.FC<RecommendationFeedbackProps> = ({
                 padding: "0.5rem",
                 border: `1px solid ${isLight ? colours.grey[300] : colours.grey[700]}`,
                 borderRadius: "0.25rem",
-                backgroundColor: isLight ? colours.primary[300] : colours.primary[500],
-                color: isLight ? colours.grey[100] : colours.grey[100]
+                backgroundColor: "#ffffff", // White background
+                color: "#000000", // Black text
               }}
               disabled={isSubmitting}
             >
@@ -220,8 +219,8 @@ const RecommendationFeedback: React.FC<RecommendationFeedbackProps> = ({
                 padding: "0.5rem",
                 border: `1px solid ${isLight ? colours.grey[300] : colours.grey[700]}`,
                 borderRadius: "0.25rem",
-                backgroundColor: isLight ? colours.primary[300] : colours.primary[500],
-                color: isLight ? colours.grey[100] : colours.grey[100],
+                backgroundColor: "#ffffff", // White background
+                color: "#000000", // Black text
                 resize: "vertical",
                 minHeight: "4rem"
               }}

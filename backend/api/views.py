@@ -251,22 +251,31 @@ class JoinSocietyView(APIView):
     def post(self, request, society_id=None):
         user = request.user
 
+        # Debugging prints:
+        print("DEBUG: User:", user, "User ID:", user.id)
+        print("DEBUG: society_id:", society_id)
+
         if not hasattr(user, "student"):
+            print("DEBUG: User is not a student.")
             return Response({"error": "Only students can join societies."}, status=status.HTTP_403_FORBIDDEN)
 
         if not society_id:
+            print("DEBUG: No society_id provided in URL.")
             return Response({"error": "Society ID is required."}, status=status.HTTP_400_BAD_REQUEST)
 
         serializer = JoinSocietySerializer(data={"society_id": society_id}, context={"request": request})
 
         if not serializer.is_valid():
+            print("DEBUG: serializer validation failed.")
+            print("DEBUG: serializer.errors:", serializer.errors)
 
             if "Society does not exist." in serializer.errors.get("society_id", []):
                 return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
 
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)  
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         society = serializer.save()
+        print(f"DEBUG: Successfully joined society '{society.name}' for user {user.id}")
         return Response({"message": f"Successfully joined society '{society.name}'."}, status=status.HTTP_200_OK)
 
 
@@ -591,73 +600,55 @@ class EventDetailView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 logger = logging.getLogger(__name__)
+
 class EventListView(APIView):
     """
-    API View to list events based on filters (upcoming, previous, pending).
+    Lists events for all societies the currently logged-in student is part of.
+    Optionally applies a filter (upcoming, previous, pending).
     """
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        society_id = request.query_params.get("society_id")
         filter_type = request.query_params.get("filter", "upcoming")
 
-        if not society_id:
-            return Response({"error": "Missing society_id"}, status=400)
+        # Ensure the user is a student
+        if not hasattr(request.user, "student"):
+            logger.warning("User is not a student.")
+            return Response({"error": "Only students can retrieve society events."}, status=403)
 
-        try:
-            # Convert society_id to integer
-            society_id = int(society_id)
-        except ValueError:
-            return Response({"error": "Invalid society_id format"}, status=400)
+        # Gather all society IDs the student is in
+        societies = request.user.student.societies_belongs_to.all()
+        society_ids = [s.id for s in societies]
 
-        # Debug - print request parameters
-        logger.info(f"Request for events: society_id={society_id}, filter={filter_type}")
-        
-        # IMPORTANT FIX: Make sure to filter by hosted_by_id, not hosted_by
-        # Check your Event model to confirm the correct field name
-        events = Event.objects.filter(hosted_by=society_id)
-        
-        # Debug - log events before time-based filtering
-        logger.info(f"Found {events.count()} events for society {society_id} before time filtering")
-        logger.info(f"Event IDs: {[e.id for e in events]}")
-        
-        # If no events found, return empty list early
-        if not events.exists():
-            logger.warning(f"No events found for society_id={society_id}")
-            return Response([])
+        # If the user belongs to no societies, return an empty list
+        if not society_ids:
+            logger.info("User is not part of any society. Returning empty list.")
+            return Response([], status=200)
 
+        # Fetch events for these societies only
+        events = Event.objects.filter(hosted_by__in=society_ids)
+
+        # If you want to do time-based filtering:
         today = now().date()
         current_time = now().time()
 
         if filter_type == "upcoming":
-            # Future dates OR current date with future time
-            filtered_events = (events.filter(date__gt=today, status="Approved") | 
-                            events.filter(date=today, start_time__gt=current_time, status="Approved"))
-        
+            events = (
+                events.filter(date__gt=today, status="Approved") |
+                events.filter(date=today, start_time__gt=current_time, status="Approved")
+            )
         elif filter_type == "previous":
-            # Past dates OR current date with past time
-            filtered_events = (events.filter(date__lt=today, status="Approved") | 
-                            events.filter(date=today, start_time__lt=current_time, status="Approved"))
-        
+            events = (
+                events.filter(date__lt=today, status="Approved") |
+                events.filter(date=today, start_time__lt=current_time, status="Approved")
+            )
         elif filter_type == "pending":
-            # Only pending events for this society
-            filtered_events = events.filter(status="Pending")
-        
-        else:
-            # Default to all events if filter is invalid
-            filtered_events = events
-        
-        # Debug - log the filtered events
-        logger.info(f"Returning {filtered_events.count()} {filter_type} events for society {society_id}")
-        logger.info(f"Filtered Event IDs: {[e.id for e in filtered_events]}")
-        
-        # For each event, log the society ID to verify it matches
-        for event in filtered_events:
-            logger.info(f"Event {event.id}: '{event.title}', hosted_by={event.hosted_by}, status={event.status}")
+            events = events.filter(status="Pending")
+        # else: no filter → returns all events from these societies
 
-        serializer = EventSerializer(filtered_events, many=True)
-        return Response(serializer.data)
-
+        serializer = EventSerializer(events, many=True)
+        return Response(serializer.data, status=200)
+    
 class ManageEventDetailsView(APIView):
     """
     API View to edit (request changes for) or delete an event.
