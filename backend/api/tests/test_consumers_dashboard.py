@@ -3,7 +3,7 @@ from channels.routing import URLRouter
 from channels.testing import WebsocketCommunicator
 from django.test import TestCase, override_settings
 from django.urls import re_path
-from api.consumers import DashboardConsumer
+from api.consumer.consumers import DashboardConsumer
 from api.models import Society, Event, Student
 from api.tests.file_deletion import delete_file
 

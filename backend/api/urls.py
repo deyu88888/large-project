@@ -9,7 +9,8 @@ from .views import (
     RecentActivitiesView, NotificationsView, EventCalendarView,
     StudentSocietiesView, JoinSocietyView, RSVPEventView, EventHistoryView,
     get_popular_societies, CreateEventRequestView, custom_media_view, get_sorted_events, StudentSocietyDataView,
-    AllEventsView, EventDetailView, EventCommentsView, DescriptionRequestView
+    AllEventsView, EventDetailView, DescriptionRequestView, toggle_follow, StudentProfileView,
+    like_comment, dislike_comment, EventCommentsView
 )
 from .utils import request_otp, verify_otp
 
@@ -37,7 +38,7 @@ urlpatterns = [
     path("events/", EventListView.as_view(), name="event-list"),
 
     # User role endpoints
-    path("user/admin", AdminView.as_view(), name="admin"),
+    path("user/admin/", AdminView.as_view(), name="admin"),
     path("user/student", StudentView.as_view(), name="student"),
   
   # Society membership endpoints
@@ -61,14 +62,14 @@ urlpatterns = [
     path("description/request/pending", DescriptionRequestView.as_view(), name="request_description"),
 
     # Student societies endpoints
-    path("student-societies", StudentSocietiesView.as_view(), name="student_societies"),
-    path("leave-society/<int:society_id>", StudentSocietiesView.as_view(), name="leave_society"),
-    path("society-view/<int:society_id>", StudentSocietyDataView.as_view(), name="society_view"),
+    path("student-societies/", StudentSocietiesView.as_view(), name="student_societies"),
+    path("leave-society/<int:society_id>/", StudentSocietiesView.as_view(), name="leave_society"),
+    path("society-view/<int:society_id>/", StudentSocietyDataView.as_view(), name="society_view"),
     path('media/<path:path>', custom_media_view, name="media"),
 
     # Dashboard API endpoints
     path("dashboard/stats/", DashboardStatsView.as_view(), name="dashboard_stats"),
-    path("dashboard/activities", RecentActivitiesView.as_view(), name="recent_activities"),
+    path("dashboard/activities/", RecentActivitiesView.as_view(), name="recent_activities"),
     path("dashboard/notifications", NotificationsView.as_view(), name="dashboard_notifications"),
     path("dashboard/events/", EventCalendarView.as_view(), name="dashboard_events"),
     path("popular-societies", get_popular_societies, name="popular_societies"),
@@ -93,5 +94,12 @@ urlpatterns = [
     path("all-events", AllEventsView.as_view(), name="all_events"),
     path("event/<int:event_id>", EventDetailView.as_view(), name="event-detail"),
     path("event/<int:event_id>/comments", EventCommentsView.as_view(), name="event_comments"),
-    path("event/<int:event_id>/manage", ManageEventDetailsView.as_view(), name="manage_event_detail"),
+    path("event/<int:event_id>/manage/", ManageEventDetailsView.as_view(), name="manage_event_detail"),
+    path("comments/", EventCommentsView.as_view(), name="comment_list_create"),
+    path("comments/<int:comment_id>/like", like_comment, name="like_comment"),
+    path("comments/<int:comment_id>/dislike", dislike_comment, name="dislike_comment"),
+
+    # Follow
+    path("users/<int:user_id>/follow", toggle_follow, name="toggle_follow"),
+    path("users/<int:user_id>", StudentProfileView.as_view(), name="user_profile"),
 ]

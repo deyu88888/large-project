@@ -1,183 +1,138 @@
-import React, { useState } from "react";
-import { apiClient } from "../api";
-import {
-  CircularProgress,
-  Button,
-  TextField,
-  Typography,
-  Box,
-  Stack,
-  IconButton,
-} from "@mui/material";
-import { format } from "date-fns";
-import ThumbUpIcon from "@mui/icons-material/ThumbUp";
-import ThumbDownIcon from "@mui/icons-material/ThumbDown";
+import { useEffect, useState } from "react";
+import { CommentItem } from "./CommentItem";
+import {apiClient} from "../api";
+import {Button, Typography} from "@mui/material";
 
-interface CommentSectionProps {
-  eventId?: string;
-  comments: any[];
-  setComments: React.Dispatch<React.SetStateAction<any[]>>;
-  loading?: boolean;
+interface CommentType {
+    id: number;
+    content: string;
+    create_at: string;
+    user_data: {
+        id: number;
+        username: string;
+    };
+    parent_comment: number | null;
+    replies: CommentType[];
+    likes: number;
+    dislikes: number;
+    liked_by_user: boolean;
+    disliked_by_user: boolean;
 }
 
-function CommentMeta({
-  formattedDate,
-  likeCount,
-  dislikeCount,
-  onReply,
-}: {
-  formattedDate: string;
-  likeCount: number;
-  dislikeCount: number;
-  onReply: () => void;
-}) {
-  return (
-    <Stack direction="row" spacing={2} alignItems="center" sx={{ color: "text.secondary" }}>
-      <Typography variant="caption">{formattedDate}</Typography>
-      <Box display="flex" alignItems="center">
-        <IconButton size="small" color="inherit" sx={{ p: 0.2 }}>
-          <ThumbUpIcon fontSize="inherit" />
-        </IconButton>
-        <Typography variant="caption" sx={{ ml: 0.5 }}>
-          {likeCount}
-        </Typography>
-      </Box>
-      <Box display="flex" alignItems="center">
-        <IconButton size="small" color="inherit" sx={{ p: 0.2 }}>
-          <ThumbDownIcon fontSize="inherit" />
-        </IconButton>
-        <Typography variant="caption" sx={{ ml: 0.5 }}>
-          {dislikeCount}
-        </Typography>
-      </Box>
-      <Button variant="text" size="small" onClick={onReply}>
-        reply
-      </Button>
-    </Stack>
-  );
-}
+export function CommentSection({ eventId }: { eventId: number }) {
+    const [comments, setComments] = useState<CommentType[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [newComment, setNewComment] = useState("");
 
-interface CommentItemProps {
-  comment: any;
-  eventId?: string;
-  setComments: React.Dispatch<React.SetStateAction<any[]>>;
-  level?: number;
-}
+    useEffect(() => {
+        apiClient
+            .get(`/api/comments/?event_id=${eventId}`)
+            .then((res) => {
+                console.log("Fetched comments:", res.data);
+                setComments(res.data);
+            })
+            .catch((err) => console.error("Error fetching comments:", err))
+            .finally(() => setLoading(false));
+    }, [eventId]);
 
-const CommentItem: React.FC<CommentItemProps> = ({ comment, eventId, setComments, level = 0 }) => {
-  const [showReplyBox, setShowReplyBox] = useState(false);
-  const [replyContent, setReplyContent] = useState("");
+    const handleSubmitComment = () => {
+        if (!newComment.trim()) return;
+        apiClient
+            .post("/api/comments/?event_id=${eventId}", {
+                event: eventId,
+                content: newComment,
+            })
+            .then((res) => {
+                setComments((prev) => [...prev, res.data]);
+                setNewComment("");
+            })
+            .catch((err) => console.error("Error creating comment:", err));
+    };
 
-  // reply the comment
-  const handleSubmitReply = async () => {
-    if (!replyContent.trim() || !eventId) return;
-    try {
-      const response = await apiClient.post(`/api/event/${eventId}/comments`, {
-        content: replyContent,
-        parent_comment: comment.id,
-      });
-      const newReply = response.data;
-      setComments((prevComments) => {
-        const insertReply = (commentsList: any[]): any[] => {
-          return commentsList.map((c) => {
-            if (c.id === comment.id) {
-              const updatedReplies = c.replies ? [newReply, ...c.replies] : [newReply];
-              return { ...c, replies: updatedReplies };
-            } else if (c.replies && c.replies.length > 0) {
-              return { ...c, replies: insertReply(c.replies) };
-            }
+    const handleReply = (parentId: number, content: string) => {
+        apiClient
+            .post("/api/comments/?event_id=${eventId}", {
+                event: eventId,
+                content,
+                parent_comment: parentId,
+            })
+            .then((res) => {
+                const newReply = res.data as CommentType;
+                const updatedComments = addReplyToTree(comments, parentId, newReply);
+                setComments(updatedComments);
+            })
+            .catch((err) => console.error("Error replying comment:", err));
+    };
+
+    function addReplyToTree(
+        list: CommentType[],
+        parentId: number,
+        newReply: CommentType
+    ): CommentType[] {
+    return list.map((c) => {
+        if (c.id === parentId) {
+            return { ...c, replies: [...c.replies, newReply] };
+        } else if (c.replies && c.replies.length > 0) {
+            return { ...c, replies: addReplyToTree(c.replies, parentId, newReply) };
+        } else {
             return c;
-          });
-        };
-        return insertReply(prevComments);
-      });
-      setReplyContent("");
-      setShowReplyBox(false);
-    } catch (error) {
-      console.error("Error posting reply:", error);
+        }
+        });
     }
-  };
 
-  const formattedDate = format(new Date(comment.create_at), "yyyy-MM-dd HH:mm:ss");
-
-  return (
-    <Box sx={{ ml: level * 2, mt: 1, borderLeft: level > 0 ? "1px solid #ddd" : "none", pl: level > 0 ? 1 : 0 }}>
-      <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
-        {comment.user_data?.username || "Anonymous"}:
-      </Typography>
-      <Typography variant="body2">{comment.content}</Typography>
-      <CommentMeta
-        formattedDate={formattedDate}
-        likeCount={comment.likeCount ?? 0}
-        dislikeCount={comment.dislikeCount ?? 0}
-        onReply={() => setShowReplyBox(!showReplyBox)}
-      />
-      {showReplyBox && (
-        <Box sx={{ mt: 1 }}>
-          <TextField
-            label="Your reply"
-            variant="outlined"
-            fullWidth
-            value={replyContent}
-            onChange={(e) => setReplyContent(e.target.value)}
-            size="small"
-          />
-          <Button variant="contained" onClick={handleSubmitReply} sx={{ mt: 1 }} disabled={!replyContent.trim()}>
-            Submit Reply
-          </Button>
-        </Box>
-      )}
-      {comment.replies && comment.replies.length > 0 && (
-        <Box>
-          {comment.replies.map((child: any) => (
-            <CommentItem key={child.id} comment={child} eventId={eventId} setComments={setComments} level={level + 1} />
-          ))}
-        </Box>
-      )}
-    </Box>
-  );
-};
-
-const CommentSection: React.FC<CommentSectionProps> = ({
-  eventId,
-  comments,
-  setComments,
-  loading = false,
-}) => {
-  const [newComment, setNewComment] = useState("");
-
-  // Post the comment
-  const handlePostComment = async () => {
-    if (!newComment.trim() || !eventId) return;
-    try {
-      const response = await apiClient.post(`/api/event/${eventId}/comments`, { content: newComment });
-      setComments([response.data, ...comments]);
-      setNewComment("");
-    } catch (error) {
-      console.error("Error posting comment:", error);
+    if (loading) {
+        return <p>Loading comments...</p>;
     }
-  };
 
-  return (
-    <div style={{ marginTop: "20px" }}>
-      <Typography variant="h5">Comments</Typography>
-      <TextField
-        label="Add a comment"
-        variant="outlined"
-        fullWidth
-        value={newComment}
-        onChange={(e) => setNewComment(e.target.value)}
-        style={{ margin: "10px 0" }}
-      />
-      <Button variant="contained" color="primary" onClick={handlePostComment} disabled={!newComment.trim()}>
-        Post
-      </Button>
-      {loading && <CircularProgress style={{ display: "block", margin: "20px auto" }} />}
-      {comments.map((comment) => (
-        <CommentItem key={comment.id} comment={comment} eventId={eventId} setComments={setComments} />
-      ))}
+    return (
+        <div>
+            <Typography
+                variant="h2"
+                align="center"
+                marginTop="20px"
+                marginBottom="20px"
+            >
+                Comments
+            </Typography>
+
+            <div style={{ marginBottom: "20px" }}>
+                <textarea
+                    rows={2}
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    style={{
+                        width: "100%",
+                        border: "2px solid black",
+                        borderRadius: "4px",
+                        padding: "8px",
+                        marginBottom: "8px",
+                        resize: "vertical",
+                    }}
+                />
+                <Button
+                    onClick={handleSubmitComment}
+                    variant="contained"
+                    color="secondary"
+                    sx={{
+                        display: "block",
+                        margin: "auto",
+                    }}
+                >
+                    Post the Comment
+                </Button>
+            </div>
+
+            {comments.length === 0 ? (
+                <p>There is no comment now</p>
+            ) : (
+                comments.map((comment) => (
+                <CommentItem
+                    key={comment.id}
+                    comment={comment}
+                    onReply={handleReply}
+                />
+            ))
+        )}
     </div>
-  );
-};
-
-export default CommentSection;
+    );
+}

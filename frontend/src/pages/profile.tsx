@@ -1,5 +1,5 @@
-import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../stores/auth-store";
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
@@ -20,34 +20,62 @@ import {
   Card,
   Grid,
 } from "@mui/material";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+
+interface User {
+    id: number;
+    first_name: string;
+    last_name: string;
+    username: string;
+    email: string;
+    role: string;
+    is_active: boolean;
+    is_following?: boolean;
+}
 
 const validationSchema = Yup.object().shape({
-  first_name: Yup.string()
-    .required("First name is required.")
-    .matches(/^[A-Za-z]+$/, "Shouldn't contain numerical or special characters.")
-    .max(50, "First name is too long."),
-  last_name: Yup.string()
-    .required("Last name is required.")
-    .matches(/^[A-Za-z]+$/, "Shouldn't contain numerical or special characters.")
-    .max(50, "Last name is too long."),
-  email: Yup.string()
-    .matches(
-      /^[A-Z0-9._+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-      "Invalid email address."
-    )
-    .required("Email is required.")
-    .max(50, "Too long email id.")
-    .min(6, "Too short email id."),
+    first_name: Yup.string()
+        .required("First name is required.")
+        .matches(/^[A-Za-z]+$/, "Shouldn't contain numerical or special characters.")
+        .max(50, "First name is too long."),
+    last_name: Yup.string()
+        .required("Last name is required.")
+        .matches(/^[A-Za-z]+$/, "Shouldn't contain numerical or special characters.")
+        .max(50, "Last name is too long."),
+    email: Yup.string()
+        .email("Invalid email address")
+        .required("Email is required.")
+        .max(50, "Too long email id.")
+        .min(6, "Too short email id."),
 });
 
 export default function ProfilePage() {
-  const navigate = useNavigate();
-  const { user } = useAuthStore();
-  const theme = useTheme();
+    const { student_id } = useParams();
+    const navigate = useNavigate();
+    const { user } = useAuthStore();
+    const theme = useTheme();
+
+    const [profile, setProfile] = useState<User | null>(null);
+    const [isFollowing, setIsFollowing] = useState<boolean>(false);
+    const isSelf = user && (!student_id || String(user.id) === student_id);
+
+    useEffect(() => {
+    if (isSelf) {
+      setProfile(user);
+    } else {
+      apiClient.get(`${apiPaths.USER.BASE}/${student_id}`)
+        .then((res) => {
+          setProfile(res.data);
+          setIsFollowing(res.data.is_following || false);
+        })
+        .catch((err) => {
+          console.error(err);
+          setProfile(null);
+        });
+    }
+    }, [student_id, user, isSelf]);
   const colors = tokens(theme.palette.mode);
 
-  const handleGoBack = () => {
+    const handleGoBack = () => {
     navigate(-1);
   };
 
@@ -56,7 +84,22 @@ export default function ProfilePage() {
     return `${firstName?.charAt(0) || ""}${lastName?.charAt(0) || ""}`.toUpperCase();
   };
 
-  if (!user) {
+    const handleToggleFollow = () => {
+        if (!profile) return;
+
+        apiClient.post(`/api/users/${profile.id}/follow`)
+          .then((res) => {
+            if (res.data.message === "Followed successfully.") {
+              setIsFollowing(true);
+            } else if (res.data.message === "Unfollowed successfully.") {
+              setIsFollowing(false);
+            }
+          })
+          .catch((err) => console.error(err));
+      };
+
+
+    if (!profile) {
     return (
       <Container maxWidth="sm" sx={{ mt: 4 }}>
         <Button 
@@ -96,7 +139,7 @@ export default function ProfilePage() {
         </Paper>
       </Container>
     );
-  }
+    }
 
   return (
     <Container maxWidth="md" sx={{ py: 4 }}>
@@ -133,23 +176,46 @@ export default function ProfilePage() {
             gap: 2
           }}
         >
-          <Typography
-            variant="h3"
-            sx={{
-              color: theme.palette.getContrastText(theme.palette.primary.main),
-            }}
-          >
-            Welcome back, {user.first_name}!
-          </Typography>
-          <Typography
-            variant="subtitle1"
-            sx={{
-              mt: 1,
-              color: theme.palette.getContrastText(theme.palette.primary.main),
-            }}
-          >
-            Manage your profile information below
-          </Typography>
+          {isSelf ? (
+            <>
+              <Typography
+                variant="h3"
+                sx={{
+                  color: theme.palette.getContrastText(theme.palette.primary.main),
+                }}
+              >
+                Welcome back, {profile.first_name}!
+              </Typography>
+              <Typography
+                variant="subtitle1"
+                sx={{
+                  mt: 1,
+                  color: theme.palette.getContrastText(theme.palette.primary.main),
+                }}
+              >
+                Manage your profile information below
+              </Typography>
+            </>
+          ) : (
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <Typography
+                variant="h3"
+                sx={{
+                  color: theme.palette.getContrastText(theme.palette.primary.main),
+                }}
+              >
+                {profile.first_name}'s Profile
+              </Typography>
+
+              <Button
+                variant="contained"
+                color={isFollowing ? "secondary" : "primary"}
+                onClick={handleToggleFollow}
+              >
+                {isFollowing ? "Unfollow" : "Follow"}
+              </Button>
+            </Box>
+          )}
         </Box>
         <Box sx={{ p: 4 }}>
           <Box
@@ -180,7 +246,7 @@ export default function ProfilePage() {
                 Username
               </Typography>
               <Typography variant="body1" sx={{ mt: 1, fontWeight: "bold" }}>
-                {user.username}
+                {profile.username}
               </Typography>
             </Paper>
             <Paper
@@ -202,7 +268,7 @@ export default function ProfilePage() {
                 Role
               </Typography>
               <Typography variant="body1" sx={{ mt: 1, fontWeight: "bold" }}>
-                {user.role}
+                {profile.role}
               </Typography>
             </Paper>
             <Paper
@@ -236,14 +302,14 @@ export default function ProfilePage() {
                     width: 10,
                     height: 10,
                     borderRadius: "50%",
-                    bgcolor: user.is_active
+                    bgcolor: profile.is_active
                       ? theme.palette.success.main
                       : theme.palette.grey[400],
                     mr: 1,
                   }}
                 />
                 <Typography variant="body1" sx={{ fontWeight: "bold" }}>
-                  {user.is_active ? "Verified" : "Not Verified"}
+                  {profile.is_active ? "Verified" : "Not Verified"}
                 </Typography>
               </Card>
             </Grid>
@@ -428,5 +494,6 @@ export default function ProfilePage() {
         </Box>
       </Paper>
     </Container>
-  );
+    );
 }
+

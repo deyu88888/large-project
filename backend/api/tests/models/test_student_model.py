@@ -50,24 +50,32 @@ class StudentModelTestCase(TestCase):
         self.assertFalse(self.student.is_president)
 
         # set student as president of one society
-        self.student.president_of.add(self.society1)
+        self.student.president_of = self.society1
+        self.student.save()
+
         self.student.refresh_from_db()
         self.assertTrue(self.student.is_president)
 
         # clear president_of relationship and verify is_president is updated
-        self.student.president_of.clear()
+        self.student.president_of = None
+        self.student.save()
+
         self.student.refresh_from_db()
         self.assertFalse(self.student.is_president)
 
     def test_signal_update_is_president(self):
         """test m2m_changed signal for updating is_president"""
         # set student as president of one society and verify is_president is updated
-        self.student.president_of.add(self.society1)
+        self.student.president_of = self.society1
+        self.student.save()
+
         self.student.refresh_from_db()
         self.assertTrue(self.student.is_president)
 
         # clear president_of relationship and verify is_president is updated
-        self.student.president_of.remove(self.society1)
+        self.student.president_of = None
+        self.student.save()
+
         self.student.refresh_from_db()
         self.assertFalse(self.student.is_president)
 
