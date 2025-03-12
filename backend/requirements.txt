@@ -22,3 +22,4 @@ six
 django-csp
 Pillow
 fakeredis
+faker
