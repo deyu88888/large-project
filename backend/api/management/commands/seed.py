@@ -240,9 +240,8 @@ class Command(BaseCommand):
         society.society_members.add(*selected_members)
 
         # Assign roles (ensure at least 2 roles)
-        if len(selected_members) >= 3:
+        if len(selected_members) >= 2:
             society.vice_president = selected_members[0]
-            society.treasurer = selected_members[1]
             society.event_manager = selected_members[2]
 
         # Assign an admin

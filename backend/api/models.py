@@ -197,14 +197,6 @@ class Society(models.Model):
         related_name="event_manager_of_society",
         help_text="Assigned event manager of the society",
     )
-    treasurer = models.ForeignKey(
-        "Student",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="treasurer_of_society",
-        help_text="Assigned treasurer of the society",
-    )
     leader = models.ForeignKey(
         "Student",
         on_delete=models.DO_NOTHING,

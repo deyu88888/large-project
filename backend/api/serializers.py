@@ -170,7 +170,6 @@ class SocietySerializer(serializers.ModelSerializer):
     )
     vice_president = StudentSerializer(required=False)
     event_manager = StudentSerializer(required=False)
-    treasurer = StudentSerializer(required=False)
     tags = serializers.ListField(child=serializers.CharField(), required=False)
 
     class Meta:
@@ -178,7 +177,7 @@ class SocietySerializer(serializers.ModelSerializer):
         model = Society
         fields = [
             'id', 'name', 'description', 'society_members', 'leader', 'leader_id', 'vice_president' ,
-            'treasurer', 'event_manager', 'approved_by','status', 'category', 'social_media_links',
+            'event_manager', 'approved_by','status', 'category', 'social_media_links',
             'showreel_images', 'membership_requirements', 'upcoming_projects_or_plans',
             'icon','tags',
         ]
