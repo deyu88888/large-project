@@ -926,44 +926,113 @@ class DeleteView(APIView):
     
     def post(self, request, log_id):
         """
-        Handle undo-delete requests
+        Handle undo requests for various actions (Delete, Approve, Reject)
         """
         try:
             log_entry = ActivityLog.objects.get(id=log_id)
 
-            if log_entry.action_type != "Delete":
+            # Check if the action type is supported
+            supported_actions = ["Delete", "Approve", "Reject"]
+            if log_entry.action_type not in supported_actions:
                 return Response({"error": "Invalid action type."}, status=status.HTTP_400_BAD_REQUEST)
 
             target_type = log_entry.target_type
-            original_data_json = log_entry.original_data  # Get JSON string
+            
+            # For Delete actions, we need original data
+            if log_entry.action_type == "Delete":
+                original_data_json = log_entry.original_data  # Get JSON string
 
-            if not original_data_json:
-                return Response({"error": "No original data found for restoration."}, status=status.HTTP_400_BAD_REQUEST)
+                if not original_data_json:
+                    return Response({"error": "No original data found for restoration."}, status=status.HTTP_400_BAD_REQUEST)
 
-            try:
-                original_data = json.loads(original_data_json)  # Convert back to dict
-            except json.JSONDecodeError:
-                return Response({"error": "Error decoding original data."}, status=status.HTTP_400_BAD_REQUEST)
+                try:
+                    original_data = json.loads(original_data_json)  # Convert back to dict
+                except json.JSONDecodeError:
+                    return Response({"error": "Error decoding original data."}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                # For Approve/Reject, we don't necessarily need original data
+                original_data = {}
+                if log_entry.original_data:
+                    try:
+                        original_data = json.loads(log_entry.original_data)
+                    except json.JSONDecodeError:
+                        pass  # Just use empty dict if we can't parse it
 
             model = self.model_mapping.get(target_type)
 
             if not model:
                 return Response({"error": "Unsupported target type."}, status=status.HTTP_400_BAD_REQUEST)
 
-            # Process model-specific restoration logic
-            if target_type == "Student":
-                return self._restore_student(original_data, log_entry)
-            elif target_type == "Society":
-                return self._restore_society(original_data, log_entry)
-            elif target_type == "Event":
-                return self._restore_event(original_data, log_entry)
+            # Process restoration based on action type and target type
+            if log_entry.action_type == "Delete":
+                # Handle delete undos
+                if target_type == "Student":
+                    return self._restore_student(original_data, log_entry)
+                elif target_type == "Society":
+                    return self._restore_society(original_data, log_entry)
+                elif target_type == "Event":
+                    return self._restore_event(original_data, log_entry)
+                else:
+                    return Response({"error": "Unsupported target type."}, status=status.HTTP_400_BAD_REQUEST)
+            elif log_entry.action_type in ["Approve", "Reject"]:
+                # Handle approve/reject undos
+                if target_type == "Society":
+                    return self._undo_society_status_change(original_data, log_entry)
+                else:
+                    return Response({"error": "Unsupported target type for this action."}, status=status.HTTP_400_BAD_REQUEST)
             else:
-                return Response({"error": "Unsupported target type."}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"error": "Unsupported action type."}, status=status.HTTP_400_BAD_REQUEST)
                 
         except ActivityLog.DoesNotExist:
             return Response({"error": "Log entry not found."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def _undo_society_status_change(self, original_data, log_entry):
+        """Handle undoing society status changes (approve/reject)"""
+        try:
+            # Find the society by ID
+            society_id = log_entry.target_id
+            society = Society.objects.filter(id=society_id).first()
+            
+            if not society:
+                # Try to find by name if the ID doesn't work
+                society_name = log_entry.target_name
+                society = Society.objects.filter(name=society_name).first()
+                
+            if not society:
+                return Response({"error": "Society not found."}, status=status.HTTP_404_NOT_FOUND)
+            
+            # Simply set the status back to Pending regardless of original data
+            society.status = "Pending"
+            
+            # If there was an approved_by field and we're undoing an approval, clear it
+            if log_entry.action_type == "Approve" and hasattr(society, 'approved_by'):
+                society.approved_by = None
+            
+            society.save()
+            
+            # Create a new activity log for this undo action
+            ActivityLog.objects.create(
+                action_type="Update",
+                target_type="Society",
+                target_id=society.id,
+                target_name=society.name,
+                performed_by=log_entry.performed_by,  # Use the same user who performed the original action
+                timestamp=timezone.now(),
+                expiration_date=timezone.now() + timedelta(days=30),
+            )
+            
+            # Delete the original log entry
+            log_entry.delete()
+            
+            return Response({
+                "message": "Society status change undone successfully. Status set back to Pending."
+            }, status=status.HTTP_200_OK)
+        
+        except Exception as e:
+            return Response({"error": f"Failed to undo society status change: {str(e)}"}, 
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     def _restore_student(self, original_data, log_entry):
         """Handle student restoration"""
