@@ -868,18 +868,74 @@ class ManageEventDetailsAdminView(APIView):
         user = request.user
         if not hasattr(user, 'admin'):
             return Response({"error": "Only admins can update event details."}, status=status.HTTP_403_FORBIDDEN)
+        
         event = Event.objects.filter(id=event_id).first()
         if not event:
             return Response({"error": "Event not found."}, status=status.HTTP_404_NOT_FOUND)
+        
+        # IMPORTANT: Store the original data BEFORE making any changes
+        original_data = {}
+        
+        # Handle regular fields first
+        for field in event._meta.fields:
+            field_name = field.name
+            if field_name not in ['id', 'user_ptr']:  # Skip certain fields
+                value = getattr(event, field_name)
+                
+                # Handle datetime objects
+                if isinstance(value, datetime):
+                    original_data[field_name] = value.isoformat()
+                # Handle date objects
+                elif isinstance(value, date) and not isinstance(value, datetime):
+                    original_data[field_name] = value.isoformat()
+                # Handle time objects
+                elif isinstance(value, time):
+                    original_data[field_name] = value.strftime('%H:%M:%S')
+                # Handle timedelta objects
+                elif isinstance(value, timedelta):
+                    original_data[field_name] = value.total_seconds()
+                # Handle foreign keys - store the ID instead of the object
+                elif hasattr(value, 'id') and not isinstance(value, (list, dict)):
+                    original_data[field_name] = value.id
+                # Handle ImageField and FileField objects
+                elif hasattr(value, 'url') and hasattr(value, 'name'):
+                    # Store the filename or URL path instead of the file object
+                    original_data[field_name] = value.name if value.name else None
+                else:
+                    original_data[field_name] = value
+        
+        # Handle many-to-many fields separately
+        for field in event._meta.many_to_many:
+            field_name = field.name
+            # Get IDs of related objects instead of objects themselves
+            related_ids = [item.id for item in getattr(event, field_name).all()]
+            original_data[field_name] = related_ids
+        
+        # Store the original data as JSON
+        try:
+            original_data_json = json.dumps(original_data)
+        except TypeError as e:
+            # Debug info if serialization fails
+            problematic_fields = {}
+            for key, value in original_data.items():
+                try:
+                    json.dumps({key: value})
+                except TypeError:
+                    problematic_fields[key] = str(type(value))
+            
+            return Response({
+                "error": f"JSON serialization error: {str(e)}",
+                "problematic_fields": problematic_fields
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        # Process the update
         data = request.data.copy()
         current_attendees_data = data.pop("current_attendees", None)
-        serializer = EventSerializer(event, data=request.data, partial=True)
+        serializer = EventSerializer(event, data=data, partial=True)
+        
         if serializer.is_valid():
-            serializer.save()
-            if current_attendees_data is not None:
-                event.current_attendees.set(current_attendees_data)
-
-            ActivityLog.objects.create(
+            # Create log entry with original data
+            log_entry = ActivityLog.objects.create(
                 action_type="Update",
                 target_type="Event",
                 target_id=event.id,
@@ -887,13 +943,24 @@ class ManageEventDetailsAdminView(APIView):
                 performed_by=user,
                 timestamp=timezone.now(),
                 expiration_date=timezone.now() + timedelta(days=30),
+                original_data=original_data_json  # Store original data here
             )
+            
+            # Now save the changes
+            serializer.save()
+            
+            # Handle current_attendees separately if provided
+            if current_attendees_data is not None:
+                event.current_attendees.set(current_attendees_data)
+            
             ActivityLog.delete_expired_logs()
-
-            return Response({"message": "Event details updated successfully.", "data": serializer.data}, status=status.HTTP_200_OK)
+            
+            return Response({
+                "message": "Event details updated successfully.",
+                "data": serializer.data
+            }, status=status.HTTP_200_OK)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 class DeleteView(APIView):
     """
@@ -987,14 +1054,14 @@ class DeleteView(APIView):
             log_entry = ActivityLog.objects.get(id=log_id)
 
             # Check if the action type is supported
-            supported_actions = ["Delete", "Approve", "Reject", "Update"]  # Added "Update"
+            supported_actions = ["Delete", "Approve", "Reject", "Update"]
             if log_entry.action_type not in supported_actions:
                 return Response({"error": "Invalid action type."}, status=status.HTTP_400_BAD_REQUEST)
 
             target_type = log_entry.target_type
             
             # For Delete and Update actions, we need original data
-            if log_entry.action_type in ["Delete", "Update"]:  # Added "Update"
+            if log_entry.action_type in ["Delete", "Update"]:
                 original_data_json = log_entry.original_data  # Get JSON string
 
                 if not original_data_json:
@@ -1029,16 +1096,20 @@ class DeleteView(APIView):
                     return self._restore_event(original_data, log_entry)
                 else:
                     return Response({"error": "Unsupported target type."}, status=status.HTTP_400_BAD_REQUEST)
-            elif log_entry.action_type == "Update":  # New condition for Update
+            elif log_entry.action_type == "Update":
                 # Handle update undos
                 if target_type == "Society":
                     return self._undo_society_update(original_data, log_entry)
+                elif target_type == "Event":
+                    return self._undo_event_update(original_data, log_entry)
                 else:
                     return Response({"error": "Unsupported target type for this action."}, status=status.HTTP_400_BAD_REQUEST)
             elif log_entry.action_type in ["Approve", "Reject"]:
                 # Handle approve/reject undos
                 if target_type == "Society":
                     return self._undo_society_status_change(original_data, log_entry)
+                elif target_type == "Event":
+                    return self._undo_event_status_change(original_data, log_entry)
                 else:
                     return Response({"error": "Unsupported target type for this action."}, status=status.HTTP_400_BAD_REQUEST)
             else:
@@ -1208,6 +1279,225 @@ class DeleteView(APIView):
         
         except Exception as e:
             return Response({"error": f"Failed to undo society status change: {str(e)}"}, 
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def _undo_event_update(self, original_data, log_entry):
+        """Handle undoing event detail updates with comprehensive relationship handling"""
+        try:
+            # Find the event
+            event_id = log_entry.target_id
+            event = Event.objects.filter(id=event_id).first()
+            
+            if not event:
+                event_name = log_entry.target_name
+                event = Event.objects.filter(title=event_name).first()
+                
+            if not event:
+                return Response({"error": "Event not found."}, status=status.HTTP_404_NOT_FOUND)
+            
+            # Define all special fields that need specialized treatment
+            many_to_many_fields = ['attendees', 'tags', 'images', 'current_attendees']
+            foreign_key_fields = ['society', 'organizer', 'approved_by', 'hosted_by']
+            complex_json_fields = ['location_details']
+            date_fields = ['date']
+            time_fields = ['start_time']
+            timedelta_fields = ['duration']
+            
+            # Create a working copy of the original data
+            data = original_data.copy()
+            
+            # Process date fields
+            for field_name in date_fields:
+                if field_name in data and data[field_name]:
+                    try:
+                        # Convert string date back to date object
+                        date_str = data[field_name]
+                        date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
+                        setattr(event, field_name, date_obj)
+                    except Exception as e:
+                        print(f"Error restoring date field {field_name}: {str(e)}")
+            
+            # Process time fields
+            for field_name in time_fields:
+                if field_name in data and data[field_name]:
+                    try:
+                        # Convert string time back to time object
+                        time_str = data[field_name]
+                        hour, minute, second = map(int, time_str.split(':'))
+                        time_obj = time(hour, minute, second)
+                        setattr(event, field_name, time_obj)
+                    except Exception as e:
+                        print(f"Error restoring time field {field_name}: {str(e)}")
+            
+            # Process timedelta fields
+            for field_name in timedelta_fields:
+                if field_name in data and data[field_name] is not None:
+                    try:
+                        # Convert seconds back to timedelta
+                        seconds = float(data[field_name])
+                        delta = timedelta(seconds=seconds)
+                        setattr(event, field_name, delta)
+                    except Exception as e:
+                        print(f"Error restoring timedelta field {field_name}: {str(e)}")
+            
+            # Apply simple fields that don't involve relationships
+            for key, value in data.items():
+                if (key not in many_to_many_fields and 
+                    key not in foreign_key_fields and 
+                    key not in complex_json_fields and
+                    key not in date_fields and
+                    key not in time_fields and
+                    key not in timedelta_fields):
+                    if hasattr(event, key) and value is not None:
+                        setattr(event, key, value)
+            
+            # Handle complex JSON fields
+            if 'location_details' in data and isinstance(data['location_details'], dict):
+                event.location_details = data['location_details']
+            
+            # Save basic field changes
+            event.save()
+            
+            # Handle the approved_by field specifically
+            if 'approved_by' in data and data['approved_by']:
+                admin_id = data['approved_by']
+                try:
+                    from users.models import Admin
+                    admin_obj = Admin.objects.get(id=admin_id)
+                    event.approved_by = admin_obj
+                    event.save()
+                except Exception as e:
+                    print(f"Error setting approved_by: {str(e)}")
+            
+            # Handle society foreign key
+            if 'society' in data and data['society']:
+                try:
+                    society_id = data['society'] if isinstance(data['society'], int) else data['society'].get('id')
+                    if society_id:
+                        event.society_id = society_id
+                except Exception as e:
+                    print(f"Error setting society: {str(e)}")
+            
+            # Handle organizer foreign key
+            if 'organizer' in data and data['organizer']:
+                try:
+                    organizer_id = data['organizer'] if isinstance(data['organizer'], int) else data['organizer'].get('id')
+                    if organizer_id:
+                        event.organizer_id = organizer_id
+                except Exception as e:
+                    print(f"Error setting organizer: {str(e)}")
+                    
+            # Handle hosted_by foreign key
+            if 'hosted_by' in data and data['hosted_by']:
+                try:
+                    society_id = data['hosted_by'] if isinstance(data['hosted_by'], int) else data['hosted_by'].get('id')
+                    if society_id:
+                        event.hosted_by_id = society_id
+                except Exception as e:
+                    print(f"Error setting hosted_by: {str(e)}")
+            
+            # Save after setting foreign keys
+            event.save()
+            
+            # Handle attendees (many-to-many)
+            if 'attendees' in data and isinstance(data['attendees'], list):
+                event.attendees.clear()
+                for attendee_id in data['attendees']:
+                    try:
+                        from users.models import Student
+                        student = Student.objects.get(id=attendee_id)
+                        event.attendees.add(student)
+                    except Exception as e:
+                        print(f"Error adding attendee {attendee_id}: {str(e)}")
+            
+            # Handle current_attendees (many-to-many)
+            if 'current_attendees' in data and isinstance(data['current_attendees'], list):
+                event.current_attendees.clear()
+                for attendee_id in data['current_attendees']:
+                    try:
+                        from users.models import Student
+                        student = Student.objects.get(id=attendee_id)
+                        event.current_attendees.add(student)
+                    except Exception as e:
+                        print(f"Error adding current attendee {attendee_id}: {str(e)}")
+            
+            # Handle tags (many-to-many)
+            if 'tags' in data and isinstance(data['tags'], list):
+                event.tags.clear()
+                for tag_value in data['tags']:
+                    try:
+                        event.tags.add(tag_value)
+                    except Exception as e:
+                        print(f"Error adding tag {tag_value}: {str(e)}")
+            
+            # Handle images (many-to-many or similar)
+            if 'images' in data:
+                try:
+                    event.images.clear()
+                    if data['images'] and isinstance(data['images'], list):
+                        for image in data['images']:
+                            event.images.add(image)
+                except Exception as e:
+                    print(f"Error handling images: {str(e)}")
+            
+            # Final save after all relationships are set
+            event.save()
+            
+            # Delete the log entry
+            log_entry.delete()
+            
+            return Response({"message": "Event update undone successfully!"}, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                "error": f"Failed to undo Event update: {str(e)}",
+                "original_data_content": original_data
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def _undo_event_status_change(self, original_data, log_entry):
+        """Handle undoing event status changes (approve/reject)"""
+        try:
+            # Find the event by ID
+            event_id = log_entry.target_id
+            event = Event.objects.filter(id=event_id).first()
+            
+            if not event:
+                # Try to find by name if the ID doesn't work
+                event_name = log_entry.target_name
+                event = Event.objects.filter(name=event_name).first()
+                
+            if not event:
+                return Response({"error": "Event not found."}, status=status.HTTP_404_NOT_FOUND)
+            
+            # Simply set the status back to Pending regardless of original data
+            event.status = "Pending"
+            
+            # If there was an approved_by field and we're undoing an approval, clear it
+            if log_entry.action_type == "Approve" and hasattr(event, 'approved_by'):
+                event.approved_by = None
+            
+            event.save()
+            
+            # Create a new activity log for this undo action
+            ActivityLog.objects.create(
+                action_type="Update",
+                target_type="Event",
+                target_id=event.id,
+                target_name=event.name,
+                performed_by=log_entry.performed_by,  # Use the same user who performed the original action
+                timestamp=timezone.now(),
+                expiration_date=timezone.now() + timedelta(days=30),
+            )
+            
+            # Delete the original log entry
+            log_entry.delete()
+            
+            return Response({
+                "message": "Event status change undone successfully. Status set back to Pending."
+            }, status=status.HTTP_200_OK)
+        
+        except Exception as e:
+            return Response({"error": f"Failed to undo event status change: {str(e)}"}, 
                         status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     def _restore_student(self, original_data, log_entry):
