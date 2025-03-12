@@ -220,6 +220,7 @@ class Command(BaseCommand):
     def finalize_society_creation(self, society):
         """Finishes society creation with proper members and roles"""
         society.leader.president_of = society
+        society.leader.is_president = True
 
         # Ensure at least 5-15 members
         all_students = list(Student.objects.exclude(id=society.leader.id).order_by("?"))
