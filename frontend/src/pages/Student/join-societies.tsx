@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { apiClient } from "../../api";
+import { apiClient, getRecommendedSocieties, SocietyRecommendation } from "../../api";
 
 // Import the theme
 import { useTheme } from "@mui/material/styles";
@@ -12,29 +12,53 @@ const JoinSocieties: React.FC = () => {
   const colours = tokens(theme.palette.mode);
   const isLight = theme.palette.mode === "light";
 
-  const [societies, setSocieties] = useState<any[]>([]);
+  const [recommendations, setRecommendations] = useState<SocietyRecommendation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchAvailableSocieties = async () => {
+    const fetchRecommendedSocieties = async () => {
       try {
         setLoading(true);
-        const response = await apiClient.get("/api/join-society");
-        setSocieties(response.data);
+        setError(null);
+        
+        // Use our new recommendation endpoint
+        const data = await getRecommendedSocieties(5);
+        setRecommendations(data);
       } catch (error) {
-        console.error("Error fetching societies:", error);
+        console.error("Error fetching society recommendations:", error);
+        setError("Failed to load recommendations. Using available societies instead.");
+        
+        // Fallback to the original join-society endpoint if recommendations fail
+        try {
+          const response = await apiClient.get("/api/join-society");
+          // Convert the standard society format to match our recommendation format
+          const fallbackData = response.data.map((society: any) => ({
+            society: society,
+            explanation: {
+              type: "popular",
+              message: "Suggested society for new members"
+            }
+          }));
+          setRecommendations(fallbackData);
+        } catch (fallbackError) {
+          console.error("Fallback fetch failed:", fallbackError);
+        }
       } finally {
         setLoading(false);
       }
     };
-    fetchAvailableSocieties();
+    
+    fetchRecommendedSocieties();
   }, []);
 
   const handleJoinSociety = async (societyId: number) => {
     try {
       await apiClient.post(`/api/join-society/${societyId}/`);
       alert("Successfully joined the society!");
-      setSocieties((prev) => prev.filter((society) => society.id !== societyId));
+      
+      // Remove the joined society from the recommendations
+      setRecommendations((prev) => prev.filter((item) => item.society.id !== societyId));
     } catch (error) {
       console.error("Error joining society:", error);
       alert("Failed to join the society. Please try again.");
@@ -42,7 +66,35 @@ const JoinSocieties: React.FC = () => {
   };
 
   const handleViewSociety = async (societyId: number) => {
-    navigate("/student/view-society/" +societyId);
+    navigate("/student/view-society/" + societyId);
+  };
+
+  // Helper function to get badge color based on recommendation type
+  const getExplanationBadgeColor = (type: string) => {
+    switch (type) {
+      case "popular":
+        return isLight ? colours.redAccent[500] : colours.redAccent[400];
+      case "category":
+        return isLight ? colours.greenAccent[500] : colours.greenAccent[400];
+      case "tags":
+        return isLight ? colours.blueAccent[500] : colours.blueAccent[400];
+      default:
+        return isLight ? colours.grey[500] : colours.grey[400];
+    }
+  };
+
+  // Get section title based on if recommendations contain popular societies or not
+  const getSectionTitle = () => {
+    if (recommendations.length === 0) return "Join a Society";
+    
+    // Check if all recommendations are popular type
+    const allPopular = recommendations.every(rec => rec.explanation.type === "popular");
+    
+    if (allPopular) {
+      return "Popular Societies";
+    } else {
+      return "Recommended Societies For You";
+    }
   };
 
   return (
@@ -72,7 +124,7 @@ const JoinSocieties: React.FC = () => {
               marginBottom: "0.5rem",
             }}
           >
-            Join a Society
+            {getSectionTitle()}
           </h1>
           <p
             style={{
@@ -81,9 +133,24 @@ const JoinSocieties: React.FC = () => {
               margin: 0,
             }}
           >
-            Discover new societies and connect with your peers!
+            {recommendations.some(rec => rec.explanation.type !== "popular") 
+              ? "Societies tailored to your interests and activities!"
+              : "Discover new societies and connect with your peers!"}
           </p>
         </header>
+
+        {error && (
+          <p
+            style={{
+              color: isLight ? colours.redAccent[400] : colours.redAccent[300],
+              textAlign: "center",
+              fontSize: "1rem",
+              marginBottom: "1rem",
+            }}
+          >
+            {error}
+          </p>
+        )}
 
         {loading ? (
           <p
@@ -93,9 +160,9 @@ const JoinSocieties: React.FC = () => {
               fontSize: "1.125rem",
             }}
           >
-            Loading societies...
+            Loading recommended societies...
           </p>
-        ) : societies.length > 0 ? (
+        ) : recommendations.length > 0 ? (
           <div
             style={{
               display: "grid",
@@ -104,9 +171,9 @@ const JoinSocieties: React.FC = () => {
               padding: "1rem 0",
             }}
           >
-            {societies.map((society) => (
+            {recommendations.map((recommendation) => (
               <div
-                key={society.id}
+                key={recommendation.society.id}
                 style={{
                   backgroundColor: isLight ? colours.primary[400] : colours.primary[400],
                   borderRadius: "12px",
@@ -114,6 +181,8 @@ const JoinSocieties: React.FC = () => {
                   border: `1px solid ${isLight ? colours.grey[300] : colours.grey[700]}`,
                   transition: "transform 0.3s, box-shadow 0.3s",
                   cursor: "pointer",
+                  display: "flex",
+                  flexDirection: "column",
                 }}
               >
                 <h3
@@ -124,8 +193,26 @@ const JoinSocieties: React.FC = () => {
                     marginBottom: "0.75rem",
                   }}
                 >
-                  {society.name}
+                  {recommendation.society.name}
                 </h3>
+                
+                {/* Recommendation explanation badge */}
+                <div
+                  style={{
+                    backgroundColor: getExplanationBadgeColor(recommendation.explanation.type),
+                    color: "#ffffff",
+                    padding: "0.25rem 0.75rem",
+                    borderRadius: "0.25rem",
+                    fontSize: "0.75rem",
+                    fontWeight: 500,
+                    display: "inline-block",
+                    marginBottom: "0.75rem",
+                    alignSelf: "flex-start",
+                  }}
+                >
+                  {recommendation.explanation.message}
+                </div>
+                
                 <p
                   style={{
                     color: isLight ? colours.grey[300] : colours.grey[300],
@@ -134,37 +221,68 @@ const JoinSocieties: React.FC = () => {
                     marginBottom: "0.75rem",
                   }}
                 >
-                  {society.description || "No description available."}
+                  {recommendation.society.description || "No description available."}
                 </p>
-                <button
-                  onClick={() => handleJoinSociety(society.id)}
-                  style={{
-                    backgroundColor: isLight ? colours.blueAccent[400] : colours.blueAccent[500],
-                    color: isLight ? "#ffffff" : colours.grey[100],
-                    padding: "0.5rem 1.5rem",
-                    borderRadius: "0.5rem",
-                    transition: "all 0.2s ease",
-                    border: "none",
-                    cursor: "pointer",
-                  }}
-                >
-                  Join Society
-                </button>
-                <button
-                  onClick={() => handleViewSociety(society.id)}
-                  style={{
-                    backgroundColor: isLight ? colours.blueAccent[400] : colours.blueAccent[500],
-                    color: isLight ? "#ffffff" : colours.grey[100],
-                    padding: "0.5rem 1.5rem",
-                    borderRadius: "0.5rem",
-                    transition: "all 0.2s ease",
-                    border: "none",
-                    cursor: "pointer",
-                    marginLeft: "1.0rem",
-                  }}
-                >
-                  View Society
-                </button>
+                
+                {/* Tags if available */}
+                {recommendation.society.tags && recommendation.society.tags.length > 0 && (
+                  <div
+                    style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: "0.5rem",
+                      marginBottom: "1rem",
+                    }}
+                  >
+                    {recommendation.society.tags.slice(0, 3).map((tag: string, index: number) => (
+                      <span
+                        key={index}
+                        style={{
+                          backgroundColor: isLight ? colours.primary[300] : colours.primary[600],
+                          color: isLight ? colours.grey[100] : colours.grey[100],
+                          padding: "0.25rem 0.5rem",
+                          borderRadius: "0.25rem",
+                          fontSize: "0.75rem",
+                        }}
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                
+                <div style={{ display: "flex", gap: "1rem", marginTop: "auto" }}>
+                  <button
+                    onClick={() => handleJoinSociety(recommendation.society.id)}
+                    style={{
+                      backgroundColor: isLight ? colours.blueAccent[400] : colours.blueAccent[500],
+                      color: isLight ? "#ffffff" : colours.grey[100],
+                      padding: "0.5rem 1.5rem",
+                      borderRadius: "0.5rem",
+                      transition: "all 0.2s ease",
+                      border: "none",
+                      cursor: "pointer",
+                      flex: 1,
+                    }}
+                  >
+                    Join Society
+                  </button>
+                  <button
+                    onClick={() => handleViewSociety(recommendation.society.id)}
+                    style={{
+                      backgroundColor: isLight ? colours.blueAccent[400] : colours.blueAccent[500],
+                      color: isLight ? "#ffffff" : colours.grey[100],
+                      padding: "0.5rem 1.5rem",
+                      borderRadius: "0.5rem",
+                      transition: "all 0.2s ease",
+                      border: "none",
+                      cursor: "pointer",
+                      flex: 1,
+                    }}
+                  >
+                    View Society
+                  </button>
+                </div>
               </div>
             ))}
           </div>
