@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiClient, getRecommendedSocieties, SocietyRecommendation } from "../../api";
+import RecommendationFeedback from "../../components/RecommendationFeedback";
 
 // Import the theme
 import { useTheme } from "@mui/material/styles";
@@ -283,6 +284,14 @@ const JoinSocieties: React.FC = () => {
                     View Society
                   </button>
                 </div>
+                
+                {/* Add recommendation feedback component */}
+                <RecommendationFeedback 
+                  societyId={recommendation.society.id}
+                  isLight={isLight}
+                  colours={colours}
+                  onFeedbackSubmitted={() => console.log(`Feedback submitted for society ${recommendation.society.id}`)}
+                />
               </div>
             ))}
           </div>

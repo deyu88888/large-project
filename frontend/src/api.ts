@@ -51,6 +51,9 @@ SOCIETY: {
 POPULAR_SOCIETIES: "/api/popular-societies", // TODO: DONT ADD BACKSLASH
 RECOMMENDED_SOCIETIES: "/api/recommended-societies", // New endpoint for recommendations
 RECOMMENDATION_EXPLANATION: (id: number) => `/api/society-recommendation/${id}/explanation/`,
+RECOMMENDATION_FEEDBACK: (id: number) => `/api/society-recommendation/${id}/feedback/`,
+RECOMMENDATION_FEEDBACK_LIST: "/api/society-recommendation/feedback/",
+RECOMMENDATION_FEEDBACK_ANALYTICS: "/api/recommendation-feedback/analytics/",
 MANAGE_DETAILS: (id: number) => `/api/manage-society-details/${id}`, // TODO: DONT ADD BACKSLASH
  },
 EVENTS: {
@@ -71,6 +74,25 @@ export interface RecommendationExplanation {
 export interface SocietyRecommendation {
   society: any;  // Using 'any' to match whatever shape your Society data has
   explanation: RecommendationExplanation;
+}
+
+// Types for recommendation feedback
+export interface RecommendationFeedback {
+  id?: number;
+  society_id: number;
+  rating: number;
+  relevance: number;
+  comment?: string;
+  is_joined: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface FeedbackAnalytics {
+  total_feedback: number;
+  average_rating: number;
+  join_count: number;
+  conversion_rate: number;
 }
 
 // Fetch Most Popular Societies
@@ -109,6 +131,76 @@ export const getRecommendationExplanation = async (societyId: number) => {
   } catch (error: any) {
     console.error(
       "Error fetching recommendation explanation:",
+      error.response?.data || error.message
+    );
+    throw error;
+  }
+};
+
+// Submit feedback for a society recommendation
+export const submitRecommendationFeedback = async (societyId: number, feedback: RecommendationFeedback) => {
+  try {
+    const response = await apiClient.post(apiPaths.SOCIETY.RECOMMENDATION_FEEDBACK(societyId), feedback);
+    return response.data;
+  } catch (error: any) {
+    console.error(
+      "Error submitting recommendation feedback:",
+      error.response?.data || error.message
+    );
+    throw error;
+  }
+};
+
+// Update feedback for a society recommendation
+export const updateRecommendationFeedback = async (societyId: number, feedback: Partial<RecommendationFeedback>) => {
+  try {
+    const response = await apiClient.put(apiPaths.SOCIETY.RECOMMENDATION_FEEDBACK(societyId), feedback);
+    return response.data;
+  } catch (error: any) {
+    console.error(
+      "Error updating recommendation feedback:",
+      error.response?.data || error.message
+    );
+    throw error;
+  }
+};
+
+// Get feedback for a specific society recommendation
+export const getRecommendationFeedback = async (societyId: number) => {
+  try {
+    const response = await apiClient.get(apiPaths.SOCIETY.RECOMMENDATION_FEEDBACK(societyId));
+    return response.data as RecommendationFeedback;
+  } catch (error: any) {
+    console.error(
+      "Error fetching recommendation feedback:",
+      error.response?.data || error.message
+    );
+    throw error;
+  }
+};
+
+// Get all feedback from the student
+export const getAllRecommendationFeedback = async () => {
+  try {
+    const response = await apiClient.get(apiPaths.SOCIETY.RECOMMENDATION_FEEDBACK_LIST);
+    return response.data as RecommendationFeedback[];
+  } catch (error: any) {
+    console.error(
+      "Error fetching all recommendation feedback:",
+      error.response?.data || error.message
+    );
+    throw error;
+  }
+};
+
+// Get feedback analytics (admin only)
+export const getRecommendationFeedbackAnalytics = async () => {
+  try {
+    const response = await apiClient.get(apiPaths.SOCIETY.RECOMMENDATION_FEEDBACK_ANALYTICS);
+    return response.data as FeedbackAnalytics;
+  } catch (error: any) {
+    console.error(
+      "Error fetching recommendation feedback analytics:",
       error.response?.data || error.message
     );
     throw error;
