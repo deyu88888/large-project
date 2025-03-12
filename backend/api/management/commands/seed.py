@@ -100,11 +100,11 @@ class Command(BaseCommand):
 
         self.create_student(100)
         self.create_admin(5)
-        self.create_society(35)
         self.create_society(
             name="Robotics Club",
             president_force=president,
         )
+        self.create_society(35)
 
         self.create_event(20)
         self.pre_define_awards()
