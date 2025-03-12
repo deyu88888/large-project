@@ -1242,12 +1242,11 @@ class DeleteView(APIView):
     def _restore_event(self, original_data, log_entry):
         """Handle event restoration"""
         try:
-            # Extract basic fields for Event
+            # Extract basic fields for Event - excluding relationship fields
             event_data = {k: v for k, v in original_data.items() if k not in [
-                'id', 'society', 'attendees'
+                'id', 'hosted_by', 'current_attendees', 'duration'  # Exclude duration for now
             ]}
             
-            # Handle date and time fields
             for field in ['date', 'start_time', 'end_time']:
                 if field in event_data:
                     if event_data[field] and isinstance(event_data[field], str):
@@ -1256,41 +1255,64 @@ class DeleteView(APIView):
                                 event_data[field] = datetime.strptime(event_data[field], '%Y-%m-%d').date()
                             except ValueError:
                                 event_data[field] = None
-                        else:  # For time fields
+                        else:
                             try:
                                 event_data[field] = datetime.strptime(event_data[field], '%H:%M:%S').time()
                             except ValueError:
                                 event_data[field] = None
             
-            # Create the event without relationship fields first
             event = Event.objects.create(**event_data)
-            
-            # Handle ForeignKey relationships
-            society_id = original_data.get('society')
-            if society_id:
+            duration_str = original_data.get('duration')
+            if duration_str:
                 try:
-                    society = Society.objects.get(id=int(society_id))
-                    event.society = society
+                    if isinstance(duration_str, str):
+                        if ',' in duration_str:
+                            days_part, time_part = duration_str.split(',', 1)
+                            days = int(days_part.strip().split()[0])
+                            hours, minutes, seconds = map(int, time_part.strip().split(':'))
+                            duration = timedelta(days=days, hours=hours, minutes=minutes, seconds=seconds)
+                        else:
+                            time_parts = duration_str.strip().split(':')
+                            if len(time_parts) == 3:
+                                hours, minutes, seconds = map(int, time_parts)
+                                duration = timedelta(hours=hours, minutes=minutes, seconds=seconds)
+                            else:
+                                duration = timedelta(hours=1)
+                        
+                        event.duration = duration
+                        event.save()
+                except Exception:
+                    event.duration = timedelta(hours=1)
+                    event.save()
+            
+            hosted_by_id = original_data.get('hosted_by')
+            if hosted_by_id:
+                try:
+                    society = Society.objects.get(id=int(hosted_by_id))
+                    event.hosted_by = society
                     event.save()
                 except (Society.DoesNotExist, ValueError, TypeError):
                     pass
             
-            # Handle M2M relationships
-            attendee_ids = original_data.get('attendees', [])
+            attendee_ids = original_data.get('current_attendees', [])
             if attendee_ids:
-                for attendee_id in attendee_ids:
-                    try:
-                        attendee = Student.objects.get(id=int(attendee_id))
-                        event.attendees.add(attendee)
-                    except (Student.DoesNotExist, ValueError, TypeError):
-                        pass
+                try:
+                    attendees = []
+                    for attendee_id in attendee_ids:
+                        try:
+                            attendee = Student.objects.get(id=int(attendee_id))
+                            attendees.append(attendee)
+                        except (Student.DoesNotExist, ValueError, TypeError):
+                            pass
+                    event.current_attendees.set(attendees)
+                except Exception:
+                    pass
             
-            log_entry.delete()  # Remove log after restoration
+            log_entry.delete()
             return Response({"message": "Event restored successfully!"}, status=status.HTTP_200_OK)
             
         except Exception as e:
             return Response({"error": f"Failed to restore Event: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
 
 
 class CreateEventRequestView(APIView):
