@@ -127,7 +127,7 @@ const StudentDashboard: React.FC = () => {
 
   const handleLeaveSociety = async (societyId: number) => {
     try {
-      await apiClient.delete(`/api/leave-society/${societyId}`);
+      await apiClient.delete(`/api/leave-society/${societyId}/`);
       fetchData();
     } catch (error) {
       console.error("Error leaving society:", error);
