@@ -138,10 +138,10 @@ const ViewNotifications: React.FC = () => {
                     alignItems: "center",
                   }}
                 >
-                  <p style={{ color: isLight ? colours.grey[100] : colours.grey[100] }}>
+                  <div style={{ color: isLight ? colours.grey[100] : colours.grey[100] }}>
                     <b>{notification.header}</b>
                     <p>{notification.body}</p>
-                  </p>
+                  </div>
                   <div style={{ display: "flex", gap: "1rem" }}>
                     {notification.is_read ? (
                       <span
