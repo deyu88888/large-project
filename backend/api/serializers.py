@@ -270,15 +270,14 @@ class EventSerializer(serializers.ModelSerializer):
 
 
 class NotificationSerializer(serializers.ModelSerializer):
-    """ Serializer for objects of the Notification model """
+    """Serializer for objects of the Notification model"""
 
     class Meta:
         """ NotificationSerializer meta data """
         model = Notification
-        fields = ['id', 'for_event', 'for_student', 'is_read', 'message']
+        fields = ["id", "header", "body", "for_student", "is_read", "is_important"]
         extra_kwargs = {
-            'for_event': {'required': True},
-            'for_student': {'required': True}
+            "for_student": {"required": True}
         }
 
     def create(self, validated_data):
