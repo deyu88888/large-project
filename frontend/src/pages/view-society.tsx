@@ -93,7 +93,7 @@ const ViewSociety: React.FC = () => {
               borderRadius: "50%",
               verticalAlign: "middle",
             }}
-          />
+            />
           )}
           <h1
             style={{
