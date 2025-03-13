@@ -392,7 +392,6 @@ class LeaveSocietySerializer(serializers.Serializer):
         return society
 
 
-
 class JoinSocietySerializer(serializers.Serializer):
     society_id = serializers.IntegerField()
 
@@ -408,14 +407,25 @@ class JoinSocietySerializer(serializers.Serializer):
 
         if society.society_members.filter(id=request_user.id).exists():
             raise serializers.ValidationError("You are already a member of this society.")
+            
+        # Check if there's already a pending request
+        pending_request = SocietyRequest.objects.filter(
+            from_student=request_user.student,
+            society=society,
+            intent="JoinSoc",
+            approved=False
+        ).exists()
+        
+        if pending_request:
+            raise serializers.ValidationError("You already have a pending request to join this society.")
 
         return value
 
     def save(self):
+        # This method is no longer used for directly adding students to societies.
+        # The view now creates a SocietyRequest instead.
         society_id = self.validated_data['society_id']
-        request_user = self.context['request'].user
         society = Society.objects.get(id=society_id)
-        request_user.student.societies_belongs_to.add(society)
         return society
 
 

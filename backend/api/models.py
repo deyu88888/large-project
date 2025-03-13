@@ -175,6 +175,33 @@ class Admin(User):
         super().save(*args, **kwargs)
 
 
+def validate_social_media_links(value):
+    """
+    Validate the social_media_links JSON field.
+    Ensures it has proper structure with valid keys and URL values.
+    """
+    # Define allowed social media platforms
+    allowed_platforms = ['WhatsApp', 'Facebook', 'Instagram', 'X', 'Other']
+    
+    # Check that value is a dictionary
+    if not isinstance(value, dict):
+        raise ValidationError("Social media links must be provided as a dictionary.")
+    
+    # Check that all keys are valid platforms
+    for key in value.keys():
+        if key not in allowed_platforms:
+            raise ValidationError(f"'{key}' is not a valid social media platform. Allowed platforms are: {', '.join(allowed_platforms)}")
+    
+    # Check that all values are strings (links)
+    for platform, link in value.items():
+        if not isinstance(link, str):
+            raise ValidationError(f"The value for '{platform}' must be a string URL.")
+        
+        # Optional: Add URL validation if needed
+        # This is a simple check, you might want to use more sophisticated URL validation
+        if link and not (link.startswith('http://') or link.startswith('https://') or link.startswith('mailto:')):
+            raise ValidationError(f"The link for '{platform}' must be a valid URL starting with http://, https://, or mailto:")
+
 class Society(models.Model):
     """
     A model for a student society.
@@ -218,7 +245,7 @@ class Society(models.Model):
         "Admin",
         on_delete=models.SET_NULL,
         related_name="approved_societies",
-        blank=False,
+        blank=True,  # Changed from False to True
         null=True,
     )
 
@@ -227,23 +254,65 @@ class Society(models.Model):
     )
 
     category = models.CharField(max_length=50, default="General")
-    # {"facebook": "link", "email": "email"}
-    social_media_links = models.JSONField(default=dict, blank=True)
+    # Social media links as a JSON field with validation
+    social_media_links = models.JSONField(
+        default=dict, 
+        blank=True,
+        help_text="Dictionary with keys: WhatsApp, Facebook, Instagram, X, Other - each with a URL value"
+    )
+    
     membership_requirements = models.TextField(blank=True, null=True)
     upcoming_projects_or_plans = models.TextField(blank=True, null=True)
     tags = models.JSONField(default=list, blank=True)  # Stores tags as a list
     icon = models.ImageField(upload_to="society_icons/", blank=True, null=True)  # Stores an image icon
 
+    def clean(self):
+        """
+        Additional model-wide validation
+        """
+        super().clean()
+        
+        # Validate social_media_links if it's not empty
+        if self.social_media_links:
+            # Check that value is a dictionary
+            if not isinstance(self.social_media_links, dict):
+                raise ValidationError({"social_media_links": "Social media links must be provided as a dictionary."})
+            
+            # Define allowed social media platforms
+            allowed_platforms = ['WhatsApp', 'Facebook', 'Instagram', 'X', 'Other']
+            
+            # Check that all keys are valid platforms
+            for key in self.social_media_links.keys():
+                if key not in allowed_platforms:
+                    raise ValidationError({"social_media_links": f"'{key}' is not a valid social media platform. Allowed platforms are: {', '.join(allowed_platforms)}"})
+            
+            # Check that all values are strings (links)
+            for platform, link in self.social_media_links.items():
+                if not isinstance(link, str):
+                    raise ValidationError({"social_media_links": f"The value for '{platform}' must be a string URL."})
+                
+                # Optional: Add URL validation if needed
+                if link and not (link.startswith('http://') or link.startswith('https://') or link.startswith('mailto:')):
+                    raise ValidationError({"social_media_links": f"The link for '{platform}' must be a valid URL starting with http://, https://, or mailto:"})
+
     def save(self, *args, **kwargs):
-        """Ensure the leader is always a member"""
-        super().save(*args, **kwargs)  # Save the society first
+        """Ensure the leader is always a member and validate JSON fields"""
+        # Run full validation
+        self.full_clean()
+        
+        # Save the society
+        super().save(*args, **kwargs)
+        
+        # Ensure leader is a member
         if self.leader:
             self.society_members.add(self.leader) 
 
+        # Add default icon if needed
         if not self.icon.name or not self.icon:
             buffer = generate_icon(self.name[0], "S")
             filename = f"default_society_icon_{self.pk}.jpeg"
             self.icon.save(filename, ContentFile(buffer.getvalue()), save=True)
+            
     def __str__(self):
         return self.name
 
@@ -363,7 +432,8 @@ class Request(models.Model):
         ("CreateEve", "Create Event"),
         ("UpdateEve", "Update Event"),
         ("CreateUse", "Create User"),
-        ("UpdateUse", "Update User")
+        ("UpdateUse", "Update User"),
+        ("JoinSoc", "Join Society")
     ]
 
     intent = models.CharField(max_length=10, choices=INTENT)
@@ -405,7 +475,6 @@ class SocietyRequest(Request):
         null=True,
     )
     category = models.CharField(max_length=50, blank=True, default="")
-    # {"facebook": "link", "email": "email"}
     social_media_links = models.JSONField(default=dict, blank=True, null=True)
     membership_requirements = models.TextField(blank=True, default="")
     upcoming_projects_or_plans = models.TextField(blank=True, default="")

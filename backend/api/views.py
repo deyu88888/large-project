@@ -22,7 +22,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticate
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from api.models import Admin, AdminReportRequest, Event, Notification, Society, Student, User, Award, AwardStudent, \
+from api.models import Admin, AdminReportRequest, Event, Notification, Society, SocietyRequest, Student, User, Award, AwardStudent, \
     UserRequest, DescriptionRequest, AdminReportRequest, Comment
 from api.serializers import (
     AdminReportRequestSerializer,
@@ -300,12 +300,12 @@ class JoinSocietyView(APIView):
             - 200: A list of available societies with details such as name and leader.
             - 403: If the user is not a student.
 
-    - **POST**: Allows the student to join a new society.
+    - **POST**: Creates a request for admin approval to join a society.
         - Permissions: Requires the user to be authenticated and a student.
         - Request Body:
             - `society_id` (int): ID of the society to join.
         - Response:
-            - 200: Confirmation message indicating the student has successfully joined the society.
+            - 201: Confirmation message indicating the join request has been submitted.
             - 400: Validation errors, such as invalid society ID.
             - 403: If the user is not a student.
     """
@@ -334,15 +334,27 @@ class JoinSocietyView(APIView):
         serializer = JoinSocietySerializer(data={"society_id": society_id}, context={"request": request})
 
         if not serializer.is_valid():
-
             if "Society does not exist." in serializer.errors.get("society_id", []):
                 return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
 
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)  
 
-        society = serializer.save()
-        return Response({"message": f"Successfully joined society '{society.name}'."}, status=status.HTTP_200_OK)
-
+        # Instead of immediately adding the student to the society,
+        # create a join request for president approval
+        society = Society.objects.get(id=serializer.validated_data['society_id'])
+        
+        # Create SocietyRequest for joining the society
+        society_request = SocietyRequest.objects.create(
+            intent="JoinSoc",  # New intent for joining societies
+            from_student=user.student,
+            society=society,
+            approved=False
+        )
+        
+        return Response({
+            "message": f"Request to join society '{society.name}' has been submitted for approval.",
+            "request_id": society_request.id
+        }, status=status.HTTP_201_CREATED)
 
 class RSVPEventView(APIView):
     """ API View for RSVPing to events. """

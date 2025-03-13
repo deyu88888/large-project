@@ -32,12 +32,30 @@ const JoinSocieties: React.FC = () => {
 
   const handleJoinSociety = async (societyId: number) => {
     try {
-      await apiClient.post(`/api/join-society/${societyId}/`);
-      alert("Successfully joined the society!");
+      const response = await apiClient.post(`/api/join-society/${societyId}/`);
+      
+      // Use the actual message from the response instead of hardcoded message
+      alert(response.data.message || "Request submitted successfully!");
+      
+      // Only remove the society from the list if the join was successful
+      // For requests, we might want to keep it visible but change the status
       setSocieties((prev) => prev.filter((society) => society.id !== societyId));
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error joining society:", error);
-      alert("Failed to join the society. Please try again.");
+      
+      // Display the error message from the backend if available
+      if (error.response && error.response.data && error.response.data.error) {
+        alert(error.response.data.error);
+      } else if (error.response && error.response.status === 400) {
+        // Check for validation errors
+        if (error.response.data && error.response.data.society_id) {
+          alert(error.response.data.society_id[0]);
+        } else {
+          alert("Failed to join the society. Invalid request.");
+        }
+      } else {
+        alert("Failed to join the society. Please try again.");
+      }
     }
   };
 

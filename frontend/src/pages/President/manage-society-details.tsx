@@ -7,6 +7,7 @@ import {
   TextField,
   CircularProgress,
   Paper,
+  Grid,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { apiClient, apiPaths } from "../../api";
@@ -54,7 +55,13 @@ const ManageSocietyDetails: React.FC = () => {
       setSociety(response.data);
       setFormData({
         ...response.data,
-        social_media_links: response.data.social_media_links || {},
+        social_media_links: response.data.social_media_links || {
+          WhatsApp: "",
+          Facebook: "",
+          Instagram: "",
+          X: "",
+          Other: ""
+        },
         tags: response.data.tags || [],
       });
     } catch (error) {
@@ -71,6 +78,18 @@ const ManageSocietyDetails: React.FC = () => {
     );
   };
 
+  const handleSocialMediaChange = (platform: string, value: string): void => {
+    if (!formData) return;
+    
+    setFormData({
+      ...formData,
+      social_media_links: {
+        ...formData.social_media_links,
+        [platform]: value
+      }
+    });
+  };
+
   const handleSubmit = async (e: FormEvent): Promise<void> => {
     e.preventDefault();
     if (!formData || !society) return;
@@ -84,9 +103,8 @@ const ManageSocietyDetails: React.FC = () => {
       formDataToSend.append("upcoming_projects_or_plans", formData.upcoming_projects_or_plans);
       formDataToSend.append("tags", JSON.stringify(formData.tags));
 
-      Object.entries(formData.social_media_links).forEach(([platform, link]) => {
-        formDataToSend.append(`social_media_links[${platform}]`, link);
-      });
+      // Convert social_media_links to JSON string
+      formDataToSend.append("social_media_links", JSON.stringify(formData.social_media_links));
 
       if (formData.icon && formData.icon instanceof File) {
         formDataToSend.append("icon", formData.icon);
@@ -180,6 +198,37 @@ const ManageSocietyDetails: React.FC = () => {
             onChange={handleChange}
             sx={{ mb: 2 }}
           />
+
+          <Typography variant="h6" fontWeight="bold" sx={{ mt: 3, mb: 2 }}>
+            Social Media Links
+          </Typography>
+
+          <Grid container spacing={2} sx={{ mb: 3 }}>
+            {/* Social media input fields */}
+            {['WhatsApp', 'Facebook', 'Instagram', 'X', 'Other'].map((platform) => (
+              <Grid item xs={12} key={platform}>
+                <Box display="flex" alignItems="center">
+                  <Typography
+                    sx={{ 
+                      minWidth: '100px', 
+                      fontWeight: 'medium',
+                      color: textColor
+                    }}
+                  >
+                    {platform}:
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    placeholder={`Enter ${platform} link`}
+                    value={formData.social_media_links[platform] || ''}
+                    onChange={(e) => handleSocialMediaChange(platform, e.target.value)}
+                    sx={{ ml: 1 }}
+                    size="small"
+                  />
+                </Box>
+              </Grid>
+            ))}
+          </Grid>
 
           <TextField
             fullWidth
