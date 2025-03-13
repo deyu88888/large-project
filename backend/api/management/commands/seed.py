@@ -109,7 +109,7 @@ class Command(BaseCommand):
         society.save()
         self.create_society(35)
 
-        self.create_event(20)
+        self.create_event(60)
         self.pre_define_awards()
         self.randomly_assign_awards(50)
         # Broadcast updates to the WebSocket
@@ -339,7 +339,7 @@ class Command(BaseCommand):
         )
 
         if created:
-            all_students = list(Student.objects.exclude(id=society.leader.id))
+            all_students = list(society.society_members.all())
             num_attendees = min(randint(5, 20), len(all_students))
             selected_attendees = all_students[:num_attendees]
 
@@ -449,24 +449,26 @@ class Command(BaseCommand):
             count += event.current_attendees.count()
         print(self.style.SUCCESS(f"Seeding notifications for {count} attendees across events"))
 
-    def count_all_event_participants(self, event_dict):
-        """Counts all the potential participants of events"""
-        total = 0
-        for _, members in event_dict.items():
-            total += len(members)
-        return total
-
     def create_event_notification(self, event):
         """Create notifications only for students attending"""
         members = event.current_attendees.all()
 
         for member in members:
             Notification.objects.create(
-                for_event=event,
-                for_student=member
+                header=f"Attend {str(event)}!",
+                body=f"Your favourite society {event.hosted_by.name} is "
+                f"hosting the event {str(event)}",
+                for_student=member,
             )
 
         print(self.style.SUCCESS(f"Created notifications for {len(members)} attendees of {event.title}"))
+
+    def count_all_event_participants(self, event_dict):
+        """Counts all the potential participants of events"""
+        total = 0
+        for _, members in event_dict.items():
+            total += len(members)
+        return total
 
     def broadcast_updates(self):
         """Broadcast updates to the WebSocket"""
