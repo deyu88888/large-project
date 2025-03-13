@@ -119,7 +119,19 @@ const JoinSocieties: React.FC = () => {
                     marginBottom: "0.75rem",
                   }}
                 >
-                  {society.name}
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                    <img
+                      src={"http://localhost:8000/api" + society.icon}
+                      alt={`${society.name} icon`}
+                      style={{
+                        width: "35px",
+                        height: "35px",
+                        borderRadius: "50%",
+                        verticalAlign: "middle",
+                      }}
+                    />
+                    {society.name}
+                  </div>
                 </h3>
                 <p
                   style={{
@@ -141,7 +153,7 @@ const JoinSocieties: React.FC = () => {
                     transition: "all 0.2s ease",
                     border: "none",
                     cursor: "pointer",
-                    marginLeft: "1.0rem",
+                    marginLeft: "5.0rem",
                   }}
                 >
                   View Society

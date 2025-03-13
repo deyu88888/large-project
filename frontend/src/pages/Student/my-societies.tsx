@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { apiClient } from "../../api";
+import { useNavigate } from "react-router-dom";
 import { useTheme } from "@mui/material/styles";
 import { tokens } from "../../theme/theme";
 // Removed: import { useSidebar } from "../components/layout/SidebarContext";
@@ -8,6 +9,7 @@ const MySocieties: React.FC = () => {
   const [societies, setSocieties] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const theme = useTheme();
+  const navigate = useNavigate();
   const colours = tokens(theme.palette.mode);
   const isLight = theme.palette.mode === "light";
 
@@ -24,6 +26,15 @@ const MySocieties: React.FC = () => {
       console.error("Error fetching societies:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleViewSociety = async (societyId: number) => {
+    try {
+      navigate("/student/view-society/"+societyId);
+    }
+    catch (error) {
+      console.error("Error viewing society:", error);
     }
   };
 
@@ -113,7 +124,19 @@ const MySocieties: React.FC = () => {
                     marginBottom: "0.5rem",
                   }}
                 >
-                  {society.name}
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                    <img
+                      src={"http://localhost:8000/api" + society.icon}
+                      alt={`${society.name} icon`}
+                      style={{
+                        width: "35px",
+                        height: "35px",
+                        borderRadius: "50%",
+                        verticalAlign: "middle",
+                      }}
+                    />
+                    {society.name}
+                  </div>
                 </h3>
                 <p
                   style={{
@@ -124,6 +147,21 @@ const MySocieties: React.FC = () => {
                 >
                   {society.description || "No description available."}
                 </p>
+                <button
+                  onClick={() => handleViewSociety(society.id)}
+                  style={{
+                    backgroundColor: isLight ? colours.blueAccent[400] : colours.blueAccent[500],
+                    color: isLight ? "#ffffff" : colours.grey[100],
+                    padding: "0.5rem 1.5rem",
+                    borderRadius: "0.5rem",
+                    transition: "all 0.2s ease",
+                    border: "none",
+                    cursor: "pointer",
+                    marginLeft: "5.0rem",
+                  }}
+                >
+                  View Society
+                </button>
               </div>
             ))}
           </div>
