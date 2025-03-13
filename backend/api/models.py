@@ -135,14 +135,16 @@ class Student(User):
     is_president = models.BooleanField(default=False)
     is_vice_president = models.BooleanField(default=False)
     icon = models.ImageField(upload_to="student_icons/", blank=True, null=True)
-    
+
     def check_is_vice_president(self):
         """Check if the student is a vice president of any society"""
-        return Society.objects.filter(vice_president=self).exists()
-    
+        if self.pk:
+            return Society.objects.filter(vice_president=self).exists()
+        return False
+
     def save(self, *args, **kwargs):
         self.role = "student"
-        
+
         # Update is_vice_president flag
         self.is_vice_president = self.check_is_vice_president()
 

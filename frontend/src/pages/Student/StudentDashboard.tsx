@@ -77,6 +77,7 @@ const StudentDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<number>(0);
   const [showCalendar, setShowCalendar] = useState<boolean>(false);
   const { user } = useAuthStore();
+  const [student, setStudent] = useState<any[]>([]);
 
   const tabColors = [
     colours.greenAccent[500],
@@ -85,13 +86,12 @@ const StudentDashboard: React.FC = () => {
   ];
 
   useEffect(() => {
-    console.log("StudentDashboard mounted"); // DEBUG
-    console.log("Current user in dashboard:", user); // DEBUG
-    
-    if (!user) {
-      console.error("No user data available in dashboard!"); // DEBUG
-    }
-    }, [user]);
+    const callFetchData = async () => {
+      await fetchData();
+    };
+  
+    callFetchData();
+  }, []);
 
   const fetchData = async () => {
     setLoading(true);
@@ -130,6 +130,13 @@ const StudentDashboard: React.FC = () => {
       setAwards([awardsResponse.data]);
     } catch (error) {
       console.error("Error fetching award assignments:", error);
+    }
+    try {
+      const studentResponse = await apiClient.get("api/user/current");
+      setStudent(studentResponse.data)
+      console.log("Student data:", student)
+    } catch (error) {
+      console.error("Error fetching current student:", error);
     }
     setLoading(false);
   };
@@ -222,10 +229,10 @@ const StudentDashboard: React.FC = () => {
             Dashboard
           </Typography>
           <Box display="flex" gap={2}>
-          {(user?.is_president === true || user?.is_vice_president === true) && (
+          {(student?.is_president === true || student?.is_vice_president === true) && (
               <Button
                 variant="contained"
-                onClick={() => navigate(`/president-page/${user?.is_president ? user?.president_of : user?.vice_president_of_society}`)}
+                onClick={() => navigate(`/president-page/${student?.is_president ? student?.president_of : student?.vice_president_of_society}`)}
                 sx={{
                   backgroundColor: colours.greenAccent[500],
                   color: colours.grey[100],
