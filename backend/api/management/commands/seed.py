@@ -104,6 +104,9 @@ class Command(BaseCommand):
             name="Robotics Club",
             president_force=president,
         )
+        society = Society.objects.get(name="Robotics Club")
+        society.icon = "pre-seed-icons/robotics.jpg"
+        society.save()
         self.create_society(35)
 
         self.create_event(20)
@@ -198,6 +201,7 @@ class Command(BaseCommand):
                     status="Approved",
                     description=data["description"],
                     tags=data["tags"],
+                    icon=data["icon"],
                 )
             if created:
                 self.finalize_society_creation(society)
