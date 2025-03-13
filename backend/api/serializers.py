@@ -67,7 +67,7 @@ class StudentSerializer(UserSerializer):
 
     class Meta(UserSerializer.Meta):
         model = Student
-        fields = UserSerializer.Meta.fields + ['major', 'societies', 'president_of', 'is_president', 'award_students']
+        fields = UserSerializer.Meta.fields + ['major', 'societies', 'president_of', 'is_president', 'award_students', 'icon']
         read_only_fields = ["is_president", "award_students"]
 
     def validate_email(self, value):
