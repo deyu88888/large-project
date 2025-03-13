@@ -61,7 +61,7 @@ class StudentSerializer(UserSerializer):
     """
     societies = serializers.PrimaryKeyRelatedField(many=True, queryset=Society.objects.all())
     president_of = serializers.PrimaryKeyRelatedField(queryset=Society.objects.all(), allow_null=True, required=False)
-    vice_president_of_society = serializers.PrimaryKeyRelatedField(read_only=True)
+    vice_president_of_society = serializers.SerializerMethodField()
     major = serializers.CharField(required=True)
     is_president = serializers.BooleanField(read_only=True)
     #awards = AwardStudentSerializer(source='award_students', many=True, read_only=True) this will work when files are seperated
@@ -73,9 +73,44 @@ class StudentSerializer(UserSerializer):
                                                'award_students', 'vice_president_of_society', 'is_vice_president']
         read_only_fields = ["is_president", "is_vice_president", "award_students"]
         
-        def get_is_vice_president(self, obj):
-            """Get whether the student is a vice president"""
-            return hasattr(obj, 'vice_president_of_society') and obj.vice_president_of_society is not None
+    def get_is_vice_president(self, obj):
+        """Get whether the student is a vice president"""
+        # For debugging
+        print(f"DEBUG - Checking is_vice_president for {obj.username}")
+        
+        # First check the direct field
+        if hasattr(obj, 'is_vice_president'):
+            print(f"DEBUG - Direct is_vice_president attribute: {obj.is_vice_president}")
+            
+        # Try the query method
+        try:
+            is_vp = Society.objects.filter(vice_president=obj).exists()
+            print(f"DEBUG - Query result for is_vice_president: {is_vp}")
+            return is_vp
+        except Exception as e:
+            print(f"DEBUG - Error querying vice president status: {str(e)}")
+            
+        # Fallback to the attribute
+        return getattr(obj, 'is_vice_president', False)
+    
+    def get_vice_president_of_society(self, obj):
+        """Get the ID of the society where the student is vice president"""
+        try:
+            # Check if it's a RelatedManager
+            if hasattr(obj.vice_president_of_society, 'all'):
+                society = obj.vice_president_of_society.first()
+                if society:
+                    print(f"DEBUG - Found society for VP: {society.id}")
+                    return society.id
+            
+            # If it's not a RelatedManager but a direct reference
+            elif hasattr(obj, 'vice_president_of_society') and obj.vice_president_of_society:
+                if hasattr(obj.vice_president_of_society, 'pk'):
+                    return obj.vice_president_of_society.pk
+        except Exception as e:
+            print(f"DEBUG - Error in get_vice_president_of_society: {str(e)}")
+        
+        return None
 
     def validate_email(self, value):
         """

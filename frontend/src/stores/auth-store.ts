@@ -24,7 +24,10 @@ interface AuthStore {
 export const useAuthStore = create<AuthStore>((set) => ({
   user: null,
   loading: true, // Default to true until user data is fetched
-  setUser: (user: User | null) => set({ user }),
+  setUser: (user: User | null) => {
+    console.log("Setting user in auth store:", user); // DEBUG
+    set({ user });
+  },
   setLoading: (isLoading) => set({ loading: isLoading }),
   clearUser: () => set({ user: null }),
 }));

@@ -85,8 +85,13 @@ const StudentDashboard: React.FC = () => {
   ];
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    console.log("StudentDashboard mounted"); // DEBUG
+    console.log("Current user in dashboard:", user); // DEBUG
+    
+    if (!user) {
+      console.error("No user data available in dashboard!"); // DEBUG
+    }
+    }, [user]);
 
   const fetchData = async () => {
     setLoading(true);

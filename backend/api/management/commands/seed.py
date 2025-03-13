@@ -113,13 +113,13 @@ class Command(BaseCommand):
         
         society.vice_president = vice_president
         society.society_members.add(vice_president)
+        society.save()
         
         self.seed_society_showreel(society, n=10)
 
         president.president_of = society
         president.save()
         
-        vice_president.is_vice_president = True
         vice_president.save()
         
 

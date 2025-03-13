@@ -133,12 +133,12 @@ class Student(User):
 
     major = models.CharField(max_length=50, blank=True)
     is_president = models.BooleanField(default=False)
-    is_vice_president = models.BooleanField(default=False)  # New field to track vice president status
+    is_vice_president = models.BooleanField(default=False)
     icon = models.ImageField(upload_to="student_icons/", blank=True, null=True)
     
     def check_is_vice_president(self):
         """Check if the student is a vice president of any society"""
-        return hasattr(self, 'vice_president_of_society') and self.vice_president_of_society is not None
+        return Society.objects.filter(vice_president=self).exists()
     
     def save(self, *args, **kwargs):
         self.role = "student"

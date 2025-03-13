@@ -94,6 +94,9 @@ class RegisterView(APIView):
         return Response({"message": "Student registered successfully"}, status=status.HTTP_201_CREATED)
 
 
+import traceback
+import sys
+
 class CurrentUserView(APIView):
     """
     View for retrieving the currently authenticated user. This view provides information about the logged-in user
@@ -110,54 +113,125 @@ class CurrentUserView(APIView):
     """
 
     def get(self, request):
-        jwt_authenticator = JWTAuthentication()
-        decoded_auth = jwt_authenticator.authenticate(request)
-
-        if decoded_auth is None:
-            return Response({
-                "error": "Invalid or expired token. Please log in again."
-            }, status=status.HTTP_401_UNAUTHORIZED)
-
-        user, _ = decoded_auth
-        
         try:
-            student_user = Student.objects.get(pk=user.pk)
-            serializer = StudentSerializer(student_user)
-        except Student.DoesNotExist:
-            # No matching Student row, so just use User
-            serializer = UserSerializer(user)
+            print("\n" + "="*80)
+            print(f"DEBUG - CurrentUserView - User ID: {request.user.id}")
+            print(f"DEBUG - CurrentUserView - Username: {request.user.username}")
+            print(f"DEBUG - CurrentUserView - User type: {type(request.user).__name__}")
+            
+            jwt_authenticator = JWTAuthentication()
+            print(f"DEBUG - About to authenticate with JWT")
+            decoded_auth = jwt_authenticator.authenticate(request)
+            print(f"DEBUG - JWT authentication result: {decoded_auth is not None}")
 
-        # Check if serializer.data is falsy, return 500 error.
-        if not serializer.data:
+            if decoded_auth is None:
+                print(f"DEBUG - JWT authentication failed")
+                return Response({
+                    "error": "Invalid or expired token. Please log in again."
+                }, status=status.HTTP_401_UNAUTHORIZED)
+
+            user, _ = decoded_auth
+            print(f"DEBUG - Authenticated user ID: {user.id}")
+            print(f"DEBUG - Authenticated username: {user.username}")
+            
+            try:
+                print(f"DEBUG - Trying to get Student with pk={user.pk}")
+                student_user = Student.objects.get(pk=user.pk)
+                print(f"DEBUG - Found student: {student_user.username}")
+                print(f"DEBUG - Student fields: {dir(student_user)}")
+                print(f"DEBUG - Is president: {getattr(student_user, 'is_president', None)}")
+                print(f"DEBUG - Is vice president: {getattr(student_user, 'is_vice_president', None)}")
+                
+                # Check for president relationship
+                if hasattr(student_user, 'president_of'):
+                    print(f"DEBUG - President of society: {getattr(student_user.president_of, 'id', None) if student_user.president_of else None}")
+                else:
+                    print(f"DEBUG - No president_of attribute")
+                
+                # Check for vice president relationship
+                try:
+                    vp_societies = getattr(student_user, 'vice_president_of_society', None)
+                    print(f"DEBUG - VP society type: {type(vp_societies).__name__}")
+                    print(f"DEBUG - VP society: {vp_societies}")
+                except Exception as e:
+                    print(f"DEBUG - Error getting vice_president_of_society: {str(e)}")
+                
+                # Create serializer
+                print(f"DEBUG - Creating StudentSerializer")
+                serializer = StudentSerializer(student_user)
+                print(f"DEBUG - StudentSerializer created")
+            except Student.DoesNotExist:
+                # No matching Student row, so just use User
+                print(f"DEBUG - No Student found, using UserSerializer instead")
+                serializer = UserSerializer(user)
+            except Exception as e:
+                print(f"DEBUG - Unexpected error handling student: {str(e)}")
+                print(traceback.format_exc())
+                # Fallback to UserSerializer
+                serializer = UserSerializer(user)
+
+            # Check if serializer.data exists
+            print(f"DEBUG - About to access serializer.data")
+            if not serializer.data:
+                print(f"DEBUG - serializer.data is empty or None")
+                return Response(
+                    {"error": "User data could not be retrieved. Please try again later."},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+            
+            print(f"DEBUG - Serializer data keys: {serializer.data.keys()}")
+            print(f"DEBUG - Response data: {serializer.data}")
+            return Response(serializer.data, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            # Print detailed error information
+            print("\nCRITICAL ERROR IN CURRENT USER VIEW:")
+            print("-"*80)
+            print(f"Exception: {str(e)}")
+            print("-"*80)
+            traceback.print_exc(file=sys.stdout)
+            print("="*80)
+            
+            # Return a proper error response
             return Response(
-                {"error": "User data could not be retrieved. Please try again later."},
+                {"error": "Server error fetching user data", "detail": str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
 
     def put(self, request):
         """
         update user details
         note: this current implmentation is not secure, it should not be able to update the user role
         """
-        jwt_authenticator = JWTAuthentication()
-        decoded_auth = jwt_authenticator.authenticate(request)
+        try:
+            print(f"DEBUG - PUT request to CurrentUserView")
+            jwt_authenticator = JWTAuthentication()
+            decoded_auth = jwt_authenticator.authenticate(request)
 
-        if decoded_auth is None:
-            return Response({
-                "error": "Invalid or expired token. Please log in again."
-            }, status=status.HTTP_401_UNAUTHORIZED)
+            if decoded_auth is None:
+                print(f"DEBUG - JWT authentication failed in PUT")
+                return Response({
+                    "error": "Invalid or expired token. Please log in again."
+                }, status=status.HTTP_401_UNAUTHORIZED)
 
-        user, _ = decoded_auth
-        print("request.data: ", request.data)
-        serializer = UserSerializer(user, data=request.data, partial=True)
-        # check the user role shouldn't change
-
-        if serializer.is_valid():
-            serializer.save()   # save the update
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            user, _ = decoded_auth
+            print(f"DEBUG - PUT request data: {request.data}")
+            serializer = UserSerializer(user, data=request.data, partial=True)
+            
+            if serializer.is_valid():
+                print(f"DEBUG - Serializer is valid, saving changes")
+                serializer.save()   # save the update
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            else:
+                print(f"DEBUG - Serializer validation errors: {serializer.errors}")
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            print(f"DEBUG - Error in PUT method: {str(e)}")
+            print(traceback.format_exc())
+            return Response(
+                {"error": "Server error updating user data", "detail": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class StudentSocietiesView(APIView):
