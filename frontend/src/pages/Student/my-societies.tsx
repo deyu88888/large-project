@@ -143,9 +143,14 @@ const MySocieties: React.FC = () => {
                     color: isLight ? colours.grey[300] : colours.grey[300],
                     fontSize: "0.875rem",
                     lineHeight: "1.5",
+                    marginBottom: "1.25rem",
                   }}
                 >
-                  {society.description || "No description available."}
+                  {society.description
+                    ? society.description.length > 160
+                      ? society.description.slice(0, 160) + "..."
+                      : society.description
+                    : "No description available."}
                 </p>
                 <button
                   onClick={() => handleViewSociety(society.id)}
