@@ -106,10 +106,10 @@ class Command(BaseCommand):
         )
         society = Society.objects.get(name="Robotics Club")
         society.icon = "pre-seed-icons/robotics.jpg"
+        self.generate_random_event(society)
         society.save()
         self.create_society(35)
-
-        self.create_event(60)
+        self.create_event(35)
         self.pre_define_awards()
         self.randomly_assign_awards(50)
         # Broadcast updates to the WebSocket
