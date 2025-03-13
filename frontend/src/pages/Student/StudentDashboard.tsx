@@ -34,6 +34,7 @@ interface Society {
   id: number;
   name: string;
   is_president: boolean;
+  is_vice_president?: boolean;
 }
 
 interface Event {
@@ -216,10 +217,10 @@ const StudentDashboard: React.FC = () => {
             Dashboard
           </Typography>
           <Box display="flex" gap={2}>
-            {user?.is_president === true && (
+          {(user?.is_president === true || user?.is_vice_president === true) && (
               <Button
                 variant="contained"
-                onClick={() => navigate(`/president-page/${user?.president_of}`)}
+                onClick={() => navigate(`/president-page/${user?.is_president ? user?.president_of : user?.vice_president_of_society}`)}
                 sx={{
                   backgroundColor: colours.greenAccent[500],
                   color: colours.grey[100],
@@ -306,6 +307,17 @@ const StudentDashboard: React.FC = () => {
                           <Typography variant="caption">President</Typography>
                         </Box>
                       )}
+                    {society.is_vice_president && (
+                      <Box
+                        px={1}
+                        py={0.5}
+                        borderRadius="4px"
+                        bgcolor={colours.blueAccent[500]}
+                        color={colours.primary[500]}
+                      >
+                        <Typography variant="caption">Vice President</Typography>
+                      </Box>
+                    )}
                     </Box>
                     <Button
                       fullWidth
