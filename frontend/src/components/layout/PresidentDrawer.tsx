@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { apiClient } from "../../api";
 import {
   Avatar,
   Box,
@@ -40,7 +41,22 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
   location,
 }) => {
   const [selected, setSelected] = useState("Dashboard");
+  const [student, setStudent] = useState<any[]>([]);
   const navigate = useNavigate();
+
+  useEffect(() => {
+      const fetchStudentData = async () => {
+        try {
+          const response = await apiClient.get("/api/user/current");
+          setStudent(response.data);
+          console.log(student);
+        } catch (error) {
+          console.error("Error retrieving student:", error);
+          alert("Failed to retrieve student. Please contact an administrator.");
+        }
+      };  
+    fetchStudentData();
+    }, []);
 
   const menuItems = [
     { title: "Dashboard", icon: <HomeOutlinedIcon />, to: "/student" },
@@ -77,16 +93,33 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
       <Box padding={2} display="flex" justifyContent="center" alignItems="center">
         {drawer ? (
           <Box sx={{ textAlign: "center" }}>
-            <Avatar sx={{ width: 72, height: 72, margin: "0 auto" }} />
+            <img
+            src={"http://localhost:8000/api" + student?.icon}
+            alt={`${student?.username} icon`}
+            style={{
+              width: "72px",
+              height: "72px",
+              borderRadius: "50%",
+              margin: "0 auto"
+            }}
+            />
             <Typography variant="h6" fontWeight="bold" sx={{ mt: "10px" }}>
-              President Name
+              {student?.first_name} {student?.last_name}
             </Typography>
             <Typography variant="body2" color="textSecondary">
               President Dashboard
             </Typography>
           </Box>
         ) : (
-          <Avatar sx={{ width: 25, height: 25 }} />
+          <img
+            src={"http://localhost:8000/api" + student?.icon}
+            alt={`${student?.username} icon`}
+            style={{
+              width: "25px",
+              height: "25px",
+              borderRadius: "50%",
+            }}
+          />
         )}
       </Box>
       <Divider />
