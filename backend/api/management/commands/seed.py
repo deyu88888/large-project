@@ -354,12 +354,25 @@ class Command(BaseCommand):
         return event, created
 
     def handle_event_status(self, society, i):
-        """Creates event requests if pending"""
+        """
+        Creates event requests if random_status is Pending/Rejected.
+        If 'Approved', we simply don't create an EventRequest object.
+        
+        Fix: Ensure from_student is always a valid Student.
+        """
         random_status = choice(["Pending", "Approved", "Rejected"])
         location = self.get_random_location()
         
         event_date = self.generate_random_date()
         event_time = self.generate_reasonable_time(event_date)
+
+        # If the society has no leader, pick any random student to avoid NULL
+        default_student = society.leader
+        if not default_student:
+            default_student = Student.objects.first()
+            if not default_student:
+                print("No student available to assign from_student. Cannot create this event request.")
+                return False
 
         if random_status == "Approved":
             return True
@@ -371,7 +384,7 @@ class Command(BaseCommand):
                 start_time=event_time,
                 duration=self.generate_random_duration(),
                 hosted_by=society,
-                from_student=society.leader,
+                from_student=default_student,  # Always assign a valid student
                 location=location,
                 intent="CreateEve",
             )
@@ -383,7 +396,7 @@ class Command(BaseCommand):
                 start_time=event_time,
                 duration=self.generate_random_duration(),
                 hosted_by=society,
-                from_student=society.leader,
+                from_student=default_student,  # Always assign a valid student
                 location=location,
                 intent="CreateEve",
                 approved=True,
@@ -409,7 +422,10 @@ class Command(BaseCommand):
         return today + timedelta(days=random_days)
 
     def generate_reasonable_time(self, event_date):
-        """Generate a future time (9:00 AM to 8:45 PM), ensuring it's after the current time if today."""
+        """
+        Generate a future time (9:00 AM to 8:45 PM),
+        ensuring it's after the current time if the event is on the same day.
+        """
         now = datetime.now()
 
         valid_hours = list(range(9, 21))  # 9 AM to 8:45 PM
@@ -418,7 +434,6 @@ class Command(BaseCommand):
         if event_date > now.date():
             return time(hour=choice(valid_hours), minute=choice(valid_minutes))
         elif event_date == now.date():
-            # Filter times that are in the future
             possible_times = [
                 time(hour=h, minute=m)
                 for h in valid_hours
@@ -427,8 +442,6 @@ class Command(BaseCommand):
             ]
             if possible_times:
                 return choice(possible_times)
-
-            # If no valid times remain, schedule tomorrow at 9:00 AM
             return time(hour=9, minute=0)
 
     def create_event_notifications(self, events):

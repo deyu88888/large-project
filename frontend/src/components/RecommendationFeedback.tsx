@@ -21,9 +21,11 @@ const RecommendationFeedback: React.FC<RecommendationFeedbackProps> = ({
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [existingFeedback, setExistingFeedback] = useState<any | null>(null);
   const [feedbackSubmitted, setFeedbackSubmitted] = useState<boolean>(false);
+
+  // Animation states
   const [animationStage, setAnimationStage] = useState<number>(0);
   const [isVisible, setIsVisible] = useState<boolean>(true);
-  
+
   const feedbackRef = useRef<HTMLDivElement>(null);
   const starsRef = useRef<HTMLDivElement>(null);
   const thanksRef = useRef<HTMLDivElement>(null);
@@ -34,18 +36,16 @@ const RecommendationFeedback: React.FC<RecommendationFeedbackProps> = ({
       try {
         const feedback = await getRecommendationFeedback(societyId);
         if (feedback && feedback.rating) {
+          // If user already submitted feedback, hide everything immediately
           setExistingFeedback(feedback);
           setRating(feedback.rating);
           setRelevance(feedback.relevance);
           setComment(feedback.comment || "");
-          
-          // Start disappearing animation for existing feedback after 4s
-          setTimeout(() => {
-            startDisappearAnimation();
-          }, 4000);
+          setFeedbackSubmitted(true);
+          setIsVisible(false); // Hide the component right away
         }
       } catch (error) {
-        // No existing feedback, that's fine
+        // No existing feedback - do nothing
       }
     };
 
@@ -53,20 +53,20 @@ const RecommendationFeedback: React.FC<RecommendationFeedbackProps> = ({
   }, [societyId]);
 
   const startDisappearAnimation = () => {
-    // Step 1: Start fading the stars
+    // 1) Fade the stars
     setAnimationStage(1);
 
-    // Step 2: After stars fade, begin sliding thanks message
+    // 2) Slide the "thanks" text
     setTimeout(() => {
       setAnimationStage(2);
     }, 400);
 
-    // Step 3: Start collapsing the container
+    // 3) Collapse container
     setTimeout(() => {
       setAnimationStage(3);
     }, 800);
 
-    // Step 4: Finally remove from DOM
+    // 4) Remove from DOM
     setTimeout(() => {
       setIsVisible(false);
     }, 1200);
@@ -79,7 +79,7 @@ const RecommendationFeedback: React.FC<RecommendationFeedbackProps> = ({
 
   const handleSubmitFeedback = async () => {
     setIsSubmitting(true);
-    
+
     try {
       await submitRecommendationFeedback(societyId, {
         society_id: societyId,
@@ -88,13 +88,13 @@ const RecommendationFeedback: React.FC<RecommendationFeedbackProps> = ({
         comment: comment.trim() ? comment : undefined,
         is_joined: false
       });
-      
+
       setFeedbackSubmitted(true);
       if (onFeedbackSubmitted) {
         onFeedbackSubmitted();
       }
-      
-      // Schedule the disappearing animation after 3 seconds
+
+      // Trigger disappearance after 3s
       setTimeout(() => {
         startDisappearAnimation();
       }, 3000);
@@ -105,10 +105,13 @@ const RecommendationFeedback: React.FC<RecommendationFeedbackProps> = ({
     }
   };
 
+  // If the component is no longer visible, render nothing
   if (!isVisible) {
-    return null; // Don't render anything if not visible
+    return null;
   }
 
+  // If feedback was just submitted OR we detected existing feedback
+  // (but haven't hidden it yet), show "thank you" animation
   if (feedbackSubmitted || (existingFeedback && !showFeedbackForm)) {
     return (
       <div 
@@ -193,7 +196,7 @@ const RecommendationFeedback: React.FC<RecommendationFeedbackProps> = ({
             </span>
           ))}
         </div>
-        {/* Decorative particles that appear briefly */}
+        {/* Decorative particles */}
         {!animationStage && [1, 2, 3, 4, 5].map((_, i) => (
           <div
             key={i}
@@ -215,6 +218,7 @@ const RecommendationFeedback: React.FC<RecommendationFeedbackProps> = ({
     );
   }
 
+  // Otherwise, show the rating/feedback form
   return (
     <div 
       style={{
@@ -306,7 +310,7 @@ const RecommendationFeedback: React.FC<RecommendationFeedbackProps> = ({
               ))}
             </div>
           </div>
-          
+
           <div style={{marginBottom: "0.75rem"}}>
             <label style={{
               display: "block", 
@@ -350,7 +354,7 @@ const RecommendationFeedback: React.FC<RecommendationFeedbackProps> = ({
               <option value={5}>Extremely relevant</option>
             </select>
           </div>
-          
+
           <div style={{marginBottom: "0.75rem"}}>
             <label style={{
               display: "block", 
@@ -390,7 +394,7 @@ const RecommendationFeedback: React.FC<RecommendationFeedbackProps> = ({
               disabled={isSubmitting}
             />
           </div>
-          
+
           <div style={{display: "flex", justifyContent: "flex-end"}}>
             <button
               onClick={() => setShowFeedbackForm(false)}

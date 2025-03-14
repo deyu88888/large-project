@@ -65,14 +65,28 @@ REJECTEDEVENTLIST: "api/society/event/rejected", // TODO: DONT ADD BACKSLASH
  },
 };
 
-// Types for recommendation responses
+// Enhanced Society interface with category
+export interface Society {
+  id: number;
+  name: string;
+  description: string;
+  category: string;
+  tags?: string[];
+  status?: string;
+  create_date?: string;
+  member_count?: number;
+  event_count?: number;
+  // Any other society fields you have
+}
+
+// Enhanced types for recommendation responses with all explanation types
 export interface RecommendationExplanation {
-  type: "popular" | "category" | "tags" | "general";
+  type: "popular" | "category" | "tags" | "content" | "semantic" | "general";
   message: string;
 }
 
 export interface SocietyRecommendation {
-  society: any;  // Using 'any' to match whatever shape your Society data has
+  society: Society;  // Now using the proper Society interface
   explanation: RecommendationExplanation;
 }
 
@@ -109,7 +123,7 @@ throw error;
  }
 };
 
-// Fetch Recommended Societies
+// Fetch Recommended Societies with enhanced type safety
 export const getRecommendedSocieties = async (limit: number = 5) => {
   try {
     const response = await apiClient.get(`${apiPaths.SOCIETY.RECOMMENDED_SOCIETIES}?limit=${limit}`);
