@@ -130,7 +130,6 @@ class Command(BaseCommand):
 
         self.create_student(50)
         self.create_admin(5)
-        self.create_society(20)
         self.create_society(35)
         self.create_event(35)
         self.pre_define_awards()
