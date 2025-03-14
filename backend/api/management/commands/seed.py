@@ -83,6 +83,18 @@ class Command(BaseCommand):
                 "major": "Computer Science",
             },
         )
+
+        president, _ = get_or_create_user(
+            Student,
+            username="president_user",
+            email="president@example.com",
+            first_name="John",
+            last_name="Doe",
+            defaults={
+                "password": make_password("presidentpassword"),
+                "major": "Mechanical Engineering"
+            },
+        )
         
         vice_president, _ = get_or_create_user(
              Student,
@@ -95,41 +107,21 @@ class Command(BaseCommand):
                  "major": "Electrical Engineering"
              },
          )
-        
-        president, _ = get_or_create_user(
-            Student,
-            username="president_user",
-            email="president@example.com",
-            first_name="John",
-            last_name="Doe",
-            defaults={
-                "password": make_password("presidentpassword"),
-                "major": "Mechanical Engineering"
-            },
-        )
 
-        society, _ = get_or_create_object(
-            Society,
+        self.create_student(100)
+        self.create_admin(5)
+        self.create_society(
             name="Robotics Club",
             president_force=president,
         )
+        
         society = Society.objects.get(name="Robotics Club")
         society.icon = "pre-seed-icons/robotics.jpg"
         self.generate_random_event(society)
         society.save()
-        society.approved_by = admin
-
         society.vice_president = vice_president
         society.society_members.add(vice_president)
         society.save()
-
-        self.seed_society_showreel(society, n=10)
-
-        president.president_of = society
-        president.save()
-
-        self.create_student(50)
-        self.create_admin(5)
         self.create_society(35)
         self.create_event(35)
         self.pre_define_awards()
@@ -237,9 +229,9 @@ class Command(BaseCommand):
     def set_society_socials(self, society : Society):
         """Assigns socials to a society (placeholder kclsu)"""
         socials_dict = {
-            "Facebook": "https://www.facebook.com/kclsupage/",
-            "Instagram": "https://www.instagram.com/kclsu/",
-            "X": "https://x.com/kclsu",
+            "facebook": "https://www.facebook.com/kclsupage/",
+            "instagram": "https://www.instagram.com/kclsu/",
+            "x": "https://x.com/kclsu",
         }
         society.social_media_links = socials_dict
 
@@ -263,7 +255,7 @@ class Command(BaseCommand):
         society.society_members.add(*selected_members)
 
         # Assign roles (ensure at least 2 roles)
-        if len(selected_members) >= 2:
+        if len(selected_members) >= 3:
             # Assign vice president and set flag
             society.vice_president = selected_members[0]
             if society.vice_president:
