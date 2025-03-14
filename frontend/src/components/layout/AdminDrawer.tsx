@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuthStore } from "../../stores/auth-store";
 import {
   Avatar,
   Box,
@@ -36,6 +37,7 @@ const AdminDrawer: React.FC<AdminDrawerProps> = ({
   location,
 }) => {
   const [selected, setSelected] = useState("Dashboard");
+  const { user } = useAuthStore();
   const navigate = useNavigate();
 
   const menuItems = [
@@ -117,7 +119,7 @@ const AdminDrawer: React.FC<AdminDrawerProps> = ({
           <Box textAlign="center">
             <Avatar sx={{ width: 72, height: 72, margin: "0 auto" }} />
             <Typography variant="h6" fontWeight="bold" sx={{ mt: "10px" }}>
-              Ed Roh
+              {user?.first_name} {user?.last_name}
             </Typography>
             <Typography variant="body2" color="textSecondary">
               University Admin

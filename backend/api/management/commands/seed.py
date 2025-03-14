@@ -1,6 +1,5 @@
 from datetime import date, datetime, time, timedelta
-import random
-from random import choice, randint
+from random import choice, randint, random
 from io import BytesIO
 from PIL import Image
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -103,9 +102,12 @@ class Command(BaseCommand):
             name="Robotics Club",
             president_force=president,
         )
+        society = Society.objects.get(name="Robotics Club")
+        society.icon = "pre-seed-icons/robotics.jpg"
+        self.generate_random_event(society)
+        society.save()
         self.create_society(35)
-
-        self.create_event(20)
+        self.create_event(35)
         self.pre_define_awards()
         self.randomly_assign_awards(50)
         # Broadcast updates to the WebSocket
@@ -197,6 +199,7 @@ class Command(BaseCommand):
                     status="Approved",
                     description=data["description"],
                     tags=data["tags"],
+                    icon=data["icon"],
                 )
             if created:
                 self.finalize_society_creation(society)
@@ -225,7 +228,7 @@ class Command(BaseCommand):
         all_students = list(Student.objects.exclude(id=society.leader.id).order_by("?"))
         members_num = 5
         while members_num < Student.objects.count():
-            if random.random() <= 0.912:
+            if random() <= 0.912:
                 members_num += 1
             else:
                 break
@@ -334,7 +337,7 @@ class Command(BaseCommand):
         )
 
         if created:
-            all_students = list(Student.objects.exclude(id=society.leader.id))
+            all_students = list(society.society_members.all())
             num_attendees = min(randint(5, 20), len(all_students))
             selected_attendees = all_students[:num_attendees]
 
@@ -430,8 +433,8 @@ class Command(BaseCommand):
     
     def generate_random_time(self):
         """Generates a random time within a day."""
-        hours = random.randint(0, 23)  # Random hour between 0-23
-        minutes = random.randint(0, 59)  # Random minute between 0-59
+        hours = randint(0, 23)  # Random hour between 0-23
+        minutes = randint(0, 59)  # Random minute between 0-59
         return time(hour=hours, minute=minutes)
 
     def create_event_notifications(self, events):
@@ -444,24 +447,26 @@ class Command(BaseCommand):
             count += event.current_attendees.count()
         print(self.style.SUCCESS(f"Seeding notifications for {count} attendees across events"))
 
-    def count_all_event_participants(self, event_dict):
-        """Counts all the potential participants of events"""
-        total = 0
-        for _, members in event_dict.items():
-            total += len(members)
-        return total
-
     def create_event_notification(self, event):
         """Create notifications only for students attending"""
         members = event.current_attendees.all()
 
         for member in members:
             Notification.objects.create(
-                for_event=event,
-                for_student=member
+                header=f"Attend {str(event)}!",
+                body=f"Your favourite society {event.hosted_by.name} is "
+                f"hosting the event {str(event)}",
+                for_student=member,
             )
 
         print(self.style.SUCCESS(f"Created notifications for {len(members)} attendees of {event.title}"))
+
+    def count_all_event_participants(self, event_dict):
+        """Counts all the potential participants of events"""
+        total = 0
+        for _, members in event_dict.items():
+            total += len(members)
+        return total
 
     def broadcast_updates(self):
         """Broadcast updates to the WebSocket"""

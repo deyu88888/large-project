@@ -148,7 +148,7 @@ class StudentSocietiesViewTestCase(TestCase):
         self.client.credentials(HTTP_AUTHORIZATION=self.student1_token)
         response = self.client.delete(f"/api/leave-society/{self.society1.id}/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        
+
         # Now, try leaving the same society again.
         response = self.client.delete(f"/api/leave-society/{self.society1.id}/")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

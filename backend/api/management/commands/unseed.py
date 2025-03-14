@@ -1,5 +1,6 @@
 from django.core.files.storage import default_storage
 from django.core.management.base import BaseCommand
+from django.conf import settings
 import api.models as m
 
 class Command(BaseCommand):
@@ -40,7 +41,7 @@ class Command(BaseCommand):
         images.extend(list(m.SocietyRequest.objects.values_list('icon', flat=True)))
 
         for image in images:
-            if image and default_storage.exists(image):
+            if image and default_storage.exists(image) and not image.startswith("pre-seed-icons"):
                 default_storage.delete(image)
 
         for model in models: # Iterate through and clear all models

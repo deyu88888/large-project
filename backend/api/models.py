@@ -333,9 +333,8 @@ class Notification(models.Model):
     """
     Notifications for a student about an event, etc.
     """
-    for_event = models.ForeignKey(
-        "Event", on_delete=models.CASCADE, blank=False, null=True
-    )
+    header = models.CharField(max_length=30, default="")
+    body = models.CharField(max_length=200, default="")
     for_student = models.ForeignKey(
         "Student",
         on_delete=models.CASCADE,
@@ -345,9 +344,10 @@ class Notification(models.Model):
     )
 
     is_read = models.BooleanField(default=False)
-    message = models.TextField()
+    is_important = models.BooleanField(default=False)
+
     def __str__(self):
-        return self.for_event.title
+        return f"{self.header}\n{self.body}"
 
 
 class Request(models.Model):

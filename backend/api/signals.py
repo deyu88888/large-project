@@ -27,16 +27,16 @@ def notify_on_status_change(sender, instance, **kwargs):
     try:
         if instance.status == "Approved":
             Notification.objects.create(
-                for_event=None,
+                header="Society Approved",
                 for_student=instance.leader,
-                message=f"Your request to create the society '{instance.name}' has been approved!"
+                body=f"Your request to create the society '{instance.name}' has been approved!"
             )
             print(f"Notification created for Society Approval: {instance.name}")
         elif instance.status == "Rejected":
             Notification.objects.create(
-                for_event=None,
+                header="Society Denied",
                 for_student=instance.leader,
-                message=f"Your request to create the society '{instance.name}' was rejected. Please contact the admin for details.",
+                body=f"Your request to create the society '{instance.name}' was rejected. Please contact the admin for details.",
             )
             print(f"Notification created for Society Rejection: {instance.name}")
     except Exception as e:
