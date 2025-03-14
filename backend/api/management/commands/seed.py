@@ -1,11 +1,12 @@
 from datetime import date, datetime, time, timedelta
-import random
-from random import choice, randint
+from random import choice, randint, random
 from io import BytesIO
 from PIL import Image
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.contrib.auth.hashers import make_password
 from django.core.management.base import BaseCommand
+
+import api
 from api.management.commands.data.society_generator import RandomSocietyDataGenerator
 from api.management.commands.data.student_generator import RandomStudentDataGenerator
 from api.management.commands.data.event_generator import RandomEventDataGenerator
@@ -33,20 +34,17 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
 
         def get_or_create_user(model, username, email, first_name, last_name, defaults):
-            """
-            Get or create a user (Admin or Student).
-            """
             user, created = model.objects.get_or_create(
-                username=username,
                 email=email,
-                first_name=first_name,
-                last_name=last_name,
-                defaults=defaults,
+                defaults={
+                    "username": username,
+                    "first_name": first_name,
+                    "last_name": last_name,
+                    **defaults,
+                },
             )
             if created:
-                self.stdout.write(
-                    self.style.SUCCESS(f"{model.__name__} created: {user.username}")
-                )
+                self.stdout.write(self.style.SUCCESS(f"{model.__name__} created: {user.username}"))
             else:
                 self.stdout.write(f"{model.__name__} already exists: {user.username}")
             return user, created
@@ -113,8 +111,12 @@ class Command(BaseCommand):
         society, _ = get_or_create_object(
             Society,
             name="Robotics Club",
-            leader=president,
+            president_force=president,
         )
+        society = Society.objects.get(name="Robotics Club")
+        society.icon = "pre-seed-icons/robotics.jpg"
+        self.generate_random_event(society)
+        society.save()
         society.approved_by = admin
 
         society.vice_president = vice_president
@@ -130,8 +132,7 @@ class Command(BaseCommand):
         self.create_admin(5)
         self.create_society(20)
         self.create_society(35)
-
-        self.create_event(20)
+        self.create_event(35)
         self.pre_define_awards()
         self.randomly_assign_awards(50)
         # Broadcast updates to the WebSocket
@@ -223,6 +224,7 @@ class Command(BaseCommand):
                     status="Approved",
                     description=data["description"],
                     tags=data["tags"],
+                    icon=data["icon"],
                 )
             if created:
                 self.finalize_society_creation(society)
@@ -251,7 +253,7 @@ class Command(BaseCommand):
         all_students = list(Student.objects.exclude(id=society.leader.id).order_by("?"))
         members_num = 5
         while members_num < Student.objects.count():
-            if random.random() <= 0.912:
+            if random() <= 0.912:
                 members_num += 1
             else:
                 break
@@ -363,7 +365,7 @@ class Command(BaseCommand):
         )
 
         if created:
-            all_students = list(Student.objects.exclude(id=society.leader.id))
+            all_students = list(society.society_members.all())
             num_attendees = min(randint(5, 20), len(all_students))
             selected_attendees = all_students[:num_attendees]
 
@@ -459,8 +461,8 @@ class Command(BaseCommand):
     
     def generate_random_time(self):
         """Generates a random time within a day."""
-        hours = random.randint(0, 23)  # Random hour between 0-23
-        minutes = random.randint(0, 59)  # Random minute between 0-59
+        hours = randint(0, 23)  # Random hour between 0-23
+        minutes = randint(0, 59)  # Random minute between 0-59
         return time(hour=hours, minute=minutes)
 
     def create_event_notifications(self, events):
@@ -473,6 +475,20 @@ class Command(BaseCommand):
             count += event.current_attendees.count()
         print(self.style.SUCCESS(f"Seeding notifications for {count} attendees across events"))
 
+    def create_event_notification(self, event):
+        """Create notifications only for students attending"""
+        members = event.current_attendees.all()
+
+        for member in members:
+            Notification.objects.create(
+                header=f"Attend {str(event)}!",
+                body=f"Your favourite society {event.hosted_by.name} is "
+                f"hosting the event {str(event)}",
+                for_student=member,
+            )
+
+        print(self.style.SUCCESS(f"Created notifications for {len(members)} attendees of {event.title}"))
+
     def count_all_event_participants(self, event_dict):
         """Counts all the potential participants of events"""
         total = 0
@@ -480,22 +496,10 @@ class Command(BaseCommand):
             total += len(members)
         return total
 
-    def create_event_notification(self, event):
-        """Create notifications only for students attending"""
-        members = event.current_attendees.all()
-
-        for member in members:
-            Notification.objects.create(
-                for_event=event,
-                for_student=member
-            )
-
-        print(self.style.SUCCESS(f"Created notifications for {len(members)} attendees of {event.title}"))
-
     def broadcast_updates(self):
         """Broadcast updates to the WebSocket"""
         print("Broadcasting updates to WebSocket...")
-        broadcast_dashboard_update()
+        api.signals.broadcast_dashboard_update()
 
     def pre_define_awards(self):
         """Pre-define automatic awards"""

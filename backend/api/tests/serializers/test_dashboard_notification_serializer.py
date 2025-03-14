@@ -35,9 +35,9 @@ class TestNotificationSerializer(TestCase):
 
         # Create a notification
         self.notification = Notification.objects.create(
-            for_event=self.event,
+            header=str(self.event),
             for_student=self.student,
-            message="This is a test notification.",
+            body="This is a test notification.",
             is_read=False,
         )
 
@@ -46,23 +46,12 @@ class TestNotificationSerializer(TestCase):
         serializer = DashboardNotificationSerializer(self.notification)
         expected_data = {
             "id": self.notification.id,
-            "message": self.notification.message,
+            "body": self.notification.body,
             "is_read": self.notification.is_read,
-            "event_title": self.event.title,
+            "header": self.notification.header,
             "student_name": f"{self.student.first_name} {self.student.last_name}",
         }
         self.assertEqual(serializer.data, expected_data)
-
-    def test_invalid_notification_without_message(self):
-        """Test that the serializer fails without a message."""
-        invalid_data = {
-            "for_event": self.event.id,
-            "for_student": self.student.id,
-            "is_read": False,
-        }
-        serializer = DashboardNotificationSerializer(data=invalid_data)
-        self.assertFalse(serializer.is_valid(), "Serializer should be invalid without 'message'")
-        self.assertIn("message", serializer.errors)
 
     def test_partial_update_is_read(self):
         """Test partial update for the `is_read` field."""
@@ -80,7 +69,6 @@ class TestNotificationSerializer(TestCase):
         """
         invalid_data = {
             "id": 999,
-            "event_title": "Fake Event Title",
             "student_name": "Fake Name",
         }
         serializer = DashboardNotificationSerializer(
@@ -93,11 +81,6 @@ class TestNotificationSerializer(TestCase):
 
         # Ensure these read-only fields remain unchanged
         self.assertNotEqual(instance.id, invalid_data["id"], "ID should not change")
-        self.assertNotEqual(
-            instance.for_event.title,
-            invalid_data.get("event_title", ""),
-            "Event title should not change"
-        )
         self.assertNotEqual(
             f"{instance.for_student.first_name} {instance.for_student.last_name}",
             invalid_data.get("student_name", ""),

@@ -318,15 +318,14 @@ class EventSerializer(serializers.ModelSerializer):
 
 
 class NotificationSerializer(serializers.ModelSerializer):
-    """ Serializer for objects of the Notification model """
+    """Serializer for objects of the Notification model"""
 
     class Meta:
         """ NotificationSerializer meta data """
         model = Notification
-        fields = ['id', 'for_event', 'for_student', 'is_read', 'message']
+        fields = ["id", "header", "body", "for_student", "is_read", "is_important"]
         extra_kwargs = {
-            'for_event': {'required': True},
-            'for_student': {'required': True}
+            "for_student": {"required": True}
         }
 
     def create(self, validated_data):
@@ -730,7 +729,6 @@ class DashboardNotificationSerializer(serializers.ModelSerializer):
     """
     Updated Notification serializer to include read/unread tracking for the dashboard.
     """
-    event_title = serializers.CharField(source="for_event.title", read_only=True)
     student_name = serializers.CharField(source="for_student.full_name", read_only=True)
 
     class Meta:
@@ -738,9 +736,9 @@ class DashboardNotificationSerializer(serializers.ModelSerializer):
         model = Notification
         fields = [
             'id',
-            'message',
+            'body',
             'is_read',
-            'event_title',
+            'header',
             'student_name'
         ]
         # Removed 'timestamp' since the model does not have it
@@ -843,17 +841,8 @@ class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
         fields = [
-            "id",
-            "content",
-            "create_at",
-            "user_data",
-            "parent_comment",
-            "replies",
-            "likes",
-            "dislikes",
-            "liked_by_user",
-            "disliked_by_user"
-        ]
+            "id", "content", "create_at", "user_data", "parent_comment", "replies",
+            "likes", "dislikes", "liked_by_user", "disliked_by_user"]
 
     def get_replies(self, obj):
         """Get all the replies of the comment"""

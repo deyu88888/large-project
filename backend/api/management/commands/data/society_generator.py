@@ -1,34 +1,35 @@
 from random import choice, sample
+import os
 
 class RandomSocietyDataGenerator():
     """Class encompassing tools to generate society data"""
     def __init__(self):
         self.prefix_names = [
-            "Mathematics",
-            "Football",
-            "Literature",
-            "Physics",
-            "Chemistry",
-            "Biology",
-            "Computing",
-            "Gaming",
-            "Rugby",
-            "Tennis",
-            "Badminton",
-            "Sewing",
-            "Knitting",
-            "Swimming",
-            "Sailing",
-            "Economics",
-            "Politics",
-            "Retro",
             "Architecture",
             "Art",
-            "Tabletop",
+            "Badminton",
+            "Biology",
+            "Chemistry",
             "Chess",
+            "Computing",
+            "Economics",
             "Fashion",
+            "Football",
+            "Gaming",
+            "Knitting",
+            "Literature",
+            "Mathematics",
             "Music",
             "Philosophy",
+            "Physics",
+            "Politics",
+            "Retro",
+            "Rugby",
+            "Sailing",
+            "Sewing",
+            "Swimming",
+            "Tabletop",
+            "Tennis",
         ]
         self.suffix_names = [
             "Club",
@@ -165,6 +166,9 @@ class RandomSocietyDataGenerator():
         return_dict["description"] = self.generate_description()
         return_dict["category"] = choice(self.categories)
         return_dict["tags"] = self.generate_tags(return_dict["name"].split()[0])
+
+        icon_name = f'{return_dict["name"].split()[0].lower()}.jpg'
+        return_dict["icon"] = os.path.join('pre-seed-icons', icon_name)
 
         return return_dict
 

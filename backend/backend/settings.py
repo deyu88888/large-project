@@ -130,8 +130,7 @@ AUTH_USER_MODEL = "api.User"
 
 CHANNEL_LAYERS = {
     "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer"  
-
+        "BACKEND": "channels.layers.InMemoryChannelLayer"
     }
 }
 

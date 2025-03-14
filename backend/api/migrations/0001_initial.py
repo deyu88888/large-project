@@ -253,9 +253,10 @@ class Migration(migrations.Migration):
             name='Notification',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('header', models.CharField(default='', max_length=30)),
+                ('body', models.CharField(default='', max_length=200)),
                 ('is_read', models.BooleanField(default=False)),
-                ('message', models.TextField()),
-                ('for_event', models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to='api.event')),
+                ('is_important', models.BooleanField(default=False)),
                 ('for_student', models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='notifications', to='api.student')),
             ],
         ),

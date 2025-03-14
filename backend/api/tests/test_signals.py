@@ -88,7 +88,7 @@ class SignalsTestCase(TestCase):
         # Check that a notification is created for the society leader.
         notifications = Notification.objects.filter(for_student=self.society.leader)
         self.assertTrue(notifications.exists())
-        self.assertIn("approved", notifications.first().message.lower())
+        self.assertIn("approved", notifications.first().body.lower())
         # Ensure broadcast_dashboard_update was called.
         mock_broadcast.assert_called_once()
 
@@ -102,7 +102,7 @@ class SignalsTestCase(TestCase):
         self.society.save()
         notifications = Notification.objects.filter(for_student=self.society.leader)
         self.assertTrue(notifications.exists())
-        self.assertIn("rejected", notifications.first().message.lower())
+        self.assertIn("rejected", notifications.first().body.lower())
         mock_broadcast.assert_called_once()
 
     @patch("api.signals.async_to_sync")

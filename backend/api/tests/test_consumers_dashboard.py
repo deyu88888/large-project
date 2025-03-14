@@ -1,13 +1,14 @@
+"""Unit tests for the Dashboard Consumer."""
 from channels.layers import get_channel_layer
 from channels.routing import URLRouter
 from channels.testing import WebsocketCommunicator
 from django.test import TestCase, override_settings
 from django.urls import re_path
+from asgiref.sync import sync_to_async
 from api.consumer.consumers import DashboardConsumer
 from api.models import Society, Event, Student
 from api.tests.file_deletion import delete_file
 
-# Build an in-memory routing for tests
 application = URLRouter([
     re_path(r"ws/dashboard/$", DashboardConsumer.as_asgi()),
 ])
@@ -17,7 +18,7 @@ application = URLRouter([
 class TestDashboardConsumer(TestCase):
     @classmethod
     def setUpTestData(cls):
-        """Create initial data in the DB once for all tests."""
+        """Create initial data before all tests."""
         Society.objects.create(name="Approved Society", status="Approved")
         Society.objects.create(name="Pending Society", status="Pending")
         Event.objects.create(title="Event 1", location="Room A")
@@ -28,35 +29,42 @@ class TestDashboardConsumer(TestCase):
             last_name="Doe",
         )
 
+    async def discard_initial_messages(self, communicator):
+        """Discard initial messages sent when the consumer connects."""
+        await communicator.receive_json_from()  # dashboard.update
+        await communicator.receive_json_from()  # update_introduction
+
     async def test_websocket_connect(self):
+        """Test successful WebSocket connection."""
         communicator = WebsocketCommunicator(application, "/ws/dashboard/")
         connected, _ = await communicator.connect()
         self.assertTrue(connected, "Should connect to the WebSocket successfully.")
-
         await communicator.disconnect()
 
     async def test_websocket_disconnect(self):
+        """Test successful WebSocket disconnection."""
         communicator = WebsocketCommunicator(application, "/ws/dashboard/")
         connected, _ = await communicator.connect()
         self.assertTrue(connected)
-
         await communicator.disconnect()
 
     async def test_dashboard_update_broadcast(self):
-        """Check group_send -> dashboard_update -> consumer sends message."""
+        """Verify that the dashboard.update message is broadcasted."""
         communicator = WebsocketCommunicator(application, "/ws/dashboard/")
         connected, _ = await communicator.connect()
         self.assertTrue(connected)
 
-        # Send a group broadcast that triggers dashboard_update
-        channel_layer = get_channel_layer()
+        # Discard initial messages
+        await self.discard_initial_messages(communicator)
+
+        # Construct message data and send group broadcast
         message_data = {"totalSocieties": 2, "totalEvents": 1, "pendingApprovals": 1, "activeMembers": 1}
+        channel_layer = get_channel_layer()
         await channel_layer.group_send("dashboard", {
             "type": "dashboard_update",
             "data": message_data
         })
 
-        # Expect a "dashboard.update" message
         response = await communicator.receive_json_from()
         self.assertEqual(
             response,
@@ -66,60 +74,68 @@ class TestDashboardConsumer(TestCase):
         await communicator.disconnect()
 
     async def test_receive_update_notifications(self):
-        """Test the consumer's receive -> group_send -> broadcast_notifications flow."""
+        """Test update_notifications process."""
         communicator = WebsocketCommunicator(application, "/ws/dashboard/")
         connected, _ = await communicator.connect()
         self.assertTrue(connected)
 
-        # Send a client -> consumer message of type "update_notifications"
+        # Discard initial messages
+        await self.discard_initial_messages(communicator)
+
         payload = {
             "type": "update_notifications",
             "notifications": [{"id": 1, "message": "New notification"}],
         }
         await communicator.send_json_to(payload)
 
-        # Expect the same payload to be broadcasted back
         response = await communicator.receive_json_from()
         self.assertEqual(response, payload)
 
         await communicator.disconnect()
 
     async def test_receive_dashboard_update(self):
-        """Test manual dashboard updates sent from the client."""
+        """Test that when a client sends a dashboard.update message, the consumer broadcasts database statistics."""
         communicator = WebsocketCommunicator(application, "/ws/dashboard/")
         connected, _ = await communicator.connect()
         self.assertTrue(connected)
 
-        # Send a client -> consumer message of type "dashboard.update"
+        await self.discard_initial_messages(communicator)
+
         payload = {
             "type": "dashboard.update",
             "data": {"totalSocieties": 5, "totalEvents": 10, "pendingApprovals": 2, "activeMembers": 50},
         }
         await communicator.send_json_to(payload)
 
-        # Expect the same data to be broadcasted
+        expected_data = {
+            "totalSocieties": await sync_to_async(Society.objects.count)(),
+            "totalEvents": await sync_to_async(Event.objects.count)(),
+            "pendingApprovals": await sync_to_async(lambda: Society.objects.filter(status="Pending").count())(),
+            "activeMembers": await sync_to_async(Student.objects.count)(),
+        }
         response = await communicator.receive_json_from()
         self.assertEqual(response, {
             "type": "dashboard.update",
-            "data": payload["data"],
+            "data": expected_data,
         })
 
         await communicator.disconnect()
 
     async def test_get_dashboard_stats(self):
-        """Directly call consumer.get_dashboard_stats() to confirm the DB data."""
+        """Directly call consumer.get_dashboard_stats() to check stats."""
         consumer = DashboardConsumer(scope={"type": "websocket"})
         stats = await consumer.get_dashboard_stats()
 
         expected_stats = {
-            "totalSocieties": 2,    # 2 societies
-            "totalEvents": 1,       # 1 event
-            "pendingApprovals": 1,  # 1 pending society
-            "activeMembers": 1,     # 1 student
+            "totalSocieties": await sync_to_async(Society.objects.count)(),
+            "totalEvents": await sync_to_async(Event.objects.count)(),
+            "pendingApprovals": await sync_to_async(lambda: Society.objects.filter(status="Pending").count())(),
+            "activeMembers": await sync_to_async(Student.objects.count)(),
         }
         self.assertEqual(stats, expected_stats)
 
     def tearDown(self):
+        """Clean up created files after tests."""
         for society in Society.objects.all():
             if society.icon:
                 delete_file(society.icon.path)

@@ -34,43 +34,42 @@ class NotificationModelTestCase(TestCase):
 
         # Create a notification
         self.notification = Notification.objects.create(
-            for_event=self.event,
+            header=str(self.event),
+            body=f"Notification for {str(self.event)}",
             for_student=self.student,
             is_read=False,
-            message="You have an upcoming event: Test Event."
+            is_important=False,
         )
 
     def test_notification_valid(self):
         """Test to ensure the notification is valid"""
         self._assert_notification_is_valid()
 
-    def test_event_not_nullable(self):
-        """Test ensuring event cannot be None"""
-        self.notification.for_event = None
-        self._assert_notification_is_invalid()
-
     def test_student_not_nullable(self):
         """Test ensuring student cannot be None"""
         self.notification.for_student = None
         self._assert_notification_is_invalid()
 
-    def test_message_not_empty(self):
-        """Test ensuring message cannot be empty"""
-        self.notification.message = ""
-        self._assert_notification_is_invalid()
-
     def test_is_read_default(self):
         """Test to ensure `is_read` defaults to False"""
         notification = Notification.objects.create(
-            for_event=self.event,
             for_student=self.student,
-            message="Test notification message."
         )
         self.assertFalse(notification.is_read)
 
+    def test_is_important_default(self):
+        """Test to ensure `is_read` defaults to False"""
+        notification = Notification.objects.create(
+            for_student=self.student,
+        )
+        self.assertFalse(notification.is_important)
+
     def test_string_representation(self):
         """Test the string representation matches the event title"""
-        self.assertEqual(str(self.notification), self.event.title)
+        self.assertEqual(
+            str(self.notification),
+            f"{str(self.event)}\nNotification for {str(self.event)}"
+        )
 
     def test_mark_notification_as_read(self):
         """Test marking a notification as read"""

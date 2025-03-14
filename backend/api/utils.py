@@ -1,9 +1,7 @@
 import json
 import random
-from datetime import timedelta
 from django.core.mail import send_mail
 from django.http.response import JsonResponse
-from django.utils.timezone import now
 from django.views.decorators.csrf import csrf_exempt
 from django.core.cache import cache
 from backend.settings import EMAIL_HOST_USER

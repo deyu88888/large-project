@@ -1,5 +1,6 @@
 from io import BytesIO
 from PIL import Image
+from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from api.models import Student, Society
@@ -35,6 +36,18 @@ class StudentModelTestCase(TestCase):
     def test_student_full_name(self):
         """test full_name property"""
         self.assertEqual(self.student.full_name, 'Alice Johnson')
+
+    def test_username_must_be_unique(self):
+        """Test student's username must be unique"""
+        duplicate_student = Student(username="test_student", email="new@example.com")
+        with self.assertRaises(ValidationError):
+            duplicate_student.full_clean()
+
+    def test_student_role_is_always_student(self):
+        """Test Student role must be always student"""
+        self.student.role = "admin"
+        self.student.save()
+        self.assertEqual(self.student.role, "student")
 
     def test_student_societies_relationship(self):
         """test societies many-to-many relationship"""
@@ -101,6 +114,12 @@ class StudentModelTestCase(TestCase):
         self.student.save()
 
         self.assertTrue(self.student.icon.name.startswith('student_icons/'))
+
+    def test_icon_generation_format(self):
+        """Test that an icon format must be JPEG"""
+        buffer = BytesIO(self.student.icon.read())
+        image = Image.open(buffer)
+        self.assertEqual(image.format, "JPEG")
 
     def tearDown(self):
         for society in Society.objects.all():

@@ -52,7 +52,8 @@ interface Event {
 
 interface Notification {
   id: number;
-  message: string;
+  header: string;
+  body: string;
   is_read: boolean;
 }
 
@@ -461,7 +462,8 @@ const StudentDashboard: React.FC = () => {
                               fontSize: "1rem",
                             }}
                           >
-                            {notification.message}
+                            <b>{notification.header}</b>
+                            <p>{notification.body}</p>
                           </Typography>
 
                           {/* Mark as read/Read status */}

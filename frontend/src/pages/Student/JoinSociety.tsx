@@ -108,7 +108,6 @@ const JoinSocieties: React.FC = () => {
                   padding: "1.5rem",
                   border: `1px solid ${isLight ? colours.grey[300] : colours.grey[700]}`,
                   transition: "transform 0.3s, box-shadow 0.3s",
-                  cursor: "pointer",
                 }}
               >
                 <h3
@@ -119,17 +118,33 @@ const JoinSocieties: React.FC = () => {
                     marginBottom: "0.75rem",
                   }}
                 >
-                  {society.name}
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                    <img
+                      src={"http://localhost:8000/api" + society.icon}
+                      alt={`${society.name} icon`}
+                      style={{
+                        width: "35px",
+                        height: "35px",
+                        borderRadius: "50%",
+                        verticalAlign: "middle",
+                      }}
+                    />
+                    {society.name}
+                  </div>
                 </h3>
                 <p
                   style={{
                     color: isLight ? colours.grey[300] : colours.grey[300],
                     fontSize: "0.875rem",
                     lineHeight: "1.5",
-                    marginBottom: "0.75rem",
+                    marginBottom: "1.25rem",
                   }}
                 >
-                  {society.description || "No description available."}
+                  {society.description
+                    ? society.description.length > 160
+                      ? society.description.slice(0, 160) + "..."
+                      : society.description
+                    : "No description available."}
                 </p>
                 <button
                   onClick={() => handleViewSociety(society.id)}
@@ -139,9 +154,8 @@ const JoinSocieties: React.FC = () => {
                     padding: "0.5rem 1.5rem",
                     borderRadius: "0.5rem",
                     transition: "all 0.2s ease",
-                    border: "none",
                     cursor: "pointer",
-                    marginLeft: "1.0rem",
+                    marginLeft: "5.0rem",
                   }}
                 >
                   View Society

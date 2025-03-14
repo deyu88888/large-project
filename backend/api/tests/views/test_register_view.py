@@ -91,6 +91,26 @@ class RegisterViewTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("major", response.data)
 
+    def test_register_student_username_case_insensitive(self):
+        """Test that username is case-insensitively unique."""
+        self.valid_payload["username"] = self.existing_user.username.lower()
+
+        response = self.client.post(reverse("register"), data=self.valid_payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("username", response.data)
+        self.assertEqual(response.data["username"][0], "user with this username already exists.")
+
+    def test_register_student_without_societies(self):
+        """Test that student can register without joining any societies."""
+        self.valid_payload["societies"] = []
+        self.valid_payload["president_of"] = None  # 显式设置 `president_of`
+
+        response = self.client.post(reverse("register"), data=self.valid_payload, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertIn("message", response.data)
+        self.assertEqual(response.data["message"], "Student registered successfully")
+
     def tearDown(self):
         for society in Society.objects.all():
             if society.icon:
