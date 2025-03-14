@@ -20,6 +20,7 @@ const JoinSocieties: React.FC = () => {
       try {
         setLoading(true);
         const response = await apiClient.get("/api/join-society");
+        console.log("Response:", response);
         setSocieties(response.data);
       } catch (error) {
         console.error("Error fetching societies:", error);
@@ -30,37 +31,13 @@ const JoinSocieties: React.FC = () => {
     fetchAvailableSocieties();
   }, []);
 
-  const handleJoinSociety = async (societyId: number) => {
-    try {
-      const response = await apiClient.post(`/api/join-society/${societyId}/`);
-      
-      // Use the actual message from the response instead of hardcoded message
-      alert(response.data.message || "Request submitted successfully!");
-      
-      // Only remove the society from the list if the join was successful
-      // For requests, we might want to keep it visible but change the status
-      setSocieties((prev) => prev.filter((society) => society.id !== societyId));
-    } catch (error: any) {
-      console.error("Error joining society:", error);
-      
-      // Display the error message from the backend if available
-      if (error.response && error.response.data && error.response.data.error) {
-        alert(error.response.data.error);
-      } else if (error.response && error.response.status === 400) {
-        // Check for validation errors
-        if (error.response.data && error.response.data.society_id) {
-          alert(error.response.data.society_id[0]);
-        } else {
-          alert("Failed to join the society. Invalid request.");
-        }
-      } else {
-        alert("Failed to join the society. Please try again.");
-      }
-    }
-  };
-
   const handleViewSociety = async (societyId: number) => {
-    navigate("/student/view-society/" +societyId);
+    try {
+      navigate("/student/view-society/"+societyId);
+    }
+    catch (error) {
+      console.error("Error viewing society:", error);
+    }
   };
 
   return (
@@ -154,20 +131,6 @@ const JoinSocieties: React.FC = () => {
                 >
                   {society.description || "No description available."}
                 </p>
-                <button
-                  onClick={() => handleJoinSociety(society.id)}
-                  style={{
-                    backgroundColor: isLight ? colours.blueAccent[400] : colours.blueAccent[500],
-                    color: isLight ? "#ffffff" : colours.grey[100],
-                    padding: "0.5rem 1.5rem",
-                    borderRadius: "0.5rem",
-                    transition: "all 0.2s ease",
-                    border: "none",
-                    cursor: "pointer",
-                  }}
-                >
-                  Join Society
-                </button>
                 <button
                   onClick={() => handleViewSociety(society.id)}
                   style={{

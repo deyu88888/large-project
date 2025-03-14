@@ -1,10 +1,12 @@
 import React from 'react';
 import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
 import { vi } from 'vitest';
+import { useNavigate } from 'react-router-dom';
 import { MemoryRouter } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import JoinSocieties from '../JoinSociety';
 import { apiClient } from '../../../api';
+import { view } from 'framer-motion';
 
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async () => {
@@ -21,6 +23,16 @@ vi.mock('../../../api', () => ({
     post: vi.fn(),
   },
 }));
+
+const mockNavigate = vi.fn();
+
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
 
 let themeModeOverride = 'light';
 vi.mock('@mui/material/styles', async () => {
@@ -112,12 +124,13 @@ describe('JoinSocieties Page', () => {
     expect(screen.getByText(/No societies available to join/i)).toBeInTheDocument();
   });
 
-  it('calls the join society API when the "Join Society" button is clicked (success case)', async () => {
-    const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
+  it('calls the view society API when the "View Society" button is clicked (success case)', async () => {
     renderComponent();
     await waitFor(() =>
       expect(screen.queryByText(/Loading societies.../i)).not.toBeInTheDocument()
     );
+
+    const viewButtons = screen.getAllByText(/View Society/i);
     const societyElements = screen.getAllByRole('heading', { level: 3 });
     const joinButtons = screen.getAllByText(/Join Society/i);
     const photoIndex = societyElements.findIndex(
@@ -125,21 +138,19 @@ describe('JoinSocieties Page', () => {
     );
     expect(photoIndex).not.toBe(-1);
     await act(async () => {
-      fireEvent.click(joinButtons[photoIndex]);
+      fireEvent.click(viewButtons[0]);
     });
-    expect(apiClient.post).toHaveBeenCalledWith('/api/join-society/1/');
-    expect(alertSpy).toHaveBeenCalledWith('Successfully joined the society!');
-    alertSpy.mockRestore();
+
+    expect(mockNavigate).toHaveBeenCalledWith('/student/view-society/1');
   });
 
-  it('logs an error and shows alert when joining a society fails', async () => {
-    (apiClient.post as vi.Mock).mockRejectedValueOnce(new Error('Join failed'));
-    const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+  it('calls view society for the alternative society', async () => {
     renderComponent();
     await waitFor(() =>
-      expect(screen.queryByText(/Loading societies.../i)).not.toBeInTheDocument()
+      expect(screen.getByText('Chess Club')).toBeInTheDocument()
     );
+
+    const viewButtons = screen.getAllByText(/View Society/i);
     const societyElements = screen.getAllByRole('heading', { level: 3 });
     const joinButtons = screen.getAllByText(/Join Society/i);
     const chessIndex = societyElements.findIndex(
@@ -147,15 +158,10 @@ describe('JoinSocieties Page', () => {
     );
     expect(chessIndex).not.toBe(-1);
     await act(async () => {
-      fireEvent.click(joinButtons[chessIndex]);
+      fireEvent.click(viewButtons[1]);
     });
-    expect(apiClient.post).toHaveBeenCalledWith('/api/join-society/2/');
-    expect(alertSpy).toHaveBeenCalledWith(
-      'Failed to join the society. Please try again.'
-    );
-    expect(consoleErrorSpy).toHaveBeenCalled();
-    alertSpy.mockRestore();
-    consoleErrorSpy.mockRestore();
+
+    expect(mockNavigate).toHaveBeenCalledWith('/student/view-society/2');
   });
 
   it('navigates to society view page when "View Society" button is clicked', async () => {

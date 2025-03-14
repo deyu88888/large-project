@@ -19,6 +19,7 @@ djangorestframework==3.15.2
 djangorestframework-camel-case==1.4.2
 djangorestframework_simplejwt==5.4.0
 exceptiongroup==1.2.2
+faker
 fakeredis==2.26.2
 gunicorn==23.0.0
 hyperlink==21.0.0
@@ -54,3 +55,4 @@ txaio==23.1.1
 typing_extensions==4.12.2
 tzdata==2025.1
 zope.interface==7.2
+>>>>>>> main

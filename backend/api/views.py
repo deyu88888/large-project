@@ -12,8 +12,6 @@ from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from django.views.static import serve
-from asgiref.sync import async_to_sync
-from channels.layers import get_channel_layer
 from rest_framework import generics, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
@@ -456,8 +454,8 @@ class StudentNotificationsView(APIView):
         except Notification.DoesNotExist:
             return Response({"error": "Notification not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        notification.is_read = True  # ✅ Manually update is_read field
-        notification.save()  # ✅ Save the notification explicitly
+        notification.is_read = True  # Manually update is_read field
+        notification.save()  # Save the notification explicitly
 
         return Response({"message": "Notification marked as read.", "id": pk}, status=status.HTTP_200_OK)
 
@@ -1291,7 +1289,14 @@ class StudentSocietyDataView(APIView):
         # Manual society access via id
         society = get_object_or_404(Society, id=society_id)
         serializer = SocietySerializer(society)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+
+        # Return extra data indicating membership
+        serializer_data = serializer.data
+        serializer_data["is_member"] = society.society_members.filter(
+            id=request.user.student.id
+        ).exists()
+
+        return Response(serializer_data, status=status.HTTP_200_OK)
 
 
 def custom_media_view(request, path):
