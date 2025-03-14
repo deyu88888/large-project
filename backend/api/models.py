@@ -136,17 +136,8 @@ class Student(User):
     is_vice_president = models.BooleanField(default=False)
     icon = models.ImageField(upload_to="student_icons/", blank=True, null=True)
 
-    def check_is_vice_president(self):
-        """Check if the student is a vice president of any society"""
-        if self.pk:
-            return Society.objects.filter(vice_president=self).exists()
-        return False
-
     def save(self, *args, **kwargs):
         self.role = "student"
-
-        # Update is_vice_president flag
-        self.is_vice_president = self.check_is_vice_president()
 
         super().save(*args, **kwargs)
 
@@ -312,7 +303,18 @@ class Society(models.Model):
             buffer = generate_icon(self.name[0], "S")
             filename = f"default_society_icon_{self.pk}.jpeg"
             self.icon.save(filename, ContentFile(buffer.getvalue()), save=True)
-            
+
+        if self.pk:
+            before_changes = Society.objects.get(pk=self.pk)
+            before_vp = before_changes.vice_president
+            if self.vice_president != before_vp:
+                if self.vice_president:
+                    self.vice_president.is_vice_president = True
+                    self.vice_president.save()
+                if before_vp:
+                    before_vp.is_vice_president = False
+                    before_vp.save()
+
     def __str__(self):
         return self.name
 
