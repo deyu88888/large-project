@@ -671,7 +671,6 @@ class DashboardNotificationSerializer(serializers.ModelSerializer):
     """
     Updated Notification serializer to include read/unread tracking for the dashboard.
     """
-    event_title = serializers.CharField(source="for_event.title", read_only=True)
     student_name = serializers.CharField(source="for_student.full_name", read_only=True)
 
     class Meta:
@@ -679,9 +678,9 @@ class DashboardNotificationSerializer(serializers.ModelSerializer):
         model = Notification
         fields = [
             'id',
-            'message',
+            'body',
             'is_read',
-            'event_title',
+            'header',
             'student_name'
         ]
         # Removed 'timestamp' since the model does not have it

@@ -1,6 +1,5 @@
 from datetime import date, datetime, time, timedelta
-import random
-from random import choice, randint
+from random import choice, randint, random
 from io import BytesIO
 from PIL import Image
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -230,7 +229,7 @@ class Command(BaseCommand):
         all_students = list(Student.objects.exclude(id=society.leader.id).order_by("?"))
         members_num = 5
         while members_num < Student.objects.count():
-            if random.random() <= 0.912:
+            if random() <= 0.912:
                 members_num += 1
             else:
                 break
@@ -435,8 +434,8 @@ class Command(BaseCommand):
     
     def generate_random_time(self):
         """Generates a random time within a day."""
-        hours = random.randint(0, 23)  # Random hour between 0-23
-        minutes = random.randint(0, 59)  # Random minute between 0-59
+        hours = randint(0, 23)  # Random hour between 0-23
+        minutes = randint(0, 59)  # Random minute between 0-59
         return time(hour=hours, minute=minutes)
 
     def create_event_notifications(self, events):

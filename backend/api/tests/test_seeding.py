@@ -141,10 +141,10 @@ class SeedingTestCase(TransactionTestCase):
             self.event.current_attendees.add(self.student)
             self.event.save()
         # Clear existing notifications for a clean test.
-        Notification.objects.filter(for_event=self.event).delete()
+        Notification.objects.all().delete()
         self.command_instance.create_event_notification(self.event)
         self.assertTrue(
-            Notification.objects.filter(for_event=self.event, for_student=self.student).exists()
+            Notification.objects.filter(for_student=self.student).exists()
         )
 
     @patch("builtins.print")  # Avoids printing while testing
@@ -286,13 +286,13 @@ class SeedingTestCase(TransactionTestCase):
         )
         self.event.current_attendees.add(student2)
         # Clear existing notifications for the event.
-        Notification.objects.filter(for_event=self.event).delete()
+        Notification.objects.all().delete()
         self.command_instance.create_event_notifications([self.event])
         attendees_count = self.event.current_attendees.count()
-        notifications_count = Notification.objects.filter(for_event=self.event).count()
+        notifications_count = Notification.objects.count()
         self.assertEqual(notifications_count, attendees_count)
 
-    @patch("api.signals.broadcast_dashboard_update")
+    @patch("api.management.commands.seed.broadcast_dashboard_update")
     @patch("builtins.print")  # Avoid printing during test
     def test_broadcast_updates(self, mock_print, mock_broadcast):
         """Test that broadcast_updates calls broadcast_dashboard_update."""
