@@ -1,14 +1,53 @@
 from django.urls import reverse
 from rest_framework.test import APITestCase
 from rest_framework import status
-from api.models import Student, Society, User
+from api.models import Admin, Student, Society, User
 from api.tests.file_deletion import delete_file
 
 class RegisterViewTestCase(APITestCase):
     def setUp(self):
+        # First create a student user for the leader field
+        self.leader_user = User.objects.create_user(
+            username="leader_user",
+            email="leader@example.com",
+            password="Password123",
+            first_name="Leader",
+            last_name="User",
+            role="student",
+        )
+        
+        self.admin = Admin(
+            username='admin_user',
+            first_name='John',
+            last_name='Smith',
+            email='admin@example.com',
+            role='admin',
+            password='adminpassword',
+        )
+        self.admin.save()
+        
+        # Create the student profile for the leader
+        self.leader = Student.objects.create(
+            user_ptr=self.leader_user,
+            major="Leadership"
+        )
 
-        self.society1 = Society.objects.create(name="Science Club")
-        self.society2 = Society.objects.create(name="Math Club")
+        # Now create societies with a leader
+        self.society1 = Society.objects.create(
+            name="Science Club",
+            leader=self.leader,
+            description="A club for science enthusiasts",
+            approved_by=self.admin,
+            social_media_links={"Email": "science@example.com"}
+        )
+        
+        self.society2 = Society.objects.create(
+            name="Math Club",
+            leader=self.leader,
+            description="A club for math enthusiasts",  # Added comma here
+            approved_by=self.admin,
+            social_media_links={"Email": "math@example.com"}
+        )
 
         self.valid_payload = {
             "first_name": "Jane",
@@ -103,7 +142,7 @@ class RegisterViewTestCase(APITestCase):
     def test_register_student_without_societies(self):
         """Test that student can register without joining any societies."""
         self.valid_payload["societies"] = []
-        self.valid_payload["president_of"] = None  # 显式设置 `president_of`
+        self.valid_payload["president_of"] = None  # Explicitly set president_of to None
 
         response = self.client.post(reverse("register"), data=self.valid_payload, format="json")
 

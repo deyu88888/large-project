@@ -171,9 +171,11 @@ class StudentSocietiesViewTestCase(TestCase):
         society3 = Society.objects.create(
             name="Art Club",
             status="Approved",
-            leader=self.student2  # Different leader; doesn't affect GET for joined societies.
+            leader=self.student2,  # Different leader; doesn't affect GET for joined societies.
+            approved_by=self.admin,  # Adding the required approved_by field
+            social_media_links={"Email": "artclub@example.com"}  # Adding social_media_links if needed
         )
-        self.student1.societies_belongs_to.add(society3)
+        society3.society_members.add(self.student1)
         
         self.client.credentials(HTTP_AUTHORIZATION=self.student1_token)
         response = self.client.get("/api/student-societies/")

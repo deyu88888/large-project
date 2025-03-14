@@ -20,7 +20,7 @@ class SocietySerializerTestCase(TestCase):
             password="adminpassword",
         )
 
-        # Create two Student users
+        # Create Student users
         self.student1 = Student.objects.create(
             username="QWERTY",
             first_name="QWE",
@@ -37,13 +37,33 @@ class SocietySerializerTestCase(TestCase):
             major="Mathematics",
         )
 
-        # Create a Society
+        # Create a third student who will not be a president
+        self.student3 = Student.objects.create(
+            username="nonpresident",
+            first_name="Non",
+            last_name="President",
+            email="nonpresident@gmail.com",
+            major="History",
+        )
+
+        # Create societies with valid leaders
         self.society = Society.objects.create(
             name="Tech",
             leader=self.student1,
             approved_by=self.admin,
         )
+        
+        self.society2 = Society.objects.create(
+            name="Music",
+            leader=self.student2,
+            approved_by=self.admin,
+        )
+        
+        # Note: student3 is not a leader of any society
+        
+        # Add members to societies
         self.society.society_members.add(self.student2)
+        self.society2.society_members.add(self.student3)
 
         # Serializer data
         self.serializer = None

@@ -229,9 +229,9 @@ class Command(BaseCommand):
     def set_society_socials(self, society : Society):
         """Assigns socials to a society (placeholder kclsu)"""
         socials_dict = {
-            "facebook": "https://www.facebook.com/kclsupage/",
-            "instagram": "https://www.instagram.com/kclsu/",
-            "x": "https://x.com/kclsu",
+            "Facebook": "https://www.facebook.com/kclsupage/",
+            "Instagram": "https://www.instagram.com/kclsu/",
+            "X": "https://x.com/kclsu",
         }
         society.social_media_links = socials_dict
 

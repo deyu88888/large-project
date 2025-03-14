@@ -13,6 +13,15 @@ class SocietyRequestViewTest(APITestCase):
             president_of=None,
             major="Test Major"
         )
+        
+        # Create a president student for the leader field
+        self.president_student = Student.objects.create_user(
+            username="president_user",
+            password="test1234",
+            email="president@example.com",
+            is_president=True,
+            major="Test Major"
+        )
 
         self.admin = Admin.objects.create_user(
             username="existing_admin",
@@ -22,19 +31,33 @@ class SocietyRequestViewTest(APITestCase):
             email="existing_email@example.com",
             role="admin",
         )
-            # 🔍 Explicitly set the ID of the society
+        
+        # Explicitly set the ID of the society with a leader
         self.society = Society.objects.create(
             id=1,
             name="Test Society",
+            approved_by=self.admin,
             status="Approved",
+            category="General",
+            social_media_links={},
+            leader=self.president_student  # Add the leader field
         )
+        
+        # Update the president's president_of field to point to this society
+        self.president_student.president_of = self.society
+        self.president_student.save()
+        
         # Refresh from DB to ensure persistence
         self.society.refresh_from_db()
+        
         # Base URL for society requests
         self.base_url = "/api/society/request/pending"
 
         # Generate tokens for authentication. 'same as access token on postman'
         self.regular_user_token = str(AccessToken.for_user(self.regular_student))
+        
+        # Create token for president user
+        self.president_user_token = str(AccessToken.for_user(self.president_student))
 
         # generate a token for admin_user_token
         self.admin_user_token = str(AccessToken.for_user(self.admin))

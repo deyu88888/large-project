@@ -3,13 +3,20 @@ from PIL import Image
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
-from api.models import Student, Society
+from api.models import Admin, Student, Society
 from api.tests.file_deletion import delete_file
 
 
 class StudentModelTestCase(TestCase):
     def setUp(self):
         # create test data
+        self.admin = Admin.objects.create(
+            username='admin_user',
+            first_name='Admin',
+            last_name='User',
+            email='admin@example.com',
+            password='adminpassword',
+        )
         self.student = Student.objects.create(
             username='test_student',
             first_name='Alice',
@@ -17,12 +24,26 @@ class StudentModelTestCase(TestCase):
             email='alice.johnson@example.com',
             major='Computer Science',
         )
+        
+        # Create a second student to be the leader of society2
+        self.student2 = Student.objects.create(
+            username='second_student',
+            first_name='Bob',
+            last_name='Smith',
+            email='bob.smith@example.com',
+            major='Mathematics',
+        )
+        
         self.society1 = Society.objects.create(
             name='Science Club',
-            leader=self.student
+            leader=self.student,
+            approved_by=self.admin
         )
+        
         self.society2 = Society.objects.create(
             name='Math Club',
+            leader=self.student2,
+            approved_by=self.admin
         )
 
     def test_student_creation(self):

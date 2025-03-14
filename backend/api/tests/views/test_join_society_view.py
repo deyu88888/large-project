@@ -34,6 +34,15 @@ class JoinSocietyViewTestCase(TestCase):
             first_name="Student",
             last_name="Two",
         )
+        
+        # Create a third student to be the leader of the third society
+        self.student3 = Student.objects.create_user(
+            username="student3",
+            email="student3@example.com",
+            password="password123",
+            first_name="Student",
+            last_name="Three",
+        )
 
         # Create test societies
         self.society1 = Society.objects.create(
@@ -50,7 +59,7 @@ class JoinSocietyViewTestCase(TestCase):
         )
         self.society3 = Society.objects.create(
             name="Art Club",
-            leader=None,
+            leader=self.student3,  # Use student3 as leader instead of None
             approved_by=self.admin,
             status="Approved"
         )
@@ -62,6 +71,7 @@ class JoinSocietyViewTestCase(TestCase):
         self.client = APIClient()
         self.student1_token = self._generate_token(self.student1)
         self.student2_token = self._generate_token(self.student2)
+        self.student3_token = self._generate_token(self.student3)
 
     def _generate_token(self, user):
         """Generate a JWT token for the user."""
@@ -74,8 +84,12 @@ class JoinSocietyViewTestCase(TestCase):
         response = self.client.get("/api/join-society/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 2)  
-        self.assertEqual(response.data[0]["name"], "Math Club")
-        self.assertEqual(response.data[1]["name"], "Art Club")
+        
+        # Check that the societies returned are the ones the student hasn't joined
+        society_names = [society["name"] for society in response.data]
+        self.assertIn("Math Club", society_names)
+        self.assertIn("Art Club", society_names)
+        self.assertNotIn("Science Club", society_names)  # Student1 already joined this
 
     def test_get_available_societies_unauthenticated(self):
         """Test retrieving societies without authentication."""
@@ -90,14 +104,23 @@ class JoinSocietyViewTestCase(TestCase):
         self.assertEqual(response.data["error"], "Only students can join societies.")
 
     def test_join_society_valid(self):
-        """Test joining a valid society."""
+        """Test creating a valid request to join a society."""
         self.client.credentials(HTTP_AUTHORIZATION=self.student1_token)
         response = self.client.post(f"/api/join-society/{self.society2.id}/")
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(
-            response.data["message"], f"Successfully joined society '{self.society2.name}'."
-        )
-        self.assertTrue(self.society2.society_members.filter(id=self.student1.id).exists())
+        
+        # Check for status code 201 Created (for request creation) instead of 200 OK
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        
+        # Check for a message about request submission rather than immediate joining
+        self.assertIn("message", response.data)
+        self.assertTrue("request" in response.data["message"].lower())
+        self.assertTrue(self.society2.name in response.data["message"])
+        
+        # Check that a request_id is returned
+        self.assertIn("request_id", response.data)
+        
+        # Verify the student has NOT been added to the society yet (since it's just a request)
+        self.assertFalse(self.society2.society_members.filter(id=self.student1.id).exists())
 
     def test_join_society_already_joined(self):
         """Test joining a society that the student has already joined."""

@@ -1,7 +1,7 @@
 from datetime import timedelta
 from django.test import TestCase
 from django.utils.timezone import now
-from api.models import Notification, Event, Student, Society
+from api.models import Notification, Event, Student, Society, Admin
 from api.serializers import NotificationSerializer
 from api.tests.file_deletion import delete_file
 
@@ -11,6 +11,15 @@ from api.tests.file_deletion import delete_file
 class NotificationSerializerTestCase(TestCase):
     """Test cases for the Notification Serializer"""
     def setUp(self):
+        # Create an admin for society approval
+        self.admin = Admin.objects.create_user(
+            username="admin_user",
+            password="adminpassword",
+            email="admin@example.com",
+            first_name="Admin",
+            last_name="User",
+        )
+        
         # Create a student
         self.student = Student.objects.create_user(
             username="test_student",
@@ -22,10 +31,13 @@ class NotificationSerializerTestCase(TestCase):
             major="Computer Science",
         )
 
-        # Create a society
+        # Create a society with all required fields
         self.society = Society.objects.create(
             name="Test Society",
-            leader=self.student
+            leader=self.student,
+            approved_by=self.admin,  # Required field
+            status="Approved",  # Add status if needed
+            social_media_links={"Email": "society@example.com"}  # Required field
         )
 
         # Create an event

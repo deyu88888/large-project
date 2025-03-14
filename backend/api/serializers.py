@@ -227,7 +227,7 @@ class SocietySerializer(serializers.ModelSerializer):
             'id', 'name', 'description', 'society_members', 'leader', 'approved_by',
             'status', 'category', 'social_media_links', 'showreel_images',
             'membership_requirements', 'upcoming_projects_or_plans', 'icon','tags',
-            'vice_president', 'event_manager', 'treasurer', 'leader_id',
+            'vice_president', 'event_manager', 'leader_id',
             'vice_president_id', 'event_manager_id', 
         ]
         extra_kwargs = {

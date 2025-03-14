@@ -6,7 +6,7 @@ from django.test import TestCase, override_settings
 from django.urls import re_path
 from asgiref.sync import sync_to_async
 from api.consumer.consumers import DashboardConsumer
-from api.models import Society, Event, Student
+from api.models import Society, Event, Student, Admin
 from api.tests.file_deletion import delete_file
 
 application = URLRouter([
@@ -19,14 +19,47 @@ class TestDashboardConsumer(TestCase):
     @classmethod
     def setUpTestData(cls):
         """Create initial data before all tests."""
-        Society.objects.create(name="Approved Society", status="Approved")
-        Society.objects.create(name="Pending Society", status="Pending")
-        Event.objects.create(title="Event 1", location="Room A")
-        Student.objects.create(
+        # Create admin for society approval
+        admin = Admin.objects.create(
+            username="admin_user",
+            email="admin@example.com",
+            first_name="Admin",
+            last_name="User",
+            password="adminpassword",
+        )
+        
+        # Create a student to be a society leader
+        student = Student.objects.create(
             username="john_doe",
             email="john@example.com",
             first_name="John",
             last_name="Doe",
+            major="Computer Science",
+        )
+        
+        # Create societies with required fields
+        Society.objects.create(
+            name="Approved Society", 
+            status="Approved",
+            leader=student,
+            approved_by=admin,
+            social_media_links={"Email": "approved@example.com"}
+        )
+        
+        Society.objects.create(
+            name="Pending Society", 
+            status="Pending",
+            leader=student,
+            approved_by=admin,
+            social_media_links={"Email": "pending@example.com"}
+        )
+        
+        # Create an event
+        approved_society = Society.objects.get(name="Approved Society")
+        Event.objects.create(
+            title="Event 1", 
+            location="Room A",
+            hosted_by=approved_society  # Add the hosted_by field if required
         )
 
     async def discard_initial_messages(self, communicator):
@@ -134,7 +167,8 @@ class TestDashboardConsumer(TestCase):
         }
         self.assertEqual(stats, expected_stats)
 
-    def tearDown(self):
+    @classmethod
+    def tearDownClass(cls):
         """Clean up created files after tests."""
         for society in Society.objects.all():
             if society.icon:
@@ -142,3 +176,4 @@ class TestDashboardConsumer(TestCase):
         for student in Student.objects.all():
             if student.icon:
                 delete_file(student.icon.path)
+        super().tearDownClass()

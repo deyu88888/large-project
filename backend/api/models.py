@@ -172,7 +172,7 @@ def validate_social_media_links(value):
     Ensures it has proper structure with valid keys and URL values.
     """
     # Define allowed social media platforms
-    allowed_platforms = ['WhatsApp', 'Facebook', 'Instagram', 'X', 'Other']
+    allowed_platforms = ['WhatsApp', 'Facebook', 'Instagram', 'X', 'Email' 'Other']
     
     # Check that value is a dictionary
     if not isinstance(value, dict):
@@ -236,7 +236,7 @@ class Society(models.Model):
         "Admin",
         on_delete=models.SET_NULL,
         related_name="approved_societies",
-        blank=True,  # Changed from False to True
+        blank=False,
         null=True,
     )
 
@@ -249,7 +249,7 @@ class Society(models.Model):
     social_media_links = models.JSONField(
         default=dict, 
         blank=True,
-        help_text="Dictionary with keys: WhatsApp, Facebook, Instagram, X, Other - each with a URL value"
+        help_text="Dictionary with keys: WhatsApp, Facebook, Instagram, X, Email, Other - each with a URL value"
     )
     
     membership_requirements = models.TextField(blank=True, null=True)
@@ -270,21 +270,29 @@ class Society(models.Model):
                 raise ValidationError({"social_media_links": "Social media links must be provided as a dictionary."})
             
             # Define allowed social media platforms
-            allowed_platforms = ['WhatsApp', 'Facebook', 'Instagram', 'X', 'Other']
+            allowed_platforms = ['WhatsApp', 'Facebook', 'Instagram', 'X', 'Email', 'Other']
             
             # Check that all keys are valid platforms
             for key in self.social_media_links.keys():
                 if key not in allowed_platforms:
                     raise ValidationError({"social_media_links": f"'{key}' is not a valid social media platform. Allowed platforms are: {', '.join(allowed_platforms)}"})
             
-            # Check that all values are strings (links)
-            for platform, link in self.social_media_links.items():
+            # Process and validate values
+            for platform, link in list(self.social_media_links.items()):
+                # Skip if empty
+                if not link:
+                    continue
+                    
+                # Check that the value is a string
                 if not isinstance(link, str):
                     raise ValidationError({"social_media_links": f"The value for '{platform}' must be a string URL."})
                 
-                # Optional: Add URL validation if needed
-                if link and not (link.startswith('http://') or link.startswith('https://') or link.startswith('mailto:')):
-                    raise ValidationError({"social_media_links": f"The link for '{platform}' must be a valid URL starting with http://, https://, or mailto:"})
+                # Special handling for Email field - automatically add mailto: prefix
+                if platform == 'Email' and not (link.startswith('http://') or link.startswith('https://') or link.startswith('mailto:')):
+                    self.social_media_links[platform] = f"mailto:{link}"
+                # For other platforms, validate URL format
+                elif platform != 'Email' and link and not (link.startswith('http://') or link.startswith('https://')):
+                    raise ValidationError({"social_media_links": f"The link for '{platform}' must be a valid URL starting with http:// or https://"})
 
     def save(self, *args, **kwargs):
         """Ensure the leader is always a member and validate JSON fields"""

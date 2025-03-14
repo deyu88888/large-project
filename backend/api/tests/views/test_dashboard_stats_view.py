@@ -1,6 +1,6 @@
 from rest_framework.test import APITestCase
 from rest_framework import status
-from api.models import User, Society, Event, Student
+from api.models import User, Society, Event, Student, Admin
 from api.tests.file_deletion import delete_file
 
 class TestDashboardStatsView(APITestCase):
@@ -15,6 +15,34 @@ class TestDashboardStatsView(APITestCase):
             role="admin",
         )
         self.client.force_authenticate(user=self.user)
+        
+        # Create an admin user for society approval
+        self.admin = Admin.objects.create_user(
+            username="admin_user",
+            password="adminpassword",
+            email="admin@example.com",
+            first_name="Admin",
+            last_name="User",
+        )
+        
+        # Create student users that will be society leaders
+        self.student1 = Student.objects.create_user(
+            username="student1",
+            password="password123",
+            email="student1@example.com",
+            first_name="Test",
+            last_name="User",
+            major="Computer Science",
+        )
+        
+        self.student2 = Student.objects.create_user(
+            username="student2",
+            password="password123",
+            email="student2@example.com",
+            first_name="Test2",
+            last_name="User2",
+            major="Mathematics",
+        )
 
     def test_dashboard_stats_no_data(self):
         # Test with no data
@@ -26,21 +54,35 @@ class TestDashboardStatsView(APITestCase):
                 "total_societies": 0,
                 "total_events": 0,
                 "pending_approvals": 0,
-                "active_members": 0,
+                "active_members": 2,  # We have 2 students created in setUp
             },
         )
 
     def test_dashboard_stats_success(self):
-        # Create some test data
-        Society.objects.create(name="Society 1", status="Approved")
-        Society.objects.create(name="Society 2", status="Pending")
-        Event.objects.create(title="Event 1", location="Test Location")
-        Student.objects.create(
-            username="student1",
-            password="password123",
-            email="student1@example.com",
-            first_name="Test",
-            last_name="User",
+        # Create some test data with proper admin approval
+        Society.objects.create(
+            name="Society 1", 
+            status="Approved", 
+            leader=self.student1,
+            approved_by=self.admin,  # Add required admin approval
+            social_media_links={"Email": "society1@example.com"}  # Add required social media links
+        )
+        
+        Society.objects.create(
+            name="Society 2", 
+            status="Pending", 
+            leader=self.student2,
+            approved_by=self.admin,  # Add required admin approval
+            social_media_links={"Email": "society2@example.com"}  # Add required social media links
+        )
+        
+        # Create a society for the event
+        society = Society.objects.get(name="Society 1")
+        
+        Event.objects.create(
+            title="Event 1", 
+            location="Test Location",
+            hosted_by=society  # Add the required hosted_by field
         )
 
         response = self.client.get("/api/dashboard/stats/")
@@ -51,7 +93,7 @@ class TestDashboardStatsView(APITestCase):
                 "total_societies": 2,
                 "total_events": 1,
                 "pending_approvals": 1,
-                "active_members": 1,
+                "active_members": 2,
             },
         )
 

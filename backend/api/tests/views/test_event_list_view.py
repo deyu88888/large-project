@@ -3,7 +3,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 from django.utils.timezone import now
-from api.models import Event, Society
+from api.models import Admin, Event, Society, Student
 from api.serializers import EventSerializer
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import AccessToken
@@ -21,9 +21,29 @@ class EventListViewTest(APITestCase):
         # Generate an access token for the test user.
         self.token = str(AccessToken.for_user(self.user))
         
-        # Create a Society.
+        # Create a student to be the society leader
+        self.student_leader = Student.objects.create_user(
+            username="leader",
+            password="leaderpass",
+            email="leader@example.com",
+            major="Computer Science",
+            first_name="Leader",
+            last_name="User"
+        )
+        
+        self.admin = Admin.objects.create_user(
+            username="admin_for_approval",
+            password="admin1234",
+            email="admin_approval@example.com",
+            first_name="Admin",
+            last_name="Approver"
+        )
+        
+        # Create a Society with the leader.
         self.society = Society.objects.create(
-            name="Test Society"
+            name="Test Society",
+            leader=self.student_leader,
+            approved_by=self.admin
         )
         
         # Set up the base URL for the events endpoint.

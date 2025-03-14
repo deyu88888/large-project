@@ -1,7 +1,7 @@
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.utils.timezone import now, timedelta
-from api.models import Notification, Event, Society, Student
+from api.models import Admin, Notification, Event, Society, Student
 from api.tests.file_deletion import delete_file
 
 
@@ -9,9 +9,14 @@ class NotificationModelTestCase(TestCase):
     """Unit test for the Notification model"""
 
     def setUp(self):
-        # Create a society
-        self.society = Society.objects.create(name="Test Society")
-
+        
+        self.admin = Admin.objects.create(
+            username='admin_user',
+            first_name='Admin',
+            last_name='User',
+            email='admin@example.com',
+            password='adminpassword',
+        )
         # Create a student
         self.student = Student.objects.create_user(
             username="teststudent",
@@ -19,6 +24,13 @@ class NotificationModelTestCase(TestCase):
             email="teststudent@example.com",
             first_name="Test",
             last_name="Student",
+        )
+        self.society = Society.objects.create(
+            name="Test Society",
+            leader=self.student,
+            approved_by=self.admin,
+            category='Technology',
+            social_media_links={"Email": "society@example.com"},
         )
         self.society.society_members.add(self.student)
 
