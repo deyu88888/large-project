@@ -300,19 +300,17 @@ export default function RegisterPage() {
                                 onChange={handleChange}
                                 onBlur={handleBlur}
                                 InputLabelProps={{ style: { color: colors.grey[300] } }}
-                                slotProps={{
-                                    input: {
-                                        style: { color: colors.grey[100] },
-                                        endAdornment: (
-                                            <InputAdornment position="end">
-                                                {values.email && !errors.email ? (
-                                                    <CheckCircle sx={{ color: "green" }} />
-                                                ) : (
-                                                    values.email && <ErrorOutline sx={{ color: "red" }} />
-                                                )}
-                                            </InputAdornment>
-                                        ),
-                                    }
+                                InputProps={{
+                                    style: { color: colors.grey[100] },
+                                    endAdornment: (
+                                        <InputAdornment position="end">
+                                            {values.email && !errors.email ? (
+                                                <CheckCircle sx={{ color: "green" }} />
+                                            ) : (
+                                                values.email && <ErrorOutline sx={{ color: "red" }} />
+                                            )}
+                                        </InputAdornment>
+                                    ),
                                 }}
                             />
                             <ErrorMessage name="email">
@@ -405,19 +403,17 @@ export default function RegisterPage() {
                                 value={values.password}
                                 onChange={handleChange}
                                 InputLabelProps={{ style: { color: colors.grey[300] } }}
-                                slotProps={{
-                                    input: {
-                                        style: { color: colors.grey[100] },
-                                        endAdornment: (
-                                            <InputAdornment position="end">
-                                                {values.password && !errors.password ? (
-                                                    <CheckCircle sx={{ color: "green" }} />
-                                                ) : (
-                                                    values.password && <ErrorOutline sx={{ color: "red" }} />
-                                                )}
-                                            </InputAdornment>
-                                        )
-                                    }
+                                InputProps={{
+                                    style: { color: colors.grey[100] },
+                                    endAdornment: (
+                                        <InputAdornment position="end">
+                                            {values.password && !errors.password ? (
+                                                <CheckCircle sx={{ color: "green" }} />
+                                            ) : (
+                                                values.password && <ErrorOutline sx={{ color: "red" }} />
+                                            )}
+                                        </InputAdornment>
+                                    ),
                                 }}
                             />
                             <ErrorMessage name="password" component="div" className="text-red-500 text-sm"/>
@@ -431,19 +427,17 @@ export default function RegisterPage() {
                                 value={values.confirm_password}
                                 onChange={handleChange}
                                 InputLabelProps={{ style: { color: colors.grey[300] } }}
-                                slotProps={{
-                                    input: {
-                                        style: { color: colors.grey[100] },
-                                        endAdornment: (
-                                            <InputAdornment position="end">
-                                                {values.confirm_password && values.confirm_password === values.password ? (
-                                                    <CheckCircle sx={{ color: "green" }} />
-                                                ) : (
-                                                    values.confirm_password && <ErrorOutline sx={{ color: "red" }} />
-                                                )}
-                                            </InputAdornment>
-                                        )
-                                    }
+                                InputProps={{
+                                    style: { color: colors.grey[100] },
+                                    endAdornment: (
+                                        <InputAdornment position="end">
+                                            {values.confirm_password && values.confirm_password === values.password ? (
+                                                <CheckCircle sx={{ color: "green" }} />
+                                            ) : (
+                                                values.confirm_password && <ErrorOutline sx={{ color: "red" }} />
+                                            )}
+                                        </InputAdornment>
+                                    )
                                 }}
                             />
                             <ErrorMessage name="confirm_password" component="div" className="text-red-500 text-sm"/>

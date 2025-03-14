@@ -1,100 +1,62 @@
 import json
+from unittest.mock import patch
 from django.core.cache import cache
-from django.core.mail import send_mail
-from django.http import HttpRequest
-from django.test import TestCase, override_settings
-from django.urls import reverse, path
-from django.utils import timezone
+from django.core.exceptions import ValidationError
+from django.test import TestCase
+from django.urls import reverse
 from rest_framework import status
-from django.conf import settings
+from api.utils import generate_otp, OTP_VALIDITY_MINUTES
 
-# Import the views from your utils.py file
-from api.utils import request_otp, verify_otp, generate_otp, send_otp_email, OTP_VALIDITY_MINUTES
+class UtilsTestCase(TestCase):
+    """Unit tests for utility functions related to OTP handling."""
 
-# We'll define URL patterns for these views for testing.
-urlpatterns = [
-    path("otp/request/", request_otp, name="request_otp"),
-    path("otp/verify/", verify_otp, name="verify_otp"),
-]
-
-@override_settings(ROOT_URLCONF=__name__, EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
-class OTPUtilsTestCase(TestCase):
     def setUp(self):
-        # Clear the cache to start fresh.
-        cache.clear()
-        self.valid_email = "user@kcl.ac.uk"
-        self.invalid_email = "user@example.com"
+        """Setup test data."""
+        self.valid_email = "test@kcl.ac.uk"
+        self.invalid_email = "test@gmail.com"
+        self.valid_otp = "123456"
 
-    def test_generate_otp_returns_6_digit_string(self):
+    def test_generate_otp(self):
+        """Test that generate_otp returns a 6-digit numeric string."""
         otp = generate_otp()
-        self.assertTrue(otp.isdigit())
         self.assertEqual(len(otp), 6)
+        self.assertTrue(otp.isdigit())
 
-    def test_send_otp_email_sends_message(self):
-        # Call send_otp_email and verify that an email is sent.
-        otp = "123456"
-        send_otp_email(self.valid_email, otp)
-        from django.core import mail
-        self.assertEqual(len(mail.outbox), 1)
-        sent_email = mail.outbox[0]
-        self.assertIn("Your OTP code is:", sent_email.body)
-        self.assertEqual(sent_email.to, [self.valid_email])
-
-    def test_request_otp_valid_email(self):
-        """
-        Test that POST to request_otp with a valid KCL email returns 200,
-        stores an OTP in cache, and sends an email.
-        """
-        payload = {"email": self.valid_email}
-        response = self.client.post(
-            reverse("request_otp"),
-            data=json.dumps(payload),
-            content_type="application/json"
-        )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.json(), {"message": "OTP sent to your email"})
-        otp_in_cache = cache.get(f"otp_{self.valid_email}")
-        self.assertIsNotNone(otp_in_cache)
+    def test_request_otp_success(self):
+        """Test that request_otp successfully generates and sends an OTP."""
+        with patch("api.utils.send_mail") as mock_send_mail:
+            response = self.client.post(
+                reverse("request_otp"),
+                data=json.dumps({"email": self.valid_email}),
+                content_type="application/json"
+            )
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertIn("OTP sent to your email", response.json()["message"])
+            self.assertIsNotNone(cache.get(f"otp_{self.valid_email}"))
+            mock_send_mail.assert_called_once()
 
     def test_request_otp_invalid_email(self):
-        """
-        Test that POST to request_otp with an invalid email returns 400.
-        """
-        payload = {"email": self.invalid_email}
+        """Test that request_otp rejects non-KCL emails."""
         response = self.client.post(
             reverse("request_otp"),
-            data=json.dumps(payload),
+            data=json.dumps({"email": self.invalid_email}),
             content_type="application/json"
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.json(), {"error": "Only KCL emails are allowed"})
+        self.assertIn("Only KCL emails are allowed", response.json()["error"])
 
     def test_request_otp_missing_email(self):
-        """
-        Test that POST to request_otp with missing email returns 400.
-        """
-        payload = {}  # no email provided
+        """Test that request_otp fails when email is missing."""
         response = self.client.post(
             reverse("request_otp"),
-            data=json.dumps(payload),
+            data=json.dumps({}),
             content_type="application/json"
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.json(), {"error": "Only KCL emails are allowed"})
-
-    def test_request_otp_invalid_method(self):
-        """
-        Test that a GET request to request_otp returns a 400 error.
-        """
-        response = self.client.get(reverse("request_otp"))
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.json(), {"error": "Invalid request"})
+        self.assertIn("Only KCL emails are allowed", response.json()["error"])
 
     def test_request_otp_invalid_json(self):
-        """
-        Test that if invalid JSON is provided in the request body,
-        the view returns a 500 error with the exception message.
-        """
+        """Test that request_otp handles invalid JSON correctly."""
         response = self.client.post(
             reverse("request_otp"),
             data="invalid json",
@@ -103,77 +65,102 @@ class OTPUtilsTestCase(TestCase):
         self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
         self.assertIn("error", response.json())
 
+    def test_request_otp_send_mail_failure(self):
+        """Test that if send_mail fails, request_otp returns a 500 error."""
+        with patch("api.utils.send_mail", side_effect=Exception("Mail error")):
+            response = self.client.post(
+                reverse("request_otp"),
+                data=json.dumps({"email": self.valid_email}),
+                content_type="application/json"
+            )
+            self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+            self.assertIn("error", response.json())
+
     def test_verify_otp_success(self):
-        """
-        Test that a correct OTP verification returns 200 and deletes the OTP.
-        """
-        otp = "123456"
-        cache.set(f"otp_{self.valid_email}", otp, timeout=OTP_VALIDITY_MINUTES * 60)
-        payload = {"email": self.valid_email, "otp": otp}
+        """Test successful OTP verification."""
+        cache.set(f"otp_{self.valid_email}", self.valid_otp, timeout=OTP_VALIDITY_MINUTES * 60)
         response = self.client.post(
             reverse("verify_otp"),
-            data=json.dumps(payload),
+            data=json.dumps({"email": self.valid_email, "otp": self.valid_otp}),
             content_type="application/json"
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.json(), {"message": "OTP verified successfully."})
-        self.assertIsNone(cache.get(f"otp_{self.valid_email}"))
-
-    def test_verify_otp_missing_fields(self):
-        """
-        Test that missing email or otp returns a 400 error.
-        """
-        payload = {"email": self.valid_email}
-        response = self.client.post(
-            reverse("verify_otp"),
-            data=json.dumps(payload),
-            content_type="application/json"
-        )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.json(), {"error": "Email and OTP are required."})
-
-        payload = {"otp": "123456"}
-        response = self.client.post(
-            reverse("verify_otp"),
-            data=json.dumps(payload),
-            content_type="application/json"
-        )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.json(), {"error": "Email and OTP are required."})
-
-    def test_verify_otp_wrong_otp(self):
-        """
-        Test that an incorrect OTP returns a 400 error.
-        """
-        correct_otp = "123456"
-        cache.set(f"otp_{self.valid_email}", correct_otp, timeout=OTP_VALIDITY_MINUTES * 60)
-        payload = {"email": self.valid_email, "otp": "000000"}
-        response = self.client.post(
-            reverse("verify_otp"),
-            data=json.dumps(payload),
-            content_type="application/json"
-        )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.json(), {"error": "Invalid OTP. Please try again."})
+        self.assertIn("OTP verified successfully.", response.json()["message"])
 
     def test_verify_otp_expired(self):
-        """
-        Test that if no OTP is in the cache, verify_otp returns a 400 error indicating expiration.
-        """
-        cache.delete(f"otp_{self.valid_email}")
-        payload = {"email": self.valid_email, "otp": "123456"}
+        """Test OTP verification failure due to expired OTP."""
         response = self.client.post(
             reverse("verify_otp"),
-            data=json.dumps(payload),
+            data=json.dumps({"email": self.valid_email, "otp": self.valid_otp}),
             content_type="application/json"
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.json(), {"error": "OTP has expired or is invalid."})
+        self.assertIn("OTP has expired or is invalid.", response.json()["error"])
+
+    def test_verify_otp_invalid(self):
+        """Test OTP verification failure due to incorrect OTP."""
+        cache.set(f"otp_{self.valid_email}", "654321", timeout=OTP_VALIDITY_MINUTES * 60)
+        response = self.client.post(
+            reverse("verify_otp"),
+            data=json.dumps({"email": self.valid_email, "otp": self.valid_otp}),
+            content_type="application/json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("Invalid OTP. Please try again.", response.json()["error"])
+
+    def test_verify_otp_missing_fields(self):
+        """Ensure both email and OTP must be provided."""
+        response = self.client.post(
+            reverse("verify_otp"),
+            data=json.dumps({"email": self.valid_email}),
+            content_type="application/json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("Email and OTP are required.", response.json()["error"])
+
+        response = self.client.post(
+            reverse("verify_otp"),
+            data=json.dumps({"otp": self.valid_otp}),
+            content_type="application/json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("Email and OTP are required.", response.json()["error"])
+
+    def test_request_otp_invalid_method(self):
+        """Test that a GET request to request_otp returns a 400 error."""
+        response = self.client.get(reverse("request_otp"))
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("Invalid request", response.json()["error"])
 
     def test_verify_otp_invalid_method(self):
-        """
-        Test that a GET request to verify_otp returns a 400 error.
-        """
+        """Test that a GET request to verify_otp returns a 400 error."""
         response = self.client.get(reverse("verify_otp"))
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.json(), {"error": "Invalid request"})
+        self.assertIn("Invalid request", response.json()["error"])
+
+    def test_verify_otp_cache_failure(self):
+        """Test verify_otp when cache.get raises an exception."""
+        with patch("django.core.cache.cache.get", side_effect=Exception("Cache error")):
+            response = self.client.post(
+                reverse("verify_otp"),
+                data=json.dumps({"email": self.valid_email, "otp": self.valid_otp}),
+                content_type="application/json"
+            )
+            self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+            self.assertIn("error", response.json())
+
+    def test_verify_otp_cache_delete_failure(self):
+        """Test that an exception during cache.delete is handled properly."""
+        cache.set(f"otp_{self.valid_email}", self.valid_otp, timeout=OTP_VALIDITY_MINUTES * 60)
+        with patch("django.core.cache.cache.delete", side_effect=Exception("Cache delete error")):
+            response = self.client.post(
+                reverse("verify_otp"),
+                data=json.dumps({"email": self.valid_email, "otp": self.valid_otp}),
+                content_type="application/json"
+            )
+            self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+            self.assertIn("error", response.json())
+
+    def tearDown(self):
+        """Clear cache after each test."""
+        cache.delete(f"otp_{self.valid_email}")

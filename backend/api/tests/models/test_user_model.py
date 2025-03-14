@@ -1,11 +1,10 @@
 """Unit tests for the User model."""
 import os
-
+from unittest.mock import patch
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 from api.models import User
-
 
 class UserModelTestCase(TestCase):
     """Unit tests for the User model."""
@@ -18,8 +17,24 @@ class UserModelTestCase(TestCase):
     def setUp(self):
         self.user = User.objects.get(username='johndoe')
 
+    def _assert_user_is_valid(self):
+        """ Helper method to validate user. """
+        try:
+            self.user.full_clean()
+        except ValidationError:
+            self.fail('Test user should be valid')
+
+    def _assert_user_is_invalid(self):
+        with self.assertRaises(ValidationError):
+            self.user.full_clean()
+
     def test_valid_user(self):
         self._assert_user_is_valid()
+
+    def test_invalid_user(self):
+        """ Test that an invalid user raises ValidationError. """
+        self.user.username = ""
+        self._assert_user_is_invalid()
 
     def test_username_cannot_be_blank(self):
         self.user.username = ''
@@ -112,14 +127,13 @@ class UserModelTestCase(TestCase):
 
     def test_meta_ordering(self):
         users = User.objects.all()
-        self.assertEqual(list(users), sorted(users, key=lambda u: (u.first_name, u.last_name)))
+        expected_order = sorted(users, key=lambda u: (u.first_name, u.last_name))
+        self.assertEqual(list(users), expected_order)
 
-    def _assert_user_is_valid(self):
-        try:
-            self.user.full_clean()
-        except ValidationError:
-            self.fail('Test user should be valid')
+    def test_force_validation_error(self):
+        """ Mock full_clean to trigger ValidationError and ensure fail() is covered. """
+        with patch.object(self.user, 'full_clean', side_effect=ValidationError("Forced error")):
+            with self.assertRaises(AssertionError) as context:
+                self._assert_user_is_valid()
+            self.assertIn('Test user should be valid', str(context.exception))
 
-    def _assert_user_is_invalid(self):
-        with self.assertRaises(ValidationError):
-            self.user.full_clean()

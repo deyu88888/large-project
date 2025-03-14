@@ -73,18 +73,68 @@ class EventCommentsViewTestCase(TestCase):
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
+    def test_post_event_comment_missing_fields(self):
+        """Test posting a comment without event_id or content should return 400."""
+        self.client.login(username="testuser", password="securepassword")
+
+        # Case 1: Missing `event`
+        payload = {"content": "Missing event"}
+        response = self.client.post(reverse("comment_list_create"), data=payload)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("error", response.data)
+
+        # Case 2: Missing `content`
+        payload = {"event": self.event.id}
+        response = self.client.post(reverse("comment_list_create"), data=payload)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("error", response.data)
+
+        # Case 3: Missing both
+        payload = {}
+        response = self.client.post(reverse("comment_list_create"), data=payload)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("error", response.data)
+
+    def test_post_event_comment_invalid_parent_comment(self):
+        """Test posting a reply with an invalid parent_comment_id should return 404."""
+        self.client.login(username="testuser", password="securepassword")
+
+        payload = {
+            "event": self.event.id,
+            "content": "Reply to a non-existing comment",
+            "parent_comment": 9999,  # Non-existing ID
+        }
+
+        response = self.client.post(reverse("comment_list_create"), data=payload)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
     def test_like_comment(self):
-        """Test liking a comment."""
+        """Test liking and unliking a comment."""
         self.client.login(username="testuser", password="securepassword")
         url = reverse("like_comment", kwargs={"comment_id": self.comment.id})
+
+        # First like (expected "liked")
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["status"], "liked")
 
+        # Unlike (expected "unliked")
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["status"], "unliked")
+
     def test_dislike_comment(self):
-        """Test disliking a comment."""
+        """Test disliking and undisliking a comment."""
         self.client.login(username="testuser", password="securepassword")
         url = reverse("dislike_comment", kwargs={"comment_id": self.comment.id})
+
+        # First dislike (expected "disliked")
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["status"], "disliked")
+
+        # Undislike (expected "undisliked")
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["status"], "undisliked")
+
