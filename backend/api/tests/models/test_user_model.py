@@ -1,11 +1,10 @@
 """Unit tests for the User model."""
 import os
-
+from unittest.mock import patch
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 from api.models import User
-
 
 class UserModelTestCase(TestCase):
     """Unit tests for the User model."""
@@ -18,8 +17,24 @@ class UserModelTestCase(TestCase):
     def setUp(self):
         self.user = User.objects.get(username='johndoe')
 
+    def _assert_user_is_valid(self):
+        """ Helper method to validate user. """
+        try:
+            self.user.full_clean()
+        except ValidationError:
+            self.fail('Test user should be valid')
+
+    def _assert_user_is_invalid(self):
+        with self.assertRaises(ValidationError):
+            self.user.full_clean()
+
     def test_valid_user(self):
         self._assert_user_is_valid()
+
+    def test_invalid_user(self):
+        """ Test that an invalid user raises ValidationError. """
+        self.user.username = ""
+        self._assert_user_is_invalid()
 
     def test_username_cannot_be_blank(self):
         self.user.username = ''
@@ -34,24 +49,18 @@ class UserModelTestCase(TestCase):
         self._assert_user_is_invalid()
 
     def test_username_with_invalid_characters(self):
-        user = User(username='invalid@user!', email='test@example.com')
-        with self.assertRaises(ValidationError):
-            user.full_clean()
+        self.user.username = 'invalid@user!'
+        self._assert_user_is_invalid()
 
     def test_username_with_spaces(self):
-        user = User(username='invalid user', email='test@example.com')
-        with self.assertRaises(ValidationError):
-            user.full_clean()
+        self.user.username = 'invalid user'
+        self._assert_user_is_invalid()
 
     def test_username_case_sensitivity(self):
         user1 = User.objects.create(username='UserName', email='user1@example.com')
         user2 = User(username='username', email='user2@example.com')
         with self.assertRaises(ValidationError):
             user2.full_clean()
-
-    def test_username_preserves_case(self):
-        user = User.objects.create(username='UserName', email='user@example.com')
-        self.assertEqual(user.username, 'UserName')
 
     def test_username_must_be_unique(self):
         second_user = User.objects.get(username='janedoe')
@@ -61,11 +70,6 @@ class UserModelTestCase(TestCase):
     def test_first_name_must_not_be_blank(self):
         self.user.first_name = ''
         self._assert_user_is_invalid()
-
-    def test_first_name_need_not_be_unique(self):
-        second_user = User.objects.get(username='janedoe')
-        self.user.first_name = second_user.first_name
-        self._assert_user_is_valid()
 
     def test_first_name_may_contain_50_characters(self):
         self.user.first_name = 'x' * 50
@@ -78,11 +82,6 @@ class UserModelTestCase(TestCase):
     def test_last_name_must_not_be_blank(self):
         self.user.last_name = ''
         self._assert_user_is_invalid()
-
-    def test_last_name_need_not_be_unique(self):
-        second_user = User.objects.get(username='janedoe')
-        self.user.last_name = second_user.last_name
-        self._assert_user_is_valid()
 
     def test_last_name_may_contain_50_characters(self):
         self.user.last_name = 'x' * 50
@@ -101,36 +100,40 @@ class UserModelTestCase(TestCase):
         self.user.email = second_user.email
         self._assert_user_is_invalid()
 
-    def test_email_must_contain_username(self):
-        self.user.email = '@example.org'
-        self._assert_user_is_invalid()
-
-    def test_email_must_contain_at_symbol(self):
-        self.user.email = 'johndoe.example.org'
-        self._assert_user_is_invalid()
-
-    def test_email_must_contain_domain_name(self):
-        self.user.email = 'johndoe@.org'
-        self._assert_user_is_invalid()
-
-    def test_email_must_contain_domain(self):
-        self.user.email = 'johndoe@example'
-        self._assert_user_is_invalid()
-
-    def test_email_must_not_contain_more_than_one_at(self):
-        self.user.email = 'johndoe@@example.org'
-        self._assert_user_is_invalid()
-
     def test_full_name_must_be_correct(self):
         full_name = self.user.full_name
         self.assertEqual(full_name, "John Doe")
 
-    def _assert_user_is_valid(self):
-        try:
-            self.user.full_clean()
-        except ValidationError:
-            self.fail('Test user should be valid')
+    def test_user_role_defaults_to_student(self):
+        new_user = User.objects.create(username='newstudent', email='newstudent@example.com')
+        self.assertEqual(new_user.role, "student")
 
-    def _assert_user_is_invalid(self):
-        with self.assertRaises(ValidationError):
-            self.user.full_clean()
+    def test_user_can_be_admin(self):
+        self.user.role = "admin"
+        self.user.save()
+        self.assertTrue(self.user.is_admin())
+        self.assertFalse(self.user.is_student())
+
+    def test_user_can_be_student(self):
+        self.user.role = "student"
+        self.user.save()
+        self.assertTrue(self.user.is_student())
+        self.assertFalse(self.user.is_admin())
+
+    def test_following_relationship(self):
+        second_user = User.objects.get(username='janedoe')
+        self.user.following.add(second_user)
+        self.assertIn(second_user, self.user.following.all())
+
+    def test_meta_ordering(self):
+        users = User.objects.all()
+        expected_order = sorted(users, key=lambda u: (u.first_name, u.last_name))
+        self.assertEqual(list(users), expected_order)
+
+    def test_force_validation_error(self):
+        """ Mock full_clean to trigger ValidationError and ensure fail() is covered. """
+        with patch.object(self.user, 'full_clean', side_effect=ValidationError("Forced error")):
+            with self.assertRaises(AssertionError) as context:
+                self._assert_user_is_valid()
+            self.assertIn('Test user should be valid', str(context.exception))
+

@@ -20,9 +20,28 @@ class AdminModelTestCase(TestCase):
         self.assertEqual(self.admin.last_name, 'Smith')
         self.assertEqual(self.admin.email, 'bob.smith@example.com')
 
+    def test_admin_username_must_be_unique(self):
+        duplicate_admin = Admin(username="test_admin", email="new_admin@example.com")
+        with self.assertRaises(ValidationError):
+            duplicate_admin.full_clean()
+
     def test_admin_role(self):
         """test admin role is admin"""
         self.assertEqual(self.admin.role, 'admin')
+
+    def test_admin_cannot_be_demoted(self):
+        self.admin.is_superuser = False
+        self.admin.is_staff = False
+        self.admin.save()
+        self.admin.refresh_from_db()
+
+        self.assertTrue(self.admin.is_superuser)
+        self.assertTrue(self.admin.is_staff)
+
+    def test_admin_role_is_always_admin(self):
+        self.admin.role = "student"
+        self.admin.save()
+        self.assertEqual(self.admin.role, "admin")
 
     def test_admin_superuser_status(self):
         """test admin is superuser and staff"""

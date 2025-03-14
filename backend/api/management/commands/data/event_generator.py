@@ -139,7 +139,7 @@ class RandomEventDataGenerator():
                 break
 
         if not returnval:
-            returnval = f"{society_prename} {choice(["Event", "Meet"])}"
+            returnval = f"{society_prename} {choice(['Event', 'Meet'])}"
 
         return returnval
 

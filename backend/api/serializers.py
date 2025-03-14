@@ -783,17 +783,8 @@ class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
         fields = [
-            "id",
-            "content",
-            "create_at",
-            "user_data",
-            "parent_comment",
-            "replies",
-            "likes",
-            "dislikes",
-            "liked_by_user",
-            "disliked_by_user"
-        ]
+            "id", "content", "create_at", "user_data", "parent_comment", "replies",
+            "likes", "dislikes", "liked_by_user", "disliked_by_user"]
 
     def get_replies(self, obj):
         """Get all the replies of the comment"""

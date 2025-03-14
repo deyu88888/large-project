@@ -13,19 +13,20 @@ class AdminViewTests(APITestCase):
         """
         Set up test users and authentication.
         """
-        self.admin_user = User.objects.create_superuser(
+        self.admin_user = Admin.objects.create_superuser(
             username="admin_user",
             email="admin@example.com",
             password="securepassword"
         )
         self.client.force_authenticate(user=self.admin_user)
 
-        self.admin1 = Admin.objects.create(user=self.admin_user)
-        self.admin2 = Admin.objects.create(user=User.objects.create_user(
-            username="admin2", email="admin2@example.com", password="securepassword"
-        ))
+        self.admin2 = Admin.objects.create_superuser(
+            username="admin2",
+            email="admin2@example.com",
+            password="securepassword"
+        )
 
-        self.url = reverse("user/admin")  
+        self.url = reverse("admin")
 
     def test_get_admins(self):
         """
@@ -43,17 +44,15 @@ class AdminViewTests(APITestCase):
         Ensure an admin can be created via POST request.
         """
         new_admin_data = {
-            "user": {
-                "username": "new_admin",
-                "email": "newadmin@example.com",
-                "password": "securepassword"
-            }
+            "username": "new_admin",
+            "email": "newadmin@example.com",
+            "password": "securepassword"
         }
         response = self.client.post(self.url, data=new_admin_data, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertIn("Admin registered successfully.", response.json()["message"])
-        self.assertTrue(Admin.objects.filter(user__username="new_admin").exists())
+        self.assertTrue(Admin.objects.filter(username="new_admin").exists())
 
     def test_unauthorized_access(self):
         """
