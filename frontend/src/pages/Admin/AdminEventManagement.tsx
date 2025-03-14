@@ -1,8 +1,8 @@
 import React, { ReactNode, useState } from "react";
 import { Box, Tabs, Tab, useTheme, Typography } from "@mui/material";
 import { tokens } from "../../theme/theme";
-import EventList from "./EventList";
-import EventListRejected from "./EventListReject";
+import EventList from "./AdminEventList";
+import EventListRejected from "./RejectedEventsList";
 import PendingEventRequest from "./PendingEventRequest";
 
 const CustomTabPanel = ({

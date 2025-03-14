@@ -3,7 +3,7 @@ import { render, screen, waitFor, fireEvent, act } from '@testing-library/react'
 import { vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import JoinSocieties from '../join-societies';
+import JoinSocieties from '../JoinSociety';
 import { apiClient } from '../../../api';
 
 const mockNavigate = vi.fn();

@@ -3,7 +3,7 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { vi, expect } from 'vitest';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import PresidentPage from '../president-page';
+import PresidentPage from '../PresidentPage';
 import { apiClient } from '../../../api';
 import { useAuthStore } from '../../../stores/auth-store';
 

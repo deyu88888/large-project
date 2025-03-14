@@ -3,7 +3,7 @@ import { render, screen, waitFor, fireEvent, act } from "@testing-library/react"
 import { vi } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
-import ViewEvents from "../view-events";
+import ViewEvents from "../../ViewEvents";
 import { apiClient } from "../../../api";
 
 vi.mock("../../../api", () => ({

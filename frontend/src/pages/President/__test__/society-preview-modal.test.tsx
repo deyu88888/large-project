@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { vi } from 'vitest';
-import SocietyPreviewModal from '../society-preview-modal';
+import SocietyPreviewModal from '../SocietyPreviewModal';
 
 describe('SocietyPreviewModal Component', () => {
   const mockSocietyData = {

@@ -2,8 +2,8 @@ import React, { ReactNode, useState } from "react";
 import { Box, Tabs, Tab, useTheme, Typography } from "@mui/material";
 import { tokens } from "../../theme/theme";
 import SocietyList from "./SocietyList";
-import SocietyListRejected from "./SocietyListReject";
-import PendingSocietyRequest from "./PendingSocietyRequest";
+import SocietyListRejected from "./RejectedSocietiesList";
+import PendingSocietyRequest from "./SocietyCreationRequests";
 
 const CustomTabPanel = ({ children, value, index }: { children: ReactNode, value: number, index: number }) => (
   value === index ? (

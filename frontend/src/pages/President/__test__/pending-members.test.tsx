@@ -3,7 +3,7 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { vi } from 'vitest';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { apiClient } from '../../../api';
-import PendingMembers from '../pending-members';
+import PendingMembers from '../PendingMembers';
 
 vi.mock('../../../api', () => ({
   apiClient: {

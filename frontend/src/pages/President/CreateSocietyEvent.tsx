@@ -1,6 +1,6 @@
 import React, { useState, ChangeEvent, FormEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { apiClient } from "../api";
+import { apiClient } from "../../api";
 
 const CreateEvent: React.FC = () => {
   const navigate = useNavigate();

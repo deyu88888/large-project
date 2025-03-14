@@ -3,7 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import MySocieties from '../my-societies';
+import MySocieties from '../MyJoinedSocieties';
 import { apiClient } from '../../../api';
 
 vi.mock('../../../api', () => ({

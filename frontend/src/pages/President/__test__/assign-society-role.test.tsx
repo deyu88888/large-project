@@ -3,7 +3,7 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { vi } from 'vitest';
 import { MemoryRouter, Routes, Route, useParams, useNavigate } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import AssignSocietyRole from '../assign-society-role';
+import AssignSocietyRole from '../AssignSocietyRole';
 import { apiClient } from '../../../api';
 
 vi.mock('../../../api', () => ({

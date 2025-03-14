@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { apiClient } from "../api";
-import { useAuthStore } from "../stores/auth-store";
+import { apiClient } from "../../api";
+import { useAuthStore } from "../../stores/auth-store";
 
 interface EventData {
   id: number;

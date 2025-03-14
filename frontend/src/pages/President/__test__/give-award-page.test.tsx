@@ -3,7 +3,7 @@ import { render, screen, waitFor, fireEvent, act } from '@testing-library/react'
 import { vi } from 'vitest';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import GiveAwardPage from '../give-award-page';
+import GiveAwardPage from '../GiveAwardPage';
 import { apiClient } from '../../../api';
 
 const theme = createTheme({

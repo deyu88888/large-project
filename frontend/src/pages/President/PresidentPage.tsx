@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useTheme, Box, Typography, Button, Paper, CircularProgress } from "@mui/material";
 import { apiClient } from "../../api";
 import { useAuthStore } from "../../stores/auth-store";
-import { tokens } from "../../theme/theme.ts";
+import { tokens } from "../../theme/theme";
 
 interface Society {
   id: number;
@@ -41,7 +41,7 @@ const PresidentPage: React.FC = () => {
   useEffect(() => {
     const fetchData = async (): Promise<void> => {
       try {
-        const id = society_id || user?.president_of;
+        const id = society_id || user?.president_of || user?.vice_president_of;
         if (!id) throw new Error("No society ID available");
 
         const societyResponse = await apiClient.get(`/api/manage-society-details/${id}/`);

@@ -3,7 +3,7 @@ import { render, screen, waitFor, fireEvent, act } from '@testing-library/react'
 import { vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import StartSociety from '../start-society';
+import StartSociety from '../StartSociety';
 import axios from 'axios';
 
 vi.mock('axios', () => ({

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { apiClient } from "../../api";
+import { apiClient } from "../api";
 import { useTheme } from "@mui/material/styles";
-import { tokens } from "../../theme/theme";
+import { tokens } from "../theme/theme";
 
 const ViewEvents: React.FC = () => {
   const navigate = useNavigate();
