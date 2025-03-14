@@ -85,18 +85,6 @@ class Command(BaseCommand):
                 "major": "Computer Science",
             },
         )
-
-        student, _ = get_or_create_user(
-             Student,
-             username="student_user",
-             email="student@example.com",
-             first_name="Student",
-             last_name="User",
-             defaults={
-                 "password": make_password("studentpassword"),
-                 "major": "Computer Science",
-             },
-         )
         
         vice_president, _ = get_or_create_user(
              Student,
@@ -128,7 +116,6 @@ class Command(BaseCommand):
             leader=president,
         )
         society.approved_by = admin
-        society.society_members.add(student)
 
         society.vice_president = vice_president
         society.society_members.add(vice_president)
@@ -162,7 +149,7 @@ class Command(BaseCommand):
                 username=data["username"],
                 first_name=data["first_name"],
                 last_name=data["last_name"],
-                email=f"{data["username"]}@kcl.ac.uk",
+                email=f"{data['username']}@kcl.ac.uk",
                 major=data["major"],
                 defaults={
                     "password": make_password("studentpassword"),  
