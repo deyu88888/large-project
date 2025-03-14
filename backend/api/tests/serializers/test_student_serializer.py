@@ -160,6 +160,18 @@ class StudentSerializerTestCase(TestCase):
         data = serializer.data
         self.assertNotIn("password", data)
 
+    def test_student_not_president(self):
+        """Test that a student without a president_of society is not a president."""
+        student = Student.objects.create_user(
+            username="non_president",
+            password="Password123",
+            first_name="Test",
+            last_name="User",
+            email="non_president@example.com",
+            major="Physics",
+        )
+        serializer = StudentSerializer(instance=student)
+        self.assertFalse(serializer.data["is_president"])
 
     def tearDown(self):
         for society in Society.objects.all():

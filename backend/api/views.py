@@ -1198,6 +1198,8 @@ class EventCommentsView(APIView):
     """
     API view for create and manage event comments
     """
+    permission_classes = [IsAuthenticated]
+
     def get(self, request):
         event_id = request.query_params.get("event_id")
         if not event_id:
@@ -1223,13 +1225,9 @@ class EventCommentsView(APIView):
         if parent_comment_id:
             parent_comment = get_object_or_404(Comment, pk=parent_comment_id)
 
-        user = request.user
-        if not user or not user.is_authenticated:
-            return Response({"error": "User must be logged in to comment."}, status=status.HTTP_401_UNAUTHORIZED)
-
         comment = Comment.objects.create(
             event=event,
-            user=user,
+            user=request.user,
             content=content,
             parent_comment=parent_comment
         )
