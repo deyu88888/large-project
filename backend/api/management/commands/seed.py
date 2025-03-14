@@ -86,6 +86,30 @@ class Command(BaseCommand):
             },
         )
 
+        student, _ = get_or_create_user(
+             Student,
+             username="student_user",
+             email="student@example.com",
+             first_name="Student",
+             last_name="User",
+             defaults={
+                 "password": make_password("studentpassword"),
+                 "major": "Computer Science",
+             },
+         )
+        
+        vice_president, _ = get_or_create_user(
+             Student,
+             username="vice_president_user",
+             email="vicepresident@example.com",
+             first_name="Vice",
+             last_name="President",
+             defaults={
+                 "password": make_password("vicepresidentpassword"),
+                 "major": "Electrical Engineering"
+             },
+         )
+        
         president, _ = get_or_create_user(
             Student,
             username="president_user",

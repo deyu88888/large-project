@@ -228,11 +228,7 @@ class SocietySerializer(serializers.ModelSerializer):
             'status', 'category', 'social_media_links', 'showreel_images',
             'membership_requirements', 'upcoming_projects_or_plans', 'icon','tags',
             'vice_president', 'event_manager', 'treasurer', 'leader_id',
-            'id', 'name', 'description', 'society_members', 'leader', 'leader_id',
-            'vice_president', 'vice_president_id', 'event_manager', 'event_manager_id', 
-            'approved_by','status', 'category', 'social_media_links',
-            'showreel_images', 'membership_requirements', 'upcoming_projects_or_plans',
-            'icon','tags',
+            'vice_president_id', 'event_manager_id', 
         ]
         extra_kwargs = {
             'society_members': {'required': False},  # Allows empty or missing data
