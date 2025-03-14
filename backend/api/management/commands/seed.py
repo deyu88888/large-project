@@ -110,19 +110,15 @@ class Command(BaseCommand):
         )
         society.approved_by = admin
         society.society_members.add(student)
-        
+
         society.vice_president = vice_president
         society.society_members.add(vice_president)
         society.save()
-        
+
         self.seed_society_showreel(society, n=10)
 
         president.president_of = society
         president.save()
-        
-        vice_president.save()
-        
-
 
         self.create_student(50)
         self.create_admin(5)
