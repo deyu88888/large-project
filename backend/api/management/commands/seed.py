@@ -6,6 +6,8 @@ from PIL import Image
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.contrib.auth.hashers import make_password
 from django.core.management.base import BaseCommand
+
+import api
 from api.management.commands.data.society_generator import RandomSocietyDataGenerator
 from api.management.commands.data.student_generator import RandomStudentDataGenerator
 from api.management.commands.data.event_generator import RandomEventDataGenerator
@@ -33,20 +35,17 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
 
         def get_or_create_user(model, username, email, first_name, last_name, defaults):
-            """
-            Get or create a user (Admin or Student).
-            """
             user, created = model.objects.get_or_create(
-                username=username,
                 email=email,
-                first_name=first_name,
-                last_name=last_name,
-                defaults=defaults,
+                defaults={
+                    "username": username,
+                    "first_name": first_name,
+                    "last_name": last_name,
+                    **defaults,
+                },
             )
             if created:
-                self.stdout.write(
-                    self.style.SUCCESS(f"{model.__name__} created: {user.username}")
-                )
+                self.stdout.write(self.style.SUCCESS(f"{model.__name__} created: {user.username}"))
             else:
                 self.stdout.write(f"{model.__name__} already exists: {user.username}")
             return user, created
@@ -124,7 +123,7 @@ class Command(BaseCommand):
                 username=data["username"],
                 first_name=data["first_name"],
                 last_name=data["last_name"],
-                email=f"{data["username"]}@kcl.ac.uk",
+                email=f"{data['username']}@kcl.ac.uk",
                 major=data["major"],
                 defaults={
                     "password": make_password("studentpassword"),  
@@ -467,7 +466,7 @@ class Command(BaseCommand):
     def broadcast_updates(self):
         """Broadcast updates to the WebSocket"""
         print("Broadcasting updates to WebSocket...")
-        broadcast_dashboard_update()
+        api.signals.broadcast_dashboard_update()
 
     def pre_define_awards(self):
         """Pre-define automatic awards"""
