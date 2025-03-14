@@ -292,7 +292,7 @@ class SeedingTestCase(TransactionTestCase):
         notifications_count = Notification.objects.count()
         self.assertEqual(notifications_count, attendees_count)
 
-    @patch("api.management.commands.seed.broadcast_dashboard_update")
+    @patch("api.signals.broadcast_dashboard_update")
     @patch("builtins.print")  # Avoid printing during test
     def test_broadcast_updates(self, mock_print, mock_broadcast):
         """Test that broadcast_updates calls broadcast_dashboard_update."""
