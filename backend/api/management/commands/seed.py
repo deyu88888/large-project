@@ -24,9 +24,6 @@ from api.models import (
     AwardStudent,
 )
 
-from api.signals import broadcast_dashboard_update
-
-
 
 class Command(BaseCommand):
     help = "Seed the database with admin, student, and president users"
@@ -98,7 +95,7 @@ class Command(BaseCommand):
                 "major": "Mechanical Engineering"
             },
         )
-        
+
         vice_president, _ = get_or_create_user(
              Student,
              username="vice_president_user",
@@ -132,7 +129,7 @@ class Command(BaseCommand):
         self.create_event(35)
         self.pre_define_awards()
         self.randomly_assign_awards(50)
-        
+
         # Broadcast updates to the WebSocket
         self.broadcast_updates()
 
@@ -141,10 +138,10 @@ class Command(BaseCommand):
     def create_student(self, n):
         """Create n different students"""
         generator = RandomStudentDataGenerator()
-        
+
         for i in range(1, n + 1):
             print(f"Seeding student {i}/{n}", end='\r', flush=True)
-            
+
             data = generator.generate()
             email = f"{data['username']}@kcl.ac.uk"
 
@@ -162,7 +159,7 @@ class Command(BaseCommand):
 
             if created:
                 self.handle_user_status(student)  # Handle additional setup if needed
-        
+
         print(self.style.SUCCESS(f"Seeding student {n}/{n}"), flush=True)
 
     def handle_user_status(self, user):
@@ -407,7 +404,7 @@ class Command(BaseCommand):
         """
         random_status = choice(["Pending", "Approved", "Rejected"])
         location = self.get_random_location()
-        
+
         event_date = self.generate_random_date()
         event_time = self.generate_reasonable_time(event_date)
 
@@ -416,7 +413,10 @@ class Command(BaseCommand):
         if not default_student:
             default_student = Student.objects.first()
             if not default_student:
-                print("No student available to assign from_student. Cannot create this event request.")
+                print(
+                    "No student available to assign from_student. "
+                    "Cannot create this event request."
+                )
                 return False
 
         if random_status == "Approved":
@@ -490,7 +490,7 @@ class Command(BaseCommand):
 
             # If no valid times remain, schedule the event for tomorrow at 9:00 AM
             return time(hour=9, minute=0)
-    
+
     def generate_random_time(self):
         """Generates a random time within a day."""
         hours = randint(0, 23)  # Random hour between 0-23
