@@ -4,6 +4,7 @@ import numpy as np
 import re
 import os
 import pickle
+import functools
 
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
@@ -16,6 +17,14 @@ from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
 
 from .semantic_enhancer import semantic_enhancer
+
+# Add sentence-transformers import - you'll need to pip install this
+try:
+    from sentence_transformers import SentenceTransformer
+    SENTENCE_TRANSFORMERS_AVAILABLE = True
+except ImportError:
+    print("WARNING: sentence-transformers not available. Falling back to TF-IDF only.")
+    SENTENCE_TRANSFORMERS_AVAILABLE = False
 
 # Ensure NLTK resources are downloaded
 try:
@@ -32,14 +41,17 @@ class TextSimilarityAnalyzer:
     """
     Advanced text similarity analyzer using NLP techniques.
     Implements multiple similarity metrics with domain-specific knowledge.
+    Now includes neural sentence embeddings for improved semantic understanding.
     """
 
     def __init__(self):
         self.tfidf_vectorizer = None
         self.count_vectorizer = None
+        self.sentence_model = None
         self.corpus = []
         self.corpus_tfidf_vectors = None
         self.corpus_count_vectors = None
+        self.embedding_cache = {}  # Cache for sentence embeddings
 
         # Paths to saved vectorizers
         self.model_path = os.path.join(
@@ -48,20 +60,51 @@ class TextSimilarityAnalyzer:
         self.count_model_path = os.path.join(
             getattr(settings, 'BASE_DIR', ''), 'api', 'ml_models', 'count_vectorizer.pkl'
         )
+        self.embed_model_path = os.path.join(
+            getattr(settings, 'BASE_DIR', ''), 'api', 'ml_models', 'sentence_embeddings.pkl'
+        )
 
         self.lemmatizer = WordNetLemmatizer()
         self.stop_words = set(stopwords.words('english'))
 
         # Initialize or load vectorizers
         self._load_or_create_vectorizers()
+        
+        # Initialize sentence transformer model if available
+        self._initialize_sentence_model()
 
-        # Define similarity weights
+        # Define similarity weights (updated to include embeddings)
         self.weights = {
-            'tfidf': 0.4,    # TF-IDF cosine similarity weight
-            'keyword': 0.2,  # Keyword overlap weight
-            'jaccard': 0.1,  # Jaccard similarity weight
-            'semantic': 0.3  # Domain-specific semantic boost weight
+            'embedding': 0.35,  # Neural sentence embedding weight
+            'tfidf': 0.25,      # TF-IDF cosine similarity weight
+            'keyword': 0.15,    # Keyword overlap weight
+            'jaccard': 0.05,    # Jaccard similarity weight
+            'semantic': 0.2     # Domain-specific semantic boost weight
         }
+        
+        # If sentence embeddings are not available, redistribute weights
+        if not SENTENCE_TRANSFORMERS_AVAILABLE or self.sentence_model is None:
+            self.weights = {
+                'tfidf': 0.4,     # TF-IDF cosine similarity weight
+                'keyword': 0.2,   # Keyword overlap weight
+                'jaccard': 0.1,   # Jaccard similarity weight
+                'semantic': 0.3   # Domain-specific semantic boost weight
+            }
+
+    def _initialize_sentence_model(self):
+        """Initialize the sentence transformer model for embeddings."""
+        if not SENTENCE_TRANSFORMERS_AVAILABLE:
+            self.sentence_model = None
+            return
+            
+        try:
+            # Use a small but effective model for sentence embeddings
+            # 'all-MiniLM-L6-v2' is a good balance between speed and accuracy
+            self.sentence_model = SentenceTransformer('all-MiniLM-L6-v2')
+            print("Initialized sentence embedding model: all-MiniLM-L6-v2")
+        except Exception as e:
+            print(f"Error initializing sentence model: {e}")
+            self.sentence_model = None
 
     def _load_or_create_vectorizers(self):
         """Load existing vectorizers if available, or create new ones."""
@@ -154,6 +197,48 @@ class TextSimilarityAnalyzer:
 
         return processed_text
 
+    @functools.lru_cache(maxsize=128)
+    def get_embedding(self, text):
+        """
+        Get embedding for a text using sentence transformers.
+        Uses a cache to avoid recomputing embeddings for the same text.
+        """
+        if not text or self.sentence_model is None:
+            return None
+            
+        try:
+            # Get embedding from model
+            embedding = self.sentence_model.encode(text, convert_to_numpy=True)
+            return embedding
+        except Exception as e:
+            print(f"Error generating embedding: {e}")
+            return None
+
+    def _calculate_embedding_similarity(self, text1, text2):
+        """Calculate cosine similarity using neural sentence embeddings."""
+        if self.sentence_model is None:
+            return 0
+            
+        try:
+            # For neural embeddings, we use the original text (not preprocessed)
+            # as the models are trained on natural language
+            embedding1 = self.get_embedding(text1)
+            embedding2 = self.get_embedding(text2)
+            
+            if embedding1 is None or embedding2 is None:
+                return 0
+                
+            # Calculate cosine similarity
+            similarity = cosine_similarity(
+                embedding1.reshape(1, -1), 
+                embedding2.reshape(1, -1)
+            )[0][0]
+            
+            return similarity
+        except Exception as e:
+            print(f"Error in embedding similarity: {e}")
+            return 0
+
     def extract_keywords(self, text, top_n=10):
         """Extract the most important keywords from text."""
         if not text or not hasattr(self.count_vectorizer, 'vocabulary_'):
@@ -230,11 +315,19 @@ class TextSimilarityAnalyzer:
             print(f"Count vectorizer saved to {self.count_model_path}")
         except Exception as e:
             print(f"Error saving vectorizers: {e}")
+            
+        # Pre-compute and cache embeddings for the original descriptions
+        if self.sentence_model is not None:
+            print("Pre-computing embeddings for corpus...")
+            for desc in unique_descriptions:
+                if desc:
+                    self.get_embedding(desc)
 
     def calculate_similarity(self, text, comparison_texts):
         """
         Calculate similarity between a text and a list of comparison texts.
         Uses a weighted combination of multiple similarity metrics with domain knowledge.
+        Now includes neural sentence embeddings for improved semantic understanding.
         Returns a similarity score from 0 to 5.
         """
         if not text or not comparison_texts or not any(comparison_texts):
@@ -245,7 +338,7 @@ class TextSimilarityAnalyzer:
             if text == comp_text:
                 return 5.0  # Perfect similarity
 
-        # Save originals for semantic enhancement
+        # Save originals for semantic enhancement and embeddings
         original_text = text
         original_comparison_texts = comparison_texts.copy()
 
@@ -269,36 +362,50 @@ class TextSimilarityAnalyzer:
             # Calculate multiple similarity metrics
             similarities = []
             for comp_text, orig_comp_text in zip(comparison_texts, original_comparison_texts):
-                # 1) TF-IDF Cosine Similarity
+                similarity_components = {}
+                
+                # 1) Neural Sentence Embedding Similarity (if available)
+                if self.sentence_model is not None:
+                    embedding_similarity = self._calculate_embedding_similarity(
+                        original_text, orig_comp_text
+                    )
+                    similarity_components['embedding'] = embedding_similarity
+                
+                # 2) TF-IDF Cosine Similarity
                 tfidf_similarity = self._calculate_tfidf_similarity(text, comp_text)
+                similarity_components['tfidf'] = tfidf_similarity
 
-                # 2) Keyword Overlap
+                # 3) Keyword Overlap
                 keyword_similarity = self._calculate_keyword_overlap(text, comp_text)
+                similarity_components['keyword'] = keyword_similarity
 
-                # 3) Jaccard Similarity
+                # 4) Jaccard Similarity
                 jaccard_similarity = self._calculate_jaccard_similarity_single(text, comp_text)
+                similarity_components['jaccard'] = jaccard_similarity
 
-                # 4) Semantic Boost
+                # 5) Semantic Boost
                 semantic_boost = semantic_enhancer.calculate_semantic_boost(
                     original_text, orig_comp_text
                 )
+                similarity_components['semantic'] = semantic_boost
 
                 # Combine with weights
-                weighted_similarity = (
-                    self.weights['tfidf'] * tfidf_similarity +
-                    self.weights['keyword'] * keyword_similarity +
-                    self.weights['jaccard'] * jaccard_similarity +
-                    self.weights['semantic'] * semantic_boost
+                weighted_similarity = sum(
+                    self.weights[key] * similarity_components.get(key, 0)
+                    for key in self.weights
                 )
 
-                print(
-                    f"TF-IDF: {tfidf_similarity:.4f}, Keyword: {keyword_similarity:.4f}, "
-                    f"Jaccard: {jaccard_similarity:.4f}, Semantic: {semantic_boost:.4f}"
-                )
+                # Log component scores
+                component_scores = ", ".join([
+                    f"{key}: {similarity_components.get(key, 0):.4f}"
+                    for key in sorted(similarity_components.keys())
+                ])
+                print(f"Similarity components: {component_scores}")
                 print(
                     f"Weighted similarity: {weighted_similarity:.4f} "
-                    f"between '{text[:30]}...' and '{comp_text[:30]}...'"
+                    f"between '{original_text[:30]}...' and '{orig_comp_text[:30]}...'"
                 )
+                
                 similarities.append(weighted_similarity)
 
             # Max similarity
@@ -363,6 +470,7 @@ class TextSimilarityAnalyzer:
     def _transform_similarity_score(self, similarity):
         """
         Apply a non-linear transformation to boost medium similarities.
+        Uses an improved sigmoid function for better distribution of scores.
         """
         # High similarity
         if similarity >= 0.9:
@@ -372,7 +480,7 @@ class TextSimilarityAnalyzer:
         if similarity <= 0.2:
             return similarity * 1.5
 
-        # Medium range
+        # Medium range - improved sigmoid function for smoother transition
         transformed = 0.2 + (0.8 * (1 / (1 + np.exp(-12 * (similarity - 0.5)))))
         return min(transformed, 1.0)
 

@@ -4,15 +4,18 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from .models import Student, Society
 from .serializers import SocietySerializer
 from .recommendation_service import SocietyRecommender
+from .feedback_processor import feedback_processor
 
 class RecommendedSocietiesView(APIView):
     """
     Enhanced API View for getting society recommendations tailored to a student's interests.
     Uses advanced NLP techniques and multi-dimensional interest profiling to provide
     balanced recommendations across different categories the student is interested in.
+    Now integrates feedback data to continuously improve recommendations.
     """
     permission_classes = [IsAuthenticated]
     
@@ -29,15 +32,24 @@ class RecommendedSocietiesView(APIView):
         # Initialize the enhanced recommender
         recommender = SocietyRecommender()
         
-        # Get limit from query params, default to 5
+        # Get parameters from query params
         limit = int(request.query_params.get('limit', 5))
+        diversity_level = request.query_params.get('diversity', 'balanced')
         
-        # Get raw recommended societies from your enhanced recommender
-        # The recommender now automatically balances recommendations across categories
-        recommended_societies = recommender.get_recommendations_for_student(student.id, limit)
+        # Track this recommendation request as implicit feedback
+        feedback_processor.record_feedback(
+            student.id, 
+            None,  # No specific society for this general action
+            'recommendation_request', 
+            metadata={'timestamp': timezone.now().isoformat()}
+        )
+        
+        # Get recommended societies from the enhanced recommender
+        recommended_societies = recommender.get_recommendations_for_student(
+            student.id, limit, diversity_level
+        )
         
         # EXCLUDE societies the student has already joined
-        # This is now redundant since the recommender already does this, but keeping for safety
         joined_society_ids = student.societies_belongs_to.values_list("id", flat=True)
         filtered_societies = [
             soc for soc in recommended_societies
@@ -45,13 +57,23 @@ class RecommendedSocietiesView(APIView):
         ]
         
         # Build the final response array with explanation data
-        # Enhanced explanations now provide more detailed reasoning
         recommendations = []
         for society in filtered_societies:
             explanation = recommender.get_recommendation_explanation(student.id, society.id)
+            
+            # Record impression for this recommendation
+            feedback_processor.record_feedback(
+                student.id,
+                society.id,
+                'impression',
+                metadata={'position': len(recommendations) + 1}
+            )
+            
             recommendations.append({
                 'society': SocietySerializer(society).data,
-                'explanation': explanation
+                'explanation': explanation,
+                'feedback_id': f"rec_{student.id}_{society.id}_{timezone.now().strftime('%Y%m%d%H%M%S')}"
+                # This feedback_id can be used when tracking interactions with this recommendation
             })
             
         return Response(recommendations, status=status.HTTP_200_OK)
@@ -60,6 +82,7 @@ class SocietyRecommendationExplanationView(APIView):
     """
     API View for getting an explanation of why a society is recommended to a student.
     Now supports enhanced explanation types including content-based and semantic relationships.
+    Tracks explanation views as implicit feedback.
     """
     permission_classes = [IsAuthenticated]
     
@@ -79,6 +102,14 @@ class SocietyRecommendationExplanationView(APIView):
         # Initialize the recommender
         recommender = SocietyRecommender()
         
+        # Record this explanation view as implicit feedback
+        feedback_processor.record_feedback(
+            student.id,
+            society_id,
+            'view_details',
+            metadata={'explanation_request': True}
+        )
+        
         # Get enhanced recommendation explanation
         explanation = recommender.get_recommendation_explanation(student.id, society.id)
         
@@ -87,7 +118,7 @@ class SocietyRecommendationExplanationView(APIView):
 class RecommendationFeedbackView(APIView):
     """
     API View for collecting feedback on society recommendations.
-    This feedback can be used to improve future recommendations.
+    This feedback is processed and stored to improve future recommendations.
     """
     permission_classes = [IsAuthenticated]
     
@@ -104,27 +135,150 @@ class RecommendationFeedbackView(APIView):
         society = get_object_or_404(Society, id=society_id)
         
         # Process the feedback data
-        # In a production system, you would store this and use it to improve recommendations
         rating = request.data.get('rating')
         relevance = request.data.get('relevance')
         comment = request.data.get('comment', '')
         is_joined = request.data.get('is_joined', False)
         
+        # Additional metadata
+        feedback_source = request.data.get('source', 'recommendation')
+        feedback_id = request.data.get('feedback_id', None)
+        
         # Simple validation
-        if rating is None or relevance is None:
+        if rating is None and relevance is None and not is_joined:
             return Response(
-                {"error": "Rating and relevance are required fields."},
+                {"error": "At least one feedback metric (rating, relevance, or is_joined) is required."},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Here you would typically save this feedback to your database
-        # For now, we'll just acknowledge it
+        # Process and store different types of feedback
+        feedback_recorded = False
+        
+        # Store rating feedback if provided
+        if rating is not None:
+            feedback_processor.record_feedback(
+                student.id,
+                society_id,
+                'rating',
+                value=rating,
+                metadata={
+                    'comment': comment,
+                    'source': feedback_source,
+                    'feedback_id': feedback_id
+                }
+            )
+            feedback_recorded = True
+        
+        # Store relevance feedback if provided
+        if relevance is not None:
+            feedback_processor.record_feedback(
+                student.id,
+                society_id,
+                'relevance',
+                value=relevance,
+                metadata={
+                    'comment': comment,
+                    'source': feedback_source,
+                    'feedback_id': feedback_id
+                }
+            )
+            feedback_recorded = True
+        
+        # Handle join society feedback
+        if is_joined:
+            feedback_processor.record_feedback(
+                student.id,
+                society_id,
+                'join',
+                metadata={
+                    'timestamp': timezone.now().isoformat(),
+                    'source': feedback_source,
+                    'feedback_id': feedback_id
+                }
+            )
+            feedback_recorded = True
+            
+            # Note: This doesn't actually join the student to the society
+            # That would typically be handled by another endpoint
+        
+        if not feedback_recorded:
+            return Response(
+                {"error": "No valid feedback was provided."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
         return Response(
             {
-                "message": "Feedback received, thank you!",
+                "message": "Feedback recorded successfully",
                 "society_id": society_id,
-                "rating": rating,
-                "relevance": relevance
+                "timestamp": timezone.now().isoformat()
+            },
+            status=status.HTTP_200_OK
+        )
+
+
+class SocietyInteractionView(APIView):
+    """
+    API View for tracking user interactions with societies.
+    These interactions are treated as implicit feedback for recommendations.
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request, society_id):
+        try:
+            student = Student.objects.get(pk=request.user.pk)
+        except Student.DoesNotExist:
+            return Response(
+                {"error": "User is not a valid student."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+            
+        # Check if society exists
+        society = get_object_or_404(Society, id=society_id)
+        
+        # Get interaction type
+        interaction_type = request.data.get('type')
+        if not interaction_type:
+            return Response(
+                {"error": "Interaction type is required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        # Map interaction types to feedback types
+        interaction_map = {
+            'view': 'view_details',
+            'click': 'click',
+            'bookmark': 'bookmark',
+            'share': 'share',
+            'join_request': 'join_request'
+        }
+        
+        if interaction_type not in interaction_map:
+            return Response(
+                {"error": f"Unknown interaction type: {interaction_type}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        # Record the interaction as feedback
+        feedback_type = interaction_map[interaction_type]
+        metadata = {
+            'timestamp': timezone.now().isoformat(),
+            'source': request.data.get('source', 'society_page'),
+            'details': request.data.get('details', {})
+        }
+        
+        feedback_processor.record_feedback(
+            student.id,
+            society_id,
+            feedback_type,
+            metadata=metadata
+        )
+        
+        return Response(
+            {
+                "message": f"{interaction_type} interaction recorded",
+                "society_id": society_id,
+                "timestamp": timezone.now().isoformat()
             },
             status=status.HTTP_200_OK
         )
