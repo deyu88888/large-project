@@ -8,6 +8,7 @@ import { tokens } from "../theme/theme";
 
 // MUI imports
 import { useTheme } from "@mui/material/styles";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import {
   Container,
   Box,
@@ -53,6 +54,7 @@ export default function ProfilePage() {
     const navigate = useNavigate();
     const { user } = useAuthStore();
     const theme = useTheme();
+    const isDark = theme.palette.mode === "dark";
 
     const [profile, setProfile] = useState<User | null>(null);
     const [isFollowing, setIsFollowing] = useState<boolean>(false);
@@ -311,9 +313,9 @@ export default function ProfilePage() {
                 <Typography variant="body1" sx={{ fontWeight: "bold" }}>
                   {profile.is_active ? "Verified" : "Not Verified"}
                 </Typography>
-              </Card>
-            </Grid>
-          </Grid>
+              </Box>
+            </Paper>
+          </Box>
           
           <Divider 
             sx={{ 
@@ -379,21 +381,21 @@ export default function ProfilePage() {
                       InputProps={{ 
                         style: { 
                           color: colors.grey[100],
-                          backgroundColor: colors.primary[600]
+                          backgroundColor: isDark ? colors.primary[600] : colors.primary[0],
                         } 
                       }}
                       sx={{
                         "& .MuiFilledInput-root": {
-                          backgroundColor: colors.primary[600],
+                          backgroundColor: isDark ? colors.primary[600] : colors.primary[0],
                           "&:hover": {
-                            backgroundColor: colors.primary[500],
+                            backgroundColor: isDark ? colors.primary[500] : colors.primary[0],
                           },
                           "&.Mui-focused": {
-                            backgroundColor: colors.primary[500],
+                            backgroundColor: isDark ? colors.primary[500] : colors.primary[0],
                           }
                         },
                         "& .MuiFormHelperText-root": {
-                          color: colors.redAccent[400]
+                          color: isDark ? colors.redAccent[400] : colors.primary[0]
                         }
                       }}
                     />
@@ -413,21 +415,21 @@ export default function ProfilePage() {
                       InputProps={{ 
                         style: { 
                           color: colors.grey[100],
-                          backgroundColor: colors.primary[600]
+                          backgroundColor: isDark ? colors.primary[600] : colors.primary[0],
                         } 
                       }}
                       sx={{
                         "& .MuiFilledInput-root": {
-                          backgroundColor: colors.primary[600],
+                          backgroundColor: isDark ? colors.primary[600] : colors.primary[0],
                           "&:hover": {
-                            backgroundColor: colors.primary[500],
+                            backgroundColor: isDark ? colors.primary[500] : colors.primary[0],
                           },
                           "&.Mui-focused": {
-                            backgroundColor: colors.primary[500],
+                            backgroundColor: isDark ? colors.primary[500] : colors.primary[0],
                           }
                         },
                         "& .MuiFormHelperText-root": {
-                          color: colors.redAccent[400]
+                          color: isDark ? colors.redAccent[400] : colors.primary[0]
                         }
                       }}
                     />
@@ -447,21 +449,21 @@ export default function ProfilePage() {
                       InputProps={{ 
                         style: { 
                           color: colors.grey[100],
-                          backgroundColor: colors.primary[600]
+                          backgroundColor: isDark ? colors.primary[600] : colors.primary[0],
                         } 
                       }}
                       sx={{
                         "& .MuiFilledInput-root": {
-                          backgroundColor: colors.primary[600],
+                          backgroundColor: isDark ? colors.primary[600] : colors.primary[0],
                           "&:hover": {
-                            backgroundColor: colors.primary[500],
+                            backgroundColor: isDark ? colors.primary[500] : colors.primary[0],
                           },
                           "&.Mui-focused": {
-                            backgroundColor: colors.primary[500],
+                            backgroundColor: isDark ? colors.primary[500] : colors.primary[0],
                           }
                         },
                         "& .MuiFormHelperText-root": {
-                          color: colors.redAccent[400]
+                          color: isDark ? colors.redAccent[400] : colors.primary[0]
                         }
                       }}
                     />
