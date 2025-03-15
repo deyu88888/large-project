@@ -190,6 +190,18 @@ class Command(BaseCommand):
                 print(self.style.WARNING("No available students left to be society leaders. Skipping."))
                 break
 
+            # Get an admin for the required approved_by field
+            admin = Admin.objects.order_by('?').first()
+            if not admin:
+                print(self.style.WARNING("No admin users found. Creating one."))
+                admin = Admin.objects.create_user(
+                    username="auto_admin",
+                    email="auto_admin@example.com",
+                    first_name="Auto",
+                    last_name="Admin",
+                    password=make_password("adminpassword")
+                )
+
             data = generator.generate()
             approved = True
             created = False
@@ -208,6 +220,10 @@ class Command(BaseCommand):
             else:
                 data["name"] = name
             if approved:
+                # Add empty dict as default for social_media_links
+                if "social_media_links" not in data or not data["social_media_links"]:
+                    data["social_media_links"] = {"Email": f"{data['name'].lower().replace(' ', '')}@example.com"}
+                    
                 society, created = Society.objects.get_or_create(
                     name=data["name"],
                     leader=president,
@@ -216,6 +232,8 @@ class Command(BaseCommand):
                     description=data["description"],
                     tags=data["tags"],
                     icon=data["icon"],
+                    approved_by=admin,  # Set the required approved_by field
+                    social_media_links=data["social_media_links"]  # Ensure social_media_links are included
                 )
             if created:
                 self.finalize_society_creation(society)
