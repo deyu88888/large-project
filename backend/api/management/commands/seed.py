@@ -115,7 +115,7 @@ class Command(BaseCommand):
         society, _ = get_or_create_object(
             Society,
             name="Robotics Club",
-            leader=president,
+            president=president,
             approved_by=admin,  # Ensure the society is approved upon creation
         )
         society.society_members.add(student)
@@ -424,7 +424,7 @@ class Command(BaseCommand):
         event_date = self.generate_random_date()
         event_time = self.generate_reasonable_time(event_date)
 
-        # If the society has no leader, pick any random student to avoid NULL
+        # If the society has no president, pick any random student to avoid NULL
         default_student = society.president
         if not default_student:
             default_student = Student.objects.first()
