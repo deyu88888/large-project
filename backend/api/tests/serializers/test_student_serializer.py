@@ -38,7 +38,7 @@ class StudentSerializerTestCase(TestCase):
             major="Computer Science",
         )
         
-        # Create another student to be the leader of society2
+        # Create another student to be the president of society2
         self.student2 = Student.objects.create_user(
             username="second_student",
             password="Password123",
@@ -51,7 +51,7 @@ class StudentSerializerTestCase(TestCase):
         # Create two societies with required fields
         self.society1 = Society.objects.create(
             name='Science Club',
-            leader=self.student,
+            president=self.student,
             approved_by=self.admin,
             status='Approved',
             social_media_links={"Email": "science@example.com"}
@@ -59,7 +59,7 @@ class StudentSerializerTestCase(TestCase):
         
         self.society2 = Society.objects.create(
             name='Math Club',
-            leader=self.student2,  # Add a leader for society2
+            president=self.student2,  # Add a president for society2
             approved_by=self.admin,
             status='Approved',
             social_media_links={"Email": "math@example.com"}
@@ -152,21 +152,21 @@ class StudentSerializerTestCase(TestCase):
         Because president_of is a OneToOneField and already assigned to an existing student,
         we need to create a new society for a new student to avoid UNIQUE constraint errors.
         """
-        # Create a new student to be the leader of the new society
-        temp_leader = Student.objects.create_user(
-            username="temp_leader",
+        # Create a new student to be the president of the new society
+        temp_president = Student.objects.create_user(
+            username="temp_president",
             password="Password123",
             first_name="Temp",
-            last_name="Leader",
-            email="temp_leader@example.com",
+            last_name="president",
+            email="temp_president@example.com",
             major="Art",
         )
         
-        # Create a new society that isn't already assigned, with a temporary leader
+        # Create a new society that isn't already assigned, with a temporary president
         new_society = Society.objects.create(
             name="New Society", 
             status="Approved",
-            leader=temp_leader,  # Add a temporary leader for the new society
+            president=temp_president,  # Add a temporary president for the new society
             approved_by=self.admin,
             social_media_links={"Email": "new@example.com"}
         )
@@ -179,8 +179,8 @@ class StudentSerializerTestCase(TestCase):
         self.assertTrue(serializer.is_valid(), serializer.errors)
         student = serializer.save()
         
-        # After saving, update the society's leader to be the newly created student
-        new_society.leader = student
+        # After saving, update the society's president to be the newly created student
+        new_society.president = student
         new_society.save()
         
         self.assertEqual(

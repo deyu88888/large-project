@@ -49,7 +49,7 @@ def update_new_vice_president_status(sender, instance, created, **kwargs):
 @receiver(post_save, sender=Society)
 def notify_on_status_change(sender, instance, **kwargs):
     """
-    Notify leader on society status change and broadcast updates.
+    Notify president on society status change and broadcast updates.
     """
     print(f"[post_save] Triggered for Society: {instance.name}")
     
@@ -57,14 +57,14 @@ def notify_on_status_change(sender, instance, **kwargs):
         if instance.status == "Approved":
             Notification.objects.create(
                 header="Society Approved",
-                for_student=instance.leader,
+                for_student=instance.president,
                 body=f"Your request to create the society '{instance.name}' has been approved!"
             )
             print(f"Notification created for Society Approval: {instance.name}")
         elif instance.status == "Rejected":
             Notification.objects.create(
                 header="Society Denied",
-                for_student=instance.leader,
+                for_student=instance.president,
                 body=f"Your request to create the society '{instance.name}' was rejected. Please contact the admin for details.",
             )
             print(f"Notification created for Society Rejection: {instance.name}")

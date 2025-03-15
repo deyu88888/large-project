@@ -84,7 +84,7 @@ class RecommendationServiceTestCase(TestCase):
             category="Technology",
             status="Approved",
             tags=["Coding", "AI", "Innovation"],
-            leader=self.leader1,
+            president=self.leader1,
             approved_by=self.admin
         )
 
@@ -94,7 +94,7 @@ class RecommendationServiceTestCase(TestCase):
             category="Games",
             status="Approved",
             tags=["Strategy", "Games", "Competition"],
-            leader=self.leader2,
+            president=self.leader2,
             approved_by=self.admin
         )
 
@@ -104,7 +104,7 @@ class RecommendationServiceTestCase(TestCase):
             category="Academic",
             status="Approved",
             tags=["Speaking", "Argument", "Critical Thinking"],
-            leader=self.leader3,
+            president=self.leader3,
             approved_by=self.admin
         )
 
@@ -114,7 +114,7 @@ class RecommendationServiceTestCase(TestCase):
             category="Creative",
             status="Approved",
             tags=["Painting", "Drawing", "Creativity"],
-            leader=self.leader4,
+            president=self.leader4,
             approved_by=self.admin
         )
 
@@ -143,7 +143,7 @@ class RecommendationServiceTestCase(TestCase):
             category="Extra",
             status="Approved",
             tags=["Extra", "Testing", "More"],
-            leader=leader_extra,
+            president=leader_extra,
             approved_by=self.admin
         )
 
@@ -191,7 +191,7 @@ class RecommendationServiceTestCase(TestCase):
             category="Technology",
             status="Approved",
             tags=["Data", "Analytics", "ML"],
-            leader=leader_ds,
+            president=leader_ds,
             approved_by=self.admin
         )
 
@@ -201,7 +201,7 @@ class RecommendationServiceTestCase(TestCase):
             category="Games",
             status="Approved",
             tags=["Games", "Strategy", "Fun"],
-            leader=leader_bg,
+            president=leader_bg,
             approved_by=self.admin
         )
 
@@ -272,7 +272,7 @@ class RecommendationServiceTestCase(TestCase):
             category="Sports",
             status="Approved",
             tags=["Football", "Team", "Athletics"],
-            leader=leader_a,
+            president=leader_a,
             approved_by=self.admin
         )
 
@@ -282,7 +282,7 @@ class RecommendationServiceTestCase(TestCase):
             category="Music",
             status="Approved",
             tags=["Singing", "Band", "Performance"],
-            leader=leader_b,
+            president=leader_b,
             approved_by=self.admin
         )
 
@@ -363,7 +363,7 @@ class RecommendationAPITestCase(TestCase):
                 category=categories[i],
                 status="Approved",
                 tags=[f"Tag{i*3+1}", f"Tag{i*3+2}", f"Tag{i*3+3}"],
-                leader=self.leaders[i],
+                president=self.leaders[i],
                 approved_by=self.admin
             )
             self.societies.append(society)
@@ -493,7 +493,7 @@ class MockedRecommendationTests(TestCase):
             category="Technology",
             status="Approved",
             tags=["Coding", "AI", "Innovation"],
-            leader=self.tech_leader,
+            president=self.tech_leader,
             approved_by=self.admin
         )
 
@@ -503,7 +503,7 @@ class MockedRecommendationTests(TestCase):
             category="Creative",
             status="Approved",
             tags=["Painting", "Drawing", "Creativity"],
-            leader=self.art_leader,
+            president=self.art_leader,
             approved_by=self.admin
         )
 

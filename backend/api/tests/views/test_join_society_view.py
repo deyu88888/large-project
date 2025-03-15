@@ -35,7 +35,7 @@ class JoinSocietyViewTestCase(TestCase):
             last_name="Two",
         )
         
-        # Create a third student to be the leader of the third society
+        # Create a third student to be the president of the third society
         self.student3 = Student.objects.create_user(
             username="student3",
             email="student3@example.com",
@@ -47,19 +47,19 @@ class JoinSocietyViewTestCase(TestCase):
         # Create test societies
         self.society1 = Society.objects.create(
             name="Science Club",
-            leader=self.student1,
+            president=self.student1,
             approved_by=self.admin,
             status="Approved"
         )
         self.society2 = Society.objects.create(
             name="Math Club",
-            leader=self.student2,
+            president=self.student2,
             approved_by=self.admin,
             status="Approved"
         )
         self.society3 = Society.objects.create(
             name="Art Club",
-            leader=self.student3,  # Use student3 as leader instead of None
+            president=self.student3,  # Use student3 as president instead of None
             approved_by=self.admin,
             status="Approved"
         )

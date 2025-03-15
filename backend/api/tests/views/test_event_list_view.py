@@ -21,13 +21,13 @@ class EventListViewTest(APITestCase):
         # Generate an access token for the test user.
         self.token = str(AccessToken.for_user(self.user))
         
-        # Create a student to be the society leader
-        self.student_leader = Student.objects.create_user(
-            username="leader",
-            password="leaderpass",
-            email="leader@example.com",
+        # Create a student to be the society president
+        self.student_president = Student.objects.create_user(
+            username="president",
+            password="presidentpass",
+            email="president@example.com",
             major="Computer Science",
-            first_name="Leader",
+            first_name="president",
             last_name="User"
         )
         
@@ -39,10 +39,10 @@ class EventListViewTest(APITestCase):
             last_name="Approver"
         )
         
-        # Create a Society with the leader.
+        # Create a Society with the president.
         self.society = Society.objects.create(
             name="Test Society",
-            leader=self.student_leader,
+            president=self.student_president,
             approved_by=self.admin
         )
         

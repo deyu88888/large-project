@@ -115,7 +115,7 @@ class Command(BaseCommand):
         society, _ = get_or_create_object(
             Society,
             name="Robotics Club",
-            leader=president,
+            president=president,
             approved_by=admin,  # Ensure the society is approved upon creation
         )
         society.society_members.add(student)
@@ -214,7 +214,7 @@ class Command(BaseCommand):
             available_students = Student.objects.order_by("?")
 
             if not available_students.exists():
-                print(self.style.WARNING("No available students left to be society leaders. Skipping."))
+                print(self.style.WARNING("No available students left to be society presidents. Skipping."))
                 break
 
             # Get an admin for the required approved_by field
@@ -250,10 +250,10 @@ class Command(BaseCommand):
                 # Add empty dict as default for social_media_links
                 if "social_media_links" not in data or not data["social_media_links"]:
                     data["social_media_links"] = {"Email": f"{data['name'].lower().replace(' ', '')}@example.com"}
-                    
+
                 society, created = Society.objects.get_or_create(
                     name=data["name"],
-                    leader=president,
+                    president=president,
                     category=data["category"],
                     status="Approved",
                     description=data["description"],
@@ -282,11 +282,11 @@ class Command(BaseCommand):
 
     def finalize_society_creation(self, society):
         """Finishes society creation with proper members and roles"""
-        society.leader.president_of = society
-        society.leader.is_president = True
+        society.president.president_of = society
+        society.president.is_president = True
 
         # Ensure at least 5-15 members
-        all_students = list(Student.objects.exclude(id=society.leader.id).order_by("?"))
+        all_students = list(Student.objects.exclude(id=society.president.id).order_by("?"))
         members_num = 5
         while members_num < Student.objects.count():
             if random() <= 0.912:
@@ -295,8 +295,8 @@ class Command(BaseCommand):
                 break
         selected_members = all_students[:members_num]
 
-        # Ensure the leader is always a member
-        society.society_members.add(society.leader)
+        # Ensure the president is always a member
+        society.society_members.add(society.president)
         society.society_members.add(*selected_members)
 
         # Assign roles (ensure at least 2 roles)
@@ -319,9 +319,9 @@ class Command(BaseCommand):
         self.seed_society_showreel(society)
 
         society.save()
-        society.leader.save()
+        society.president.save()
 
-    def handle_society_status(self, leader, name):
+    def handle_society_status(self, president, name):
         """Creates society requests if pending, else assigns an admin to approved_by"""
         random_status = choice(["Pending", "Approved", "Rejected"])
 
@@ -330,17 +330,17 @@ class Command(BaseCommand):
         elif random_status == "Pending":
             SocietyRequest.objects.get_or_create(
                 name=name,
-                leader=leader,
+                president=president,
                 category="Tech",
-                from_student=leader,
+                from_student=president,
                 intent="CreateSoc",
                 approved=False
             )
         else:
             SocietyRequest.objects.get_or_create(
                 name=name,
-                leader=leader,
-                from_student=leader,
+                president=president,
+                from_student=president,
                 category="Tech",
                 intent="CreateSoc",
                 approved=True,
@@ -424,8 +424,8 @@ class Command(BaseCommand):
         event_date = self.generate_random_date()
         event_time = self.generate_reasonable_time(event_date)
 
-        # If the society has no leader, pick any random student to avoid NULL
-        default_student = society.leader
+        # If the society has no president, pick any random student to avoid NULL
+        default_student = society.president
         if not default_student:
             default_student = Student.objects.first()
             if not default_student:

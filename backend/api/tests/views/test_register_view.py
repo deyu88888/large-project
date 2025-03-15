@@ -6,12 +6,12 @@ from api.tests.file_deletion import delete_file
 
 class RegisterViewTestCase(APITestCase):
     def setUp(self):
-        # First create a student user for the leader field
-        self.leader_user = User.objects.create_user(
-            username="leader_user",
-            email="leader@example.com",
+        # First create a student user for the president field
+        self.president_user = User.objects.create_user(
+            username="president_user",
+            email="president@example.com",
             password="Password123",
-            first_name="Leader",
+            first_name="president",
             last_name="User",
             role="student",
         )
@@ -26,16 +26,16 @@ class RegisterViewTestCase(APITestCase):
         )
         self.admin.save()
         
-        # Create the student profile for the leader
-        self.leader = Student.objects.create(
-            user_ptr=self.leader_user,
-            major="Leadership"
+        # Create the student profile for the president
+        self.president = Student.objects.create(
+            user_ptr=self.president_user,
+            major="presidentship"
         )
 
-        # Now create societies with a leader
+        # Now create societies with a president
         self.society1 = Society.objects.create(
             name="Science Club",
-            leader=self.leader,
+            president=self.president,
             description="A club for science enthusiasts",
             approved_by=self.admin,
             social_media_links={"Email": "science@example.com"}
@@ -43,7 +43,7 @@ class RegisterViewTestCase(APITestCase):
         
         self.society2 = Society.objects.create(
             name="Math Club",
-            leader=self.leader,
+            president=self.president,
             description="A club for math enthusiasts",  # Added comma here
             approved_by=self.admin,
             social_media_links={"Email": "math@example.com"}

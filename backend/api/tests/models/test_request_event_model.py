@@ -33,7 +33,7 @@ class EventRequestTestCase(TestCase):
 
         self.society = Society.objects.create(
             name="Robotics Club",
-            leader=self.student,
+            president=self.student,
             approved_by=self.admin
         )
 

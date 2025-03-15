@@ -34,7 +34,7 @@ class NotificationSerializerTestCase(TestCase):
         # Create a society with all required fields
         self.society = Society.objects.create(
             name="Test Society",
-            leader=self.student,
+            president=self.student,
             approved_by=self.admin,  # Required field
             status="Approved",  # Add status if needed
             social_media_links={"Email": "society@example.com"}  # Required field

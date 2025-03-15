@@ -32,7 +32,7 @@ class ManageEventDetailsViewTestCase(APITestCase):
         # Create a society that this president leads.
         self.society = Society.objects.create(
             name="Tech Society",
-            leader=self.president,
+            president=self.president,
             approved_by=self.admin,
             status="Approved",
             category="Technology",

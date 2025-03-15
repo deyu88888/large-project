@@ -35,7 +35,7 @@ class SignalsTestCase(TestCase):
         )
         cls.society = Society.objects.create(
             name="Test Society",
-            leader=cls.student,
+            president=cls.student,
             approved_by=cls.admin,
             status="Pending",
             category="General",
@@ -44,7 +44,7 @@ class SignalsTestCase(TestCase):
             upcoming_projects_or_plans=""
         )
         # Initially, student.president_of is None.
-        # (Assuming your model doesn't auto-assign unless leader is set.)
+        # (Assuming your model doesn't auto-assign unless president is set.)
         # We'll use this for testing update_is_president_on_save.
         # Also, create a dummy event so that broadcast_dashboard_update can count something.
         Event.objects.create(
@@ -85,8 +85,8 @@ class SignalsTestCase(TestCase):
         # Change society status to Approved.
         self.society.status = "Approved"
         self.society.save()
-        # Check that a notification is created for the society leader.
-        notifications = Notification.objects.filter(for_student=self.society.leader)
+        # Check that a notification is created for the society president.
+        notifications = Notification.objects.filter(for_student=self.society.president)
         self.assertTrue(notifications.exists())
         self.assertIn("approved", notifications.first().body.lower())
         # Ensure broadcast_dashboard_update was called.
@@ -100,7 +100,7 @@ class SignalsTestCase(TestCase):
         """
         self.society.status = "Rejected"
         self.society.save()
-        notifications = Notification.objects.filter(for_student=self.society.leader)
+        notifications = Notification.objects.filter(for_student=self.society.president)
         self.assertTrue(notifications.exists())
         self.assertIn("rejected", notifications.first().body.lower())
         mock_broadcast.assert_called_once()

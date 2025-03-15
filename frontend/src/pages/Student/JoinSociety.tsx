@@ -91,58 +91,6 @@ const JoinSocieties: React.FC = () => {
     fetchRecommendedSocieties();
   }, []);
 
-  // Handler to join society
-  const handleJoinSociety = async (societyId: number) => {
-    try {
-      // Set this society as joining (for animation)
-      setJoining(societyId);
-      
-      // Make the POST request to join
-      await apiClient.post(`/api/join-society/${societyId}/`);
-      
-      // Set join success to trigger success indicator
-      setJoinSuccess(true);
-
-      // Multi-stage animation sequence for a more polished effect
-      const society = document.getElementById(`society-card-${societyId}`);
-      if (society) {
-        // First stage: slide up and rotate slightly
-        society.style.transform = "translateY(-20px) rotate(1deg)";
-        society.style.opacity = "0.9";
-        
-        // Second stage: scale down while fading
-        setTimeout(() => {
-          society.style.transform = "translateY(-30px) scale(0.95) rotate(2deg)";
-          society.style.opacity = "0.6";
-          society.style.boxShadow = "0 10px 20px rgba(0, 0, 0, 0.1)";
-        }, 200);
-        
-        // Final stage: complete fade out and collapse
-        setTimeout(() => {
-          society.style.transform = "translateY(-50px) scale(0.9) rotate(3deg)";
-          society.style.opacity = "0";
-          society.style.maxHeight = "0";
-          society.style.margin = "0";
-          society.style.padding = "0";
-        }, 400);
-      }
-      
-      // Wait for animation to complete before removing from the list
-      setTimeout(() => {
-        setRecommendations(prev => prev.filter(item => item.society.id !== societyId));
-        setJoining(null);
-        setJoinSuccess(false);
-      }, 700);
-    } catch (err) {
-      console.error("Error joining society:", err);
-      setJoining(null);
-      setJoinSuccess(false);
-      // Show error in a less intrusive way
-      setError("Failed to join the society. Please try again.");
-      setTimeout(() => setError(null), 3000);
-    }
-  };
-
   // Handler to view society
   const handleViewSociety = (societyId: number) => {
     navigate(`/student/view-society/${societyId}`);
@@ -374,46 +322,6 @@ const JoinSocieties: React.FC = () => {
 
         {/* Action Buttons */}
         <div style={{ display: "flex", gap: "0.5rem", marginTop: "auto" }}>
-          <button
-            onClick={() => handleJoinSociety(recommendation.society.id)}
-            disabled={joining === recommendation.society.id}
-            style={{
-              backgroundColor: joining === recommendation.society.id 
-                ? isLight ? colours.greenAccent[400] : colours.greenAccent[600]
-                : isLight ? colours.blueAccent[400] : colours.blueAccent[500],
-              color: "#ffffff",
-              padding: "0.5rem 1rem",
-              borderRadius: "0.5rem",
-              border: "none",
-              cursor: joining === recommendation.society.id ? "default" : "pointer",
-              fontSize: "0.875rem",
-              flex: 1,
-              transition: "all 0.2s ease",
-              boxShadow: joining === recommendation.society.id 
-                ? "0 0 15px rgba(46, 204, 113, 0.5)" 
-                : "0 2px 5px rgba(0,0,0,0.15)",
-              transform: joining === recommendation.society.id ? "scale(1.02)" : "scale(1)",
-              position: "relative",
-              overflow: "hidden",
-            }}
-          >
-            {joining === recommendation.society.id ? (
-              <>
-                <span>Joining...</span>
-                <span 
-                  style={{
-                    position: "absolute",
-                    top: 0,
-                    right: 0,
-                    bottom: 0,
-                    left: 0,
-                    background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)",
-                    animation: "shimmer 1.5s infinite",
-                  }}
-                />
-              </>
-            ) : "Join Society"}
-          </button>
           <button
             onClick={() => handleViewSociety(recommendation.society.id)}
             disabled={joining === recommendation.society.id}

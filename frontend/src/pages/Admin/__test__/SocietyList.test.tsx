@@ -16,6 +16,6 @@ describe('Society List Page', () => {
         expect(screen.getByText(/Society List/i)).toBeInTheDocument();
         expect(screen.getByText(/Name/i)).toBeInTheDocument();
         expect(screen.getByText(/Members/i)).toBeInTheDocument();
-        expect(screen.getByText(/Leader/i)).toBeInTheDocument();
+        expect(screen.getByText(/president/i)).toBeInTheDocument();
     });
     });

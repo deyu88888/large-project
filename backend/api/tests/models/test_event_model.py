@@ -41,7 +41,7 @@ class EventModelTestCase(TestCase):
         # Create a society
         self.society = Society.objects.create(
             name='Tech',
-            leader=self.student1,
+            president=self.student1,
             approved_by=self.admin,
         )
         self.society.society_members.add(self.student2)

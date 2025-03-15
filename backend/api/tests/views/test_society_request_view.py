@@ -14,7 +14,7 @@ class SocietyRequestViewTest(APITestCase):
             major="Test Major"
         )
         
-        # Create a president student for the leader field
+        # Create a president student for the president field
         self.president_student = Student.objects.create_user(
             username="president_user",
             password="test1234",
@@ -32,7 +32,7 @@ class SocietyRequestViewTest(APITestCase):
             role="admin",
         )
         
-        # Explicitly set the ID of the society with a leader
+        # Explicitly set the ID of the society with a president
         self.society = Society.objects.create(
             id=1,
             name="Test Society",
@@ -40,7 +40,7 @@ class SocietyRequestViewTest(APITestCase):
             status="Approved",
             category="General",
             social_media_links={},
-            leader=self.president_student  # Add the leader field
+            president=self.president_student  # Add the president field
         )
         
         # Update the president's president_of field to point to this society

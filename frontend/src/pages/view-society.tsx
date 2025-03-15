@@ -18,7 +18,7 @@ const ViewSociety: React.FC = () => {
 
   const [society, setSociety] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [joined, setJoined] = useState(true)
+  const [joined, setJoined] = useState(0)
 
   const { society_id } = useParams<{ society_id: string }>();
 
@@ -43,11 +43,11 @@ const ViewSociety: React.FC = () => {
   const handleJoinSociety = async (societyId: number) => {
     try {
       await apiClient.post("/api/join-society/" + societyId + "/");
-      setJoined(true)
-      alert("Successfully joined the society!");
+      setJoined(1)
+      alert("Successfully sent a request to join the society!");
     } catch (error) {
       console.error("Error joining society:", error);
-      alert("Failed to join the society. Please try again.");
+      alert("Failed to join the society. You may have already sent a request to join.");
     }
   };
 
@@ -146,7 +146,7 @@ const ViewSociety: React.FC = () => {
             <b>Society Roles</b>
           </p>
           <p>
-              President: {society.leader.first_name} {society.leader.last_name}
+              President: {society.president.first_name} {society.president.last_name}
             </p>
           {society.vice_president && (
             <p>
@@ -163,7 +163,7 @@ const ViewSociety: React.FC = () => {
               Treasurer: {society.treasurer.first_name} {society.treasurer.last_name}
             </p>
           )}
-          {!joined && (<button
+          {joined === 0 && (<button
             onClick={() => handleJoinSociety(society.id)}
             style={{
               backgroundColor: isLight ? colours.blueAccent[400] : colours.blueAccent[500],
@@ -177,6 +177,21 @@ const ViewSociety: React.FC = () => {
             }}
           >
             Join Society
+          </button>)}
+          {joined === 1 && (<button
+            disabled = {true}
+            style={{
+              backgroundColor: isLight ? colours.grey[900] : colours.grey[300],
+              color: isLight ? colours.grey[0] : "#ffffff",
+              padding: "0.5rem 1.5rem",
+              borderRadius: "0.5rem",
+              transition: "all 0.2s ease",
+              border: "none",
+              cursor: "not-allowed",
+              marginTop: "2.5rem",
+            }}
+          >
+            Request Pending
           </button>)}
         </div>
         <div style={{flex: 1.5}}>
@@ -202,10 +217,10 @@ const ViewSociety: React.FC = () => {
               {society.tags?.map((tag: string) => "#" + tag || "No society tags!").join(", ")}
             </p>
             <p>Contact us: <Link 
-              href={"mailto:" + society.leader.email}
+              href={"mailto:" + society.president.email}
               style={{color: isLight ? "black" : "white"}}
             >
-              {society.leader.email}
+              {society.president.email}
             </Link></p>
           </div>
           <div style={{flex: 1.0}}>

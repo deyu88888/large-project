@@ -239,7 +239,7 @@ class StudentSocietiesView(APIView):
     - **GET**: Retrieves a list of societies the currently logged-in student has joined.
         - Permissions: Requires the user to be authenticated and a student.
         - Response:
-            - 200: A list of societies with details such as name and leader.
+            - 200: A list of societies with details such as name and president.
             - 403: If the user is not a student.
 
     - **POST**: Allows the student to leave a society they are part of.
@@ -292,10 +292,11 @@ class JoinSocietyView(APIView):
     """
     API View for managing the joining of new societies by a student.
     - **GET**: Retrieves a list of societies the currently logged-in student has NOT joined.
-    - Permissions: Requires the user to be authenticated and a student.
-    - Response:
-    - 200: A list of available societies with details such as name and leader.
-    - 403: If the user is not a student.
+        - Permissions: Requires the user to be authenticated and a student.
+        - Response:
+            - 200: A list of available societies with details such as name and president.
+            - 403: If the user is not a student.
+
     - **POST**: Creates a request for admin approval to join a society.
     - Permissions: Requires the user to be authenticated and a student.
     - Request Body:
@@ -567,8 +568,8 @@ def has_society_management_permission(student, society):
     Returns:
         bool: True if the student has management permissions, False otherwise
     """
-    # Check if student is president (leader)
-    is_president = student.is_president and hasattr(society, 'leader') and society.leader.id == student.id
+    # Check if student is president (president)
+    is_president = student.is_president and hasattr(society, 'president') and society.president.id == student.id
     
     # Check if student is vice president
     is_vice_president = hasattr(society, 'vice_president') and society.vice_president and society.vice_president.id == student.id
@@ -1276,9 +1277,21 @@ class StudentSocietyDataView(APIView):
 
         # Return extra data indicating membership
         serializer_data = serializer.data
-        serializer_data["is_member"] = society.society_members.filter(
+        is_member = society.society_members.filter(
             id=request.user.student.id
         ).exists()
+        if is_member:
+            serializer_data["is_member"] = 2
+        else:
+            request_exists = SocietyRequest.objects.filter(
+                society=society,
+                from_student=request.user.student,
+                intent="JoinSoc"
+            ).exists()
+            if request_exists:
+                serializer_data["is_member"] = 1
+            else:
+                serializer_data["is_member"] = 0
 
         return Response(serializer_data, status=status.HTTP_200_OK)
 
