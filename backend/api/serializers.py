@@ -69,7 +69,7 @@ class StudentSerializer(UserSerializer):
 
     class Meta(UserSerializer.Meta):
         model = Student
-        fields = UserSerializer.Meta.fields + ['major', 'societies', 'president_of', 'is_president',
+        fields = UserSerializer.Meta.fields + ['major', 'societies', 'president_of', 'is_president', 'icon',
                                                'award_students', 'vice_president_of_society', 'is_vice_president']
         read_only_fields = ["is_president", "is_vice_president", "award_students"]
         
