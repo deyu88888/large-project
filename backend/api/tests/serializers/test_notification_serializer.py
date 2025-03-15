@@ -1,7 +1,7 @@
 from datetime import timedelta
 from django.test import TestCase
 from django.utils.timezone import now
-from api.models import Notification, Event, Student, Society
+from api.models import Notification, Event, Student, Society, Admin
 from api.serializers import NotificationSerializer
 from api.tests.file_deletion import delete_file
 
@@ -9,11 +9,19 @@ from api.tests.file_deletion import delete_file
 
 
 class NotificationSerializerTestCase(TestCase):
-    """ Test cases for the Notification Serializer """
-
+    """Test cases for the Notification Serializer"""
     def setUp(self):
+        # Create an admin for society approval
+        self.admin = Admin.objects.create_user(
+            username="admin_user",
+            password="adminpassword",
+            email="admin@example.com",
+            first_name="Admin",
+            last_name="User",
+        )
+        
         # Create a student
-        self.student2 = Student.objects.create_user(
+        self.student = Student.objects.create_user(
             username="test_student",
             password="Password123",
             first_name="Test",
@@ -23,10 +31,13 @@ class NotificationSerializerTestCase(TestCase):
             major="Computer Science",
         )
 
-        # Create a society
+        # Create a society with all required fields
         self.society = Society.objects.create(
             name="Test Society",
-            leader=self.student2
+            leader=self.student,
+            approved_by=self.admin,  # Required field
+            status="Approved",  # Add status if needed
+            social_media_links={"Email": "society@example.com"}  # Required field
         )
 
         # Create an event
@@ -42,42 +53,51 @@ class NotificationSerializerTestCase(TestCase):
 
         # Create a notification
         self.notification = Notification.objects.create(
-            for_event=self.event,
-            for_student=self.student2
+            header=str(self.event),
+            body=f"Notification for {str(self.event)}",
+            for_student=self.student,
+            is_read=False,
+            is_important=False,
         )
 
         # Sample data for serialization
         self.serializer = None
         self.data = {
-            'for_event': self.event.id,
-            'for_student': self.student2.id,
-            'is_read': False,
-            'message': 'xxx',
+            "header": str(self.event),
+            "body": f"Notification for {str(self.event)}",
+            "for_student": self.student.id,
+            "is_read": False,
+            "is_important": False,
         }
 
     def test_notification_serialization(self):
-        """ Test to ensure the serializer is correctly serializing """
-
+        """Test to ensure the serializer is correctly serializing"""
         self.serializer = NotificationSerializer(instance=self.notification)
         data = self.serializer.data
 
-        self.assertEqual(data['for_event'], self.event.id)
-        self.assertEqual(data['for_student'], self.student2.id)
+        self.assertEqual(data["header"], self.notification.header)
+        self.assertEqual(data["body"], self.notification.body)
+        self.assertEqual(data["for_student"], self.student.id)
+        self.assertEqual(data["is_read"], self.notification.is_read)
+        self.assertEqual(data["is_important"], self.notification.is_important)
 
     def test_notification_deserialization(self):
-        """ Test to ensure deserialization functions correctly """
-
+        """Test to ensure deserialization functions correctly"""
         self.serializer = NotificationSerializer(data=self.data)
         self._assert_serializer_is_valid()
 
         notification = self.serializer.save()
 
-        self.assertEqual(notification.for_event.id, self.data['for_event'])
-        self.assertEqual(notification.for_student.id, self.data['for_student'])
+        self.assertEqual(notification.header, self.data["header"])
+        self.assertEqual(notification.body, self.data["body"])
+        self.assertEqual(notification.for_student.id, self.data["for_student"])
+        self.assertEqual(notification.is_read, self.data["is_read"])
+        self.assertEqual(notification.is_important, self.data["is_important"])
 
     def test_notification_update(self):
-        """ Test notification update functions correctly """
-
+        """Test notification update functions correctly"""
+        self.assertFalse(self.notification.is_read)
+        self.data["is_read"] = True
         self.serializer = NotificationSerializer(
             instance=self.notification,
             data=self.data,
@@ -86,8 +106,7 @@ class NotificationSerializerTestCase(TestCase):
         self._assert_serializer_is_valid()
         self.serializer.save()
 
-        self.assertEqual(self.notification.for_event.id, self.data['for_event'])
-        self.assertEqual(self.notification.for_student.id, self.data['for_student'])
+        self.assertTrue(self.notification.is_read)
 
     def _assert_serializer_is_valid(self):
         if not self.serializer.is_valid():

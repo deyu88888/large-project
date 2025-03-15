@@ -36,7 +36,7 @@ class SocietyRequestTestCase(TestCase):
             leader=self.student,
             approved_by=self.admin,
             category="Technology",
-            social_media_links={"email": "techsociety@example.com"},
+            social_media_links={"Email": "techsociety@example.com"},
             membership_requirements="Members must attend at least 3 events per semester",
             upcoming_projects_or_plans="Plan to host a Tech Fest in May",
         )

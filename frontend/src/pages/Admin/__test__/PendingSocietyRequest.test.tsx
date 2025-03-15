@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { vi, describe, it, expect, beforeEach } from "vitest";
-import PendingSocietyRequest from "../PendingSocietyRequest";
+import PendingSocietyRequest from "../SocietyCreationRequests";
 import { SearchContext } from "../../../components/layout/SearchContext";
 import { apiPaths } from "../../../api";
 import { updateRequestStatus } from "../../../api/requestApi";

@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { apiClient } from "../../api";
 import {
   Avatar,
   Box,
@@ -14,13 +15,13 @@ import {
 } from "@mui/material";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
-import GroupAddOutlinedIcon from "@mui/icons-material/GroupAddOutlined";
-import EventOutlinedIcon from "@mui/icons-material/EventOutlined";
+import PeopleOutlineIcon from "@mui/icons-material/PeopleOutline";
+import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
+import EventAvailableIcon from "@mui/icons-material/EventAvailable";
 import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";
-import PersonOutlinedIcon from "@mui/icons-material/PersonOutlined";
 import InboxIcon from "@mui/icons-material/MoveToInbox";
 import MailIcon from "@mui/icons-material/Mail";
-import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
+import GroupAddOutlinedIcon from "@mui/icons-material/GroupAddOutlined";
 import LogoutIcon from '@mui/icons-material/Logout';
 import { CustomDrawer, CustomDrawerHeader } from "./drawer/CustomDrawer";
 
@@ -36,14 +37,29 @@ const StudentDrawer: React.FC<StudentDrawerProps> = ({
   location,
 }) => {
   const [selected, setSelected] = useState("Dashboard");
+  const [student, setStudent] = useState<any[]>([]);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchStudentData = async () => {
+      try {
+        const response = await apiClient.get("/api/user/current");
+        setStudent(response.data);
+        console.log(student);
+      } catch (error) {
+        console.error("Error retrieving student:", error);
+        alert("Failed to retrieve student. Please contact an administrator.");
+      }
+    };  
+  fetchStudentData();
+  });
 
   const menuItems = [
     { title: "Dashboard", icon: <HomeOutlinedIcon />, to: "/student" },
-    { title: "My Societies", icon: <GroupAddOutlinedIcon />, to: "/student/my-societies" },
-    { title: "Start Society", icon: <EventOutlinedIcon />, to: "/student/start-society" },
-    { title: "View Events", icon: <NotificationsNoneOutlinedIcon />, to: "/student/view-events" },
-    { title: "Notifications", icon: <PersonOutlinedIcon />, to: "/student/view-notifications" },
+    { title: "My Societies", icon: <PeopleOutlineIcon />, to: "/student/my-societies" },
+    { title: "Start Society", icon: <AddCircleOutlineIcon />, to: "/student/start-society" },
+    { title: "View Events", icon: <EventAvailableIcon />, to: "/student/view-events" },
+    { title: "Notifications", icon: <NotificationsNoneOutlinedIcon />, to: "/student/view-notifications" },
   ];
 
   const logout = () => {
@@ -70,16 +86,33 @@ const StudentDrawer: React.FC<StudentDrawerProps> = ({
         >
           {drawer ? (
             <Box sx={{ textAlign: "center" }}>
-              <Avatar sx={{ width: 72, height: 72, margin: "0 auto" }} />
+              <img
+                src={"http://localhost:8000/api" + student?.icon}
+                alt={`${student?.username} icon`}
+                style={{
+                  width: "72px",
+                  height: "72px",
+                  borderRadius: "50%",
+                  margin: "0 auto"
+                }}
+              />
               <Typography variant="h6" fontWeight="bold" sx={{ mt: "10px" }}>
-                Student Name
+                {student?.first_name} {student?.last_name}
               </Typography>
               <Typography variant="body2" color="textSecondary">
                 Student Dashboard
               </Typography>
             </Box>
           ) : (
-            <Avatar sx={{ width: 25, height: 25 }} />
+            <img
+              src={"http://localhost:8000/api" + student?.icon}
+              alt={`${student?.username} icon`}
+              style={{
+                width: "25px",
+                height: "25px",
+                borderRadius: "50%",
+              }}
+            />
           )}
         </Box>
         <Divider />
@@ -133,7 +166,7 @@ const StudentDrawer: React.FC<StudentDrawerProps> = ({
                   justifyContent: "center",
                 }}
               >
-                <AddCircleOutlineIcon />
+                <GroupAddOutlinedIcon />
               </ListItemIcon>
               {drawer && <ListItemText primary="Join Societies" />}
             </ListItemButton>

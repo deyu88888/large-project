@@ -1,7 +1,7 @@
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.utils.timezone import now, timedelta
-from api.models import Notification, Event, Society, Student
+from api.models import Admin, Notification, Event, Society, Student
 from api.tests.file_deletion import delete_file
 
 
@@ -9,9 +9,14 @@ class NotificationModelTestCase(TestCase):
     """Unit test for the Notification model"""
 
     def setUp(self):
-        # Create a society
-        self.society = Society.objects.create(name="Test Society")
-
+        
+        self.admin = Admin.objects.create(
+            username='admin_user',
+            first_name='Admin',
+            last_name='User',
+            email='admin@example.com',
+            password='adminpassword',
+        )
         # Create a student
         self.student = Student.objects.create_user(
             username="teststudent",
@@ -19,6 +24,13 @@ class NotificationModelTestCase(TestCase):
             email="teststudent@example.com",
             first_name="Test",
             last_name="Student",
+        )
+        self.society = Society.objects.create(
+            name="Test Society",
+            leader=self.student,
+            approved_by=self.admin,
+            category='Technology',
+            social_media_links={"Email": "society@example.com"},
         )
         self.society.society_members.add(self.student)
 
@@ -34,43 +46,42 @@ class NotificationModelTestCase(TestCase):
 
         # Create a notification
         self.notification = Notification.objects.create(
-            for_event=self.event,
+            header=str(self.event),
+            body=f"Notification for {str(self.event)}",
             for_student=self.student,
             is_read=False,
-            message="You have an upcoming event: Test Event."
+            is_important=False,
         )
 
     def test_notification_valid(self):
         """Test to ensure the notification is valid"""
         self._assert_notification_is_valid()
 
-    def test_event_not_nullable(self):
-        """Test ensuring event cannot be None"""
-        self.notification.for_event = None
-        self._assert_notification_is_invalid()
-
     def test_student_not_nullable(self):
         """Test ensuring student cannot be None"""
         self.notification.for_student = None
         self._assert_notification_is_invalid()
 
-    def test_message_not_empty(self):
-        """Test ensuring message cannot be empty"""
-        self.notification.message = ""
-        self._assert_notification_is_invalid()
-
     def test_is_read_default(self):
         """Test to ensure `is_read` defaults to False"""
         notification = Notification.objects.create(
-            for_event=self.event,
             for_student=self.student,
-            message="Test notification message."
         )
         self.assertFalse(notification.is_read)
 
+    def test_is_important_default(self):
+        """Test to ensure `is_read` defaults to False"""
+        notification = Notification.objects.create(
+            for_student=self.student,
+        )
+        self.assertFalse(notification.is_important)
+
     def test_string_representation(self):
         """Test the string representation matches the event title"""
-        self.assertEqual(str(self.notification), self.event.title)
+        self.assertEqual(
+            str(self.notification),
+            f"{str(self.event)}\nNotification for {str(self.event)}"
+        )
 
     def test_mark_notification_as_read(self):
         """Test marking a notification as read"""

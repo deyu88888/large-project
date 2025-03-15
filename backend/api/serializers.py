@@ -61,14 +61,56 @@ class StudentSerializer(UserSerializer):
     """
     societies = serializers.PrimaryKeyRelatedField(many=True, queryset=Society.objects.all())
     president_of = serializers.PrimaryKeyRelatedField(queryset=Society.objects.all(), allow_null=True, required=False)
+    vice_president_of_society = serializers.SerializerMethodField()
     major = serializers.CharField(required=True)
     is_president = serializers.BooleanField(read_only=True)
     #awards = AwardStudentSerializer(source='award_students', many=True, read_only=True) this will work when files are seperated
+    is_vice_president = serializers.SerializerMethodField()
 
     class Meta(UserSerializer.Meta):
         model = Student
-        fields = UserSerializer.Meta.fields + ['major', 'societies', 'president_of', 'is_president', 'award_students']
-        read_only_fields = ["is_president", "award_students"]
+        fields = UserSerializer.Meta.fields + ['major', 'societies', 'president_of', 'is_president',
+                                               'award_students', 'vice_president_of_society', 'is_vice_president']
+        read_only_fields = ["is_president", "is_vice_president", "award_students"]
+        
+    def get_is_vice_president(self, obj):
+        """Get whether the student is a vice president"""
+        # For debugging
+        print(f"DEBUG - Checking is_vice_president for {obj.username}")
+        
+        # First check the direct field
+        if hasattr(obj, 'is_vice_president'):
+            print(f"DEBUG - Direct is_vice_president attribute: {obj.is_vice_president}")
+            
+        # Try the query method
+        try:
+            is_vp = Society.objects.filter(vice_president=obj).exists()
+            print(f"DEBUG - Query result for is_vice_president: {is_vp}")
+            return is_vp
+        except Exception as e:
+            print(f"DEBUG - Error querying vice president status: {str(e)}")
+            
+        # Fallback to the attribute
+        return getattr(obj, 'is_vice_president', False)
+    
+    def get_vice_president_of_society(self, obj):
+        """Get the ID of the society where the student is vice president"""
+        try:
+            # Check if it's a RelatedManager
+            if hasattr(obj.vice_president_of_society, 'all'):
+                society = obj.vice_president_of_society.first()
+                if society:
+                    print(f"DEBUG - Found society for VP: {society.id}")
+                    return society.id
+            
+            # If it's not a RelatedManager but a direct reference
+            elif hasattr(obj, 'vice_president_of_society') and obj.vice_president_of_society:
+                if hasattr(obj.vice_president_of_society, 'pk'):
+                    return obj.vice_president_of_society.pk
+        except Exception as e:
+            print(f"DEBUG - Error in get_vice_president_of_society: {str(e)}")
+        
+        return None
 
     def validate_email(self, value):
         """
@@ -168,19 +210,25 @@ class SocietySerializer(serializers.ModelSerializer):
     leader_id = serializers.PrimaryKeyRelatedField(
         queryset=Student.objects.all(), write_only=True, source='leader'
     )
-    vice_president = StudentSerializer(required=False)
+    vice_president = StudentSerializer(read_only=True)
+    vice_president_id = serializers.PrimaryKeyRelatedField(
+        queryset=Student.objects.all(), write_only=True, source='vice_president', required=False
+    )
     event_manager = StudentSerializer(required=False)
-    treasurer = StudentSerializer(required=False)
+    event_manager_id = serializers.PrimaryKeyRelatedField(
+        queryset=Student.objects.all(), write_only=True, source='event_manager', required=False
+    )
     tags = serializers.ListField(child=serializers.CharField(), required=False)
 
     class Meta:
         """SocietySerializer meta data"""
         model = Society
         fields = [
-            'id', 'name', 'description', 'society_members', 'leader', 'leader_id', 'vice_president' ,
-            'treasurer', 'event_manager', 'approved_by','status', 'category', 'social_media_links',
-            'showreel_images', 'membership_requirements', 'upcoming_projects_or_plans',
-            'icon','tags',
+            'id', 'name', 'description', 'society_members', 'leader', 'approved_by',
+            'status', 'category', 'social_media_links', 'showreel_images',
+            'membership_requirements', 'upcoming_projects_or_plans', 'icon','tags',
+            'vice_president', 'event_manager', 'leader_id',
+            'vice_president_id', 'event_manager_id', 
         ]
         extra_kwargs = {
             'society_members': {'required': False},  # Allows empty or missing data
@@ -270,15 +318,14 @@ class EventSerializer(serializers.ModelSerializer):
 
 
 class NotificationSerializer(serializers.ModelSerializer):
-    """ Serializer for objects of the Notification model """
+    """Serializer for objects of the Notification model"""
 
     class Meta:
         """ NotificationSerializer meta data """
         model = Notification
-        fields = ['id', 'for_event', 'for_student', 'is_read', 'message']
+        fields = ["id", "header", "body", "for_student", "is_read", "is_important"]
         extra_kwargs = {
-            'for_event': {'required': True},
-            'for_student': {'required': True}
+            "for_student": {"required": True}
         }
 
     def create(self, validated_data):
@@ -344,7 +391,6 @@ class LeaveSocietySerializer(serializers.Serializer):
         return society
 
 
-
 class JoinSocietySerializer(serializers.Serializer):
     society_id = serializers.IntegerField()
 
@@ -360,14 +406,25 @@ class JoinSocietySerializer(serializers.Serializer):
 
         if society.society_members.filter(id=request_user.id).exists():
             raise serializers.ValidationError("You are already a member of this society.")
+            
+        # Check if there's already a pending request
+        pending_request = SocietyRequest.objects.filter(
+            from_student=request_user.student,
+            society=society,
+            intent="JoinSoc",
+            approved=False
+        ).exists()
+        
+        if pending_request:
+            raise serializers.ValidationError("You already have a pending request to join this society.")
 
         return value
 
     def save(self):
+        # This method is no longer used for directly adding students to societies.
+        # The view now creates a SocietyRequest instead.
         society_id = self.validated_data['society_id']
-        request_user = self.context['request'].user
         society = Society.objects.get(id=society_id)
-        request_user.student.societies_belongs_to.add(society)
         return society
 
 
@@ -672,7 +729,6 @@ class DashboardNotificationSerializer(serializers.ModelSerializer):
     """
     Updated Notification serializer to include read/unread tracking for the dashboard.
     """
-    event_title = serializers.CharField(source="for_event.title", read_only=True)
     student_name = serializers.CharField(source="for_student.full_name", read_only=True)
 
     class Meta:
@@ -680,9 +736,9 @@ class DashboardNotificationSerializer(serializers.ModelSerializer):
         model = Notification
         fields = [
             'id',
-            'message',
+            'body',
             'is_read',
-            'event_title',
+            'header',
             'student_name'
         ]
         # Removed 'timestamp' since the model does not have it
@@ -785,17 +841,8 @@ class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
         fields = [
-            "id",
-            "content",
-            "create_at",
-            "user_data",
-            "parent_comment",
-            "replies",
-            "likes",
-            "dislikes",
-            "liked_by_user",
-            "disliked_by_user"
-        ]
+            "id", "content", "create_at", "user_data", "parent_comment", "replies",
+            "likes", "dislikes", "liked_by_user", "disliked_by_user"]
 
     def get_replies(self, obj):
         """Get all the replies of the comment"""

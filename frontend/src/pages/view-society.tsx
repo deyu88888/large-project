@@ -18,6 +18,7 @@ const ViewSociety: React.FC = () => {
 
   const [society, setSociety] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [joined, setJoined] = useState(true)
 
   const { society_id } = useParams<{ society_id: string }>();
 
@@ -27,7 +28,8 @@ const ViewSociety: React.FC = () => {
         setLoading(true);
         const response = await apiClient.get("/api/society-view/" + societyId);
         setSociety(response.data);
-        console.log(response);
+        setJoined(response.data.is_member)
+        /*console.log("Society data: ", response);*/
       } catch (error) {
         console.error("Error retrieving society:", error);
         alert("Failed to load society. Please try again.");
@@ -38,6 +40,16 @@ const ViewSociety: React.FC = () => {
   fetchSocietyData(Number(society_id));
   }, [society_id]);
 
+  const handleJoinSociety = async (societyId: number) => {
+    try {
+      await apiClient.post("/api/join-society/" + societyId + "/");
+      setJoined(true)
+      alert("Successfully joined the society!");
+    } catch (error) {
+      console.error("Error joining society:", error);
+      alert("Failed to join the society. Please try again.");
+    }
+  };
 
   return (
     <div
@@ -57,7 +69,7 @@ const ViewSociety: React.FC = () => {
               fontSize: "1.125rem",
             }}
           >
-            Loading societies...
+            Loading society...
           </p>
         ) : (
           <>
@@ -81,7 +93,7 @@ const ViewSociety: React.FC = () => {
               borderRadius: "50%",
               verticalAlign: "middle",
             }}
-          />
+            />
           )}
           <h1
             style={{
@@ -133,6 +145,9 @@ const ViewSociety: React.FC = () => {
           <p style={{fontSize: 18}}>
             <b>Society Roles</b>
           </p>
+          <p>
+              President: {society.leader.first_name} {society.leader.last_name}
+            </p>
           {society.vice_president && (
             <p>
               Vice President: {society.vice_president.first_name} {society.vice_president.last_name}
@@ -148,6 +163,21 @@ const ViewSociety: React.FC = () => {
               Treasurer: {society.treasurer.first_name} {society.treasurer.last_name}
             </p>
           )}
+          {!joined && (<button
+            onClick={() => handleJoinSociety(society.id)}
+            style={{
+              backgroundColor: isLight ? colours.blueAccent[400] : colours.blueAccent[500],
+              color: isLight ? "#ffffff" : colours.grey[100],
+              padding: "0.5rem 1.5rem",
+              borderRadius: "0.5rem",
+              transition: "all 0.2s ease",
+              border: "none",
+              cursor: "pointer",
+              marginTop: "2.5rem",
+            }}
+          >
+            Join Society
+          </button>)}
         </div>
         <div style={{flex: 1.5}}>
           {society.showreel_images && society.showreel_images.length > 0 && (
@@ -169,7 +199,7 @@ const ViewSociety: React.FC = () => {
         <div style={{display: "flex"}}>
           <div style={{flex: 3.0}}>
             <p style={{marginBottom: "1.5rem", color: isLight ? colours.grey[600] : colours.grey[300]}}>
-              {society.tags.map((tag: string) => "#" + tag).join(", ")}
+              {society.tags?.map((tag: string) => "#" + tag || "No society tags!").join(", ")}
             </p>
             <p>Contact us: <Link 
               href={"mailto:" + society.leader.email}

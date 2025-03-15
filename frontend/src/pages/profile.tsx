@@ -4,17 +4,21 @@ import { useAuthStore } from "../stores/auth-store";
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
 import { apiClient, apiPaths } from "../api";
+import { tokens } from "../theme/theme";
 
 // MUI imports
 import { useTheme } from "@mui/material/styles";
 import {
-    Container,
-    Box,
-    Paper,
-    Typography,
-    Button,
-    Divider,
-    TextField,
+  Container,
+  Box,
+  Paper,
+  Typography,
+  Button,
+  Divider,
+  TextField,
+  Avatar,
+  Card,
+  Grid,
 } from "@mui/material";
 
 interface User {
@@ -69,10 +73,16 @@ export default function ProfilePage() {
         });
     }
     }, [student_id, user, isSelf]);
+  const colors = tokens(theme.palette.mode);
 
     const handleGoBack = () => {
     navigate(-1);
-    };
+  };
+
+  // Get user initials for avatar
+  const getInitials = (firstName, lastName) => {
+    return `${firstName?.charAt(0) || ""}${lastName?.charAt(0) || ""}`.toUpperCase();
+  };
 
     const handleToggleFollow = () => {
         if (!profile) return;
@@ -92,18 +102,38 @@ export default function ProfilePage() {
     if (!profile) {
     return (
       <Container maxWidth="sm" sx={{ mt: 4 }}>
-        <Button variant="contained" onClick={handleGoBack} sx={{ mb: 4 }}>
-          Back
-        </Button>
-        <Paper
-          elevation={3}
-          sx={{
-            p: 4,
-            textAlign: "center",
-            backgroundColor: theme.palette.background.default,
+        <Button 
+          variant="outlined" 
+          startIcon={<ArrowBackIcon />}
+          onClick={handleGoBack} 
+          sx={{ 
+            mb: 4, 
+            color: colors.grey[100], 
+            borderColor: colors.grey[400] 
           }}
         >
-          <Typography variant="h6" sx={{ mt: 2, color: theme.palette.text.secondary }}>
+          Back
+        </Button>
+        <Paper 
+          elevation={2} 
+          sx={{ 
+            p: 4, 
+            textAlign: "center",
+            backgroundColor: colors.primary[400]
+          }}
+        >
+          <Avatar 
+            sx={{ 
+              width: 64, 
+              height: 64, 
+              mx: "auto", 
+              bgcolor: colors.blueAccent[500],
+              color: colors.grey[100]
+            }}
+          >
+            ?
+          </Avatar>
+          <Typography variant="h6" sx={{ mt: 2, color: colors.grey[100] }}>
             No user found
           </Typography>
         </Paper>
@@ -111,16 +141,39 @@ export default function ProfilePage() {
     );
     }
 
-    return (
-    <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
-      <Button variant="contained" onClick={handleGoBack} sx={{ mb: 2 }}>
-        ← Back
+  return (
+    <Container maxWidth="md" sx={{ py: 4 }}>
+      <Button 
+        variant="outlined" 
+        startIcon={<ArrowBackIcon />}
+        onClick={handleGoBack} 
+        sx={{ 
+          mb: 3, 
+          color: colors.grey[100], 
+          borderColor: colors.grey[400] 
+        }}
+      >
+        Back
       </Button>
-      <Paper elevation={3} sx={{ mb: 4 }}>
+      
+      <Paper 
+        elevation={2} 
+        sx={{ 
+          mb: 4, 
+          overflow: 'hidden',
+          backgroundColor: colors.primary[400],
+          borderRadius: 1
+        }}
+      >
+        {/* Header */}
         <Box
           sx={{
-            p: 4,
-            backgroundColor: theme.palette.primary.main,
+            p: 3,
+            backgroundColor: colors.blueAccent[700],
+            color: colors.grey[100],
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2
           }}
         >
           {isSelf ? (
@@ -258,115 +311,186 @@ export default function ProfilePage() {
                 <Typography variant="body1" sx={{ fontWeight: "bold" }}>
                   {profile.is_active ? "Verified" : "Not Verified"}
                 </Typography>
-              </Box>
-            </Paper>
-          </Box>
-          <Divider sx={{ mb: 4 }}>Profile Information</Divider>
-          {isSelf ? (
-            <Formik
-              initialValues={{
-                first_name: profile.first_name,
-                last_name: profile.last_name,
-                username: profile.username,
-                email: profile.email,
-                role: profile.role,
-              }}
-              validationSchema={validationSchema}
-              onSubmit={async (values, { setSubmitting }) => {
-                const res = await apiClient.put(apiPaths.USER.CURRENT, {
-                  first_name:
-                    profile.first_name === values.first_name
-                      ? undefined
-                      : values.first_name,
-                  last_name:
-                    profile.last_name === values.last_name
-                      ? undefined
-                      : values.last_name,
-                  username:
-                    profile.username === values.username
-                      ? undefined
-                      : values.username,
-                  email: profile.email === values.email ? undefined : values.email,
-                  role: profile.role === values.role ? undefined : values.role,
-                });
-                console.log(res);
-                setSubmitting(false);
-              }}
-            >
-              {({
-                values,
-                handleChange,
-                handleBlur,
-                isSubmitting,
-                errors,
-                touched,
-              }) => (
-                <Form>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 2,
-                    }}
-                  >
+              </Card>
+            </Grid>
+          </Grid>
+          
+          <Divider 
+            sx={{ 
+              my: 3, 
+              "&::before, &::after": {
+                borderColor: colors.grey[500],
+              },
+              color: colors.grey[100]
+            }}
+          >
+            <Typography variant="h5">Profile Information</Typography>
+          </Divider>
+          
+          {/* Form */}
+          <Formik
+            initialValues={{
+              first_name: user.first_name,
+              last_name: user.last_name,
+              username: user.username,
+              email: user.email,
+              role: user.role,
+            }}
+            validationSchema={validationSchema}
+            onSubmit={async (values, { setSubmitting }) => {
+              const res = await apiClient.put(apiPaths.USER.CURRENT, {
+                first_name:
+                  user.first_name === values.first_name
+                    ? undefined
+                    : values.first_name,
+                last_name:
+                  user.last_name === values.last_name ? undefined : values.last_name,
+                username:
+                  user.username === values.username ? undefined : values.username,
+                email: user.email === values.email ? undefined : values.email,
+                role: user.role === values.role ? undefined : values.role,
+              });
+              console.log(res);
+              setSubmitting(false);
+            }}
+          >
+            {({
+              values,
+              handleChange,
+              handleBlur,
+              isSubmitting,
+              errors,
+              touched,
+            }) => (
+              <Form>
+                <Grid container spacing={3}>
+                  <Grid item xs={12} md={6}>
                     <TextField
                       fullWidth
                       name="first_name"
                       label="First Name"
-                      variant="outlined"
+                      variant="filled"
                       value={values.first_name}
                       onChange={handleChange}
                       onBlur={handleBlur}
                       error={touched.first_name && Boolean(errors.first_name)}
                       helperText={touched.first_name && errors.first_name}
+                      InputLabelProps={{ style: { color: colors.grey[300] } }}
+                      InputProps={{ 
+                        style: { 
+                          color: colors.grey[100],
+                          backgroundColor: colors.primary[600]
+                        } 
+                      }}
+                      sx={{
+                        "& .MuiFilledInput-root": {
+                          backgroundColor: colors.primary[600],
+                          "&:hover": {
+                            backgroundColor: colors.primary[500],
+                          },
+                          "&.Mui-focused": {
+                            backgroundColor: colors.primary[500],
+                          }
+                        },
+                        "& .MuiFormHelperText-root": {
+                          color: colors.redAccent[400]
+                        }
+                      }}
                     />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
                     <TextField
                       fullWidth
                       name="last_name"
                       label="Last Name"
-                      variant="outlined"
+                      variant="filled"
                       value={values.last_name}
                       onChange={handleChange}
                       onBlur={handleBlur}
                       error={touched.last_name && Boolean(errors.last_name)}
                       helperText={touched.last_name && errors.last_name}
+                      InputLabelProps={{ style: { color: colors.grey[300] } }}
+                      InputProps={{ 
+                        style: { 
+                          color: colors.grey[100],
+                          backgroundColor: colors.primary[600]
+                        } 
+                      }}
+                      sx={{
+                        "& .MuiFilledInput-root": {
+                          backgroundColor: colors.primary[600],
+                          "&:hover": {
+                            backgroundColor: colors.primary[500],
+                          },
+                          "&.Mui-focused": {
+                            backgroundColor: colors.primary[500],
+                          }
+                        },
+                        "& .MuiFormHelperText-root": {
+                          color: colors.redAccent[400]
+                        }
+                      }}
                     />
+                  </Grid>
+                  <Grid item xs={12}>
                     <TextField
                       fullWidth
                       name="email"
                       label="Email"
-                      variant="outlined"
+                      variant="filled"
                       value={values.email}
                       onChange={handleChange}
                       onBlur={handleBlur}
                       error={touched.email && Boolean(errors.email)}
                       helperText={touched.email && errors.email}
+                      InputLabelProps={{ style: { color: colors.grey[300] } }}
+                      InputProps={{ 
+                        style: { 
+                          color: colors.grey[100],
+                          backgroundColor: colors.primary[600]
+                        } 
+                      }}
+                      sx={{
+                        "& .MuiFilledInput-root": {
+                          backgroundColor: colors.primary[600],
+                          "&:hover": {
+                            backgroundColor: colors.primary[500],
+                          },
+                          "&.Mui-focused": {
+                            backgroundColor: colors.primary[500],
+                          }
+                        },
+                        "& .MuiFormHelperText-root": {
+                          color: colors.redAccent[400]
+                        }
+                      }}
                     />
-                    <Button
-                      type="submit"
-                      variant="contained"
-                      disabled={isSubmitting}
-                      sx={{ mt: 2 }}
-                    >
-                      Update Profile
-                    </Button>
-                  </Box>
-                </Form>
-              )}
-            </Formik>
-          ) : (
-            <Box>
-              <Typography variant="body1">
-                First Name: {profile.first_name}
-              </Typography>
-              <Typography variant="body1">
-                Last Name: {profile.last_name}
-              </Typography>
-              <Typography variant="body1">
-                Email: {profile.email}
-              </Typography>
-            </Box>
-          )}
+                  </Grid>
+                  <Grid item xs={12}>
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                      <Button
+                        type="submit"
+                        variant="contained"
+                        disabled={isSubmitting}
+                        sx={{
+                          backgroundColor: colors.blueAccent[600],
+                          color: colors.grey[100],
+                          fontSize: "14px",
+                          fontWeight: "bold",
+                          padding: "10px 20px",
+                          "&:hover": {
+                            backgroundColor: colors.blueAccent[500],
+                          },
+                        }}
+                      >
+                        Update Profile
+                      </Button>
+                    </Box>
+                  </Grid>
+                </Grid>
+              </Form>
+            )}
+          </Formik>
         </Box>
       </Paper>
     </Container>

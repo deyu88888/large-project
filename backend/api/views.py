@@ -12,8 +12,6 @@ from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from django.views.static import serve
-from asgiref.sync import async_to_sync
-from channels.layers import get_channel_layer
 from rest_framework import generics, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
@@ -22,7 +20,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticate
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from api.models import Admin, AdminReportRequest, Event, Notification, Society, Student, User, Award, AwardStudent, \
+from api.models import Admin, AdminReportRequest, Event, Notification, Society, SocietyRequest, Student, User, Award, AwardStudent, \
     UserRequest, DescriptionRequest, AdminReportRequest, Comment
 from api.serializers import (
     AdminReportRequestSerializer,
@@ -94,6 +92,9 @@ class RegisterView(APIView):
         return Response({"message": "Student registered successfully"}, status=status.HTTP_201_CREATED)
 
 
+import traceback
+import sys
+
 class CurrentUserView(APIView):
     """
     View for retrieving the currently authenticated user. This view provides information about the logged-in user
@@ -110,54 +111,125 @@ class CurrentUserView(APIView):
     """
 
     def get(self, request):
-        jwt_authenticator = JWTAuthentication()
-        decoded_auth = jwt_authenticator.authenticate(request)
-
-        if decoded_auth is None:
-            return Response({
-                "error": "Invalid or expired token. Please log in again."
-            }, status=status.HTTP_401_UNAUTHORIZED)
-
-        user, _ = decoded_auth
-        
         try:
-            student_user = Student.objects.get(pk=user.pk)
-            serializer = StudentSerializer(student_user)
-        except Student.DoesNotExist:
-            # No matching Student row, so just use User
-            serializer = UserSerializer(user)
+            print("\n" + "="*80)
+            print(f"DEBUG - CurrentUserView - User ID: {request.user.id}")
+            print(f"DEBUG - CurrentUserView - Username: {request.user.username}")
+            print(f"DEBUG - CurrentUserView - User type: {type(request.user).__name__}")
+            
+            jwt_authenticator = JWTAuthentication()
+            print(f"DEBUG - About to authenticate with JWT")
+            decoded_auth = jwt_authenticator.authenticate(request)
+            print(f"DEBUG - JWT authentication result: {decoded_auth is not None}")
 
-        # Check if serializer.data is falsy, return 500 error.
-        if not serializer.data:
+            if decoded_auth is None:
+                print(f"DEBUG - JWT authentication failed")
+                return Response({
+                    "error": "Invalid or expired token. Please log in again."
+                }, status=status.HTTP_401_UNAUTHORIZED)
+
+            user, _ = decoded_auth
+            print(f"DEBUG - Authenticated user ID: {user.id}")
+            print(f"DEBUG - Authenticated username: {user.username}")
+            
+            try:
+                print(f"DEBUG - Trying to get Student with pk={user.pk}")
+                student_user = Student.objects.get(pk=user.pk)
+                print(f"DEBUG - Found student: {student_user.username}")
+                print(f"DEBUG - Student fields: {dir(student_user)}")
+                print(f"DEBUG - Is president: {getattr(student_user, 'is_president', None)}")
+                print(f"DEBUG - Is vice president: {getattr(student_user, 'is_vice_president', None)}")
+                
+                # Check for president relationship
+                if hasattr(student_user, 'president_of'):
+                    print(f"DEBUG - President of society: {getattr(student_user.president_of, 'id', None) if student_user.president_of else None}")
+                else:
+                    print(f"DEBUG - No president_of attribute")
+                
+                # Check for vice president relationship
+                try:
+                    vp_societies = getattr(student_user, 'vice_president_of_society', None)
+                    print(f"DEBUG - VP society type: {type(vp_societies).__name__}")
+                    print(f"DEBUG - VP society: {vp_societies}")
+                except Exception as e:
+                    print(f"DEBUG - Error getting vice_president_of_society: {str(e)}")
+                
+                # Create serializer
+                print(f"DEBUG - Creating StudentSerializer")
+                serializer = StudentSerializer(student_user)
+                print(f"DEBUG - StudentSerializer created")
+            except Student.DoesNotExist:
+                # No matching Student row, so just use User
+                print(f"DEBUG - No Student found, using UserSerializer instead")
+                serializer = UserSerializer(user)
+            except Exception as e:
+                print(f"DEBUG - Unexpected error handling student: {str(e)}")
+                print(traceback.format_exc())
+                # Fallback to UserSerializer
+                serializer = UserSerializer(user)
+
+            # Check if serializer.data exists
+            print(f"DEBUG - About to access serializer.data")
+            if not serializer.data:
+                print(f"DEBUG - serializer.data is empty or None")
+                return Response(
+                    {"error": "User data could not be retrieved. Please try again later."},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+            
+            print(f"DEBUG - Serializer data keys: {serializer.data.keys()}")
+            print(f"DEBUG - Response data: {serializer.data}")
+            return Response(serializer.data, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            # Print detailed error information
+            print("\nCRITICAL ERROR IN CURRENT USER VIEW:")
+            print("-"*80)
+            print(f"Exception: {str(e)}")
+            print("-"*80)
+            traceback.print_exc(file=sys.stdout)
+            print("="*80)
+            
+            # Return a proper error response
             return Response(
-                {"error": "User data could not be retrieved. Please try again later."},
+                {"error": "Server error fetching user data", "detail": str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
 
     def put(self, request):
         """
         update user details
         note: this current implmentation is not secure, it should not be able to update the user role
         """
-        jwt_authenticator = JWTAuthentication()
-        decoded_auth = jwt_authenticator.authenticate(request)
+        try:
+            print(f"DEBUG - PUT request to CurrentUserView")
+            jwt_authenticator = JWTAuthentication()
+            decoded_auth = jwt_authenticator.authenticate(request)
 
-        if decoded_auth is None:
-            return Response({
-                "error": "Invalid or expired token. Please log in again."
-            }, status=status.HTTP_401_UNAUTHORIZED)
+            if decoded_auth is None:
+                print(f"DEBUG - JWT authentication failed in PUT")
+                return Response({
+                    "error": "Invalid or expired token. Please log in again."
+                }, status=status.HTTP_401_UNAUTHORIZED)
 
-        user, _ = decoded_auth
-        print("request.data: ", request.data)
-        serializer = UserSerializer(user, data=request.data, partial=True)
-        # check the user role shouldn't change
-
-        if serializer.is_valid():
-            serializer.save()   # save the update
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            user, _ = decoded_auth
+            print(f"DEBUG - PUT request data: {request.data}")
+            serializer = UserSerializer(user, data=request.data, partial=True)
+            
+            if serializer.is_valid():
+                print(f"DEBUG - Serializer is valid, saving changes")
+                serializer.save()   # save the update
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            else:
+                print(f"DEBUG - Serializer validation errors: {serializer.errors}")
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            print(f"DEBUG - Error in PUT method: {str(e)}")
+            print(traceback.format_exc())
+            return Response(
+                {"error": "Server error updating user data", "detail": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class StudentSocietiesView(APIView):
@@ -219,65 +291,70 @@ class StudentSocietiesView(APIView):
 class JoinSocietyView(APIView):
     """
     API View for managing the joining of new societies by a student.
-
     - **GET**: Retrieves a list of societies the currently logged-in student has NOT joined.
-        - Permissions: Requires the user to be authenticated and a student.
-        - Response:
-            - 200: A list of available societies with details such as name and leader.
-            - 403: If the user is not a student.
-
-    - **POST**: Allows the student to join a new society.
-        - Permissions: Requires the user to be authenticated and a student.
-        - Request Body:
-            - `society_id` (int): ID of the society to join.
-        - Response:
-            - 200: Confirmation message indicating the student has successfully joined the society.
-            - 400: Validation errors, such as invalid society ID.
-            - 403: If the user is not a student.
+    - Permissions: Requires the user to be authenticated and a student.
+    - Response:
+    - 200: A list of available societies with details such as name and leader.
+    - 403: If the user is not a student.
+    - **POST**: Creates a request for admin approval to join a society.
+    - Permissions: Requires the user to be authenticated and a student.
+    - Request Body:
+    - `society_id` (int): ID of the society to join.
+    - Response:
+    - 201: Confirmation message indicating the join request has been submitted.
+    - 400: Validation errors, such as invalid society ID.
+    - 403: If the user is not a student.
     """
     permission_classes = [IsAuthenticated]
-
+    
     def get(self, request):
         user = request.user
         if not hasattr(user, "student"):
             return Response({"error": "Only students can join societies."}, status=status.HTTP_403_FORBIDDEN)
-
         joined_societies = user.student.societies_belongs_to.all()
         available_societies = Society.objects.exclude(id__in=joined_societies)
-
         serializer = SocietySerializer(available_societies, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-
+    
     def post(self, request, society_id=None):
         user = request.user
-
         # Debugging prints:
         print("DEBUG: User:", user, "User ID:", user.id)
         print("DEBUG: society_id:", society_id)
-
+        
         if not hasattr(user, "student"):
             print("DEBUG: User is not a student.")
             return Response({"error": "Only students can join societies."}, status=status.HTTP_403_FORBIDDEN)
-
+        
         if not society_id:
             print("DEBUG: No society_id provided in URL.")
             return Response({"error": "Society ID is required."}, status=status.HTTP_400_BAD_REQUEST)
-
+        
         serializer = JoinSocietySerializer(data={"society_id": society_id}, context={"request": request})
-
+        
         if not serializer.is_valid():
             print("DEBUG: serializer validation failed.")
             print("DEBUG: serializer.errors:", serializer.errors)
-
             if "Society does not exist." in serializer.errors.get("society_id", []):
                 return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
-
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        society = serializer.save()
-        print(f"DEBUG: Successfully joined society '{society.name}' for user {user.id}")
-        return Response({"message": f"Successfully joined society '{society.name}'."}, status=status.HTTP_200_OK)
-
+        
+        # Instead of immediately adding the student to the society,
+        # create a join request for president approval
+        society = Society.objects.get(id=serializer.validated_data['society_id'])
+        
+        # Create SocietyRequest for joining the society
+        society_request = SocietyRequest.objects.create(
+            intent="JoinSoc", # New intent for joining societies
+            from_student=user.student,
+            society=society,
+            approved=False
+        )
+        
+        return Response({
+            "message": f"Request to join society '{society.name}' has been submitted for approval.",
+            "request_id": society_request.id
+        }, status=status.HTTP_201_CREATED)
 
 class RSVPEventView(APIView):
     """ API View for RSVPing to events. """
@@ -379,8 +456,8 @@ class StudentNotificationsView(APIView):
         except Notification.DoesNotExist:
             return Response({"error": "Notification not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        notification.is_read = True  # ✅ Manually update is_read field
-        notification.save()  # ✅ Save the notification explicitly
+        notification.is_read = True  # Manually update is_read field
+        notification.save()  # Save the notification explicitly
 
         return Response({"message": "Notification marked as read.", "id": pk}, status=status.HTTP_200_OK)
 
@@ -478,30 +555,54 @@ class SocietyRequestView(APIView):
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+def has_society_management_permission(student, society):
+    """
+    Check if a student has management permissions for a society.
+    This includes being either the president or vice president.
+    
+    Args:
+        student: The Student instance to check
+        society: The Society instance to check against
+        
+    Returns:
+        bool: True if the student has management permissions, False otherwise
+    """
+    # Check if student is president (leader)
+    is_president = student.is_president and hasattr(society, 'leader') and society.leader.id == student.id
+    
+    # Check if student is vice president
+    is_vice_president = hasattr(society, 'vice_president') and society.vice_president and society.vice_president.id == student.id
+    
+    return is_president or is_vice_president
+
 class ManageSocietyDetailsView(APIView):
     """
-    API View for society presidents to manage their societies.
+    API View for society presidents and vice presidents to manage their societies.
     """
     permission_classes = [IsAuthenticated]
 
     def get(self, request, society_id):
         user = request.user
 
-        # Ensure the user is a society president
+        # Ensure the user is a student
         try:
             student = Student.objects.get(pk=user.pk)
         except Student.DoesNotExist:
-            return Response({"error": "Only society presidents can manage their societies."}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"error": "Only society presidents and vice presidents can manage their societies."}, 
+                           status=status.HTTP_403_FORBIDDEN)
+        
         print("Logged-in student id:", student.id)
         print("Requested society id:", society_id)
-        if not student.is_president:
-            return Response({"error": "Only society presidents can manage their societies."}, status=status.HTTP_403_FORBIDDEN)
-
+        
         # Fetch the society
-        society = Society.objects.filter(
-            id=society_id).first()
+        society = Society.objects.filter(id=society_id).first()
         if not society:
-            return Response({"error": "Society not found or you are not the president of this society."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "Society not found."}, status=status.HTTP_404_NOT_FOUND)
+            
+        # Check for management permissions using utility function
+        if not has_society_management_permission(student, society):
+            return Response({"error": "Only the society president or vice president can manage this society."}, 
+                           status=status.HTTP_403_FORBIDDEN)
 
         # Serialize the society details
         serializer = SocietySerializer(society)
@@ -510,18 +611,25 @@ class ManageSocietyDetailsView(APIView):
 
     def patch(self, request, society_id):
         user = request.user
-        # Ensure the user is a valid student and a society president.
-        if not user.is_student() or not user.student.is_president:
+        
+        if not user.is_student():
             return Response(
-                {"error": "Only society presidents can manage their societies."},
+                {"error": "Only society presidents and vice presidents can manage their societies."},
                 status=status.HTTP_403_FORBIDDEN
             )
-
+            
         society = Society.objects.filter(id=society_id).first()
         if not society:
             return Response(
-                {"error": "Society not found or you are not the president of this society."},
+                {"error": "Society not found."},
                 status=status.HTTP_404_NOT_FOUND
+            )
+            
+        # Check for management permissions using utility function
+        if not has_society_management_permission(user.student, society):
+            return Response(
+                {"error": "Only the society president or vice president can manage this society."},
+                status=status.HTTP_403_FORBIDDEN
             )
 
         # Pass the request context so the serializer can access the current user.
@@ -541,7 +649,7 @@ class ManageSocietyDetailsView(APIView):
 
 class CreateEventRequestView(APIView):
     """
-    API View for society presidents to create events that require admin approval.
+    API View for society presidents and vice presidents to create events that require admin approval.
     """
     permission_classes = [IsAuthenticated]
 
@@ -551,22 +659,25 @@ class CreateEventRequestView(APIView):
         """
         user = request.user
 
-        # Ensure the user is a society president
-        if not user.is_student() or not user.student.is_president:
+        if not user.is_student():
             return Response(
-                {"error": "Only society presidents can create events."},
+                {"error": "Only society presidents and vice presidents can create events."},
                 status=status.HTTP_403_FORBIDDEN
             )
 
         # Fetch the society
-        society = Society.objects.filter(
-            id=society_id, leader=user.student
-        ).first()
-
+        society = Society.objects.filter(id=society_id).first()
         if not society:
             return Response(
-                {"error": "Society not found or you are not the president of this society."},
+                {"error": "Society not found."},
                 status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Check for management permissions using utility function
+        if not has_society_management_permission(user.student, society):
+            return Response(
+                {"error": "Only the society president or vice president can create events for this society."},
+                status=status.HTTP_403_FORBIDDEN
             )
 
         # Validate and save the event request instead of creating an event directly
@@ -651,16 +762,7 @@ class EventListView(APIView):
     
 class ManageEventDetailsView(APIView):
     """
-    API View to edit (request changes for) or delete an event.
-    
-    PATCH:
-      - Allowed only for upcoming or pending events.
-      - Instead of updating the event immediately, an EventRequest is created with
-        the proposed changes; an admin will later approve or reject them.
-    
-    DELETE:
-      - Allowed only for upcoming or pending events.
-      - Deletion is performed immediately without admin approval.
+    API View for society presidents and vice presidents to edit or delete events.
     """
     permission_classes = [IsAuthenticated]
     
@@ -690,20 +792,22 @@ class ManageEventDetailsView(APIView):
         serializer = EventSerializer(event)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
-    
     def patch(self, request, event_id):
         user = request.user
-        # Ensure the user is a valid student and a society president.
+        # Ensure the user is a valid student
         try:
             student = Student.objects.get(pk=user.pk)
         except Student.DoesNotExist:
             return Response({"error": "User is not a valid student."}, status=status.HTTP_403_FORBIDDEN)
-        if not student.is_president:
-            return Response({"error": "Only society presidents can edit events."}, status=status.HTTP_403_FORBIDDEN)
-
+        
         event = self.get_event(event_id)
         if not self.is_event_editable(event):
             return Response({"error": "Only upcoming or pending events can be edited."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Check if the user has management permissions for the society
+        if not has_society_management_permission(student, event.hosted_by):
+            return Response({"error": "Only society presidents and vice presidents can edit events."}, 
+                           status=status.HTTP_403_FORBIDDEN)
 
         # Prepare data for the update request.
         data = request.data.copy()
@@ -720,7 +824,7 @@ class ManageEventDetailsView(APIView):
             context={
                 "request": request,
                 "hosted_by": event.hosted_by,
-                "event": event,  # Optionally, if you want to reference the event in create.
+                "event": event, 
             }
         )
         if serializer.is_valid():
@@ -736,24 +840,27 @@ class ManageEventDetailsView(APIView):
 
     def delete(self, request, event_id):
         user = request.user
-        # Ensure the user is a valid student and a society president.
+        # Ensure the user is a valid student
         try:
             student = Student.objects.get(pk=user.pk)
         except Student.DoesNotExist:
             return Response({"error": "User is not a valid student."}, status=status.HTTP_403_FORBIDDEN)
-        if not student.is_president:
-            return Response({"error": "Only society presidents can delete events."}, status=status.HTTP_403_FORBIDDEN)
-
+        
         event = self.get_event(event_id)
         if not self.is_event_editable(event):
             return Response({"error": "Only upcoming or pending events can be deleted."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Check if the user has management permissions for the society
+        if not has_society_management_permission(student, event.hosted_by):
+            return Response({"error": "Only society presidents and vice presidents can delete events."}, 
+                           status=status.HTTP_403_FORBIDDEN)
 
         event.delete()
         return Response({"message": "Event deleted successfully."}, status=status.HTTP_200_OK)
 
 class PendingMembersView(APIView):
     """
-    API View for Society Presidents to manage pending membership requests.
+    API View for Society Presidents and Vice Presidents to manage pending membership requests.
     """
     permission_classes = [IsAuthenticated]
 
@@ -763,14 +870,18 @@ class PendingMembersView(APIView):
         """
         user = request.user
 
-        # Ensure the user is a president
-        if not hasattr(user, "student") or not user.student.is_president:
-            return Response({"error": "Only society presidents can manage members."}, status=status.HTTP_403_FORBIDDEN)
+        if not hasattr(user, "student"):
+            return Response({"error": "Only society presidents and vice presidents can manage members."}, 
+                           status=status.HTTP_403_FORBIDDEN)
 
-        # Ensure the president owns this society
-        society = Society.objects.filter(id=society_id, leader=user.student).first()
+        society = Society.objects.filter(id=society_id).first()
         if not society:
-            return Response({"error": "You are not the president of this society."}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"error": "Society not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Check for management permissions using utility function
+        if not has_society_management_permission(user.student, society):
+            return Response({"error": "Only the society president or vice president can manage members."}, 
+                           status=status.HTTP_403_FORBIDDEN)
 
         # Get all pending membership requests
         pending_requests = UserRequest.objects.filter(
@@ -786,19 +897,18 @@ class PendingMembersView(APIView):
         """
         user = request.user
 
-        # Ensure the user is a president
-        if not hasattr(user, "student") or not user.student.is_president:
-            return Response({"error": "Only society presidents can manage members."}, status=status.HTTP_403_FORBIDDEN)
+        if not hasattr(user, "student"):
+            return Response({"error": "Only society presidents and vice presidents can manage members."}, 
+                           status=status.HTTP_403_FORBIDDEN)
 
         society = Society.objects.filter(id=society_id).first()
         if not society:
             return Response({"error": "Society not found."}, status=status.HTTP_404_NOT_FOUND)
-        print(f"Society leader id: {society.leader.id}, Request user student id: {request.user.student.id}")
 
-        # Compare by primary key (ID)
-        if society.leader.id != request.user.student.id:
-            return Response({"error": "You are not the president of this society."}, status=status.HTTP_403_FORBIDDEN)
-
+        # Check for management permissions using utility function
+        if not has_society_management_permission(user.student, society):
+            return Response({"error": "Only the society president or vice president can manage members."}, 
+                           status=status.HTTP_403_FORBIDDEN)
 
         # Find the pending request
         pending_request = UserRequest.objects.filter(id=request_id, intent="JoinSoc", approved=False).first()
@@ -1163,7 +1273,14 @@ class StudentSocietyDataView(APIView):
         # Manual society access via id
         society = get_object_or_404(Society, id=society_id)
         serializer = SocietySerializer(society)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+
+        # Return extra data indicating membership
+        serializer_data = serializer.data
+        serializer_data["is_member"] = society.society_members.filter(
+            id=request.user.student.id
+        ).exists()
+
+        return Response(serializer_data, status=status.HTTP_200_OK)
 
 
 def custom_media_view(request, path):
@@ -1184,6 +1301,8 @@ class EventCommentsView(APIView):
     """
     API view for create and manage event comments
     """
+    permission_classes = [IsAuthenticated]
+
     def get(self, request):
         event_id = request.query_params.get("event_id")
         if not event_id:
@@ -1209,13 +1328,9 @@ class EventCommentsView(APIView):
         if parent_comment_id:
             parent_comment = get_object_or_404(Comment, pk=parent_comment_id)
 
-        user = request.user
-        if not user or not user.is_authenticated:
-            return Response({"error": "User must be logged in to comment."}, status=status.HTTP_401_UNAUTHORIZED)
-
         comment = Comment.objects.create(
             event=event,
-            user=user,
+            user=request.user,
             content=content,
             parent_comment=parent_comment
         )

@@ -94,7 +94,7 @@ urlpatterns = [
 
     # Events page
     path("all-events", AllEventsView.as_view(), name="all_events"),
-    path("event/<int:event_id>", EventDetailView.as_view(), name="event-detail"),
+    path("event/<int:event_id>", EventDetailView.as_view(), name="event_detail"),
     path("event/<int:event_id>/comments", EventCommentsView.as_view(), name="event_comments"),
     path("event/<int:event_id>/manage/", ManageEventDetailsView.as_view(), name="manage_event_detail"),
     path("comments/", EventCommentsView.as_view(), name="comment_list_create"),

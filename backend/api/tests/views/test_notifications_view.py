@@ -23,14 +23,14 @@ class TestNotificationsView(APITestCase):
 
         # Create sample notifications
         self.notification1 = Notification.objects.create(
-            for_event=self.event,
+            header=str(self.event),
             for_student=self.student,
-            message="Notification 1",
+            body="Notification 1",
         )
         self.notification2 = Notification.objects.create(
-            for_event=self.event,
+            header=str(self.event),
             for_student=self.student,
-            message="Notification 2",
+            body="Notification 2",
         )
 
         self.url = "/api/dashboard/notifications"

@@ -43,13 +43,14 @@ class SocietyRequestSerializerTestCase(TestCase):
             major="Mathematics",
         )
 
-        # Create a Society
+        # Create a Society with required approved_by field
         self.society = Society.objects.create(
             name="Tech",
             leader=self.student1,
-            approved_by=None,
+            approved_by=self.admin,  # Fixed: Set admin instead of None
             status="Pending",
             category="Informatics",
+            social_media_links={"Email": "tech@example.com"}  # Added required field
         )
         self.society.society_members.add(self.student2)
 

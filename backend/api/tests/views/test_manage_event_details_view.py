@@ -36,7 +36,7 @@ class ManageEventDetailsViewTestCase(APITestCase):
             approved_by=self.admin,
             status="Approved",
             category="Technology",
-            social_media_links={"email": "tech@example.com"},
+            social_media_links={"Email": "tech@example.com"},
             membership_requirements="Must attend 2 events",
             upcoming_projects_or_plans="Plan a hackathon"
         )
@@ -161,7 +161,7 @@ class ManageEventDetailsViewTestCase(APITestCase):
         payload = {"title": "Should not update"}
         response = self.client.patch(url, payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertIn("Only society presidents can edit events", str(response.data))
+        self.assertIn("Only society presidents and vice presidents can edit events.", str(response.data))
 
     def test_delete_editable_event_success(self):
         """
@@ -209,4 +209,4 @@ class ManageEventDetailsViewTestCase(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertIn("Only society presidents can delete events", str(response.data))
+        self.assertIn("Only society presidents and vice presidents can delete events.", str(response.data))

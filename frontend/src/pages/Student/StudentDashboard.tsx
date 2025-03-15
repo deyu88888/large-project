@@ -9,6 +9,7 @@ import {
   Tabs,
   Tab,
   CircularProgress,
+  styled,
 } from '@mui/material';
 import { tokens } from '../../theme/theme';
 import {
@@ -23,10 +24,17 @@ import { apiClient } from "../../api";
 import { useAuthStore } from "../../stores/auth-store";
 import StudentCalendar from './StudentCalendar'; // Import the new StudentCalendar component
 
+const CustomTabs = styled(Tabs)(({ theme, activecolor }) => ({
+  '& .MuiTabs-indicator': {
+    backgroundColor: activecolor,
+  },
+}));
+
 interface Society {
   id: number;
   name: string;
   is_president: boolean;
+  is_vice_president?: boolean;
 }
 
 interface Event {
@@ -44,7 +52,8 @@ interface Event {
 
 interface Notification {
   id: number;
-  message: string;
+  header: string;
+  body: string;
   is_read: boolean;
 }
 
@@ -61,7 +70,6 @@ const StudentDashboard: React.FC = () => {
   const navigate = useNavigate();
   const theme = useTheme();
   const colours = tokens(theme.palette.mode);
-
   const [societies, setSocieties] = useState<Society[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -70,15 +78,26 @@ const StudentDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<number>(0);
   const [showCalendar, setShowCalendar] = useState<boolean>(false);
   const { user } = useAuthStore();
+  const [student, setStudent] = useState<any[]>([]);
+
+  const tabColors = [
+    colours.greenAccent[500],
+    colours.blueAccent[500],
+    colours.redAccent[500],
+  ];
 
   useEffect(() => {
-    fetchData();
+    const callFetchData = async () => {
+      await fetchData();
+    };
+  
+    callFetchData();
   }, []);
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const societiesResponse = await apiClient.get("/api/student-societies");   
+      const societiesResponse = await apiClient.get("/api/student-societies");
       setSocieties(societiesResponse.data || []);
     } catch (error) {
       console.error("Error fetching society data:", error);
@@ -102,16 +121,23 @@ const StudentDashboard: React.FC = () => {
       console.error("Error fetching event data:", error);
     }
     try {
-      const notificationsResponse = await apiClient.get("/api/notifications"); 
+      const notificationsResponse = await apiClient.get("/api/notifications/");
       setNotifications(notificationsResponse.data || []);
     } catch (error) {
       console.error("Error fetching notification data:", error);
     }
     try {
-      const awardsResponse = await apiClient.get(`/api/award-students/${user?.id}`); 
+      const awardsResponse = await apiClient.get(`/api/award-students/${user?.id}`);
       setAwards([awardsResponse.data]);
     } catch (error) {
       console.error("Error fetching award assignments:", error);
+    }
+    try {
+      const studentResponse = await apiClient.get("api/user/current");
+      setStudent(studentResponse.data)
+      console.log("Student data:", student)
+    } catch (error) {
+      console.error("Error fetching current student:", error);
     }
     setLoading(false);
   };
@@ -151,8 +177,8 @@ const StudentDashboard: React.FC = () => {
     try {
       const response = await apiClient.patch(`/api/notifications/${id}`, { is_read: true });
       if (response.status === 200) {
-        setNotifications((prevNotifications) =>
-          prevNotifications.map((notification) =>
+        setNotifications((prev) =>
+          prev.map((notification) =>
             notification.id === id ? { ...notification, is_read: true } : notification
           )
         );
@@ -204,10 +230,10 @@ const StudentDashboard: React.FC = () => {
             Dashboard
           </Typography>
           <Box display="flex" gap={2}>
-            {user?.is_president === true && (
+          {(student?.is_president === true || student?.is_vice_president === true) && (
               <Button
                 variant="contained"
-                onClick={() => navigate(`/president-page/${user?.president_of}`)}
+                onClick={() => navigate(`/president-page/${student?.is_president ? student?.president_of : student?.vice_president_of_society}`)}
                 sx={{
                   backgroundColor: colours.greenAccent[500],
                   color: colours.grey[100],
@@ -251,17 +277,17 @@ const StudentDashboard: React.FC = () => {
             border: `1px solid ${colours.grey[800]}`,
           }}
         >
-          <Tabs
+          <CustomTabs
             value={activeTab}
             onChange={handleTabChange}
             textColor="inherit"
-            indicatorColor="secondary"
+            activecolor={tabColors[activeTab]}
             variant="fullWidth"
           >
             <Tab label="Societies" />
             <Tab label="Events" />
             <Tab label="Notifications" />
-          </Tabs>
+          </CustomTabs>
           <Box p={3}>
             {activeTab === 0 && (
               <Box
@@ -294,6 +320,17 @@ const StudentDashboard: React.FC = () => {
                           <Typography variant="caption">President</Typography>
                         </Box>
                       )}
+                    {society.is_vice_president && (
+                      <Box
+                        px={1}
+                        py={0.5}
+                        borderRadius="4px"
+                        bgcolor={colours.blueAccent[500]}
+                        color={colours.primary[500]}
+                      >
+                        <Typography variant="caption">Vice President</Typography>
+                      </Box>
+                    )}
                     </Box>
                     <Button
                       fullWidth
@@ -425,7 +462,8 @@ const StudentDashboard: React.FC = () => {
                               fontSize: "1rem",
                             }}
                           >
-                            {notification.message}
+                            <b>{notification.header}</b>
+                            <p>{notification.body}</p>
                           </Typography>
 
                           {/* Mark as read/Read status */}

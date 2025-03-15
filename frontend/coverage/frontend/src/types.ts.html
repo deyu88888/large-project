@@ -25,28 +25,28 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/0</span>
+                <span class='fraction'>0/58</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>1/1</span>
+                <span class='fraction'>0/1</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>1/1</span>
+                <span class='fraction'>0/1</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/0</span>
+                <span class='fraction'>0/58</span>
             </div>
         
             
@@ -107,102 +107,141 @@
 <a name='L42'></a><a href='#L42'>42</a>
 <a name='L43'></a><a href='#L43'>43</a>
 <a name='L44'></a><a href='#L44'>44</a>
-<a name='L45'></a><a href='#L45'>45</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">&nbsp;
-export type Society = {
-    id: number;
-    name: string;
-    societyMembers: number[];
-    roles: {};
-    leader: number;
-    category: string;
-    socialMediaLinks: {};
-    timetable: string | null;
-    membershipRequirements: string | null;
-    upcomingProjectsOrPlans: string | null;
-};
-&nbsp;
-export type SocietyEvent = {        // avoid naming conflicts with JavaScript's built-in Event type
-    id: number;
-    title: string;
-    description: string;
-    date: string;
-    startTime: string;
-    duration: string;
-    hostedBy: number;
-    location: string;
-  };
-&nbsp;
-export interface Report {
-    id: number;
-    from_student: string;
-    message: string;
-    created_at: string;
-}
-&nbsp;
-export interface Student {
-    id: number;
-    username: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    isActive: boolean;
-    role: string;
-    major: string;
-    societies: string[];
-    presidentOf: number[];
-    isPresident: boolean;
-  }</pre></td></tr></table></pre>
+<a name='L45'></a><a href='#L45'>45</a>
+<a name='L46'></a><a href='#L46'>46</a>
+<a name='L47'></a><a href='#L47'>47</a>
+<a name='L48'></a><a href='#L48'>48</a>
+<a name='L49'></a><a href='#L49'>49</a>
+<a name='L50'></a><a href='#L50'>50</a>
+<a name='L51'></a><a href='#L51'>51</a>
+<a name='L52'></a><a href='#L52'>52</a>
+<a name='L53'></a><a href='#L53'>53</a>
+<a name='L54'></a><a href='#L54'>54</a>
+<a name='L55'></a><a href='#L55'>55</a>
+<a name='L56'></a><a href='#L56'>56</a>
+<a name='L57'></a><a href='#L57'>57</a>
+<a name='L58'></a><a href='#L58'>58</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" ></span></span></span>
+<span class="cstat-no" title="statement not covered" >export type Society = {</span>
+<span class="cstat-no" title="statement not covered" >    id: number;</span>
+<span class="cstat-no" title="statement not covered" >    name: string;</span>
+<span class="cstat-no" title="statement not covered" >    societyMembers: number[];</span>
+<span class="cstat-no" title="statement not covered" >    roles: {};</span>
+<span class="cstat-no" title="statement not covered" >    leader: number;</span>
+<span class="cstat-no" title="statement not covered" >    category: string;</span>
+<span class="cstat-no" title="statement not covered" >    socialMediaLinks: {};</span>
+<span class="cstat-no" title="statement not covered" >    timetable: string | null;</span>
+<span class="cstat-no" title="statement not covered" >    membershipRequirements: string | null;</span>
+<span class="cstat-no" title="statement not covered" >    upcomingProjectsOrPlans: string | null;</span>
+<span class="cstat-no" title="statement not covered" >};</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >export type SocietyEvent = {        // avoid naming conflicts with JavaScript's built-in Event type</span>
+<span class="cstat-no" title="statement not covered" >    id: number;</span>
+<span class="cstat-no" title="statement not covered" >    title: string;</span>
+<span class="cstat-no" title="statement not covered" >    description: string;</span>
+<span class="cstat-no" title="statement not covered" >    date: string;</span>
+<span class="cstat-no" title="statement not covered" >    startTime: string;</span>
+<span class="cstat-no" title="statement not covered" >    duration: string;</span>
+<span class="cstat-no" title="statement not covered" >    hostedBy: number;</span>
+<span class="cstat-no" title="statement not covered" >    location: string;</span>
+<span class="cstat-no" title="statement not covered" >  };</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >export interface Student {</span>
+<span class="cstat-no" title="statement not covered" >    id: number;</span>
+<span class="cstat-no" title="statement not covered" >    username: string;</span>
+<span class="cstat-no" title="statement not covered" >    firstName: string;</span>
+<span class="cstat-no" title="statement not covered" >    lastName: string;</span>
+<span class="cstat-no" title="statement not covered" >    email: string;</span>
+<span class="cstat-no" title="statement not covered" >    isActive: boolean;</span>
+<span class="cstat-no" title="statement not covered" >    role: string;</span>
+<span class="cstat-no" title="statement not covered" >    major: string;</span>
+<span class="cstat-no" title="statement not covered" >    societies: string[];</span>
+<span class="cstat-no" title="statement not covered" >    presidentOf: number[];</span>
+<span class="cstat-no" title="statement not covered" >    isPresident: boolean;</span>
+<span class="cstat-no" title="statement not covered" >  }</span>
+<span class="cstat-no" title="statement not covered" >  </span>
+<span class="cstat-no" title="statement not covered" >  export interface Report {</span>
+<span class="cstat-no" title="statement not covered" >    id: number;</span>
+<span class="cstat-no" title="statement not covered" >    from_student: string;</span>
+<span class="cstat-no" title="statement not covered" >    report_type: string;</span>
+<span class="cstat-no" title="statement not covered" >    subject: string;</span>
+<span class="cstat-no" title="statement not covered" >    details: string;</span>
+<span class="cstat-no" title="statement not covered" >    created_at: string;</span>
+<span class="cstat-no" title="statement not covered" >};</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >export interface Event {</span>
+<span class="cstat-no" title="statement not covered" >    id: number;</span>
+<span class="cstat-no" title="statement not covered" >    title: string;</span>
+<span class="cstat-no" title="statement not covered" >    description: string;</span>
+<span class="cstat-no" title="statement not covered" >    date: string;</span>
+<span class="cstat-no" title="statement not covered" >    startTime: string;</span>
+<span class="cstat-no" title="statement not covered" >    duration: string;</span>
+<span class="cstat-no" title="statement not covered" >    hostedBy: number;</span>
+<span class="cstat-no" title="statement not covered" >    location: string;</span>
+<span class="cstat-no" title="statement not covered" >  };</span></pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
             </div><!-- /wrapper -->
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-03-02T20:45:08.821Z
+                at 2025-03-10T21:31:58.011Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

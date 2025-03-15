@@ -1,13 +1,23 @@
 from django.test import TestCase
 from django.contrib.auth import get_user_model
-from api.models import Student, Society
+from api.models import Student, Society, Admin
 from api.serializers import StudentSerializer
 from api.tests.file_deletion import delete_file
 
 User = get_user_model()
 
 class StudentSerializerTestCase(TestCase):
+    
     def setUp(self):
+        # Create an admin user for society approval
+        self.admin = Admin.objects.create_user(
+            username="admin_user",
+            password="adminpassword",
+            email="admin@example.com",
+            first_name="Admin",
+            last_name="User",
+        )
+        
         self.student_data = {
             "username": "unique_student",
             "password": "Password123",
@@ -27,14 +37,34 @@ class StudentSerializerTestCase(TestCase):
             email="existing_email@example.com",
             major="Computer Science",
         )
-        # Create two societies.
+        
+        # Create another student to be the leader of society2
+        self.student2 = Student.objects.create_user(
+            username="second_student",
+            password="Password123",
+            first_name="John",
+            last_name="Smith",
+            email="second_student@example.com",
+            major="Physics",
+        )
+        
+        # Create two societies with required fields
         self.society1 = Society.objects.create(
             name='Science Club',
-            leader=self.student
+            leader=self.student,
+            approved_by=self.admin,
+            status='Approved',
+            social_media_links={"Email": "science@example.com"}
         )
+        
         self.society2 = Society.objects.create(
             name='Math Club',
+            leader=self.student2,  # Add a leader for society2
+            approved_by=self.admin,
+            status='Approved',
+            social_media_links={"Email": "math@example.com"}
         )
+        
         # Set the many-to-many relationship.
         # The reverse relation is defined as "societies_belongs_to" on Student.
         self.student.societies.set([self.society1])
@@ -122,14 +152,37 @@ class StudentSerializerTestCase(TestCase):
         Because president_of is a OneToOneField and already assigned to an existing student,
         we need to create a new society for a new student to avoid UNIQUE constraint errors.
         """
-        # Create a new society that isn't already assigned.
-        new_society = Society.objects.create(name="New Society", status="Approved")
+        # Create a new student to be the leader of the new society
+        temp_leader = Student.objects.create_user(
+            username="temp_leader",
+            password="Password123",
+            first_name="Temp",
+            last_name="Leader",
+            email="temp_leader@example.com",
+            major="Art",
+        )
+        
+        # Create a new society that isn't already assigned, with a temporary leader
+        new_society = Society.objects.create(
+            name="New Society", 
+            status="Approved",
+            leader=temp_leader,  # Add a temporary leader for the new society
+            approved_by=self.admin,
+            social_media_links={"Email": "new@example.com"}
+        )
+        
         # Set up payload so that the new student will have both societies.
         self.student_data["president_of"] = new_society.id  # Use new_society for this new student.
         self.student_data["societies"] = [self.society1.id, self.society2.id, new_society.id]
+        
         serializer = StudentSerializer(data=self.student_data)
         self.assertTrue(serializer.is_valid(), serializer.errors)
         student = serializer.save()
+        
+        # After saving, update the society's leader to be the newly created student
+        new_society.leader = student
+        new_society.save()
+        
         self.assertEqual(
             list(student.societies.values_list("id", flat=True)),
             self.student_data["societies"]
@@ -160,6 +213,18 @@ class StudentSerializerTestCase(TestCase):
         data = serializer.data
         self.assertNotIn("password", data)
 
+    def test_student_not_president(self):
+        """Test that a student without a president_of society is not a president."""
+        student = Student.objects.create_user(
+            username="non_president",
+            password="Password123",
+            first_name="Test",
+            last_name="User",
+            email="non_president@example.com",
+            major="Physics",
+        )
+        serializer = StudentSerializer(instance=student)
+        self.assertFalse(serializer.data["is_president"])
 
     def tearDown(self):
         for society in Society.objects.all():

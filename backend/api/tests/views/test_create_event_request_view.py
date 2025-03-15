@@ -3,7 +3,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 from django.contrib.auth import get_user_model
-from api.models import Student, Society
+from api.models import Admin, Student, Society
 from rest_framework_simplejwt.tokens import AccessToken
 
 User = get_user_model()
@@ -29,12 +29,23 @@ class CreateEventRequestViewTest(APITestCase):
             major="Test Major"
         )
         
+        self.admin = Admin(
+            username='admin_user',
+            first_name='John',
+            last_name='Smith',
+            email='admin@example.com',
+            role='admin',
+            password='adminpassword',
+        )
+        self.admin.save()
+        
         # Create a Society with id=1 for the president to manage.
         self.society = Society.objects.create(
             id=1,
             name="Test Society",
             status="Approved",
-            leader=self.president_student  # if your model uses this field
+            leader=self.president_student,
+            approved_by=self.admin
         )
         # Set the president_of field so that the president is linked to this society.
         self.president_student.president_of = self.society
@@ -80,7 +91,7 @@ class CreateEventRequestViewTest(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.regular_user_token}")
         response = self.client.post(url, self.valid_payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertIn("Only society presidents can create events", str(response.data))
+        self.assertIn("Only the society president or vice president can create events for this society.", str(response.data))
 
     def test_post_society_not_found(self):
         """

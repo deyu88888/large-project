@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>44/44</span>
+                <span class='fraction'>0/55</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>11/11</span>
+                <span class='fraction'>0/1</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">75% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>6/8</span>
+                <span class='fraction'>0/1</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>44/44</span>
+                <span class='fraction'>0/55</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line high'></div>
+    <div class='status-line low'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -117,122 +117,122 @@
 <a name='L52'></a><a href='#L52'>52</a>
 <a name='L53'></a><a href='#L53'>53</a>
 <a name='L54'></a><a href='#L54'>54</a>
-<a name='L55'></a><a href='#L55'>55</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span></td><td class="text"><pre class="prettyprint lang-js">import { useEffect, useRef, useState } from "react";
-&nbsp;
-export const fetchData = async &lt;T&gt;(setData: (data: T[]) =&gt; void, fetchDataFunction: () =&gt; Promise&lt;T[]&gt;):Promise&lt;void&gt; =&gt; {
-    const data = await fetchDataFunction();
-    setData(data);
-    console.log("fetchData executed successfully, data updated."); // TODO: remove all the console logs before deploying
-};
-&nbsp;
-export const handleMessage = async &lt;T&gt;(setData: (data: T[]) =&gt; void, fetchDataFunction: () =&gt; Promise&lt;T[]&gt;):Promise&lt;void&gt; =&gt; {
-    try {
-        await fetchData(setData, fetchDataFunction);
-    } catch (error) {
-        console.error("Error parsing WebSocket message:", error);   // TODO: keep this, need to know the error
-    }
-};
-&nbsp;
-export const handleError = (event: Event) =&gt; {
-    console.error("WebSocket Error:", event);
-};
-&nbsp;
-export const handleClose =  &lt;T&gt; (setData: (data: T[]) =&gt; void, ws: React.MutableRefObject&lt;WebSocket | null&gt;,  fetchDataFunction: () =&gt; Promise&lt;T[]&gt;):void =&gt; {
-    setTimeout(() =&gt; {  
-        connectWebSocket(setData, ws, fetchDataFunction);
-    }, 5000);
-};
-&nbsp;
-export const connectWebSocket =  &lt;T&gt; (setData: (data: T[]) =&gt; void, ws: React.MutableRefObject&lt;WebSocket | null&gt;,  fetchDataFunction: () =&gt; Promise&lt;T[]&gt;, sourceURL: string) =&gt; {
-    const socketUrl = `${import.meta.env.VITE_WEBSOCKET_ADMIN_BASE_URL}/${sourceURL}/`;
-    ws.current = new WebSocket(socketUrl);
-&nbsp;
-    // ws.current.onopen = handleOpen;
-    ws.current.onmessage = <span class="fstat-no" title="function not covered" >() =&gt; handleMessage(setData, fetchDataFunction);</span>
-    ws.current.onerror = handleError;
-    ws.current.onclose = <span class="fstat-no" title="function not covered" >() =&gt; handleClose(setData, ws, fetchDataFunction);</span>
-&nbsp;
-    const currentWs = ws.current;
-    return () =&gt; {
-        if (currentWs) {
-            currentWs.close();
-            ws.current = null;
-        }
-    };
-};
-&nbsp;
-export const useFetchWebSocket = &lt;T&gt; (fetchDataFunction: () =&gt; Promise&lt;T[]&gt;, sourceURL: string) =&gt; {
-    const [data, setData] = useState&lt;T[]&gt;([]);
-    const ws = useRef&lt;WebSocket | null&gt;(null);
-&nbsp;
-    useEffect(() =&gt; {
-        fetchData(setData, fetchDataFunction);
-        connectWebSocket(setData, ws, fetchDataFunction, sourceURL);
-    }, []);
-&nbsp;
-    return data;
-};</pre></td></tr></table></pre>
+<a name='L55'></a><a href='#L55'>55</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" >import { useEffect, useRef, useState } from "react";</span></span></span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >export const fetchData = async &lt;T&gt;(setData: (data: T[]) =&gt; void, fetchDataFunction: () =&gt; Promise&lt;T[]&gt;):Promise&lt;void&gt; =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    const data = await fetchDataFunction();</span>
+<span class="cstat-no" title="statement not covered" >    setData(data);</span>
+<span class="cstat-no" title="statement not covered" >    console.log("fetchData executed successfully, data updated."); // TODO: remove all the console logs before deploying</span>
+<span class="cstat-no" title="statement not covered" >};</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >export const handleMessage = async &lt;T&gt;(setData: (data: T[]) =&gt; void, fetchDataFunction: () =&gt; Promise&lt;T[]&gt;):Promise&lt;void&gt; =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    try {</span>
+<span class="cstat-no" title="statement not covered" >        await fetchData(setData, fetchDataFunction);</span>
+<span class="cstat-no" title="statement not covered" >    } catch (error) {</span>
+<span class="cstat-no" title="statement not covered" >        console.error("Error parsing WebSocket message:", error);   // TODO: keep this, need to know the error</span>
+<span class="cstat-no" title="statement not covered" >    }</span>
+<span class="cstat-no" title="statement not covered" >};</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >export const handleError = (event: Event) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    console.error("WebSocket Error:", event);</span>
+<span class="cstat-no" title="statement not covered" >};</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >export const handleClose =  &lt;T&gt; (setData: (data: T[]) =&gt; void, ws: React.MutableRefObject&lt;WebSocket | null&gt;,  fetchDataFunction: () =&gt; Promise&lt;T[]&gt;):void =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    setTimeout(() =&gt; {  </span>
+<span class="cstat-no" title="statement not covered" >        connectWebSocket(setData, ws, fetchDataFunction);</span>
+<span class="cstat-no" title="statement not covered" >    }, 5000);</span>
+<span class="cstat-no" title="statement not covered" >};</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >export const connectWebSocket =  &lt;T&gt; (setData: (data: T[]) =&gt; void, ws: React.MutableRefObject&lt;WebSocket | null&gt;,  fetchDataFunction: () =&gt; Promise&lt;T[]&gt;, sourceURL: string) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    const socketUrl = `${import.meta.env.VITE_WEBSOCKET_ADMIN_BASE_URL}/${sourceURL}/`;</span>
+<span class="cstat-no" title="statement not covered" >    ws.current = new WebSocket(socketUrl);</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >    // ws.current.onopen = handleOpen;</span>
+<span class="cstat-no" title="statement not covered" >    ws.current.onmessage = () =&gt; handleMessage(setData, fetchDataFunction);</span>
+<span class="cstat-no" title="statement not covered" >    ws.current.onerror = handleError;</span>
+<span class="cstat-no" title="statement not covered" >    ws.current.onclose = () =&gt; handleClose(setData, ws, fetchDataFunction);</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >    const currentWs = ws.current;</span>
+<span class="cstat-no" title="statement not covered" >    return () =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >        if (currentWs) {</span>
+<span class="cstat-no" title="statement not covered" >            currentWs.close();</span>
+<span class="cstat-no" title="statement not covered" >            ws.current = null;</span>
+<span class="cstat-no" title="statement not covered" >        }</span>
+<span class="cstat-no" title="statement not covered" >    };</span>
+<span class="cstat-no" title="statement not covered" >};</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >export const useFetchWebSocket = &lt;T&gt; (fetchDataFunction: () =&gt; Promise&lt;T[]&gt;, sourceURL: string) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    const [data, setData] = useState&lt;T[]&gt;([]);</span>
+<span class="cstat-no" title="statement not covered" >    const ws = useRef&lt;WebSocket | null&gt;(null);</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >    useEffect(() =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >        fetchData(setData, fetchDataFunction);</span>
+<span class="cstat-no" title="statement not covered" >        connectWebSocket(setData, ws, fetchDataFunction, sourceURL);</span>
+<span class="cstat-no" title="statement not covered" >    }, []);</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >    return data;</span>
+<span class="cstat-no" title="statement not covered" >};</span></pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
             </div><!-- /wrapper -->
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-03-02T20:45:08.821Z
+                at 2025-03-10T21:31:58.011Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

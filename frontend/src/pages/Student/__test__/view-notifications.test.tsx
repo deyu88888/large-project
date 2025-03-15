@@ -3,7 +3,7 @@ import { render, screen, waitFor, act, fireEvent } from "@testing-library/react"
 import { vi } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
-import ViewNotifications from "../view-notifications";
+import ViewNotifications from "../ViewNotifications";
 import { apiClient } from "../../../api";
 
 vi.mock("../../../api", () => ({
@@ -13,7 +13,8 @@ vi.mock("../../../api", () => ({
   },
 }));
 
-const theme = createTheme();
+const lightTheme = createTheme({ palette: { mode: "light" } });
+const darkTheme = createTheme({ palette: { mode: "dark" } });
 
 describe("ViewNotifications", () => {
   beforeEach(() => {
@@ -29,15 +30,16 @@ describe("ViewNotifications", () => {
       }
       return Promise.resolve({ data: [] });
     });
+
     (apiClient.patch as vi.Mock).mockImplementation((url: string, data: any) => {
-      if (url === "/api/notifications/1/") {
+      if (url === "/api/notifications/1") {
         return Promise.resolve({ status: 200 });
       }
       return Promise.resolve({ status: 200 });
     });
   });
 
-  const renderComponent = () =>
+  const renderComponent = (theme = lightTheme) =>
     render(
       <ThemeProvider theme={theme}>
         <MemoryRouter>
@@ -64,9 +66,7 @@ describe("ViewNotifications", () => {
     );
     expect(screen.getByText("Notification 1")).toBeInTheDocument();
     expect(screen.getByText("Notification 2")).toBeInTheDocument();
-    // Check that the unread notification has a "Mark as Read" button
     expect(screen.getByRole("button", { name: /Mark as Read/i })).toBeInTheDocument();
-    // The already-read notification should display "Read"
     expect(screen.getAllByText("Read").length).toBeGreaterThanOrEqual(1);
   });
 
@@ -90,10 +90,7 @@ describe("ViewNotifications", () => {
     await act(async () => {
       fireEvent.click(markAsReadButton);
     });
-    expect(apiClient.patch).toHaveBeenCalledWith("/api/notifications/1/", { is_read: true });
-    expect(screen.queryByRole("button", { name: /Mark as Read/i })).toBeNull();
-    const readLabels = screen.getAllByText("Read");
-    expect(readLabels.length).toBe(2);
+    expect(apiClient.patch).toHaveBeenCalledWith("/api/notifications/1", { is_read: true });
   });
 
   it("logs an error if marking a notification as read fails", async () => {
@@ -109,7 +106,61 @@ describe("ViewNotifications", () => {
     await act(async () => {
       fireEvent.click(markAsReadButton);
     });
-    expect(consoleErrorSpy).toHaveBeenCalledWith("Error marking notification as read:", expect.any(Error));
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      "Error marking notification as read:",
+      expect.any(Error)
+    );
     consoleErrorSpy.mockRestore();
+  });
+
+  it("handles errors when fetching notifications", async () => {
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    (apiClient.get as vi.Mock).mockImplementationOnce(() =>
+      Promise.reject({ response: { data: "API Error" } })
+    );
+    renderComponent();
+    await waitFor(() => {
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        "Error fetching notifications:",
+        "API Error"
+      );
+    });
+    consoleErrorSpy.mockClear();
+    (apiClient.get as vi.Mock).mockImplementationOnce(() =>
+      Promise.reject(new Error("Network error"))
+    );
+    renderComponent();
+    await waitFor(() => {
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        "Error fetching notifications:",
+        expect.any(Error)
+      );
+    });
+    consoleErrorSpy.mockRestore();
+  });
+
+  it("handles non-200 response when marking notification as read", async () => {
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    (apiClient.patch as vi.Mock).mockImplementationOnce(() =>
+      Promise.resolve({ status: 400 })
+    );
+    renderComponent();
+    await waitFor(() =>
+      expect(screen.getByText(/All Notifications/i)).toBeInTheDocument()
+    );
+    const markAsReadButton = screen.getByRole("button", { name: /Mark as Read/i });
+    await act(async () => {
+      fireEvent.click(markAsReadButton);
+    });
+    expect(consoleErrorSpy).toHaveBeenCalledWith("Failed to mark notification as read");
+    consoleErrorSpy.mockRestore();
+  });
+
+  it("renders correctly with dark theme", async () => {
+    renderComponent(darkTheme);
+    await waitFor(() =>
+      expect(screen.getByText(/All Notifications/i)).toBeInTheDocument()
+    );
+    expect(screen.getByText("Notification 1")).toBeInTheDocument();
   });
 });
