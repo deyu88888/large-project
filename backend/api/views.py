@@ -1292,9 +1292,21 @@ class StudentSocietyDataView(APIView):
 
         # Return extra data indicating membership
         serializer_data = serializer.data
-        serializer_data["is_member"] = society.society_members.filter(
+        is_member = society.society_members.filter(
             id=request.user.student.id
         ).exists()
+        if is_member:
+            serializer_data["is_member"] = 2
+        else:
+            request_exists = SocietyRequest.objects.filter(
+                society=society,
+                from_student=request.user.student,
+                intent="JoinSoc"
+            ).exists()
+            if request_exists:
+                serializer_data["is_member"] = 1
+            else:
+                serializer_data["is_member"] = 0
 
         return Response(serializer_data, status=status.HTTP_200_OK)
 
