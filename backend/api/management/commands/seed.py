@@ -111,13 +111,13 @@ class Command(BaseCommand):
              },
          )
 
-        # Create/Get Robotics Club, assign leader & members
+        # Create/Get Robotics Club with approved_by provided at creation time
         society, _ = get_or_create_object(
             Society,
             name="Robotics Club",
             leader=president,
+            approved_by=admin,  # Ensure the society is approved upon creation
         )
-        society.approved_by = admin
         society.society_members.add(student)
         
         # Seed up to 10 new showreels for the Robotics Club
@@ -130,19 +130,18 @@ class Command(BaseCommand):
         # CONFLICT RESOLUTION: Using 100 students from main branch
         self.create_student(100)
         self.create_admin(5)
-        self.create_society(
-            name="Robotics Club",
-            president_force=president,
-        )
-        
-        society = Society.objects.get(name="Robotics Club")
+
+        # Retrieve the existing Robotics Club society instead of creating it again
+        society = Society.objects.filter(name="Robotics Club").first()
+
         society.icon = "pre-seed-icons/robotics.jpg"
         self.generate_random_event(society)
         society.save()
         society.vice_president = vice_president
         society.society_members.add(vice_president)
         society.save()
-        self.create_society(35)
+
+        self.create_society(35)  # Continue creating other societies
         self.create_event(35)
         self.pre_define_awards()
         self.randomly_assign_awards(50)
@@ -155,21 +154,28 @@ class Command(BaseCommand):
     def create_student(self, n):
         """Create n different students"""
         generator = RandomStudentDataGenerator()
-        for i in range(1, n+1):
+        
+        for i in range(1, n + 1):
             print(f"Seeding student {i}/{n}", end='\r', flush=True)
+            
             data = generator.generate()
+            email = f"{data['username']}@kcl.ac.uk"
+
+            # Ensure unique email constraint is respected
             student, created = Student.objects.get_or_create(
-                username=data["username"],
-                first_name=data["first_name"],
-                last_name=data["last_name"],
-                email=f"{data['username']}@kcl.ac.uk",
-                major=data["major"],
+                email=email,  # Email is the lookup field to prevent duplicates
                 defaults={
-                    "password": make_password("studentpassword"),  
+                    "username": data["username"],
+                    "first_name": data["first_name"],
+                    "last_name": data["last_name"],
+                    "major": data["major"],
+                    "password": make_password("studentpassword"),
                 },
             )
+
             if created:
-                self.handle_user_status(student)
+                self.handle_user_status(student)  # Handle additional setup if needed
+        
         print(self.style.SUCCESS(f"Seeding student {n}/{n}"), flush=True)
 
     def handle_user_status(self, user):
