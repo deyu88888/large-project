@@ -83,8 +83,8 @@ class StudentSocietiesViewTestCase(TestCase):
         """Tests the is_member field for students who are/aren't members"""
         self.client.credentials(HTTP_AUTHORIZATION=self.student1_token)
         response = self.client.get(f"/api/society-view/{self.society.id}/")
-        self.assertEqual(response.data["is_member"], True)
+        self.assertEqual(response.data["is_member"], 2)
 
         self.client.credentials(HTTP_AUTHORIZATION=self.student3_token)
         response = self.client.get(f"/api/society-view/{self.society.id}/")
-        self.assertEqual(response.data["is_member"], False)
+        self.assertEqual(response.data["is_member"], 0)
