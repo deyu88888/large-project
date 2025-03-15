@@ -57,8 +57,8 @@ describe("PendingSocietyRequest Component", () => {
 
   it("renders the pending society requests", () => {
     const mockSocieties = [
-      { id: 1, name: "Society 1", leader: "Leader 1", category: "Tech", society_members: ["Member1", "Member2"] },
-      { id: 2, name: "Society 2", leader: "Leader 2", category: "Science", society_members: "" },
+      { id: 1, name: "Society 1", president: "president 1", category: "Tech", society_members: ["Member1", "Member2"] },
+      { id: 2, name: "Society 2", president: "president 2", category: "Science", society_members: "" },
     ];
 
     (useFetchWebSocket as vi.Mock).mockReturnValue(mockSocieties);
@@ -76,7 +76,7 @@ describe("PendingSocietyRequest Component", () => {
 
   it("handles societies with empty members array", () => {
     const mockSocieties = [
-      { id: 1, name: "Society 1", leader: "Leader 1", category: "Tech", society_members: "" },
+      { id: 1, name: "Society 1", president: "president 1", category: "Tech", society_members: "" },
     ];
 
     (useFetchWebSocket as vi.Mock).mockReturnValue(mockSocieties);
@@ -92,7 +92,7 @@ describe("PendingSocietyRequest Component", () => {
 
   it("formats society members correctly", () => {
     const mockSocieties = [
-      { id: 1, name: "Society 1", leader: "Leader 1", category: "Tech", society_members: ["Member1", "Member2"] },
+      { id: 1, name: "Society 1", president: "president 1", category: "Tech", society_members: ["Member1", "Member2"] },
     ];
 
     (useFetchWebSocket as vi.Mock).mockReturnValue(mockSocieties);
@@ -108,7 +108,7 @@ describe("PendingSocietyRequest Component", () => {
 
   it("calls updateRequestStatus when accept and reject buttons are clicked", async () => {
     const mockSocieties = [
-      { id: 1, name: "Society 1", leader: "Leader 1", category: "Tech", society_members: ["Member1", "Member2"] },
+      { id: 1, name: "Society 1", president: "president 1", category: "Tech", society_members: ["Member1", "Member2"] },
     ];
 
     (useFetchWebSocket as vi.Mock).mockReturnValue(mockSocieties);
@@ -130,7 +130,7 @@ describe("PendingSocietyRequest Component", () => {
 
   it("displays an alert when updateRequestStatus fails", async () => {
     const mockSocieties = [
-      { id: 1, name: "Society 1", leader: "Leader 1", category: "Tech", society_members: ["Member1", "Member2"] },
+      { id: 1, name: "Society 1", president: "president 1", category: "Tech", society_members: ["Member1", "Member2"] },
     ];
 
     (useFetchWebSocket as vi.Mock).mockReturnValue(mockSocieties);

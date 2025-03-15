@@ -118,7 +118,7 @@ class Student(User):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name="president",
+        related_name="society_president",
     )
 
     attended_events = models.ManyToManyField(
@@ -225,7 +225,7 @@ class Society(models.Model):
         related_name="event_manager_of_society",
         help_text="Assigned event manager of the society",
     )
-    leader = models.ForeignKey(
+    president = models.ForeignKey(
         "Student",
         on_delete=models.DO_NOTHING,
         related_name="society",
@@ -295,16 +295,16 @@ class Society(models.Model):
                     raise ValidationError({"social_media_links": f"The link for '{platform}' must be a valid URL starting with http:// or https://"})
 
     def save(self, *args, **kwargs):
-        """Ensure the leader is always a member and validate JSON fields"""
+        """Ensure the president is always a member and validate JSON fields"""
         # Run full validation
         self.full_clean()
         
         # Save the society
         super().save(*args, **kwargs)
         
-        # Ensure leader is a member
-        if self.leader:
-            self.society_members.add(self.leader) 
+        # Ensure president is a member
+        if self.president:
+            self.society_members.add(self.president) 
 
         # Add default icon if needed
         if not self.icon.name or not self.icon:
@@ -477,10 +477,10 @@ class SocietyRequest(Request):
     name = models.CharField(max_length=30, blank=True, default="")
     description = models.CharField(max_length=500, blank=True, default="")
     roles = models.JSONField(default=dict, blank=True)
-    leader = models.ForeignKey(
+    president = models.ForeignKey(
         "Student",
         on_delete=models.CASCADE,
-        related_name="society_request_leader",
+        related_name="society_request_president",
         blank=True,
         null=True,
     )

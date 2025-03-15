@@ -27,7 +27,7 @@ class NotificationModelTestCase(TestCase):
         )
         self.society = Society.objects.create(
             name="Test Society",
-            leader=self.student,
+            president=self.student,
             approved_by=self.admin,
             category='Technology',
             social_media_links={"Email": "society@example.com"},

@@ -10,7 +10,7 @@ interface Society {
   id: number;
   name: string;
   description: string;
-  leader: string;
+  president: string;
   members: string[]; 
   roles: Record<string, string>; 
   approvedBy: string;
@@ -74,7 +74,7 @@ const SocietyListRejected = () => {
   const columns: GridColDef[] = [
     { field: "name", headerName: "Name", flex: 1 },
     { field: "description", headerName: "Description", flex: 1 },
-    { field: "leader", headerName: "Leader", flex: 1 },
+    { field: "president", headerName: "president", flex: 1 },
     { field: "members", headerName: "Members", flex: 1 },
     { field: "roles", headerName: "Roles", flex: 1  },
     { field: "approvedBy", headerName: "Approved By", flex: 1  },

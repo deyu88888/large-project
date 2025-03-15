@@ -4,7 +4,7 @@ export type Society = {
     name: string;
     societyMembers: number[];
     roles: {};
-    leader: number;
+    president: number;
     category: string;
     socialMediaLinks: {};
     timetable: string | null;

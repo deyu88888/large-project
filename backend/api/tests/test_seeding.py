@@ -57,7 +57,7 @@ class SeedingTestCase(TransactionTestCase):
 
         self.society = Society.objects.create(
             name="Robotics Club",
-            leader=self.president,
+            president=self.president,
             approved_by=self.admin,
         )
         self.society.society_members.add(self.student)
@@ -100,7 +100,7 @@ class SeedingTestCase(TransactionTestCase):
     def test_society_exists_and_relationships(self):
         """Test if the society was created and linked correctly."""
         society = Society.objects.get(name="Robotics Club")
-        self.assertEqual(society.leader, self.president)
+        self.assertEqual(society.president, self.president)
         self.assertEqual(society.approved_by, self.admin)
 
     @patch("builtins.print")  # Avoids printing while testing

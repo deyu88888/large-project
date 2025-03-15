@@ -28,7 +28,7 @@ class TestDashboardConsumer(TestCase):
             password="adminpassword",
         )
         
-        # Create a student to be a society leader
+        # Create a student to be a society president
         student = Student.objects.create(
             username="john_doe",
             email="john@example.com",
@@ -41,7 +41,7 @@ class TestDashboardConsumer(TestCase):
         Society.objects.create(
             name="Approved Society", 
             status="Approved",
-            leader=student,
+            president=student,
             approved_by=admin,
             social_media_links={"Email": "approved@example.com"}
         )
@@ -49,7 +49,7 @@ class TestDashboardConsumer(TestCase):
         Society.objects.create(
             name="Pending Society", 
             status="Pending",
-            leader=student,
+            president=student,
             approved_by=admin,
             social_media_links={"Email": "pending@example.com"}
         )

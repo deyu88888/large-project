@@ -46,20 +46,20 @@ class SocietySerializerTestCase(TestCase):
             major="History",
         )
 
-        # Create societies with valid leaders
+        # Create societies with valid presidents
         self.society = Society.objects.create(
             name="Tech",
-            leader=self.student1,
+            president=self.student1,
             approved_by=self.admin,
         )
         
         self.society2 = Society.objects.create(
             name="Music",
-            leader=self.student2,
+            president=self.student2,
             approved_by=self.admin,
         )
         
-        # Note: student3 is not a leader of any society
+        # Note: student3 is not a president of any society
         
         # Add members to societies
         self.society.society_members.add(self.student2)
@@ -69,7 +69,7 @@ class SocietySerializerTestCase(TestCase):
         self.serializer = None
         self.data = {
             "name": "Music",
-            "leader_id": self.student1.id,
+            "president_id": self.student1.id,
             "society_members": [self.student2.id, self.student1.id],
             "approved_by": self.admin.id,
         }
@@ -81,7 +81,7 @@ class SocietySerializerTestCase(TestCase):
         data = self.serializer.data
 
         self.assertEqual(data["name"], self.society.name)
-        self.assertEqual(data["leader"]["id"], self.society.leader.id)
+        self.assertEqual(data["president"]["id"], self.society.president.id)
         self.assertEqual(data["approved_by"], self.society.approved_by.id)
         self.assertEqual(
             data["society_members"],
@@ -97,7 +97,7 @@ class SocietySerializerTestCase(TestCase):
         society = self.serializer.save()
 
         self.assertEqual(society.name, self.data["name"])
-        self.assertEqual(society.leader.id, self.data["leader_id"])
+        self.assertEqual(society.president.id, self.data["president_id"])
         self.assertEqual(
             list(society.society_members.values_list("id", flat=True)),
             self.data["society_members"],
@@ -113,7 +113,7 @@ class SocietySerializerTestCase(TestCase):
         society = self.serializer.save()
 
         self.assertEqual(society.name, self.data["name"])
-        self.assertEqual(society.leader.id, self.data["leader_id"])
+        self.assertEqual(society.president.id, self.data["president_id"])
         self.assertEqual(
             list(society.society_members.values_list("id", flat=True)),
             self.data["society_members"],
@@ -133,7 +133,7 @@ class SocietySerializerTestCase(TestCase):
         self.serializer.save()
 
         self.assertEqual(self.society.name, self.data["name"])
-        self.assertEqual(self.society.leader.id, self.data["leader_id"])
+        self.assertEqual(self.society.president.id, self.data["president_id"])
         self.assertEqual(
             list(self.society.society_members.values_list("id", flat=True)),
             self.data["society_members"],

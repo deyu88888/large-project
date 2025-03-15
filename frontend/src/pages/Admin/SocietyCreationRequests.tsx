@@ -49,7 +49,7 @@ const PendingSocietyRequest = () => {
       headerName: "Members",
       flex: 1,
     },
-    { field: "leader", headerName: "Leader", flex: 1 },
+    { field: "president", headerName: "president", flex: 1 },
     { field: "category", headerName: "Category", flex: 1 },
     { field: "timetable", headerName: "Timetable", flex: 1 },
     { field: "membershipRequirements", headerName: "Membership Requirements", flex: 1 },

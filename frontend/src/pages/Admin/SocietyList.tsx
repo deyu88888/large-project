@@ -11,7 +11,7 @@ interface Society {
   id: number;
   name: string;
   description: string;
-  leader: string;
+  president: string;
   members: string[]; // Assuming members is an array of strings
   roles: Record<string, string>; // Assuming roles is a key-value object
   approvedBy: string;
@@ -83,7 +83,7 @@ const SocietyList = () => {
     () => [
       { field: "name", headerName: "Name", flex: 1 },
       { field: "description", headerName: "Description", flex: 1},
-      { field: "leader", headerName: "Leader", flex: 1 },
+      { field: "president", headerName: "president", flex: 1 },
       { field: "members", headerName: "Members", flex: 1 },
       { field: "roles", headerName: "Roles", flex: 1 },
       { field: "approvedBy", headerName: "Approved By", flex: 1 },

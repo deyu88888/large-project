@@ -45,7 +45,7 @@ class StudentSocietiesViewTestCase(TestCase):
         # Create test societies
         self.society = Society.objects.create(
             name="Science Club",
-            leader=self.student1,
+            president=self.student1,
             approved_by=self.admin,
             event_manager=self.student2,
             status="Approved"
@@ -74,7 +74,7 @@ class StudentSocietiesViewTestCase(TestCase):
         self.client.credentials(HTTP_AUTHORIZATION=self.student1_token)
         response = self.client.get(f"/api/society-view/{self.society.id}/")
         self.assertEqual(response.data["name"], "Science Club")
-        self.assertEqual(response.data["leader"]["id"], self.student1.id)
+        self.assertEqual(response.data["president"]["id"], self.student1.id)
         self.assertEqual(response.data["event_manager"]["id"], self.student2.id)
         self.assertEqual(response.data["status"], "Approved")
         self.assertEqual(response.data["approved_by"], self.admin.id)

@@ -42,7 +42,7 @@ class ManageSocietyDetailsViewTest(APITestCase):
             id=1,
             name="Test Society",
             status="Approved",
-            leader=self.president_student,  # if your Society model uses this field
+            president=self.president_student,  # if your Society model uses this field
             approved_by=self.admin
         )
         

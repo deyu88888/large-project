@@ -146,7 +146,7 @@ const ViewSociety: React.FC = () => {
             <b>Society Roles</b>
           </p>
           <p>
-              President: {society.leader.first_name} {society.leader.last_name}
+              President: {society.president.first_name} {society.president.last_name}
             </p>
           {society.vice_president && (
             <p>
@@ -202,10 +202,10 @@ const ViewSociety: React.FC = () => {
               {society.tags?.map((tag: string) => "#" + tag || "No society tags!").join(", ")}
             </p>
             <p>Contact us: <Link 
-              href={"mailto:" + society.leader.email}
+              href={"mailto:" + society.president.email}
               style={{color: isLight ? "black" : "white"}}
             >
-              {society.leader.email}
+              {society.president.email}
             </Link></p>
           </div>
           <div style={{flex: 1.0}}>

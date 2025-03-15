@@ -239,7 +239,7 @@ class StudentSocietiesView(APIView):
     - **GET**: Retrieves a list of societies the currently logged-in student has joined.
         - Permissions: Requires the user to be authenticated and a student.
         - Response:
-            - 200: A list of societies with details such as name and leader.
+            - 200: A list of societies with details such as name and president.
             - 403: If the user is not a student.
 
     - **POST**: Allows the student to leave a society they are part of.
@@ -295,7 +295,7 @@ class JoinSocietyView(APIView):
     - **GET**: Retrieves a list of societies the currently logged-in student has NOT joined.
         - Permissions: Requires the user to be authenticated and a student.
         - Response:
-            - 200: A list of available societies with details such as name and leader.
+            - 200: A list of available societies with details such as name and president.
             - 403: If the user is not a student.
 
     - **POST**: Creates a request for admin approval to join a society.
@@ -565,8 +565,8 @@ def has_society_management_permission(student, society):
     Returns:
         bool: True if the student has management permissions, False otherwise
     """
-    # Check if student is president (leader)
-    is_president = student.is_president and hasattr(society, 'leader') and society.leader.id == student.id
+    # Check if student is president (president)
+    is_president = student.is_president and hasattr(society, 'president') and society.president.id == student.id
     
     # Check if student is vice president
     is_vice_president = hasattr(society, 'vice_president') and society.vice_president and society.vice_president.id == student.id

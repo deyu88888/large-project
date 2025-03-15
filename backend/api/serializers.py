@@ -206,9 +206,9 @@ class SocietyShowreelSerializer(serializers.ModelSerializer):
 class SocietySerializer(serializers.ModelSerializer):
     """ Serializer for objects of the Society model """
     showreel_images = SocietyShowreelSerializer(many=True, required=False)
-    leader = StudentSerializer(read_only=True)
-    leader_id = serializers.PrimaryKeyRelatedField(
-        queryset=Student.objects.all(), write_only=True, source='leader'
+    president = StudentSerializer(read_only=True)
+    president_id = serializers.PrimaryKeyRelatedField(
+        queryset=Student.objects.all(), write_only=True, source='president'
     )
     vice_president = StudentSerializer(read_only=True)
     vice_president_id = serializers.PrimaryKeyRelatedField(
@@ -224,10 +224,10 @@ class SocietySerializer(serializers.ModelSerializer):
         """SocietySerializer meta data"""
         model = Society
         fields = [
-            'id', 'name', 'description', 'society_members', 'leader', 'approved_by',
+            'id', 'name', 'description', 'society_members', 'president', 'approved_by',
             'status', 'category', 'social_media_links', 'showreel_images',
             'membership_requirements', 'upcoming_projects_or_plans', 'icon','tags',
-            'vice_president', 'event_manager', 'leader_id',
+            'vice_president', 'event_manager', 'president_id',
             'vice_president_id', 'event_manager_id', 
         ]
         extra_kwargs = {
@@ -504,7 +504,7 @@ class StartSocietyRequestSerializer(serializers.ModelSerializer):
         return Society.objects.create(
             name=validated_data["name"],
             roles={"description": validated_data["description"], "category": validated_data["category"]},
-            leader=validated_data["requested_by"],
+            president=validated_data["requested_by"],
             status="Pending"
         )
 
@@ -562,7 +562,7 @@ class SocietyRequestSerializer(RequestSerializer):
         model = SocietyRequest
         fields = (
             RequestSerializer.Meta.fields
-            + ['name', 'description', 'roles', 'leader', 'category', 'icon',
+            + ['name', 'description', 'roles', 'president', 'category', 'icon',
             'social_media_links', 'membership_requirements',
             'upcoming_projects_or_plans', 'society', 'showreel_images_request']
         )

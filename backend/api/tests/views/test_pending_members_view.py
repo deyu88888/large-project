@@ -33,7 +33,7 @@ class PendingMembersViewTest(APITestCase):
             id=1,
             name="Test Society",
             status="Approved",
-            leader=self.president_student,
+            president=self.president_student,
             approved_by=self.admin,
         )
         # Set the president_of field so that the president is linked to this society.
@@ -83,7 +83,7 @@ class PendingMembersViewTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertIn("Only the society president or vice president can manage members.", str(response.data))
 
-    def test_get_not_leader(self):
+    def test_get_not_president(self):
         """
         GET by a president who does not own this society should return 403 Forbidden.
         We'll create another president who is not linked to this society.
@@ -124,12 +124,12 @@ class PendingMembersViewTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertIn("Only the society president or vice president can manage members.", str(response.data))
 
-    def test_post_society_not_leader(self):
-    # Create a student who will serve as the actual leader.
-        leader_student = Student.objects.create_user(
-            username="leader_user",
+    def test_post_society_not_president(self):
+    # Create a student who will serve as the actual president.
+        president_student = Student.objects.create_user(
+            username="president2_user",
             password="test1234",
-            email="leader@example.com",
+            email="president2@example.com",
             is_president=True,
             major="Test Major"
         )
@@ -140,11 +140,11 @@ class PendingMembersViewTest(APITestCase):
             first_name="Admin",
             last_name="Approver"
         )
-        # Create a society with leader_student as the leader.
+        # Create a society with president_student as the president.
         society = Society.objects.create(
             name="Society Not Led by President",
             status="Approved",
-            leader=leader_student,
+            president=president_student,
             approved_by=admin
         )
         
@@ -158,7 +158,7 @@ class PendingMembersViewTest(APITestCase):
         # Build the URL based on the PendingMembersView URL pattern.
         url = f"/api/society/{society.id}/pending-members/{pending_request.id}/"
         
-        # Use the token for the president user from setUp (whose student id is different from leader_student).
+        # Use the token for the president user from setUp (whose student id is different from president_student).
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.president_token}")
         response = self.client.post(url, {"action": "approve"}, format="json")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)

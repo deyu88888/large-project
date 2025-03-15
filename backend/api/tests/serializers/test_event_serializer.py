@@ -32,7 +32,7 @@ class EventSerializerTestCase(TestCase):
 
         self.society = Society.objects.create(
             name="Robotics Club",
-            leader=self.student1,
+            president=self.student1,
             approved_by=self.admin
         )
 

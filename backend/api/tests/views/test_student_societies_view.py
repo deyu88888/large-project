@@ -38,13 +38,13 @@ class StudentSocietiesViewTestCase(TestCase):
         # Create test societies
         self.society1 = Society.objects.create(
             name="Science Club",
-            leader=self.student1,
+            president=self.student1,
             approved_by=self.admin,
             status="Approved"
         )
         self.society2 = Society.objects.create(
             name="Math Club",
-            leader=self.student2,
+            president=self.student2,
             approved_by=self.admin,
             status="Approved"
         )
@@ -171,7 +171,7 @@ class StudentSocietiesViewTestCase(TestCase):
         society3 = Society.objects.create(
             name="Art Club",
             status="Approved",
-            leader=self.student2,  # Different leader; doesn't affect GET for joined societies.
+            president=self.student2,  # Different president; doesn't affect GET for joined societies.
             approved_by=self.admin,  # Adding the required approved_by field
             social_media_links={"Email": "artclub@example.com"}  # Adding social_media_links if needed
         )

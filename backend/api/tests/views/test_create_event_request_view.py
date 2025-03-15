@@ -44,7 +44,7 @@ class CreateEventRequestViewTest(APITestCase):
             id=1,
             name="Test Society",
             status="Approved",
-            leader=self.president_student,
+            president=self.president_student,
             approved_by=self.admin
         )
         # Set the president_of field so that the president is linked to this society.

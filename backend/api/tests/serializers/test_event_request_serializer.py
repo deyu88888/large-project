@@ -33,10 +33,10 @@ class EventRequestSerializerTestCase(TestCase):
             password="studentpassword",
             major="Physics"
         )
-        # Create a society with student1 as leader (and president)
+        # Create a society with student1 as president (and president)
         self.society = Society.objects.create(
             name="Robotics Club",
-            leader=self.student1,
+            president=self.student1,
             approved_by=self.admin
         )
         self.student1.president_of = self.society
@@ -170,7 +170,7 @@ class EventRequestSerializerTestCase(TestCase):
         # Create a new society and student who is not its president.
         other_society = Society.objects.create(
             name="Chess Club",
-            leader=self.student1,  # initially student1 is leader here...
+            president=self.student1,  # initially student1 is president here...
             approved_by=self.admin
         )
         # Create a new student with no president_of assignment.
