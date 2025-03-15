@@ -62,6 +62,7 @@ class Command(BaseCommand):
                 self.stdout.write(f"{model.__name__} already exists: {kwargs}")
             return obj, created
 
+        # Create/Get Admin
         admin, _ = get_or_create_user(
             Admin,
             username="admin_user",
@@ -72,7 +73,8 @@ class Command(BaseCommand):
         )
         admin.save()
 
-        get_or_create_user(
+        # CONFLICT RESOLUTION: Using the 'get_or_create_user' approach from HEAD
+        student, _ = get_or_create_user(
             Student,
             username="student_user",
             email="student@example.com",
@@ -84,6 +86,7 @@ class Command(BaseCommand):
             },
         )
 
+        # Create/Get President
         president, _ = get_or_create_user(
             Student,
             username="president_user",
@@ -108,6 +111,23 @@ class Command(BaseCommand):
              },
          )
 
+        # Create/Get Robotics Club, assign leader & members
+        society, _ = get_or_create_object(
+            Society,
+            name="Robotics Club",
+            leader=president,
+        )
+        society.approved_by = admin
+        society.society_members.add(student)
+        
+        # Seed up to 10 new showreels for the Robotics Club
+        self.seed_society_showreel(society, n=10)
+
+        # Mark the president as leading this society
+        president.president_of = society
+        president.save()
+
+        # CONFLICT RESOLUTION: Using 100 students from main branch
         self.create_student(100)
         self.create_admin(5)
         self.create_society(
@@ -126,6 +146,7 @@ class Command(BaseCommand):
         self.create_event(35)
         self.pre_define_awards()
         self.randomly_assign_awards(50)
+        
         # Broadcast updates to the WebSocket
         self.broadcast_updates()
 
@@ -288,7 +309,9 @@ class Command(BaseCommand):
         # Assigns tags and socials
         self.set_society_socials(society)
 
+        # Seed showreel entries for newly created society
         self.seed_society_showreel(society)
+
         society.save()
         society.leader.save()
 
@@ -356,8 +379,6 @@ class Command(BaseCommand):
         """Generate a random event and ensure attendees are added."""
         location = self.get_random_location()
         event_date = self.generate_random_date()
-        # Use generate_reasonable_time to ensure that the start time is in the future.
-        # If the event is scheduled for today, this function will pick a time after now.
         event_time = self.generate_reasonable_time(event_date)
 
         generator = RandomEventDataGenerator()
@@ -385,12 +406,25 @@ class Command(BaseCommand):
         return event, created
 
     def handle_event_status(self, society, i):
-        """Creates event requests if pending"""
+        """
+        Creates event requests if random_status is Pending/Rejected.
+        If 'Approved', we simply don't create an EventRequest object.
+        
+        Fix: Ensure from_student is always a valid Student.
+        """
         random_status = choice(["Pending", "Approved", "Rejected"])
         location = self.get_random_location()
         
         event_date = self.generate_random_date()
         event_time = self.generate_reasonable_time(event_date)
+
+        # If the society has no leader, pick any random student to avoid NULL
+        default_student = society.leader
+        if not default_student:
+            default_student = Student.objects.first()
+            if not default_student:
+                print("No student available to assign from_student. Cannot create this event request.")
+                return False
 
         if random_status == "Approved":
             return True
@@ -402,7 +436,7 @@ class Command(BaseCommand):
                 start_time=event_time,
                 duration=self.generate_random_duration(),
                 hosted_by=society,
-                from_student=society.leader,
+                from_student=default_student,  # Always assign a valid student
                 location=location,
                 intent="CreateEve",
             )
@@ -414,7 +448,7 @@ class Command(BaseCommand):
                 start_time=event_time,
                 duration=self.generate_random_duration(),
                 hosted_by=society,
-                from_student=society.leader,
+                from_student=default_student,  # Always assign a valid student
                 location=location,
                 intent="CreateEve",
                 approved=True,
@@ -427,24 +461,23 @@ class Command(BaseCommand):
         return choice(duration_choices)
 
     def generate_random_date(self):
-        """Generate a future event date within the next 30 days.
-        
-        If the current time is past the allowed event hours (after 8:45 PM), 
-        then events will not be scheduled for today.
-        """
+        """Generate a future event date within the next 30 days."""
         today = date.today()
         now_time = datetime.now().time()
-        latest_allowed_time = time(20, 45)  # 8:45 PM as the latest allowed event time
-        # If it's already too late today, start from tomorrow (i.e. add at least 1 day)
+        latest_allowed_time = time(20, 45)  # 8:45 PM
+
+        # If it's already too late today, start from tomorrow
         if now_time > latest_allowed_time:
             random_days = randint(1, 30)
         else:
             random_days = randint(0, 30)
         return today + timedelta(days=random_days)
 
-
     def generate_reasonable_time(self, event_date):
-        """Generate a future time (9:00 AM to 8:45 PM), ensuring it's always after the current time if today."""
+        """
+        Generate a future time (9:00 AM to 8:45 PM),
+        ensuring it's after the current time if the event is on the same day.
+        """
         now = datetime.now()
 
         valid_hours = list(range(9, 21))  # 9 AM to 8:45 PM
@@ -452,16 +485,13 @@ class Command(BaseCommand):
 
         if event_date > now.date():
             return time(hour=choice(valid_hours), minute=choice(valid_minutes))
-
         elif event_date == now.date():
-            # Filter times that are strictly in the future
             possible_times = [
                 time(hour=h, minute=m)
                 for h in valid_hours
                 for m in valid_minutes
                 if datetime.combine(event_date, time(hour=h, minute=m)) > now
             ]
-
             if possible_times:
                 return choice(possible_times)
 
@@ -475,7 +505,7 @@ class Command(BaseCommand):
         return time(hour=hours, minute=minutes)
 
     def create_event_notifications(self, events):
-        """Creates notifications from a list of events"""
+        """Creates notifications for event attendees"""
         count = 0
 
         for event in events:
@@ -571,7 +601,7 @@ class Command(BaseCommand):
         )
 
     def student_has_reward(self, category, rank, student):
-        """True if a student has an award of category of a certain rank"""
+        """Check if a student already has an award of a specific rank & category."""
         return AwardStudent.objects.filter(
             award__title__startswith=category,
             award__rank=rank,
@@ -579,7 +609,7 @@ class Command(BaseCommand):
         ).exists()
 
     def enforce_award_validity(self, award, student):
-        """Award in a way so gold for a category relies on bronze & silver"""
+        """Award in a structured way so gold for a category relies on silver/bronze."""
         if award.rank == "Bronze":
             AwardStudent.objects.get_or_create(
                 award=award,
@@ -590,6 +620,7 @@ class Command(BaseCommand):
         lower_ranks = {"Gold": "Silver", "Silver": "Bronze"}
         lower_rank = lower_ranks[award.rank]
         category = award.title.split()[0]
+
         if self.student_has_reward(category, lower_rank, student):
             AwardStudent.objects.get_or_create(
                 award=award,
@@ -603,7 +634,7 @@ class Command(BaseCommand):
             self.enforce_award_validity(award=lower_award, student=student)
 
     def randomly_assign_awards(self, n):
-        """Awards n random awards to random students"""
+        """Give out n random awards to random students"""
         students = list(Student.objects.all())
         awards = list(Award.objects.all())
         for i in range(1, n+1):
@@ -614,9 +645,18 @@ class Command(BaseCommand):
         print(self.style.SUCCESS(f"Seeding awards {n}/{n}"))
 
     def seed_society_showreel(self, society, caption="A sample caption", n=None):
-        """Adds a SocietyShowreel entry to a specific society"""
+        """
+        Adds up to 'n' new SocietyShowreel entries (max 10) for a society.
+        Before creating new showreels, we delete all existing ones to ensure
+        we never exceed the 10-image limit.
+        """
+        # --- NEW: Delete existing showreels for this society ---
+        SocietyShowreel.objects.filter(society=society).delete()
+
         if not n:
             n = randint(1, 10)
+
+        # Create up to 'n' new showreel entries, but never more than 10
         for _ in range(min(n, 10)):
             colour = (randint(0, 255), randint(0, 255), randint(0,255))
             size = (100, 100)
@@ -625,8 +665,13 @@ class Command(BaseCommand):
             buffer = BytesIO()
             image.save(buffer, format='JPEG')
             buffer.seek(0)
+
             file_name = f"showreel_{society.id}.jpeg"
-            uploaded_file = SimpleUploadedFile(file_name, buffer.read(), content_type='image/jpeg')
+            uploaded_file = SimpleUploadedFile(
+                file_name, 
+                buffer.read(), 
+                content_type='image/jpeg'
+            )
 
             showreel_entry = SocietyShowreel.objects.create(
                 society=society,

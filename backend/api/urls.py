@@ -13,6 +13,8 @@ from .views import (
     like_comment, dislike_comment, EventCommentsView
 )
 from .utils import request_otp, verify_otp
+from .recommendation_views import RecommendedSocietiesView, SocietyRecommendationExplanationView
+from .recommendation_feedback_views import RecommendationFeedbackView, RecommendationFeedbackAnalyticsView
 
 
 urlpatterns = [
@@ -102,4 +104,13 @@ urlpatterns = [
     # Follow
     path("users/<int:user_id>/follow", toggle_follow, name="toggle_follow"),
     path("users/<int:user_id>", StudentProfileView.as_view(), name="user_profile"),
+    
+    # Society recommendation endpoints
+    path("recommended-societies/", RecommendedSocietiesView.as_view(), name="recommended_societies"),
+    path("society-recommendation/<int:society_id>/explanation/", SocietyRecommendationExplanationView.as_view(), name="society_recommendation_explanation"),
+    
+    # Recommendation feedback endpoints
+    path("society-recommendation/feedback/", RecommendationFeedbackView.as_view(), name="recommendation_feedback_list"),
+    path("society-recommendation/<int:society_id>/feedback/", RecommendationFeedbackView.as_view(), name="recommendation_feedback_detail"),
+    path("recommendation-feedback/analytics/", RecommendationFeedbackAnalyticsView.as_view(), name="recommendation_feedback_analytics"),
 ]
