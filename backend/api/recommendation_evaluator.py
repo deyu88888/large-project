@@ -11,7 +11,14 @@ from django.utils import timezone
 from django.conf import settings
 import os
 
-from .models import Society, Student, Event
+import django
+
+# Set up Django settings
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "backend.settings")
+django.setup()
+
+# Now you can import models
+from api.models import Society, Student, Event
 
 class RecommendationEvaluator:
     """

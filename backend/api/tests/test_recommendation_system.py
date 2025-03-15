@@ -9,8 +9,9 @@ from django.urls import reverse
 from rest_framework.test import APIClient
 from django.contrib.auth import get_user_model
 from unittest.mock import patch, MagicMock
+from django.contrib.auth.hashers import make_password
 
-from ..models import Society, Student
+from ..models import Society, Student, Admin
 from ..recommendation_service import SocietyRecommender
 
 User = get_user_model()
@@ -20,13 +21,60 @@ class RecommendationServiceTestCase(TestCase):
     """Test the core recommendation service functionality"""
 
     def setUp(self):
-        # Create a test Student (which also creates a User behind the scenes)
+        # Create a test admin user for approved_by field
+        self.admin = Admin.objects.create(
+            username=f"admin_{uuid.uuid4().hex[:8]}",
+            email=f"admin_{uuid.uuid4().hex[:8]}@example.com",
+            password=make_password("adminpassword"),
+            first_name="Admin",
+            last_name="User"
+        )
+        
+        # Create test students
         self.student1 = Student.objects.create(
             username=f"testuser1_{uuid.uuid4().hex[:8]}",
             email=f"test1_{uuid.uuid4().hex[:8]}@example.com",
-            password="password123",  # For tests; won't be hashed
+            password=make_password("password123"),
             first_name="Test",
-            last_name="User"
+            last_name="User",
+            major="Computer Science"
+        )
+        
+        # Create student leaders for societies
+        self.leader1 = Student.objects.create(
+            username=f"leader1_{uuid.uuid4().hex[:8]}",
+            email=f"leader1_{uuid.uuid4().hex[:8]}@example.com",
+            password=make_password("password123"),
+            first_name="Leader",
+            last_name="One",
+            major="Leadership"
+        )
+        
+        self.leader2 = Student.objects.create(
+            username=f"leader2_{uuid.uuid4().hex[:8]}",
+            email=f"leader2_{uuid.uuid4().hex[:8]}@example.com",
+            password=make_password("password123"),
+            first_name="Leader",
+            last_name="Two",
+            major="Management"
+        )
+        
+        self.leader3 = Student.objects.create(
+            username=f"leader3_{uuid.uuid4().hex[:8]}",
+            email=f"leader3_{uuid.uuid4().hex[:8]}@example.com",
+            password=make_password("password123"),
+            first_name="Leader",
+            last_name="Three",
+            major="Direction"
+        )
+        
+        self.leader4 = Student.objects.create(
+            username=f"leader4_{uuid.uuid4().hex[:8]}",
+            email=f"leader4_{uuid.uuid4().hex[:8]}@example.com",
+            password=make_password("password123"),
+            first_name="Leader",
+            last_name="Four",
+            major="Coordination"
         )
 
         # Create societies with different categories
@@ -35,7 +83,9 @@ class RecommendationServiceTestCase(TestCase):
             description="A society for technology enthusiasts",
             category="Technology",
             status="Approved",
-            tags=["Coding", "AI", "Innovation"]
+            tags=["Coding", "AI", "Innovation"],
+            leader=self.leader1,
+            approved_by=self.admin
         )
 
         self.chess_society = Society.objects.create(
@@ -43,7 +93,9 @@ class RecommendationServiceTestCase(TestCase):
             description="A society for chess players",
             category="Games",
             status="Approved",
-            tags=["Strategy", "Games", "Competition"]
+            tags=["Strategy", "Games", "Competition"],
+            leader=self.leader2,
+            approved_by=self.admin
         )
 
         self.debate_society = Society.objects.create(
@@ -51,7 +103,9 @@ class RecommendationServiceTestCase(TestCase):
             description="A society for debate enthusiasts",
             category="Academic",
             status="Approved",
-            tags=["Speaking", "Argument", "Critical Thinking"]
+            tags=["Speaking", "Argument", "Critical Thinking"],
+            leader=self.leader3,
+            approved_by=self.admin
         )
 
         self.art_society = Society.objects.create(
@@ -59,12 +113,14 @@ class RecommendationServiceTestCase(TestCase):
             description="A society for art lovers",
             category="Creative",
             status="Approved",
-            tags=["Painting", "Drawing", "Creativity"]
+            tags=["Painting", "Drawing", "Creativity"],
+            leader=self.leader4,
+            approved_by=self.admin
         )
 
         # Add the student to some societies
-        self.student1.societies_belongs_to.add(self.tech_society)
-        self.student1.societies_belongs_to.add(self.chess_society)
+        self.student1.societies.add(self.tech_society)
+        self.student1.societies.add(self.chess_society)
 
         # Create the recommender instance
         self.recommender = SocietyRecommender()
@@ -72,12 +128,23 @@ class RecommendationServiceTestCase(TestCase):
     def test_get_recommendations_for_student_with_memberships(self):
         """Test that recommendations are provided for students with existing memberships"""
         # Create more societies to ensure we have non-member societies available
+        leader_extra = Student.objects.create(
+            username=f"leader_extra_{uuid.uuid4().hex[:8]}",
+            email=f"leader_extra_{uuid.uuid4().hex[:8]}@example.com",
+            password=make_password("password123"),
+            first_name="Leader",
+            last_name="Extra",
+            major="Extra Studies"
+        )
+        
         Society.objects.create(
             name=f"Extra Society {uuid.uuid4().hex[:5]}",
             description="An extra society for testing",
             category="Extra",
             status="Approved",
-            tags=["Extra", "Testing", "More"]
+            tags=["Extra", "Testing", "More"],
+            leader=leader_extra,
+            approved_by=self.admin
         )
 
         # Get recommendations
@@ -87,7 +154,7 @@ class RecommendationServiceTestCase(TestCase):
         self.assertTrue(len(recommendations) > 0)
 
         # Get the IDs of societies the student is already a member of
-        joined_societies = self.student1.societies_belongs_to.all()
+        joined_societies = self.student1.societies.all()
         joined_society_ids = {society.id for society in joined_societies}
 
         # Check for at least one recommended society that isn't in joined societies
@@ -100,12 +167,32 @@ class RecommendationServiceTestCase(TestCase):
     def test_balance_across_categories(self):
         """Test that recommendations are balanced across different categories"""
         # Create more societies in various categories
+        leader_ds = Student.objects.create(
+            username=f"leader_ds_{uuid.uuid4().hex[:8]}",
+            email=f"leader_ds_{uuid.uuid4().hex[:8]}@example.com",
+            password=make_password("password123"),
+            first_name="Leader",
+            last_name="DataScience",
+            major="Data Science"
+        )
+        
+        leader_bg = Student.objects.create(
+            username=f"leader_bg_{uuid.uuid4().hex[:8]}",
+            email=f"leader_bg_{uuid.uuid4().hex[:8]}@example.com",
+            password=make_password("password123"),
+            first_name="Leader",
+            last_name="BoardGames",
+            major="Game Theory"
+        )
+        
         Society.objects.create(
             name=f"Data Science Society {uuid.uuid4().hex[:5]}",
             description="A society for data science enthusiasts",
             category="Technology",
             status="Approved",
-            tags=["Data", "Analytics", "ML"]
+            tags=["Data", "Analytics", "ML"],
+            leader=leader_ds,
+            approved_by=self.admin
         )
 
         Society.objects.create(
@@ -113,7 +200,9 @@ class RecommendationServiceTestCase(TestCase):
             description="A society for board game enthusiasts",
             category="Games",
             status="Approved",
-            tags=["Games", "Strategy", "Fun"]
+            tags=["Games", "Strategy", "Fun"],
+            leader=leader_bg,
+            approved_by=self.admin
         )
 
         # Get recommendations with a limit that should include both categories
@@ -132,13 +221,14 @@ class RecommendationServiceTestCase(TestCase):
         student2 = Student.objects.create(
             username=f"testuser2_{uuid.uuid4().hex}",
             email=f"test2_{uuid.uuid4().hex}@example.com",
-            password="password123",
+            password=make_password("password123"),
             first_name="Another",
-            last_name="Student"
+            last_name="Student",
+            major="Another Major"
         )
 
         # Add student2 to one society
-        student2.societies_belongs_to.add(self.debate_society)
+        student2.societies.add(self.debate_society)
 
         # Get explanation for a recommendation
         explanation = self.recommender.get_recommendation_explanation(
@@ -158,12 +248,32 @@ class RecommendationServiceTestCase(TestCase):
         # Create societies with identical descriptions but different categories/tags
         identical_desc = "A vibrant community dedicated to bringing like-minded individuals together."
 
+        leader_a = Student.objects.create(
+            username=f"leader_a_{uuid.uuid4().hex[:8]}",
+            email=f"leader_a_{uuid.uuid4().hex[:8]}@example.com",
+            password=make_password("password123"),
+            first_name="Leader",
+            last_name="A",
+            major="Sports Management"
+        )
+        
+        leader_b = Student.objects.create(
+            username=f"leader_b_{uuid.uuid4().hex[:8]}",
+            email=f"leader_b_{uuid.uuid4().hex[:8]}@example.com",
+            password=make_password("password123"),
+            first_name="Leader",
+            last_name="B",
+            major="Music Studies"
+        )
+        
         society1 = Society.objects.create(
             name=f"Society A {uuid.uuid4().hex[:5]}",
             description=identical_desc,
             category="Sports",
             status="Approved",
-            tags=["Football", "Team", "Athletics"]
+            tags=["Football", "Team", "Athletics"],
+            leader=leader_a,
+            approved_by=self.admin
         )
 
         society2 = Society.objects.create(
@@ -171,7 +281,9 @@ class RecommendationServiceTestCase(TestCase):
             description=identical_desc,
             category="Music",
             status="Approved",
-            tags=["Singing", "Band", "Performance"]
+            tags=["Singing", "Band", "Performance"],
+            leader=leader_b,
+            approved_by=self.admin
         )
 
         # Remove all other societies so that only society1 and society2 remain
@@ -181,13 +293,14 @@ class RecommendationServiceTestCase(TestCase):
         student3 = Student.objects.create(
             username=f"testuser3_{uuid.uuid4().hex}",
             email=f"test3_{uuid.uuid4().hex}@example.com",
-            password="password123",
+            password=make_password("password123"),
             first_name="Third",
-            last_name="Student"
+            last_name="Student",
+            major="Third Major"
         )
 
         # Add the student to the society with the identical description
-        student3.societies_belongs_to.add(society1)
+        student3.societies.add(society1)
 
         # Get recommendations
         recommendations = self.recommender.get_recommendations_for_student(student3.id, limit=5)
@@ -201,10 +314,6 @@ class RecommendationServiceTestCase(TestCase):
             "Society with identical description but different category should be recommended"
         )
 
-        # (Optional) If you want to log or confirm scores:
-        # for s in recommendations:
-        #     print(f"Recommended: {s.name}, Category={s.category}, Score={getattr(s, '_recommender_debug_score', None)}")
-
 
 class RecommendationAPITestCase(TestCase):
     """Test the recommendation API endpoints"""
@@ -212,14 +321,37 @@ class RecommendationAPITestCase(TestCase):
     def setUp(self):
         self.client = APIClient()
 
+        # Create an admin for society approval
+        self.admin = Admin.objects.create(
+            username=f"admin_{uuid.uuid4().hex[:8]}",
+            email=f"admin_{uuid.uuid4().hex[:8]}@example.com",
+            password=make_password("adminpassword"),
+            first_name="Admin",
+            last_name="User"
+        )
+
         # Create a Student (subclass of User) with a unique email
         self.student = Student.objects.create(
             username=f"testuser_{uuid.uuid4().hex[:8]}",
             email=f"test_{uuid.uuid4().hex[:8]}@example.com",
-            password="password123",
+            password=make_password("password123"),
             first_name="Test",
-            last_name="User"
+            last_name="User",
+            major="Test Major"
         )
+        
+        # Create leaders for societies
+        self.leaders = []
+        for i in range(5):
+            leader = Student.objects.create(
+                username=f"leader_{i}_{uuid.uuid4().hex[:8]}",
+                email=f"leader_{i}_{uuid.uuid4().hex[:8]}@example.com",
+                password=make_password("password123"),
+                first_name=f"Leader {i}",
+                last_name="User",
+                major=f"Leadership {i}"
+            )
+            self.leaders.append(leader)
 
         # Create some test societies
         self.societies = []
@@ -230,12 +362,14 @@ class RecommendationAPITestCase(TestCase):
                 description=f"Description for Test Society {i+1}",
                 category=categories[i],
                 status="Approved",
-                tags=[f"Tag{i*3+1}", f"Tag{i*3+2}", f"Tag{i*3+3}"]
+                tags=[f"Tag{i*3+1}", f"Tag{i*3+2}", f"Tag{i*3+3}"],
+                leader=self.leaders[i],
+                approved_by=self.admin
             )
             self.societies.append(society)
 
         # Add the student to some societies
-        self.student.societies_belongs_to.add(self.societies[0])
+        self.student.societies.add(self.societies[0])
 
         # "Force" authenticate the API client with the Student (who is also a User)
         self.client.force_authenticate(user=self.student)
@@ -314,13 +448,42 @@ class MockedRecommendationTests(TestCase):
     """Test the recommendation service with mocked dependencies"""
 
     def setUp(self):
+        # Create an admin for society approval
+        self.admin = Admin.objects.create(
+            username=f"admin_{uuid.uuid4().hex[:8]}",
+            email=f"admin_{uuid.uuid4().hex[:8]}@example.com",
+            password=make_password("adminpassword"),
+            first_name="Admin",
+            last_name="User"
+        )
+        
         # Create a Student with unique email
         self.student = Student.objects.create(
             username=f"testuser_{uuid.uuid4().hex[:8]}",
             email=f"test_{uuid.uuid4().hex[:8]}@example.com",
-            password="password123",
+            password=make_password("password123"),
             first_name="Test",
-            last_name="User"
+            last_name="User",
+            major="Test Major"
+        )
+        
+        # Create leaders for societies
+        self.tech_leader = Student.objects.create(
+            username=f"tech_leader_{uuid.uuid4().hex[:8]}",
+            email=f"tech_leader_{uuid.uuid4().hex[:8]}@example.com",
+            password=make_password("password123"),
+            first_name="Tech",
+            last_name="Leader",
+            major="Computer Science"
+        )
+        
+        self.art_leader = Student.objects.create(
+            username=f"art_leader_{uuid.uuid4().hex[:8]}",
+            email=f"art_leader_{uuid.uuid4().hex[:8]}@example.com",
+            password=make_password("password123"),
+            first_name="Art",
+            last_name="Leader",
+            major="Fine Arts"
         )
 
         # Create test societies
@@ -329,7 +492,9 @@ class MockedRecommendationTests(TestCase):
             description="A society for technology enthusiasts",
             category="Technology",
             status="Approved",
-            tags=["Coding", "AI", "Innovation"]
+            tags=["Coding", "AI", "Innovation"],
+            leader=self.tech_leader,
+            approved_by=self.admin
         )
 
         self.art_society = Society.objects.create(
@@ -337,11 +502,13 @@ class MockedRecommendationTests(TestCase):
             description="A society for art lovers",
             category="Creative",
             status="Approved",
-            tags=["Painting", "Drawing", "Creativity"]
+            tags=["Painting", "Drawing", "Creativity"],
+            leader=self.art_leader,
+            approved_by=self.admin
         )
 
         # Add the student to a society
-        self.student.societies_belongs_to.add(self.tech_society)
+        self.student.societies.add(self.tech_society)
 
         # Initialize the recommender
         self.recommender = SocietyRecommender()

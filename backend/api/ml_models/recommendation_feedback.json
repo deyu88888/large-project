@@ -1,0 +1,15 @@
+{
+  "user_feedback": [
+    {
+      "student_id": 2,
+      "society_id": 2,
+      "feedback_type": "view_details",
+      "timestamp": "2025-03-15T15:09:23.300469",
+      "value": null,
+      "metadata": {
+        "explanation_request": true
+      }
+    }
+  ],
+  "last_updated": "2025-03-15T15:09:23.300496"
+}
