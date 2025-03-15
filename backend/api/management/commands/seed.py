@@ -111,32 +111,19 @@ class Command(BaseCommand):
              },
          )
 
-        # Create/Get Robotics Club with approved_by provided at creation time
-        society, _ = get_or_create_object(
-            Society,
-            name="Robotics Club",
-            president=president,
-            approved_by=admin,  # Ensure the society is approved upon creation
-        )
-        society.society_members.add(student)
-        
-        # Seed up to 10 new showreels for the Robotics Club
-        self.seed_society_showreel(society, n=10)
-
-        # Mark the president as leading this society
-        president.president_of = society
-        president.save()
-
-        # CONFLICT RESOLUTION: Using 100 students from main branch
         self.create_student(100)
         self.create_admin(5)
 
-        # Retrieve the existing Robotics Club society instead of creating it again
+        self.create_society(name="Robotics Club", president_force=president)
         society = Society.objects.filter(name="Robotics Club").first()
-
+        society.society_members.add(student)
         society.icon = "pre-seed-icons/robotics.jpg"
+
+        self.seed_society_showreel(society, n=10)
+
+        president.president_of = society
+        president.save()
         self.generate_random_event(society)
-        society.save()
         society.vice_president = vice_president
         society.society_members.add(vice_president)
         society.save()
