@@ -11,6 +11,9 @@ interface User {
   is_president?: boolean;
   is_vice_president: boolean;
   vice_president_of_society?: number;
+  is_event_manager?: boolean;
+  event_manager_of_society?: number;
+
 }
 
 interface AuthStore {

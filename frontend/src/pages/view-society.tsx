@@ -42,12 +42,21 @@ const ViewSociety: React.FC = () => {
 
   const handleJoinSociety = async (societyId: number) => {
     try {
-      await apiClient.post("/api/join-society/" + societyId + "/");
-      setJoined(true)
-      alert("Successfully joined the society!");
-    } catch (error) {
+      const response = await apiClient.post(`/api/join-society/${societyId}/`);
+      if (response.data.message) {
+        alert(response.data.message);
+      } else {
+        setJoined(true);
+        alert("Successfully joined the society!");
+      }
+    } catch (error: any) {
       console.error("Error joining society:", error);
-      alert("Failed to join the society. Please try again.");
+      
+      const errorMessage = error.response?.data?.message || 
+        error.response?.data?.error || 
+        "Failed to join the society. Please try again.";
+      
+      alert(errorMessage);
     }
   };
 

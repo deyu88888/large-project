@@ -35,6 +35,7 @@ interface Society {
   name: string;
   is_president: boolean;
   is_vice_president?: boolean;
+  is_event_manager?: boolean;
 }
 
 interface Event {
@@ -78,7 +79,7 @@ const StudentDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<number>(0);
   const [showCalendar, setShowCalendar] = useState<boolean>(false);
   const { user } = useAuthStore();
-  const [student, setStudent] = useState<any[]>([]);
+  const [student, setStudent] = useState<any>(null);
 
   const tabColors = [
     colours.greenAccent[500],
@@ -133,9 +134,9 @@ const StudentDashboard: React.FC = () => {
       console.error("Error fetching award assignments:", error);
     }
     try {
-      const studentResponse = await apiClient.get("api/user/current");
+      const studentResponse = await apiClient.get("api/user/current/");
+      console.log("Student data:", studentResponse.data)
       setStudent(studentResponse.data)
-      console.log("Student data:", student)
     } catch (error) {
       console.error("Error fetching current student:", error);
     }
@@ -230,19 +231,30 @@ const StudentDashboard: React.FC = () => {
             Dashboard
           </Typography>
           <Box display="flex" gap={2}>
-          {(student?.is_president === true || student?.is_vice_president === true) && (
-              <Button
-                variant="contained"
-                onClick={() => navigate(`/president-page/${student?.is_president ? student?.president_of : student?.vice_president_of_society}`)}
-                sx={{
-                  backgroundColor: colours.greenAccent[500],
-                  color: colours.grey[100],
-                }}
-              >
-                <FaCogs style={{ marginRight: 4 }} />
-                Manage My Societies
-              </Button>
-            )}
+          {(student?.is_president === true || 
+            student?.is_vice_president === true || 
+            student?.is_event_manager === true) && (  
+            <Button
+              variant="contained"
+              onClick={() => {
+                if (student?.is_president) {
+                  navigate(`/president-page/${student.president_of}`);
+                } else if (student?.is_vice_president) {
+                  navigate(`/president-page/${student.vice_president_of_society}`);
+                } else if (student?.is_event_manager) {
+                  // Direct event managers straight to events management page
+                  navigate(`/president-page/${student.event_manager_of_society}/manage-society-events`);
+                }
+              }}
+              sx={{
+                backgroundColor: colours.greenAccent[500],
+                color: colours.grey[100],
+              }}
+            >
+              <FaCogs style={{ marginRight: 4 }} />
+              {student?.is_event_manager ? 'Manage Society Events' : 'Manage My Society'}
+            </Button>
+          )}
           </Box>
         </Box>
         <Box
@@ -329,6 +341,17 @@ const StudentDashboard: React.FC = () => {
                         color={colours.primary[500]}
                       >
                         <Typography variant="caption">Vice President</Typography>
+                      </Box>
+                    )}
+                    {society.is_event_manager && (  
+                      <Box
+                        px={1}
+                        py={0.5}
+                        borderRadius="4px"
+                        bgcolor={colours.blueAccent[500]} 
+                        color={colours.primary[500]}
+                      >
+                        <Typography variant="caption">Event Manager</Typography>
                       </Box>
                     )}
                     </Box>
@@ -566,6 +589,27 @@ const StudentDashboard: React.FC = () => {
                 {showCalendar ? 'Hide Calendar' : 'Show Calendar'}
               </Button>
             </Box>
+            {student?.is_event_manager && (
+              <Button
+                variant="contained"
+                onClick={() => {
+                  if (student?.event_manager_of_society) {
+                    // Navigate directly to the events management page instead of president page
+                    navigate(`/president-page/${student.event_manager_of_society}/manage-society-events`);
+                  } else {
+                    console.error("No society ID found for event manager");
+                  }
+                }}
+                sx={{
+                  backgroundColor: colours.redAccent[500],
+                  color: colours.grey[100],
+                  mb: 2
+                }}
+              >
+                <FaCalendarAlt style={{ marginRight: 4 }} />
+                Manage Society Events
+              </Button>
+            )}
             
             {showCalendar ? (
               // Render the Calendar component with societies data

@@ -107,6 +107,17 @@ class Command(BaseCommand):
                  "major": "Electrical Engineering"
              },
          )
+        event_manager, _ = get_or_create_user(
+            Student,
+            username="event_manager_user",
+            email="eventmanager@example.com",
+            first_name="Event",
+            last_name="Manager",
+            defaults={
+                "password": make_password("eventmanagerpassword"),
+                "major": "Digital Arts"
+            },
+        )
 
         self.create_student(100)
         self.create_admin(5)
@@ -120,8 +131,14 @@ class Command(BaseCommand):
         self.generate_random_event(society)
         society.save()
         society.vice_president = vice_president
+        society.event_manager = event_manager
         society.society_members.add(vice_president)
+        society.society_members.add(event_manager)
         society.save()
+        vice_president.is_vice_president = True
+        vice_president.save()
+        event_manager.is_event_manager = True
+        event_manager.save()
         self.create_society(35)
         self.create_event(35)
         self.pre_define_awards()
@@ -254,14 +271,19 @@ class Command(BaseCommand):
         society.society_members.add(society.leader)
         society.society_members.add(*selected_members)
 
-        # Assign roles (ensure at least 2 roles)
+        # Assign roles (ensure at least 3 roles for president, vp, and event manager)
         if len(selected_members) >= 3:
             # Assign vice president and set flag
             society.vice_president = selected_members[0]
             if society.vice_president:
                 society.vice_president.is_vice_president = True
                 society.vice_president.save()
+                
+            # Assign event manager and set flag
             society.event_manager = selected_members[2]
+            if society.event_manager:
+                society.event_manager.is_event_manager = True
+                society.event_manager.save()
 
         # Assign an admin
         admin_randomised = Admin.objects.order_by('?')

@@ -14,30 +14,90 @@ const JoinSocieties: React.FC = () => {
 
   const [societies, setSocieties] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [pendingRequests, setPendingRequests] = useState<{[key: number]: boolean}>({});
+  const [joinMessages, setJoinMessages] = useState<{[key: number]: string}>({});
+  const [pendingSocietyIds, setPendingSocietyIds] = useState<number[]>([]);
 
-  useEffect(() => {
-    const fetchAvailableSocieties = async () => {
-      try {
-        setLoading(true);
-        const response = await apiClient.get("/api/join-society");
-        console.log("Response:", response);
-        setSocieties(response.data);
-      } catch (error) {
-        console.error("Error fetching societies:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchAvailableSocieties();
-  }, []);
 
-  const handleViewSociety = async (societyId: number) => {
+useEffect(() => {
+  const fetchData = async () => {
     try {
-      navigate("/student/view-society/"+societyId);
+      setLoading(true);
+      
+      // Get available societies
+      const societiesResponse = await apiClient.get("/api/join-society");
+      setSocieties(societiesResponse.data);
+      
+      // Fetch pending requests from the backend
+      try {
+        const pendingResponse = await apiClient.get("/api/society-requests");
+        
+        // Filter to get only pending join society requests
+        const pendingJoinRequests = pendingResponse.data.filter(
+          (request: any) => request.intent === "JoinSoc" && !request.approved
+        );
+        
+        // Create a map of pending society IDs
+        const pendingMap: {[key: number]: string} = {};
+        pendingJoinRequests.forEach((request: any) => {
+          const societyId = request.society.id || request.society;
+          pendingMap[societyId] = "Request pending approval from president.";
+        });
+        
+        // Update state with pending society IDs and messages
+        setPendingSocietyIds(Object.keys(pendingMap).map(Number));
+        setJoinMessages(pendingMap);
+      } catch (pendingError) {
+        console.error("Error fetching pending requests:", pendingError);
+      }
+    } catch (error) {
+      console.error("Error loading data:", error);
+    } finally {
+      setLoading(false);
     }
-    catch (error) {
-      console.error("Error viewing society:", error);
-    }
+  };
+  
+  fetchData();
+}, []);
+
+
+const handleJoinSociety = async (societyId: number) => {
+  try {
+    // Set this society as having a pending request
+    setPendingRequests(prev => ({...prev, [societyId]: true}));
+    
+    // Make API call to join society
+    const response = await apiClient.post(`/api/join-society/${societyId}/`);
+    
+    // Handle successful request
+    setJoinMessages(prev => ({
+      ...prev, 
+      [societyId]: response.data.message || "Request submitted for approval."
+    }));
+    
+    // Update the pending society IDs list
+    setPendingSocietyIds(prev => [...new Set([...prev, societyId])]);
+    
+  } catch (error: any) {
+    console.error("Error joining society:", error);
+    
+    // Check if error response exists
+    const errorMessage = error.response?.data?.message || 
+      error.response?.data?.error || 
+      "Failed to submit join request. Please try again.";
+    
+    setJoinMessages(prev => ({
+      ...prev, 
+      [societyId]: errorMessage
+    }));
+  } finally {
+    setPendingRequests(prev => ({...prev, [societyId]: false}));
+  }
+};
+
+  const handleViewSociety = (societyId: number) => {
+    console.log("Viewing society:", societyId);
+    navigate(`/student/view-society/${societyId}`);
   };
 
   return (
@@ -146,20 +206,60 @@ const JoinSocieties: React.FC = () => {
                       : society.description
                     : "No description available."}
                 </p>
-                <button
-                  onClick={() => handleViewSociety(society.id)}
-                  style={{
-                    backgroundColor: isLight ? colours.blueAccent[400] : colours.blueAccent[500],
-                    color: isLight ? "#ffffff" : colours.grey[100],
-                    padding: "0.5rem 1.5rem",
-                    borderRadius: "0.5rem",
-                    transition: "all 0.2s ease",
-                    cursor: "pointer",
-                    marginLeft: "5.0rem",
-                  }}
-                >
-                  View Society
-                </button>
+                
+                {/* Show message if there is one */}
+                {joinMessages[society.id] && (
+                  <p
+                    style={{
+                      color: isLight ? colours.greenAccent[400] : colours.greenAccent[500],
+                      fontSize: "0.875rem",
+                      marginBottom: "1rem",
+                      textAlign: "center",
+                    }}
+                  >
+                    {joinMessages[society.id]}
+                  </p>
+                )}
+                
+                <div style={{
+                  display: "flex",
+                  gap: "0.5rem",
+                  justifyContent: "center"
+                }}>
+                  <button
+                    onClick={() => handleViewSociety(society.id)}
+                    style={{
+                      backgroundColor: isLight ? colours.blueAccent[400] : colours.blueAccent[500],
+                      color: isLight ? "#ffffff" : colours.grey[100],
+                      padding: "0.5rem 1.5rem",
+                      borderRadius: "0.5rem",
+                      transition: "all 0.2s ease",
+                      cursor: "pointer",
+                    }}
+                  >
+                    View Society
+                  </button>
+                  
+                  {/* Only show join button if there's no pending request */}
+                  {!pendingSocietyIds.includes(society.id) && !joinMessages[society.id] && (
+                    <button
+                      onClick={() => handleJoinSociety(society.id)}
+                      disabled={pendingRequests[society.id]}
+                      style={{
+                        backgroundColor: pendingRequests[society.id] 
+                          ? isLight ? colours.grey[400] : colours.grey[700]
+                          : isLight ? colours.greenAccent[400] : colours.greenAccent[500],
+                        color: isLight ? "#ffffff" : colours.grey[100],
+                        padding: "0.5rem 1.5rem",
+                        borderRadius: "0.5rem",
+                        transition: "all 0.2s ease",
+                        cursor: pendingRequests[society.id] ? "not-allowed" : "pointer",
+                      }}
+                    >
+                      {pendingRequests[society.id] ? "Submitting..." : "Join Society"}
+                    </button>
+                  )}
+                </div>
               </div>
             ))}
           </div>
