@@ -1,25 +1,23 @@
-import React, { useState, useEffect } from "react";
-import { Box, Typography, Button, CircularProgress, Paper, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from "@mui/material";
-import { DataGrid, GridColDef } from "@mui/x-data-grid";
+import React, { useState, useEffect, useContext } from "react";
+import { Box, Typography, Button, CircularProgress, Paper, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, useTheme } from "@mui/material";
+import { DataGrid, GridColDef, GridToolbar } from "@mui/x-data-grid";
 import { apiClient, apiPaths } from "../../api.ts";
+import { ActivityLog } from "../../types.ts"
+import { tokens } from "../../theme/theme.ts";
+import { useSettingsStore } from "../../stores/settings-store.ts";
+import { SearchContext } from "../../components/layout/SearchContext";
 
-interface ActivityLog {
-  id: number;
-  action_type: string;
-  target_type: string;
-  target_name: string;
-  performed_by: string;
-  timestamp: string;
-  expiration_date?: string;
-  reason?: string;
-}
 
-const ActivityLog: React.FC = () => {
+const ActivityLogList: React.FC = () => {
   const [data, setData] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedLog, setSelectedLog] = useState<ActivityLog | null>(null);
-  const [reason, setReason] = useState<string>('');
+  const theme = useTheme();
+  const colors = tokens(theme.palette.mode);
+  const { drawer } = useSettingsStore(); 
+  const { searchTerm } = useContext(SearchContext);
+
   
     const fetchData = async () => {
       try {
@@ -36,11 +34,18 @@ useEffect(() => {
     fetchData();
   }, []);
 
+  const filteredActivityLogs = data.filter((activityLog) =>
+    Object.values(activityLog)
+      .join(" ")
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase())
+  );       
+
   const columns: GridColDef[] = [
+    { field: "id", headerName: "ID", flex: 0.3 },
     { field: "action_type", headerName: "Action Type", flex: 1 },
     { field: "target_type", headerName: "Type", flex: 1 },
     { field: "target_name", headerName: "Name", flex: 1 },
-    { field: "target_email", headerName: "Email", flex: 1 },
     { field: "performed_by", headerName: "Performed By", flex: 1 },
     { field: "timestamp", headerName: "Timestamp", flex: 1 },
     { field: "reason", headerName: "Reason", flex: 2 },
@@ -109,16 +114,60 @@ useEffect(() => {
       
 
   return (
-    <Box p={4}>
-      <Typography variant="h2" textAlign="center" mb={4}>
+    <Box
+      sx={{
+        height: "calc(100vh - 64px)",
+        maxWidth: drawer ? `calc(100% - 3px)`: "100%",
+      }}
+    >
+      <Typography
+        variant="h1"
+        sx={{
+          color: theme.palette.mode === "light" ? colors.grey[100] : colors.grey[100],
+          fontSize: "1.75rem",
+          fontWeight: 800,
+          marginBottom: "1rem",
+        }}
+      >
         Activity Log
       </Typography>
       {loading ? (
         <CircularProgress color="secondary" />
       ) : (
-        <Paper>
-          <DataGrid rows={data} columns={columns} autoHeight />
-        </Paper>
+        <Box sx={{ height: "78vh",
+          "& .MuiDataGrid-root": { border: "none" },
+          "& .MuiDataGrid-cell": { borderBottom: "none" },
+          "& .MuiDataGrid-columnHeaders": {
+            backgroundColor: colors.blueAccent[700],
+            borderBottom: "none",
+          },
+          "& .MuiDataGrid-columnHeader": {
+            whiteSpace: "normal",
+            wordBreak: "break-word",
+          },
+          "& .MuiDataGrid-virtualScroller": {
+            backgroundColor: colors.primary[400],
+          },
+          "& .MuiDataGrid-footerContainer": {
+            borderTop: "none",
+            backgroundColor: colors.blueAccent[700],
+          },
+          "& .MuiCheckbox-root": {
+            color: `${colors.blueAccent[400]} !important`,
+          },
+          "& .MuiDataGrid-toolbarContainer .MuiButton-text": {
+          color: `${colors.blueAccent[500]} !important`,
+        },
+        }}
+      >
+      <DataGrid
+        rows={filteredActivityLogs}
+        columns={columns}
+        slots={{ toolbar: GridToolbar }}
+        resizeThrottleMs={0}
+        autoHeight
+      />
+    </Box>
       )}
       <Dialog open={openDialog} onClose={handleCloseDialog}>
         <DialogTitle>Please confirm that you would like to permanently delete {selectedLog?.action_type} {selectedLog?.target_type}.</DialogTitle>
@@ -140,4 +189,4 @@ useEffect(() => {
   );
 };
 
-export default ActivityLog;
+export default ActivityLogList;
