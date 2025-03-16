@@ -54,7 +54,7 @@ export type Student = {
     isPresident: boolean;
   };
   
-  export type Report = {
+export type Report = {
     id: number;
     from_student: string;
     report_type: string;
@@ -69,4 +69,15 @@ export type Student = {
     brief: string;
     content: string;
     // is_read: boolean;  // add after backend is fixed
+  }
+  
+export type ActivityLog = {
+  id: number;
+  action_type: string;
+  target_type: string;
+  target_name: string;
+  performed_by: string;
+  timestamp: string;
+  expiration_date?: string;
+  reason?: string;
 };
