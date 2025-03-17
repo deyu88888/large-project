@@ -48,13 +48,16 @@ const AdminDashboard = () => {
       setUserStats(statsResponse.data || {});
       const eventsResponse = await apiClient.get("/api/admin/events/");
       setEvents(eventsResponse.data || []);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+    try {
       const notificationsResponse = await apiClient.get("/api/notifications");
       setNotifications(notificationsResponse.data || []);
     } catch (error) {
-      console.error("Error fetching data:", error);
-    } finally {
-      setLoading(false);
+      console.error("Error fetching notifications:", error);
     }
+    setLoading(false);
   };
 
   const fetchSocieties = async () => {
@@ -184,7 +187,7 @@ const AdminDashboard = () => {
                   notifications.map((notification) => (
                     <NotificationCard
                       key={notification.id}
-                      message={notification.message}
+                      message={notification.body}
                       isRead={notification.is_read}
                     />
                   ))
