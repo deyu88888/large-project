@@ -55,7 +55,7 @@ class NotificationSerializerTestCase(TestCase):
         self.notification = Notification.objects.create(
             header=str(self.event),
             body=f"Notification for {str(self.event)}",
-            for_student=self.student,
+            for_user=self.student,
             is_read=False,
             is_important=False,
         )
@@ -65,7 +65,7 @@ class NotificationSerializerTestCase(TestCase):
         self.data = {
             "header": str(self.event),
             "body": f"Notification for {str(self.event)}",
-            "for_student": self.student.id,
+            "for_user": self.student.id,
             "is_read": False,
             "is_important": False,
         }
@@ -77,7 +77,7 @@ class NotificationSerializerTestCase(TestCase):
 
         self.assertEqual(data["header"], self.notification.header)
         self.assertEqual(data["body"], self.notification.body)
-        self.assertEqual(data["for_student"], self.student.id)
+        self.assertEqual(data["for_user"], self.student.id)
         self.assertEqual(data["is_read"], self.notification.is_read)
         self.assertEqual(data["is_important"], self.notification.is_important)
 
@@ -90,7 +90,7 @@ class NotificationSerializerTestCase(TestCase):
 
         self.assertEqual(notification.header, self.data["header"])
         self.assertEqual(notification.body, self.data["body"])
-        self.assertEqual(notification.for_student.id, self.data["for_student"])
+        self.assertEqual(notification.for_user.id, self.data["for_user"])
         self.assertEqual(notification.is_read, self.data["is_read"])
         self.assertEqual(notification.is_important, self.data["is_important"])
 

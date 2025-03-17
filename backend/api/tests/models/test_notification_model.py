@@ -48,7 +48,7 @@ class NotificationModelTestCase(TestCase):
         self.notification = Notification.objects.create(
             header=str(self.event),
             body=f"Notification for {str(self.event)}",
-            for_student=self.student,
+            for_user=self.student,
             is_read=False,
             is_important=False,
         )
@@ -59,20 +59,20 @@ class NotificationModelTestCase(TestCase):
 
     def test_student_not_nullable(self):
         """Test ensuring student cannot be None"""
-        self.notification.for_student = None
+        self.notification.for_user = None
         self._assert_notification_is_invalid()
 
     def test_is_read_default(self):
         """Test to ensure `is_read` defaults to False"""
         notification = Notification.objects.create(
-            for_student=self.student,
+            for_user=self.student,
         )
         self.assertFalse(notification.is_read)
 
     def test_is_important_default(self):
         """Test to ensure `is_read` defaults to False"""
         notification = Notification.objects.create(
-            for_student=self.student,
+            for_user=self.student,
         )
         self.assertFalse(notification.is_important)
 
