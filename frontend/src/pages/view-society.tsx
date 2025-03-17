@@ -10,6 +10,7 @@ import FacebookIcon from '@mui/icons-material/Facebook';
 import InstagramIcon from '@mui/icons-material/Instagram';
 import XIcon from '@mui/icons-material/X';
 import { tokens } from "../theme/theme";
+import { NewsCardAnimation } from "../components/NewsCardAnimation";
 
 const ViewSociety: React.FC = () => {
   const theme = useTheme();
@@ -209,6 +210,9 @@ const ViewSociety: React.FC = () => {
               ))}
             </div>
           )}
+        </div>
+        <div>
+          <NewsCardAnimation /> 
         </div>
         </div>
         <div style={{display: "flex"}}>

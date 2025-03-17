@@ -14,7 +14,7 @@ from api.models import (
     Award,
     AwardStudent,
 )
-from api.management.commands import seed
+from backend.api.management.commands import seed_backup
 from api.tests.file_deletion import delete_file
 
 class SeedingTestCase(TransactionTestCase):
@@ -73,7 +73,7 @@ class SeedingTestCase(TransactionTestCase):
         self.president.president_of = self.society
         self.president.save()
 
-        self.command_instance = seed.Command()
+        self.command_instance = seed_backup.Command()
 
     def test_admin_exists(self):
         """Test if the admin user was correctly seeded."""

@@ -52,13 +52,14 @@ const StudentDrawer: React.FC<StudentDrawerProps> = ({
       }
     };  
   fetchStudentData();
-  });
+  },[]);
 
   const menuItems = [
     { title: "Dashboard", icon: <HomeOutlinedIcon />, to: "/student" },
     { title: "My Societies", icon: <PeopleOutlineIcon />, to: "/student/my-societies" },
     { title: "Start Society", icon: <AddCircleOutlineIcon />, to: "/student/start-society" },
     { title: "View Events", icon: <EventAvailableIcon />, to: "/student/view-events" },
+    { title: "News", icon: <NotificationsNoneOutlinedIcon />, to: "/student/view-notifications" },
     { title: "Notifications", icon: <NotificationsNoneOutlinedIcon />, to: "/student/view-notifications" },
   ];
 
