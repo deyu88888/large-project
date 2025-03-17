@@ -416,16 +416,21 @@ class Notification(models.Model):
     """
     header = models.CharField(max_length=30, default="")
     body = models.CharField(max_length=200, default="")
-    for_student = models.ForeignKey(
-        "Student",
+    for_user = models.ForeignKey(
+        "User",
         on_delete=models.CASCADE,
         related_name="notifications",
         blank=False,
         null=True,
     )
 
+    send_time = models.DateTimeField(default=timezone.now)
     is_read = models.BooleanField(default=False)
     is_important = models.BooleanField(default=False)
+
+    def is_sent(self):
+        """Notification should be sent if it's send_time is passed"""
+        return self.send_time <= timezone.now()
 
     def __str__(self):
         return f"{self.header}\n{self.body}"
@@ -448,7 +453,7 @@ class Request(models.Model):
 
     intent = models.CharField(max_length=10, choices=INTENT)
     requested_at = models.DateTimeField(auto_now_add=True)
-    approved = models.BooleanField(default=False)
+    approved = models.BooleanField(null=True, blank=True, default=None)
 
     # Use "%(class)s" in related_name for uniqueness in inherited models
     from_student = models.ForeignKey(
