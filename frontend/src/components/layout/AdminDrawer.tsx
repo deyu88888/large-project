@@ -39,8 +39,8 @@ const AdminDrawer: React.FC<AdminDrawerProps> = ({
   const [selected, setSelected] = useState("Dashboard");
   const { user } = useAuthStore();
   const navigate = useNavigate();
-
   const menuItems = [
+    
     { title: "Dashboard", icon: <HomeOutlinedIcon />, to: "/admin" },
     {
       title: "Manage Students",
@@ -72,13 +72,24 @@ const AdminDrawer: React.FC<AdminDrawerProps> = ({
       icon: <GroupAddOutlinedIcon />,
       to: "/admin/request-description",
     },
-    {
+    // {(student?.is_president === true || student?.is_vice_president === true) && (
+    // below should only be added if admnin is a 'super admin'
+    // console.log({user?.is_super_admin});
+    // {
+    //   title: "Create Admin",
+    //   icon: <PersonAddAltIcon />,
+    //   to: "/admin/create-admin",
+    // },
+  ];
+
+    // Check if user is super admin before adding the menu item
+  if (user?.is_super_admin) {
+    menuItems.push({
       title: "Create Admin",
       icon: <PersonAddAltIcon />,
       to: "/admin/create-admin",
-    },
-  ];
-
+    });
+  }
   const additionalItems = [
     { title: "Reports", icon: <InboxIcon />, to: "/admin/report-list" },
     {
@@ -122,7 +133,7 @@ const AdminDrawer: React.FC<AdminDrawerProps> = ({
               {user?.first_name} {user?.last_name}
             </Typography>
             <Typography variant="body2" color="textSecondary">
-              University Admin
+              {user?.is_super_admin ? "Super Admin" : "Admin"}
             </Typography>
           </Box>
         ) : (

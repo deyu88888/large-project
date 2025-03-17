@@ -1,5 +1,5 @@
 import datetime
-from api.models import AdminReportRequest, Award, AwardStudent, SiteSettings, User, Student, Admin, Society, Event, \
+from api.models import AdminReportRequest, Award, AwardStudent, BroadcastMessage, SiteSettings, User, Student, Society, Event, \
     Notification, Request, SocietyRequest, SocietyShowreel, SocietyShowreelRequest, EventRequest, UserRequest, Comment, DescriptionRequest
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
@@ -13,6 +13,7 @@ class SiteSettingsSerializer(serializers.ModelSerializer):
         fields = ('introduction_title', 'introduction_content')
         read_only_fields = ('introduction_title', 'introduction_content')
 
+
 class UserSerializer(serializers.ModelSerializer):
     """
     Serializer for the base User model.
@@ -24,7 +25,7 @@ class UserSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'username', 'password', 'first_name',
             'last_name', 'email', 'is_active', 'role', 'following',
-            'is_following'
+            'is_following',  "is_super_admin", "is_staff", "is_superuser"
         ]
         extra_kwargs = {
             'password': {'write_only': True, 'min_length': 8},
@@ -154,48 +155,10 @@ class StudentSerializer(UserSerializer):
         return student
 
 
-
-class AdminSerializer(UserSerializer):
-    """
-    Serializer for the Admin model.
-    """
-
-    class Meta(UserSerializer.Meta):
-        model = Admin
-        fields = UserSerializer.Meta.fields
-
-    def validate_email(self, value):
-        """
-        Check if the email is unique.
-        """
-        if User.objects.filter(email=value).exists():
-            raise serializers.ValidationError("Email already exists.")
-        return value
-
-    def validate_username(self, value):
-        """
-        Check if the username is unique.
-        """
-        if User.objects.filter(username=value).exists():
-            raise serializers.ValidationError("Username already exists.")
-        return value
-
-    def create(self, validated_data):
-        password = validated_data.pop("password")
-        validated_data['role'] = 'admin'
-        admin = Admin.objects.create(**validated_data)
-        admin.set_password(password)
-        admin.is_superuser = True
-        admin.is_staff = True
-        admin.save()
-        return admin
-
-
 class SocietyShowreelSerializer(serializers.ModelSerializer):
     """
     Serializer for the SocietyShowreel model
     """
-
 
     class Meta:
         """SocietyShowreelSerializer meta data"""
@@ -774,6 +737,7 @@ class EventCalendarSerializer(serializers.ModelSerializer):
         )
         return (start_dt + obj.duration).isoformat()
 
+
 class AwardSerializer(serializers.ModelSerializer):
     """
     Serializer for the Award model
@@ -781,6 +745,7 @@ class AwardSerializer(serializers.ModelSerializer):
     class Meta:
         model = Award
         fields = '__all__'
+
 
 class AwardStudentSerializer(serializers.ModelSerializer):
     """
@@ -885,3 +850,10 @@ class DescriptionRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = DescriptionRequest
         fields = ['id', 'society', 'new_description', 'status', 'reviewed_by', 'created_at', 'updated_at']
+
+
+class BroadcastSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BroadcastMessage
+        fields = ['id', 'sender', 'societies', 'events', 'recipients', 'message', 'created_at']
+        read_only_fields = ['id', 'created_at', 'sender']

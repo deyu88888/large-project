@@ -26,7 +26,7 @@ class AdminViewTests(APITestCase):
             password="securepassword"
         )
 
-        self.url = reverse("admin")
+        self.url = reverse("user/admin-panel")  
 
     def test_get_admins(self):
         """

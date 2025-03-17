@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Calendar, momentLocalizer, Event as BigCalendarEvent } from "react-big-calendar";
-import "react-big-calendar/lib/css/react-big-calendar.css";
 import moment from "moment";
 import { Box, CircularProgress, Typography, useTheme, Dialog, DialogTitle, DialogContent, DialogActions, Button, Alert } from "@mui/material";
+
 import Header from "../../components/Header";
 import { tokens } from "../../theme/theme";
 import { getAllEvents } from "../../api";
 import { Event as EventType } from "../../types";
+import "react-big-calendar/lib/css/react-big-calendar.css";
 
 // Initialize the localizer
 const localizer = momentLocalizer(moment);
@@ -99,7 +100,7 @@ const AdminCalendar = () => {
     event: CalendarEvent,
     start: Date,
     end: Date,
-    isSelected: boolean
+    // isSelected: boolean    // TODO: delete as its not used
   ) => {
     // Generate a deterministic color based on the event ID
     const colorOptions = [
@@ -199,7 +200,7 @@ const AdminCalendar = () => {
               startAccessor="start"
               endAccessor="end"
               style={{ height: 600 }}
-              className="rounded-lg"
+              // className="rounded-lg"
               eventPropGetter={eventStyleGetter}
               components={{
                 event: CustomEvent,
@@ -217,7 +218,7 @@ const AdminCalendar = () => {
               popup={true}
               // Customize the appearance to match your theme
               // These styles can be adjusted to match your app's theme better
-              className={`calendar-container ${theme.palette.mode}`}
+              className={`rounded-lg calendar-container ${theme.palette.mode}`}
             />
           </div>
         </div>
