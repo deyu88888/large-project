@@ -8,6 +8,12 @@ import { PrivateGuard } from "../components/guards/private-guard";
 import CircularLoader from "../components/loading/circular-loader";
 import Layout from "../components/layout";
 import PageWithTitle from "../components/PageWithTitle";
+import ViewSocietyEvents from "../pages/view-society-events";
+import PendingMembers from "../pages/President/pending-members";
+import GiveAwardPage from "../pages/President/give-award-page";
+import AssignSocietyRole from "../pages/President/assign-society-role";
+import ManageReports from "../pages/Admin/ManageReports";
+import ViewReports from "../pages/President/ViewReports";
 
 // Lazy-loaded pages
 const LoginPage = lazy(() => import("../pages/login"));
@@ -33,6 +39,8 @@ const ViewSocietyMembers = lazy(() => import("../pages/President/ViewSocietyMemb
 const PendingMembers = lazy(() => import("../pages/President/PendingMembers"));
 const GiveAwardPage = lazy(() => import("../pages/President/GiveAwardPage"));
 const AssignRolePage = lazy(() => import("../pages/President/AssignSocietyRole"));
+const ReportThread = lazy(() => import("../pages/Admin/ReportThread"));
+const RepliesPage = lazy(() => import("../pages/President/replies"));
 
 // Public event pages
 const AllEventsPage = lazy(() => import("../pages/allEventsPage"));
@@ -54,6 +62,12 @@ const RequestEventPage = lazy(() => import("../pages/Admin/PendingEventRequest")
 const AdminReportList = lazy(() => import("../pages/Admin/AdminReportList"));
 const ManageSocietiesPage = lazy(() => import("../pages/Admin/AdminSocietyManagement"));
 const ManageEventsPage = lazy(() => import("../pages/Admin/AdminEventManagement"));
+const ReportReply = lazy(
+  () => import("../pages/Admin/ReportReply")
+);
+const ReportRepliedList = lazy(
+  () => import("../pages/Admin/ReportRepliedList")
+);
 const AdminViewSocietyPage = lazy(() => import("../pages/Admin/ViewSociety"));
 const RequestDescriptionPage = lazy(() => import("../pages/Admin/SocietyDesChangeRequest"));
 const AdminViewStudentPage = lazy(() => import("../pages/Admin/ViewStudent"));
@@ -143,8 +157,20 @@ const routes = [
             element: <RequestDescriptionPage />,
           },
           {
-            path: "report-list",
-            element: <AdminReportList />,
+            path: "reports",
+            element: <ManageReports />,
+          },
+          {
+            path: "report-list/:reportId/reply",
+            element: <ReportReply />,
+          },
+          {
+            path: "report-replied",
+            element: <ReportRepliedList />,
+          },
+          {
+            path: "/admin/report-thread/:reportId",
+            element: <ReportThread />,
           },
           {
             path: "view-student/:student_id",
@@ -185,6 +211,8 @@ const routes = [
           { path: "join-society", element: <PageWithTitle title="Join a Society"><JoinSocietiesPage /></PageWithTitle> },
           { path: "view-society/:society_id", element: <PageWithTitle title="Society Details"><ViewSocietyPage /></PageWithTitle> },
           { path: "profile/:userId", element: <PageWithTitle title="User Profile"><ProfilePage /></PageWithTitle> },
+          { path: "my-reports", element: <PageWithTitle title="View Reports"><ViewReports /></PageWithTitle>},
+          { path: "report-thread/:reportId", element:  <PageWithTitle title="Report Thread"><ReportThread /></PageWithTitle>},
         ],
       },
       {

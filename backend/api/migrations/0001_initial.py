@@ -47,6 +47,21 @@ class Migration(migrations.Migration):
             ],
         ),
         migrations.CreateModel(
+            name='AdminReportRequest',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('intent', models.CharField(choices=[('CreateSoc', 'Create Society'), ('UpdateSoc', 'Update Society'), ('CreateEve', 'Create Event'), ('UpdateEve', 'Update Event'), ('CreateUse', 'Create User'), ('UpdateUse', 'Update User')], max_length=10)),
+                ('approved', models.BooleanField(default=False)),
+                ('report_type', models.CharField(choices=[('Misconduct', 'Misconduct'), ('System Issue', 'System Issue'), ('Society Issue', 'Society Issue'), ('Event Issue', 'Event Issue'), ('Other', 'Other')], max_length=20)),
+                ('subject', models.CharField(max_length=100)),
+                ('details', models.TextField()),
+                ('requested_at', models.DateTimeField(auto_now_add=True)),
+            ],
+            options={
+                'abstract': False,
+            },
+        ),
+        migrations.CreateModel(
             name='Award',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),

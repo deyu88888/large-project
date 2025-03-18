@@ -24,7 +24,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from api.models import Admin, AdminReportRequest, Event, Notification, Society, Student, User, Award, AwardStudent, \
-    UserRequest, DescriptionRequest, AdminReportRequest, Comment, ActivityLog
+    UserRequest, DescriptionRequest, AdminReportRequest, Comment, ActivityLog, ReportReply
 from api.serializers import (
     AdminReportRequestSerializer,
     BroadcastSerializer,
@@ -49,6 +49,7 @@ from api.serializers import (
     DescriptionRequestSerializer, 
     CommentSerializer,
     ActivityLogSerializer,
+    ReportReplySerializer,
 )
 from api.utils import *
 from django.db.models import Q
@@ -2465,19 +2466,264 @@ class AdminReportView(APIView):
     API view for students and society presidents to submit reports to admins.
     """
     permission_classes = [IsAuthenticated]
-
+    
     def post(self, request):
         serializer = AdminReportRequestSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(from_student=request.user.student)  #  Auto-assign the reporter
             return Response({"message": "Report submitted successfully."}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def get(self, request):
-        reports = AdminReportRequest.objects.all().order_by("-requested_at")
-
+    
+    def get(self, request, report_id=None):
+        # If report_id is provided, return that specific report
+        if report_id:
+            try:
+                report = AdminReportRequest.objects.get(id=report_id)
+                serializer = AdminReportRequestSerializer(report)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            except AdminReportRequest.DoesNotExist:
+                return Response({"error": "Report not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Otherwise return all reports without admin replies
+        reports = AdminReportRequest.objects.exclude(
+            replies__is_admin_reply=True
+        ).order_by("-requested_at")
         serializer = AdminReportRequestSerializer(reports, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+class ReportReplyView(APIView):
+    """
+    API view for admins and presidents to reply to reports or other replies.
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        serializer = ReportReplySerializer(data=request.data)
+        if serializer.is_valid():
+            # Get the report
+            report_id = serializer.validated_data.get('report').id
+            report = AdminReportRequest.objects.get(id=report_id)
+            
+            # Get parent reply if provided
+            parent_reply_id = serializer.validated_data.get('parent_reply')
+            print("Parent reply ID:", parent_reply_id)  # Debug line
+            
+            # Check permissions
+            user = request.user
+            is_admin = hasattr(user, 'admin')
+            is_president = hasattr(user, 'society_president')
+            
+            # Rule 1: If no parent reply, only admins can reply to reports
+            if parent_reply_id is None and not is_admin:
+                return Response({"error": "Only admins can reply to reports directly."}, 
+                                status=status.HTTP_403_FORBIDDEN)
+            
+            # Rule 2: If there's a parent reply, check if it's an admin reply
+            if parent_reply_id:
+                parent_reply = ReportReply.objects.get(id=parent_reply_id.id)
+                # Presidents can only reply to admin replies
+                if is_president and not parent_reply.is_admin_reply:
+                    return Response({"error": "Presidents can only reply to admin replies."}, 
+                                    status=status.HTTP_403_FORBIDDEN)
+            
+            # Save the reply with appropriate flags
+            reply = serializer.save(
+                replied_by=user,
+                is_admin_reply=is_admin
+            )
+            
+            return Response(ReportReplySerializer(reply).data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def get(self, request, report_id=None):
+        """Get all replies for a specific report"""
+        if report_id:
+            replies = ReportReply.objects.filter(report_id=report_id, parent_reply=None).order_by('created_at')
+            serializer = ReportReplySerializer(replies, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response({"error": "Report ID is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+class MyReportsView(APIView):
+    """
+    API view for users to view their own submitted reports.
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        reports = AdminReportRequest.objects.filter(from_student=request.user.student).order_by("-requested_at")
+        serializer = AdminReportRequestSerializer(reports, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class MyReportsWithRepliesView(APIView):
+    """
+    API view for users to view their own submitted reports with associated replies.
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        reports = AdminReportRequest.objects.filter(from_student=request.user.student).order_by("-requested_at")
+        
+        reports_with_replies = []
+        
+        for report in reports:
+            replies = ReportReply.objects.filter(report=report).order_by('created_at')
+            
+            report_data = AdminReportRequestSerializer(report).data
+            report_data['replies'] = ReportReplySerializer(replies, many=True).data
+            reports_with_replies.append(report_data)
+        
+        return Response(reports_with_replies, status=status.HTTP_200_OK)
+
+class AdminReportsWithRepliesView(APIView):
+    """
+    API view for admins to view reports they've replied to without user response.
+    """
+    permission_classes = [IsAuthenticated, IsAdminUser]  # Ensure only admins can access
+    
+    def get(self, request):
+        # Ensure the user is an admin
+        if not hasattr(request.user, 'admin'):
+            return Response({"error": "Only admins can access this endpoint."}, 
+                            status=status.HTTP_403_FORBIDDEN)
+        
+        # Get all reports
+        all_reports = AdminReportRequest.objects.all().order_by("-requested_at")
+        
+        # Filter reports that admin has replied to
+        reports_with_admin_replies = []
+        
+        for report in all_reports:
+            # Check if admin has replied to this report
+            admin_replies = ReportReply.objects.filter(
+                report=report,
+                is_admin_reply=True
+            ).order_by('-created_at')
+            
+            if admin_replies.exists():
+                latest_admin_reply = admin_replies.first()
+                
+                # Check if there are any user replies after the latest admin reply
+                newer_user_replies = ReportReply.objects.filter(
+                    report=report,
+                    is_admin_reply=False,
+                    created_at__gt=latest_admin_reply.created_at
+                ).exists()
+                
+                # If no newer user replies, include this report
+                if not newer_user_replies:
+                    # Serialize the report
+                    report_data = AdminReportRequestSerializer(report).data
+                    # Add all replies to this report
+                    all_replies = ReportReply.objects.filter(report=report).order_by('created_at')
+                    report_data['replies'] = ReportReplySerializer(all_replies, many=True).data
+                    reports_with_admin_replies.append(report_data)
+        
+        return Response(reports_with_admin_replies, status=status.HTTP_200_OK)
+
+class AdminRepliesListView(APIView):
+    """
+    API view for admins to view reports where students have replied but admin hasn't responded yet.
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        # Ensure the user is an admin
+        if not hasattr(request.user, 'admin'):
+            return Response({"error": "Only admins can access this endpoint."}, 
+                            status=status.HTTP_403_FORBIDDEN)
+        
+        # Get all reports
+        all_reports = AdminReportRequest.objects.all().order_by("-requested_at")
+        
+        # Filter reports that need admin attention
+        reports_needing_attention = []
+        
+        for report in all_reports:
+            # Get all replies for this report
+            replies = ReportReply.objects.filter(report=report).order_by('created_at')
+            
+            if replies.exists():
+                # Get the most recent reply
+                latest_reply = replies.order_by('-created_at').first()
+                
+                # Check if the latest reply is from a student (not an admin)
+                if not latest_reply.is_admin_reply:
+                    # Serialize the report
+                    report_data = AdminReportRequestSerializer(report).data
+                    # Add report creator's name
+                    if report.from_student:
+                        report_data['from_student_name'] = report.from_student.get_full_name() or report.from_student.username
+                    else:
+                        report_data['from_student_name'] = "Unknown"
+                    # Add all replies to this report
+                    report_data['replies'] = ReportReplySerializer(replies, many=True).data
+                    # Add the latest reply information
+                    report_data['latest_reply'] = {
+                        'content': latest_reply.content,
+                        'created_at': latest_reply.created_at,
+                        'replied_by': latest_reply.replied_by.get_full_name() if latest_reply.replied_by else "Unknown"
+                    }
+                    reports_needing_attention.append(report_data)
+        
+        return Response(reports_needing_attention, status=status.HTTP_200_OK)
+
+class ReportThreadView(APIView):
+    """
+    API view for viewing a complete report thread with hierarchical replies.
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, report_id):
+        try:
+            # Get the report
+            report = AdminReportRequest.objects.get(id=report_id)
+            
+            # Check permissions
+            user = request.user
+            is_admin = hasattr(user, 'admin')
+            is_creator = hasattr(user, 'student') and user.student == report.from_student
+            
+            # Check if user is a president
+            is_president = False
+            if hasattr(user, 'student'):
+                is_president = user.student.is_president
+            
+            # Check if user has participated in this thread
+            has_replied = ReportReply.objects.filter(
+                report=report, 
+                replied_by=user
+            ).exists()
+            
+            if not (is_admin or is_creator or is_president or has_replied):
+                return Response(
+                    {"error": "You don't have permission to view this report thread."}, 
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            # Get top-level replies (no parent)
+            top_replies = ReportReply.objects.filter(
+                report=report, 
+                parent_reply=None
+            ).order_by('created_at')
+            
+            # Function to recursively get replies
+            def get_nested_replies(reply):
+                reply_data = ReportReplySerializer(reply).data
+                child_replies = ReportReply.objects.filter(parent_reply=reply).order_by('created_at')
+                if child_replies.exists():
+                    reply_data['child_replies'] = [get_nested_replies(child) for child in child_replies]
+                else:
+                    reply_data['child_replies'] = []
+                return reply_data
+            
+            # Structure the report with hierarchical replies
+            report_data = AdminReportRequestSerializer(report).data
+            report_data['replies'] = [get_nested_replies(reply) for reply in top_replies]
+            
+            return Response(report_data, status=status.HTTP_200_OK)
+            
+        except AdminReportRequest.DoesNotExist:
+            return Response({"error": "Report not found"}, status=status.HTTP_404_NOT_FOUND)
 
 
 class StudentSocietyDataView(APIView):
