@@ -78,7 +78,7 @@ const StudentDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<number>(0);
   const [showCalendar, setShowCalendar] = useState<boolean>(false);
   const { user } = useAuthStore();
-  const [student, setStudent] = useState<any[]>([]);
+  const [student, setStudent] = useState<any>({});
 
   const tabColors = [
     colours.greenAccent[500],
@@ -134,8 +134,8 @@ const StudentDashboard: React.FC = () => {
     }
     try {
       const studentResponse = await apiClient.get("api/user/current");
-      setStudent(studentResponse.data)
-      console.log("Student data:", student)
+      setStudent(studentResponse.data);
+      console.log("Student data:", studentResponse.data);
     } catch (error) {
       console.error("Error fetching current student:", error);
     }
@@ -208,6 +208,15 @@ const StudentDashboard: React.FC = () => {
     return events.filter(event => mySocietyIds.includes(event.hostedBy)).length;
   };
 
+  // Handle society management button click
+  const handleManageSocietyClick = () => {
+    const societyId = student?.is_president ? student?.president_of : student?.vice_president_of_society;
+    console.log("Navigating to society management, society ID:", societyId);
+    
+    // Use president-page route which is confirmed to be working
+    navigate(`/president-page/${societyId}`);
+  };
+
   if (loading) {
     return (
       <Box
@@ -233,7 +242,7 @@ const StudentDashboard: React.FC = () => {
           {(student?.is_president === true || student?.is_vice_president === true) && (
               <Button
                 variant="contained"
-                onClick={() => navigate(`/president-page/${student?.is_president ? student?.president_of : student?.vice_president_of_society}`)}
+                onClick={handleManageSocietyClick}
                 sx={{
                   backgroundColor: colours.greenAccent[500],
                   color: colours.grey[100],

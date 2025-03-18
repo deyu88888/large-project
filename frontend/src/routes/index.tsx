@@ -110,6 +110,33 @@ const routes = [
           { path: "view-society/:society_id", element: <PageWithTitle title="Society Details"><ViewSocietyPage /></PageWithTitle> },
         ],
       },
+      // Added society management routes
+      {
+        path: "president-page/:societyId",
+        element: (
+          <PrivateGuard requiredRole="student">
+            <Suspense fallback={<LoadingView />}>
+              <Layout />
+            </Suspense>
+          </PrivateGuard>
+        ),
+        children: [
+          { index: true, element: <PageWithTitle title="Manage Society"><PresidentPage /></PageWithTitle> },
+        ],
+      },
+      {
+        path: "manage-society-details/:societyId",
+        element: (
+          <PrivateGuard requiredRole="student">
+            <Suspense fallback={<LoadingView />}>
+              <Layout />
+            </Suspense>
+          </PrivateGuard>
+        ),
+        children: [
+          { index: true, element: <PageWithTitle title="Manage Society Details"><ManageSocietyDetails /></PageWithTitle> },
+        ],
+      },
       {
         path: "logout",
         children: [
