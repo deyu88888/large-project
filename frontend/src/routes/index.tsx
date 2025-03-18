@@ -30,6 +30,7 @@ const ManageSocietyEvents = lazy(() => import("../pages/President/ManageSocietyE
 const CreateEventPage = lazy(() => import("../pages/President/CreateSocietyEvent"));
 const ReportToAdmin = lazy(() => import("../pages/President/ReportToAdmin"));
 const ViewSocietyMembers = lazy(() => import("../pages/President/ViewSocietyMembers"));
+const PendingMembers = lazy(() => import("../pages/President/PendingMembers"));
 
 // Public event pages
 const AllEventsPage = lazy(() => import("../pages/allEventsPage"));
@@ -125,7 +126,7 @@ const routes = [
           { index: true, element: <PageWithTitle title="Society Management"><PresidentPage /></PageWithTitle> },
           { path: "manage-society-details", element: <PageWithTitle title="Society Details"><ManageSocietyDetails /></PageWithTitle> },
           { path: "manage-society-events/:filter?", element: <PageWithTitle title="Society Events"><ManageSocietyEvents /></PageWithTitle> },
-          { path: "pending-members", element: <PageWithTitle title="Pending Members"><CircularLoader /></PageWithTitle> },
+          { path: "pending-members", element: <PageWithTitle title="Pending Members"><PendingMembers /></PageWithTitle> },
           { path: "view-society-members", element: <PageWithTitle title="Society Members"><ViewSocietyMembers /></PageWithTitle> },
           { path: "report-to-admin", element: <PageWithTitle title="Report to Admin"><ReportToAdmin /></PageWithTitle> },
           { path: "create-event", element: <PageWithTitle title="Create Event"><CreateEventPage /></PageWithTitle> },
