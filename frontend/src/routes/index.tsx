@@ -31,6 +31,8 @@ const CreateEventPage = lazy(() => import("../pages/President/CreateSocietyEvent
 const ReportToAdmin = lazy(() => import("../pages/President/ReportToAdmin"));
 const ViewSocietyMembers = lazy(() => import("../pages/President/ViewSocietyMembers"));
 const PendingMembers = lazy(() => import("../pages/President/PendingMembers"));
+const GiveAwardPage = lazy(() => import("../pages/President/GiveAwardPage"));
+const AssignRolePage = lazy(() => import("../pages/President/AssignSocietyRole"));
 
 // Public event pages
 const AllEventsPage = lazy(() => import("../pages/allEventsPage"));
@@ -111,6 +113,7 @@ const routes = [
           { path: "start-society", element: <PageWithTitle title="Start a Society"><StartSociety /></PageWithTitle> },
           { path: "join-society", element: <PageWithTitle title="Join a Society"><JoinSocietiesPage /></PageWithTitle> },
           { path: "view-society/:society_id", element: <PageWithTitle title="Society Details"><ViewSocietyPage /></PageWithTitle> },
+          { path: "profile/:userId", element: <PageWithTitle title="User Profile"><ProfilePage /></PageWithTitle> },
         ],
       },
       {
@@ -131,6 +134,8 @@ const routes = [
           { path: "report-to-admin", element: <PageWithTitle title="Report to Admin"><ReportToAdmin /></PageWithTitle> },
           { path: "create-event", element: <PageWithTitle title="Create Event"><CreateEventPage /></PageWithTitle> },
           { path: "edit-event/:eventId", element: <PageWithTitle title="Edit Event"><EditEventDetails /></PageWithTitle> },
+          { path: "give-award/:memberId", element: <PageWithTitle title="Give Award to Member"><GiveAwardPage /></PageWithTitle> },
+          { path: "assign-role/:memberId", element: <PageWithTitle title="Assign Society Role"><AssignRolePage /></PageWithTitle> },
         ],
       },
       {
