@@ -81,3 +81,14 @@ export type ActivityLog = {
   expiration_date?: string;
   reason?: string;
 };
+
+export type ReportReply = {
+  id: number;
+  report_id: number;
+  report_subject: string;
+  from_user: string;
+  user_type: 'admin' | 'student' | 'moderator';
+  content: string;
+  created_at: string;
+  is_new: boolean;
+}

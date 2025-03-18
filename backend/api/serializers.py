@@ -1,6 +1,6 @@
 import datetime
 from api.models import AdminReportRequest, Award, AwardStudent, SiteSettings, User, Student, Admin, Society, Event, \
-    Notification, Request, SocietyRequest, SocietyShowreel, SocietyShowreelRequest, EventRequest, UserRequest, Comment, DescriptionRequest, ActivityLog
+    Notification, Request, SocietyRequest, SocietyShowreel, SocietyShowreelRequest, EventRequest, UserRequest, Comment, DescriptionRequest, ActivityLog, ReportReply
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 from django.utils.translation import gettext_lazy as _
@@ -811,11 +811,39 @@ class AdminReportRequestSerializer(serializers.ModelSerializer):
     """
     Serializer for the AdminReportRequest model
     """
+    from_student_username = serializers.CharField(source='from_student.username', read_only=True)
+    top_level_replies = serializers.SerializerMethodField()
+
     class Meta:
         """AdminReportRequest meta data"""
         model = AdminReportRequest
-        fields = ["id", "report_type", "subject", "details", "requested_at", "from_student"]
+        fields = ["id", "report_type", "subject", "details", "requested_at", "from_student", "from_student_username", "top_level_replies"]
         extra_kwargs = {"from_student": {"read_only": True}}  # Auto-assign the user
+
+    def get_top_level_replies(self, obj):
+        replies = ReportReply.objects.filter(report=obj, parent_reply=None).order_by('created_at')
+        return ReportReplySerializer(replies, many=True).data
+
+
+class ReportReplySerializer(serializers.ModelSerializer):
+    """
+    Serializer for the ReportReply model
+    """
+    replied_by_username = serializers.CharField(source='replied_by.username', read_only=True)
+    child_replies = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = ReportReply
+        fields = ['id', 'report', 'parent_reply', 'content', 'created_at', 
+                  'replied_by', 'replied_by_username', 'is_admin_reply', 'child_replies']
+        extra_kwargs = {
+            'replied_by': {'read_only': True},
+            'is_admin_reply': {'read_only': True}
+        }
+    
+    def get_child_replies(self, obj):
+        children = obj.child_replies.all().order_by('created_at')
+        return ReportReplySerializer(children, many=True).data
 
 class CommentSerializer(serializers.ModelSerializer):
     """

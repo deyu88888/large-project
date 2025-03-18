@@ -1,87 +1,84 @@
+// src/pages/admin/ReportRepliedList.tsx
 import React, { useEffect, useState, useContext } from 'react';
 import { Box, Button, Typography, useTheme } from "@mui/material";
 import { DataGrid, GridToolbar } from "@mui/x-data-grid";
 import { tokens } from "../../theme/theme";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { useSettingsStore } from "../../stores/settings-store";
-import { fetchReports } from './fetchReports';
-import { Report } from '../../types'
+import { apiClient } from "../../api";
 import { useNavigate } from 'react-router-dom';
 
-
-const AdminReportList: React.FC = () => {
+const ReportRepliedList: React.FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
-  const [reports, setReports] = useState<Report[]>([]);
+  const [reportsWithReplies, setReportsWithReplies] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
   const { searchTerm } = useContext(SearchContext);
-  const { drawer } = useSettingsStore(); 
-  const navigate = useNavigate(); // Use the navigate hook for routing
+  const { drawer } = useSettingsStore();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const loadReports = async () => {
+    const fetchReportsWithReplies = async () => {
       try {
-        const data = await fetchReports();
-        setReports(data);
-      } catch (error) {
-        setError("Failed to fetch reports.");
+        const response = await apiClient.get("/api/reports-replied");
+        setReportsWithReplies(response.data);
+      } catch (err) {
+        setError("Failed to fetch reports with replies");
       }
     };
 
-    loadReports();
+    fetchReportsWithReplies();
   }, []);
 
-  if (error) {
-    return <div>Error: {error}</div>;
-  }
-
-  const filteredReports = reports.filter((report) =>
+  const filteredReports = reportsWithReplies.filter((report) =>
     Object.values(report)
       .join(" ")
       .toLowerCase()
       .includes(searchTerm.toLowerCase())
-  );   
-  
+  );
+
   const columns = [
     { field: "id", headerName: "ID", flex: 0.5 },
-    { field: "from_student", headerName: "Reporter", flex: 1 },
+    { field: "from_student_username", headerName: "Reporter", flex: 1 },
     { field: "report_type", headerName: "Report Type", flex: 1 },
     { field: "subject", headerName: "Subject", flex: 1.5 },
-    { field: "details", headerName: "Details", flex: 2 },
+    { field: "latest_reply", headerName: "Latest Reply", flex: 2 },
+    { field: "reply_count", headerName: "Total Replies", flex: 0.8 },
     {
-      field: "created_at",
-      headerName: "Created At",
+      field: "latest_reply_date",
+      headerName: "Latest Reply Date",
       flex: 1.5,
-      renderCell: (params: any) => new Date(params.row.created_at).toLocaleString(),
+      renderCell: (params: any) => new Date(params.row.latest_reply_date).toLocaleString(),
     },
     {
-      field: "action", // Action column for the reply button
+      field: "action",
       headerName: "Actions",
       flex: 1,
       renderCell: (params: any) => {
-        const reportId = params.row.id;
         return (
           <Button
             variant="contained"
             color="primary"
-            onClick={() => navigate(`/admin/report-list/${reportId}/reply`)} // Navigate to the reply page
+            onClick={() => navigate(`/admin/report-thread/${params.row.id}`)}
           >
-            Reply
+            View Thread
           </Button>
         );
       },
     }
-
   ];
+
+  if (error) {
+    return <Typography color="error">{error}</Typography>;
+  }
 
   return (
     <Box
       sx={{
         height: "calc(100vh - 64px)",
-        maxWidth: drawer ? `calc(100% - 3px)`: "100%",
+        maxWidth: drawer ? `calc(100% - 3px)` : "100%",
       }}
     >
-
       <Box
         sx={{
           height: "78vh",
@@ -90,10 +87,6 @@ const AdminReportList: React.FC = () => {
           "& .MuiDataGrid-columnHeaders": {
             backgroundColor: colors.blueAccent[700],
             borderBottom: "none",
-          },
-          "& .MuiDataGrid-columnHeader": {
-            whiteSpace: "normal",
-            wordBreak: "break-word",
           },
           "& .MuiDataGrid-virtualScroller": {
             backgroundColor: colors.primary[400],
@@ -111,7 +104,7 @@ const AdminReportList: React.FC = () => {
         }}
       >
         <DataGrid
-          rows={reports}
+          rows={reportsWithReplies}
           columns={columns}
           slots={{ toolbar: GridToolbar }}
           getRowId={(row) => row.id}
@@ -123,4 +116,4 @@ const AdminReportList: React.FC = () => {
   );
 };
 
-export default AdminReportList;
+export default ReportRepliedList;

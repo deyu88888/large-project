@@ -628,6 +628,23 @@ class AdminReportRequest(Request):
         return f"{self.get_report_type_display()} - {self.subject} (From {self.from_student.username})"
 
 
+class ReportReply(models.Model):
+    """
+    Replies to AdminReportRequest or other replies.
+    Used by both admins and presidents.
+    """
+    report = models.ForeignKey(AdminReportRequest, on_delete=models.CASCADE, related_name='replies')
+    parent_reply = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='child_replies')
+    content = models.TextField(blank=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    replied_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='report_replies')
+    is_admin_reply = models.BooleanField(default=False)  # To distinguish between admin and president replies
+    
+    def __str__(self):
+        reply_type = "Admin" if self.is_admin_reply else "President"
+        return f"{reply_type} Reply to {self.report.subject} ({self.created_at.strftime('%Y-%m-%d')})"
+
+
 class SiteSettings(models.Model):
     """
     Stores site-wide settings, including the introduction text.

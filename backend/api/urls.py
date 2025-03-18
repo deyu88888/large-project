@@ -10,8 +10,8 @@ from .views import (
     StudentSocietiesView, JoinSocietyView, RSVPEventView, EventHistoryView,
     get_popular_societies, CreateEventRequestView, custom_media_view, get_sorted_events, StudentSocietyDataView,
     AllEventsView, EventDetailView, EventCommentsView, DescriptionRequestView, ManageSocietyDetailsAdminView, 
-    like_comment, dislike_comment, EventCommentsView, toggle_follow, StudentProfileView,
-    ActivityLogView, ManageEventDetailsAdminView, DeleteView, ManageStudentDetailsAdminView,)
+    like_comment, dislike_comment, EventCommentsView, toggle_follow, StudentProfileView, AdminRepliesListView,
+    ActivityLogView, ManageEventDetailsAdminView, DeleteView, ManageStudentDetailsAdminView, ReportReplyView, MyReportsView, MyReportsWithRepliesView, ReportThreadView, AdminReportsWithRepliesView)
 from .utils import request_otp, verify_otp
 from .recommendation_views import RecommendedSocietiesView, SocietyRecommendationExplanationView
 from .recommendation_feedback_views import RecommendationFeedbackView, RecommendationFeedbackAnalyticsView
@@ -101,6 +101,16 @@ urlpatterns = [
 
     # Report to admin
     path("report-to-admin", AdminReportView.as_view(), name="report-to-admin"),
+    path("report-to-admin/<int:report_id>", AdminReportView.as_view(), name="report-to-admin-detail"),
+    path("my-reports", MyReportsView.as_view(), name='my_reports'),
+    path('my-reports-with-replies', MyReportsWithRepliesView.as_view(), name='my_reports_with_replies'),
+    path("report-replies", ReportReplyView.as_view(), name="report-replies"),
+    path("report-replies/<int:report_id>", ReportReplyView.as_view(), name="report-replies-by-report"),
+    path('report-thread/<int:report_id>', ReportThreadView.as_view(), name='report_thread'),
+    path("reports-replied", AdminReportsWithRepliesView.as_view(), name="report_replied"),
+    path("reports-with-replies", AdminRepliesListView.as_view(), name="reports_with_replies"),
+
+
 
     # Events page
     path("all-events", AllEventsView.as_view(), name="all_events"),
