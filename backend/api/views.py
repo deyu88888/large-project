@@ -1,4 +1,3 @@
-# from datetime import timezone // incorrect import
 import logging
 from django.utils import timezone
 from datetime import datetime, timezone
@@ -14,17 +13,17 @@ from django.conf import settings
 from django.views.static import serve
 from rest_framework import generics, status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser, BasePermission
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from api.models import Admin, AdminReportRequest, Event, Notification, Society, SocietyRequest, Student, User, Award, AwardStudent, \
+from api.models import  AdminReportRequest, BroadcastMessage, Event, Notification, Society, SocietyRequest, Student, User, Award, AwardStudent, \
     UserRequest, DescriptionRequest, AdminReportRequest, Comment
 from api.serializers import (
     AdminReportRequestSerializer,
-    AdminSerializer,
+    BroadcastSerializer,
     DashboardNotificationSerializer,
     DashboardStatisticSerializer,
     EventCalendarSerializer,
@@ -46,6 +45,7 @@ from api.serializers import (
     DescriptionRequestSerializer, CommentSerializer,
 )
 from api.utils import *
+from django.db.models import Q
 
 
 class CreateUserView(generics.CreateAPIView):
@@ -357,6 +357,7 @@ class JoinSocietyView(APIView):
             "request_id": society_request.id
         }, status=status.HTTP_201_CREATED)
 
+
 class RSVPEventView(APIView):
     """ API View for RSVPing to events. """
 
@@ -585,6 +586,7 @@ def has_society_management_permission(student, society):
     
     return is_president or is_vice_president
 
+
 class ManageSocietyDetailsView(APIView):
     """
     API View for society presidents and vice presidents to manage their societies.
@@ -702,6 +704,7 @@ class CreateEventRequestView(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 class AllEventsView(APIView):
     """API View to list all approved events for public user"""
     permission_classes = [AllowAny]
@@ -710,6 +713,7 @@ class AllEventsView(APIView):
         events = Event.objects.filter(status="Approved").order_by("date", "start_time")
         serializer = EventSerializer(events, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 class EventDetailView(APIView):
     """API View to get details of an event"""
@@ -720,7 +724,9 @@ class EventDetailView(APIView):
         serializer = EventSerializer(event)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+
 logger = logging.getLogger(__name__)
+
 
 class EventListView(APIView):
     """
@@ -769,7 +775,8 @@ class EventListView(APIView):
 
         serializer = EventSerializer(events, many=True)
         return Response(serializer.data, status=200)
-    
+
+
 class ManageEventDetailsView(APIView):
     """
     API View for society presidents and vice presidents to edit or delete events.
@@ -867,6 +874,7 @@ class ManageEventDetailsView(APIView):
 
         event.delete()
         return Response({"message": "Event deleted successfully."}, status=status.HTTP_200_OK)
+
 
 class PendingMembersView(APIView):
     """
@@ -1006,25 +1014,33 @@ class AdminView(APIView):
     admin view for admins to view all admins
     """
     permission_classes = [IsAuthenticated]
-    # queryset = Admin.objects.all()      # redundant code, remove later
-    # serializer_class = AdminSerializer      # redundant code, remove later
 
     def get(self, request) -> Response:
         """
         get the list of admins for the admin.
         """
-        admin = Admin.objects.all()
-        serializer = AdminSerializer(admin, many=True)  # serializer ensures its a admin object
+        admins = User.get_admins()
+        serializer = UserSerializer(admins, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
         """
         post request to create a new admin user
         """
-        serializer = AdminSerializer(data=request.data)
+        if not request.user.is_super_admin:
+            return Response(
+                {"error": "You do not have permission to create admins."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
-            return Response({"message": "Admin registered successfully."}, status=status.HTTP_201_CREATED)
+            user = serializer.save(role="admin", is_staff=True)   
+            return Response(
+                {"message": "Admin registered successfully.", "admin": UserSerializer(user).data},
+                status=status.HTTP_201_CREATED
+            )
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -1038,7 +1054,6 @@ class StudentView(APIView):
         """
         Get the list of students for the admin.
         """
-        # Get all students and extend their user information
         students = Student.objects.all()
         serializer = StudentSerializer(students, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -1074,7 +1089,6 @@ class RecentActivitiesView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        # Example recent activities (can be extended based on project requirements)
         activities = [
             {"description": "John Doe joined the Chess Society", "timestamp": now()},
             {"description": "A new event was created: 'AI Workshop'", "timestamp": now()},
@@ -1091,7 +1105,6 @@ class NotificationsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        # If user's role is not "student", forbid access
         if request.user.role != "student":
             return Response({"error": "Only students can view notifications."}, status=403)
 
@@ -1112,8 +1125,10 @@ class EventCalendarView(APIView):
         serializer = EventCalendarSerializer(events, many=True)
         return Response(serializer.data, status=200)
 
+
 class MySocietiesView(APIView):
     pass
+
 
 @csrf_exempt
 def get_popular_societies(request):
@@ -1123,7 +1138,7 @@ def get_popular_societies(request):
     - Number of hosted events
     - Total event attendees
     """
-    
+
     popular_societies = (
         Society.objects.annotate(
             total_members=Count("society_members"),
@@ -1320,6 +1335,7 @@ class SocietyMembersListView(APIView):
         serializer = StudentSerializer(members, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+
 class EventCommentsView(APIView):
     """
     API view for create and manage event comments
@@ -1361,6 +1377,7 @@ class EventCommentsView(APIView):
         serializer = CommentSerializer(comment, context={"request": request})
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+
 @api_view(["POST"])
 def like_comment(request, comment_id):
     """Allow user to like a comment"""
@@ -1375,6 +1392,7 @@ def like_comment(request, comment_id):
         comment.dislikes.remove(user)
         return Response({"status": "liked"}, status=status.HTTP_200_OK)
 
+
 @api_view(["POST"])
 def dislike_comment(request, comment_id):
     """Allow user to dislike a comment"""
@@ -1388,6 +1406,7 @@ def dislike_comment(request, comment_id):
         comment.dislikes.add(user)
         comment.likes.remove(user)
         return Response({"status": "disliked"}, status=status.HTTP_200_OK)
+
 
 class DescriptionRequestView(APIView):
     """
@@ -1451,6 +1470,7 @@ class DescriptionRequestView(APIView):
             status=status.HTTP_200_OK
         )
 
+
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def toggle_follow(request, user_id):
@@ -1472,6 +1492,7 @@ def toggle_follow(request, user_id):
         current_user.following.add(target_user)
         return Response({"message": "Followed successfully."}, status=status.HTTP_200_OK)
 
+
 class StudentProfileView(APIView):
     """API view to show Student's Profile"""
     permission_classes = [AllowAny]
@@ -1480,3 +1501,87 @@ class StudentProfileView(APIView):
         student = get_object_or_404(Student, id=user_id)
         serializer = StudentSerializer(student, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class IsAdminOrPresident(BasePermission):
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and (request.user.is_admin() or request.user.is_president)
+
+
+class NewsView(APIView):
+    permission_classes = [IsAuthenticated, IsAdminOrPresident]
+
+    def post(self, request):
+        user = request.user
+        data = request.data
+        societies = list(map(int, data.get("societies", [])))  # Ensure integer IDs
+        events = list(map(int, data.get("events", [])))  # Ensure integer IDs
+        message = data.get("message", "")
+        recipients = set()
+
+        # Debugging prints
+        print(f"Received societies: {societies}")  
+        print(f"Received events: {events}")  
+        print(f"Total Student Users: {User.objects.filter(student__isnull=False).count()}")  
+
+        if not message:
+            return Response({"error": "Message content is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if 'all' in data.get('target', []):
+            print("Sending to all users")
+            recipients.update(User.objects.all())
+        else:
+            print("Filtering recipients based on societies and events")
+
+            if societies:
+                society_members = User.objects.filter(
+                    student__isnull=False,  # Ensure the user has a student profile
+                    student__societies__in=Society.objects.filter(id__in=societies)
+                ).distinct()
+                print(f"Society Members: {list(society_members.values('id', 'username'))}")
+                recipients.update(society_members)
+
+            if events:
+                event_attendees = User.objects.filter(
+                    student__isnull=False,  # Ensure the user has a student profile
+                    student__attended_events__in=Event.objects.filter(id__in=events)
+                ).distinct()
+                print(f"Event Attendees: {list(event_attendees.values('id', 'username'))}")
+                recipients.update(event_attendees)
+
+        # Create the Broadcast Message
+        broadcast = BroadcastMessage.objects.create(sender=user, message=message)
+
+        # Assign societies and events
+        if societies:
+            broadcast.societies.set(Society.objects.filter(id__in=societies))  # Ensure valid societies
+        if events:
+            broadcast.events.set(Event.objects.filter(id__in=events))  # Ensure valid events
+        broadcast.save()
+
+        # Assign recipients
+        if recipients:
+            broadcast.recipients.set(list(recipients))
+
+        return Response(BroadcastSerializer(broadcast).data, status=status.HTTP_201_CREATED)
+
+
+class BroadcastListAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        # Initialize an empty query
+        query = Q(recipients=user)
+
+        # Check if the user has a student relation before accessing societies/events
+        if hasattr(user, 'student'):
+            student = user.student
+            query |= Q(societies__in=student.societies.all()) | Q(events__in=student.attended_events.all())
+
+        # Fetch broadcasts based on the query
+        broadcasts = BroadcastMessage.objects.filter(query).distinct()
+
+        serializer = BroadcastSerializer(broadcasts, many=True)
+        return Response(serializer.data)

@@ -11,7 +11,6 @@ from api.management.commands.data.society_generator import RandomSocietyDataGene
 from api.management.commands.data.student_generator import RandomStudentDataGenerator
 from api.management.commands.data.event_generator import RandomEventDataGenerator
 from api.models import (
-    Admin,
     Student,
     Society,
     SocietyShowreel,
@@ -19,16 +18,18 @@ from api.models import (
     Notification,
     SocietyRequest,
     EventRequest,
+    User,
     UserRequest,
     Award,
     AwardStudent,
 )
-
+from api.signals import broadcast_dashboard_update
 
 class Command(BaseCommand):
-    help = "Seed the database with admin, student, and president users"
+    help = "Seed the database with super admins, normal admins, students, societies, and events"
 
     def handle(self, *args, **kwargs):
+        """Handles database seeding"""
 
         def get_or_create_user(model, username, email, first_name, last_name, defaults):
             user, created = model.objects.get_or_create(
@@ -46,31 +47,53 @@ class Command(BaseCommand):
                 self.stdout.write(f"{model.__name__} already exists: {user.username}")
             return user, created
 
-        def get_or_create_object(model, **kwargs):
-            """
-            Get or create a generic object.
-            """
-            obj, created = model.objects.get_or_create(**kwargs)
+        super_admins = [
+            {"username": "superadmin1", "email": "superadmin1@example.com", "first_name": "Alice", "last_name": "Smith"},
+            {"username": "superadmin2", "email": "superadmin2@example.com", "first_name": "Bob", "last_name": "Johnson"},
+        ]
+
+        for admin in super_admins:
+
+            user, created = User.objects.get_or_create(
+                username=admin["username"],
+                email=admin["email"],  # Required field - must be passed directly
+                first_name=admin["first_name"],  # Required field - must be passed directly
+                last_name=admin["last_name"],  # Required field - must be passed directly
+                defaults={"password": make_password("superadminpassword"), "is_super_admin": True,  "role": "admin", "is_staff": True},  # Only optional fields in defaults
+            )
+
             if created:
-                self.stdout.write(
-                    self.style.SUCCESS(f"{model.__name__} created: {kwargs}")
-                )
+                self.stdout.write(self.style.SUCCESS(f"Super Admin '{admin['username']}' created."))
             else:
-                self.stdout.write(f"{model.__name__} already exists: {kwargs}")
-            return obj, created
+                self.stdout.write(self.style.WARNING(f"Super Admin '{admin['username']}' already exists."))
 
-        # Create/Get Admin
-        admin, _ = get_or_create_user(
-            Admin,
-            username="admin_user",
-            email="admin@example.com",
-            first_name="Jane",
-            last_name="Smith",
-            defaults={"password": make_password("adminpassword")},
+        # Create/Get Admin using create_admin, to avoid code duplication
+        self.create_admin(5)
+
+        self.create_student(100)
+
+        president, _ = Student.objects.get_or_create(
+            username="president_user",
+            defaults={
+                "email": "president@example.com",
+                "first_name": "John",
+                "last_name": "Doe",
+                "password": make_password("presidentpassword"),
+                "major": "Mechanical Engineering",
+            },
         )
-        admin.save()
+        self.create_society(name="Robotics Club", president_force=president)
+        self.create_society(35)
 
-        # CONFLICT RESOLUTION: Using the 'get_or_create_user' approach from HEAD
+        self.create_event(20)
+
+        self.pre_define_awards()
+        self.randomly_assign_awards(50)
+
+        self.broadcast_updates()
+
+        self.stdout.write(self.style.SUCCESS("🎉 Seeding complete!"))
+
         student, _ = get_or_create_user(
             Student,
             username="student_user",
@@ -82,6 +105,7 @@ class Command(BaseCommand):
                 "major": "Computer Science",
             },
         )
+        student.save()
 
         # Create/Get President
         president, _ = get_or_create_user(
@@ -109,7 +133,11 @@ class Command(BaseCommand):
          )
 
         self.create_student(100)
-        self.create_admin(5)
+        self.create_society(
+            name="Robotics Club",
+            president_force=president,
+        )
+        self.create_society(35)
 
         self.create_society(name="Robotics Club", president_force=president)
         society = Society.objects.filter(name="Robotics Club").first()
@@ -148,6 +176,10 @@ class Command(BaseCommand):
             # Ensure unique email constraint is respected
             student, created = Student.objects.get_or_create(
                 email=email,  # Email is the lookup field to prevent duplicates
+                username=data["username"],
+                first_name=data["first_name"],
+                last_name=data["last_name"],
+                major=data["major"],
                 defaults={
                     "username": data["username"],
                     "first_name": data["first_name"],
@@ -177,11 +209,13 @@ class Command(BaseCommand):
         """Create n different admins"""
         for i in range(1, n+1):
             print(f"Seeding admin {i}/{n}", end='\r', flush=True)
-            Admin.objects.get_or_create(
+            User.objects.get_or_create(
                 username=f"admin{i}",
                 email=f"admin{i}@example.com",
                 first_name=f"admin{i}",
                 last_name="User",
+                role="admin",
+                is_staff=True,
                 defaults={"password": make_password("adminpassword")},
             )
         print(self.style.SUCCESS(f"Seeding admin {n}/{n}"), flush=True)
@@ -202,10 +236,10 @@ class Command(BaseCommand):
                 break
 
             # Get an admin for the required approved_by field
-            admin = Admin.objects.order_by('?').first()
+            admin = User.objects.filter(role='admin').order_by('?').first()
             if not admin:
                 print(self.style.WARNING("No admin users found. Creating one."))
-                admin = Admin.objects.create_user(
+                admin = User.objects.create_user(
                     username="auto_admin",
                     email="auto_admin@example.com",
                     first_name="Auto",
@@ -293,7 +327,7 @@ class Command(BaseCommand):
             society.event_manager = selected_members[2]
 
         # Assign an admin
-        admin_randomised = Admin.objects.order_by('?')
+        admin_randomised = User.objects.order_by('?')
         society.approved_by = admin_randomised.first()
 
         # Assigns tags and socials

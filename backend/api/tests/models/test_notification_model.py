@@ -1,7 +1,7 @@
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.utils.timezone import now, timedelta
-from api.models import Admin, Notification, Event, Society, Student
+from api.models import User, Notification, Event, Society, Student
 from api.tests.file_deletion import delete_file
 
 
@@ -10,7 +10,7 @@ class NotificationModelTestCase(TestCase):
 
     def setUp(self):
         
-        self.admin = Admin.objects.create(
+        self.admin = User.objects.create(
             username='admin_user',
             first_name='Admin',
             last_name='User',

@@ -1,5 +1,5 @@
 from rest_framework.test import APITestCase
-from api.models import Student, Society, Admin
+from api.models import Student, Society, User
 from rest_framework_simplejwt.tokens import AccessToken
 
 class SocietyRequestViewTest(APITestCase):
@@ -23,7 +23,7 @@ class SocietyRequestViewTest(APITestCase):
             major="Test Major"
         )
 
-        self.admin = Admin.objects.create_user(
+        self.admin = User.objects.create_user(
             username="existing_admin",
             password="Password123",
             first_name="Admin",

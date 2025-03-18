@@ -6,7 +6,7 @@ from django.core.exceptions import ValidationError
 from django.test import TestCase, override_settings
 from django.utils.timezone import now, make_aware
 
-from api.models import Student, Society, Notification, Event, SocietyRequest, Admin, EventRequest
+from api.models import Student, Society, Notification, Event, SocietyRequest, User, EventRequest
 from api.signals import broadcast_dashboard_update  # and other signal handlers as needed
 from api.consumer.consumers import DashboardConsumer
 
@@ -16,12 +16,13 @@ class SignalsTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):
         # Create a student and society for testing.
-        cls.admin = Admin.objects.create_user(
+        cls.admin = User.objects.create_user(
             username="admin_user",
             email="admin@example.com",
             password="adminpassword",
             first_name="Admin",
-            last_name="User"
+            last_name="User",
+            role="admin",
         )
         cls.student = Student.objects.create_user(
             username="student_user",

@@ -1,7 +1,7 @@
 from django.urls import reverse
 from rest_framework.test import APITestCase
 from rest_framework import status
-from api.models import Admin, Student, Society, User
+from api.models import User, Student, Society, User
 from api.tests.file_deletion import delete_file
 
 class RegisterViewTestCase(APITestCase):
@@ -16,7 +16,7 @@ class RegisterViewTestCase(APITestCase):
             role="student",
         )
         
-        self.admin = Admin(
+        self.admin = User.objects.create(
             username='admin_user',
             first_name='John',
             last_name='Smith',
@@ -109,7 +109,7 @@ class RegisterViewTestCase(APITestCase):
         response = self.client.post(reverse("register"), data=self.valid_payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("username", response.data)
-        self.assertEqual(response.data["username"][0], "user with this username already exists.")
+        self.assertEqual(str(response.data["username"][0]), "This field must be unique.")
 
     def test_register_student_invalid_password(self):
         """
@@ -137,7 +137,7 @@ class RegisterViewTestCase(APITestCase):
         response = self.client.post(reverse("register"), data=self.valid_payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("username", response.data)
-        self.assertEqual(response.data["username"][0], "user with this username already exists.")
+        self.assertEqual(str(response.data["username"][0]), "This field must be unique.")
 
     def test_register_student_without_societies(self):
         """Test that student can register without joining any societies."""

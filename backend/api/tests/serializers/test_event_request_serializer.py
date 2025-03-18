@@ -4,7 +4,7 @@ from django.utils import timezone
 from datetime import timedelta
 from rest_framework.test import APIRequestFactory
 from rest_framework import serializers
-from api.models import Event, Society, Admin, Student, EventRequest
+from api.models import Event, Society, User, Student, EventRequest
 from api.serializers import EventRequestSerializer
 from api.tests.file_deletion import delete_file
 
@@ -16,7 +16,7 @@ class EventRequestSerializerTestCase(TestCase):
 
     def setUp(self):
         # Create an admin
-        self.admin = Admin.objects.create(
+        self.admin = User.objects.create(
             username="admin_user",
             email="admin@example.com",
             first_name="Admin",

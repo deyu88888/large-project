@@ -11,7 +11,7 @@ from django.contrib.auth import get_user_model
 from unittest.mock import patch, MagicMock
 from django.contrib.auth.hashers import make_password
 
-from ..models import Society, Student, Admin
+from ..models import Society, Student, User
 from ..recommendation_service import SocietyRecommender
 
 User = get_user_model()
@@ -22,7 +22,7 @@ class RecommendationServiceTestCase(TestCase):
 
     def setUp(self):
         # Create a test admin user for approved_by field
-        self.admin = Admin.objects.create(
+        self.admin = User.objects.create(
             username=f"admin_{uuid.uuid4().hex[:8]}",
             email=f"admin_{uuid.uuid4().hex[:8]}@example.com",
             password=make_password("adminpassword"),
@@ -322,7 +322,7 @@ class RecommendationAPITestCase(TestCase):
         self.client = APIClient()
 
         # Create an admin for society approval
-        self.admin = Admin.objects.create(
+        self.admin = User.objects.create(
             username=f"admin_{uuid.uuid4().hex[:8]}",
             email=f"admin_{uuid.uuid4().hex[:8]}@example.com",
             password=make_password("adminpassword"),
@@ -449,7 +449,7 @@ class MockedRecommendationTests(TestCase):
 
     def setUp(self):
         # Create an admin for society approval
-        self.admin = Admin.objects.create(
+        self.admin = User.objects.create(
             username=f"admin_{uuid.uuid4().hex[:8]}",
             email=f"admin_{uuid.uuid4().hex[:8]}@example.com",
             password=make_password("adminpassword"),

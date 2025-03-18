@@ -1,6 +1,6 @@
 from django.core.exceptions import ValidationError
 from django.test import TestCase
-from api.models import Student, Society, Admin, SocietyRequest
+from api.models import Student, Society, User, SocietyRequest
 from api.tests.file_deletion import delete_file
 
 # pylint: disable=no-member
@@ -12,7 +12,7 @@ class SocietyRequestTestCase(TestCase):
     """
 
     def setUp(self):
-        self.admin = Admin(
+        self.admin = User.objects.create(
             username="admin_user",
             first_name="John",
             last_name="Smith",

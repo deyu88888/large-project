@@ -1,7 +1,7 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from .views import (
-    AdminReportView, AwardStudentView, AwardView, EventListView, EventRequestView, ManageEventDetailsView, PendingMembersView, RegisterView,
+    AdminReportView, AwardStudentView, AwardView, BroadcastListAPIView, EventListView, EventRequestView, ManageEventDetailsView, NewsView, PendingMembersView, RegisterView,
     CurrentUserView, SocietyMembersListView,
     StudentNotificationsView, StartSocietyRequestView, ManageSocietyDetailsView, StudentInboxView,
     AdminView, StudentView, EventView,
@@ -41,7 +41,7 @@ urlpatterns = [
     path("events/", EventListView.as_view(), name="event-list"),
 
     # User role endpoints
-    path("user/admin/", AdminView.as_view(), name="admin"),
+    path("user/admin-panel/", AdminView.as_view(), name="admin"),
     path("user/student", StudentView.as_view(), name="student"),
   
   # Society membership endpoints
@@ -114,4 +114,9 @@ urlpatterns = [
     path("society-recommendation/feedback/", RecommendationFeedbackView.as_view(), name="recommendation_feedback_list"),
     path("society-recommendation/<int:society_id>/feedback/", RecommendationFeedbackView.as_view(), name="recommendation_feedback_detail"),
     path("recommendation-feedback/analytics/", RecommendationFeedbackAnalyticsView.as_view(), name="recommendation_feedback_analytics"),
+
+    # news
+    path("news/", NewsView.as_view(), name="news"),
+    path("news/<int:pk>", NewsView.as_view(), name="mark_news_read"),   # TODO: implement this later
+    path("get-news/", BroadcastListAPIView.as_view(), name="get-news"),
 ]

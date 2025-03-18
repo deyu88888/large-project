@@ -18,8 +18,8 @@ export default function HomePage() {
     console.log("user", user);
     if (user?.role==="student"){
         navigate("/student-dashboard");
-    // } else if (user?.role==="admin"){    // remove comment when page is ready
-    //     navigate("/admin-dashboard");
+    } else if (user?.role==="admin"){ 
+        navigate("/admin-dashboard");
     }
     
   }, [user]);
@@ -38,5 +38,3 @@ export default function HomePage() {
         </div>
     );
 }
-
-

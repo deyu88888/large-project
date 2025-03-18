@@ -5,7 +5,7 @@ from django.utils import timezone
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from channels.exceptions import ChannelFull
-from .models import AwardStudent, Student, Society, Notification, EventRequest, Admin, SocietyRequest, Event
+from .models import AwardStudent, Student, Society, Notification, EventRequest, SocietyRequest, Event, User
 
 @receiver(post_save, sender=Student)
 def update_is_president_on_save(sender, instance, created, **kwargs):
@@ -88,7 +88,7 @@ def notify_on_event_requested(sender, instance, created, **kwargs):
     try:
         if not created or instance.intent != "CreateEve":
             return
-        all_admins = Admin.objects.all()
+        all_admins = User.get_admins()
         for admin in all_admins:
             Notification.objects.create(
                 header="Event requested",
@@ -133,7 +133,7 @@ def notify_on_society_requested(sender, instance, created, **kwargs):
     try:
         if not created:
             return
-        all_admins = Admin.objects.all()
+        all_admins = User.get_admins()
         for admin in all_admins:
             Notification.objects.create(
                 header="Society requested",

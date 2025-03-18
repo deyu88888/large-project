@@ -1,7 +1,7 @@
 from django.test import TestCase
 from rest_framework.test import APIClient
 from rest_framework import status
-from api.models import Student, Society, Admin
+from api.models import Student, Society, User
 from api.tests.file_deletion import delete_file
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -11,7 +11,7 @@ class JoinSocietyViewTestCase(TestCase):
 
     def setUp(self):
         # Create a test admin
-        self.admin = Admin.objects.create_user(
+        self.admin = User.objects.create_user(
             username="admin_user",
             email="admin@example.com",
             password="adminpassword",

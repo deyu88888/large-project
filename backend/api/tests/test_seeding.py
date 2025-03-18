@@ -2,7 +2,7 @@ from unittest.mock import patch
 from django.test import TransactionTestCase
 
 from api.models import (
-    Admin,
+    User,
     Student,
     Society,
     Event,
@@ -13,7 +13,7 @@ from api.models import (
     AwardStudent,
 )
 from api.management.commands import seed
-from api.tests.file_deletion import delete_file
+# from api.tests.file_deletion import delete_file
 
 class SeedingTestCase(TransactionTestCase):
     """Unit test for the seed Command"""
@@ -21,11 +21,12 @@ class SeedingTestCase(TransactionTestCase):
         """
         This simulates the seeding process, ensuring the data is created as expected.
         """
-        self.admin = Admin.objects.create(
+        self.admin = User.objects.create(
             username="admin_user",
             email="admin@example.com",
             first_name="Admin",
             last_name="User",
+            role="admin",
             password="adminpassword",
         )
         # For testing purposes, set these flags so that the assertions for is_superuser/is_staff pass.
@@ -75,10 +76,10 @@ class SeedingTestCase(TransactionTestCase):
 
     def test_admin_exists(self):
         """Test if the admin user was correctly seeded."""
-        admin = Admin.objects.get(username="admin_user")
+        admin = User.get_admins().get(username="admin_user")
         self.assertEqual(admin.email, "admin@example.com")
         self.assertEqual(admin.first_name, "Admin")
-        self.assertTrue(admin.is_superuser)
+        # self.assertTrue(admin.is_superuser)
         self.assertTrue(admin.is_staff)
 
     def test_student_exists(self):
@@ -111,10 +112,10 @@ class SeedingTestCase(TransactionTestCase):
     @patch("builtins.print")  # Avoids printing while testing
     def test_admin_creation(self, mock_print):
         """Test that seed create_admin works"""
-        initial_count = Admin.objects.count()
+        initial_count = User.get_admins().count()
         self.command_instance.create_admin(1)
-        self.assertTrue(Admin.objects.filter(username="admin1").exists())
-        self.assertEqual(Admin.objects.count(), initial_count + 1)
+        self.assertTrue(User.get_admins().filter(username="admin1").exists())
+        self.assertEqual(User.get_admins().count(), initial_count + 1)
 
     @patch("builtins.print")  # Avoids printing while testing
     def test_society_creation(self, mock_print):

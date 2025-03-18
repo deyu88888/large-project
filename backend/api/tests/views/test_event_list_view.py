@@ -3,7 +3,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 from django.utils.timezone import now
-from api.models import Admin, Event, Society, Student
+from api.models import User, Event, Society, Student
 from api.serializers import EventSerializer
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import AccessToken
@@ -31,7 +31,7 @@ class EventListViewTest(APITestCase):
             last_name="User"
         )
         
-        self.admin = Admin.objects.create_user(
+        self.admin = User.objects.create_user(
             username="admin_for_approval",
             password="admin1234",
             email="admin_approval@example.com",

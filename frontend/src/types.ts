@@ -56,3 +56,11 @@ export interface Event {
     hostedBy: number;
     location: string;
   };
+
+  export type News = {
+    id: number;
+    title: string;
+    brief: string;
+    content: string;
+    // is_read: boolean;  // add after backend is fixed
+};

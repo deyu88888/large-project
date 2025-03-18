@@ -53,6 +53,9 @@ class User(AbstractUser):
         blank=True,
     )
 
+    # This flag differentiates super-admins from normal admins
+    is_super_admin = models.BooleanField(default=False)
+
     class Meta:
         ordering = ("first_name", "last_name")
 
@@ -64,7 +67,30 @@ class User(AbstractUser):
         return self.role == "student"
 
     def is_admin(self):
-        return self.role == "admin"
+        return self.role == "admin" or self.is_super_admin
+    
+    @classmethod
+    def get_admins(cls):
+        """Return all admin users (including super-admins)."""
+        return cls.objects.filter(role="admin") | cls.objects.filter(is_super_admin=True)
+
+    def save(self, *args, **kwargs):
+        """
+        Assign users to the correct groups based on role.
+        """
+        # super().save(*args, **kwargs) 
+
+        if self.is_super_admin:
+            self.is_superuser = True
+            self.is_staff = True
+        elif self.is_admin():
+            self.is_superuser = False
+            self.is_staff = True
+        else:
+            self.is_superuser = False
+            self.is_staff = False
+
+        super().save(*args, **kwargs)
 
 
 def generate_icon(initial1: str, initial2: str) -> BytesIO:
@@ -155,17 +181,6 @@ def update_is_president(sender, instance, **kwargs):
     instance.is_president = instance.president_of is not None
 
 
-class Admin(User):
-    """
-    A model representing admin users
-    """
-    def save(self, *args, **kwargs):
-        self.is_superuser = True
-        self.is_staff = True
-        self.role = "admin"
-        super().save(*args, **kwargs)
-
-
 def validate_social_media_links(value):
     """
     Validate the social_media_links JSON field.
@@ -192,6 +207,7 @@ def validate_social_media_links(value):
         # This is a simple check, you might want to use more sophisticated URL validation
         if link and not (link.startswith('http://') or link.startswith('https://') or link.startswith('mailto:')):
             raise ValidationError(f"The link for '{platform}' must be a valid URL starting with http://, https://, or mailto:")
+
 
 class Society(models.Model):
     """
@@ -233,7 +249,7 @@ class Society(models.Model):
     )
 
     approved_by = models.ForeignKey(
-        "Admin",
+        "User",
         on_delete=models.SET_NULL,
         related_name="approved_societies",
         blank=False,
@@ -495,6 +511,7 @@ class SocietyRequest(Request):
     upcoming_projects_or_plans = models.TextField(blank=True, default="")
     icon = models.ImageField(upload_to="icon_request/", blank=True, null=True)
 
+
 class DescriptionRequest(models.Model):
     """
     Society description change requests
@@ -511,11 +528,10 @@ class DescriptionRequest(models.Model):
     new_description = models.TextField(blank=False)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="Pending")
     created_at = models.DateTimeField(auto_now_add=True)
-    reviewed_by = models.ForeignKey("Admin", on_delete=models.SET_NULL, null=True, blank=True)
+    reviewed_by = models.ForeignKey("User", on_delete=models.SET_NULL, null=True, blank=True)
 
     def __str__(self):
         return f"Description update request for {self.society.name} - {self.status}"
-
 
 
 class SocietyShowreelRequest(models.Model):
@@ -545,6 +561,7 @@ class UserRequest(Request):
     major = models.CharField(max_length=50, blank=True, default="")
     icon = models.ImageField(upload_to="icon_request/", blank=True, null=True)
 
+
 class EventRequest(Request):
     """
     Requests related to events
@@ -569,6 +586,7 @@ class EventRequest(Request):
     date = models.DateField(blank=True, null=True)
     start_time = models.TimeField(blank=True, null=True)
     duration = models.DurationField(blank=True, null=True)
+
 
 class AdminReportRequest(Request):
     """
@@ -701,6 +719,7 @@ class AwardStudent(models.Model):
     def __str__(self):
         return f"{self.student}, ({self.award})"
 
+
 class Comment(models.Model):
     event = models.ForeignKey("Event", on_delete=models.CASCADE, related_name="comments")
     user = models.ForeignKey("User", on_delete=models.CASCADE)
@@ -724,3 +743,37 @@ class Comment(models.Model):
 
     def __str__(self):
             return f"{self.user.username}: {self.content[:30]}"
+
+
+class NewsNotification(models.Model):
+    """
+    Model for broadcasting news/notifications.
+    """
+    TARGET_CHOICES = [
+        ("society", "Specific Society"),
+        ("multiple_societies", "Multiple Societies"),
+        ("event", "Specific Event"),
+        ("everyone", "Everyone"),
+        ("student_dashboard", "Student Dashboard"),
+    ]
+
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sent_notifications")
+    title = models.CharField(max_length=100)
+    content = models.TextField()
+    target_type = models.CharField(max_length=50, choices=TARGET_CHOICES)
+    target_society = models.ForeignKey("Society", on_delete=models.CASCADE, null=True, blank=True, related_name="news_notifications")
+    target_event = models.ForeignKey("Event", on_delete=models.CASCADE, null=True, blank=True, related_name="event_notifications")
+    target_multiple_societies = models.ManyToManyField("Society", blank=True, related_name="multi_society_news")
+    created_at = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        return f"{self.title} - {self.target_type}"
+
+
+class BroadcastMessage(models.Model):
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sent_broadcasts")
+    societies = models.ManyToManyField("Society", related_name="broadcasts", blank=True)
+    events = models.ManyToManyField("Event", related_name="broadcasts", blank=True)
+    recipients = models.ManyToManyField(User, related_name="received_broadcasts", blank=True)
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)

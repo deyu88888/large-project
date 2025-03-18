@@ -3,7 +3,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 from django.contrib.auth import get_user_model
-from api.models import Admin, Student, Society, UserRequest
+from api.models import User, Student, Society, UserRequest
 from api.serializers import PendingMemberSerializer
 from rest_framework_simplejwt.tokens import AccessToken
 
@@ -19,7 +19,7 @@ class PendingMembersViewTest(APITestCase):
             is_president=True,
             major="Test Major"
         )
-        self.admin = Admin(
+        self.admin = User.objects.create(
             username='admin_user',
             first_name='John',
             last_name='Smith',
@@ -133,12 +133,13 @@ class PendingMembersViewTest(APITestCase):
             is_president=True,
             major="Test Major"
         )
-        admin = Admin.objects.create_user(
+        admin = User.objects.create_user(
             username="admin_for_approval",
             password="admin1234",
             email="admin_approval@example.com",
             first_name="Admin",
-            last_name="Approver"
+            last_name="Approver",
+            role="admin"
         )
         # Create a society with president_student as the president.
         society = Society.objects.create(
