@@ -1,6 +1,6 @@
 from rest_framework.test import APITestCase
 from rest_framework import status
-from api.models import User, Society, Event, Student, Admin
+from api.models import User, Society, Event, Student, User
 from api.tests.file_deletion import delete_file
 
 class TestDashboardStatsView(APITestCase):
@@ -17,7 +17,7 @@ class TestDashboardStatsView(APITestCase):
         self.client.force_authenticate(user=self.user)
         
         # Create an admin user for society approval
-        self.admin = Admin.objects.create_user(
+        self.admin = User.objects.create_user(
             username="admin_user",
             password="adminpassword",
             email="admin@example.com",

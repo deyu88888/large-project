@@ -322,24 +322,24 @@ class JoinSocietyView(APIView):
         # Debugging prints:
         print("DEBUG: User:", user, "User ID:", user.id)
         print("DEBUG: society_id:", society_id)
-        
+
         if not hasattr(user, "student"):
             print("DEBUG: User is not a student.")
             return Response({"error": "Only students can join societies."}, status=status.HTTP_403_FORBIDDEN)
-        
+
         if not society_id:
             print("DEBUG: No society_id provided in URL.")
             return Response({"error": "Society ID is required."}, status=status.HTTP_400_BAD_REQUEST)
-        
+
         serializer = JoinSocietySerializer(data={"society_id": society_id}, context={"request": request})
-        
+
         if not serializer.is_valid():
             print("DEBUG: serializer validation failed.")
             print("DEBUG: serializer.errors:", serializer.errors)
             if "Society does not exist." in serializer.errors.get("society_id", []):
                 return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
+
         # Instead of immediately adding the student to the society,
         # create a join request for president approval
         society = Society.objects.get(id=serializer.validated_data['society_id'])
@@ -351,7 +351,7 @@ class JoinSocietyView(APIView):
             society=society,
             approved=False
         )
-        
+
         return Response({
             "message": f"Request to join society '{society.name}' has been submitted for approval.",
             "request_id": society_request.id
@@ -438,13 +438,10 @@ class StudentNotificationsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        # Ensure the user is a student
-        if not hasattr(request.user, 'student'):
-            return Response({"error": "Only students can view notifications."}, status=status.HTTP_403_FORBIDDEN)
-
         # Get notifications for societies the student has joined
-        student = request.user.student
-        notifications = Notification.objects.filter(for_student=student)
+        user = request.user
+        notifications = Notification.objects.filter(for_user=user)
+        notifications = [n for n in notifications if n.is_sent()]
 
         serializer = NotificationSerializer(notifications, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -454,7 +451,7 @@ class StudentNotificationsView(APIView):
             return Response({"error": "Only students can mark notifications as read."}, status=status.HTTP_403_FORBIDDEN)
 
         try:
-            notification = Notification.objects.get(id=pk, for_student=request.user.student)
+            notification = Notification.objects.get(id=pk, for_user=request.user.student)
         except Notification.DoesNotExist:
             return Response({"error": "Notification not found."}, status=status.HTTP_404_NOT_FOUND)
 
@@ -462,6 +459,18 @@ class StudentNotificationsView(APIView):
         notification.save()  # Save the notification explicitly
 
         return Response({"message": "Notification marked as read.", "id": pk}, status=status.HTTP_200_OK)
+
+
+class StudentInboxView(StudentNotificationsView):
+    """
+    View to retrieve and update important notifications for a student.
+    """
+    def get(self, request):
+        user = request.user
+        notifications = Notification.objects.filter(for_user=user, is_important=True)
+        notifications = [n for n in notifications if n.is_sent()]
+        serializer = NotificationSerializer(notifications, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class StartSocietyRequestView(APIView):
@@ -1099,7 +1108,8 @@ class NotificationsView(APIView):
         if request.user.role != "student":
             return Response({"error": "Only students can view notifications."}, status=403)
 
-        notifications = Notification.objects.filter(for_student=request.user).order_by("-id")
+        notifications = Notification.objects.filter(for_user=request.user).order_by("-id")
+        notifications = [n for n in notifications if n.is_sent()]
         serializer = DashboardNotificationSerializer(notifications, many=True)
         return Response(serializer.data, status=200)
 

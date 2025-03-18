@@ -18,6 +18,7 @@ const MySocieties = lazy(() => import("../pages/Student/MyJoinedSocieties"));
 const ViewEvents = lazy(() => import("../pages/ViewEvents"));
 const ViewNews = lazy(() => import("../pages/Student/ViewNews"));
 const ViewNotifications = lazy(() => import("../pages/Student/ViewNotifications"));
+const ViewInbox = lazy(() => import("../pages/Student/ViewInbox"));
 const StartSociety = lazy(() => import("../pages/Student/StartSociety"));
 const JoinSocietiesPage = lazy(() => import("../pages/Student/JoinSociety"));
 const ViewSocietyPage = lazy(() => import("../pages/view-society"));
@@ -105,6 +106,7 @@ const routes = [
           { path: "view-events", element: <PageWithTitle title="Upcoming Events"><ViewEvents /></PageWithTitle> },
           { path: "view-news", element: <PageWithTitle title="News"><ViewNews /></PageWithTitle> },
           { path: "view-notifications", element: <PageWithTitle title="Notifications"><ViewNotifications /></PageWithTitle> },
+          { path: "view-inbox", element: <ViewInbox /> },
           { path: "start-society", element: <PageWithTitle title="Start a Society"><StartSociety /></PageWithTitle> },
           { path: "join-society", element: <PageWithTitle title="Join a Society"><JoinSocietiesPage /></PageWithTitle> },
           { path: "view-society/:society_id", element: <PageWithTitle title="Society Details"><ViewSocietyPage /></PageWithTitle> },

@@ -1,6 +1,6 @@
 from django.test import TestCase
 from django.contrib.auth import get_user_model
-from api.models import Student, Society, Admin
+from api.models import Student, Society, User
 from api.serializers import StudentSerializer
 from api.tests.file_deletion import delete_file
 
@@ -10,7 +10,7 @@ class StudentSerializerTestCase(TestCase):
     
     def setUp(self):
         # Create an admin user for society approval
-        self.admin = Admin.objects.create_user(
+        self.admin = User.objects.create_user(
             username="admin_user",
             password="adminpassword",
             email="admin@example.com",
@@ -109,7 +109,7 @@ class StudentSerializerTestCase(TestCase):
         serializer = StudentSerializer(data=self.student_data)
         self.assertFalse(serializer.is_valid())
         self.assertIn("email", serializer.errors)
-        self.assertEqual(serializer.errors["email"][0], "user with this email already exists.")
+        self.assertEqual(str(serializer.errors["email"][0]), "This field must be unique.")
 
     def test_duplicate_username_validation(self):
         """Test that duplicate username validation works."""
@@ -117,7 +117,7 @@ class StudentSerializerTestCase(TestCase):
         serializer = StudentSerializer(data=self.student_data)
         self.assertFalse(serializer.is_valid())
         self.assertIn("username", serializer.errors)
-        self.assertEqual(serializer.errors["username"][0], "user with this username already exists.")
+        self.assertEqual(str(serializer.errors["username"][0]), "This field must be unique.")
 
     def test_missing_required_fields(self):
         """Test that missing required fields cause validation errors."""

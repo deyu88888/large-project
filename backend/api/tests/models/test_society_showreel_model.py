@@ -3,14 +3,14 @@ from PIL import Image
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.exceptions import ValidationError
 from django.test import TestCase
-from api.models import Society, Admin, Student, SocietyShowreel
+from api.models import Society, User, Student, SocietyShowreel
 from api.tests.file_deletion import delete_file
 
 class SocietyShowreelModelTestCase(TestCase):
     """ Unit tests for the Society model """
 
     def setUp(self):
-        self.admin = Admin(
+        self.admin = User.objects.create(
             username='admin_user',
             first_name='John',
             last_name='Smith',

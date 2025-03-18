@@ -6,7 +6,7 @@ from django.test import TestCase, override_settings
 from django.urls import re_path
 from asgiref.sync import sync_to_async
 from api.consumer.consumers import DashboardConsumer
-from api.models import Society, Event, Student, Admin
+from api.models import Society, Event, Student, User
 from api.tests.file_deletion import delete_file
 
 application = URLRouter([
@@ -20,7 +20,7 @@ class TestDashboardConsumer(TestCase):
     def setUpTestData(cls):
         """Create initial data before all tests."""
         # Create admin for society approval
-        admin = Admin.objects.create(
+        admin = User.objects.create(
             username="admin_user",
             email="admin@example.com",
             first_name="Admin",

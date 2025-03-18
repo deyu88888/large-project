@@ -2,7 +2,7 @@ from io import BytesIO
 from PIL import Image
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
-from api.models import Society, Admin, Student, SocietyShowreel
+from api.models import Society, User, Student, SocietyShowreel
 from api.serializers import SocietySerializer
 from api.tests.file_deletion import delete_file
 
@@ -12,7 +12,7 @@ class SocietySerializerTestCase(TestCase):
 
     def setUp(self):
         # Create an Admin user
-        self.admin = Admin.objects.create(
+        self.admin = User.objects.create(
             username="admin_user",
             first_name="Admin",
             last_name="User",

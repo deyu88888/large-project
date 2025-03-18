@@ -2,6 +2,7 @@ import datetime
 from api.models import AdminReportRequest, Award, AwardStudent, BroadcastMessage, SiteSettings, User, Student, Society, Event, \
     Notification, Request, SocietyRequest, SocietyShowreel, SocietyShowreelRequest, EventRequest, UserRequest, Comment, DescriptionRequest
 from rest_framework import serializers
+from rest_framework.validators import UniqueValidator
 from django.utils.translation import gettext_lazy as _
 
 class SiteSettingsSerializer(serializers.ModelSerializer):
@@ -29,8 +30,8 @@ class UserSerializer(serializers.ModelSerializer):
         ]
         extra_kwargs = {
             'password': {'write_only': True, 'min_length': 8},
-            'username': {'validators': []},
-            'email': {'validators': []},
+            'username': {'validators': [UniqueValidator(queryset=User.objects.all())]},
+            'email': {'validators': [UniqueValidator(queryset=User.objects.all())]},
         }
 
     def get_is_following(self, obj):
@@ -286,9 +287,9 @@ class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         """ NotificationSerializer meta data """
         model = Notification
-        fields = ["id", "header", "body", "for_student", "is_read", "is_important"]
+        fields = ["id", "header", "body", "for_user", "is_read", "is_important"]
         extra_kwargs = {
-            "for_student": {"required": True}
+            "for_user": {"required": True}
         }
 
     def create(self, validated_data):
@@ -692,7 +693,7 @@ class DashboardNotificationSerializer(serializers.ModelSerializer):
     """
     Updated Notification serializer to include read/unread tracking for the dashboard.
     """
-    student_name = serializers.CharField(source="for_student.full_name", read_only=True)
+    student_name = serializers.CharField(source="for_user.full_name", read_only=True)
 
     class Meta:
         """Dashboard notification meta data"""

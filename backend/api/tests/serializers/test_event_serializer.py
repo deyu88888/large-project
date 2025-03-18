@@ -2,7 +2,7 @@
 from datetime import timedelta
 from django.test import TestCase
 from django.utils import timezone
-from api.models import Event, Society, Admin, Student
+from api.models import Event, Society, User, Student
 from api.serializers import EventSerializer
 from api.tests.file_deletion import delete_file
 
@@ -12,7 +12,7 @@ class EventSerializerTestCase(TestCase):
 
     def setUp(self):
         # Set up Admin, Students, and Society
-        self.admin = Admin.objects.create(
+        self.admin = User.objects.create(
             username="admin_user",
             email="admin@example.com",
             first_name="Admin",

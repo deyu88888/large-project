@@ -19,6 +19,7 @@ import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import PeopleOutlineIcon from "@mui/icons-material/PeopleOutline";
 import EventAvailableIcon from "@mui/icons-material/EventAvailable";
 import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";
+import NotificationImportantOutlinedIcon from '@mui/icons-material/NotificationImportantOutlined';
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import LogoutIcon from "@mui/icons-material/Logout";
 import ManageAccountsOutlinedIcon from "@mui/icons-material/ManageAccountsOutlined";
@@ -65,6 +66,7 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
     { title: "Start Society", icon: <AddCircleOutlineIcon />, to: "/student/start-society" },
     { title: "View Events", icon: <EventAvailableIcon />, to: "/student/view-events" },
     { title: "Notifications", icon: <NotificationsNoneOutlinedIcon />, to: "/student/view-notifications" },
+    { title: "Inbox", icon: <NotificationImportantOutlinedIcon />, to: "/student/view-inbox" },
   ];
 
   const manageMySocietiesItems = [

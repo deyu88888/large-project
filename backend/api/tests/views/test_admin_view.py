@@ -2,8 +2,8 @@ from django.contrib.auth import get_user_model
 from rest_framework.test import APITestCase
 from rest_framework import status
 from django.urls import reverse
-from api.models import Admin
-from api.serializers import AdminSerializer
+from api.models import User
+from api.serializers import UserSerializer
 
 User = get_user_model()  # Assuming you use Django's custom user model
 
@@ -13,28 +13,28 @@ class AdminViewTests(APITestCase):
         """
         Set up test users and authentication.
         """
-        self.admin_user = Admin.objects.create_superuser(
+        self.admin_user = User.objects.create_superuser(
             username="admin_user",
             email="admin@example.com",
             password="securepassword"
         )
         self.client.force_authenticate(user=self.admin_user)
 
-        self.admin2 = Admin.objects.create_superuser(
+        self.admin2 = User.objects.create_superuser(
             username="admin2",
             email="admin2@example.com",
             password="securepassword"
         )
 
-        self.url = reverse("user/admin-panel")  
+        self.url = reverse("admin")  
 
     def test_get_admins(self):
         """
         Ensure authenticated users can retrieve the list of admins.
         """
         response = self.client.get(self.url)
-        admins = Admin.objects.all()
-        expected_data = AdminSerializer(admins, many=True).data
+        admins = User.get_admins().all()
+        expected_data = UserSerializer(admins, many=True).data
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.json(), expected_data)
@@ -52,7 +52,7 @@ class AdminViewTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertIn("Admin registered successfully.", response.json()["message"])
-        self.assertTrue(Admin.objects.filter(username="new_admin").exists())
+        self.assertTrue(User.get_admins().filter(username="new_admin").exists())
 
     def test_unauthorized_access(self):
         """

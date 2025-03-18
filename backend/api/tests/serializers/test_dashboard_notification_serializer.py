@@ -36,7 +36,7 @@ class TestNotificationSerializer(TestCase):
         # Create a notification
         self.notification = Notification.objects.create(
             header=str(self.event),
-            for_student=self.student,
+            for_user=self.student,
             body="This is a test notification.",
             is_read=False,
         )
@@ -82,7 +82,7 @@ class TestNotificationSerializer(TestCase):
         # Ensure these read-only fields remain unchanged
         self.assertNotEqual(instance.id, invalid_data["id"], "ID should not change")
         self.assertNotEqual(
-            f"{instance.for_student.first_name} {instance.for_student.last_name}",
+            f"{instance.for_user.first_name} {instance.for_user.last_name}",
             invalid_data.get("student_name", ""),
             "Student name should not change"
         )
