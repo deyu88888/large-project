@@ -113,6 +113,26 @@ const routes = [
         ],
       },
       {
+        path: "president-page/:societyId",
+        element: (
+          <PrivateGuard requiredRole="student">
+            <Suspense fallback={<LoadingView />}>
+              <Layout />
+            </Suspense>
+          </PrivateGuard>
+        ),
+        children: [
+          { index: true, element: <PageWithTitle title="Society Management"><PresidentPage /></PageWithTitle> },
+          { path: "manage-society-details", element: <PageWithTitle title="Society Details"><ManageSocietyDetails /></PageWithTitle> },
+          { path: "manage-society-events/:filter?", element: <PageWithTitle title="Society Events"><ManageSocietyEvents /></PageWithTitle> },
+          { path: "pending-members", element: <PageWithTitle title="Pending Members"><CircularLoader /></PageWithTitle> },
+          { path: "view-society-members", element: <PageWithTitle title="Society Members"><ViewSocietyMembers /></PageWithTitle> },
+          { path: "report-to-admin", element: <PageWithTitle title="Report to Admin"><ReportToAdmin /></PageWithTitle> },
+          { path: "create-event", element: <PageWithTitle title="Create Event"><CreateEventPage /></PageWithTitle> },
+          { path: "edit-event/:eventId", element: <PageWithTitle title="Edit Event"><EditEventDetails /></PageWithTitle> },
+        ],
+      },
+      {
         path: "logout",
         children: [
           { index: true, element: <PageWithTitle title="Logging Out"><DashboardPage /></PageWithTitle> },
