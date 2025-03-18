@@ -139,7 +139,6 @@ class Command(BaseCommand):
         )
         self.create_society(35)
 
-        self.create_society(name="Robotics Club", president_force=president)
         society = Society.objects.filter(name="Robotics Club").first()
         society.society_members.add(student)
         society.icon = "pre-seed-icons/robotics.jpg"
@@ -341,7 +340,8 @@ class Command(BaseCommand):
 
     def handle_society_status(self, president, name):
         """Creates society requests if pending, else assigns an admin to approved_by"""
-        random_status = choice(["Pending", "Approved", "Rejected"])
+        # At least half of the societies should be approved
+        random_status = choice(["Approved", "Approved", "Pending", "Rejected"])
 
         if random_status == "Approved":
             society_request, _ = SocietyRequest.objects.get_or_create(
