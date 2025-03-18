@@ -3,7 +3,7 @@ from PIL import Image
 from django.core.files.base import ContentFile
 from django.core.exceptions import ValidationError
 from django.test import TestCase
-from api.models import Society, Admin, Student
+from api.models import Society, User, Student
 from django.core.files.uploadedfile import SimpleUploadedFile
 from api.tests.file_deletion import delete_file
 
@@ -11,7 +11,7 @@ class SocietyModelTestCase(TestCase):
     """ Unit tests for the Society model """
 
     def setUp(self):
-        self.admin = Admin(
+        self.admin = User.objects.create(
             username='admin_user',
             first_name='John',
             last_name='Smith',
@@ -43,7 +43,7 @@ class SocietyModelTestCase(TestCase):
 
         self.society = Society(
             name='Tech',
-            leader=self.student1,
+            president=self.student1,
             approved_by=self.admin,
             category='Technology',
             social_media_links={"Email": "techsociety@example.com"},
@@ -63,7 +63,7 @@ class SocietyModelTestCase(TestCase):
         # Create a new society instance without an admin for proper validation testing
         test_society = Society(
             name='TestNoAdmin',
-            leader=self.student1,
+            president=self.student1,
             approved_by=None,  # Explicitly set to None
             category='Technology',
             social_media_links={"Email": "test@example.com"},
@@ -75,9 +75,9 @@ class SocietyModelTestCase(TestCase):
         with self.assertRaises(ValidationError):
             test_society.full_clean()
 
-    def test_blank_leader(self):
-        """ Test to ensure a leader must be specified """
-        self.society.leader = None
+    def test_blank_president(self):
+        """ Test to ensure a president must be specified """
+        self.society.president = None
         self._assert_society_is_invalid()
 
     def test_string_representation(self):
@@ -100,11 +100,11 @@ class SocietyModelTestCase(TestCase):
         self.society.save()
         self.assertEqual(self.society.roles["President"], self.student1.id)
 
-    def test_change_leader(self):
-        """ Test to ensure changing the leader works correctly """
-        self.society.leader = self.student2
+    def test_change_president(self):
+        """ Test to ensure changing the president works correctly """
+        self.society.president = self.student2
         self.society.save()
-        self.assertEqual(self.society.leader, self.student2)
+        self.assertEqual(self.society.president, self.student2)
 
     def test_social_media_links(self):
         """ Test the social_media_links JSON field """
@@ -161,14 +161,14 @@ class SocietyModelTestCase(TestCase):
             if student.icon:
                 delete_file(student.icon.path)
                 
-    def test_leader_always_member(self):
+    def test_president_always_member(self):
         """
-        Test that after saving, the society's leader is always included in society_members.
+        Test that after saving, the society's president is always included in society_members.
         """
-        # Create a new society without manually adding the leader.
+        # Create a new society without manually adding the president.
         society = Society.objects.create(
-            name="Leader Membership Test",
-            leader=self.student1,
+            name="president Membership Test",
+            president=self.student1,
             approved_by=self.admin,
             status="Approved",
             category="General",
@@ -176,7 +176,7 @@ class SocietyModelTestCase(TestCase):
             membership_requirements="",
             upcoming_projects_or_plans="",
         )
-        # After saving, the leader should be in society_members.
+        # After saving, the president should be in society_members.
         self.assertIn(self.student1, society.society_members.all())
 
     def test_default_icon_generated(self):
@@ -186,7 +186,7 @@ class SocietyModelTestCase(TestCase):
         # Create a society without specifying an icon.
         society = Society.objects.create(
             name="Icon Generation Test",
-            leader=self.student1,
+            president=self.student1,
             approved_by=self.admin,
             status="Approved",
             category="General",
@@ -213,7 +213,7 @@ class SocietyModelTestCase(TestCase):
 
         society = Society.objects.create(
             name="Custom Icon Test",
-            leader=self.student1,
+            president=self.student1,
             approved_by=self.admin,
             status="Approved",
             category="General",

@@ -1,7 +1,8 @@
 import datetime
-from api.models import AdminReportRequest, Award, AwardStudent, SiteSettings, User, Student, Admin, Society, Event, \
+from api.models import AdminReportRequest, Award, AwardStudent, BroadcastMessage, SiteSettings, User, Student, Society, Event, \
     Notification, Request, SocietyRequest, SocietyShowreel, SocietyShowreelRequest, EventRequest, UserRequest, Comment, DescriptionRequest
 from rest_framework import serializers
+from rest_framework.validators import UniqueValidator
 from django.utils.translation import gettext_lazy as _
 
 class SiteSettingsSerializer(serializers.ModelSerializer):
@@ -12,6 +13,7 @@ class SiteSettingsSerializer(serializers.ModelSerializer):
         model = SiteSettings
         fields = ('introduction_title', 'introduction_content')
         read_only_fields = ('introduction_title', 'introduction_content')
+
 
 class UserSerializer(serializers.ModelSerializer):
     """
@@ -24,12 +26,12 @@ class UserSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'username', 'password', 'first_name',
             'last_name', 'email', 'is_active', 'role', 'following',
-            'is_following'
+            'is_following',  "is_super_admin", "is_staff", "is_superuser"
         ]
         extra_kwargs = {
             'password': {'write_only': True, 'min_length': 8},
-            'username': {'validators': []},
-            'email': {'validators': []},
+            'username': {'validators': [UniqueValidator(queryset=User.objects.all())]},
+            'email': {'validators': [UniqueValidator(queryset=User.objects.all())]},
         }
 
     def get_is_following(self, obj):
@@ -193,48 +195,10 @@ class StudentSerializer(UserSerializer):
         return student
 
 
-
-class AdminSerializer(UserSerializer):
-    """
-    Serializer for the Admin model.
-    """
-
-    class Meta(UserSerializer.Meta):
-        model = Admin
-        fields = UserSerializer.Meta.fields
-
-    def validate_email(self, value):
-        """
-        Check if the email is unique.
-        """
-        if User.objects.filter(email=value).exists():
-            raise serializers.ValidationError("Email already exists.")
-        return value
-
-    def validate_username(self, value):
-        """
-        Check if the username is unique.
-        """
-        if User.objects.filter(username=value).exists():
-            raise serializers.ValidationError("Username already exists.")
-        return value
-
-    def create(self, validated_data):
-        password = validated_data.pop("password")
-        validated_data['role'] = 'admin'
-        admin = Admin.objects.create(**validated_data)
-        admin.set_password(password)
-        admin.is_superuser = True
-        admin.is_staff = True
-        admin.save()
-        return admin
-
-
 class SocietyShowreelSerializer(serializers.ModelSerializer):
     """
     Serializer for the SocietyShowreel model
     """
-
 
     class Meta:
         """SocietyShowreelSerializer meta data"""
@@ -245,9 +209,9 @@ class SocietyShowreelSerializer(serializers.ModelSerializer):
 class SocietySerializer(serializers.ModelSerializer):
     """ Serializer for objects of the Society model """
     showreel_images = SocietyShowreelSerializer(many=True, required=False)
-    leader = StudentSerializer(read_only=True)
-    leader_id = serializers.PrimaryKeyRelatedField(
-        queryset=Student.objects.all(), write_only=True, source='leader'
+    president = StudentSerializer(read_only=True)
+    president_id = serializers.PrimaryKeyRelatedField(
+        queryset=Student.objects.all(), write_only=True, source='president'
     )
     vice_president = StudentSerializer(read_only=True)
     vice_president_id = serializers.PrimaryKeyRelatedField(
@@ -263,10 +227,10 @@ class SocietySerializer(serializers.ModelSerializer):
         """SocietySerializer meta data"""
         model = Society
         fields = [
-            'id', 'name', 'description', 'society_members', 'leader', 'approved_by',
+            'id', 'name', 'description', 'society_members', 'president', 'approved_by',
             'status', 'category', 'social_media_links', 'showreel_images',
             'membership_requirements', 'upcoming_projects_or_plans', 'icon','tags',
-            'vice_president', 'event_manager', 'leader_id',
+            'vice_president', 'event_manager', 'president_id',
             'vice_president_id', 'event_manager_id', 
         ]
         extra_kwargs = {
@@ -362,9 +326,9 @@ class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         """ NotificationSerializer meta data """
         model = Notification
-        fields = ["id", "header", "body", "for_student", "is_read", "is_important"]
+        fields = ["id", "header", "body", "for_user", "is_read", "is_important"]
         extra_kwargs = {
-            "for_student": {"required": True}
+            "for_user": {"required": True}
         }
 
     def create(self, validated_data):
@@ -543,7 +507,7 @@ class StartSocietyRequestSerializer(serializers.ModelSerializer):
         return Society.objects.create(
             name=validated_data["name"],
             roles={"description": validated_data["description"], "category": validated_data["category"]},
-            leader=validated_data["requested_by"],
+            president=validated_data["requested_by"],
             status="Pending"
         )
 
@@ -601,7 +565,7 @@ class SocietyRequestSerializer(RequestSerializer):
         model = SocietyRequest
         fields = (
             RequestSerializer.Meta.fields
-            + ['name', 'description', 'roles', 'leader', 'category', 'icon',
+            + ['name', 'description', 'roles', 'president', 'category', 'icon',
             'social_media_links', 'membership_requirements',
             'upcoming_projects_or_plans', 'society', 'showreel_images_request']
         )
@@ -768,7 +732,7 @@ class DashboardNotificationSerializer(serializers.ModelSerializer):
     """
     Updated Notification serializer to include read/unread tracking for the dashboard.
     """
-    student_name = serializers.CharField(source="for_student.full_name", read_only=True)
+    student_name = serializers.CharField(source="for_user.full_name", read_only=True)
 
     class Meta:
         """Dashboard notification meta data"""
@@ -813,6 +777,7 @@ class EventCalendarSerializer(serializers.ModelSerializer):
         )
         return (start_dt + obj.duration).isoformat()
 
+
 class AwardSerializer(serializers.ModelSerializer):
     """
     Serializer for the Award model
@@ -820,6 +785,7 @@ class AwardSerializer(serializers.ModelSerializer):
     class Meta:
         model = Award
         fields = '__all__'
+
 
 class AwardStudentSerializer(serializers.ModelSerializer):
     """
@@ -924,3 +890,10 @@ class DescriptionRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = DescriptionRequest
         fields = ['id', 'society', 'new_description', 'status', 'reviewed_by', 'created_at', 'updated_at']
+
+
+class BroadcastSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BroadcastMessage
+        fields = ['id', 'sender', 'societies', 'events', 'recipients', 'message', 'created_at']
+        read_only_fields = ['id', 'created_at', 'sender']

@@ -24,12 +24,12 @@ class TestNotificationsView(APITestCase):
         # Create sample notifications
         self.notification1 = Notification.objects.create(
             header=str(self.event),
-            for_student=self.student,
+            for_user=self.student,
             body="Notification 1",
         )
         self.notification2 = Notification.objects.create(
             header=str(self.event),
-            for_student=self.student,
+            for_user=self.student,
             body="Notification 2",
         )
 

@@ -1,6 +1,6 @@
 from rest_framework.test import APITestCase
 from rest_framework import status
-from api.models import User, Society, Event, Student, Admin
+from api.models import User, Society, Event, Student, User
 from api.tests.file_deletion import delete_file
 
 class TestDashboardStatsView(APITestCase):
@@ -17,7 +17,7 @@ class TestDashboardStatsView(APITestCase):
         self.client.force_authenticate(user=self.user)
         
         # Create an admin user for society approval
-        self.admin = Admin.objects.create_user(
+        self.admin = User.objects.create_user(
             username="admin_user",
             password="adminpassword",
             email="admin@example.com",
@@ -25,7 +25,7 @@ class TestDashboardStatsView(APITestCase):
             last_name="User",
         )
         
-        # Create student users that will be society leaders
+        # Create student users that will be society presidents
         self.student1 = Student.objects.create_user(
             username="student1",
             password="password123",
@@ -63,7 +63,7 @@ class TestDashboardStatsView(APITestCase):
         Society.objects.create(
             name="Society 1", 
             status="Approved", 
-            leader=self.student1,
+            president=self.student1,
             approved_by=self.admin,  # Add required admin approval
             social_media_links={"Email": "society1@example.com"}  # Add required social media links
         )
@@ -71,7 +71,7 @@ class TestDashboardStatsView(APITestCase):
         Society.objects.create(
             name="Society 2", 
             status="Pending", 
-            leader=self.student2,
+            president=self.student2,
             approved_by=self.admin,  # Add required admin approval
             social_media_links={"Email": "society2@example.com"}  # Add required social media links
         )

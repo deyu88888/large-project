@@ -27,7 +27,7 @@ describe('ViewSociety Page', () => {
               name: "Robotics Club",
               description: "default",
               society_members: [1,2],
-              leader: {
+              president: {
                 id: 1,
                 username: "president_user",
                 first_name: "President",

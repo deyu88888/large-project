@@ -1,22 +1,22 @@
 from django.urls import reverse
 from rest_framework.test import APITestCase
 from rest_framework import status
-from api.models import Admin, Student, Society, User
+from api.models import User, Student, Society, User
 from api.tests.file_deletion import delete_file
 
 class RegisterViewTestCase(APITestCase):
     def setUp(self):
-        # First create a student user for the leader field
-        self.leader_user = User.objects.create_user(
-            username="leader_user",
-            email="leader@example.com",
+        # First create a student user for the president field
+        self.president_user = User.objects.create_user(
+            username="president_user",
+            email="president@example.com",
             password="Password123",
-            first_name="Leader",
+            first_name="president",
             last_name="User",
             role="student",
         )
         
-        self.admin = Admin(
+        self.admin = User.objects.create(
             username='admin_user',
             first_name='John',
             last_name='Smith',
@@ -26,16 +26,16 @@ class RegisterViewTestCase(APITestCase):
         )
         self.admin.save()
         
-        # Create the student profile for the leader
-        self.leader = Student.objects.create(
-            user_ptr=self.leader_user,
-            major="Leadership"
+        # Create the student profile for the president
+        self.president = Student.objects.create(
+            user_ptr=self.president_user,
+            major="presidentship"
         )
 
-        # Now create societies with a leader
+        # Now create societies with a president
         self.society1 = Society.objects.create(
             name="Science Club",
-            leader=self.leader,
+            president=self.president,
             description="A club for science enthusiasts",
             approved_by=self.admin,
             social_media_links={"Email": "science@example.com"}
@@ -43,7 +43,7 @@ class RegisterViewTestCase(APITestCase):
         
         self.society2 = Society.objects.create(
             name="Math Club",
-            leader=self.leader,
+            president=self.president,
             description="A club for math enthusiasts",  # Added comma here
             approved_by=self.admin,
             social_media_links={"Email": "math@example.com"}
@@ -109,7 +109,7 @@ class RegisterViewTestCase(APITestCase):
         response = self.client.post(reverse("register"), data=self.valid_payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("username", response.data)
-        self.assertEqual(response.data["username"][0], "user with this username already exists.")
+        self.assertEqual(str(response.data["username"][0]), "This field must be unique.")
 
     def test_register_student_invalid_password(self):
         """
@@ -137,7 +137,7 @@ class RegisterViewTestCase(APITestCase):
         response = self.client.post(reverse("register"), data=self.valid_payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("username", response.data)
-        self.assertEqual(response.data["username"][0], "user with this username already exists.")
+        self.assertEqual(str(response.data["username"][0]), "This field must be unique.")
 
     def test_register_student_without_societies(self):
         """Test that student can register without joining any societies."""

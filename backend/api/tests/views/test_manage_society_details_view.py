@@ -4,7 +4,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 from django.contrib.auth import get_user_model
 
-from api.models import Admin, SocietyRequest, Student, Society
+from api.models import User, SocietyRequest, Student, Society
 from api.serializers import SocietySerializer
 from rest_framework_simplejwt.tokens import AccessToken
 
@@ -30,7 +30,7 @@ class ManageSocietyDetailsViewTest(APITestCase):
             is_president=True,
             major="Test Major"
         )
-        self.admin = Admin.objects.create_user(
+        self.admin = User.objects.create_user(
             username="admin_for_approval",
             password="admin1234",
             email="admin_approval@example.com",
@@ -42,7 +42,7 @@ class ManageSocietyDetailsViewTest(APITestCase):
             id=1,
             name="Test Society",
             status="Approved",
-            leader=self.president_student,  # if your Society model uses this field
+            president=self.president_student,  # if your Society model uses this field
             approved_by=self.admin
         )
         

@@ -2,7 +2,7 @@ from django.utils.timezone import now, make_aware
 from datetime import datetime, timedelta
 from django.core.exceptions import ValidationError
 from django.test import TestCase
-from api.models import Event, Society, Admin, Student
+from api.models import Event, Society, User, Student
 from api.tests.file_deletion import delete_file
 
 class EventModelTestCase(TestCase):
@@ -10,7 +10,7 @@ class EventModelTestCase(TestCase):
 
     def setUp(self):
         # Create an admin user
-        self.admin = Admin.objects.create(
+        self.admin = User.objects.create(
             username='admin_user',
             first_name='Admin',
             last_name='User',
@@ -41,7 +41,7 @@ class EventModelTestCase(TestCase):
         # Create a society
         self.society = Society.objects.create(
             name='Tech',
-            leader=self.student1,
+            president=self.student1,
             approved_by=self.admin,
         )
         self.society.society_members.add(self.student2)

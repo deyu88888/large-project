@@ -4,13 +4,13 @@ from django.utils.timezone import now, make_aware
 from rest_framework import status
 from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import AccessToken
-from api.models import Admin, Student, Society, Event
+from api.models import User, Student, Society, Event
 from api.serializers import EventSerializer
 
 class ManageEventDetailsViewTestCase(APITestCase):
     def setUp(self):
         # Create an admin user.
-        self.admin = Admin.objects.create_user(
+        self.admin = User.objects.create_user(
             username="admin_user",
             email="admin@example.com",
             password="adminpassword",
@@ -32,7 +32,7 @@ class ManageEventDetailsViewTestCase(APITestCase):
         # Create a society that this president leads.
         self.society = Society.objects.create(
             name="Tech Society",
-            leader=self.president,
+            president=self.president,
             approved_by=self.admin,
             status="Approved",
             category="Technology",

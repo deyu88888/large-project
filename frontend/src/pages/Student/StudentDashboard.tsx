@@ -22,7 +22,7 @@ import {
 } from "react-icons/fa";
 import { apiClient } from "../../api";
 import { useAuthStore } from "../../stores/auth-store";
-import StudentCalendar from './StudentCalendar'; // Import the new StudentCalendar component
+import StudentCalendar from './StudentCalendar';
 
 const CustomTabs = styled(Tabs)(({ theme, activecolor }) => ({
   '& .MuiTabs-indicator': {
@@ -80,6 +80,31 @@ const StudentDashboard: React.FC = () => {
   const [showCalendar, setShowCalendar] = useState<boolean>(false);
   const { user } = useAuthStore();
   const [student, setStudent] = useState<any>(null);
+  
+  // Combine all societies the user belongs to, including those they lead
+  const allSocieties = React.useMemo(() => {
+    const allSocs = [...societies];
+    
+    // Add president_of society if it exists and isn't already included
+    if (student?.president_of && !allSocs.some(s => s.id === student.president_of)) {
+      allSocs.push({
+        id: student.president_of,
+        name: student?.president_of_society_name || `Society ${student.president_of}`,
+        is_president: true
+      });
+    }
+    
+    // Add vice_president_of_society if it exists and isn't already included
+    if (student?.vice_president_of_society && !allSocs.some(s => s.id === student.vice_president_of_society)) {
+      allSocs.push({
+        id: student.vice_president_of_society,
+        name: student?.vice_president_of_society_name || `Society ${student.vice_president_of_society}`,
+        is_vice_president: true
+      });
+    }
+    
+    return allSocs;
+  }, [societies, student]);
 
   const tabColors = [
     colours.greenAccent[500],
@@ -98,11 +123,23 @@ const StudentDashboard: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
+      // First fetch current user data to get leadership roles
+      const studentResponse = await apiClient.get("api/user/current");
+      setStudent(studentResponse.data);
+      console.log("Student data:", studentResponse.data);
+      
+      // Then fetch societies the user is a regular member of
       const societiesResponse = await apiClient.get("/api/student-societies");
       setSocieties(societiesResponse.data || []);
+      
+      // Fetch additional data about societies student leads if needed
+      if (studentResponse.data?.president_of || studentResponse.data?.vice_president_of_society) {
+        // You could fetch additional society details here if needed
+      }
     } catch (error) {
-      console.error("Error fetching society data:", error);
+      console.error("Error fetching user or society data:", error);
     }
+    
     try {
       const eventsResponse = await apiClient.get("/api/events/"); 
       
@@ -154,7 +191,7 @@ const StudentDashboard: React.FC = () => {
 
   const handleLeaveSociety = async (societyId: number) => {
     try {
-      await apiClient.delete(`/api/leave-society/${societyId}`);
+      await apiClient.delete(`/api/leave-society/${societyId}/`);
       fetchData();
     } catch (error) {
       console.error("Error leaving society:", error);
@@ -200,10 +237,10 @@ const StudentDashboard: React.FC = () => {
     setShowCalendar(!showCalendar);
   };
 
-  // Get upcoming events for my societies
+  // Get upcoming events for my societies - use allSocieties instead of societies
   const getMyEventsCount = () => {
-    // Get IDs of societies the user is a member of
-    const mySocietyIds = societies.map(society => society.id);
+    // Get IDs of societies the user is a member of or leads
+    const mySocietyIds = allSocieties.map(society => society.id);
     
     // Filter events to only include those from the user's societies
     return events.filter(event => mySocietyIds.includes(event.hostedBy)).length;
@@ -266,7 +303,7 @@ const StudentDashboard: React.FC = () => {
           <StatCard
             icon={<FaUsers size={24} />}
             title="My Societies"
-            value={societies.length}
+            value={allSocieties.length} /* Use allSocieties instead of societies */
             color={colours.greenAccent[500]}
           />
           <StatCard
@@ -307,42 +344,43 @@ const StudentDashboard: React.FC = () => {
                 gridTemplateColumns={{ xs: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' }}
                 gap={3}
               >
-                {societies.map((society) => (
-                  <Paper
-                    key={society.id}
-                    elevation={2}
-                    sx={{
-                      backgroundColor: colours.primary[400],
-                      border: `1px solid ${colours.grey[800]}`,
-                      p: 2,
-                    }}
-                  >
-                    <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                      <Typography variant="h6" sx={{ color: colours.grey[100] }}>
-                        {society.name}
-                      </Typography>
-                      {society.is_president && (
-                        <Box
-                          px={1}
-                          py={0.5}
-                          borderRadius="4px"
-                          bgcolor={colours.greenAccent[500]}
-                          color={colours.primary[500]}
-                        >
-                          <Typography variant="caption">President</Typography>
-                        </Box>
-                      )}
-                    {society.is_vice_president && (
-                      <Box
-                        px={1}
-                        py={0.5}
-                        borderRadius="4px"
-                        bgcolor={colours.blueAccent[500]}
-                        color={colours.primary[500]}
-                      >
-                        <Typography variant="caption">Vice President</Typography>
-                      </Box>
-                    )}
+                {allSocieties.length > 0 ? (
+                  allSocieties.map((society) => (
+                    <Paper
+                      key={society.id}
+                      elevation={2}
+                      sx={{
+                        backgroundColor: colours.primary[400],
+                        border: `1px solid ${colours.grey[800]}`,
+                        p: 2,
+                      }}
+                    >
+                      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                        <Typography variant="h6" sx={{ color: colours.grey[100] }}>
+                          {society.name}
+                        </Typography>
+                        {society.is_president && (
+                          <Box
+                            px={1}
+                            py={0.5}
+                            borderRadius="4px"
+                            bgcolor={colours.greenAccent[500]}
+                            color={colours.primary[500]}
+                          >
+                            <Typography variant="caption">President</Typography>
+                          </Box>
+                        )}
+                        {society.is_vice_president && (
+                          <Box
+                            px={1}
+                            py={0.5}
+                            borderRadius="4px"
+                            bgcolor={colours.blueAccent[500]}
+                            color={colours.primary[500]}
+                          >
+                            <Typography variant="caption">Vice President</Typography>
+                          </Box>
+                        )}
                     {society.is_event_manager && (  
                       <Box
                         px={1}
@@ -354,20 +392,34 @@ const StudentDashboard: React.FC = () => {
                         <Typography variant="caption">Event Manager</Typography>
                       </Box>
                     )}
-                    </Box>
-                    <Button
-                      fullWidth
-                      variant="contained"
-                      onClick={() => handleLeaveSociety(society.id)}
-                      sx={{
-                        backgroundColor: colours.redAccent[500],
-                        color: colours.grey[100],
-                      }}
-                    >
-                      Leave Society
-                    </Button>
-                  </Paper>
-                ))}
+                      </Box>
+                      {/* Only show "Leave Society" for societies where they're not president or VP */}
+                      {!(society.is_president || society.is_vice_president) && (
+                        <Button
+                          fullWidth
+                          variant="contained"
+                          onClick={() => handleLeaveSociety(society.id)}
+                          sx={{
+                            backgroundColor: colours.redAccent[500],
+                            color: colours.grey[100],
+                          }}
+                        >
+                          Leave Society
+                        </Button>
+                      )}
+                    </Paper>
+                  ))
+                ) : (
+                  <Box
+                    gridColumn={{ xs: '1', md: '1 / span 2', lg: '1 / span 3' }} 
+                    p={4} 
+                    textAlign="center"
+                  >
+                    <Typography variant="body1" sx={{ color: colours.grey[300] }}>
+                      You are not a member of any societies yet
+                    </Typography>
+                  </Box>
+                )}
               </Box>
             )}
             {activeTab === 1 && (
@@ -378,7 +430,7 @@ const StudentDashboard: React.FC = () => {
               >
                 {/* Filter events to only show those from societies the user is a member of */}
                 {events
-                  .filter(event => societies.some(society => society.id === event.hostedBy))
+                  .filter(event => allSocieties.some(society => society.id === event.hostedBy))
                   .map((event) => (
                     <Paper
                       key={event.id}
@@ -408,7 +460,7 @@ const StudentDashboard: React.FC = () => {
                           {/* Show hosting society */}
                           <Typography variant="body2" sx={{ color: colours.grey[300], mt: 1 }}>
                             Hosted by: {
-                              societies.find(society => society.id === event.hostedBy)?.name || 
+                              allSocieties.find(society => society.id === event.hostedBy)?.name || 
                               event.societyName || 
                               `Society ${event.hostedBy}`
                             }
@@ -430,7 +482,7 @@ const StudentDashboard: React.FC = () => {
                   ))}
                   
                 {/* Show message when no events from user's societies */}
-                {events.filter(event => societies.some(society => society.id === event.hostedBy)).length === 0 && (
+                {events.filter(event => allSocieties.some(society => society.id === event.hostedBy)).length === 0 && (
                   <Box
                     gridColumn={{ xs: '1', md: '1 / span 2', lg: '1 / span 3' }} 
                     p={4} 
@@ -612,9 +664,9 @@ const StudentDashboard: React.FC = () => {
             )}
             
             {showCalendar ? (
-              // Render the Calendar component with societies data
+              // Render the Calendar component with ALL societies data
               <StudentCalendar 
-                societies={societies} 
+                societies={allSocieties} 
                 userEvents={events}
               />
             ) : (

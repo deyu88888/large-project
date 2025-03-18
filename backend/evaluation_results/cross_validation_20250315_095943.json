@@ -1,0 +1,1671 @@
+{
+  "timestamp": "2025-03-15T09:59:31.879438",
+  "num_students": 44,
+  "k": 5,
+  "n_folds": 5,
+  "models": {
+    "advanced": {
+      "metrics": {
+        "precision": [
+          0.06666666666666668,
+          0.1111111111111111,
+          0.08888888888888889,
+          0.044444444444444446,
+          0.07500000000000001
+        ],
+        "recall": [
+          0.3333333333333333,
+          0.5555555555555556,
+          0.4444444444444444,
+          0.2222222222222222,
+          0.375
+        ],
+        "hit_rate": [
+          0.3333333333333333,
+          0.5555555555555556,
+          0.4444444444444444,
+          0.2222222222222222,
+          0.375
+        ],
+        "diversity": [
+          0.4444444444444444,
+          0.4222222222222222,
+          0.48888888888888893,
+          0.4666666666666667,
+          0.42500000000000004
+        ],
+        "novelty": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "aggregate": {
+        "precision": {
+          "mean": 0.07722222222222222,
+          "std": 0.022249982660556424,
+          "min": 0.044444444444444446,
+          "max": 0.1111111111111111
+        },
+        "recall": {
+          "mean": 0.38611111111111107,
+          "std": 0.11124991330278217,
+          "min": 0.2222222222222222,
+          "max": 0.5555555555555556
+        },
+        "hit_rate": {
+          "mean": 0.38611111111111107,
+          "std": 0.11124991330278217,
+          "min": 0.2222222222222222,
+          "max": 0.5555555555555556
+        },
+        "diversity": {
+          "mean": 0.44944444444444454,
+          "std": 0.025361582690029624,
+          "min": 0.4222222222222222,
+          "max": 0.48888888888888893
+        },
+        "novelty": {
+          "mean": 1.0,
+          "std": 0.0,
+          "min": 1.0,
+          "max": 1.0
+        }
+      }
+    },
+    "baseline": {
+      "metrics": {
+        "precision": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "recall": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "hit_rate": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "diversity": [
+          0.19999999999999998,
+          0.19999999999999998,
+          0.19999999999999998,
+          0.19999999999999998,
+          0.19999999999999998
+        ],
+        "novelty": [
+          0.8466019417475729,
+          0.8466019417475729,
+          0.8466019417475729,
+          0.8466019417475729,
+          0.8466019417475729
+        ]
+      },
+      "aggregate": {
+        "precision": {
+          "mean": 0.0,
+          "std": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "recall": {
+          "mean": 0.0,
+          "std": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "hit_rate": {
+          "mean": 0.0,
+          "std": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "diversity": {
+          "mean": 0.19999999999999998,
+          "std": 0.0,
+          "min": 0.19999999999999998,
+          "max": 0.19999999999999998
+        },
+        "novelty": {
+          "mean": 0.8466019417475728,
+          "std": 1.1102230246251565e-16,
+          "min": 0.8466019417475729,
+          "max": 0.8466019417475729
+        }
+      }
+    }
+  },
+  "folds": [
+    {
+      "fold": 1,
+      "num_test": 9,
+      "num_train": 35,
+      "models": {
+        "advanced": {
+          "num_students": 9,
+          "metrics": {
+            "precision": {
+              "mean": 0.06666666666666668,
+              "std": 0.09428090415820635,
+              "min": 0.0,
+              "max": 0.2,
+              "count": 9
+            },
+            "recall": {
+              "mean": 0.3333333333333333,
+              "std": 0.4714045207910317,
+              "min": 0.0,
+              "max": 1.0,
+              "count": 9
+            },
+            "hit_rate": {
+              "mean": 0.3333333333333333,
+              "std": 0.4714045207910317,
+              "min": 0.0,
+              "max": 1.0,
+              "count": 9
+            },
+            "diversity": {
+              "mean": 0.4444444444444444,
+              "std": 0.12570787221094176,
+              "min": 0.2,
+              "max": 0.6,
+              "count": 9
+            },
+            "novelty": {
+              "mean": 1.0,
+              "std": 0.0,
+              "min": 1.0,
+              "max": 1.0,
+              "count": 9
+            }
+          },
+          "per_student": {
+            "73": {
+              "holdout_id": 44,
+              "recommendations": [
+                46,
+                38,
+                49,
+                41,
+                45
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.6,
+              "novelty": 1.0
+            },
+            "68": {
+              "holdout_id": 49,
+              "recommendations": [
+                52,
+                49,
+                37,
+                54,
+                53
+              ],
+              "hit": 1,
+              "precision": 0.2,
+              "diversity": 0.2,
+              "novelty": 1.0
+            },
+            "71": {
+              "holdout_id": 36,
+              "recommendations": [
+                18,
+                37,
+                19,
+                52,
+                36
+              ],
+              "hit": 1,
+              "precision": 0.2,
+              "diversity": 0.4,
+              "novelty": 1.0
+            },
+            "101": {
+              "holdout_id": 39,
+              "recommendations": [
+                49,
+                37,
+                42,
+                52,
+                54
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.4,
+              "novelty": 1.0
+            },
+            "67": {
+              "holdout_id": 44,
+              "recommendations": [
+                42,
+                48,
+                41,
+                36,
+                38
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.6,
+              "novelty": 1.0
+            },
+            "62": {
+              "holdout_id": 52,
+              "recommendations": [
+                42,
+                50,
+                53,
+                51,
+                52
+              ],
+              "hit": 1,
+              "precision": 0.2,
+              "diversity": 0.4,
+              "novelty": 1.0
+            },
+            "97": {
+              "holdout_id": 47,
+              "recommendations": [
+                40,
+                18,
+                19,
+                46,
+                38
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.4,
+              "novelty": 1.0
+            },
+            "93": {
+              "holdout_id": 36,
+              "recommendations": [
+                54,
+                51,
+                48,
+                53,
+                50
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.4,
+              "novelty": 1.0
+            },
+            "94": {
+              "holdout_id": 40,
+              "recommendations": [
+                52,
+                38,
+                37,
+                53,
+                18
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.6,
+              "novelty": 1.0
+            }
+          }
+        },
+        "baseline": {
+          "num_students": 9,
+          "metrics": {
+            "precision": {
+              "mean": 0.0,
+              "std": 0.0,
+              "min": 0.0,
+              "max": 0.0,
+              "count": 7
+            },
+            "recall": {
+              "mean": 0.0,
+              "std": 0.0,
+              "min": 0.0,
+              "max": 0.0,
+              "count": 7
+            },
+            "hit_rate": {
+              "mean": 0.0,
+              "std": 0.0,
+              "min": 0.0,
+              "max": 0.0,
+              "count": 7
+            },
+            "diversity": {
+              "mean": 0.19999999999999998,
+              "std": 2.7755575615628914e-17,
+              "min": 0.2,
+              "max": 0.2,
+              "count": 7
+            },
+            "novelty": {
+              "mean": 0.8466019417475729,
+              "std": 1.1102230246251565e-16,
+              "min": 0.8466019417475728,
+              "max": 0.8466019417475728,
+              "count": 7
+            }
+          },
+          "per_student": {
+            "68": {
+              "holdout_id": 35,
+              "recommendations": [
+                30,
+                7,
+                17,
+                16,
+                34
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.2,
+              "novelty": 0.8466019417475728
+            },
+            "71": {
+              "holdout_id": 53,
+              "recommendations": [
+                30,
+                7,
+                17,
+                16,
+                34
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.2,
+              "novelty": 0.8466019417475728
+            },
+            "101": {
+              "holdout_id": 36,
+              "recommendations": [
+                30,
+                7,
+                17,
+                16,
+                34
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.2,
+              "novelty": 0.8466019417475728
+            },
+            "67": {
+              "holdout_id": 40,
+              "recommendations": [
+                30,
+                7,
+                17,
+                16,
+                34
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.2,
+              "novelty": 0.8466019417475728
+            },
+            "62": {
+              "holdout_id": 54,
+              "recommendations": [
+                30,
+                7,
+                17,
+                16,
+                34
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.2,
+              "novelty": 0.8466019417475728
+            },
+            "93": {
+              "holdout_id": 37,
+              "recommendations": [
+                30,
+                7,
+                17,
+                16,
+                34
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.2,
+              "novelty": 0.8466019417475728
+            },
+            "94": {
+              "holdout_id": 47,
+              "recommendations": [
+                30,
+                7,
+                17,
+                16,
+                34
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.2,
+              "novelty": 0.8466019417475728
+            }
+          }
+        }
+      }
+    },
+    {
+      "fold": 2,
+      "num_test": 9,
+      "num_train": 35,
+      "models": {
+        "advanced": {
+          "num_students": 9,
+          "metrics": {
+            "precision": {
+              "mean": 0.1111111111111111,
+              "std": 0.09938079899999067,
+              "min": 0.0,
+              "max": 0.2,
+              "count": 9
+            },
+            "recall": {
+              "mean": 0.5555555555555556,
+              "std": 0.4969039949999533,
+              "min": 0.0,
+              "max": 1.0,
+              "count": 9
+            },
+            "hit_rate": {
+              "mean": 0.5555555555555556,
+              "std": 0.4969039949999533,
+              "min": 0.0,
+              "max": 1.0,
+              "count": 9
+            },
+            "diversity": {
+              "mean": 0.4222222222222222,
+              "std": 0.23934065809486688,
+              "min": 0.2,
+              "max": 0.8,
+              "count": 9
+            },
+            "novelty": {
+              "mean": 1.0,
+              "std": 0.0,
+              "min": 1.0,
+              "max": 1.0,
+              "count": 9
+            }
+          },
+          "per_student": {
+            "83": {
+              "holdout_id": 37,
+              "recommendations": [
+                37,
+                36,
+                52,
+                54,
+                51
+              ],
+              "hit": 1,
+              "precision": 0.2,
+              "diversity": 0.2,
+              "novelty": 1.0
+            },
+            "88": {
+              "holdout_id": 47,
+              "recommendations": [
+                37,
+                54,
+                36,
+                51,
+                52
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.2,
+              "novelty": 1.0
+            },
+            "96": {
+              "holdout_id": 39,
+              "recommendations": [
+                38,
+                37,
+                42,
+                49,
+                51
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.6,
+              "novelty": 1.0
+            },
+            "104": {
+              "holdout_id": 41,
+              "recommendations": [
+                41,
+                38,
+                54,
+                37,
+                36
+              ],
+              "hit": 1,
+              "precision": 0.2,
+              "diversity": 0.4,
+              "novelty": 1.0
+            },
+            "85": {
+              "holdout_id": 47,
+              "recommendations": [
+                42,
+                47,
+                39,
+                36,
+                41
+              ],
+              "hit": 1,
+              "precision": 0.2,
+              "diversity": 0.8,
+              "novelty": 1.0
+            },
+            "63": {
+              "holdout_id": 42,
+              "recommendations": [
+                52,
+                49,
+                37,
+                54,
+                53
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.2,
+              "novelty": 1.0
+            },
+            "106": {
+              "holdout_id": 52,
+              "recommendations": [
+                37,
+                36,
+                52,
+                54,
+                51
+              ],
+              "hit": 1,
+              "precision": 0.2,
+              "diversity": 0.2,
+              "novelty": 1.0
+            },
+            "100": {
+              "holdout_id": 52,
+              "recommendations": [
+                42,
+                48,
+                45,
+                38,
+                54
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.8,
+              "novelty": 1.0
+            },
+            "84": {
+              "holdout_id": 40,
+              "recommendations": [
+                53,
+                54,
+                38,
+                40,
+                36
+              ],
+              "hit": 1,
+              "precision": 0.2,
+              "diversity": 0.4,
+              "novelty": 1.0
+            }
+          }
+        },
+        "baseline": {
+          "num_students": 9,
+          "metrics": {
+            "precision": {
+              "mean": 0.0,
+              "std": 0.0,
+              "min": 0.0,
+              "max": 0.0,
+              "count": 6
+            },
+            "recall": {
+              "mean": 0.0,
+              "std": 0.0,
+              "min": 0.0,
+              "max": 0.0,
+              "count": 6
+            },
+            "hit_rate": {
+              "mean": 0.0,
+              "std": 0.0,
+              "min": 0.0,
+              "max": 0.0,
+              "count": 6
+            },
+            "diversity": {
+              "mean": 0.19999999999999998,
+              "std": 2.7755575615628914e-17,
+              "min": 0.2,
+              "max": 0.2,
+              "count": 6
+            },
+            "novelty": {
+              "mean": 0.8466019417475729,
+              "std": 1.1102230246251565e-16,
+              "min": 0.8466019417475728,
+              "max": 0.8466019417475728,
+              "count": 6
+            }
+          },
+          "per_student": {
+            "83": {
+              "holdout_id": 53,
+              "recommendations": [
+                30,
+                7,
+                17,
+                16,
+                34
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.2,
+              "novelty": 0.8466019417475728
+            },
+            "96": {
+              "holdout_id": 54,
+              "recommendations": [
+                30,
+                7,
+                17,
+                16,
+                34
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.2,
+              "novelty": 0.8466019417475728
+            },
+            "104": {
+              "holdout_id": 51,
+              "recommendations": [
+                30,
+                7,
+                17,
+                16,
+                34
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.2,
+              "novelty": 0.8466019417475728
+            },
+            "85": {
+              "holdout_id": 50,
+              "recommendations": [
+                30,
+                7,
+                17,
+                16,
+                34
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.2,
+              "novelty": 0.8466019417475728
+            },
+            "106": {
+              "holdout_id": 49,
+              "recommendations": [
+                30,
+                7,
+                17,
+                16,
+                34
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.2,
+              "novelty": 0.8466019417475728
+            },
+            "84": {
+              "holdout_id": 37,
+              "recommendations": [
+                30,
+                7,
+                17,
+                16,
+                34
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.2,
+              "novelty": 0.8466019417475728
+            }
+          }
+        }
+      }
+    },
+    {
+      "fold": 3,
+      "num_test": 9,
+      "num_train": 35,
+      "models": {
+        "advanced": {
+          "num_students": 9,
+          "metrics": {
+            "precision": {
+              "mean": 0.08888888888888889,
+              "std": 0.09938079899999065,
+              "min": 0.0,
+              "max": 0.2,
+              "count": 9
+            },
+            "recall": {
+              "mean": 0.4444444444444444,
+              "std": 0.4969039949999533,
+              "min": 0.0,
+              "max": 1.0,
+              "count": 9
+            },
+            "hit_rate": {
+              "mean": 0.4444444444444444,
+              "std": 0.4969039949999533,
+              "min": 0.0,
+              "max": 1.0,
+              "count": 9
+            },
+            "diversity": {
+              "mean": 0.48888888888888893,
+              "std": 0.16629588385661961,
+              "min": 0.2,
+              "max": 0.8,
+              "count": 9
+            },
+            "novelty": {
+              "mean": 1.0,
+              "std": 0.0,
+              "min": 1.0,
+              "max": 1.0,
+              "count": 9
+            }
+          },
+          "per_student": {
+            "77": {
+              "holdout_id": 36,
+              "recommendations": [
+                54,
+                37,
+                53,
+                36,
+                52
+              ],
+              "hit": 1,
+              "precision": 0.2,
+              "diversity": 0.2,
+              "novelty": 1.0
+            },
+            "86": {
+              "holdout_id": 37,
+              "recommendations": [
+                49,
+                52,
+                42,
+                50,
+                37
+              ],
+              "hit": 1,
+              "precision": 0.2,
+              "diversity": 0.4,
+              "novelty": 1.0
+            },
+            "102": {
+              "holdout_id": 41,
+              "recommendations": [
+                42,
+                38,
+                48,
+                47,
+                49
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.6,
+              "novelty": 1.0
+            },
+            "108": {
+              "holdout_id": 35,
+              "recommendations": [
+                47,
+                38,
+                41,
+                49,
+                50
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.6,
+              "novelty": 1.0
+            },
+            "99": {
+              "holdout_id": 38,
+              "recommendations": [
+                38,
+                41,
+                47,
+                44,
+                39
+              ],
+              "hit": 1,
+              "precision": 0.2,
+              "diversity": 0.6,
+              "novelty": 1.0
+            },
+            "79": {
+              "holdout_id": 41,
+              "recommendations": [
+                42,
+                48,
+                45,
+                38,
+                54
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.8,
+              "novelty": 1.0
+            },
+            "76": {
+              "holdout_id": 53,
+              "recommendations": [
+                42,
+                40,
+                46,
+                50,
+                41
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.4,
+              "novelty": 1.0
+            },
+            "64": {
+              "holdout_id": 54,
+              "recommendations": [
+                48,
+                50,
+                54,
+                49,
+                36
+              ],
+              "hit": 1,
+              "precision": 0.2,
+              "diversity": 0.4,
+              "novelty": 1.0
+            },
+            "98": {
+              "holdout_id": 41,
+              "recommendations": [
+                48,
+                42,
+                49,
+                53,
+                52
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.4,
+              "novelty": 1.0
+            }
+          }
+        },
+        "baseline": {
+          "num_students": 9,
+          "metrics": {
+            "precision": {
+              "mean": 0.0,
+              "std": 0.0,
+              "min": 0.0,
+              "max": 0.0,
+              "count": 6
+            },
+            "recall": {
+              "mean": 0.0,
+              "std": 0.0,
+              "min": 0.0,
+              "max": 0.0,
+              "count": 6
+            },
+            "hit_rate": {
+              "mean": 0.0,
+              "std": 0.0,
+              "min": 0.0,
+              "max": 0.0,
+              "count": 6
+            },
+            "diversity": {
+              "mean": 0.19999999999999998,
+              "std": 2.7755575615628914e-17,
+              "min": 0.2,
+              "max": 0.2,
+              "count": 6
+            },
+            "novelty": {
+              "mean": 0.8466019417475729,
+              "std": 1.1102230246251565e-16,
+              "min": 0.8466019417475728,
+              "max": 0.8466019417475728,
+              "count": 6
+            }
+          },
+          "per_student": {
+            "86": {
+              "holdout_id": 43,
+              "recommendations": [
+                30,
+                7,
+                17,
+                16,
+                34
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.2,
+              "novelty": 0.8466019417475728
+            },
+            "102": {
+              "holdout_id": 46,
+              "recommendations": [
+                30,
+                7,
+                17,
+                16,
+                34
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.2,
+              "novelty": 0.8466019417475728
+            },
+            "99": {
+              "holdout_id": 45,
+              "recommendations": [
+                30,
+                7,
+                17,
+                16,
+                34
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.2,
+              "novelty": 0.8466019417475728
+            },
+            "76": {
+              "holdout_id": 36,
+              "recommendations": [
+                30,
+                7,
+                17,
+                16,
+                34
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.2,
+              "novelty": 0.8466019417475728
+            },
+            "64": {
+              "holdout_id": 37,
+              "recommendations": [
+                30,
+                7,
+                17,
+                16,
+                34
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.2,
+              "novelty": 0.8466019417475728
+            },
+            "98": {
+              "holdout_id": 45,
+              "recommendations": [
+                30,
+                7,
+                17,
+                16,
+                34
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.2,
+              "novelty": 0.8466019417475728
+            }
+          }
+        }
+      }
+    },
+    {
+      "fold": 4,
+      "num_test": 9,
+      "num_train": 35,
+      "models": {
+        "advanced": {
+          "num_students": 9,
+          "metrics": {
+            "precision": {
+              "mean": 0.044444444444444446,
+              "std": 0.08314794192830981,
+              "min": 0.0,
+              "max": 0.2,
+              "count": 9
+            },
+            "recall": {
+              "mean": 0.2222222222222222,
+              "std": 0.41573970964154905,
+              "min": 0.0,
+              "max": 1.0,
+              "count": 9
+            },
+            "hit_rate": {
+              "mean": 0.2222222222222222,
+              "std": 0.41573970964154905,
+              "min": 0.0,
+              "max": 1.0,
+              "count": 9
+            },
+            "diversity": {
+              "mean": 0.4666666666666667,
+              "std": 0.1632993161855452,
+              "min": 0.2,
+              "max": 0.8,
+              "count": 9
+            },
+            "novelty": {
+              "mean": 1.0,
+              "std": 0.0,
+              "min": 1.0,
+              "max": 1.0,
+              "count": 9
+            }
+          },
+          "per_student": {
+            "75": {
+              "holdout_id": 45,
+              "recommendations": [
+                39,
+                37,
+                52,
+                36,
+                18
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.4,
+              "novelty": 1.0
+            },
+            "69": {
+              "holdout_id": 49,
+              "recommendations": [
+                50,
+                44,
+                45,
+                49,
+                36
+              ],
+              "hit": 1,
+              "precision": 0.2,
+              "diversity": 0.8,
+              "novelty": 1.0
+            },
+            "107": {
+              "holdout_id": 44,
+              "recommendations": [
+                36,
+                53,
+                54,
+                46,
+                49
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.4,
+              "novelty": 1.0
+            },
+            "105": {
+              "holdout_id": 54,
+              "recommendations": [
+                49,
+                42,
+                52,
+                38,
+                50
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.6,
+              "novelty": 1.0
+            },
+            "78": {
+              "holdout_id": 53,
+              "recommendations": [
+                38,
+                53,
+                49,
+                52,
+                54
+              ],
+              "hit": 1,
+              "precision": 0.2,
+              "diversity": 0.4,
+              "novelty": 1.0
+            },
+            "66": {
+              "holdout_id": 47,
+              "recommendations": [
+                38,
+                48,
+                50,
+                41,
+                52
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.6,
+              "novelty": 1.0
+            },
+            "103": {
+              "holdout_id": 35,
+              "recommendations": [
+                48,
+                42,
+                49,
+                52,
+                54
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.4,
+              "novelty": 1.0
+            },
+            "89": {
+              "holdout_id": 43,
+              "recommendations": [
+                36,
+                49,
+                54,
+                37,
+                53
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.2,
+              "novelty": 1.0
+            },
+            "82": {
+              "holdout_id": 48,
+              "recommendations": [
+                52,
+                44,
+                36,
+                53,
+                51
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.4,
+              "novelty": 1.0
+            }
+          }
+        },
+        "baseline": {
+          "num_students": 9,
+          "metrics": {
+            "precision": {
+              "mean": 0.0,
+              "std": 0.0,
+              "min": 0.0,
+              "max": 0.0,
+              "count": 7
+            },
+            "recall": {
+              "mean": 0.0,
+              "std": 0.0,
+              "min": 0.0,
+              "max": 0.0,
+              "count": 7
+            },
+            "hit_rate": {
+              "mean": 0.0,
+              "std": 0.0,
+              "min": 0.0,
+              "max": 0.0,
+              "count": 7
+            },
+            "diversity": {
+              "mean": 0.19999999999999998,
+              "std": 2.7755575615628914e-17,
+              "min": 0.2,
+              "max": 0.2,
+              "count": 7
+            },
+            "novelty": {
+              "mean": 0.8466019417475729,
+              "std": 1.1102230246251565e-16,
+              "min": 0.8466019417475728,
+              "max": 0.8466019417475728,
+              "count": 7
+            }
+          },
+          "per_student": {
+            "69": {
+              "holdout_id": 42,
+              "recommendations": [
+                30,
+                7,
+                17,
+                16,
+                34
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.2,
+              "novelty": 0.8466019417475728
+            },
+            "107": {
+              "holdout_id": 47,
+              "recommendations": [
+                30,
+                7,
+                17,
+                16,
+                34
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.2,
+              "novelty": 0.8466019417475728
+            },
+            "105": {
+              "holdout_id": 39,
+              "recommendations": [
+                30,
+                7,
+                17,
+                16,
+                34
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.2,
+              "novelty": 0.8466019417475728
+            },
+            "78": {
+              "holdout_id": 36,
+              "recommendations": [
+                30,
+                7,
+                17,
+                16,
+                34
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.2,
+              "novelty": 0.8466019417475728
+            },
+            "66": {
+              "holdout_id": 42,
+              "recommendations": [
+                30,
+                7,
+                17,
+                16,
+                34
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.2,
+              "novelty": 0.8466019417475728
+            },
+            "103": {
+              "holdout_id": 47,
+              "recommendations": [
+                30,
+                7,
+                17,
+                16,
+                34
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.2,
+              "novelty": 0.8466019417475728
+            },
+            "82": {
+              "holdout_id": 46,
+              "recommendations": [
+                30,
+                7,
+                17,
+                16,
+                34
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.2,
+              "novelty": 0.8466019417475728
+            }
+          }
+        }
+      }
+    },
+    {
+      "fold": 5,
+      "num_test": 8,
+      "num_train": 36,
+      "models": {
+        "advanced": {
+          "num_students": 8,
+          "metrics": {
+            "precision": {
+              "mean": 0.07500000000000001,
+              "std": 0.09682458365518543,
+              "min": 0.0,
+              "max": 0.2,
+              "count": 8
+            },
+            "recall": {
+              "mean": 0.375,
+              "std": 0.4841229182759271,
+              "min": 0.0,
+              "max": 1.0,
+              "count": 8
+            },
+            "hit_rate": {
+              "mean": 0.375,
+              "std": 0.4841229182759271,
+              "min": 0.0,
+              "max": 1.0,
+              "count": 8
+            },
+            "diversity": {
+              "mean": 0.42500000000000004,
+              "std": 0.18540496217739155,
+              "min": 0.2,
+              "max": 0.6,
+              "count": 8
+            },
+            "novelty": {
+              "mean": 1.0,
+              "std": 0.0,
+              "min": 1.0,
+              "max": 1.0,
+              "count": 8
+            }
+          },
+          "per_student": {
+            "65": {
+              "holdout_id": 48,
+              "recommendations": [
+                54,
+                37,
+                18,
+                44,
+                19
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.6,
+              "novelty": 1.0
+            },
+            "95": {
+              "holdout_id": 36,
+              "recommendations": [
+                54,
+                40,
+                37,
+                41,
+                51
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.4,
+              "novelty": 1.0
+            },
+            "91": {
+              "holdout_id": 36,
+              "recommendations": [
+                42,
+                46,
+                47,
+                54,
+                50
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.6,
+              "novelty": 1.0
+            },
+            "80": {
+              "holdout_id": 40,
+              "recommendations": [
+                42,
+                47,
+                54,
+                49,
+                50
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.6,
+              "novelty": 1.0
+            },
+            "60": {
+              "holdout_id": 51,
+              "recommendations": [
+                52,
+                51,
+                37,
+                36,
+                53
+              ],
+              "hit": 1,
+              "precision": 0.2,
+              "diversity": 0.2,
+              "novelty": 1.0
+            },
+            "74": {
+              "holdout_id": 49,
+              "recommendations": [
+                53,
+                54,
+                36,
+                52,
+                49
+              ],
+              "hit": 1,
+              "precision": 0.2,
+              "diversity": 0.2,
+              "novelty": 1.0
+            },
+            "92": {
+              "holdout_id": 52,
+              "recommendations": [
+                37,
+                54,
+                36,
+                52,
+                51
+              ],
+              "hit": 1,
+              "precision": 0.2,
+              "diversity": 0.2,
+              "novelty": 1.0
+            },
+            "81": {
+              "holdout_id": 37,
+              "recommendations": [
+                42,
+                50,
+                45,
+                49,
+                36
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.6,
+              "novelty": 1.0
+            }
+          }
+        },
+        "baseline": {
+          "num_students": 8,
+          "metrics": {
+            "precision": {
+              "mean": 0.0,
+              "std": 0.0,
+              "min": 0.0,
+              "max": 0.0,
+              "count": 6
+            },
+            "recall": {
+              "mean": 0.0,
+              "std": 0.0,
+              "min": 0.0,
+              "max": 0.0,
+              "count": 6
+            },
+            "hit_rate": {
+              "mean": 0.0,
+              "std": 0.0,
+              "min": 0.0,
+              "max": 0.0,
+              "count": 6
+            },
+            "diversity": {
+              "mean": 0.19999999999999998,
+              "std": 2.7755575615628914e-17,
+              "min": 0.2,
+              "max": 0.2,
+              "count": 6
+            },
+            "novelty": {
+              "mean": 0.8466019417475729,
+              "std": 1.1102230246251565e-16,
+              "min": 0.8466019417475728,
+              "max": 0.8466019417475728,
+              "count": 6
+            }
+          },
+          "per_student": {
+            "65": {
+              "holdout_id": 43,
+              "recommendations": [
+                30,
+                7,
+                17,
+                16,
+                34
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.2,
+              "novelty": 0.8466019417475728
+            },
+            "95": {
+              "holdout_id": 38,
+              "recommendations": [
+                30,
+                7,
+                17,
+                16,
+                34
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.2,
+              "novelty": 0.8466019417475728
+            },
+            "91": {
+              "holdout_id": 49,
+              "recommendations": [
+                30,
+                7,
+                17,
+                16,
+                34
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.2,
+              "novelty": 0.8466019417475728
+            },
+            "80": {
+              "holdout_id": 48,
+              "recommendations": [
+                30,
+                7,
+                17,
+                16,
+                34
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.2,
+              "novelty": 0.8466019417475728
+            },
+            "60": {
+              "holdout_id": 54,
+              "recommendations": [
+                30,
+                7,
+                17,
+                16,
+                34
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.2,
+              "novelty": 0.8466019417475728
+            },
+            "92": {
+              "holdout_id": 53,
+              "recommendations": [
+                30,
+                7,
+                17,
+                16,
+                34
+              ],
+              "hit": 0,
+              "precision": 0.0,
+              "diversity": 0.2,
+              "novelty": 0.8466019417475728
+            }
+          }
+        }
+      }
+    }
+  ]
+}

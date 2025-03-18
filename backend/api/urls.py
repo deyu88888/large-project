@@ -1,9 +1,9 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from .views import (
-    AdminReportView, AwardStudentView, AwardView, EventListView, EventRequestView, ManageEventDetailsView, PendingMembersView, PendingRequestsView, RegisterView,
+    AdminReportView, AwardStudentView, AwardView, BroadcastListAPIView, EventListView, EventRequestView, ManageEventDetailsView, NewsView, PendingMembersView, PendingRequestsView, RegisterView,
     CurrentUserView, SocietyMembersListView,
-    StudentNotificationsView, StartSocietyRequestView, ManageSocietyDetailsView,
+    StudentNotificationsView, StartSocietyRequestView, ManageSocietyDetailsView, StudentInboxView,
     AdminView, StudentView, EventView,
     SocietyRequestView, DashboardStatsView,
     RecentActivitiesView, NotificationsView, EventCalendarView,
@@ -13,6 +13,8 @@ from .views import (
     like_comment, dislike_comment, EventCommentsView
 )
 from .utils import request_otp, verify_otp
+from .recommendation_views import RecommendedSocietiesView, SocietyRecommendationExplanationView
+from .recommendation_feedback_views import RecommendationFeedbackView, RecommendationFeedbackAnalyticsView
 
 
 urlpatterns = [
@@ -30,6 +32,7 @@ urlpatterns = [
     # trailing backshlash needed in this case, because of the following line
     path("notifications/", StudentNotificationsView.as_view(), name="student_notifications"), # trailing backshlash needed
     path("notifications/<int:pk>", StudentNotificationsView.as_view(), name="mark_notification_read"),
+    path("inbox/", StudentInboxView.as_view(), name="student_inbox"),
 
     # Society creation/management endpoints
     path("start-society", StartSocietyRequestView.as_view(), name="start_society"),
@@ -38,7 +41,7 @@ urlpatterns = [
     path("events/", EventListView.as_view(), name="event-list"),
 
     # User role endpoints
-    path("user/admin/", AdminView.as_view(), name="admin"),
+    path("user/admin-panel/", AdminView.as_view(), name="admin"),
     path("user/student", StudentView.as_view(), name="student"),
   
   # Society membership endpoints
@@ -74,7 +77,7 @@ urlpatterns = [
     path("dashboard/notifications", NotificationsView.as_view(), name="dashboard_notifications"),
     path("dashboard/events/", EventCalendarView.as_view(), name="dashboard_events"),
     path("popular-societies", get_popular_societies, name="popular_societies"),
-    
+
     # Awards Endpoints
     path("awards/", AwardView.as_view(), name="awards"),  # List & Create Awards
     path("awards/<int:pk>/", AwardView.as_view(), name="award_detail"),  # Retrieve, Update, Delete Award
@@ -82,7 +85,7 @@ urlpatterns = [
     # Award-Student Endpoints
     path("award-students", AwardStudentView.as_view(), name="award_students"),  # List & Assign Awards to Students
     path("award-students/<int:pk>", AwardStudentView.as_view(), name="award_student_detail"),  # Retrieve, Update, Delete Assignment
-    
+
     # President page
     path("society/<int:society_id>/pending-members/", PendingMembersView.as_view(), name="pending-members"),
     path("society/<int:society_id>/pending-members/<int:request_id>/", PendingMembersView.as_view(), name="process-pending-member"),
@@ -103,4 +106,18 @@ urlpatterns = [
     # Follow
     path("users/<int:user_id>/follow", toggle_follow, name="toggle_follow"),
     path("users/<int:user_id>", StudentProfileView.as_view(), name="user_profile"),
+
+    # Society recommendation endpoints
+    path("recommended-societies/", RecommendedSocietiesView.as_view(), name="recommended_societies"),
+    path("society-recommendation/<int:society_id>/explanation/", SocietyRecommendationExplanationView.as_view(), name="society_recommendation_explanation"),
+
+    # Recommendation feedback endpoints
+    path("society-recommendation/feedback/", RecommendationFeedbackView.as_view(), name="recommendation_feedback_list"),
+    path("society-recommendation/<int:society_id>/feedback/", RecommendationFeedbackView.as_view(), name="recommendation_feedback_detail"),
+    path("recommendation-feedback/analytics/", RecommendationFeedbackAnalyticsView.as_view(), name="recommendation_feedback_analytics"),
+
+    # news
+    path("news/", NewsView.as_view(), name="news"),
+    path("news/<int:pk>", NewsView.as_view(), name="mark_news_read"),   # TODO: implement this later
+    path("get-news/", BroadcastListAPIView.as_view(), name="get-news"),
 ]

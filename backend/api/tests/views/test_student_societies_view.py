@@ -1,7 +1,7 @@
 from django.test import TestCase
 from rest_framework.test import APIClient
 from rest_framework import status
-from api.models import Student, Society, Admin
+from api.models import Student, Society, User
 from api.tests.file_deletion import delete_file
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -11,7 +11,7 @@ class StudentSocietiesViewTestCase(TestCase):
 
     def setUp(self):
         # Create a test admin
-        self.admin = Admin.objects.create_user(
+        self.admin = User.objects.create_user(
             username="admin_user",
             email="admin@example.com",
             password="adminpassword",
@@ -38,13 +38,13 @@ class StudentSocietiesViewTestCase(TestCase):
         # Create test societies
         self.society1 = Society.objects.create(
             name="Science Club",
-            leader=self.student1,
+            president=self.student1,
             approved_by=self.admin,
             status="Approved"
         )
         self.society2 = Society.objects.create(
             name="Math Club",
-            leader=self.student2,
+            president=self.student2,
             approved_by=self.admin,
             status="Approved"
         )
@@ -171,7 +171,7 @@ class StudentSocietiesViewTestCase(TestCase):
         society3 = Society.objects.create(
             name="Art Club",
             status="Approved",
-            leader=self.student2,  # Different leader; doesn't affect GET for joined societies.
+            president=self.student2,  # Different president; doesn't affect GET for joined societies.
             approved_by=self.admin,  # Adding the required approved_by field
             social_media_links={"Email": "artclub@example.com"}  # Adding social_media_links if needed
         )

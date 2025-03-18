@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Box, Button, Typography, useTheme } from "@mui/material";
+import { Box, Typography, useTheme } from "@mui/material";
 import { FaUsers, FaCalendarAlt, FaEnvelope } from "react-icons/fa";
-import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 import Header from "../../components/Header";
 import BarChart from "../../components/graphs/BarChart";
-import StatBox from "../../components/graphs/StatBox";
 import { tokens } from "../../theme/theme";
 import { apiClient } from "../../api";
 import { useSettingsStore } from "../../stores/settings-store";
@@ -19,16 +17,13 @@ const AdminDashboard = () => {
   const [societiesData, setSocietiesData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const { drawer } = useSettingsStore(); 
+  const { drawer } = useSettingsStore();
   const [currentUser, setCurrentUser] = useState<any>(null);
 
 
   useEffect(() => {
     fetchData();
     fetchSocieties();
-  }, []);
-
-  useEffect(() => {
     fetchCurrentUser();
   }, []);
 
@@ -40,7 +35,7 @@ const AdminDashboard = () => {
       console.error("Error fetching current user:", error);
     }
   };
-  
+
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -48,13 +43,16 @@ const AdminDashboard = () => {
       setUserStats(statsResponse.data || {});
       const eventsResponse = await apiClient.get("/api/admin/events/");
       setEvents(eventsResponse.data || []);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+    try {
       const notificationsResponse = await apiClient.get("/api/notifications");
       setNotifications(notificationsResponse.data || []);
     } catch (error) {
-      console.error("Error fetching data:", error);
-    } finally {
-      setLoading(false);
+      console.error("Error fetching notifications:", error);
     }
+    setLoading(false);
   };
 
   const fetchSocieties = async () => {
@@ -71,8 +69,9 @@ const AdminDashboard = () => {
     title: string;
     value: number | string;
   }
-  
-  const StatCard = ({ icon, title, value }: StatCardProps) => {  return (
+
+  const StatCard = ({ icon, title, value }: StatCardProps) => {
+    return (
       <Box
         className="p-6 rounded-xl shadow hover:shadow-lg transition-transform hover:-translate-y-1"
         style={{
@@ -92,13 +91,14 @@ const AdminDashboard = () => {
       </Box>
     );
   };
-  
+
   interface NotificationCardProps {
     message: string;
     isRead: boolean;
   }
-  
-  const NotificationCard = ({ message, isRead }: NotificationCardProps) => {  return (
+
+  const NotificationCard = ({ message, isRead }: NotificationCardProps) => {
+    return (
       <Box
         className="p-5 rounded-lg shadow-md transition-all"
         style={{
@@ -118,7 +118,7 @@ const AdminDashboard = () => {
         marginTop: "64px",
         transition: "margin-left 0.3s ease-in-out",
         minHeight: "100vh",
-        maxWidth: drawer ? `calc(100% - 5px)`: "100%",
+        maxWidth: drawer ? `calc(100% - 5px)` : "100%",
         padding: "0px 0px",
         background: `${colours.primary[400]} !important`,
       }}
@@ -161,12 +161,12 @@ const AdminDashboard = () => {
                 Societies Overview
               </Typography>
               <div style={{ height: "300px" }}>
-              <BarChart
-                data={societiesData.map((society) => ({
-                  country: society.name,
-                  members: society.societyMembers.length,
-                }))}
-              />
+                <BarChart
+                  data={societiesData.map((society) => ({
+                    country: society.name,
+                    members: society.societyMembers.length,
+                  }))}
+                />
               </div>
             </section>
 
@@ -184,7 +184,7 @@ const AdminDashboard = () => {
                   notifications.map((notification) => (
                     <NotificationCard
                       key={notification.id}
-                      message={notification.message}
+                      message={notification.body}
                       isRead={notification.is_read}
                     />
                   ))

@@ -6,7 +6,7 @@ from django.test import TestCase, override_settings
 from django.urls import re_path
 from asgiref.sync import sync_to_async
 from api.consumer.consumers import DashboardConsumer
-from api.models import Society, Event, Student, Admin
+from api.models import Society, Event, Student, User
 from api.tests.file_deletion import delete_file
 
 application = URLRouter([
@@ -20,7 +20,7 @@ class TestDashboardConsumer(TestCase):
     def setUpTestData(cls):
         """Create initial data before all tests."""
         # Create admin for society approval
-        admin = Admin.objects.create(
+        admin = User.objects.create(
             username="admin_user",
             email="admin@example.com",
             first_name="Admin",
@@ -28,7 +28,7 @@ class TestDashboardConsumer(TestCase):
             password="adminpassword",
         )
         
-        # Create a student to be a society leader
+        # Create a student to be a society president
         student = Student.objects.create(
             username="john_doe",
             email="john@example.com",
@@ -41,7 +41,7 @@ class TestDashboardConsumer(TestCase):
         Society.objects.create(
             name="Approved Society", 
             status="Approved",
-            leader=student,
+            president=student,
             approved_by=admin,
             social_media_links={"Email": "approved@example.com"}
         )
@@ -49,7 +49,7 @@ class TestDashboardConsumer(TestCase):
         Society.objects.create(
             name="Pending Society", 
             status="Pending",
-            leader=student,
+            president=student,
             approved_by=admin,
             social_media_links={"Email": "pending@example.com"}
         )

@@ -1,7 +1,7 @@
 from datetime import timedelta
 from django.test import TestCase
 from django.utils.timezone import now
-from api.models import Notification, Event, Student, Society, Admin
+from api.models import Notification, Event, Student, Society, User
 from api.serializers import NotificationSerializer
 from api.tests.file_deletion import delete_file
 
@@ -12,7 +12,7 @@ class NotificationSerializerTestCase(TestCase):
     """Test cases for the Notification Serializer"""
     def setUp(self):
         # Create an admin for society approval
-        self.admin = Admin.objects.create_user(
+        self.admin = User.objects.create_user(
             username="admin_user",
             password="adminpassword",
             email="admin@example.com",
@@ -34,7 +34,7 @@ class NotificationSerializerTestCase(TestCase):
         # Create a society with all required fields
         self.society = Society.objects.create(
             name="Test Society",
-            leader=self.student,
+            president=self.student,
             approved_by=self.admin,  # Required field
             status="Approved",  # Add status if needed
             social_media_links={"Email": "society@example.com"}  # Required field
@@ -55,7 +55,7 @@ class NotificationSerializerTestCase(TestCase):
         self.notification = Notification.objects.create(
             header=str(self.event),
             body=f"Notification for {str(self.event)}",
-            for_student=self.student,
+            for_user=self.student,
             is_read=False,
             is_important=False,
         )
@@ -65,7 +65,7 @@ class NotificationSerializerTestCase(TestCase):
         self.data = {
             "header": str(self.event),
             "body": f"Notification for {str(self.event)}",
-            "for_student": self.student.id,
+            "for_user": self.student.id,
             "is_read": False,
             "is_important": False,
         }
@@ -77,7 +77,7 @@ class NotificationSerializerTestCase(TestCase):
 
         self.assertEqual(data["header"], self.notification.header)
         self.assertEqual(data["body"], self.notification.body)
-        self.assertEqual(data["for_student"], self.student.id)
+        self.assertEqual(data["for_user"], self.student.id)
         self.assertEqual(data["is_read"], self.notification.is_read)
         self.assertEqual(data["is_important"], self.notification.is_important)
 
@@ -90,7 +90,7 @@ class NotificationSerializerTestCase(TestCase):
 
         self.assertEqual(notification.header, self.data["header"])
         self.assertEqual(notification.body, self.data["body"])
-        self.assertEqual(notification.for_student.id, self.data["for_student"])
+        self.assertEqual(notification.for_user.id, self.data["for_user"])
         self.assertEqual(notification.is_read, self.data["is_read"])
         self.assertEqual(notification.is_important, self.data["is_important"])
 

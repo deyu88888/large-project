@@ -1,6 +1,6 @@
 from django.core.exceptions import ValidationError
 from django.test import TestCase
-from api.models import Student, Society, Admin, SocietyRequest
+from api.models import Student, Society, User, SocietyRequest
 from api.tests.file_deletion import delete_file
 
 # pylint: disable=no-member
@@ -12,7 +12,7 @@ class SocietyRequestTestCase(TestCase):
     """
 
     def setUp(self):
-        self.admin = Admin(
+        self.admin = User.objects.create(
             username="admin_user",
             first_name="John",
             last_name="Smith",
@@ -33,7 +33,7 @@ class SocietyRequestTestCase(TestCase):
 
         self.society = Society(
             name="Tech",
-            leader=self.student,
+            president=self.student,
             approved_by=self.admin,
             category="Technology",
             social_media_links={"Email": "techsociety@example.com"},
@@ -46,7 +46,7 @@ class SocietyRequestTestCase(TestCase):
             society=self.society,
             name="Tech",
             roles={"Treasurer": self.student.id},
-            leader=self.student,
+            president=self.student,
             category="Technology",
             from_student=self.student,
             intent="CreateSoc",
@@ -66,9 +66,9 @@ class SocietyRequestTestCase(TestCase):
         self.society_request.roles = None
         self._assert_society_request_is_valid()
 
-    def test_leader_not_required(self):
-        """Test that the leader field doesn't have to be populated"""
-        self.society_request.leader = None
+    def test_president_not_required(self):
+        """Test that the president field doesn't have to be populated"""
+        self.society_request.president = None
         self._assert_society_request_is_valid()
 
     def test_category_not_required(self):

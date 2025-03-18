@@ -3,7 +3,7 @@ from PIL import Image
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.utils import timezone
-from api.models import Society, Admin, Student, SocietyRequest, SocietyShowreelRequest
+from api.models import Society, User, Student, SocietyRequest, SocietyShowreelRequest
 from api.serializers import SocietyRequestSerializer
 from api.tests.file_deletion import delete_file
 from rest_framework.test import APIRequestFactory
@@ -18,7 +18,7 @@ class SocietyRequestSerializerTestCase(TestCase):
 
     def setUp(self):
         # Create an Admin user
-        self.admin = Admin.objects.create(
+        self.admin = User.objects.create(
             username="admin_user",
             first_name="Admin",
             last_name="User",
@@ -46,7 +46,7 @@ class SocietyRequestSerializerTestCase(TestCase):
         # Create a Society with required approved_by field
         self.society = Society.objects.create(
             name="Tech",
-            leader=self.student1,
+            president=self.student1,
             approved_by=self.admin,  # Fixed: Set admin instead of None
             status="Pending",
             category="Informatics",
@@ -58,7 +58,7 @@ class SocietyRequestSerializerTestCase(TestCase):
         self.society_request = SocietyRequest.objects.create(
             society=self.society,
             name="Tech",
-            leader=self.student1,
+            president=self.student1,
             category="Technology",
             from_student=self.student1,
             intent="CreateSoc",
@@ -70,7 +70,7 @@ class SocietyRequestSerializerTestCase(TestCase):
         self.data = {
             "society": self.society.id,
             "name": "Tech",
-            "leader": self.student1.id,
+            "president": self.student1.id,
             "category": "Technology",
             "requested_at": timezone.now(),
             "approved": True,
@@ -86,7 +86,7 @@ class SocietyRequestSerializerTestCase(TestCase):
 
         self.assertEqual(self.society_request.society.id, data["society"])
         self.assertEqual(self.society_request.name, data["name"])
-        self.assertEqual(self.society_request.leader.id, data["leader"])
+        self.assertEqual(self.society_request.president.id, data["president"])
         self.assertEqual(self.society_request.category, data["category"])
         self.assertEqual(self.society_request.approved, data["approved"])
         self.assertEqual(self.society_request.intent, data["intent"])
@@ -104,7 +104,7 @@ class SocietyRequestSerializerTestCase(TestCase):
 
         self.assertEqual(society_request["society"].id, self.data["society"])
         self.assertEqual(society_request["name"], self.data["name"])
-        self.assertEqual(society_request["leader"].id, self.data["leader"])
+        self.assertEqual(society_request["president"].id, self.data["president"])
         self.assertEqual(society_request["category"], self.data["category"])
         self.assertEqual(society_request["approved"], self.data["approved"])
         self.assertEqual(society_request["intent"], self.data["intent"])
@@ -128,7 +128,7 @@ class SocietyRequestSerializerTestCase(TestCase):
 
         self.assertEqual(society_request.society.id, self.data["society"])
         self.assertEqual(society_request.name, self.data["name"])
-        self.assertEqual(society_request.leader.id, self.data["leader"])
+        self.assertEqual(society_request.president.id, self.data["president"])
         self.assertEqual(society_request.category, self.data["category"])
         self.assertEqual(society_request.approved, self.data["approved"])
         self.assertEqual(society_request.intent, self.data["intent"])

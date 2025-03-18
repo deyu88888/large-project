@@ -2,7 +2,7 @@ from datetime import timedelta
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.utils import timezone
-from api.models import Event, Society, Admin, Student, EventRequest
+from api.models import Event, Society, User, Student, EventRequest
 from api.tests.file_deletion import delete_file
 
 # pylint: disable=no-member
@@ -13,7 +13,7 @@ class EventRequestTestCase(TestCase):
 
     def setUp(self):
         # Set up Admin, Students, and Society
-        self.admin = Admin.objects.create(
+        self.admin = User.objects.create(
             username="admin_user",
             email="admin@example.com",
             first_name="Admin",
@@ -33,7 +33,7 @@ class EventRequestTestCase(TestCase):
 
         self.society = Society.objects.create(
             name="Robotics Club",
-            leader=self.student,
+            president=self.student,
             approved_by=self.admin
         )
 

@@ -4,7 +4,7 @@ from django.utils import timezone
 from datetime import timedelta
 from rest_framework.test import APIRequestFactory
 from rest_framework import serializers
-from api.models import Event, Society, Admin, Student, EventRequest
+from api.models import Event, Society, User, Student, EventRequest
 from api.serializers import EventRequestSerializer
 from api.tests.file_deletion import delete_file
 
@@ -16,7 +16,7 @@ class EventRequestSerializerTestCase(TestCase):
 
     def setUp(self):
         # Create an admin
-        self.admin = Admin.objects.create(
+        self.admin = User.objects.create(
             username="admin_user",
             email="admin@example.com",
             first_name="Admin",
@@ -33,10 +33,10 @@ class EventRequestSerializerTestCase(TestCase):
             password="studentpassword",
             major="Physics"
         )
-        # Create a society with student1 as leader (and president)
+        # Create a society with student1 as president (and president)
         self.society = Society.objects.create(
             name="Robotics Club",
-            leader=self.student1,
+            president=self.student1,
             approved_by=self.admin
         )
         self.student1.president_of = self.society
@@ -170,7 +170,7 @@ class EventRequestSerializerTestCase(TestCase):
         # Create a new society and student who is not its president.
         other_society = Society.objects.create(
             name="Chess Club",
-            leader=self.student1,  # initially student1 is leader here...
+            president=self.student1,  # initially student1 is president here...
             approved_by=self.admin
         )
         # Create a new student with no president_of assignment.

@@ -1,4 +1,3 @@
-# from datetime import timezone // incorrect import
 import logging
 from django.utils import timezone
 from datetime import datetime, timezone
@@ -14,17 +13,17 @@ from django.conf import settings
 from django.views.static import serve
 from rest_framework import generics, status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser, BasePermission
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from api.models import Admin, AdminReportRequest, Event, Notification, Society, SocietyRequest, Student, User, Award, AwardStudent, \
+from api.models import  AdminReportRequest, BroadcastMessage, Event, Notification, Society, SocietyRequest, Student, User, Award, AwardStudent, \
     UserRequest, DescriptionRequest, AdminReportRequest, Comment
 from api.serializers import (
     AdminReportRequestSerializer,
-    AdminSerializer,
+    BroadcastSerializer,
     DashboardNotificationSerializer,
     DashboardStatisticSerializer,
     EventCalendarSerializer,
@@ -46,6 +45,7 @@ from api.serializers import (
     DescriptionRequestSerializer, CommentSerializer,
 )
 from api.utils import *
+from django.db.models import Q
 
 
 class CreateUserView(generics.CreateAPIView):
@@ -239,7 +239,7 @@ class StudentSocietiesView(APIView):
     - **GET**: Retrieves a list of societies the currently logged-in student has joined.
         - Permissions: Requires the user to be authenticated and a student.
         - Response:
-            - 200: A list of societies with details such as name and leader.
+            - 200: A list of societies with details such as name and president.
             - 403: If the user is not a student.
 
     - **POST**: Allows the student to leave a society they are part of.
@@ -291,11 +291,10 @@ class StudentSocietiesView(APIView):
 class JoinSocietyView(APIView):
     """
     API View for managing the joining of new societies by a student.
-
     - **GET**: Retrieves a list of societies the currently logged-in student has NOT joined.
         - Permissions: Requires the user to be authenticated and a student.
         - Response:
-            - 200: A list of available societies with details such as name and leader.
+            - 200: A list of available societies with details such as name and president.
             - 403: If the user is not a student.
 
     - **POST**: Creates a request for president approval to join a society.
@@ -308,25 +307,28 @@ class JoinSocietyView(APIView):
             - 403: If the user is not a student.
     """
     permission_classes = [IsAuthenticated]
-
+    
     def get(self, request):
         user = request.user
         if not hasattr(user, "student"):
             return Response({"error": "Only students can join societies."}, status=status.HTTP_403_FORBIDDEN)
-
         joined_societies = user.student.societies_belongs_to.all()
         available_societies = Society.objects.exclude(id__in=joined_societies)
-
         serializer = SocietySerializer(available_societies, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-
+    
     def post(self, request, society_id=None):
         user = request.user
+        # Debugging prints:
+        print("DEBUG: User:", user, "User ID:", user.id)
+        print("DEBUG: society_id:", society_id)
 
         if not hasattr(user, "student"):
+            print("DEBUG: User is not a student.")
             return Response({"error": "Only students can join societies."}, status=status.HTTP_403_FORBIDDEN)
 
         if not society_id:
+            print("DEBUG: No society_id provided in URL.")
             return Response({"error": "Society ID is required."}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
@@ -359,7 +361,7 @@ class JoinSocietyView(APIView):
             society=society,
             approved=False
         )
-        
+
         return Response({
             "message": f"Request to join society '{society.name}' has been submitted for approval.",
             "request_id": society_request.id
@@ -464,13 +466,10 @@ class StudentNotificationsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        # Ensure the user is a student
-        if not hasattr(request.user, 'student'):
-            return Response({"error": "Only students can view notifications."}, status=status.HTTP_403_FORBIDDEN)
-
         # Get notifications for societies the student has joined
-        student = request.user.student
-        notifications = Notification.objects.filter(for_student=student)
+        user = request.user
+        notifications = Notification.objects.filter(for_user=user)
+        notifications = [n for n in notifications if n.is_sent()]
 
         serializer = NotificationSerializer(notifications, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -480,7 +479,7 @@ class StudentNotificationsView(APIView):
             return Response({"error": "Only students can mark notifications as read."}, status=status.HTTP_403_FORBIDDEN)
 
         try:
-            notification = Notification.objects.get(id=pk, for_student=request.user.student)
+            notification = Notification.objects.get(id=pk, for_user=request.user.student)
         except Notification.DoesNotExist:
             return Response({"error": "Notification not found."}, status=status.HTTP_404_NOT_FOUND)
 
@@ -488,6 +487,18 @@ class StudentNotificationsView(APIView):
         notification.save()  # Save the notification explicitly
 
         return Response({"message": "Notification marked as read.", "id": pk}, status=status.HTTP_200_OK)
+
+
+class StudentInboxView(StudentNotificationsView):
+    """
+    View to retrieve and update important notifications for a student.
+    """
+    def get(self, request):
+        user = request.user
+        notifications = Notification.objects.filter(for_user=user, is_important=True)
+        notifications = [n for n in notifications if n.is_sent()]
+        serializer = NotificationSerializer(notifications, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class StartSocietyRequestView(APIView):
@@ -728,6 +739,7 @@ class CreateEventRequestView(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 class AllEventsView(APIView):
     """API View to list all approved events for public user"""
     permission_classes = [AllowAny]
@@ -736,6 +748,7 @@ class AllEventsView(APIView):
         events = Event.objects.filter(status="Approved").order_by("date", "start_time")
         serializer = EventSerializer(events, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 class EventDetailView(APIView):
     """API View to get details of an event"""
@@ -746,73 +759,58 @@ class EventDetailView(APIView):
         serializer = EventSerializer(event)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+
 logger = logging.getLogger(__name__)
+
+
 class EventListView(APIView):
     """
-    API View to list events based on filters (upcoming, previous, pending).
+    Lists events for all societies the currently logged-in student is part of.
+    Optionally applies a filter (upcoming, previous, pending).
     """
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        society_id = request.query_params.get("society_id")
         filter_type = request.query_params.get("filter", "upcoming")
 
-        if not society_id:
-            return Response({"error": "Missing society_id"}, status=400)
+        # Ensure the user is a student
+        if not hasattr(request.user, "student"):
+            logger.warning("User is not a student.")
+            return Response({"error": "Only students can retrieve society events."}, status=403)
 
-        try:
-            # Convert society_id to integer
-            society_id = int(society_id)
-        except ValueError:
-            return Response({"error": "Invalid society_id format"}, status=400)
+        # Gather all society IDs the student is in
+        societies = request.user.student.societies_belongs_to.all()
+        society_ids = [s.id for s in societies]
 
-        # Debug - print request parameters
-        logger.info(f"Request for events: society_id={society_id}, filter={filter_type}")
-        
-        # IMPORTANT FIX: Make sure to filter by hosted_by_id, not hosted_by
-        # Check your Event model to confirm the correct field name
-        events = Event.objects.filter(hosted_by=society_id)
-        
-        # Debug - log events before time-based filtering
-        logger.info(f"Found {events.count()} events for society {society_id} before time filtering")
-        logger.info(f"Event IDs: {[e.id for e in events]}")
-        
-        # If no events found, return empty list early
-        if not events.exists():
-            logger.warning(f"No events found for society_id={society_id}")
-            return Response([])
+        # If the user belongs to no societies, return an empty list
+        if not society_ids:
+            logger.info("User is not part of any society. Returning empty list.")
+            return Response([], status=200)
 
+        # Fetch events for these societies only
+        events = Event.objects.filter(hosted_by__in=society_ids)
+
+        # If you want to do time-based filtering:
         today = now().date()
         current_time = now().time()
 
         if filter_type == "upcoming":
-            # Future dates OR current date with future time
-            filtered_events = (events.filter(date__gt=today, status="Approved") | 
-                            events.filter(date=today, start_time__gt=current_time, status="Approved"))
-        
+            events = (
+                events.filter(date__gt=today, status="Approved") |
+                events.filter(date=today, start_time__gt=current_time, status="Approved")
+            )
         elif filter_type == "previous":
-            # Past dates OR current date with past time
-            filtered_events = (events.filter(date__lt=today, status="Approved") | 
-                            events.filter(date=today, start_time__lt=current_time, status="Approved"))
-        
+            events = (
+                events.filter(date__lt=today, status="Approved") |
+                events.filter(date=today, start_time__lt=current_time, status="Approved")
+            )
         elif filter_type == "pending":
-            # Only pending events for this society
-            filtered_events = events.filter(status="Pending")
-        
-        else:
-            # Default to all events if filter is invalid
-            filtered_events = events
-        
-        # Debug - log the filtered events
-        logger.info(f"Returning {filtered_events.count()} {filter_type} events for society {society_id}")
-        logger.info(f"Filtered Event IDs: {[e.id for e in filtered_events]}")
-        
-        # For each event, log the society ID to verify it matches
-        for event in filtered_events:
-            logger.info(f"Event {event.id}: '{event.title}', hosted_by={event.hosted_by}, status={event.status}")
+            events = events.filter(status="Pending")
+        # else: no filter → returns all events from these societies
 
-        serializer = EventSerializer(filtered_events, many=True)
-        return Response(serializer.data)
+        serializer = EventSerializer(events, many=True)
+        return Response(serializer.data, status=200)
+
 
 class ManageEventDetailsView(APIView):
     """
@@ -911,6 +909,7 @@ class ManageEventDetailsView(APIView):
 
         event.delete()
         return Response({"message": "Event deleted successfully."}, status=status.HTTP_200_OK)
+
 
 class PendingMembersView(APIView):
     """
@@ -1050,25 +1049,33 @@ class AdminView(APIView):
     admin view for admins to view all admins
     """
     permission_classes = [IsAuthenticated]
-    # queryset = Admin.objects.all()      # redundant code, remove later
-    # serializer_class = AdminSerializer      # redundant code, remove later
 
     def get(self, request) -> Response:
         """
         get the list of admins for the admin.
         """
-        admin = Admin.objects.all()
-        serializer = AdminSerializer(admin, many=True)  # serializer ensures its a admin object
+        admins = User.get_admins()
+        serializer = UserSerializer(admins, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
         """
         post request to create a new admin user
         """
-        serializer = AdminSerializer(data=request.data)
+        if not request.user.is_super_admin:
+            return Response(
+                {"error": "You do not have permission to create admins."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
-            return Response({"message": "Admin registered successfully."}, status=status.HTTP_201_CREATED)
+            user = serializer.save(role="admin", is_staff=True)   
+            return Response(
+                {"message": "Admin registered successfully.", "admin": UserSerializer(user).data},
+                status=status.HTTP_201_CREATED
+            )
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -1082,7 +1089,6 @@ class StudentView(APIView):
         """
         Get the list of students for the admin.
         """
-        # Get all students and extend their user information
         students = Student.objects.all()
         serializer = StudentSerializer(students, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -1118,7 +1124,6 @@ class RecentActivitiesView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        # Example recent activities (can be extended based on project requirements)
         activities = [
             {"description": "John Doe joined the Chess Society", "timestamp": now()},
             {"description": "A new event was created: 'AI Workshop'", "timestamp": now()},
@@ -1135,11 +1140,11 @@ class NotificationsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        # If user's role is not "student", forbid access
         if request.user.role != "student":
             return Response({"error": "Only students can view notifications."}, status=403)
 
-        notifications = Notification.objects.filter(for_student=request.user).order_by("-id")
+        notifications = Notification.objects.filter(for_user=request.user).order_by("-id")
+        notifications = [n for n in notifications if n.is_sent()]
         serializer = DashboardNotificationSerializer(notifications, many=True)
         return Response(serializer.data, status=200)
 
@@ -1155,8 +1160,10 @@ class EventCalendarView(APIView):
         serializer = EventCalendarSerializer(events, many=True)
         return Response(serializer.data, status=200)
 
+
 class MySocietiesView(APIView):
     pass
+
 
 @csrf_exempt
 def get_popular_societies(request):
@@ -1166,7 +1173,7 @@ def get_popular_societies(request):
     - Number of hosted events
     - Total event attendees
     """
-    
+
     popular_societies = (
         Society.objects.annotate(
             total_members=Count("society_members"),
@@ -1330,9 +1337,21 @@ class StudentSocietyDataView(APIView):
 
         # Return extra data indicating membership
         serializer_data = serializer.data
-        serializer_data["is_member"] = society.society_members.filter(
+        is_member = society.society_members.filter(
             id=request.user.student.id
         ).exists()
+        if is_member:
+            serializer_data["is_member"] = 2
+        else:
+            request_exists = SocietyRequest.objects.filter(
+                society=society,
+                from_student=request.user.student,
+                intent="JoinSoc"
+            ).exists()
+            if request_exists:
+                serializer_data["is_member"] = 1
+            else:
+                serializer_data["is_member"] = 0
 
         return Response(serializer_data, status=status.HTTP_200_OK)
 
@@ -1350,6 +1369,7 @@ class SocietyMembersListView(APIView):
         members = society.society_members.all()
         serializer = StudentSerializer(members, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 class EventCommentsView(APIView):
     """
@@ -1392,6 +1412,7 @@ class EventCommentsView(APIView):
         serializer = CommentSerializer(comment, context={"request": request})
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+
 @api_view(["POST"])
 def like_comment(request, comment_id):
     """Allow user to like a comment"""
@@ -1406,6 +1427,7 @@ def like_comment(request, comment_id):
         comment.dislikes.remove(user)
         return Response({"status": "liked"}, status=status.HTTP_200_OK)
 
+
 @api_view(["POST"])
 def dislike_comment(request, comment_id):
     """Allow user to dislike a comment"""
@@ -1419,6 +1441,7 @@ def dislike_comment(request, comment_id):
         comment.dislikes.add(user)
         comment.likes.remove(user)
         return Response({"status": "disliked"}, status=status.HTTP_200_OK)
+
 
 class DescriptionRequestView(APIView):
     """
@@ -1482,6 +1505,7 @@ class DescriptionRequestView(APIView):
             status=status.HTTP_200_OK
         )
 
+
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def toggle_follow(request, user_id):
@@ -1503,6 +1527,7 @@ def toggle_follow(request, user_id):
         current_user.following.add(target_user)
         return Response({"message": "Followed successfully."}, status=status.HTTP_200_OK)
 
+
 class StudentProfileView(APIView):
     """API view to show Student's Profile"""
     permission_classes = [AllowAny]
@@ -1511,3 +1536,87 @@ class StudentProfileView(APIView):
         student = get_object_or_404(Student, id=user_id)
         serializer = StudentSerializer(student, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class IsAdminOrPresident(BasePermission):
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and (request.user.is_admin() or request.user.is_president)
+
+
+class NewsView(APIView):
+    permission_classes = [IsAuthenticated, IsAdminOrPresident]
+
+    def post(self, request):
+        user = request.user
+        data = request.data
+        societies = list(map(int, data.get("societies", [])))  # Ensure integer IDs
+        events = list(map(int, data.get("events", [])))  # Ensure integer IDs
+        message = data.get("message", "")
+        recipients = set()
+
+        # Debugging prints
+        print(f"Received societies: {societies}")  
+        print(f"Received events: {events}")  
+        print(f"Total Student Users: {User.objects.filter(student__isnull=False).count()}")  
+
+        if not message:
+            return Response({"error": "Message content is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if 'all' in data.get('target', []):
+            print("Sending to all users")
+            recipients.update(User.objects.all())
+        else:
+            print("Filtering recipients based on societies and events")
+
+            if societies:
+                society_members = User.objects.filter(
+                    student__isnull=False,  # Ensure the user has a student profile
+                    student__societies__in=Society.objects.filter(id__in=societies)
+                ).distinct()
+                print(f"Society Members: {list(society_members.values('id', 'username'))}")
+                recipients.update(society_members)
+
+            if events:
+                event_attendees = User.objects.filter(
+                    student__isnull=False,  # Ensure the user has a student profile
+                    student__attended_events__in=Event.objects.filter(id__in=events)
+                ).distinct()
+                print(f"Event Attendees: {list(event_attendees.values('id', 'username'))}")
+                recipients.update(event_attendees)
+
+        # Create the Broadcast Message
+        broadcast = BroadcastMessage.objects.create(sender=user, message=message)
+
+        # Assign societies and events
+        if societies:
+            broadcast.societies.set(Society.objects.filter(id__in=societies))  # Ensure valid societies
+        if events:
+            broadcast.events.set(Event.objects.filter(id__in=events))  # Ensure valid events
+        broadcast.save()
+
+        # Assign recipients
+        if recipients:
+            broadcast.recipients.set(list(recipients))
+
+        return Response(BroadcastSerializer(broadcast).data, status=status.HTTP_201_CREATED)
+
+
+class BroadcastListAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        # Initialize an empty query
+        query = Q(recipients=user)
+
+        # Check if the user has a student relation before accessing societies/events
+        if hasattr(user, 'student'):
+            student = user.student
+            query |= Q(societies__in=student.societies.all()) | Q(events__in=student.attended_events.all())
+
+        # Fetch broadcasts based on the query
+        broadcasts = BroadcastMessage.objects.filter(query).distinct()
+
+        serializer = BroadcastSerializer(broadcasts, many=True)
+        return Response(serializer.data)
