@@ -96,48 +96,45 @@ const JoinSocieties: React.FC = () => {
   }, []);
 
 
-const handleJoinSociety = async (societyId: number) => {
-  try {
-    // Set this society as having a pending request
-    setPendingRequests(prev => ({...prev, [societyId]: true}));
-    
-    // Make API call to join society
-    const response = await apiClient.post(`/api/join-society/${societyId}/`);
-    
-    // Handle successful request
-    setJoinMessages(prev => ({
-      ...prev, 
-      [societyId]: response.data.message || "Request submitted for approval."
-    }));
-    
-    // Update the pending society IDs list
-    setPendingSocietyIds(prev => [...new Set([...prev, societyId])]);
-    
-  } catch (error: any) {
-    console.error("Error joining society:", error);
-    
-    // Check if error response exists
-    const errorMessage = error.response?.data?.message || 
-      error.response?.data?.error || 
-      "Failed to submit join request. Please try again.";
-    
-    setJoinMessages(prev => ({
-      ...prev, 
-      [societyId]: errorMessage
-    }));
-  } finally {
-    setPendingRequests(prev => ({...prev, [societyId]: false}));
-  }
-};
+  const handleJoinSociety = async (societyId: number) => {
+    try {
+      // Set this society as having a pending request
+      setPendingRequests(prev => ({...prev, [societyId]: true}));
+      
+      // Make API call to join society
+      const response = await apiClient.post(`/api/join-society/${societyId}/`);
+      
+      // Handle successful request
+      setJoinMessages(prev => ({
+        ...prev, 
+        [societyId]: response.data.message || "Request submitted for approval."
+      }));
+      
+      // Update the pending society IDs list
+      setPendingSocietyIds(prev => [...new Set([...prev, societyId])]);
+      
+    } catch (error: any) {
+      console.error("Error joining society:", error);
+      
+      // Check if error response exists
+      const errorMessage = error.response?.data?.message || 
+        error.response?.data?.error || 
+        "Failed to submit join request. Please try again.";
+      
+      setJoinMessages(prev => ({
+        ...prev, 
+        [societyId]: errorMessage
+      }));
+    } finally {
+      setPendingRequests(prev => ({...prev, [societyId]: false}));
+    }
+  };
 
   const handleViewSociety = (societyId: number) => {
     console.log("Viewing society:", societyId);
     navigate(`/student/view-society/${societyId}`);
-  // Handler to view society
-  const handleViewSociety = (societyId: number) => {
-    navigate(`/student/view-society/${societyId}`);
   };
-
+  
   // Group recommendations by category
   const groupRecommendationsByCategory = () => {
     const groups: { [key: string]: SocietyRecommendation[] } = {};
@@ -520,118 +517,18 @@ const handleJoinSociety = async (societyId: number) => {
 
         {/* Loading State */}
         {loading && (
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: "2rem",
-            }}
-          >
-            {societies.map((society) => (
-              <div
-                key={society.id}
-                style={{
-                  backgroundColor: isLight ? colours.primary[400] : colours.primary[400],
-                  borderRadius: "12px",
-                  padding: "1.5rem",
-                  border: `1px solid ${isLight ? colours.grey[300] : colours.grey[700]}`,
-                  transition: "transform 0.3s, box-shadow 0.3s",
-                }}
-              >
-                <h3
-                  style={{
-                    color: isLight ? colours.grey[100] : colours.grey[100],
-                    fontSize: "1.25rem",
-                    fontWeight: 600,
-                    marginBottom: "0.75rem",
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                    <img
-                      src={"http://localhost:8000/api" + society.icon}
-                      alt={`${society.name} icon`}
-                      style={{
-                        width: "35px",
-                        height: "35px",
-                        borderRadius: "50%",
-                        verticalAlign: "middle",
-                      }}
-                    />
-                    {society.name}
-                  </div>
-                </h3>
-                <p
-                  style={{
-                    color: isLight ? colours.grey[300] : colours.grey[300],
-                    fontSize: "0.875rem",
-                    lineHeight: "1.5",
-                    marginBottom: "1.25rem",
-                  }}
-                >
-                  {society.description
-                    ? society.description.length > 160
-                      ? society.description.slice(0, 160) + "..."
-                      : society.description
-                    : "No description available."}
-                </p>
-                
-                {/* Show message if there is one */}
-                {joinMessages[society.id] && (
-                  <p
-                    style={{
-                      color: isLight ? colours.greenAccent[400] : colours.greenAccent[500],
-                      fontSize: "0.875rem",
-                      marginBottom: "1rem",
-                      textAlign: "center",
-                    }}
-                  >
-                    {joinMessages[society.id]}
-                  </p>
-                )}
-                
-                <div style={{
-                  display: "flex",
-                  gap: "0.5rem",
-                  justifyContent: "center"
-                }}>
-                  <button
-                    onClick={() => handleViewSociety(society.id)}
-                    style={{
-                      backgroundColor: isLight ? colours.blueAccent[400] : colours.blueAccent[500],
-                      color: isLight ? "#ffffff" : colours.grey[100],
-                      padding: "0.5rem 1.5rem",
-                      borderRadius: "0.5rem",
-                      transition: "all 0.2s ease",
-                      cursor: "pointer",
-                    }}
-                  >
-                    View Society
-                  </button>
-                  
-                  {/* Only show join button if there's no pending request */}
-                  {!pendingSocietyIds.includes(society.id) && !joinMessages[society.id] && (
-                    <button
-                      onClick={() => handleJoinSociety(society.id)}
-                      disabled={pendingRequests[society.id]}
-                      style={{
-                        backgroundColor: pendingRequests[society.id] 
-                          ? isLight ? colours.grey[400] : colours.grey[700]
-                          : isLight ? colours.greenAccent[400] : colours.greenAccent[500],
-                        color: isLight ? "#ffffff" : colours.grey[100],
-                        padding: "0.5rem 1.5rem",
-                        borderRadius: "0.5rem",
-                        transition: "all 0.2s ease",
-                        cursor: pendingRequests[society.id] ? "not-allowed" : "pointer",
-                      }}
-                    >
-                      {pendingRequests[society.id] ? "Submitting..." : "Join Society"}
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
+          <div style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            padding: "3rem"
+          }}>
+            <div style={{
+              color: colours.grey[100],
+              fontSize: "1.2rem"
+            }}>
+              Loading recommendations...
+            </div>
           </div>
         )}
 
@@ -647,6 +544,32 @@ const handleJoinSociety = async (societyId: number) => {
             }}
           >
             {recommendations.map(recommendation => renderSocietyCard(recommendation))}
+          </div>
+        )}
+
+        {/* Societies Grid - Grouped by Category View */}
+        {!loading && recommendations.length > 0 && viewByCategory && getCategoryCount() > 1 && (
+          <div>
+            {Object.entries(groupRecommendationsByCategory()).map(([category, recs]) => (
+              <div key={category} style={{ marginBottom: "2rem" }}>
+                <h2 style={{ 
+                  color: colours.grey[100], 
+                  fontSize: "1.5rem", 
+                  marginBottom: "1rem",
+                  paddingBottom: "0.5rem",
+                  borderBottom: `1px solid ${isLight ? colours.grey[300] : colours.grey[700]}`
+                }}>
+                  {category}
+                </h2>
+                <div style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
+                  gap: "1.25rem"
+                }}>
+                  {recs.map(recommendation => renderSocietyCard(recommendation))}
+                </div>
+              </div>
+            ))}
           </div>
         )}
 

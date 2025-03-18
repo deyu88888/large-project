@@ -181,33 +181,43 @@ class Command(BaseCommand):
     def create_student(self, n):
         """Create n different students"""
         generator = RandomStudentDataGenerator()
+        created_count = 0
+        attempts = 0
+        max_attempts = n * 2  # Prevent infinite loop
 
-        for i in range(1, n + 1):
-            print(f"Seeding student {i}/{n}", end='\r', flush=True)
+        while created_count < n and attempts < max_attempts:
+            attempts += 1
+            print(f"Seeding student {created_count}/{n} (Attempt {attempts})", end='\r', flush=True)
 
             data = generator.generate()
-            email = f"{data['username']}@kcl.ac.uk"
+            
+            base_email = f"{data['username']}@kcl.ac.uk"
+            email = base_email
+            counter = 1
 
-            # Ensure unique email constraint is respected
-            student, created = Student.objects.get_or_create(
-                email=email,  # Email is the lookup field to prevent duplicates
-                username=data["username"],
-                first_name=data["first_name"],
-                last_name=data["last_name"],
-                major=data["major"],
-                defaults={
-                    "username": data["username"],
-                    "first_name": data["first_name"],
-                    "last_name": data["last_name"],
-                    "major": data["major"],
-                    "password": make_password("studentpassword"),
-                },
-            )
+            while Student.objects.filter(email=email).exists():
+                email = f"{data['username']}{counter}@kcl.ac.uk"
+                counter += 1
 
-            if created:
-                self.handle_user_status(student)  # Handle additional setup if needed
+            try:
+                student = Student.objects.create(
+                    email=email,
+                    username=data["username"] + str(counter-1) if counter > 1 else data["username"],
+                    first_name=data["first_name"],
+                    last_name=data["last_name"],
+                    major=data["major"],
+                    password=make_password("studentpassword"),
+                )
 
-        print(self.style.SUCCESS(f"Seeding student {n}/{n}"), flush=True)
+                self.handle_user_status(student)
+                created_count += 1
+
+            except Exception as e:
+                print(f"\nError creating student: {e}")
+                continue
+
+        print(self.style.SUCCESS(f"Seeding student {created_count}/{n}"), flush=True)
+        return created_count
 
     def handle_user_status(self, user):
         """Creates user requests if pending"""
