@@ -5,6 +5,7 @@ import Header from "../../components/Header";
 import { tokens } from "../../theme/theme";
 import { apiClient } from "../../api";
 import { useSettingsStore } from "../../stores/settings-store";
+import { useAuthStore } from "../../stores/auth-store";
 
 const AdminDashboard = () => {
   const theme = useTheme();
@@ -17,7 +18,7 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
 
   const { drawer } = useSettingsStore();
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const { user, setUser } = useAuthStore();
 
 
   useEffect(() => {
@@ -29,7 +30,7 @@ const AdminDashboard = () => {
   const fetchCurrentUser = async () => {
     try {
       const response = await apiClient.get("/api/admin/user-stats/"); // Adjust the endpoint
-      setCurrentUser(response.data);
+      setUser(response.data);
     } catch (error) {
       console.error("Error fetching current user:", error);
     }
@@ -124,7 +125,7 @@ const AdminDashboard = () => {
     >
       <div style={{ maxWidth: "1600px", margin: "0 auto" }}>
         <header className="text-center mb-16">
-          <Header title={`Welcome to your Dashboard, ${currentUser?.firstName || "User"}`} subtitle="Manage users, societies, and more." />
+          <Header title={`Welcome to your Dashboard, ${user?.first_name || "User"}!`} subtitle="Manage users, societies, and more." />
         </header>
 
         {loading ? (
