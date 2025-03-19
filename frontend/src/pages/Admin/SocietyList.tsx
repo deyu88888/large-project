@@ -6,14 +6,13 @@ import { tokens } from "../../theme/theme";
 import { useSettingsStore } from "../../stores/settings-store";
 import { SearchContext } from "../../components/layout/SearchContext";
 
-// Consistent Society type
 interface Society {
   id: number;
   name: string;
   description: string;
   president: string;
-  members: string[]; // Assuming members is an array of strings
-  roles: Record<string, string>; // Assuming roles is a key-value object
+  members: string[];
+  roles: Record<string, string>;
   approvedBy: string;
 }
 
@@ -47,8 +46,6 @@ const SocietyList = () => {
         try {
           const data = JSON.parse(event.data);
           console.log("WebSocket Update Received:", data);
-
-          // Re-fetch on any update
           fetchSocieties();
         } catch (error) {
           console.error("Error parsing WebSocket message:", error);
@@ -66,10 +63,8 @@ const SocietyList = () => {
         }, 5000);
       };
     };
-    //Initial fetch
+    
     fetchSocieties();
-
-    //Establish websocket connection
     connectWebSocket();
 
     return () => {
@@ -102,14 +97,21 @@ const SocietyList = () => {
     [societies, searchTerm]
   );
 
-
   return (
     <Box
       sx={{
-        height: "calc(100vh - 64px)", // Full height minus the AppBar height
+        height: "calc(100vh - 64px)",
         maxWidth: drawer ? `calc(100% - 3px)` : "100%",
       }}
     >
+      <Typography
+        variant="h4"
+        fontWeight="bold"
+        sx={{ mb: 2 }}
+        data-testid="society-list-title"
+      >
+        Society List
+      </Typography>
       <Box
         sx={{
           height: "78vh",

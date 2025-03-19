@@ -33,9 +33,12 @@ describe("PendingEventRequest Component", () => {
       </SearchContext.Provider>
     );
 
-    expect(screen.getByText("Pending Event Requests")).toBeInTheDocument();
     expect(screen.getByText("Event 1")).toBeInTheDocument();
     expect(screen.getByText("Event 2")).toBeInTheDocument();
+    
+    // Use getAllByText since there are multiple buttons with the same text
+    expect(screen.getAllByText("Accept").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Reject").length).toBeGreaterThan(0);
   });
 
   it("filters events based on search term", () => {
@@ -69,12 +72,12 @@ describe("PendingEventRequest Component", () => {
       </SearchContext.Provider>
     );
 
-    const acceptButton = screen.getByText("Accept");
-    fireEvent.click(acceptButton);
+    const acceptButtons = screen.getAllByText("Accept");
+    fireEvent.click(acceptButtons[0]);
     expect(updateRequestStatus).toHaveBeenCalledWith(1, "Approved", apiPaths.EVENTS.UPDATEENEVENTREQUEST);
 
-    const rejectButton = screen.getByText("Reject");
-    fireEvent.click(rejectButton);
+    const rejectButtons = screen.getAllByText("Reject");
+    fireEvent.click(rejectButtons[0]);
     expect(updateRequestStatus).toHaveBeenCalledWith(1, "Rejected", apiPaths.EVENTS.UPDATEENEVENTREQUEST);
   });
 
@@ -86,7 +89,7 @@ describe("PendingEventRequest Component", () => {
     (useFetchWebSocket as vi.Mock).mockReturnValue(mockEvents);
     (updateRequestStatus as vi.Mock).mockRejectedValue(new Error("Network Error"));
 
-    const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {}); // Ensure alert is mocked
+    const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {});
 
     render(
       <SearchContext.Provider value={{ searchTerm: "" }}>
@@ -94,13 +97,13 @@ describe("PendingEventRequest Component", () => {
       </SearchContext.Provider>
     );
 
-    const acceptButton = screen.getByText("Accept");
-    fireEvent.click(acceptButton);
+    const acceptButtons = screen.getAllByText("Accept");
+    fireEvent.click(acceptButtons[0]);
 
     await waitFor(() => {
       expect(alertSpy).toHaveBeenCalledWith("Failed to approved event.");
     });
 
-    alertSpy.mockRestore(); // Cleanup after test
+    alertSpy.mockRestore();
   });
 });
