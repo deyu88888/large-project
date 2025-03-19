@@ -35,6 +35,10 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
+vi.mock('../StudentCalendar', () => ({
+  default: () => <div data-testid="student-calendar">Student Calendar Mock</div>,
+}));
+
 const theme = createTheme();
 
 describe('StudentDashboard', () => {
@@ -121,19 +125,28 @@ describe('StudentDashboard', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     userMock = { ...defaultUserMock };
+    
     (apiClient.get as vi.Mock).mockImplementation((url: string) => {
+      if (url === "api/user/current") {
+        return Promise.resolve({
+          data: { id: 1, is_president: false }
+        });
+      }
       if (url === '/api/student-societies') {
         return Promise.resolve({
           data: [{ id: 1, name: 'Science Club', is_president: false }],
         });
       }
-      if (url === '/api/events') {
+      if (url === '/api/events/' || url === '/api/events') {
         return Promise.resolve({
           data: [
             {
               id: 1,
               title: 'Math Workshop',
               date: '2023-09-01',
+              startTime: '14:00',
+              duration: '2 hours',
+              hostedBy: 1,
               rsvp: false,
             },
           ],
@@ -141,7 +154,7 @@ describe('StudentDashboard', () => {
       }
       if (url === '/api/notifications/') {
         return Promise.resolve({
-          data: [{ id: 1, message: 'Test notification', is_read: false }],
+          data: [{ id: 1, header: 'Test notification', body: 'Details here', is_read: false }],
         });
       }
       if (url.includes('/api/award-students/')) {
@@ -149,12 +162,14 @@ describe('StudentDashboard', () => {
       }
       return Promise.resolve({ data: [] });
     });
+    
     (apiClient.patch as vi.Mock).mockImplementation((url: string, data: any) => {
       if (url.startsWith('/api/notifications/')) {
         return Promise.resolve({ status: 200 });
       }
       return Promise.resolve({ status: 200 });
     });
+    
     (apiClient.post as vi.Mock).mockResolvedValue({ status: 200 });
     (apiClient.delete as vi.Mock).mockResolvedValue({ status: 200 });
   });
@@ -173,7 +188,11 @@ describe('StudentDashboard', () => {
     expect(screen.getByRole('progressbar')).toBeInTheDocument();
     await waitFor(() => expect(screen.getByText(/Dashboard/i)).toBeInTheDocument());
     expect(screen.getByText(/My Societies/i)).toBeInTheDocument();
-    expect(screen.getByText(/Upcoming Events/i)).toBeInTheDocument();
+    
+    // Use getAllByText instead of getByText when there are multiple matching elements
+    const societyEvents = screen.getAllByText(/Society Events/i);
+    expect(societyEvents.length).toBeGreaterThan(0);
+    
     expect(screen.getByText(/Unread Notifications/i)).toBeInTheDocument();
   });
 
@@ -198,7 +217,7 @@ describe('StudentDashboard', () => {
     await act(async () => {
       fireEvent.click(leaveButton);
     });
-    expect(apiClient.delete).toHaveBeenCalledWith('/api/leave-society/1');
+    expect(apiClient.delete).toHaveBeenCalledWith('/api/leave-society/1/');
   });
 
   it('handles error when leaving society fails', async () => {
@@ -278,18 +297,26 @@ describe('StudentDashboard', () => {
 
   it('calls the cancel RSVP API when the "Cancel RSVP" button is clicked in the Events tab', async () => {
     (apiClient.get as vi.Mock).mockImplementation((url: string) => {
+      if (url === "api/user/current") {
+        return Promise.resolve({
+          data: { id: 1, is_president: false }
+        });
+      }
       if (url === '/api/student-societies') {
         return Promise.resolve({
           data: [{ id: 1, name: 'Science Club', is_president: false }],
         });
       }
-      if (url === '/api/events') {
+      if (url === '/api/events/' || url === '/api/events') {
         return Promise.resolve({
           data: [
             {
               id: 1,
               title: 'Math Workshop',
               date: '2023-09-01',
+              startTime: '14:00',
+              duration: '2 hours',
+              hostedBy: 1,
               rsvp: true,
             },
           ],
@@ -297,7 +324,7 @@ describe('StudentDashboard', () => {
       }
       if (url === '/api/notifications/') {
         return Promise.resolve({
-          data: [{ id: 1, message: 'Test notification', is_read: false }],
+          data: [{ id: 1, header: 'Test notification', body: 'Details here', is_read: false }],
         });
       }
       if (url.includes('/api/award-students/')) {
@@ -320,9 +347,24 @@ describe('StudentDashboard', () => {
 
   it('handles error when canceling RSVP fails', async () => {
     (apiClient.get as vi.Mock).mockImplementation((url: string) => {
-      if (url === '/api/events') {
+      if (url === "api/user/current") {
         return Promise.resolve({
-          data: [{ id: 1, title: 'Math Workshop', date: '2023-09-01', rsvp: true }],
+          data: { id: 1, is_president: false }
+        });
+      }
+      if (url === '/api/student-societies') {
+        return Promise.resolve({
+          data: [{ id: 1, name: 'Science Club', is_president: false }],
+        });
+      }
+      if (url === '/api/events/' || url === '/api/events') {
+        return Promise.resolve({
+          data: [{ id: 1, title: 'Math Workshop', date: '2023-09-01', startTime: '14:00', duration: '2 hours', hostedBy: 1, rsvp: true }],
+        });
+      }
+      if (url === '/api/notifications/') {
+        return Promise.resolve({
+          data: [{ id: 1, header: 'Test notification', body: 'Details here', is_read: false }],
         });
       }
       return Promise.resolve({ data: [] });
@@ -352,10 +394,19 @@ describe('StudentDashboard', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/student/start-society');
   });
 
-  it('renders the calendar integration placeholder', async () => {
+  it('toggles the calendar when the show/hide calendar button is clicked', async () => {
     renderComponent();
     await waitFor(() => expect(screen.getByText(/Dashboard/i)).toBeInTheDocument());
-    expect(screen.getByText(/Calendar Integration Placeholder/i)).toBeInTheDocument();
+    const showCalendarButton = screen.getByRole('button', { name: /Show Calendar/i });
+    await act(async () => {
+      fireEvent.click(showCalendarButton);
+    });
+    expect(screen.getByTestId('student-calendar')).toBeInTheDocument();
+    const hideCalendarButton = screen.getByRole('button', { name: /Hide Calendar/i });
+    await act(async () => {
+      fireEvent.click(hideCalendarButton);
+    });
+    expect(screen.queryByTestId('student-calendar')).not.toBeInTheDocument();
   });
 
   it('logs an error when marking a notification as read fails', async () => {
@@ -379,7 +430,18 @@ describe('StudentDashboard', () => {
 
   it('renders empty notifications state when no notifications are returned', async () => {
     (apiClient.get as vi.Mock).mockImplementation((url: string) => {
+      if (url === "api/user/current") {
+        return Promise.resolve({
+          data: { id: 1, is_president: false }
+        });
+      }
       if (url === '/api/notifications/') {
+        return Promise.resolve({ data: [] });
+      }
+      if (url === '/api/student-societies') {
+        return Promise.resolve({ data: [] });
+      }
+      if (url === '/api/events/' || url === '/api/events') {
         return Promise.resolve({ data: [] });
       }
       return Promise.resolve({ data: [] });
@@ -392,9 +454,14 @@ describe('StudentDashboard', () => {
     expect(screen.getByText(/No notifications/i)).toBeInTheDocument();
   });
 
-  it('handles errors when fetching societies data', async () => {
+  it('handles errors when fetching society data', async () => {
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    (apiClient.get as vi.Mock).mockImplementationOnce((url: string) => {
+    (apiClient.get as vi.Mock).mockImplementation((url: string) => {
+      if (url === "api/user/current") {
+        return Promise.resolve({
+          data: { id: 1, is_president: false }
+        });
+      }
       if (url === '/api/student-societies') {
         return Promise.reject(new Error('Failed to fetch societies'));
       }
@@ -403,7 +470,7 @@ describe('StudentDashboard', () => {
     renderComponent();
     await waitFor(() => expect(screen.getByText(/Dashboard/i)).toBeInTheDocument());
     expect(consoleErrorSpy).toHaveBeenCalledWith(
-      'Error fetching society data:',
+      'Error fetching user or society data:',
       expect.any(Error)
     );
     consoleErrorSpy.mockRestore();
@@ -412,7 +479,12 @@ describe('StudentDashboard', () => {
   it('handles errors when fetching events data', async () => {
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     (apiClient.get as vi.Mock).mockImplementation((url: string) => {
-      if (url === '/api/events') {
+      if (url === "api/user/current") {
+        return Promise.resolve({
+          data: { id: 1, is_president: false }
+        });
+      }
+      if (url === '/api/events/' || url === '/api/events') {
         return Promise.reject(new Error('Failed to fetch events'));
       }
       if (url === '/api/student-societies') {
@@ -438,13 +510,18 @@ describe('StudentDashboard', () => {
   it('handles errors when fetching notifications data', async () => {
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     (apiClient.get as vi.Mock).mockImplementation((url: string) => {
+      if (url === "api/user/current") {
+        return Promise.resolve({
+          data: { id: 1, is_president: false }
+        });
+      }
       if (url === '/api/notifications/') {
         return Promise.reject(new Error('Failed to fetch notifications'));
       }
       if (url === '/api/student-societies') {
         return Promise.resolve({ data: [] });
       }
-      if (url === '/api/events') {
+      if (url === '/api/events/' || url === '/api/events') {
         return Promise.resolve({ data: [] });
       }
       if (url.includes('/api/award-students/')) {
@@ -464,13 +541,18 @@ describe('StudentDashboard', () => {
   it('handles errors when fetching award assignments data', async () => {
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     (apiClient.get as vi.Mock).mockImplementation((url: string) => {
+      if (url === "api/user/current") {
+        return Promise.resolve({
+          data: { id: 1, is_president: false }
+        });
+      }
       if (url.includes('/api/award-students/')) {
         return Promise.reject(new Error('Failed to fetch awards'));
       }
       if (url === '/api/student-societies') {
         return Promise.resolve({ data: [] });
       }
-      if (url === '/api/events') {
+      if (url === '/api/events/' || url === '/api/events') {
         return Promise.resolve({ data: [] });
       }
       if (url === '/api/notifications/') {
@@ -488,8 +570,13 @@ describe('StudentDashboard', () => {
   });
 
   it('renders the president management button when user is a president', async () => {
-    userMock = { id: 1, is_president: true, president_of: 123 };
+    userMock = { id: 1, is_president: true };
     (apiClient.get as vi.Mock).mockImplementation((url: string) => {
+      if (url === "api/user/current") {
+        return Promise.resolve({
+          data: { id: 1, is_president: true, president_of: 123 }
+        });
+      }
       if (url === '/api/student-societies') {
         return Promise.resolve({
           data: [{ id: 1, name: 'Science Club', is_president: true }],
@@ -509,6 +596,11 @@ describe('StudentDashboard', () => {
 
   it('renders the president badge for societies where the user is president', async () => {
     (apiClient.get as vi.Mock).mockImplementation((url: string) => {
+      if (url === "api/user/current") {
+        return Promise.resolve({
+          data: { id: 1, is_president: false }
+        });
+      }
       if (url === '/api/student-societies') {
         return Promise.resolve({
           data: [{ id: 1, name: 'Science Club', is_president: true }],

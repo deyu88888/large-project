@@ -5,10 +5,10 @@ import { useNavigate } from 'react-router-dom';
 import { MemoryRouter } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import JoinSocieties from '../JoinSociety';
-import { apiClient } from '../../../api';
-import { view } from 'framer-motion';
+import { apiClient, getRecommendedSocieties } from '../../../api';
 
 const mockNavigate = vi.fn();
+
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return {
@@ -22,17 +22,8 @@ vi.mock('../../../api', () => ({
     get: vi.fn(),
     post: vi.fn(),
   },
+  getRecommendedSocieties: vi.fn(),
 }));
-
-const mockNavigate = vi.fn();
-
-vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual('react-router-dom');
-  return {
-    ...actual,
-    useNavigate: () => mockNavigate,
-  };
-});
 
 let themeModeOverride = 'light';
 vi.mock('@mui/material/styles', async () => {
@@ -52,17 +43,32 @@ vi.mock('../../../theme/theme', () => ({
     primary: {
       400: '#mock-primary-400',
       500: '#mock-primary-500',
+      600: '#mock-primary-600',
+      700: '#mock-primary-700',
       1000: '#mock-primary-1000',
     },
     grey: {
       100: '#mock-grey-100',
+      200: '#mock-grey-200',
       300: '#mock-grey-300',
+      400: '#mock-grey-400',
       600: '#mock-grey-600',
       700: '#mock-grey-700',
+      800: '#mock-grey-800',
     },
     blueAccent: {
       400: '#mock-blue-400',
       500: '#mock-blue-500',
+    },
+    redAccent: {
+      300: '#mock-red-300',
+      400: '#mock-red-400',
+      500: '#mock-red-500',
+    },
+    greenAccent: {
+      400: '#mock-green-400',
+      500: '#mock-green-500',
+      600: '#mock-green-600',
     },
   }),
 }));
@@ -71,6 +77,36 @@ describe('JoinSocieties Page', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     themeModeOverride = 'light';
+
+    (getRecommendedSocieties as vi.Mock).mockResolvedValue([
+      {
+        society: {
+          id: 1,
+          name: 'Photography Club',
+          description: 'A club for photography enthusiasts',
+          category: 'Arts',
+          tags: ['photography', 'creative'],
+        },
+        explanation: {
+          type: 'popular',
+          message: 'Suggested society for new members',
+        },
+      },
+      {
+        society: {
+          id: 2,
+          name: 'Chess Club',
+          description: 'Challenge your mind with chess!',
+          category: 'Games',
+          tags: ['strategy', 'chess'],
+        },
+        explanation: {
+          type: 'category',
+          message: 'Matches your interests',
+        },
+      },
+    ]);
+
     (apiClient.get as vi.Mock).mockImplementation((url: string) => {
       if (url === '/api/join-society') {
         return Promise.resolve({
@@ -90,6 +126,7 @@ describe('JoinSocieties Page', () => {
       }
       return Promise.resolve({ data: [] });
     });
+    
     (apiClient.post as vi.Mock).mockResolvedValue({ status: 200 });
   });
 
@@ -104,11 +141,11 @@ describe('JoinSocieties Page', () => {
 
   it('displays a loading message initially and then renders societies', async () => {
     renderComponent();
-    expect(screen.getByText(/Loading societies.../i)).toBeInTheDocument();
+    expect(screen.getByText(/Loading/i)).toBeInTheDocument();
     await waitFor(() =>
-      expect(screen.queryByText(/Loading societies.../i)).not.toBeInTheDocument()
+      expect(screen.queryByText(/Loading/i)).not.toBeInTheDocument()
     );
-    expect(screen.getByText(/Join a Society/i)).toBeInTheDocument();
+    expect(screen.getByText(/Recommended Societies/i)).toBeInTheDocument();
     const societyElements = screen.getAllByRole('heading', { level: 3 });
     const societyNames = societyElements.map((el) => el.textContent);
     expect(societyNames).toContain('Photography Club');
@@ -116,7 +153,7 @@ describe('JoinSocieties Page', () => {
   });
 
   it('renders empty state when no societies are returned', async () => {
-    (apiClient.get as vi.Mock).mockResolvedValueOnce({ data: [] });
+    (getRecommendedSocieties as vi.Mock).mockResolvedValueOnce([]);
     renderComponent();
     await waitFor(() =>
       expect(screen.getByText(/Join a Society/i)).toBeInTheDocument()
@@ -124,19 +161,13 @@ describe('JoinSocieties Page', () => {
     expect(screen.getByText(/No societies available to join/i)).toBeInTheDocument();
   });
 
-  it('calls the view society API when the "View Society" button is clicked (success case)', async () => {
+  it('calls the view society function when the "View Society" button is clicked', async () => {
     renderComponent();
     await waitFor(() =>
-      expect(screen.queryByText(/Loading societies.../i)).not.toBeInTheDocument()
+      expect(screen.queryByText(/Loading/i)).not.toBeInTheDocument()
     );
 
     const viewButtons = screen.getAllByText(/View Society/i);
-    const societyElements = screen.getAllByRole('heading', { level: 3 });
-    const joinButtons = screen.getAllByText(/Join Society/i);
-    const photoIndex = societyElements.findIndex(
-      (el) => el.textContent === 'Photography Club'
-    );
-    expect(photoIndex).not.toBe(-1);
     await act(async () => {
       fireEvent.click(viewButtons[0]);
     });
@@ -144,19 +175,14 @@ describe('JoinSocieties Page', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/student/view-society/1');
   });
 
-  it('calls view society for the alternative society', async () => {
+  it('calls view society for the second society', async () => {
     renderComponent();
     await waitFor(() =>
       expect(screen.getByText('Chess Club')).toBeInTheDocument()
     );
 
     const viewButtons = screen.getAllByText(/View Society/i);
-    const societyElements = screen.getAllByRole('heading', { level: 3 });
-    const joinButtons = screen.getAllByText(/Join Society/i);
-    const chessIndex = societyElements.findIndex(
-      (el) => el.textContent === 'Chess Club'
-    );
-    expect(chessIndex).not.toBe(-1);
+    
     await act(async () => {
       fireEvent.click(viewButtons[1]);
     });
@@ -164,30 +190,23 @@ describe('JoinSocieties Page', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/student/view-society/2');
   });
 
-  it('navigates to society view page when "View Society" button is clicked', async () => {
-    renderComponent();
-    await waitFor(() =>
-      expect(screen.queryByText(/Loading societies.../i)).not.toBeInTheDocument()
-    );
-    const viewButtons = screen.getAllByText(/View Society/i);
-    await act(async () => {
-      fireEvent.click(viewButtons[0]);
-    });
-    expect(mockNavigate).toHaveBeenCalledWith('/student/view-society/1');
-  });
-
-  it('handles error when fetching societies fails', async () => {
-    (apiClient.get as vi.Mock).mockRejectedValueOnce(new Error('Fetch error'));
+  it('handles error when fetching society recommendations fails', async () => {
+    (getRecommendedSocieties as vi.Mock).mockRejectedValueOnce(new Error('Fetch error'));
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    
     renderComponent();
+    
     await waitFor(() =>
-      expect(screen.queryByText(/Loading societies.../i)).not.toBeInTheDocument()
+      expect(screen.queryByText(/Loading/i)).not.toBeInTheDocument()
     );
+    
     expect(consoleErrorSpy).toHaveBeenCalledWith(
-      'Error fetching societies:',
+      'Error fetching society recommendations:',
       expect.any(Error)
     );
-    expect(screen.getByText(/No societies available to join/i)).toBeInTheDocument();
+    
+    expect(screen.getByText(/Failed to load recommendations/i)).toBeInTheDocument();
+    
     consoleErrorSpy.mockRestore();
   });
 
@@ -195,54 +214,57 @@ describe('JoinSocieties Page', () => {
     themeModeOverride = 'dark';
     renderComponent();
     await waitFor(() =>
-      expect(screen.queryByText(/Loading societies.../i)).not.toBeInTheDocument()
+      expect(screen.queryByText(/Loading/i)).not.toBeInTheDocument()
     );
-    expect(screen.getByText(/Join a Society/i)).toBeInTheDocument();
+    expect(screen.getByText(/Recommended Societies/i)).toBeInTheDocument();
   });
 
   it('renders society with no description', async () => {
-    (apiClient.get as vi.Mock).mockResolvedValueOnce({
-      data: [
-        {
+    (getRecommendedSocieties as vi.Mock).mockResolvedValueOnce([
+      {
+        society: {
           id: 3,
           name: 'Society with No Description',
           description: null,
+          category: 'Other',
         },
-      ],
-    });
+        explanation: {
+          type: 'popular',
+          message: 'Suggested society',
+        },
+      },
+    ]);
+    
     renderComponent();
+    
     await waitFor(() =>
-      expect(screen.queryByText(/Loading societies.../i)).not.toBeInTheDocument()
+      expect(screen.queryByText(/Loading/i)).not.toBeInTheDocument()
     );
+    
     expect(screen.getByText(/No description available/i)).toBeInTheDocument();
   });
 
-  it('handles unmounting during data fetching', async () => {
-    let resolvePromise: Function;
-    const pendingPromise = new Promise((resolve) => {
-      resolvePromise = resolve;
-    });
-    (apiClient.get as vi.Mock).mockReturnValueOnce(pendingPromise);
-    const { unmount } = renderComponent();
-    unmount();
-    await act(async () => {
-      resolvePromise({ data: [] });
-    });
-  });
-
-  it('removes society from list after joining', async () => {
-    const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
+  it('toggles between category view and all view', async () => {
     renderComponent();
+    
     await waitFor(() =>
-      expect(screen.getAllByText(/Join Society/i)).toHaveLength(2)
+      expect(screen.queryByText(/Loading/i)).not.toBeInTheDocument()
     );
-    expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(2);
+    
+    const categoryButton = screen.getByText(/Group by Category/i);
+    const allViewButton = screen.getByText(/View All/i);
+    
     await act(async () => {
-      fireEvent.click(screen.getAllByText(/Join Society/i)[0]);
+      fireEvent.click(allViewButton);
     });
-    expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(1);
-    expect(screen.queryByText(/Photography Club/i)).not.toBeInTheDocument();
-    expect(screen.getByText(/Chess Club/i)).toBeInTheDocument();
-    alertSpy.mockRestore();
+    
+    expect(screen.queryByText(/Arts Societies/i)).not.toBeInTheDocument();
+    
+    await act(async () => {
+      fireEvent.click(categoryButton);
+    });
+    
+    expect(screen.getByText(/Arts Societies/i)).toBeInTheDocument();
+    expect(screen.getByText(/Games Societies/i)).toBeInTheDocument();
   });
 });

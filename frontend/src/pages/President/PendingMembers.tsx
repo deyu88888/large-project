@@ -10,17 +10,12 @@ interface PendingMember {
 }
 
 const PendingMembers: React.FC = () => {
-  // Fix the parameter name to match what's in your route config
   const { societyId } = useParams<{ societyId: string }>();
   const [pendingMembers, setPendingMembers] = useState<PendingMember[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Debug logging
-  console.log("URL params:", { societyId });
-
   useEffect(() => {
-    // Check if societyId is valid
     if (!societyId) {
       console.error("societyId is missing from URL params");
       setError("Missing society ID parameter");
@@ -33,9 +28,7 @@ const PendingMembers: React.FC = () => {
 
   const fetchPendingMembers = async (): Promise<void> => {
     try {
-      console.log(`Fetching pending members for society: ${societyId}`);
       const response = await apiClient.get(`/api/society/${societyId}/pending-members/`);
-      console.log("API response:", response.data);
       setPendingMembers(response.data);
     } catch (error) {
       console.error("Error fetching pending members:", error);

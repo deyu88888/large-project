@@ -3,7 +3,7 @@ import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { vi } from 'vitest';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import ReportToAdmin from '../report-to-admin';
+import ReportToAdmin from '../ReportToAdmin';
 import { apiClient } from '../../../api';
 
 vi.mock('../../../api', () => ({

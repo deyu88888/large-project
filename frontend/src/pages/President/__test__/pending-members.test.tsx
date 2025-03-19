@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { vi } from 'vitest';
-import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import { MemoryRouter } from 'react-router-dom';
 import { apiClient } from '../../../api';
 import PendingMembers from '../PendingMembers';
 
@@ -11,6 +11,14 @@ vi.mock('../../../api', () => ({
     post: vi.fn(),
   },
 }));
+
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return {
+    ...actual,
+    useParams: () => ({ societyId: '123' }),
+  };
+});
 
 describe('PendingMembers Component', () => {
   const mockPendingMembers = [
@@ -30,18 +38,16 @@ describe('PendingMembers Component', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (apiClient.get as vi.Mock).mockResolvedValue({
+    (apiClient.get).mockResolvedValue({
       data: mockPendingMembers,
     });
-    (apiClient.post as vi.Mock).mockResolvedValue({});
+    (apiClient.post).mockResolvedValue({});
   });
 
-  function renderComponent(societyId = '123') {
+  function renderComponent() {
     return render(
-      <MemoryRouter initialEntries={[`/president/pending-members/${societyId}`]}>
-        <Routes>
-          <Route path="/president/pending-members/:society_id" element={<PendingMembers />} />
-        </Routes>
+      <MemoryRouter>
+        <PendingMembers />
       </MemoryRouter>
     );
   }
@@ -61,7 +67,7 @@ describe('PendingMembers Component', () => {
   });
 
   it('handles empty pending members list', async () => {
-    (apiClient.get as vi.Mock).mockResolvedValueOnce({ data: [] });
+    (apiClient.get).mockResolvedValueOnce({ data: [] });
     renderComponent();
     await waitFor(() => {
       expect(screen.getByText('No pending membership requests.')).toBeInTheDocument();
@@ -70,7 +76,7 @@ describe('PendingMembers Component', () => {
 
   it('handles API error when fetching pending members', async () => {
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    (apiClient.get as vi.Mock).mockRejectedValueOnce(new Error('Fetch error'));
+    (apiClient.get).mockRejectedValueOnce(new Error('Fetch error'));
     renderComponent();
     await waitFor(() => {
       expect(consoleErrorSpy).toHaveBeenCalledWith(
@@ -113,7 +119,7 @@ describe('PendingMembers Component', () => {
 
   it('handles error when updating member status', async () => {
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    (apiClient.post as vi.Mock).mockRejectedValueOnce(new Error('Update error'));
+    (apiClient.post).mockRejectedValueOnce(new Error('Update error'));
     renderComponent();
     await waitFor(() => {
       expect(screen.getByText('John Doe')).toBeInTheDocument();

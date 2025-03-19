@@ -61,18 +61,15 @@ const ViewSocietyMembers: React.FC = () => {
   }, [societyId, user]);
 
   const handleViewProfile = (memberId: number): void => {
-    // Now navigate to the actual profile page
-    navigate(`/student/profile/${memberId}`);
+    navigate(`/profile/${memberId}`);
   };
 
   const handleGiveAward = (memberId: number): void => {
-    // Navigate to the award page
-    navigate(`/president-page/${societyId}/give-award/${memberId}`);
+    navigate(`../give-award-page/${memberId}`);
   };
 
   const handleAssignRole = (memberId: number): void => {
-    // Navigate to the role assignment page
-    navigate(`/president-page/${societyId}/assign-role/${memberId}`);
+    navigate(`../assign-society-role/${memberId}`);
   };
 
   if (loading) {
