@@ -246,7 +246,7 @@ class Society(models.Model):
         related_name="event_manager_of_society",
         help_text="Assigned event manager of the society",
     )
-        president = models.ForeignKey(
+    president = models.ForeignKey(
         "Student",
         on_delete=models.DO_NOTHING,
         related_name="society",
@@ -639,6 +639,7 @@ class ReportReply(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     replied_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='report_replies')
     is_admin_reply = models.BooleanField(default=False)  # To distinguish between admin and president replies
+    read_by_students = models.ManyToManyField(User, related_name='read_report_replies', blank=True)
     
     def __str__(self):
         reply_type = "Admin" if self.is_admin_reply else "President"
@@ -811,7 +812,6 @@ class BroadcastMessage(models.Model):
     recipients = models.ManyToManyField(User, related_name="received_broadcasts", blank=True)
     message = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
-        return f"{self.user.username}: {self.content[:30]}"
 
 class ActivityLog(models.Model):
     ACTION_CHOICES = [
