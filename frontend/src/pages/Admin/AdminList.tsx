@@ -6,6 +6,7 @@ import { tokens } from "../../theme/theme";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { useSettingsStore } from "../../stores/settings-store";
 import { useNavigate } from "react-router-dom";
+import { useAuthStore } from "../../stores/auth-store";
 
 const AdminList: React.FC = () => {
   const theme = useTheme();
@@ -17,8 +18,8 @@ const AdminList: React.FC = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedAdmin, setSelectedAdmin] = useState<any | null>(null);
   const [reason, setReason] = useState('');
-  const [currentUser, setCurrentUser] = useState<any | null>(null);
-  const isSuperAdmin = currentUser?.is_super_admin === true;
+  const { user } = useAuthStore();
+  const isSuperAdmin = user?.is_super_admin === true;
   const actionsColumnWidth = isSuperAdmin ? 170 : 85;
 
   const getData = async () => {
