@@ -2463,19 +2463,18 @@ class AwardStudentView(APIView):
 
 class AdminReportView(APIView):
     """
-    API view for students and society presidents to submit reports to admins.
+    API view for students and society presidents to submit reports to admins and admins receive reports.
     """
     permission_classes = [IsAuthenticated]
     
     def post(self, request):
         serializer = AdminReportRequestSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(from_student=request.user.student)  #  Auto-assign the reporter
+            serializer.save(from_student=request.user.student)
             return Response({"message": "Report submitted successfully."}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     def get(self, request, report_id=None):
-        # If report_id is provided, return that specific report
         if report_id:
             try:
                 report = AdminReportRequest.objects.get(id=report_id)
@@ -2484,7 +2483,6 @@ class AdminReportView(APIView):
             except AdminReportRequest.DoesNotExist:
                 return Response({"error": "Report not found"}, status=status.HTTP_404_NOT_FOUND)
         
-        # Otherwise return all reports without admin replies
         reports = AdminReportRequest.objects.exclude(
             replies__is_admin_reply=True
         ).order_by("-requested_at")
@@ -2578,22 +2576,18 @@ class AdminReportsWithRepliesView(APIView):
     """
     API view for admins to view reports they've replied to without user response.
     """
-    permission_classes = [IsAuthenticated, IsAdminUser]  # Ensure only admins can access
+    permission_classes = [IsAuthenticated, IsAdminUser]
     
     def get(self, request):
-        # Ensure the user is an admin
         if not hasattr(request.user, 'admin'):
             return Response({"error": "Only admins can access this endpoint."}, 
                             status=status.HTTP_403_FORBIDDEN)
         
-        # Get all reports
         all_reports = AdminReportRequest.objects.all().order_by("-requested_at")
         
-        # Filter reports that admin has replied to
         reports_with_admin_replies = []
         
         for report in all_reports:
-            # Check if admin has replied to this report
             admin_replies = ReportReply.objects.filter(
                 report=report,
                 is_admin_reply=True
@@ -2602,18 +2596,14 @@ class AdminReportsWithRepliesView(APIView):
             if admin_replies.exists():
                 latest_admin_reply = admin_replies.first()
                 
-                # Check if there are any user replies after the latest admin reply
                 newer_user_replies = ReportReply.objects.filter(
                     report=report,
                     is_admin_reply=False,
                     created_at__gt=latest_admin_reply.created_at
                 ).exists()
                 
-                # If no newer user replies, include this report
                 if not newer_user_replies:
-                    # Serialize the report
                     report_data = AdminReportRequestSerializer(report).data
-                    # Add all replies to this report
                     all_replies = ReportReply.objects.filter(report=report).order_by('created_at')
                     report_data['replies'] = ReportReplySerializer(all_replies, many=True).data
                     reports_with_admin_replies.append(report_data)
@@ -2627,37 +2617,27 @@ class AdminRepliesListView(APIView):
     permission_classes = [IsAuthenticated]
     
     def get(self, request):
-        # Ensure the user is an admin
         if not hasattr(request.user, 'admin'):
             return Response({"error": "Only admins can access this endpoint."}, 
                             status=status.HTTP_403_FORBIDDEN)
         
-        # Get all reports
         all_reports = AdminReportRequest.objects.all().order_by("-requested_at")
         
-        # Filter reports that need admin attention
         reports_needing_attention = []
         
         for report in all_reports:
-            # Get all replies for this report
             replies = ReportReply.objects.filter(report=report).order_by('created_at')
             
             if replies.exists():
-                # Get the most recent reply
                 latest_reply = replies.order_by('-created_at').first()
                 
-                # Check if the latest reply is from a student (not an admin)
                 if not latest_reply.is_admin_reply:
-                    # Serialize the report
                     report_data = AdminReportRequestSerializer(report).data
-                    # Add report creator's name
                     if report.from_student:
                         report_data['from_student_name'] = report.from_student.get_full_name() or report.from_student.username
                     else:
                         report_data['from_student_name'] = "Unknown"
-                    # Add all replies to this report
                     report_data['replies'] = ReportReplySerializer(replies, many=True).data
-                    # Add the latest reply information
                     report_data['latest_reply'] = {
                         'content': latest_reply.content,
                         'created_at': latest_reply.created_at,
@@ -2675,20 +2655,16 @@ class ReportThreadView(APIView):
     
     def get(self, request, report_id):
         try:
-            # Get the report
             report = AdminReportRequest.objects.get(id=report_id)
             
-            # Check permissions
             user = request.user
             is_admin = hasattr(user, 'admin')
             is_creator = hasattr(user, 'student') and user.student == report.from_student
             
-            # Check if user is a president
             is_president = False
             if hasattr(user, 'student'):
                 is_president = user.student.is_president
             
-            # Check if user has participated in this thread
             has_replied = ReportReply.objects.filter(
                 report=report, 
                 replied_by=user
@@ -2700,13 +2676,11 @@ class ReportThreadView(APIView):
                     status=status.HTTP_403_FORBIDDEN
                 )
             
-            # Get top-level replies (no parent)
             top_replies = ReportReply.objects.filter(
                 report=report, 
                 parent_reply=None
             ).order_by('created_at')
             
-            # Function to recursively get replies
             def get_nested_replies(reply):
                 reply_data = ReportReplySerializer(reply).data
                 child_replies = ReportReply.objects.filter(parent_reply=reply).order_by('created_at')
@@ -2716,7 +2690,6 @@ class ReportThreadView(APIView):
                     reply_data['child_replies'] = []
                 return reply_data
             
-            # Structure the report with hierarchical replies
             report_data = AdminReportRequestSerializer(report).data
             report_data['replies'] = [get_nested_replies(reply) for reply in top_replies]
             
