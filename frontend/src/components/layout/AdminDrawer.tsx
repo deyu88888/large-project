@@ -68,15 +68,6 @@ const AdminDrawer: React.FC<AdminDrawerProps> = ({
 
   ];
 
-    // Check if user is super admin before adding the menu item
-  if (user?.is_super_admin) {
-    menuItems.push({
-      title: "Create Admin",
-      icon: <PersonAddAltIcon />,
-      to: "/admin/create-admin",
-    });
-  }
-
   const additionalItems = [
     {
       title: "My Team",
@@ -84,16 +75,20 @@ const AdminDrawer: React.FC<AdminDrawerProps> = ({
       to: "/admin/my-team",
     },
     {
-      title: "Create Admin",
-      icon: <PersonAddAltIcon />,
-      to: "/admin/create-admin",
-    },
-    {
       title: "Activity Log",
       icon: <ManageHistoryIcon />,
       to: "/admin/activity-log",
     },
   ];
+  
+  // Check if user is super admin before adding the menu item
+  if (user?.is_super_admin) {
+    additionalItems.push({
+      title: "Create Admin",
+      icon: <PersonAddAltIcon />,
+      to: "/admin/create-admin",
+    });
+  }
 
   const logout = () => {
     localStorage.removeItem("access");
