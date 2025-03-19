@@ -1,11 +1,10 @@
 import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 import { ThemeProvider, createTheme } from "@mui/material";
 import { vi } from "vitest";
-import LoginPage from "../login";
+import LoginPage, { ACCESS_TOKEN, REFRESH_TOKEN } from "../login";
 import { apiClient } from "../../api";
 import * as router from "react-router-dom";
 
-// Mock dependencies
 vi.mock("../../api", () => ({
   apiClient: {
     post: vi.fn()
@@ -17,7 +16,6 @@ vi.mock("../../api", () => ({
   }
 }));
 
-// Mock the navigate function
 const mockNavigate = vi.fn();
 vi.mock("react-router-dom", async () => {
   const actual = await vi.importActual("react-router-dom");
@@ -27,7 +25,6 @@ vi.mock("react-router-dom", async () => {
   };
 });
 
-// Mock localStorage
 const localStorageMock = (() => {
   let store = {};
   return {
@@ -68,46 +65,48 @@ describe("LoginPage Component", () => {
   it("renders the login form correctly", () => {
     renderLoginPage();
     
-    expect(screen.getByText("Login")).toBeInTheDocument();
+    expect(screen.getByTestId("login-heading")).toBeInTheDocument();
     expect(screen.getByLabelText("Username")).toBeInTheDocument();
     expect(screen.getByLabelText("Password")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Login" })).toBeInTheDocument();
+    expect(screen.getByTestId("login-button")).toBeInTheDocument();
     expect(screen.getByText(/Need to sign up\?/)).toBeInTheDocument();
     expect(screen.getByText("Please register.")).toBeInTheDocument();
   });
 
-  it("allows typing in the username and password fields", () => {
+  it("allows typing in the username and password fields", async () => {
     renderLoginPage();
     
     const usernameInput = screen.getByLabelText("Username");
     const passwordInput = screen.getByLabelText("Password");
     
-    fireEvent.change(usernameInput, { target: { value: "testuser" } });
-    fireEvent.change(passwordInput, { target: { value: "password123" } });
+    await act(async () => {
+      fireEvent.change(usernameInput, { target: { value: "testuser" } });
+      fireEvent.change(passwordInput, { target: { value: "password123" } });
+    });
     
     expect(usernameInput).toHaveValue("testuser");
     expect(passwordInput).toHaveValue("password123");
   });
 
-  it("toggles password visibility when the visibility icon is clicked", () => {
+  it("toggles password visibility when the visibility icon is clicked", async () => {
     renderLoginPage();
     
     const passwordInput = screen.getByLabelText("Password");
     
-    // Initially password should be hidden
     expect(passwordInput).toHaveAttribute("type", "password");
     
-    // Click the visibility toggle button
-    const visibilityButton = screen.getByRole("button", { name: "" });
-    fireEvent.click(visibilityButton);
+    await act(async () => {
+      const visibilityButton = screen.getByRole("button", { name: "" });
+      fireEvent.click(visibilityButton);
+    });
     
-    // Password should now be visible
     expect(passwordInput).toHaveAttribute("type", "text");
     
-    // Click again to hide
-    fireEvent.click(visibilityButton);
+    await act(async () => {
+      const visibilityButton = screen.getByRole("button", { name: "" });
+      fireEvent.click(visibilityButton);
+    });
     
-    // Password should be hidden again
     expect(passwordInput).toHaveAttribute("type", "password");
   });
 
@@ -123,66 +122,66 @@ describe("LoginPage Component", () => {
     
     const usernameInput = screen.getByLabelText("Username");
     const passwordInput = screen.getByLabelText("Password");
-    const loginButton = screen.getByRole("button", { name: "Login" });
+    const loginButton = screen.getByTestId("login-button");
     
-    // Fill the form
-    fireEvent.change(usernameInput, { target: { value: "testuser" } });
-    fireEvent.change(passwordInput, { target: { value: "password123" } });
+    await act(async () => {
+      fireEvent.change(usernameInput, { target: { value: "testuser" } });
+      fireEvent.change(passwordInput, { target: { value: "password123" } });
+    });
     
-    // Submit the form
     await act(async () => {
       fireEvent.click(loginButton);
     });
     
-    // Check API was called with correct data
     expect(apiClient.post).toHaveBeenCalledWith("/api/user/login", {
       username: "testuser",
       password: "password123"
     });
     
-    // Check tokens were saved to localStorage
-    expect(localStorageMock.setItem).toHaveBeenCalledWith("ACCESS_TOKEN", "mock-access-token");
-    expect(localStorageMock.setItem).toHaveBeenCalledWith("REFRESH_TOKEN", "mock-refresh-token");
+    expect(localStorageMock.setItem).toHaveBeenCalledWith(ACCESS_TOKEN, "mock-access-token");
+    expect(localStorageMock.setItem).toHaveBeenCalledWith(REFRESH_TOKEN, "mock-refresh-token");
     
-    // Check navigation happened
     expect(mockNavigate).toHaveBeenCalledWith("/");
   });
 
   it("shows loading state while submitting the form", async () => {
-    // Delay the API response to show loading state
+    let resolvePromise;
+    
     apiClient.post.mockImplementationOnce(() => 
-      new Promise(resolve => 
-        setTimeout(() => resolve({ data: { access: "token", refresh: "token" } }), 100)
-      )
+      new Promise(resolve => {
+        resolvePromise = () => resolve({ data: { access: "token", refresh: "token" } });
+      })
     );
     
     renderLoginPage();
     
     const usernameInput = screen.getByLabelText("Username");
     const passwordInput = screen.getByLabelText("Password");
-    const loginButton = screen.getByRole("button", { name: "Login" });
+    const loginButton = screen.getByTestId("login-button");
     
-    // Fill the form
-    fireEvent.change(usernameInput, { target: { value: "testuser" } });
-    fireEvent.change(passwordInput, { target: { value: "password123" } });
+    await act(async () => {
+      fireEvent.change(usernameInput, { target: { value: "testuser" } });
+      fireEvent.change(passwordInput, { target: { value: "password123" } });
+    });
     
-    // Submit the form
-    fireEvent.click(loginButton);
+    await act(async () => {
+      fireEvent.click(loginButton);
+    });
     
-    // Loading indicator should appear
-    expect(screen.getByRole("progressbar")).toBeInTheDocument();
+    expect(screen.getByTestId("loading-indicator")).toBeInTheDocument();
     
-    // Wait for API call to resolve
+    await act(async () => {
+      resolvePromise();
+    });
+    
     await waitFor(() => {
       expect(apiClient.post).toHaveBeenCalled();
     });
   });
 
   it("handles API errors during login", async () => {
-    // Mock the window.alert
     const alertMock = vi.spyOn(window, "alert").mockImplementation(() => {});
     
-    // Mock API to reject
     const errorMessage = "Invalid credentials";
     apiClient.post.mockRejectedValueOnce(errorMessage);
     
@@ -190,24 +189,21 @@ describe("LoginPage Component", () => {
     
     const usernameInput = screen.getByLabelText("Username");
     const passwordInput = screen.getByLabelText("Password");
-    const loginButton = screen.getByRole("button", { name: "Login" });
+    const loginButton = screen.getByTestId("login-button");
     
-    // Fill the form
-    fireEvent.change(usernameInput, { target: { value: "testuser" } });
-    fireEvent.change(passwordInput, { target: { value: "wrongpassword" } });
+    await act(async () => {
+      fireEvent.change(usernameInput, { target: { value: "testuser" } });
+      fireEvent.change(passwordInput, { target: { value: "wrongpassword" } });
+    });
     
-    // Submit the form
     await act(async () => {
       fireEvent.click(loginButton);
     });
     
-    // Check alert was shown with error message
     expect(alertMock).toHaveBeenCalledWith(errorMessage);
     
-    // Navigation should not happen
     expect(mockNavigate).not.toHaveBeenCalled();
     
-    // Cleanup
     alertMock.mockRestore();
   });
 
