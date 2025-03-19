@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Calendar, momentLocalizer } from "react-big-calendar";
-import moment from "moment";
+import moment from "moment-timezone";
 import { Box, CircularProgress, Typography, useTheme, Dialog, DialogTitle, DialogContent, DialogActions, Button, Chip, Alert, IconButton } from "@mui/material";
 import { FaCalendarCheck, FaCalendarTimes, FaMapMarkerAlt, FaUsers, FaInfoCircle, FaSync } from "react-icons/fa";
 import { tokens } from "../../theme/theme";
@@ -17,12 +17,12 @@ interface SocietyData {
 interface EventData {
   id: number;
   title: string;
-  date: string;
-  startTime: string;
-  duration: string;
   description?: string;
+  date: string;
+  start_time: string;
+  duration: string;
   location?: string;
-  hostedBy: number;
+  hosted_by: number;
   societyName?: string;
   rsvp?: boolean;
 }
@@ -64,7 +64,7 @@ function StudentCalendar({
     if (!userEvents) return;
     setLoading(true);
     try {
-      const filtered = userEvents.filter(e => societyIds.includes(e.hostedBy));
+      const filtered = userEvents.filter(e => societyIds.includes(e.hosted_by));
       transformEvents(filtered);
     } catch (err) {
       console.error("Error transforming userEvents:", err);
@@ -87,7 +87,7 @@ function StudentCalendar({
       if (!response.data) {
         throw new Error("No data received from API");
       }
-      const filtered = response.data.filter(e => societyIds.includes(e.hostedBy));
+      const filtered = response.data.filter(e => societyIds.includes(e.hosted_by));
       transformEvents(filtered);
     } catch (err) {
       console.error("Error fetching events:", err);
@@ -99,10 +99,10 @@ function StudentCalendar({
 
   function transformEvents(eventsData: EventData[]) {
     const formatted = eventsData.map(event => {
-      const startDate = parseDateTime(event.date, event.startTime, timezone);
+      const startDate = parseDateTime(event.date, event.start_time, timezone);
       const endDate = calculateEndTime(startDate, event.duration);
-      const society = societies.find(s => s.id === event.hostedBy);
-      const societyName = society ? society.name : event.societyName || `Society ${event.hostedBy}`;
+      const society = societies.find(s => s.id === event.hosted_by);
+      const societyName = society ? society.name : event.societyName || `Society ${event.hosted_by}`;
       return {
         id: event.id,
         title: event.title,
@@ -110,7 +110,7 @@ function StudentCalendar({
         end: endDate,
         description: event.description || "",
         location: event.location || "",
-        societyId: event.hostedBy,
+        societyId: event.hosted_by,
         societyName,
         rsvp: event.rsvp || false,
       };
@@ -265,11 +265,7 @@ function StudentCalendar({
             </Box>
           </Box>
           {memoizedEvents.length === 0 ? (
-            <Typography
-              variant="body1"
-              align="center"
-              sx={{ color: colours.grey[300], py: 4 }}
-            >
+            <Typography variant="body1" align="center" sx={{ color: colours.grey[300], py: 4 }}>
               No events from your societies
             </Typography>
           ) : (
@@ -327,9 +323,7 @@ function StudentCalendar({
           <>
             <DialogTitle
               style={{
-                backgroundColor: eventStyleGetter(
-                  selectedEvent
-                ).style.backgroundColor,
+                backgroundColor: eventStyleGetter(selectedEvent).style.backgroundColor,
                 color: "#ffffff",
                 borderTopLeftRadius: "12px",
                 borderTopRightRadius: "12px",
@@ -403,7 +397,9 @@ function StudentCalendar({
                 sx={{
                   backgroundColor: selectedEvent.rsvp ? colours.redAccent[500] : colours.blueAccent[500],
                   "&:hover": {
-                    backgroundColor: selectedEvent.rsvp ? colours.redAccent[600] : colours.blueAccent[600],
+                    backgroundColor: selectedEvent.rsvp
+                      ? colours.redAccent[600]
+                      : colours.blueAccent[600],
                   },
                 }}
               >
