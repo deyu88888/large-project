@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { Box, Typography, useTheme } from "@mui/material";
 import { FaUsers, FaCalendarAlt, FaEnvelope } from "react-icons/fa";
 import Header from "../../components/Header";
-import BarChart from "../../components/graphs/BarChart";
 import { tokens } from "../../theme/theme";
 import { apiClient } from "../../api";
 import { useSettingsStore } from "../../stores/settings-store";
@@ -153,21 +152,6 @@ const AdminDashboard = () => {
                 title="Pending Requests"
                 value={notifications.length}
               />
-            </section>
-
-            {/* Societies Bar Chart */}
-            <section className="mb-16">
-              <Typography variant="h5" color={colours.grey[100]} gutterBottom>
-                Societies Overview
-              </Typography>
-              <div style={{ height: "300px" }}>
-                <BarChart
-                  data={societiesData.map((society) => ({
-                    country: society.name,
-                    members: society.societyMembers.length,
-                  }))}
-                />
-              </div>
             </section>
 
             {/* Notifications */}
