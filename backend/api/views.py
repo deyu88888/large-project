@@ -23,7 +23,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticate
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from api.models import Admin, AdminReportRequest, Event, Notification, Society, Student, User, Award, AwardStudent, \
+from api.models import AdminReportRequest, Event, Notification, Society, Student, User, Award, AwardStudent, \
     UserRequest, DescriptionRequest, AdminReportRequest, Comment, ActivityLog, ReportReply
 from api.serializers import (
     AdminReportRequestSerializer,
@@ -503,7 +503,7 @@ class ManageStudentDetailsAdminView(APIView):
 
     def get(self, request, student_id):
         user = request.user
-        if not hasattr(user, 'admin'):
+        if not (user.role == "admin" or user.is_super_admin):
             return Response({"error": "Only admins can access this endpoint."}, status=status.HTTP_403_FORBIDDEN)
         
         student = Student.objects.filter(id=student_id).first()
@@ -515,7 +515,7 @@ class ManageStudentDetailsAdminView(APIView):
 
     def patch(self, request, student_id):
         user = request.user
-        if not hasattr(user, 'admin'):
+        if not (user.role == "admin" or user.is_super_admin):
             return Response({"error": "Only admins can update student details."}, status=status.HTTP_403_FORBIDDEN)
 
         student = Student.objects.filter(id=student_id).first()
@@ -570,9 +570,7 @@ class SocietyRequestView(APIView):
     """
     def get(self, request, society_status):
         user = request.user
-
-        # Ensure the user is an admin
-        if not hasattr(user, "admin"):
+        if not (user.role == "admin" or user.is_super_admin):
             return Response(
                 {"error": "Only admins can view society requests."},
                 status=status.HTTP_403_FORBIDDEN
@@ -590,9 +588,7 @@ class SocietyRequestView(APIView):
         PUT request to update the status of the society request from pending to approved or rejected for admins.
         """
         user = request.user
-        print("society_id", society_id, type(society_id))
-        # Ensure the user is an admin
-        if not hasattr(user, "admin"):
+        if not (user.role == "admin" or user.is_super_admin):
             return Response(
                 {"error": "Only admins can approve or reject society requests."},
                 status=status.HTTP_403_FORBIDDEN
@@ -760,7 +756,7 @@ class ManageSocietyDetailsAdminView(APIView):
 
     def get(self, request, society_id):
         user = request.user
-        if not hasattr(user, 'admin'):
+        if not (user.role == "admin" or user.is_super_admin):
             return Response({"error": "Only admins can access this endpoint."}, status=status.HTTP_403_FORBIDDEN)
         society = Society.objects.filter(id=society_id).first()
         if not society:
@@ -770,7 +766,7 @@ class ManageSocietyDetailsAdminView(APIView):
 
     def patch(self, request, society_id):
         user = request.user
-        if not hasattr(user, 'admin'):
+        if not (user.role == "admin" or user.is_super_admin):
             return Response({"error": "Only admins can update society details."}, status=status.HTTP_403_FORBIDDEN)
 
         society = Society.objects.filter(id=society_id).first()
@@ -857,7 +853,7 @@ class ManageEventDetailsAdminView(APIView):
 
     def get(self, request, event_id):
         user = request.user
-        if not hasattr(user, 'admin'):
+        if not (user.role == "admin" or user.is_super_admin):
             return Response({"error": "Only admins can access this endpoint."}, status=status.HTTP_403_FORBIDDEN)
         event = Event.objects.filter(id=event_id).first()
         if not event:
@@ -867,7 +863,7 @@ class ManageEventDetailsAdminView(APIView):
 
     def patch(self, request, event_id):
         user = request.user
-        if not hasattr(user, 'admin'):
+        if not (user.role == "admin" or user.is_super_admin):
             return Response({"error": "Only admins can update event details."}, status=status.HTTP_403_FORBIDDEN)
         
         event = Event.objects.filter(id=event_id).first()
@@ -977,7 +973,7 @@ class DeleteView(APIView):
 
     def delete(self, request, target_type, target_id):
         user = request.user
-        if not hasattr(user, 'admin'):
+        if not (user.role == "admin" or user.is_super_admin):
             return Response({"error": "Only admins can delete resources."}, status=status.HTTP_403_FORBIDDEN)
 
         model = self.model_mapping.get(target_type)
@@ -1170,7 +1166,7 @@ class DeleteView(APIView):
                     print(f"Error setting approved_by: {str(e)}")
             
             # Handle student role foreign keys
-            for role in ['leader', 'vice_president', 'event_manager', 'treasurer']:
+            for role in ['leader', 'vice_president', 'event_manager']:
                 if role in data and data[role] and isinstance(data[role], dict):
                     role_id = data[role].get('id')
                     if role_id:
@@ -2169,8 +2165,7 @@ class EventRequestView(APIView):
         PUT request to update the status of the event request from pending to approved or rejected for admins
         """
         user = request.user
-
-        if not hasattr(user, "admin"):
+        if not (user.role == "admin" or user.is_super_admin):
             return Response({"error": "Only admins can approve or reject event requests."}, status=status.HTTP_403_FORBIDDEN)
 
         event = Event.objects.filter(id=event_id).first()
@@ -2505,16 +2500,14 @@ class ReportReplyView(APIView):
             # Get parent reply if provided
             parent_reply_id = serializer.validated_data.get('parent_reply')
             print("Parent reply ID:", parent_reply_id)  # Debug line
-            
             # Check permissions
             user = request.user
-            is_admin = hasattr(user, 'admin')
-            is_president = hasattr(user, 'society_president')
-            
-            # Rule 1: If no parent reply, only admins can reply to reports
-            if parent_reply_id is None and not is_admin:
-                return Response({"error": "Only admins can reply to reports directly."}, 
-                                status=status.HTTP_403_FORBIDDEN)
+            if parent_reply_id is None and not (user.role == "admin" or user.is_super_admin):
+                return Response(
+                    {"error": "Only admins or super admins can reply to reports directly."}, 
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
             
             # Rule 2: If there's a parent reply, check if it's an admin reply
             if parent_reply_id:
@@ -2534,12 +2527,14 @@ class ReportReplyView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     def get(self, request, report_id=None):
-        """Get all replies for a specific report"""
+        """Get all replies or replies for a specific report"""
         if report_id:
             replies = ReportReply.objects.filter(report_id=report_id, parent_reply=None).order_by('created_at')
-            serializer = ReportReplySerializer(replies, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response({"error": "Report ID is required"}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            replies = ReportReply.objects.all().order_by('created_at')
+        
+        serializer = ReportReplySerializer(replies, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class MyReportsView(APIView):
     """
@@ -2579,7 +2574,8 @@ class AdminReportsWithRepliesView(APIView):
     permission_classes = [IsAuthenticated, IsAdminUser]
     
     def get(self, request):
-        if not hasattr(request.user, 'admin'):
+        user = request.user
+        if not (user.role == "admin" or user.is_super_admin):
             return Response({"error": "Only admins can access this endpoint."}, 
                             status=status.HTTP_403_FORBIDDEN)
         
@@ -2617,7 +2613,8 @@ class AdminRepliesListView(APIView):
     permission_classes = [IsAuthenticated]
     
     def get(self, request):
-        if not hasattr(request.user, 'admin'):
+        user = request.user
+        if not (user.role == "admin" or user.is_super_admin):
             return Response({"error": "Only admins can access this endpoint."}, 
                             status=status.HTTP_403_FORBIDDEN)
         
@@ -2646,6 +2643,60 @@ class AdminRepliesListView(APIView):
                     reports_needing_attention.append(report_data)
         
         return Response(reports_needing_attention, status=status.HTTP_200_OK)
+
+class ReportReplyNotificationsView(APIView):
+    """
+    student notifications for replies to their reports
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        student = request.user.student
+        
+        student_reports = AdminReportRequest.objects.filter(from_student=student)
+        replies = ReportReply.objects.filter(
+            report__in=student_reports
+        ).filter(
+            Q(replied_by__role="admin") | Q(replied_by__is_super_admin=True)
+        ).order_by('-created_at')
+
+        notifications = []
+        for reply in replies:
+            replier_name = reply.replied_by.get_full_name() if reply.replied_by else "Admin"
+            is_read = request.user in reply.read_by_students.all()
+            notifications.append({
+                'id': reply.id,
+                'report_id': reply.report.id,
+                'header': f"New Reply to Your Report",
+                'body': f"{replier_name} replied to your report regarding {reply.report.report_type}",
+                'created_at': reply.created_at,
+                'is_read': is_read,
+                'type': "report_reply",
+                'content_preview': reply.content[:100] + "..." if len(reply.content) > 100 else reply.content
+            })
+        
+        return Response(notifications, status=status.HTTP_200_OK)
+
+    def patch(self, request, reply_id):
+        """
+        Mark a specific reply as read
+        """
+        try:
+            student = request.user.student
+            
+            # Verify this reply belongs to one of the student's reports
+            reply = ReportReply.objects.get(
+                id=reply_id,
+                report__from_student=student
+            )
+            
+            # Mark as read by adding user to read_by_students
+            reply.read_by_students.add(request.user)
+            
+            return Response({"status": "success"}, status=status.HTTP_200_OK)
+        except ReportReply.DoesNotExist:
+            return Response({"error": "Reply not found or not authorized"}, status=status.HTTP_404_NOT_FOUND)
+
 
 class ReportThreadView(APIView):
     """
@@ -2827,8 +2878,7 @@ class DescriptionRequestView(APIView):
     def get(self, request):
         """Get all pending description requests (Admins only)."""
         user = request.user
-
-        if not hasattr(user, "admin"):
+        if not (user.role == "admin" or user.is_super_admin):
             return Response(
                 {"error": "Only admins can view pending description requests."},
                 status=status.HTTP_403_FORBIDDEN
@@ -2841,9 +2891,7 @@ class DescriptionRequestView(APIView):
     def put(self, request, request_id):
         """Approve or reject a pending description request."""
         user = request.user
-
-        # ensure the user is an admin
-        if not hasattr(user, "admin"):
+        if not (user.role == "admin" or user.is_super_admin):
             return Response(
                 {"error": "Only admins can approve or reject description requests."},
                 status=status.HTTP_403_FORBIDDEN
@@ -3005,7 +3053,7 @@ class ActivityLogView(APIView):
     
     def delete(self, request, log_id):
         user = request.user
-        if not hasattr(user, 'admin'):
+        if not (user.role == "admin" or user.is_super_admin):
             return Response({"error": "Only admins can delete activity logs."}, status=status.HTTP_403_FORBIDDEN)
         activity_log = ActivityLog.objects.filter(id=log_id).first()
         if not activity_log:
