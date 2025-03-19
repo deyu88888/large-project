@@ -185,6 +185,10 @@ const routes = [
             path: "activity-log",
             element: <ActivityLogPage />,
           },
+          {
+            path: "my-team",
+            element: <AdminListPage/>
+          }
         ],
       },
       {
@@ -208,9 +212,7 @@ const routes = [
           { path: "join-society", element: <PageWithTitle title="Join a Society"><JoinSocietiesPage /></PageWithTitle> },
           { path: "view-society/:society_id", element: <PageWithTitle title="Society Details"><ViewSocietyPage /></PageWithTitle> },
           { path: "profile/:userId", element: <PageWithTitle title="User Profile"><ProfilePage /></PageWithTitle> },
-          { path: "my-reports", element: <PageWithTitle title="View Reports"><ViewReports /></PageWithTitle>},
           { path: "report-thread/:reportId", element:  <PageWithTitle title="Report Thread"><ReportThread /></PageWithTitle>},
-          { path: "replies", element:  <PageWithTitle title="Replies"><RepliesPage /></PageWithTitle>},
         ],
       },
       {
