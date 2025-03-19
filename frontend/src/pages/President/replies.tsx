@@ -13,7 +13,7 @@ const Replies: React.FC = () => {
   useEffect(() => {
     const fetchReplies = async () => {
       try {
-        const response = await apiClient.get("/api/replies");
+        const response = await apiClient.get("/api/report-replies");
         setReplies(response.data); // Assuming the response contains an array of replies
       } catch (error) {
         setError("Failed to load replies.");
