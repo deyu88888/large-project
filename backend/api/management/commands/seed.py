@@ -63,52 +63,14 @@ class Command(BaseCommand):
             )
 
             if created:
-                self.stdout.write(self.style.SUCCESS(f"✅ Super Admin '{admin['username']}' created."))
+                self.stdout.write(self.style.SUCCESS(f"Super Admin '{admin['username']}' created."))
             else:
-                self.stdout.write(self.style.WARNING(f"⚠️ Super Admin '{admin['username']}' already exists."))
+                self.stdout.write(self.style.WARNING(f"Super Admin '{admin['username']}' already exists."))
 
-        # Create/Get Admin
-        for i in range(1, 6):  # Create 5 normal admins
-            user, created = User.objects.get_or_create(
-                username=f"admin{i}",
-                defaults={
-                    "email": f"admin{i}@example.com",
-                    "first_name": f"Admin{i}",
-                    "last_name": "User",
-                    "password": make_password("adminpassword"),
-                    "role": "admin",
-                    "is_staff": True,
-                },
-            )
-            if created:
-                self.stdout.write(self.style.SUCCESS(f"✅ Admin 'admin{i}' created."))
-            else:
-                self.stdout.write(self.style.WARNING(f"⚠️ Admin 'admin{i}' already exists."))
+        # Create/Get Admin using create_admin, to avoid code duplication
+        self.create_admin(5)
 
-      
         self.create_student(100)
-
-        president, _ = Student.objects.get_or_create(
-            username="president_user",
-            defaults={
-                "email": "president@example.com",
-                "first_name": "John",
-                "last_name": "Doe",
-                "password": make_password("presidentpassword"),
-                "major": "Mechanical Engineering",
-            },
-        )
-        self.create_society(name="Robotics Club", president_force=president)
-        self.create_society(35)
-
-        self.create_event(20)
-
-        self.pre_define_awards()
-        self.randomly_assign_awards(50)
-
-        self.broadcast_updates()
-
-        self.stdout.write(self.style.SUCCESS("🎉 Seeding complete!"))
 
         student, _ = get_or_create_user(
             Student,
@@ -147,6 +109,17 @@ class Command(BaseCommand):
                  "major": "Electrical Engineering"
              },
          )
+        event_manager, _ = get_or_create_user(
+            Student,
+            username="event_manager_user",
+            email="eventmanager@example.com",
+            first_name="Event",
+            last_name="Manager",
+            defaults={
+                "password": make_password("eventmanagerpassword"),
+                "major": "Digital Arts"
+            },
+        )
 
         self.create_student(100)
         self.create_society(
@@ -155,7 +128,6 @@ class Command(BaseCommand):
         )
         self.create_society(35)
 
-        self.create_society(name="Robotics Club", president_force=president)
         society = Society.objects.filter(name="Robotics Club").first()
         society.society_members.add(student)
         society.icon = "pre-seed-icons/robotics.jpg"
@@ -166,15 +138,19 @@ class Command(BaseCommand):
         president.save()
         self.generate_random_event(society)
         society.vice_president = vice_president
+        society.event_manager = event_manager
         society.society_members.add(vice_president)
+        society.society_members.add(event_manager)
         society.save()
-
-        self.create_society(35)  # Continue creating other societies
+        vice_president.is_vice_president = True
+        vice_president.save()
+        event_manager.is_event_manager = True
+        event_manager.save()
+        self.create_society(35)
         self.create_event(35)
         self.pre_define_awards()
         self.randomly_assign_awards(50)
 
-        # Broadcast updates to the WebSocket
         self.broadcast_updates()
 
         self.stdout.write(self.style.SUCCESS("Seeding complete!"))
@@ -182,33 +158,43 @@ class Command(BaseCommand):
     def create_student(self, n):
         """Create n different students"""
         generator = RandomStudentDataGenerator()
+        created_count = 0
+        attempts = 0
+        max_attempts = n * 2  # Prevent infinite loop
 
-        for i in range(1, n + 1):
-            print(f"Seeding student {i}/{n}", end='\r', flush=True)
+        while created_count < n and attempts < max_attempts:
+            attempts += 1
+            print(f"Seeding student {created_count}/{n} (Attempt {attempts})", end='\r', flush=True)
 
             data = generator.generate()
-            email = f"{data['username']}@kcl.ac.uk"
+            
+            base_email = f"{data['username']}@kcl.ac.uk"
+            email = base_email
+            counter = 1
 
-            # Ensure unique email constraint is respected
-            student, created = Student.objects.get_or_create(
-                email=email,  # Email is the lookup field to prevent duplicates
-                username=data["username"],
-                first_name=data["first_name"],
-                last_name=data["last_name"],
-                major=data["major"],
-                defaults={
-                    "username": data["username"],
-                    "first_name": data["first_name"],
-                    "last_name": data["last_name"],
-                    "major": data["major"],
-                    "password": make_password("studentpassword"),
-                },
-            )
+            while Student.objects.filter(email=email).exists():
+                email = f"{data['username']}{counter}@kcl.ac.uk"
+                counter += 1
 
-            if created:
-                self.handle_user_status(student)  # Handle additional setup if needed
+            try:
+                student = Student.objects.create(
+                    email=email,
+                    username=data["username"] + str(counter-1) if counter > 1 else data["username"],
+                    first_name=data["first_name"],
+                    last_name=data["last_name"],
+                    major=data["major"],
+                    password=make_password("studentpassword"),
+                )
 
-        print(self.style.SUCCESS(f"Seeding student {n}/{n}"), flush=True)
+                self.handle_user_status(student)
+                created_count += 1
+
+            except Exception as e:
+                print(f"\nError creating student: {e}")
+                continue
+
+        print(self.style.SUCCESS(f"Seeding student {created_count}/{n}"), flush=True)
+        return created_count
 
     def handle_user_status(self, user):
         """Creates user requests if pending"""
@@ -230,6 +216,8 @@ class Command(BaseCommand):
                 email=f"admin{i}@example.com",
                 first_name=f"admin{i}",
                 last_name="User",
+                role="admin",
+                is_staff=True,
                 defaults={"password": make_password("adminpassword")},
             )
         print(self.style.SUCCESS(f"Seeding admin {n}/{n}"), flush=True)
@@ -331,14 +319,19 @@ class Command(BaseCommand):
         society.society_members.add(society.president)
         society.society_members.add(*selected_members)
 
-        # Assign roles (ensure at least 2 roles)
+        # Assign roles (ensure at least 3 roles for president, vp, and event manager)
         if len(selected_members) >= 3:
             # Assign vice president and set flag
             society.vice_president = selected_members[0]
             if society.vice_president:
                 society.vice_president.is_vice_president = True
                 society.vice_president.save()
+                
+            # Assign event manager and set flag
             society.event_manager = selected_members[2]
+            if society.event_manager:
+                society.event_manager.is_event_manager = True
+                society.event_manager.save()
 
         # Assign an admin
         admin_randomised = User.objects.order_by('?')
@@ -355,9 +348,20 @@ class Command(BaseCommand):
 
     def handle_society_status(self, president, name):
         """Creates society requests if pending, else assigns an admin to approved_by"""
-        random_status = choice(["Pending", "Approved", "Rejected"])
+        # At least half of the societies should be approved
+        random_status = choice(["Approved", "Approved", "Pending", "Rejected"])
 
         if random_status == "Approved":
+            society_request, _ = SocietyRequest.objects.get_or_create(
+                name=name,
+                president=president,
+                category="Tech",
+                from_student=president,
+                intent="CreateSoc",
+            )
+
+            society_request.approved = True
+            society_request.save()
             return True
         elif random_status == "Pending":
             SocietyRequest.objects.get_or_create(
@@ -366,7 +370,6 @@ class Command(BaseCommand):
                 category="Tech",
                 from_student=president,
                 intent="CreateSoc",
-                approved=False
             )
         else:
             SocietyRequest.objects.get_or_create(
@@ -375,7 +378,7 @@ class Command(BaseCommand):
                 from_student=president,
                 category="Tech",
                 intent="CreateSoc",
-                approved=True,
+                approved=False,
             )
         return False
 
@@ -394,41 +397,30 @@ class Command(BaseCommand):
 
             society = choice(societies)
 
-            approved = self.handle_event_status(society, i)
+            generator = RandomEventDataGenerator()
+            data = generator.generate(society.name)
+
+            approved = self.handle_event_status(society, data)
             if approved:
-                event, _ = self.generate_random_event(society)
+                event, _ = self.generate_random_event(society, data)
                 event_list.append(event)
 
         print(self.style.SUCCESS(f"Seeding event {n}/{n}"), flush=True)
         self.create_event_notifications(event_list)
 
-    def get_random_location(self):
-        """Generates a random location for an event"""
-        locations = [
-            'Main Auditorium',
-            'Library Conference Room',
-            'Sports Hall',
-            'Computer Lab',
-            'Music Hall'
-        ]
-        return choice(locations)
-
-    def generate_random_event(self, society):
+    def generate_random_event(self, society, data=None):
         """Generate a random event and ensure attendees are added."""
-        location = self.get_random_location()
-        event_date = self.generate_random_date()
-        event_time = self.generate_reasonable_time(event_date)
-
-        generator = RandomEventDataGenerator()
-        data = generator.generate(society.name)
+        if not data:
+            generator = RandomEventDataGenerator()
+            data = generator.generate(society.name)
         event, created = Event.objects.get_or_create(
             title=data["name"],
             description=data["description"],
-            date=event_date,
-            start_time=event_time,
-            duration=self.generate_random_duration(),
+            date=data["event_date"],
+            start_time=data["event_time"],
+            duration=data["duration"],
             hosted_by=society,
-            location=location,
+            location=data["location"],
             status="Approved",
         )
 
@@ -443,7 +435,7 @@ class Command(BaseCommand):
 
         return event, created
 
-    def handle_event_status(self, society, i):
+    def handle_event_status(self, society, data=None):
         """
         Creates event requests if random_status is Pending/Rejected.
         If 'Approved', we simply don't create an EventRequest object.
@@ -451,10 +443,9 @@ class Command(BaseCommand):
         Fix: Ensure from_student is always a valid Student.
         """
         random_status = choice(["Pending", "Approved", "Rejected"])
-        location = self.get_random_location()
-
-        event_date = self.generate_random_date()
-        event_time = self.generate_reasonable_time(event_date)
+        if not data:
+            generator = RandomEventDataGenerator()
+            data = generator.generate(society.name)
 
         # If the society has no president, pick any random student to avoid NULL
         default_student = society.president
@@ -468,82 +459,46 @@ class Command(BaseCommand):
                 return False
 
         if random_status == "Approved":
+            event_request, _ = EventRequest.objects.get_or_create(
+                title=data["name"],
+                description=data["description"],
+                date=data["event_date"],
+                start_time=data["event_time"],
+                duration=data["duration"],
+                hosted_by=society,
+                from_student=default_student,  # Always assign a valid student
+                location=data["location"],
+                intent="CreateEve",
+            )
+            event_request.approved = True
+            event_request.save()
             return True
         elif random_status == "Pending":
             EventRequest.objects.get_or_create(
-                title=f'Event{i}',
-                description=f'Event{i} organised by {society.name}',
-                date=event_date,
-                start_time=event_time,
-                duration=self.generate_random_duration(),
+                title=data["name"],
+                description=data["description"],
+                date=data["event_date"],
+                start_time=data["event_time"],
+                duration=data["duration"],
                 hosted_by=society,
                 from_student=default_student,  # Always assign a valid student
-                location=location,
+                location=data["location"],
                 intent="CreateEve",
             )
         else:
             EventRequest.objects.get_or_create(
-                title=f'Event{i}',
-                description=f'Event{i} organised by {society.name}',
-                date=event_date,
-                start_time=event_time,
-                duration=self.generate_random_duration(),
+                title=data["name"],
+                description=data["description"],
+                date=data["event_date"],
+                start_time=data["event_time"],
+                duration=data["duration"],
                 hosted_by=society,
                 from_student=default_student,  # Always assign a valid student
-                location=location,
+                location=data["location"],
                 intent="CreateEve",
-                approved=True,
+                approved=False,
             )
         return False
-
-    def generate_random_duration(self):
-        """Generate and return a random duration from 1-3 hours."""
-        duration_choices = [timedelta(hours=i) for i in range(1, 4)]
-        return choice(duration_choices)
-
-    def generate_random_date(self):
-        """Generate a future event date within the next 30 days."""
-        today = date.today()
-        now_time = datetime.now().time()
-        latest_allowed_time = time(20, 45)  # 8:45 PM
-
-        # If it's already too late today, start from tomorrow
-        if now_time > latest_allowed_time:
-            random_days = randint(1, 30)
-        else:
-            random_days = randint(0, 30)
-        return today + timedelta(days=random_days)
-
-    def generate_reasonable_time(self, event_date):
-        """
-        Generate a future time (9:00 AM to 8:45 PM),
-        ensuring it's after the current time if the event is on the same day.
-        """
-        now = datetime.now()
-
-        valid_hours = list(range(9, 21))  # 9 AM to 8:45 PM
-        valid_minutes = [0, 15, 30, 45]
-
-        if event_date > now.date():
-            return time(hour=choice(valid_hours), minute=choice(valid_minutes))
-        elif event_date == now.date():
-            possible_times = [
-                time(hour=h, minute=m)
-                for h in valid_hours
-                for m in valid_minutes
-                if datetime.combine(event_date, time(hour=h, minute=m)) > now
-            ]
-            if possible_times:
-                return choice(possible_times)
-
-            # If no valid times remain, schedule the event for tomorrow at 9:00 AM
-            return time(hour=9, minute=0)
-
-    def generate_random_time(self):
-        """Generates a random time within a day."""
-        hours = randint(0, 23)  # Random hour between 0-23
-        minutes = randint(0, 59)  # Random minute between 0-59
-        return time(hour=hours, minute=minutes)
 
     def create_event_notifications(self, events):
         """Creates notifications for event attendees"""
@@ -564,7 +519,7 @@ class Command(BaseCommand):
                 header=f"Attend {str(event)}!",
                 body=f"Your favourite society {event.hosted_by.name} is "
                 f"hosting the event {str(event)}",
-                for_student=member,
+                for_user=member,
             )
 
         print(self.style.SUCCESS(f"Created notifications for {len(members)} attendees of {event.title}"))

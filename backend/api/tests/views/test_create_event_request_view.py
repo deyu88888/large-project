@@ -3,7 +3,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 from django.contrib.auth import get_user_model
-from api.models import Admin, Student, Society
+from api.models import User, Student, Society
 from rest_framework_simplejwt.tokens import AccessToken
 
 User = get_user_model()
@@ -29,7 +29,7 @@ class CreateEventRequestViewTest(APITestCase):
             major="Test Major"
         )
         
-        self.admin = Admin(
+        self.admin = User.objects.create(
             username='admin_user',
             first_name='John',
             last_name='Smith',

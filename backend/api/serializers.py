@@ -2,6 +2,7 @@ import datetime
 from api.models import AdminReportRequest, Award, AwardStudent, BroadcastMessage, SiteSettings, User, Student, Society, Event, \
     Notification, Request, SocietyRequest, SocietyShowreel, SocietyShowreelRequest, EventRequest, UserRequest, Comment, DescriptionRequest
 from rest_framework import serializers
+from rest_framework.validators import UniqueValidator
 from django.utils.translation import gettext_lazy as _
 
 class SiteSettingsSerializer(serializers.ModelSerializer):
@@ -29,8 +30,8 @@ class UserSerializer(serializers.ModelSerializer):
         ]
         extra_kwargs = {
             'password': {'write_only': True, 'min_length': 8},
-            'username': {'validators': []},
-            'email': {'validators': []},
+            'username': {'validators': [UniqueValidator(queryset=User.objects.all())]},
+            'email': {'validators': [UniqueValidator(queryset=User.objects.all())]},
         }
 
     def get_is_following(self, obj):
@@ -63,17 +64,40 @@ class StudentSerializer(UserSerializer):
     societies = serializers.PrimaryKeyRelatedField(many=True, queryset=Society.objects.all())
     president_of = serializers.PrimaryKeyRelatedField(queryset=Society.objects.all(), allow_null=True, required=False)
     vice_president_of_society = serializers.SerializerMethodField()
+    event_manager_of_society = serializers.SerializerMethodField()
     major = serializers.CharField(required=True)
     is_president = serializers.BooleanField(read_only=True)
     #awards = AwardStudentSerializer(source='award_students', many=True, read_only=True) this will work when files are seperated
-    is_vice_president = serializers.SerializerMethodField()
+    is_vice_president = serializers.BooleanField(read_only=True)
+    is_event_manager = serializers.BooleanField(read_only=True)
+    
 
     class Meta(UserSerializer.Meta):
         model = Student
-        fields = UserSerializer.Meta.fields + ['major', 'societies', 'president_of', 'is_president', 'icon',
-                                               'award_students', 'vice_president_of_society', 'is_vice_president']
-        read_only_fields = ["is_president", "is_vice_president", "award_students"]
+        fields = UserSerializer.Meta.fields + ['major', 'societies', 'president_of', 'is_president',
+                                               'award_students', 'vice_president_of_society', 'is_vice_president',
+                                               'event_manager_of_society', 'is_event_manager']
+        read_only_fields = ["is_president", "is_vice_president", "is_event_manager", "award_students"]
+
+    
+    def get_event_manager_of_society(self, obj):
+        """Get the ID of the society where the student is event manager"""
+        try:
+            # Check if it's a RelatedManager
+            if hasattr(obj.event_manager_of_society, 'all'):
+                society = obj.event_manager_of_society.first()
+                if society:
+                    print(f"DEBUG - Found society for event manager: {society.id}")
+                    return society.id
+            
+            # If it's not a RelatedManager but a direct reference
+            elif hasattr(obj, 'event_manager_of_society') and obj.event_manager_of_society:
+                if hasattr(obj.event_manager_of_society, 'pk'):
+                    return obj.event_manager_of_society.pk
+        except Exception as e:
+            print(f"DEBUG - Error in get_event_manager_of_society: {str(e)}")
         
+        return None
     def get_is_vice_president(self, obj):
         """Get whether the student is a vice president"""
         # For debugging
@@ -177,7 +201,7 @@ class SocietySerializer(serializers.ModelSerializer):
     vice_president_id = serializers.PrimaryKeyRelatedField(
         queryset=Student.objects.all(), write_only=True, source='vice_president', required=False
     )
-    event_manager = StudentSerializer(required=False)
+    event_manager = StudentSerializer(read_only=True)
     event_manager_id = serializers.PrimaryKeyRelatedField(
         queryset=Student.objects.all(), write_only=True, source='event_manager', required=False
     )
@@ -286,9 +310,9 @@ class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         """ NotificationSerializer meta data """
         model = Notification
-        fields = ["id", "header", "body", "for_student", "is_read", "is_important"]
+        fields = ["id", "header", "body", "for_user", "is_read", "is_important"]
         extra_kwargs = {
-            "for_student": {"required": True}
+            "for_user": {"required": True}
         }
 
     def create(self, validated_data):
@@ -692,7 +716,7 @@ class DashboardNotificationSerializer(serializers.ModelSerializer):
     """
     Updated Notification serializer to include read/unread tracking for the dashboard.
     """
-    student_name = serializers.CharField(source="for_student.full_name", read_only=True)
+    student_name = serializers.CharField(source="for_user.full_name", read_only=True)
 
     class Meta:
         """Dashboard notification meta data"""

@@ -19,19 +19,19 @@ const darkTheme = createTheme({ palette: { mode: "dark" } });
 describe("ViewNotifications", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    (apiClient.get as vi.Mock).mockImplementation((url: string) => {
+    (apiClient.get).mockImplementation((url) => {
       if (url === "/api/notifications") {
         return Promise.resolve({
           data: [
-            { id: 1, message: "Notification 1", is_read: false },
-            { id: 2, message: "Notification 2", is_read: true },
+            { id: 1, header: "Test Header 1", body: "Notification 1", is_read: false },
+            { id: 2, header: "Test Header 2", body: "Notification 2", is_read: true },
           ],
         });
       }
       return Promise.resolve({ data: [] });
     });
 
-    (apiClient.patch as vi.Mock).mockImplementation((url: string, data: any) => {
+    (apiClient.patch).mockImplementation((url) => {
       if (url === "/api/notifications/1") {
         return Promise.resolve({ status: 200 });
       }
@@ -49,7 +49,7 @@ describe("ViewNotifications", () => {
     );
 
   it("displays a loading indicator initially", async () => {
-    (apiClient.get as vi.Mock).mockImplementationOnce(() =>
+    (apiClient.get).mockImplementationOnce(() =>
       new Promise((resolve) => setTimeout(() => resolve({ data: [] }), 200))
     );
     renderComponent();
@@ -64,14 +64,17 @@ describe("ViewNotifications", () => {
     await waitFor(() =>
       expect(screen.getByText(/All Notifications/i)).toBeInTheDocument()
     );
+    
+    expect(screen.getByText("Test Header 1")).toBeInTheDocument();
     expect(screen.getByText("Notification 1")).toBeInTheDocument();
+    expect(screen.getByText("Test Header 2")).toBeInTheDocument();
     expect(screen.getByText("Notification 2")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Mark as Read/i })).toBeInTheDocument();
-    expect(screen.getAllByText("Read").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText("Read")).toBeInTheDocument();
   });
 
   it('renders "No new notifications." when there are no notifications', async () => {
-    (apiClient.get as vi.Mock).mockImplementationOnce(() =>
+    (apiClient.get).mockImplementationOnce(() =>
       Promise.resolve({ data: [] })
     );
     renderComponent();
@@ -95,7 +98,7 @@ describe("ViewNotifications", () => {
 
   it("logs an error if marking a notification as read fails", async () => {
     const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    (apiClient.patch as vi.Mock).mockImplementationOnce(() =>
+    (apiClient.patch).mockImplementationOnce(() =>
       Promise.reject(new Error("Patch failed"))
     );
     renderComponent();
@@ -115,7 +118,7 @@ describe("ViewNotifications", () => {
 
   it("handles errors when fetching notifications", async () => {
     const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    (apiClient.get as vi.Mock).mockImplementationOnce(() =>
+    (apiClient.get).mockImplementationOnce(() =>
       Promise.reject({ response: { data: "API Error" } })
     );
     renderComponent();
@@ -126,7 +129,7 @@ describe("ViewNotifications", () => {
       );
     });
     consoleErrorSpy.mockClear();
-    (apiClient.get as vi.Mock).mockImplementationOnce(() =>
+    (apiClient.get).mockImplementationOnce(() =>
       Promise.reject(new Error("Network error"))
     );
     renderComponent();
@@ -141,7 +144,7 @@ describe("ViewNotifications", () => {
 
   it("handles non-200 response when marking notification as read", async () => {
     const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    (apiClient.patch as vi.Mock).mockImplementationOnce(() =>
+    (apiClient.patch).mockImplementationOnce(() =>
       Promise.resolve({ status: 400 })
     );
     renderComponent();
@@ -161,6 +164,7 @@ describe("ViewNotifications", () => {
     await waitFor(() =>
       expect(screen.getByText(/All Notifications/i)).toBeInTheDocument()
     );
+    expect(screen.getByText("Test Header 1")).toBeInTheDocument();
     expect(screen.getByText("Notification 1")).toBeInTheDocument();
   });
 });

@@ -35,18 +35,39 @@ const ManageSocietyDetails: React.FC = () => {
   const colors = tokens(theme.palette.mode);
   const { user } = useAuthStore();
   const navigate = useNavigate();
-  const { society_id } = useParams<RouteParams>();
-  const societyId = Number(society_id);
+
+  const { societyId } = useParams<{ societyId: string }>();
+  const numericSocietyId = Number(societyId);
+
+  // Debug logging to help diagnose the issue
+  console.log("URL params:", { societyId });
+  console.log("Numeric society ID:", numericSocietyId);
 
   const [society, setSociety] = useState<SocietyData | null>(null);
   const [formData, setFormData] = useState<SocietyData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
   const [openPreview, setOpenPreview] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Check if societyId is valid
+    if (!societyId) {
+      console.error("societyId is missing from URL params");
+      setError("Missing society ID parameter");
+      setLoading(false);
+      return;
+    }
+
+    if (isNaN(numericSocietyId) || numericSocietyId <= 0) {
+      console.error("Invalid societyId format:", societyId);
+      setError("Invalid society ID format");
+      setLoading(false);
+      return;
+    }
+
     fetchSociety();
-  }, []);
+  }, [societyId]);
 
   const fetchSociety = async (): Promise<void> => {
     try {

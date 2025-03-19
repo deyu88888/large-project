@@ -50,6 +50,10 @@ const JoinSocieties: React.FC = () => {
   // State:
   const [recommendations, setRecommendations] = useState<SocietyRecommendation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [pendingRequests, setPendingRequests] = useState<{[key: number]: boolean}>({});
+  const [joinMessages, setJoinMessages] = useState<{[key: number]: string}>({});
+  const [pendingSocietyIds, setPendingSocietyIds] = useState<number[]>([]);
+
   const [error, setError] = useState<string | null>(null);
   const [joining, setJoining] = useState<number | null>(null);
   const [joinSuccess, setJoinSuccess] = useState<boolean>(false);
@@ -91,11 +95,46 @@ const JoinSocieties: React.FC = () => {
     fetchRecommendedSocieties();
   }, []);
 
-  // Handler to view society
-  const handleViewSociety = (societyId: number) => {
-    navigate(`/student/view-society/${societyId}`);
+
+  const handleJoinSociety = async (societyId: number) => {
+    try {
+      // Set this society as having a pending request
+      setPendingRequests(prev => ({...prev, [societyId]: true}));
+      
+      // Make API call to join society
+      const response = await apiClient.post(`/api/join-society/${societyId}/`);
+      
+      // Handle successful request
+      setJoinMessages(prev => ({
+        ...prev, 
+        [societyId]: response.data.message || "Request submitted for approval."
+      }));
+      
+      // Update the pending society IDs list
+      setPendingSocietyIds(prev => [...new Set([...prev, societyId])]);
+      
+    } catch (error: any) {
+      console.error("Error joining society:", error);
+      
+      // Check if error response exists
+      const errorMessage = error.response?.data?.message || 
+        error.response?.data?.error || 
+        "Failed to submit join request. Please try again.";
+      
+      setJoinMessages(prev => ({
+        ...prev, 
+        [societyId]: errorMessage
+      }));
+    } finally {
+      setPendingRequests(prev => ({...prev, [societyId]: false}));
+    }
   };
 
+  const handleViewSociety = (societyId: number) => {
+    console.log("Viewing society:", societyId);
+    navigate(`/student/view-society/${societyId}`);
+  };
+  
   // Group recommendations by category
   const groupRecommendationsByCategory = () => {
     const groups: { [key: string]: SocietyRecommendation[] } = {};
@@ -478,85 +517,18 @@ const JoinSocieties: React.FC = () => {
 
         {/* Loading State */}
         {loading && (
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: "2rem",
-            }}
-          >
-            <div
-              style={{
-                width: "40px",
-                height: "40px",
-                border: `3px solid ${isLight ? colours.grey[300] : colours.grey[600]}`,
-                borderTop: `3px solid ${colours.blueAccent[400]}`,
-                borderRadius: "50%",
-                animation: "spin 1s linear infinite",
-                marginBottom: "1rem",
-              }}
-            />
-            <p
-              style={{
-                color: isLight ? colours.grey[700] : colours.grey[300],
-                fontSize: "1.125rem",
-              }}
-            >
-              Loading recommended societies...
-            </p>
-            <style>
-              {`
-                @keyframes spin {
-                  0% { transform: rotate(0deg); }
-                  100% { transform: rotate(360deg); }
-                }
-                @keyframes slideInDown {
-                  from { transform: translateY(-20px); opacity: 0; }
-                  to { transform: translateY(0); opacity: 1; }
-                }
-                @keyframes zoomOut {
-                  from { transform: scale(1); opacity: 1; }
-                  to { transform: scale(0.8); opacity: 0; }
-                }
-                @keyframes successPulse {
-                  0% { transform: scale(1); opacity: 1; }
-                  50% { transform: scale(1.05); opacity: 1; }
-                  100% { transform: scale(1); opacity: 1; }
-                }
-              `}
-            </style>
-          </div>
-        )}
-
-        {/* Societies Grid - Grouped by Category */}
-        {!loading && recommendations.length > 0 && viewByCategory && getCategoryCount() > 1 && (
-          <div>
-            {Object.entries(groupRecommendationsByCategory()).map(([category, categoryRecs]) => (
-              <div key={category} style={{ marginBottom: "2.5rem" }}>
-                <h2 style={{
-                  color: colours.grey[100],
-                  fontSize: "1.5rem",
-                  fontWeight: 600,
-                  marginBottom: "1rem",
-                  borderBottom: `1px solid ${isLight ? colours.grey[300] : colours.grey[700]}`,
-                  paddingBottom: "0.5rem"
-                }}>
-                  {category} Societies
-                </h2>
-                
-                <div style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
-                  gap: "1.25rem",
-                  perspective: "1000px",
-                  maxWidth: "100%"
-                }}>
-                  {categoryRecs.map(recommendation => renderSocietyCard(recommendation))}
-                </div>
-              </div>
-            ))}
+          <div style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            padding: "3rem"
+          }}>
+            <div style={{
+              color: colours.grey[100],
+              fontSize: "1.2rem"
+            }}>
+              Loading recommendations...
+            </div>
           </div>
         )}
 
@@ -572,6 +544,32 @@ const JoinSocieties: React.FC = () => {
             }}
           >
             {recommendations.map(recommendation => renderSocietyCard(recommendation))}
+          </div>
+        )}
+
+        {/* Societies Grid - Grouped by Category View */}
+        {!loading && recommendations.length > 0 && viewByCategory && getCategoryCount() > 1 && (
+          <div>
+            {Object.entries(groupRecommendationsByCategory()).map(([category, recs]) => (
+              <div key={category} style={{ marginBottom: "2rem" }}>
+                <h2 style={{ 
+                  color: colours.grey[100], 
+                  fontSize: "1.5rem", 
+                  marginBottom: "1rem",
+                  paddingBottom: "0.5rem",
+                  borderBottom: `1px solid ${isLight ? colours.grey[300] : colours.grey[700]}`
+                }}>
+                  {category}
+                </h2>
+                <div style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
+                  gap: "1.25rem"
+                }}>
+                  {recs.map(recommendation => renderSocietyCard(recommendation))}
+                </div>
+              </div>
+            ))}
           </div>
         )}
 

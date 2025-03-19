@@ -1,9 +1,9 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from .views import (
-    AdminReportView, AwardStudentView, AwardView, BroadcastListAPIView, EventListView, EventRequestView, ManageEventDetailsView, NewsView, PendingMembersView, RegisterView,
+    AdminReportView, AwardStudentView, AwardView, BroadcastListAPIView, EventListView, EventRequestView, ManageEventDetailsView, NewsView, PendingMembersView, PendingRequestsView, RegisterView,
     CurrentUserView, SocietyMembersListView,
-    StudentNotificationsView, StartSocietyRequestView, ManageSocietyDetailsView,
+    StudentNotificationsView, StartSocietyRequestView, ManageSocietyDetailsView, StudentInboxView,
     AdminView, StudentView, EventView,
     SocietyRequestView, DashboardStatsView,
     RecentActivitiesView, NotificationsView, EventCalendarView,
@@ -22,7 +22,7 @@ urlpatterns = [
     path("user/token/refresh", TokenRefreshView.as_view(), name="refresh"),
     path("user/register", RegisterView.as_view(), name="register"),
     path("user/login", TokenObtainPairView.as_view(), name="get_token"),
-    path("user/current", CurrentUserView.as_view(), name="current_user"),
+    path("user/current/", CurrentUserView.as_view(), name="current_user"),
 
     # OTP verification
     path("request-otp", request_otp, name="request_otp"),
@@ -32,6 +32,7 @@ urlpatterns = [
     # trailing backshlash needed in this case, because of the following line
     path("notifications/", StudentNotificationsView.as_view(), name="student_notifications"), # trailing backshlash needed
     path("notifications/<int:pk>", StudentNotificationsView.as_view(), name="mark_notification_read"),
+    path("inbox/", StudentInboxView.as_view(), name="student_inbox"),
 
     # Society creation/management endpoints
     path("start-society", StartSocietyRequestView.as_view(), name="start_society"),
@@ -68,6 +69,7 @@ urlpatterns = [
     path("leave-society/<int:society_id>/", StudentSocietiesView.as_view(), name="leave_society"),
     path("society-view/<int:society_id>/", StudentSocietyDataView.as_view(), name="society_view"),
     path('media/<path:path>', custom_media_view, name="media"),
+     path('api/pending-requests/', PendingRequestsView.as_view(), name='pending-requests'),
 
     # Dashboard API endpoints
     path("dashboard/stats/", DashboardStatsView.as_view(), name="dashboard_stats"),
@@ -75,7 +77,7 @@ urlpatterns = [
     path("dashboard/notifications", NotificationsView.as_view(), name="dashboard_notifications"),
     path("dashboard/events/", EventCalendarView.as_view(), name="dashboard_events"),
     path("popular-societies", get_popular_societies, name="popular_societies"),
-    
+
     # Awards Endpoints
     path("awards/", AwardView.as_view(), name="awards"),  # List & Create Awards
     path("awards/<int:pk>/", AwardView.as_view(), name="award_detail"),  # Retrieve, Update, Delete Award
@@ -83,7 +85,7 @@ urlpatterns = [
     # Award-Student Endpoints
     path("award-students", AwardStudentView.as_view(), name="award_students"),  # List & Assign Awards to Students
     path("award-students/<int:pk>", AwardStudentView.as_view(), name="award_student_detail"),  # Retrieve, Update, Delete Assignment
-    
+
     # President page
     path("society/<int:society_id>/pending-members/", PendingMembersView.as_view(), name="pending-members"),
     path("society/<int:society_id>/pending-members/<int:request_id>/", PendingMembersView.as_view(), name="process-pending-member"),
@@ -104,11 +106,11 @@ urlpatterns = [
     # Follow
     path("users/<int:user_id>/follow", toggle_follow, name="toggle_follow"),
     path("users/<int:user_id>", StudentProfileView.as_view(), name="user_profile"),
-    
+
     # Society recommendation endpoints
     path("recommended-societies/", RecommendedSocietiesView.as_view(), name="recommended_societies"),
     path("society-recommendation/<int:society_id>/explanation/", SocietyRecommendationExplanationView.as_view(), name="society_recommendation_explanation"),
-    
+
     # Recommendation feedback endpoints
     path("society-recommendation/feedback/", RecommendationFeedbackView.as_view(), name="recommendation_feedback_list"),
     path("society-recommendation/<int:society_id>/feedback/", RecommendationFeedbackView.as_view(), name="recommendation_feedback_detail"),

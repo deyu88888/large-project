@@ -160,6 +160,7 @@ class Student(User):
     major = models.CharField(max_length=50, blank=True)
     is_president = models.BooleanField(default=False)
     is_vice_president = models.BooleanField(default=False)
+    is_event_manager = models.BooleanField(default=False)
     icon = models.ImageField(upload_to="student_icons/", blank=True, null=True)
 
     def save(self, *args, **kwargs):
@@ -330,6 +331,8 @@ class Society(models.Model):
 
         if self.pk:
             before_changes = Society.objects.get(pk=self.pk)
+            
+            # Handle vice president changes
             before_vp = before_changes.vice_president
             if self.vice_president != before_vp:
                 if self.vice_president:
@@ -338,6 +341,16 @@ class Society(models.Model):
                 if before_vp:
                     before_vp.is_vice_president = False
                     before_vp.save()
+            
+            # Handle event manager changes
+            before_em = before_changes.event_manager
+            if self.event_manager != before_em:
+                if self.event_manager:
+                    self.event_manager.is_event_manager = True
+                    self.event_manager.save()
+                if before_em:
+                    before_em.is_event_manager = False
+                    before_em.save()
 
     def __str__(self):
         return self.name
@@ -432,16 +445,21 @@ class Notification(models.Model):
     """
     header = models.CharField(max_length=30, default="")
     body = models.CharField(max_length=200, default="")
-    for_student = models.ForeignKey(
-        "Student",
+    for_user = models.ForeignKey(
+        "User",
         on_delete=models.CASCADE,
         related_name="notifications",
         blank=False,
         null=True,
     )
 
+    send_time = models.DateTimeField(default=timezone.now)
     is_read = models.BooleanField(default=False)
     is_important = models.BooleanField(default=False)
+
+    def is_sent(self):
+        """Notification should be sent if it's send_time is passed"""
+        return self.send_time <= timezone.now()
 
     def __str__(self):
         return f"{self.header}\n{self.body}"
@@ -464,7 +482,7 @@ class Request(models.Model):
 
     intent = models.CharField(max_length=10, choices=INTENT)
     requested_at = models.DateTimeField(auto_now_add=True)
-    approved = models.BooleanField(default=False)
+    approved = models.BooleanField(null=True, blank=True, default=None)
 
     # Use "%(class)s" in related_name for uniqueness in inherited models
     from_student = models.ForeignKey(

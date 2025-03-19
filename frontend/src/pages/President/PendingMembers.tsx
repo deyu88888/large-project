@@ -9,25 +9,30 @@ interface PendingMember {
   username: string;
 }
 
-interface RouteParams {
-  society_id: string;
-}
-
 const PendingMembers: React.FC = () => {
-  const { society_id } = useParams<RouteParams>();
+  const { societyId } = useParams<{ societyId: string }>();
   const [pendingMembers, setPendingMembers] = useState<PendingMember[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!societyId) {
+      console.error("societyId is missing from URL params");
+      setError("Missing society ID parameter");
+      setLoading(false);
+      return;
+    }
+
     fetchPendingMembers();
-  }, [society_id]); 
+  }, [societyId]); 
 
   const fetchPendingMembers = async (): Promise<void> => {
     try {
-      const response = await apiClient.get(`/api/society/${society_id}/pending-members/`);
+      const response = await apiClient.get(`/api/society/${societyId}/pending-members/`);
       setPendingMembers(response.data);
     } catch (error) {
       console.error("Error fetching pending members:", error);
+      setError("Failed to load pending members");
     } finally {
       setLoading(false);
     }
@@ -35,7 +40,7 @@ const PendingMembers: React.FC = () => {
 
   const handleApproval = async (memberId: number, approved: boolean): Promise<void> => {
     try {
-      await apiClient.post(`/api/society/${society_id}/pending-members/${memberId}/`, {
+      await apiClient.post(`/api/society/${societyId}/pending-members/${memberId}/`, {
         approved: approved,
       });
 
@@ -44,6 +49,16 @@ const PendingMembers: React.FC = () => {
       console.error("Error updating member status:", error);
     }
   };
+
+  if (error) {
+    return (
+      <div className="container mx-auto p-8">
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+          <p>{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) return <p>Loading pending members...</p>;
 

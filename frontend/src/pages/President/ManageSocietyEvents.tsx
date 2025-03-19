@@ -58,7 +58,8 @@ const ManageSocietyEvents: React.FC = () => {
   const colors = tokens(theme.palette.mode);
   const navigate = useNavigate();
   const location = useLocation();
-  const { society_id, filter: filterParam } = useParams<RouteParams>();
+  const { societyId, filter: filterParam } = useParams<{ societyId: string; filter?: string }>();
+  const society_id = societyId;
 
   const [filter, setFilter] = useState<FilterType>(filterParam || "upcoming");
   const [events, setEvents] = useState<Event[]>([]);
@@ -71,7 +72,7 @@ const ManageSocietyEvents: React.FC = () => {
     if (!society_id) return;
     
     if (filter !== filterParam) {
-      navigate(`/president-page/${society_id}/manage-society-events/${filter}`, { replace: true });
+      navigate(`/president-page/${societyId}/manage-society-events/${filter}`, { replace: true });
     }
   }, [filter, filterParam, society_id, navigate]);
 

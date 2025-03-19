@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/125</span>
+                <span class='fraction'>0/138</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/125</span>
+                <span class='fraction'>0/138</span>
             </div>
         
             
@@ -187,7 +187,21 @@
 <a name='L122'></a><a href='#L122'>122</a>
 <a name='L123'></a><a href='#L123'>123</a>
 <a name='L124'></a><a href='#L124'>124</a>
-<a name='L125'></a><a href='#L125'>125</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L125'></a><a href='#L125'>125</a>
+<a name='L126'></a><a href='#L126'>126</a>
+<a name='L127'></a><a href='#L127'>127</a>
+<a name='L128'></a><a href='#L128'>128</a>
+<a name='L129'></a><a href='#L129'>129</a>
+<a name='L130'></a><a href='#L130'>130</a>
+<a name='L131'></a><a href='#L131'>131</a>
+<a name='L132'></a><a href='#L132'>132</a>
+<a name='L133'></a><a href='#L133'>133</a>
+<a name='L134'></a><a href='#L134'>134</a>
+<a name='L135'></a><a href='#L135'>135</a>
+<a name='L136'></a><a href='#L136'>136</a>
+<a name='L137'></a><a href='#L137'>137</a>
+<a name='L138'></a><a href='#L138'>138</a>
+<a name='L139'></a><a href='#L139'>139</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -311,16 +325,34 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" >import { useState } from "react";</span></span></span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" >import { useState } from "react";</span></span></span>
 <span class="cstat-no" title="statement not covered" >import { useNavigate } from "react-router-dom";</span>
 <span class="cstat-no" title="statement not covered" >import { useFormik } from "formik";</span>
-<span class="cstat-no" title="statement not covered" >import { Box, Typography, TextField, Button, CircularProgress, useTheme } from "@mui/material";</span>
+<span class="cstat-no" title="statement not covered" >import {</span>
+<span class="cstat-no" title="statement not covered" >  Box, Typography, TextField, Button, CircularProgress, useTheme, InputAdornment, IconButton</span>
+<span class="cstat-no" title="statement not covered" >} from "@mui/material";</span>
+<span class="cstat-no" title="statement not covered" >import { Visibility, VisibilityOff } from "@mui/icons-material";</span>
 <span class="cstat-no" title="statement not covered" >import { apiClient, apiPaths } from "../api";</span>
 <span class="cstat-no" title="statement not covered" >import { tokens } from "../theme/theme";</span>
 <span class="cstat-no" title="statement not covered" >import { ACCESS_TOKEN, REFRESH_TOKEN } from "../constants";</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >export default function LoginPage() {</span>
 <span class="cstat-no" title="statement not covered" >  const [loading, setLoading] = useState(false);</span>
+<span class="cstat-no" title="statement not covered" >  const [showPassword, setShowPassword] = useState(false);</span>
 <span class="cstat-no" title="statement not covered" >  const navigate = useNavigate();</span>
 <span class="cstat-no" title="statement not covered" >  const theme = useTheme();</span>
 <span class="cstat-no" title="statement not covered" >  const colors = tokens(theme.palette.mode);</span>
@@ -352,7 +384,7 @@
 <span class="cstat-no" title="statement not covered" >        display: "flex",</span>
 <span class="cstat-no" title="statement not covered" >        justifyContent: "center",</span>
 <span class="cstat-no" title="statement not covered" >        alignItems: "center",</span>
-<span class="cstat-no" title="statement not covered" >        backgroundColor: colors.primary[400], </span>
+<span class="cstat-no" title="statement not covered" >        backgroundColor: colors.primary[400],</span>
 <span class="cstat-no" title="statement not covered" >        padding: 2,</span>
 <span class="cstat-no" title="statement not covered" >      }}</span>
 <span class="cstat-no" title="statement not covered" >    &gt;</span>
@@ -370,11 +402,11 @@
 <span class="cstat-no" title="statement not covered" >      &gt;</span>
 <span class="cstat-no" title="statement not covered" >        &lt;Typography</span>
 <span class="cstat-no" title="statement not covered" >          variant="h4"</span>
-<span class="cstat-no" title="statement not covered" >          sx={{ </span>
-<span class="cstat-no" title="statement not covered" >            textAlign: "center", </span>
-<span class="cstat-no" title="statement not covered" >            fontWeight: "bold", </span>
-<span class="cstat-no" title="statement not covered" >            color: colors.grey[100], </span>
-<span class="cstat-no" title="statement not covered" >            marginBottom: 2 </span>
+<span class="cstat-no" title="statement not covered" >          sx={{</span>
+<span class="cstat-no" title="statement not covered" >            textAlign: "center",</span>
+<span class="cstat-no" title="statement not covered" >            fontWeight: "bold",</span>
+<span class="cstat-no" title="statement not covered" >            color: colors.grey[100],</span>
+<span class="cstat-no" title="statement not covered" >            marginBottom: 2</span>
 <span class="cstat-no" title="statement not covered" >          }}</span>
 <span class="cstat-no" title="statement not covered" >        &gt;</span>
 <span class="cstat-no" title="statement not covered" >          Login</span>
@@ -398,13 +430,22 @@
 <span class="cstat-no" title="statement not covered" >          id="password"</span>
 <span class="cstat-no" title="statement not covered" >          name="password"</span>
 <span class="cstat-no" title="statement not covered" >          label="Password"</span>
-<span class="cstat-no" title="statement not covered" >          type="password"</span>
+<span class="cstat-no" title="statement not covered" >          type={showPassword ? "text" : "password"}</span>
 <span class="cstat-no" title="statement not covered" >          placeholder="Enter your password here"</span>
 <span class="cstat-no" title="statement not covered" >          value={loginFormik.values.password}</span>
 <span class="cstat-no" title="statement not covered" >          onChange={loginFormik.handleChange}</span>
 <span class="cstat-no" title="statement not covered" >          sx={{ marginBottom: 2 }}</span>
 <span class="cstat-no" title="statement not covered" >          InputLabelProps={{ style: { color: colors.grey[300] } }}</span>
-<span class="cstat-no" title="statement not covered" >          InputProps={{ style: { color: colors.grey[100] } }}</span>
+<span class="cstat-no" title="statement not covered" >          InputProps={{</span>
+<span class="cstat-no" title="statement not covered" >            style: { color: colors.grey[100] },</span>
+<span class="cstat-no" title="statement not covered" >            endAdornment: (</span>
+<span class="cstat-no" title="statement not covered" >              &lt;InputAdornment position="end"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                &lt;IconButton onClick={() =&gt; setShowPassword(!showPassword)} edge="end"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                  {showPassword ? &lt;VisibilityOff /&gt; : &lt;Visibility /&gt;}</span>
+<span class="cstat-no" title="statement not covered" >                &lt;/IconButton&gt;</span>
+<span class="cstat-no" title="statement not covered" >              &lt;/InputAdornment&gt;</span>
+<span class="cstat-no" title="statement not covered" >            ),</span>
+<span class="cstat-no" title="statement not covered" >          }}</span>
 <span class="cstat-no" title="statement not covered" >        /&gt;</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >        {loading &amp;&amp; (</span>
@@ -435,14 +476,15 @@
 <span class="cstat-no" title="statement not covered" >      &lt;/Box&gt;</span>
 <span class="cstat-no" title="statement not covered" >    &lt;/Box&gt;</span>
 <span class="cstat-no" title="statement not covered" >  );</span>
-<span class="cstat-no" title="statement not covered" >}</span></pre></td></tr></table></pre>
+<span class="cstat-no" title="statement not covered" >}</span>
+&nbsp;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
             </div><!-- /wrapper -->
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-03-10T21:31:58.011Z
+                at 2025-03-19T01:38:58.370Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

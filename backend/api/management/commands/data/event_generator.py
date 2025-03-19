@@ -1,4 +1,5 @@
-from random import choice
+from datetime import date, datetime, time, timedelta
+from random import choice, randint
 
 class RandomEventDataGenerator():
     """Class encompassing tools to generate event data"""
@@ -123,6 +124,12 @@ class RandomEventDataGenerator():
         society_prename = society_name.split()[0]
         return_dict["name"] = self.generate_name(society_prename)
         return_dict["description"] = self.generate_description()
+        return_dict["location"] = self.get_random_location()
+        return_dict["event_date"] = self.generate_random_date()
+        return_dict["event_time"] = self.generate_reasonable_time(
+            return_dict["event_date"]
+        )
+        return_dict["duration"] = self.generate_random_duration()
 
         return return_dict
 
@@ -151,3 +158,57 @@ class RandomEventDataGenerator():
         d = choice(self.final_paragraphs)
 
         return f"{a} {b}\n{c}\n\n{d}"
+
+    def generate_random_duration(self):
+        """Generate and return a random duration from 1-3 hours."""
+        duration_choices = [timedelta(hours=i) for i in range(1, 4)]
+        return choice(duration_choices)
+
+    def generate_random_date(self):
+        """Generate a future event date within the next 30 days."""
+        today = date.today()
+        now_time = datetime.now().time()
+        latest_allowed_time = time(20, 45)  # 8:45 PM
+
+        # If it's already too late today, start from tomorrow
+        if now_time > latest_allowed_time:
+            random_days = randint(1, 30)
+        else:
+            random_days = randint(0, 30)
+        return today + timedelta(days=random_days)
+
+    def generate_reasonable_time(self, event_date):
+        """
+        Generate a future time (9:00 AM to 8:45 PM),
+        ensuring it's after the current time if the event is on the same day.
+        """
+        now = datetime.now()
+
+        valid_hours = list(range(9, 21))  # 9 AM to 8:45 PM
+        valid_minutes = [0, 15, 30, 45]
+
+        if event_date > now.date():
+            return time(hour=choice(valid_hours), minute=choice(valid_minutes))
+        elif event_date == now.date():
+            possible_times = [
+                time(hour=h, minute=m)
+                for h in valid_hours
+                for m in valid_minutes
+                if datetime.combine(event_date, time(hour=h, minute=m)) > now
+            ]
+            if possible_times:
+                return choice(possible_times)
+
+            # If no valid times remain, schedule the event for tomorrow at 9:00 AM
+            return time(hour=9, minute=0)
+
+    def get_random_location(self):
+        """Generates a random location for an event"""
+        locations = [
+            'Main Auditorium',
+            'Library Conference Room',
+            'Sports Hall',
+            'Computer Lab',
+            'Music Hall'
+        ]
+        return choice(locations)

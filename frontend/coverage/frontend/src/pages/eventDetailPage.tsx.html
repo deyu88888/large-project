@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/172</span>
+                <span class='fraction'>0/165</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/172</span>
+                <span class='fraction'>0/165</span>
             </div>
         
             
@@ -228,14 +228,7 @@
 <a name='L163'></a><a href='#L163'>163</a>
 <a name='L164'></a><a href='#L164'>164</a>
 <a name='L165'></a><a href='#L165'>165</a>
-<a name='L166'></a><a href='#L166'>166</a>
-<a name='L167'></a><a href='#L167'>167</a>
-<a name='L168'></a><a href='#L168'>168</a>
-<a name='L169'></a><a href='#L169'>169</a>
-<a name='L170'></a><a href='#L170'>170</a>
-<a name='L171'></a><a href='#L171'>171</a>
-<a name='L172'></a><a href='#L172'>172</a>
-<a name='L173'></a><a href='#L173'>173</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L166'></a><a href='#L166'>166</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -400,33 +393,32 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" >import React, { useEffect, useRef, useState } from "react";</span></span></span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" >import React, { useEffect, useState, useRef } from "react";</span></span></span>
 <span class="cstat-no" title="statement not covered" >import { useParams } from "react-router-dom";</span>
 <span class="cstat-no" title="statement not covered" >import { apiClient } from "../api";</span>
 <span class="cstat-no" title="statement not covered" >import { CircularProgress, Typography, Card, CardContent } from "@mui/material";</span>
 <span class="cstat-no" title="statement not covered" >import { format } from "date-fns";</span>
-<span class="cstat-no" title="statement not covered" >import CommentSection from "../components/CommentSection";</span>
 <span class="cstat-no" title="statement not covered" >import { Link } from "react-router-dom";</span>
+<span class="cstat-no" title="statement not covered" >import { CommentSection } from "../components/CommentSection";</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >function CommentsSectionWrapper({ isAuthenticated, children }: {</span>
-<span class="cstat-no" title="statement not covered" >  isAuthenticated: boolean;</span>
-<span class="cstat-no" title="statement not covered" >  children: React.ReactNode;</span>
-<span class="cstat-no" title="statement not covered" >}) {</span>
+<span class="cstat-no" title="statement not covered" >const CommentsSectionWrapper: React.FC&lt;{ isAuthenticated: boolean; children: React.ReactNode }&gt; = ({</span>
+<span class="cstat-no" title="statement not covered" >  isAuthenticated,</span>
+<span class="cstat-no" title="statement not covered" >  children,</span>
+<span class="cstat-no" title="statement not covered" >}) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >  if (!isAuthenticated) {</span>
 <span class="cstat-no" title="statement not covered" >    return (</span>
-<span class="cstat-no" title="statement not covered" >      &lt;Typography variant="body2" color="text.primary"&gt;</span>
+<span class="cstat-no" title="statement not covered" >      &lt;Typography</span>
+<span class="cstat-no" title="statement not covered" >          variant="body2"</span>
+<span class="cstat-no" title="statement not covered" >          color="text.primary"</span>
+<span class="cstat-no" title="statement not covered" >          align="center"</span>
+<span class="cstat-no" title="statement not covered" >          marginTop="20px"</span>
+<span class="cstat-no" title="statement not covered" >          fontSize="14px"</span>
+<span class="cstat-no" title="statement not covered" >      &gt;</span>
 <span class="cstat-no" title="statement not covered" >        Please{" "}</span>
 <span class="cstat-no" title="statement not covered" >        &lt;Link to="/login" style={{ textDecoration: "underline", color: "blue" }}&gt;</span>
 <span class="cstat-no" title="statement not covered" >          login</span>
 <span class="cstat-no" title="statement not covered" >        &lt;/Link&gt;{" "}</span>
-<span class="cstat-no" title="statement not covered" >        to view the comments (don&amp;apos;t have an account? click{" "}</span>
+<span class="cstat-no" title="statement not covered" >        to view the comments (don't have an account? click{" "}</span>
 <span class="cstat-no" title="statement not covered" >        &lt;Link to="/register" style={{ textDecoration: "underline", color: "blue" }}&gt;</span>
 <span class="cstat-no" title="statement not covered" >          here</span>
 <span class="cstat-no" title="statement not covered" >        &lt;/Link&gt;</span>
@@ -435,74 +427,67 @@
 <span class="cstat-no" title="statement not covered" >    );</span>
 <span class="cstat-no" title="statement not covered" >  }</span>
 <span class="cstat-no" title="statement not covered" >  return &lt;&gt;{children}&lt;/&gt;;</span>
-<span class="cstat-no" title="statement not covered" >}</span>
+<span class="cstat-no" title="statement not covered" >};</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >const EventDetailPage: React.FC = () =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >  const { eventId } = useParams();</span>
+<span class="cstat-no" title="statement not covered" >  const numericEventId = eventId ? parseInt(eventId, 10) : undefined;</span>
 <span class="cstat-no" title="statement not covered" >  const [event, setEvent] = useState&lt;any&gt;(null);</span>
-<span class="cstat-no" title="statement not covered" >  const [loadingEvent, setLoadingEvent] = useState(true);</span>
+<span class="cstat-no" title="statement not covered" >  const [loading, setLoading] = useState(true);</span>
 <span class="cstat-no" title="statement not covered" >  const [isAuthenticated, setIsAuthenticated] = useState(false);</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >  const [comments, setComments] = useState&lt;any[]&gt;([]);</span>
-<span class="cstat-no" title="statement not covered" >  const [loadingComments, setLoadingComments] = useState(true);</span>
+<span class="cstat-no" title="statement not covered" >  const [, setComments] = useState&lt;any[]&gt;([]);</span>
 <span class="cstat-no" title="statement not covered" >  const wsRef = useRef&lt;WebSocket | null&gt;(null);</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >  // get the event detail</span>
 <span class="cstat-no" title="statement not covered" >  useEffect(() =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    const fetchEvent = async () =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >      setLoadingEvent(true);</span>
+<span class="cstat-no" title="statement not covered" >      if (!numericEventId) return;</span>
+<span class="cstat-no" title="statement not covered" >      setLoading(true);</span>
 <span class="cstat-no" title="statement not covered" >      try {</span>
-<span class="cstat-no" title="statement not covered" >        const response = await apiClient.get(`/api/event/${eventId}`);</span>
-<span class="cstat-no" title="statement not covered" >        setEvent(response.data);</span>
+<span class="cstat-no" title="statement not covered" >        const eventRes = await apiClient.get(`/api/event/${numericEventId}`);</span>
+<span class="cstat-no" title="statement not covered" >        setEvent(eventRes.data);</span>
 <span class="cstat-no" title="statement not covered" >      } catch (error) {</span>
 <span class="cstat-no" title="statement not covered" >        console.error("Error fetching event:", error);</span>
 <span class="cstat-no" title="statement not covered" >      } finally {</span>
-<span class="cstat-no" title="statement not covered" >        setLoadingEvent(false);</span>
+<span class="cstat-no" title="statement not covered" >        setLoading(false);</span>
 <span class="cstat-no" title="statement not covered" >      }</span>
 <span class="cstat-no" title="statement not covered" >    };</span>
-<span class="cstat-no" title="statement not covered" >    if (eventId) {</span>
-<span class="cstat-no" title="statement not covered" >      fetchEvent();</span>
-<span class="cstat-no" title="statement not covered" >    }</span>
-<span class="cstat-no" title="statement not covered" >  }, [eventId]);</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >  // get all the comments</span>
-<span class="cstat-no" title="statement not covered" >  useEffect(() =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >    const fetchComments = async () =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >      setLoadingComments(true);</span>
-<span class="cstat-no" title="statement not covered" >      try {</span>
-<span class="cstat-no" title="statement not covered" >        const response = await apiClient.get(`/api/event/${eventId}/comments`);</span>
-<span class="cstat-no" title="statement not covered" >        setComments(response.data);</span>
-<span class="cstat-no" title="statement not covered" >      } catch (error) {</span>
-<span class="cstat-no" title="statement not covered" >        console.error("Error fetching comments:", error);</span>
-<span class="cstat-no" title="statement not covered" >      } finally {</span>
-<span class="cstat-no" title="statement not covered" >        setLoadingComments(false);</span>
-<span class="cstat-no" title="statement not covered" >      }</span>
-<span class="cstat-no" title="statement not covered" >    };</span>
-<span class="cstat-no" title="statement not covered" >    if (eventId) {</span>
-<span class="cstat-no" title="statement not covered" >      fetchComments();</span>
-<span class="cstat-no" title="statement not covered" >    }</span>
-<span class="cstat-no" title="statement not covered" >  }, [eventId]);</span>
+<span class="cstat-no" title="statement not covered" >    fetchEvent();</span>
+<span class="cstat-no" title="statement not covered" >  }, [numericEventId]);</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >  // check if user is logged in</span>
 <span class="cstat-no" title="statement not covered" >  useEffect(() =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    const checkAuth = async () =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >      try {</span>
-<span class="cstat-no" title="statement not covered" >        const response = await apiClient.get("/api/user/current");</span>
-<span class="cstat-no" title="statement not covered" >        if (response.status === 200) {</span>
+<span class="cstat-no" title="statement not covered" >        const authRes = await apiClient.get("/api/user/current");</span>
+<span class="cstat-no" title="statement not covered" >        if (authRes.status === 200) {</span>
 <span class="cstat-no" title="statement not covered" >          setIsAuthenticated(true);</span>
-<span class="cstat-no" title="statement not covered" >        } else {</span>
-<span class="cstat-no" title="statement not covered" >          setIsAuthenticated(false);</span>
 <span class="cstat-no" title="statement not covered" >        }</span>
-<span class="cstat-no" title="statement not covered" >      } catch (error) {</span>
-<span class="cstat-no" title="statement not covered" >        setIsAuthenticated(false);</span>
+<span class="cstat-no" title="statement not covered" >      } catch {</span>
+<span class="cstat-no" title="statement not covered" >        setIsAuthenticated(false); // 401 Unauthorized</span>
 <span class="cstat-no" title="statement not covered" >      }</span>
 <span class="cstat-no" title="statement not covered" >    };</span>
+<span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >    checkAuth();</span>
 <span class="cstat-no" title="statement not covered" >  }, []);</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >  useEffect(() =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >    if (!eventId) return;</span>
-<span class="cstat-no" title="statement not covered" >    const wsUrl = `ws://127.0.0.1:8000/ws/event/${eventId}/`;</span>
+<span class="cstat-no" title="statement not covered" >    const fetchComments = async () =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >      if (!numericEventId || !isAuthenticated) return;</span>
+<span class="cstat-no" title="statement not covered" >      try {</span>
+<span class="cstat-no" title="statement not covered" >        const commentsRes = await apiClient.get(`/api/comments/?event_id=${numericEventId}`);</span>
+<span class="cstat-no" title="statement not covered" >        setComments(commentsRes.data);</span>
+<span class="cstat-no" title="statement not covered" >      } catch (error) {</span>
+<span class="cstat-no" title="statement not covered" >        console.error("Error fetching comments:", error);</span>
+<span class="cstat-no" title="statement not covered" >      }</span>
+<span class="cstat-no" title="statement not covered" >    };</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >    fetchComments();</span>
+<span class="cstat-no" title="statement not covered" >  }, [numericEventId, isAuthenticated]);</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >  useEffect(() =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    if (!numericEventId || !isAuthenticated) return;</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >    const wsUrl = `ws://127.0.0.1:8000/ws/event/${numericEventId}/`;</span>
 <span class="cstat-no" title="statement not covered" >    wsRef.current = new WebSocket(wsUrl);</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >    wsRef.current.onopen = () =&gt; {</span>
@@ -512,8 +497,7 @@
 <span class="cstat-no" title="statement not covered" >    wsRef.current.onmessage = (e) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >      const data = JSON.parse(e.data);</span>
 <span class="cstat-no" title="statement not covered" >      if (data.type === "NEW_COMMENT") {</span>
-<span class="cstat-no" title="statement not covered" >        console.log("Received new comment:", data.payload);</span>
-<span class="cstat-no" title="statement not covered" >        setComments((prevComments) =&gt; [data.payload, ...prevComments]);</span>
+<span class="cstat-no" title="statement not covered" >        setComments((prev) =&gt; [data.payload, ...prev]);</span>
 <span class="cstat-no" title="statement not covered" >      }</span>
 <span class="cstat-no" title="statement not covered" >    };</span>
 <span class="cstat-no" title="statement not covered" ></span>
@@ -530,9 +514,9 @@
 <span class="cstat-no" title="statement not covered" >        wsRef.current.close();</span>
 <span class="cstat-no" title="statement not covered" >      }</span>
 <span class="cstat-no" title="statement not covered" >    };</span>
-<span class="cstat-no" title="statement not covered" >  }, [eventId]);</span>
+<span class="cstat-no" title="statement not covered" >  }, [numericEventId, isAuthenticated]);</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >  if (loadingEvent) {</span>
+<span class="cstat-no" title="statement not covered" >  if (loading) {</span>
 <span class="cstat-no" title="statement not covered" >    return &lt;CircularProgress style={{ display: "block", margin: "20px auto" }} /&gt;;</span>
 <span class="cstat-no" title="statement not covered" >  }</span>
 <span class="cstat-no" title="statement not covered" ></span>
@@ -567,12 +551,7 @@
 <span class="cstat-no" title="statement not covered" >      &lt;/Card&gt;</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >      &lt;CommentsSectionWrapper isAuthenticated={isAuthenticated}&gt;</span>
-<span class="cstat-no" title="statement not covered" >        &lt;CommentSection</span>
-<span class="cstat-no" title="statement not covered" >          eventId={eventId}</span>
-<span class="cstat-no" title="statement not covered" >          comments={comments}</span>
-<span class="cstat-no" title="statement not covered" >          setComments={setComments}</span>
-<span class="cstat-no" title="statement not covered" >          loading={loadingComments}</span>
-<span class="cstat-no" title="statement not covered" >        /&gt;</span>
+<span class="cstat-no" title="statement not covered" >        &lt;CommentSection eventId={numericEventId as number} /&gt;</span>
 <span class="cstat-no" title="statement not covered" >      &lt;/CommentsSectionWrapper&gt;</span>
 <span class="cstat-no" title="statement not covered" >    &lt;/div&gt;</span>
 <span class="cstat-no" title="statement not covered" >  );</span>
@@ -586,7 +565,7 @@
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-03-10T21:31:58.011Z
+                at 2025-03-19T01:38:58.370Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

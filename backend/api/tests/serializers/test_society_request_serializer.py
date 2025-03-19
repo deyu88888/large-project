@@ -3,7 +3,7 @@ from PIL import Image
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.utils import timezone
-from api.models import Society, Admin, Student, SocietyRequest, SocietyShowreelRequest
+from api.models import Society, User, Student, SocietyRequest, SocietyShowreelRequest
 from api.serializers import SocietyRequestSerializer
 from api.tests.file_deletion import delete_file
 from rest_framework.test import APIRequestFactory
@@ -18,7 +18,7 @@ class SocietyRequestSerializerTestCase(TestCase):
 
     def setUp(self):
         # Create an Admin user
-        self.admin = Admin.objects.create(
+        self.admin = User.objects.create(
             username="admin_user",
             first_name="Admin",
             last_name="User",

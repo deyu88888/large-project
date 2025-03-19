@@ -14,6 +14,7 @@ import {
   ListItemText, 
   ListItemSecondaryAction 
 } from "@mui/material";
+import { tokens } from "../../theme/theme";
 
 interface Society {
   id: number;
@@ -28,15 +29,12 @@ interface Member {
   username: string;
 }
 
-interface RouteParams {
-  society_id: string;
-}
-
 const ViewSocietyMembers: React.FC = () => {
-  const { society_id } = useParams<RouteParams>();
+  const { societyId } = useParams<{ societyId: string }>();
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const theme = useTheme();
+  const colors = tokens(theme.palette.mode);
   
   const [society, setSociety] = useState<Society | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
@@ -45,7 +43,7 @@ const ViewSocietyMembers: React.FC = () => {
   useEffect(() => {
     const fetchMembers = async (): Promise<void> => {
       try {
-        const id = society_id || user?.president_of;
+        const id = societyId || user?.president_of;
         if (!id) {
           throw new Error("No society id available");
         }
@@ -60,7 +58,7 @@ const ViewSocietyMembers: React.FC = () => {
     };
 
     fetchMembers();
-  }, [society_id, user]);
+  }, [societyId, user]);
 
   const handleViewProfile = (memberId: number): void => {
     navigate(`/profile/${memberId}`);
@@ -108,7 +106,7 @@ const ViewSocietyMembers: React.FC = () => {
         <Typography 
           variant="h1" 
           sx={{ 
-            color: theme.palette.primary.main,
+            color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[100],
             fontWeight: 'bold' 
           }}
         >
@@ -122,7 +120,7 @@ const ViewSocietyMembers: React.FC = () => {
           maxWidth: 800, 
           mx: 'auto', 
           p: 3,
-          backgroundColor: theme.palette.mode === 'dark' ? '#141b2d' : theme.palette.background.paper
+          backgroundColor: theme.palette.mode === 'dark' ? colors.primary[400] : theme.palette.background.paper
         }}
       >
         {members.length === 0 ? (

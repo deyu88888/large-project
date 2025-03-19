@@ -14,7 +14,7 @@ vi.mock('react-router-dom', async () => {
   return {
     ...actual,
     useNavigate: () => mockNavigate,
-    useParams: () => ({ society_id: '123' }),
+    useParams: () => ({ societyId: '123' }),
   };
 });
 
@@ -25,7 +25,7 @@ vi.mock('../../../api', () => ({
   },
   apiPaths: {
     SOCIETY: {
-      MANAGE_DETAILS: (id: number) => `/api/manage-society-details/${id}/`,
+      MANAGE_DETAILS: (id: string) => `/api/manage-society-details/${id}/`,
     },
   },
 }));
@@ -34,7 +34,7 @@ vi.mock('../../../stores/auth-store', () => ({
   useAuthStore: vi.fn(),
 }));
 
-vi.mock('../society-preview-modal', () => ({
+vi.mock('../SocietyPreviewModal', () => ({
   default: vi.fn(({ open, onClose, formData }) => {
     if (!open) return null;
     return (
@@ -75,7 +75,7 @@ describe('ManageSocietyDetails Component', () => {
         <MemoryRouter initialEntries={['/president-page/123/manage-society-details']}>
           <Routes>
             <Route
-              path="/president-page/:society_id/manage-society-details"
+              path="/president-page/:societyId/manage-society-details"
               element={<ManageSocietyDetails />}
             />
           </Routes>
