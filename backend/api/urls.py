@@ -11,7 +11,8 @@ from .views import (
     get_popular_societies, CreateEventRequestView, custom_media_view, get_sorted_events, StudentSocietyDataView,
     AllEventsView, EventDetailView, EventCommentsView, DescriptionRequestView, ManageSocietyDetailsAdminView, 
     like_comment, dislike_comment, EventCommentsView, toggle_follow, StudentProfileView, AdminRepliesListView,
-    ActivityLogView, ManageEventDetailsAdminView, DeleteView, ManageStudentDetailsAdminView, ReportReplyView, MyReportsView, MyReportsWithRepliesView, ReportThreadView, AdminReportsWithRepliesView)
+    ActivityLogView, ManageEventDetailsAdminView, DeleteView, ManageStudentDetailsAdminView, ReportReplyView, 
+    MyReportsView, MyReportsWithRepliesView, ReportThreadView, AdminReportsWithRepliesView, ReportReplyNotificationsView)
 from .utils import request_otp, verify_otp
 from .recommendation_views import RecommendedSocietiesView, SocietyRecommendationExplanationView
 from .recommendation_feedback_views import RecommendationFeedbackView, RecommendationFeedbackAnalyticsView
@@ -41,7 +42,7 @@ urlpatterns = [
     path("events/", EventListView.as_view(), name="event-list"),
 
     # User role endpoints
-    path("user/admin-panel/", AdminView.as_view(), name="admin"),
+    path("user/admin", AdminView.as_view(), name="admin"),
     path("user/student", StudentView.as_view(), name="student"),
   
   # Society membership endpoints
@@ -109,6 +110,8 @@ urlpatterns = [
     path('report-thread/<int:report_id>', ReportThreadView.as_view(), name='report_thread'),
     path("reports-replied", AdminReportsWithRepliesView.as_view(), name="report_replied"),
     path("reports-with-replies", AdminRepliesListView.as_view(), name="reports_with_replies"),
+    path('report-reply-notifications', ReportReplyNotificationsView.as_view(), name='report-reply-notifications'),
+    path('report-reply-notifications/<int:reply_id>', ReportReplyNotificationsView.as_view(), name='mark-report-reply-read'),
 
 
 

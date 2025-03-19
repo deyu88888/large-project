@@ -81,7 +81,7 @@ const AdminDrawer: React.FC<AdminDrawerProps> = ({
     {
       title: "My Team",
       icon: <GroupsIcon />,
-      to: "/admin/student-list",
+      to: "/admin/my-team",
     },
     {
       title: "Create Admin",

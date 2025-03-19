@@ -118,8 +118,8 @@ class RecommendationFeedbackAnalyticsView(APIView):
         """
         Get analytics on recommendation feedback.
         """
-        # Ensure the user is an admin
-        if not hasattr(request.user, 'admin'):
+        user = request.user
+        if not (user.role == "admin" or user.is_super_admin):
             return Response(
                 {"error": "Only admins can access feedback analytics."},
                 status=status.HTTP_403_FORBIDDEN
