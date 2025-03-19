@@ -17,6 +17,9 @@ const AdminList: React.FC = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedAdmin, setSelectedAdmin] = useState<any | null>(null);
   const [reason, setReason] = useState('');
+  const [currentUser, setCurrentUser] = useState<any | null>(null);
+  const isSuperAdmin = currentUser?.is_super_admin === true;
+  const actionsColumnWidth = isSuperAdmin ? 170 : 85;
 
   const getData = async () => {
     try {
@@ -32,8 +35,18 @@ const AdminList: React.FC = () => {
     }
   };
 
+  const getCurrentUser = async () => {
+    try {
+      const res = await apiClient.get(apiPaths.USER.CURRENT);
+      setCurrentUser(res.data);
+    } catch (error) {
+      console.error("Error fetching current user:", error);
+    }
+  };
+
   useEffect(() => {
     getData();
+    getCurrentUser();
   }, []);
 
   // Filter admins based on search term (if provided)
@@ -66,12 +79,14 @@ const AdminList: React.FC = () => {
     {
       field: "actions",
       headerName: "Actions",
-      width: 170,
-      minWidth: 170,
+      width: actionsColumnWidth,
+      minWidth: actionsColumnWidth,
       sortable: false,
       filterable: false,
       renderCell: (params: any) => {
         const adminId = params.row.id;
+        const isSuperAdmin = currentUser?.is_super_admin === true;
+        
         return (
           <Box>
             <Button
@@ -82,13 +97,15 @@ const AdminList: React.FC = () => {
             >
               View
             </Button>
-            <Button
-              variant="contained"
-              color="error"
-              onClick={() => handleOpenDialog(params.row)}
-            >
-              Delete
-            </Button>
+            {isSuperAdmin && (
+              <Button
+                variant="contained"
+                color="error"
+                onClick={() => handleOpenDialog(params.row)}
+              >
+                Delete
+              </Button>
+            )}
           </Box>
         );
       },
