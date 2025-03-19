@@ -15,6 +15,14 @@ from .views import (
 from .utils import request_otp, verify_otp
 from .recommendation_views import RecommendedSocietiesView, SocietyRecommendationExplanationView
 from .recommendation_feedback_views import RecommendationFeedbackView, RecommendationFeedbackAnalyticsView
+from .news_views import (
+    SocietyNewsListView, 
+    SocietyNewsDetailView, 
+    NewsCommentView, 
+    NewsCommentDetailView, 
+    NewsCommentLikeView,
+    MemberNewsView
+)
 
 
 urlpatterns = [
@@ -120,4 +128,11 @@ urlpatterns = [
     path("news/", NewsView.as_view(), name="news"),
     path("news/<int:pk>", NewsView.as_view(), name="mark_news_read"),   # TODO: implement this later
     path("get-news/", BroadcastListAPIView.as_view(), name="get-news"),
+
+    path("society/<int:society_id>/news/", SocietyNewsListView.as_view(), name="society_news_list"),
+    path("news/<int:news_id>/", SocietyNewsDetailView.as_view(), name="society_news_detail"),
+    path("news/<int:news_id>/comments/", NewsCommentView.as_view(), name="news_comments"),
+    path("news/comments/<int:comment_id>/", NewsCommentDetailView.as_view(), name="news_comment_detail"),
+    path("news/comments/<int:comment_id>/like/", NewsCommentLikeView.as_view(), name="news_comment_like"),
+    path("my-news-feed/", MemberNewsView.as_view(), name="member_news_feed"),
 ]

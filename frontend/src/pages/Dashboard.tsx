@@ -47,13 +47,6 @@ interface RawEvent {
   duration?: string;
 }
 
-type WebSocketMessage =
-  | { type: "dashboard.update"; data: StatData }
-  | { type: "update_activities"; activities: Activity[] }
-  | { type: "update_notifications"; notifications: Notification[] }
-  | { type: "update_events"; events: CalendarEvent[] }
-  | { type: "update_introduction"; introduction: Introduction };
-
 // -- Reusable Components --
 const SectionCard: React.FC<{ title: string; children: React.ReactNode }> = ({
   title,
@@ -101,7 +94,7 @@ interface TabsProps {
   children: React.ReactNode;
 }
 
-// Define the Tabs component here, making sure it's fully defined before use
+// Define the Tabs component
 const Tabs: React.FC<TabsProps> = ({ activeTab, setActiveTab, children }) => {
   const tabLabels = React.Children.toArray(children)
     .filter((child) => React.isValidElement(child))
@@ -141,10 +134,65 @@ interface TabPanelProps {
   children: React.ReactNode;
 }
 
-// Define the TabPanel component here, making sure it's fully defined before use
+// Define the TabPanel component
 const TabPanel: React.FC<TabPanelProps> = ({ children, label }) => (
   <div data-testid={`panel-${label.toLowerCase().replace(/\s+/g, '-')}`}>{children}</div>
 );
+
+// -- API Functions to use with useFetchWebSocket --
+const fetchDashboardStats = async (): Promise<StatData> => {
+  try {
+    const response = await apiClient.get("/api/dashboard/stats");
+    return response.data || {
+      totalSocieties: 5,
+      totalEvents: 10,
+      pendingApprovals: 3,
+      activeMembers: 125
+    };
+  } catch (error) {
+    console.error("Error fetching dashboard stats:", error);
+    return {
+      totalSocieties: 5,
+      totalEvents: 10,
+      pendingApprovals: 3,
+      activeMembers: 125
+    };
+  }
+};
+
+const fetchActivities = async (): Promise<Activity[]> => {
+  try {
+    const response = await apiClient.get("/api/dashboard/activities");
+    return response.data || [
+      { description: "Chess Society organized a tournament" },
+      { description: "New Debate Society was created" },
+      { description: "Music Club scheduled a concert for next month" }
+    ];
+  } catch (error) {
+    console.error("Error fetching activities:", error);
+    return [
+      { description: "Chess Society organized a tournament" },
+      { description: "New Debate Society was created" },
+      { description: "Music Club scheduled a concert for next month" }
+    ];
+  }
+};
+
+const fetchNotifications = async (): Promise<Notification[]> => {
+  try {
+    const response = await apiClient.get("/api/dashboard/notifications");
+    return response.data || [
+      { message: "New event proposal requires approval" },
+      { message: "Society budget reports due next week" }
+    ];
+  } catch (error) {
+    console.error("Error fetching notifications:", error);
+    return [
+      { message: "New event proposal requires approval" },
+      { message: "Society budget reports due next week" }
+    ];
+  }
+};
 
 // -- Main Dashboard --
 const Dashboard: React.FC = () => {
@@ -159,14 +207,19 @@ const Dashboard: React.FC = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [eventCalendar, setEventCalendar] = useState<CalendarEvent[]>([]);
   const [upcomingEvents, setUpcomingEvents] = useState<CalendarEvent[]>([]);
-  const [introduction, setIntroduction] = useState<Introduction | null>(null);
+  const [introduction, setIntroduction] = useState<Introduction | null>({
+    title: "Welcome to Student Societies Dashboard",
+    content: [
+      "This dashboard provides an overview of all student societies and their activities.",
+      "Join a society, attend events, and make the most of your campus experience!"
+    ]
+  });
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("Recent Activities");
-  const [dataVersion, setDataVersion] = useState(0);
 
-  // Sidebar control - Now manages width instead of open/closed state
+  // Sidebar control - Manages width instead of open/closed state
   const [sidebarWidth, setSidebarWidth] = useState<'collapsed' | 'expanded'>('collapsed');
 
   // -- Dark Mode --
@@ -208,12 +261,14 @@ const Dashboard: React.FC = () => {
   const eventCalendarRef = useRef<HTMLDivElement>(null);
   const updatesRef = useRef<HTMLDivElement>(null);
 
-  // -- WebSocket --
-  const socketRef = useRef<WebSocket | null>(null);
-  const reconnectIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const reconnectAttemptsRef = useRef<number>(0);
-  const MAX_RECONNECT_ATTEMPTS = 5;
-  const RECONNECT_INTERVAL = 5000;
+  // -- Use WebSocket Hook for Dashboard Stats --
+  const dashboardStats = useFetchWebSocket<StatData>(fetchDashboardStats, "dashboard/stats");
+  
+  // -- Use WebSocket Hook for Activities --
+  const activities = useFetchWebSocket<Activity>(fetchActivities, "dashboard/activities");
+  
+  // -- Use WebSocket Hook for Notifications --
+  const notificationData = useFetchWebSocket<Notification>(fetchNotifications, "dashboard/notifications");
 
   // -- Toggle Sidebar -- (ONLY for the hamburger button)
   const handleToggleSidebar = useCallback(() => {
@@ -319,163 +374,24 @@ const Dashboard: React.FC = () => {
     }
   }, []);
 
-  // Real-time fetch of all dashboard data
-  const fetchAllDashboardData = useCallback(async () => {
-    try {
-      // Fetch dashboard stats
-      const statsResponse = await apiClient.get("/api/dashboard/stats");
-      if (statsResponse.data) {
-        setStats(statsResponse.data);
-      }
-      
-      // Fetch activities
-      const activitiesResponse = await apiClient.get("/api/dashboard/activities");
-      if (activitiesResponse.data) {
-        setRecentActivities(activitiesResponse.data);
-      }
-      
-      // Fetch notifications
-      const notificationsResponse = await apiClient.get("/api/dashboard/notifications");
-      if (notificationsResponse.data) {
-        setNotifications(notificationsResponse.data);
-      }
-      
-      setDataVersion(prev => prev + 1);
-    } catch (err) {
-      console.error("Failed to fetch dashboard data:", err);
-    }
-  }, []);
-
-  // Set up continuous data polling and WebSocket monitoring
+  // Update state when WebSocket data changes
   useEffect(() => {
-    fetchAllDashboardData();
-    
-    // Create a data refresh loop using requestAnimationFrame for smoother updates
-    let animationFrameId: number;
-    let lastRefreshTime = 0;
-    
-    const checkForUpdates = (timestamp: number) => {
-      // Check every second for updates (but don't block rendering)
-      if (timestamp - lastRefreshTime > 1000) {
-        fetchAllDashboardData();
-        lastRefreshTime = timestamp;
-      }
-      
-      animationFrameId = requestAnimationFrame(checkForUpdates);
-    };
-    
-    animationFrameId = requestAnimationFrame(checkForUpdates);
-    
-    return () => {
-      cancelAnimationFrame(animationFrameId);
-    };
-  }, [fetchAllDashboardData]);
-
-  // Process any WebSocket messages when they arrive
-  const messageHandler = useCallback((data: WebSocketMessage) => {
-    console.log("Received WebSocket message:", data);
-    
-    switch (data.type) {
-      case "dashboard.update":
-        setStats(data.data);
-        break;
-      case "update_activities":
-        setRecentActivities(data.activities);
-        break;
-      case "update_notifications":
-        setNotifications(data.notifications);
-        break;
-      case "update_events":
-        setEventCalendar(data.events);
-        setUpcomingEvents(data.events);
-        break;
-      case "update_introduction":
-        setIntroduction(data.introduction);
-        break;
-      default:
-        console.warn("Unknown WebSocket message type:", data);
+    if (dashboardStats && dashboardStats.length > 0) {
+      setStats(dashboardStats[0]);
     }
-    
-    // Increment the data version to trigger re-renders
-    setDataVersion(prev => prev + 1);
-  }, []);
-
-  // WebSocket connection
-  const connectWebSocket = useCallback(() => {
-    if (reconnectIntervalRef.current) {
-      clearTimeout(reconnectIntervalRef.current);
-      reconnectIntervalRef.current = null;
-    }
-    
-    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
-      console.warn("[Dashboard] WebSocket already open. Skipping.");
-      return;
-    }
-
-    console.log("[Dashboard] Connecting to WebSocket...");
-    const wsURL =
-      process.env.NODE_ENV === "production"
-        ? "wss://your-production-domain.com/ws/dashboard/"
-        : "ws://127.0.0.1:8000/ws/dashboard/";
-
-    const socket = new WebSocket(wsURL);
-    socketRef.current = socket;
-
-    socket.onopen = () => {
-      console.log("[Dashboard] WebSocket Connected!");
-      setError(null);
-      reconnectAttemptsRef.current = 0;
-      // Trigger immediate data refresh when WebSocket connects
-      fetchAllDashboardData();
-    };
-
-    socket.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        messageHandler(data);
-      } catch (parseErr) {
-        console.error("Error parsing WebSocket message:", parseErr, event.data);
-      }
-    };
-
-    socket.onerror = (err) => {
-      console.error("[Dashboard] WebSocket Error:", err);
-    };
-
-    socket.onclose = (evt) => {
-      socketRef.current = null;
-      console.warn(`[Dashboard] WebSocket Closed: code ${evt.code}`);
-      if (
-        evt.code !== 1000 &&
-        evt.code !== 1005 &&
-        reconnectAttemptsRef.current < MAX_RECONNECT_ATTEMPTS
-      ) {
-        reconnectAttemptsRef.current++;
-        reconnectIntervalRef.current = setTimeout(
-          connectWebSocket,
-          RECONNECT_INTERVAL
-        );
-      } else {
-        console.warn("[Dashboard] WebSocket closed permanently.");
-      }
-    };
-  }, [messageHandler, fetchAllDashboardData]);
+  }, [dashboardStats]);
 
   useEffect(() => {
-    console.log("[Dashboard] Initializing WebSocket...");
-    connectWebSocket();
+    if (activities && activities.length > 0) {
+      setRecentActivities(activities);
+    }
+  }, [activities]);
 
-    return () => {
-      if (socketRef.current) {
-        socketRef.current.close();
-        socketRef.current = null;
-      }
-      if (reconnectIntervalRef.current) {
-        clearTimeout(reconnectIntervalRef.current);
-        reconnectIntervalRef.current = null;
-      }
-    };
-  }, [connectWebSocket]);
+  useEffect(() => {
+    if (notificationData && notificationData.length > 0) {
+      setNotifications(notificationData);
+    }
+  }, [notificationData]);
 
   // ---- Fetch Events ----
   useEffect(() => {
@@ -557,47 +473,25 @@ const Dashboard: React.FC = () => {
     fetchEvents();
     
     // Set up event polling with a small interval for real-time updates
-    const eventPolling = setInterval(fetchEvents, 2000);
+    const eventPolling = setInterval(fetchEvents, 3000);
   
     return () => {
       isMounted = false;
       clearInterval(eventPolling);
     };
-  }, [parseEventDateTime, calculateEventEnd, dataVersion]);
+  }, [parseEventDateTime, calculateEventEnd]);
 
-  // Initialize with some default stats if needed - with a short delay
+  // Loading state check
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (stats.totalSocieties === 0) {
-        setStats({
-          totalSocieties: 5,
-          totalEvents: 10,
-          pendingApprovals: 3,
-          activeMembers: 125
-        });
-      }
-      
-      if (recentActivities.length === 0) {
-        setRecentActivities([
-          { description: "Chess Society organized a tournament" },
-          { description: "New Debate Society was created" },
-          { description: "Music Club scheduled a concert for next month" }
-        ]);
-      }
-      
-      if (!introduction) {
-        setIntroduction({
-          title: "Welcome to Student Societies Dashboard",
-          content: [
-            "This dashboard provides an overview of all student societies and their activities.",
-            "Join a society, attend events, and make the most of your campus experience!"
-          ]
-        });
-      }
-    }, 1000); // Wait 1 second before using defaults
-    
-    return () => clearTimeout(timer);
-  }, [stats.totalSocieties, recentActivities.length, introduction]);
+    if (
+      dashboardStats && 
+      activities && 
+      notificationData && 
+      upcomingEvents.length > 0
+    ) {
+      setLoading(false);
+    }
+  }, [dashboardStats, activities, notificationData, upcomingEvents]);
 
   if (loading) {
     return <LoadingView />;
@@ -765,7 +659,7 @@ const Dashboard: React.FC = () => {
             <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4">
               Popular Societies
             </h2>
-            <PopularSocieties key={`societies-${dataVersion}`} />
+            <PopularSocieties />
           </motion.section>
 
           {/* Upcoming Events */}

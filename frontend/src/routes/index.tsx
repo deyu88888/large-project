@@ -33,6 +33,7 @@ const ViewSocietyMembers = lazy(() => import("../pages/President/ViewSocietyMemb
 const PendingMembers = lazy(() => import("../pages/President/PendingMembers"));
 const GiveAwardPage = lazy(() => import("../pages/President/GiveAwardPage"));
 const AssignRolePage = lazy(() => import("../pages/President/AssignSocietyRole"));
+const SocietyNewsManager = lazy(() => import("../pages/President/SocietyNewsManager"));
 
 // Public event pages
 const AllEventsPage = lazy(() => import("../pages/allEventsPage"));
@@ -136,6 +137,7 @@ const routes = [
           { path: "edit-event/:eventId", element: <PageWithTitle title="Edit Event"><EditEventDetails /></PageWithTitle> },
           { path: "give-award/:memberId", element: <PageWithTitle title="Give Award to Member"><GiveAwardPage /></PageWithTitle> },
           { path: "assign-role/:memberId", element: <PageWithTitle title="Assign Society Role"><AssignRolePage /></PageWithTitle> },
+          { path: "manage-society-news", element: <PageWithTitle title="Manage Society News"><SocietyNewsManager /></PageWithTitle> },
         ],
       },
       // Added society management routes
@@ -163,6 +165,72 @@ const routes = [
         ),
         children: [
           { index: true, element: <PageWithTitle title="Manage Society Details"><ManageSocietyDetails /></PageWithTitle> },
+        ],
+      },
+      // New route for managing society news
+      {
+        path: "manage-society-news/:societyId",
+        element: (
+          <PrivateGuard requiredRole="student">
+            <Suspense fallback={<LoadingView />}>
+              <Layout />
+            </Suspense>
+          </PrivateGuard>
+        ),
+        children: [
+          { index: true, element: <PageWithTitle title="Manage Society News"><SocietyNewsManager /></PageWithTitle> },
+        ],
+      },
+      {
+        path: "manage-society-events/:societyId",
+        element: (
+          <PrivateGuard requiredRole="student">
+            <Suspense fallback={<LoadingView />}>
+              <Layout />
+            </Suspense>
+          </PrivateGuard>
+        ),
+        children: [
+          { index: true, element: <PageWithTitle title="Manage Society Events"><ManageSocietyEvents /></PageWithTitle> },
+        ],
+      },
+      {
+        path: "pending-members/:societyId",
+        element: (
+          <PrivateGuard requiredRole="student">
+            <Suspense fallback={<LoadingView />}>
+              <Layout />
+            </Suspense>
+          </PrivateGuard>
+        ),
+        children: [
+          { index: true, element: <PageWithTitle title="Pending Members"><PresidentPage /></PageWithTitle> },
+        ],
+      },
+      {
+        path: "report-to-admin/:societyId",
+        element: (
+          <PrivateGuard requiredRole="student">
+            <Suspense fallback={<LoadingView />}>
+              <Layout />
+            </Suspense>
+          </PrivateGuard>
+        ),
+        children: [
+          { index: true, element: <PageWithTitle title="Report to Admin"><ReportToAdmin /></PageWithTitle> },
+        ],
+      },
+      {
+        path: "view-society-members/:societyId",
+        element: (
+          <PrivateGuard requiredRole="student">
+            <Suspense fallback={<LoadingView />}>
+              <Layout />
+            </Suspense>
+          </PrivateGuard>
+        ),
+        children: [
+          { index: true, element: <PageWithTitle title="Society Members"><ViewSocietyMembers /></PageWithTitle> },
         ],
       },
       {

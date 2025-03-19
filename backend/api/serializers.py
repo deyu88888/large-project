@@ -1,6 +1,6 @@
 import datetime
 from api.models import AdminReportRequest, Award, AwardStudent, BroadcastMessage, SiteSettings, User, Student, Society, Event, \
-    Notification, Request, SocietyRequest, SocietyShowreel, SocietyShowreelRequest, EventRequest, UserRequest, Comment, DescriptionRequest
+    Notification, Request, SocietyRequest, SocietyShowreel, SocietyShowreelRequest, EventRequest, UserRequest, Comment, DescriptionRequest, SocietyNews, NewsComment
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 from django.utils.translation import gettext_lazy as _
@@ -881,3 +881,143 @@ class BroadcastSerializer(serializers.ModelSerializer):
         model = BroadcastMessage
         fields = ['id', 'sender', 'societies', 'events', 'recipients', 'message', 'created_at']
         read_only_fields = ['id', 'created_at', 'sender']
+
+class NewsCommentSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the NewsComment model
+    """
+    replies = serializers.SerializerMethodField()
+    user_data = serializers.SerializerMethodField()
+    likes_count = serializers.SerializerMethodField()
+    liked_by_user = serializers.SerializerMethodField()
+
+    class Meta:
+        model = NewsComment
+        fields = [
+            "id", "content", "created_at", "user_data", "parent_comment", 
+            "replies", "likes_count", "liked_by_user"
+        ]
+
+    def get_replies(self, obj):
+        """Get all the replies of the comment"""
+        request = self.context.get("request", None)
+        serializer = NewsCommentSerializer(
+            obj.replies.all().order_by("created_at"),
+            many=True,
+            context={"request": request}
+        )
+        return serializer.data
+
+    def get_user_data(self, obj):
+        return {
+            "id": obj.user.id,
+            "username": obj.user.username,
+            "first_name": obj.user.first_name,
+            "last_name": obj.user.last_name,
+        }
+
+    def get_likes_count(self, obj):
+        return obj.likes.count()
+
+    def get_liked_by_user(self, obj):
+        """Check if the user liked this comment"""
+        request = self.context.get("request", None)
+        if request and request.user.is_authenticated:
+            return obj.likes.filter(id=request.user.id).exists()
+        return False
+
+
+class SocietyNewsSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the SocietyNews model
+    """
+    author_data = serializers.SerializerMethodField()
+    society_data = serializers.SerializerMethodField()
+    comment_count = serializers.SerializerMethodField()
+    is_author = serializers.SerializerMethodField()
+    image_url = serializers.SerializerMethodField()
+    attachment_name = serializers.SerializerMethodField()
+    comments = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = SocietyNews
+        fields = [
+            'id', 'society', 'title', 'content', 'image', 'image_url', 
+            'attachment', 'attachment_name', 'author', 'author_data', 
+            'society_data', 'created_at', 'updated_at', 'published_at', 
+            'status', 'is_featured', 'is_pinned', 'tags', 'view_count',
+            'comment_count', 'is_author', 'comments'
+        ]
+        read_only_fields = ['created_at', 'updated_at', 'published_at', 'view_count']
+        extra_kwargs = {
+            'image': {'write_only': True},
+            'attachment': {'write_only': True},
+            'author': {'write_only': True},
+            'society': {'write_only': True},
+        }
+
+    def get_author_data(self, obj):
+        """Get basic author information"""
+        if not obj.author:
+            return None
+        return {
+            "id": obj.author.id,
+            "username": obj.author.username,
+            "first_name": obj.author.first_name,
+            "last_name": obj.author.last_name,
+            "full_name": obj.author.full_name,
+        }
+
+    def get_society_data(self, obj):
+        """Get basic society information"""
+        return {
+            "id": obj.society.id,
+            "name": obj.society.name,
+            "icon": self.context.get('request').build_absolute_uri(obj.society.icon.url) if obj.society.icon else None,
+        }
+
+    def get_comment_count(self, obj):
+        """Get total comment count including replies"""
+        return NewsComment.objects.filter(news_post=obj).count()
+
+    def get_is_author(self, obj):
+        """Check if the current user is the author of this post"""
+        request = self.context.get("request", None)
+        if request and request.user.is_authenticated and hasattr(request.user, 'student'):
+            return obj.author and obj.author.id == request.user.student.id
+        return False
+
+    def get_image_url(self, obj):
+        """Get full image URL"""
+        request = self.context.get("request")
+        if obj.image:
+            return request.build_absolute_uri(obj.image.url) if request else obj.image.url
+        return None
+
+    def get_attachment_name(self, obj):
+        """Get the attachment filename"""
+        if obj.attachment:
+            return obj.attachment.name.split('/')[-1]
+        return None
+        
+    def get_comments(self, obj):
+        """Get top-level comments"""
+        request = self.context.get("request", None)
+        comments = NewsComment.objects.filter(news_post=obj, parent_comment=None).order_by("created_at")
+        serializer = NewsCommentSerializer(comments, many=True, context={"request": request})
+        return serializer.data
+
+    def validate(self, data):
+        """Validate the news post data"""
+        if data.get('status') == 'Published' and not data.get('title'):
+            raise serializers.ValidationError({"title": "Published news must have a title."})
+        return data
+
+    def create(self, validated_data):
+        """Create a new news post"""
+        # Ensure the author is set to the current user's student profile
+        request = self.context.get("request")
+        if not validated_data.get('author') and request and hasattr(request.user, 'student'):
+            validated_data['author'] = request.user.student
+            
+        return super().create(validated_data)        

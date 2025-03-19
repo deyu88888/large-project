@@ -19,7 +19,7 @@ interface Member {
 }
 
 interface RouteParams {
-  society_id: string;
+  societyId: string; // Changed from society_id to match the route param name
 }
 
 interface NavigationItem {
@@ -32,7 +32,7 @@ const PresidentPage: React.FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const navigate = useNavigate();
-  const { society_id } = useParams<RouteParams>();
+  const { societyId } = useParams<RouteParams>(); // Changed from society_id to match the route param name
   const [society, setSociety] = useState<Society | null>(null);
   const [pendingMembers, setPendingMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -41,7 +41,7 @@ const PresidentPage: React.FC = () => {
   useEffect(() => {
     const fetchData = async (): Promise<void> => {
       try {
-        const id = society_id || user?.president_of || user?.vice_president_of;
+        const id = societyId || user?.president_of || user?.vice_president_of;
         if (!id) throw new Error("No society ID available");
 
         const societyResponse = await apiClient.get(`/api/manage-society-details/${id}/`);
@@ -57,11 +57,12 @@ const PresidentPage: React.FC = () => {
     };
 
     fetchData();
-  }, [society_id, user]);
+  }, [societyId, user]);
 
   const navigationItems: NavigationItem[] = [
     { text: "Society Details", path: "manage-society-details", color: colors.greenAccent[500] },
     { text: "Society Events", path: "manage-society-events", color: colors.greenAccent[500] },
+    { text: "Manage News", path: "manage-society-news", color: colors.blueAccent[500] },
     { text: "Pending Members", path: "pending-members", color: colors.blueAccent[500] },
     { text: "Report to Admin", path: "report-to-admin", color: colors.redAccent[500] },
     { text: "All Members", path: "view-society-members", color: colors.blueAccent[500] },
@@ -84,6 +85,9 @@ const PresidentPage: React.FC = () => {
       </Box>
     );
   }
+
+  // Get the current society ID for navigation
+  const currentSocietyId = societyId || (society ? society.id : null) || user?.president_of || user?.vice_president_of;
 
   return (
     <Box
@@ -108,7 +112,7 @@ const PresidentPage: React.FC = () => {
         {navigationItems.map((item) => (
           <Button
             key={item.text}
-            onClick={() => navigate(item.path)}
+            onClick={() => currentSocietyId && navigate(`/${item.path}/${currentSocietyId}`)}
             sx={{
               backgroundColor: item.color,
               color: theme.palette.mode === "dark" ? colors.primary[900] : "#fff",
@@ -160,7 +164,7 @@ const PresidentPage: React.FC = () => {
 
         {pendingMembers.length > 3 && (
           <Button
-            onClick={() => navigate("pending-members")}
+            onClick={() => currentSocietyId && navigate(`/pending-members/${currentSocietyId}`)}
             sx={{ mt: 2, color: colors.blueAccent[500], textTransform: "none" }}
           >
             View All Pending Members

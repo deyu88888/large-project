@@ -20,10 +20,12 @@ import {
   FaUserPlus,
   FaCogs,
   FaRegClock,
+  FaNewspaper, // For news tab
 } from "react-icons/fa";
 import { apiClient } from "../../api";
 import { useAuthStore } from "../../stores/auth-store";
 import StudentCalendar from "./StudentCalendar";
+import SocietyNewsFeed from './SocietyNewsFeed'; // Import the news feed component
 
 const CustomTabs = styled(Tabs)(({ theme, activecolor }) => ({
   "& .MuiTabs-indicator": {
@@ -121,10 +123,12 @@ const StudentDashboard: React.FC = () => {
     return allSocs;
   }, [societies, student]);
 
+  // Updated to include orange accent for the news tab + fallback color
   const tabColors = [
-    colours.greenAccent[500],
-    colours.blueAccent[500],
-    colours.redAccent[500],
+    colours.greenAccent?.[500] || '#4CAF50',
+    colours.blueAccent?.[500] || '#2196F3',
+    colours.redAccent?.[500] || '#F44336',
+    colours.orangeAccent?.[500] || '#FF9800', // fallback if orangeAccent is undefined
   ];
 
   useEffect(() => {
@@ -323,6 +327,7 @@ const StudentDashboard: React.FC = () => {
             <Tab label="Societies" />
             <Tab label="Events" />
             <Tab label="Notifications" />
+            <Tab label="Society News" icon={<FaNewspaper />} iconPosition="start" />
           </CustomTabs>
           <Box p={3}>
             {activeTab === 0 && (
@@ -569,6 +574,11 @@ const StudentDashboard: React.FC = () => {
                     ))}
                   </div>
                 )}
+              </Box>
+            )}
+            {activeTab === 3 && (
+              <Box>
+                <SocietyNewsFeed />
               </Box>
             )}
           </Box>
