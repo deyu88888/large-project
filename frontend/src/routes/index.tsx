@@ -9,9 +9,6 @@ import CircularLoader from "../components/loading/circular-loader";
 import Layout from "../components/layout";
 import PageWithTitle from "../components/PageWithTitle";
 import ViewSocietyEvents from "../pages/view-society-events";
-import PendingMembers from "../pages/President/pending-members";
-import GiveAwardPage from "../pages/President/give-award-page";
-import AssignSocietyRole from "../pages/President/assign-society-role";
 import ManageReports from "../pages/Admin/ManageReports";
 import ViewReports from "../pages/President/ViewReports";
 
@@ -29,10 +26,10 @@ const StartSociety = lazy(() => import("../pages/Student/StartSociety"));
 const JoinSocietiesPage = lazy(() => import("../pages/Student/JoinSociety"));
 const ViewSocietyPage = lazy(() => import("../pages/view-society"));
 const PresidentPage = lazy(() => import("../pages/President/PresidentPage"));
-const ManageSocietyDetails = lazy(() => import("../pages/President/ManageSocietyDetails"));
+const ManageSocietyDetails = lazy(() => import("../pages/Admin/ManageSocietyDetails"));
 const SocietyPreviewModal = lazy(() => import("../pages/President/SocietyPreviewModal"));
 const EditEventDetails = lazy(() => import("../pages/President/EditEventDetails"));
-const ManageSocietyEvents = lazy(() => import("../pages/President/ManageSocietyEvents"));
+const ManageSocietyEvents = lazy(() => import("../pages/Admin/ManageSocietyEvents"));
 const CreateEventPage = lazy(() => import("../pages/President/CreateSocietyEvent"));
 const ReportToAdmin = lazy(() => import("../pages/President/ReportToAdmin"));
 const ViewSocietyMembers = lazy(() => import("../pages/President/ViewSocietyMembers"));
@@ -213,6 +210,7 @@ const routes = [
           { path: "profile/:userId", element: <PageWithTitle title="User Profile"><ProfilePage /></PageWithTitle> },
           { path: "my-reports", element: <PageWithTitle title="View Reports"><ViewReports /></PageWithTitle>},
           { path: "report-thread/:reportId", element:  <PageWithTitle title="Report Thread"><ReportThread /></PageWithTitle>},
+          { path: "replies", element:  <PageWithTitle title="Replies"><RepliesPage /></PageWithTitle>},
         ],
       },
       {

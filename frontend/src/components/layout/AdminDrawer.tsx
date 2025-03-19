@@ -60,21 +60,6 @@ const AdminDrawer: React.FC<AdminDrawerProps> = ({
       to: "/admin/event",
     },
     {
-      title: "Pending Societies",
-      icon: <GroupAddOutlinedIcon />,
-      to: "/admin/request-society",
-    },
-    {
-      title: "Pending Events",
-      icon: <GroupAddOutlinedIcon />,
-      to: "/admin/request-event",
-    },
-    {
-      title: "Pending Descriptions",
-      icon: <GroupAddOutlinedIcon />,
-      to: "/admin/request-description",
-    },
-    {
       title: "Calendar",
       to: "/admin/calendar",
       icon: <CalendarMonthIcon />,
