@@ -72,28 +72,6 @@ class Command(BaseCommand):
 
         self.create_student(100)
 
-        president, _ = Student.objects.get_or_create(
-            username="president_user",
-            defaults={
-                "email": "president@example.com",
-                "first_name": "John",
-                "last_name": "Doe",
-                "password": make_password("presidentpassword"),
-                "major": "Mechanical Engineering",
-            },
-        )
-        self.create_society(name="Robotics Club", president_force=president)
-        self.create_society(35)
-
-        self.create_event(20)
-
-        self.pre_define_awards()
-        self.randomly_assign_awards(50)
-
-        self.broadcast_updates()
-
-        self.stdout.write(self.style.SUCCESS("🎉 Seeding complete!"))
-
         student, _ = get_or_create_user(
             Student,
             username="student_user",
@@ -131,8 +109,6 @@ class Command(BaseCommand):
                  "major": "Electrical Engineering"
              },
          )
-
-        self.create_student(100)
         self.create_society(
             name="Robotics Club",
             president_force=president,
@@ -145,19 +121,11 @@ class Command(BaseCommand):
 
         self.seed_society_showreel(society, n=10)
 
-        president.president_of = society
-        president.save()
-        self.generate_random_event(society)
-        society.vice_president = vice_president
-        society.society_members.add(vice_president)
-        society.save()
+        self.create_event(20)
 
-        self.create_society(35)  # Continue creating other societies
-        self.create_event(35)
         self.pre_define_awards()
         self.randomly_assign_awards(50)
 
-        # Broadcast updates to the WebSocket
         self.broadcast_updates()
 
         self.stdout.write(self.style.SUCCESS("Seeding complete!"))

@@ -67,33 +67,13 @@ class StudentSerializer(UserSerializer):
     major = serializers.CharField(required=True)
     is_president = serializers.BooleanField(read_only=True)
     #awards = AwardStudentSerializer(source='award_students', many=True, read_only=True) this will work when files are seperated
-    is_vice_president = serializers.SerializerMethodField()
+    is_vice_president = serializers.BooleanField(read_only=True)
 
     class Meta(UserSerializer.Meta):
         model = Student
         fields = UserSerializer.Meta.fields + ['major', 'societies', 'president_of', 'is_president', 'icon',
                                                'award_students', 'vice_president_of_society', 'is_vice_president']
         read_only_fields = ["is_president", "is_vice_president", "award_students"]
-        
-    def get_is_vice_president(self, obj):
-        """Get whether the student is a vice president"""
-        # For debugging
-        print(f"DEBUG - Checking is_vice_president for {obj.username}")
-        
-        # First check the direct field
-        if hasattr(obj, 'is_vice_president'):
-            print(f"DEBUG - Direct is_vice_president attribute: {obj.is_vice_president}")
-            
-        # Try the query method
-        try:
-            is_vp = Society.objects.filter(vice_president=obj).exists()
-            print(f"DEBUG - Query result for is_vice_president: {is_vp}")
-            return is_vp
-        except Exception as e:
-            print(f"DEBUG - Error querying vice president status: {str(e)}")
-            
-        # Fallback to the attribute
-        return getattr(obj, 'is_vice_president', False)
     
     def get_vice_president_of_society(self, obj):
         """Get the ID of the society where the student is vice president"""
