@@ -160,6 +160,7 @@ class Student(User):
     major = models.CharField(max_length=50, blank=True)
     is_president = models.BooleanField(default=False)
     is_vice_president = models.BooleanField(default=False)
+    is_event_manager = models.BooleanField(default=False)
     icon = models.ImageField(upload_to="student_icons/", blank=True, null=True)
 
     def save(self, *args, **kwargs):
@@ -330,6 +331,8 @@ class Society(models.Model):
 
         if self.pk:
             before_changes = Society.objects.get(pk=self.pk)
+            
+            # Handle vice president changes
             before_vp = before_changes.vice_president
             if self.vice_president != before_vp:
                 if self.vice_president:
@@ -338,6 +341,16 @@ class Society(models.Model):
                 if before_vp:
                     before_vp.is_vice_president = False
                     before_vp.save()
+            
+            # Handle event manager changes
+            before_em = before_changes.event_manager
+            if self.event_manager != before_em:
+                if self.event_manager:
+                    self.event_manager.is_event_manager = True
+                    self.event_manager.save()
+                if before_em:
+                    before_em.is_event_manager = False
+                    before_em.save()
 
     def __str__(self):
         return self.name

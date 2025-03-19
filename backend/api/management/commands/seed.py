@@ -109,6 +109,19 @@ class Command(BaseCommand):
                  "major": "Electrical Engineering"
              },
          )
+        event_manager, _ = get_or_create_user(
+            Student,
+            username="event_manager_user",
+            email="eventmanager@example.com",
+            first_name="Event",
+            last_name="Manager",
+            defaults={
+                "password": make_password("eventmanagerpassword"),
+                "major": "Digital Arts"
+            },
+        )
+
+        self.create_student(100)
         self.create_society(
             name="Robotics Club",
             president_force=president,
@@ -121,8 +134,20 @@ class Command(BaseCommand):
 
         self.seed_society_showreel(society, n=10)
 
-        self.create_event(20)
-
+        president.president_of = society
+        president.save()
+        self.generate_random_event(society)
+        society.vice_president = vice_president
+        society.event_manager = event_manager
+        society.society_members.add(vice_president)
+        society.society_members.add(event_manager)
+        society.save()
+        vice_president.is_vice_president = True
+        vice_president.save()
+        event_manager.is_event_manager = True
+        event_manager.save()
+        self.create_society(35)
+        self.create_event(35)
         self.pre_define_awards()
         self.randomly_assign_awards(50)
 
@@ -133,33 +158,43 @@ class Command(BaseCommand):
     def create_student(self, n):
         """Create n different students"""
         generator = RandomStudentDataGenerator()
+        created_count = 0
+        attempts = 0
+        max_attempts = n * 2  # Prevent infinite loop
 
-        for i in range(1, n + 1):
-            print(f"Seeding student {i}/{n}", end='\r', flush=True)
+        while created_count < n and attempts < max_attempts:
+            attempts += 1
+            print(f"Seeding student {created_count}/{n} (Attempt {attempts})", end='\r', flush=True)
 
             data = generator.generate()
-            email = f"{data['username']}@kcl.ac.uk"
+            
+            base_email = f"{data['username']}@kcl.ac.uk"
+            email = base_email
+            counter = 1
 
-            # Ensure unique email constraint is respected
-            student, created = Student.objects.get_or_create(
-                email=email,  # Email is the lookup field to prevent duplicates
-                username=data["username"],
-                first_name=data["first_name"],
-                last_name=data["last_name"],
-                major=data["major"],
-                defaults={
-                    "username": data["username"],
-                    "first_name": data["first_name"],
-                    "last_name": data["last_name"],
-                    "major": data["major"],
-                    "password": make_password("studentpassword"),
-                },
-            )
+            while Student.objects.filter(email=email).exists():
+                email = f"{data['username']}{counter}@kcl.ac.uk"
+                counter += 1
 
-            if created:
-                self.handle_user_status(student)  # Handle additional setup if needed
+            try:
+                student = Student.objects.create(
+                    email=email,
+                    username=data["username"] + str(counter-1) if counter > 1 else data["username"],
+                    first_name=data["first_name"],
+                    last_name=data["last_name"],
+                    major=data["major"],
+                    password=make_password("studentpassword"),
+                )
 
-        print(self.style.SUCCESS(f"Seeding student {n}/{n}"), flush=True)
+                self.handle_user_status(student)
+                created_count += 1
+
+            except Exception as e:
+                print(f"\nError creating student: {e}")
+                continue
+
+        print(self.style.SUCCESS(f"Seeding student {created_count}/{n}"), flush=True)
+        return created_count
 
     def handle_user_status(self, user):
         """Creates user requests if pending"""
@@ -284,14 +319,19 @@ class Command(BaseCommand):
         society.society_members.add(society.president)
         society.society_members.add(*selected_members)
 
-        # Assign roles (ensure at least 2 roles)
+        # Assign roles (ensure at least 3 roles for president, vp, and event manager)
         if len(selected_members) >= 3:
             # Assign vice president and set flag
             society.vice_president = selected_members[0]
             if society.vice_president:
                 society.vice_president.is_vice_president = True
                 society.vice_president.save()
+                
+            # Assign event manager and set flag
             society.event_manager = selected_members[2]
+            if society.event_manager:
+                society.event_manager.is_event_manager = True
+                society.event_manager.save()
 
         # Assign an admin
         admin_randomised = User.objects.order_by('?')

@@ -196,6 +196,36 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
+            name='Student',
+            fields=[
+                ('user_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to=settings.AUTH_USER_MODEL)),
+                ('status', models.CharField(choices=[('Pending', 'Pending Approval'), ('Approved', 'Approved'), ('Rejected', 'Rejected')], default='Pending', max_length=20)),
+                ('major', models.CharField(blank=True, max_length=50)),
+                ('is_president', models.BooleanField(default=False)),
+                ('is_vice_president', models.BooleanField(default=False)),
+                ('is_event_manager', models.BooleanField(default=False)),
+                ('icon', models.ImageField(blank=True, null=True, upload_to='student_icons/')),
+            ],
+            options={
+                'verbose_name': 'user',
+                'verbose_name_plural': 'users',
+                'abstract': False,
+            },
+            bases=('api.user',),
+            managers=[
+                ('objects', django.contrib.auth.models.UserManager()),
+            ],
+        ),
+        migrations.CreateModel(
+            name='SocietyShowreelRequest',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('photo', models.ImageField(upload_to='society_showreel_request/')),
+                ('caption', models.CharField(blank=True, default='', max_length=50)),
+                ('society', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='showreel_images_request', to='api.societyrequest')),
+            ],
+        ),
+        migrations.CreateModel(
             name='SocietyShowreel',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),

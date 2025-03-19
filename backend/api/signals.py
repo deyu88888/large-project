@@ -47,6 +47,30 @@ def update_new_vice_president_status(sender, instance, created, **kwargs):
     if created and instance.vice_president:
         instance.vice_president.is_vice_president = True
         instance.vice_president.save()
+        
+@receiver(pre_save, sender=Society)
+def update_event_manager_status(sender, instance, **kwargs):
+    """Update student's is_event_manager status when event_manager field changes"""
+    # Only run if we have an existing instance to compare against
+    if instance.pk:
+        try:
+            # Get the society instance before changes
+            before_changes = Society.objects.get(pk=instance.pk)
+            before_event_manager = before_changes.event_manager
+            
+            # If event manager has changed
+            if instance.event_manager != before_event_manager:
+                # If new event manager exists, set flag to True
+                if instance.event_manager:
+                    instance.event_manager.is_event_manager = True
+                    instance.event_manager.save()
+                
+                # If previous event manager exists, set their flag to False
+                if before_event_manager:
+                    before_event_manager.is_event_manager = False
+                    before_event_manager.save()
+        except Society.DoesNotExist:
+            pass  # This is a new society being created
 
 def broadcast_dashboard_update():
     """

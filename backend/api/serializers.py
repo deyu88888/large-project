@@ -64,16 +64,59 @@ class StudentSerializer(UserSerializer):
     societies = serializers.PrimaryKeyRelatedField(many=True, queryset=Society.objects.all())
     president_of = serializers.PrimaryKeyRelatedField(queryset=Society.objects.all(), allow_null=True, required=False)
     vice_president_of_society = serializers.SerializerMethodField()
+    event_manager_of_society = serializers.SerializerMethodField()
     major = serializers.CharField(required=True)
     is_president = serializers.BooleanField(read_only=True)
     #awards = AwardStudentSerializer(source='award_students', many=True, read_only=True) this will work when files are seperated
     is_vice_president = serializers.BooleanField(read_only=True)
+    is_event_manager = serializers.BooleanField(read_only=True)
+    
 
     class Meta(UserSerializer.Meta):
         model = Student
-        fields = UserSerializer.Meta.fields + ['major', 'societies', 'president_of', 'is_president', 'icon',
-                                               'award_students', 'vice_president_of_society', 'is_vice_president']
-        read_only_fields = ["is_president", "is_vice_president", "award_students"]
+        fields = UserSerializer.Meta.fields + ['major', 'societies', 'president_of', 'is_president',
+                                               'award_students', 'vice_president_of_society', 'is_vice_president',
+                                               'event_manager_of_society', 'is_event_manager']
+        read_only_fields = ["is_president", "is_vice_president", "is_event_manager", "award_students"]
+
+    
+    def get_event_manager_of_society(self, obj):
+        """Get the ID of the society where the student is event manager"""
+        try:
+            # Check if it's a RelatedManager
+            if hasattr(obj.event_manager_of_society, 'all'):
+                society = obj.event_manager_of_society.first()
+                if society:
+                    print(f"DEBUG - Found society for event manager: {society.id}")
+                    return society.id
+            
+            # If it's not a RelatedManager but a direct reference
+            elif hasattr(obj, 'event_manager_of_society') and obj.event_manager_of_society:
+                if hasattr(obj.event_manager_of_society, 'pk'):
+                    return obj.event_manager_of_society.pk
+        except Exception as e:
+            print(f"DEBUG - Error in get_event_manager_of_society: {str(e)}")
+        
+        return None
+    def get_is_vice_president(self, obj):
+        """Get whether the student is a vice president"""
+        # For debugging
+        print(f"DEBUG - Checking is_vice_president for {obj.username}")
+        
+        # First check the direct field
+        if hasattr(obj, 'is_vice_president'):
+            print(f"DEBUG - Direct is_vice_president attribute: {obj.is_vice_president}")
+            
+        # Try the query method
+        try:
+            is_vp = Society.objects.filter(vice_president=obj).exists()
+            print(f"DEBUG - Query result for is_vice_president: {is_vp}")
+            return is_vp
+        except Exception as e:
+            print(f"DEBUG - Error querying vice president status: {str(e)}")
+            
+        # Fallback to the attribute
+        return getattr(obj, 'is_vice_president', False)
     
     def get_vice_president_of_society(self, obj):
         """Get the ID of the society where the student is vice president"""
@@ -158,7 +201,7 @@ class SocietySerializer(serializers.ModelSerializer):
     vice_president_id = serializers.PrimaryKeyRelatedField(
         queryset=Student.objects.all(), write_only=True, source='vice_president', required=False
     )
-    event_manager = StudentSerializer(required=False)
+    event_manager = StudentSerializer(read_only=True)
     event_manager_id = serializers.PrimaryKeyRelatedField(
         queryset=Student.objects.all(), write_only=True, source='event_manager', required=False
     )

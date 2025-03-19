@@ -1,7 +1,7 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from .views import (
-    AdminReportView, AwardStudentView, AwardView, BroadcastListAPIView, EventListView, EventRequestView, ManageEventDetailsView, NewsView, PendingMembersView, RegisterView,
+    AdminReportView, AwardStudentView, AwardView, BroadcastListAPIView, EventListView, EventRequestView, ManageEventDetailsView, NewsView, PendingMembersView, PendingRequestsView, RegisterView,
     CurrentUserView, SocietyMembersListView,
     StudentNotificationsView, StartSocietyRequestView, ManageSocietyDetailsView, StudentInboxView,
     AdminView, StudentView, EventView,
@@ -22,7 +22,7 @@ urlpatterns = [
     path("user/token/refresh", TokenRefreshView.as_view(), name="refresh"),
     path("user/register", RegisterView.as_view(), name="register"),
     path("user/login", TokenObtainPairView.as_view(), name="get_token"),
-    path("user/current", CurrentUserView.as_view(), name="current_user"),
+    path("user/current/", CurrentUserView.as_view(), name="current_user"),
 
     # OTP verification
     path("request-otp", request_otp, name="request_otp"),
@@ -69,6 +69,7 @@ urlpatterns = [
     path("leave-society/<int:society_id>/", StudentSocietiesView.as_view(), name="leave_society"),
     path("society-view/<int:society_id>/", StudentSocietyDataView.as_view(), name="society_view"),
     path('media/<path:path>', custom_media_view, name="media"),
+     path('api/pending-requests/', PendingRequestsView.as_view(), name='pending-requests'),
 
     # Dashboard API endpoints
     path("dashboard/stats/", DashboardStatsView.as_view(), name="dashboard_stats"),
