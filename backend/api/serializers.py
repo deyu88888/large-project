@@ -1,6 +1,7 @@
 import datetime
-from api.models import AdminReportRequest, Award, AwardStudent, SiteSettings, User, Student, Admin, Society, Event, \
-    Notification, Request, SocietyRequest, SocietyShowreel, SocietyShowreelRequest, EventRequest, UserRequest, Comment, DescriptionRequest, ActivityLog, ReportReply
+from api.models import AdminReportRequest, Award, AwardStudent, SiteSettings, User, Student, Society, Event, \
+    Notification, Request, SocietyRequest, SocietyShowreel, SocietyShowreelRequest, EventRequest, UserRequest, \
+    Comment, DescriptionRequest, ActivityLog, ReportReply, BroadcastMessage
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 from django.utils.translation import gettext_lazy as _
@@ -211,10 +212,11 @@ class SocietySerializer(serializers.ModelSerializer):
         """SocietySerializer meta data"""
         model = Society
         fields = [
-            'id', 'name', 'description', 'society_members', 'leader', 'leader_id','approved_by',
+            'id', 'name', 'description', 'society_members', 'approved_by',
             'status', 'category', 'social_media_links', 'showreel_images',
-            'membership_requirements', 'upcoming_projects_or_plans', 'icon','tags',
-            'vice_president', 'event_manager', 'treasurer',
+            'membership_requirements', 'upcoming_projects_or_plans', 'icon','tags','president_id',
+            'vice_president', 'event_manager','event_manager_id', 'vice_president_id',
+            'president',
         ]
         extra_kwargs = {
             'society_members': {'required': False},  # Allows empty or missing data
