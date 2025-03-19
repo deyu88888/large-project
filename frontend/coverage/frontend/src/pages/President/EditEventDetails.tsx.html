@@ -3,7 +3,7 @@
 <html lang="en">
 
 <head>
-    <title>Code coverage report for frontend/src/components/layout/PresidentDrawer.tsx</title>
+    <title>Code coverage report for frontend/src/pages/President/EditEventDetails.tsx</title>
     <meta charset="utf-8" />
     <link rel="stylesheet" href="../../../../prettify.css" />
     <link rel="stylesheet" href="../../../../base.css" />
@@ -19,13 +19,13 @@
 <body>
 <div class='wrapper'>
     <div class='pad1'>
-        <h1><a href="../../../../index.html">All files</a> / <a href="index.html">frontend/src/components/layout</a> PresidentDrawer.tsx</h1>
+        <h1><a href="../../../../index.html">All files</a> / <a href="index.html">frontend/src/pages/President</a> EditEventDetails.tsx</h1>
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/268</span>
+                <span class='fraction'>0/259</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/268</span>
+                <span class='fraction'>0/259</span>
             </div>
         
             
@@ -321,16 +321,7 @@
 <a name='L256'></a><a href='#L256'>256</a>
 <a name='L257'></a><a href='#L257'>257</a>
 <a name='L258'></a><a href='#L258'>258</a>
-<a name='L259'></a><a href='#L259'>259</a>
-<a name='L260'></a><a href='#L260'>260</a>
-<a name='L261'></a><a href='#L261'>261</a>
-<a name='L262'></a><a href='#L262'>262</a>
-<a name='L263'></a><a href='#L263'>263</a>
-<a name='L264'></a><a href='#L264'>264</a>
-<a name='L265'></a><a href='#L265'>265</a>
-<a name='L266'></a><a href='#L266'>266</a>
-<a name='L267'></a><a href='#L267'>267</a>
-<a name='L268'></a><a href='#L268'>268</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L259'></a><a href='#L259'>259</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -588,283 +579,265 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" >import React, { useState, useEffect } from "react";</span></span></span>
-<span class="cstat-no" title="statement not covered" >import { Link, useNavigate } from "react-router-dom";</span>
-<span class="cstat-no" title="statement not covered" >import { apiClient } from "../../api";</span>
+<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" >import React, { useState, useEffect, FormEvent } from "react";</span></span></span>
+<span class="cstat-no" title="statement not covered" >import { useNavigate, useParams } from "react-router-dom";</span>
 <span class="cstat-no" title="statement not covered" >import {</span>
-<span class="cstat-no" title="statement not covered" >  Avatar,</span>
 <span class="cstat-no" title="statement not covered" >  Box,</span>
-<span class="cstat-no" title="statement not covered" >  Divider,</span>
-<span class="cstat-no" title="statement not covered" >  IconButton,</span>
-<span class="cstat-no" title="statement not covered" >  List,</span>
-<span class="cstat-no" title="statement not covered" >  ListItem,</span>
-<span class="cstat-no" title="statement not covered" >  ListItemButton,</span>
-<span class="cstat-no" title="statement not covered" >  ListItemIcon,</span>
-<span class="cstat-no" title="statement not covered" >  ListItemText,</span>
 <span class="cstat-no" title="statement not covered" >  Typography,</span>
-<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >  Button,</span>
+<span class="cstat-no" title="statement not covered" >  TextField,</span>
+<span class="cstat-no" title="statement not covered" >  CircularProgress,</span>
+<span class="cstat-no" title="statement not covered" >  Alert,</span>
 <span class="cstat-no" title="statement not covered" >} from "@mui/material";</span>
-<span class="cstat-no" title="statement not covered" >import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";</span>
-<span class="cstat-no" title="statement not covered" >import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";</span>
-<span class="cstat-no" title="statement not covered" >import PeopleOutlineIcon from "@mui/icons-material/PeopleOutline";</span>
-<span class="cstat-no" title="statement not covered" >import EventAvailableIcon from "@mui/icons-material/EventAvailable";</span>
-<span class="cstat-no" title="statement not covered" >import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";</span>
-<span class="cstat-no" title="statement not covered" >import NotificationImportantOutlinedIcon from '@mui/icons-material/NotificationImportantOutlined';</span>
-<span class="cstat-no" title="statement not covered" >import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";</span>
-<span class="cstat-no" title="statement not covered" >import LogoutIcon from "@mui/icons-material/Logout";</span>
-<span class="cstat-no" title="statement not covered" >import ManageAccountsOutlinedIcon from "@mui/icons-material/ManageAccountsOutlined";</span>
-<span class="cstat-no" title="statement not covered" >import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";</span>
-<span class="cstat-no" title="statement not covered" >import EventNoteOutlinedIcon from "@mui/icons-material/EventNoteOutlined";</span>
-<span class="cstat-no" title="statement not covered" >import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";</span>
-<span class="cstat-no" title="statement not covered" >import ReportProblemOutlinedIcon from "@mui/icons-material/ReportProblemOutlined";</span>
-<span class="cstat-no" title="statement not covered" >import GroupAddOutlinedIcon from "@mui/icons-material/GroupAddOutlined";</span>
+<span class="cstat-no" title="statement not covered" >import { useTheme } from "@mui/material/styles";</span>
+<span class="cstat-no" title="statement not covered" >import { apiClient } from "../../api";</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >import { CustomDrawer, CustomDrawerHeader } from "./drawer/CustomDrawer";</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >interface PresidentDrawerProps {</span>
-<span class="cstat-no" title="statement not covered" >  drawer: boolean;</span>
-<span class="cstat-no" title="statement not covered" >  toggleDrawer: () =&gt; void;</span>
-<span class="cstat-no" title="statement not covered" >  location: { pathname: string };</span>
+<span class="cstat-no" title="statement not covered" >interface EventDetail {</span>
+<span class="cstat-no" title="statement not covered" >  id: number;</span>
+<span class="cstat-no" title="statement not covered" >  title: string;</span>
+<span class="cstat-no" title="statement not covered" >  description: string;</span>
+<span class="cstat-no" title="statement not covered" >  location: string;</span>
+<span class="cstat-no" title="statement not covered" >  date: string;</span>
+<span class="cstat-no" title="statement not covered" >  start_time: string;</span>
+<span class="cstat-no" title="statement not covered" >  duration: string;</span>
+<span class="cstat-no" title="statement not covered" >  status: string;</span>
 <span class="cstat-no" title="statement not covered" >}</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >const PresidentDrawer: React.FC&lt;PresidentDrawerProps&gt; = ({</span>
-<span class="cstat-no" title="statement not covered" >  drawer,</span>
-<span class="cstat-no" title="statement not covered" >  toggleDrawer,</span>
-<span class="cstat-no" title="statement not covered" >  location,</span>
-<span class="cstat-no" title="statement not covered" >}) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >  const [selected, setSelected] = useState("Dashboard");</span>
-<span class="cstat-no" title="statement not covered" >  const [student, setStudent] = useState&lt;any[]&gt;([]);</span>
+<span class="cstat-no" title="statement not covered" >interface RouteParams {</span>
+<span class="cstat-no" title="statement not covered" >  society_id: string;</span>
+<span class="cstat-no" title="statement not covered" >  event_id: string;</span>
+<span class="cstat-no" title="statement not covered" >}</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >interface FormData {</span>
+<span class="cstat-no" title="statement not covered" >  title: string;</span>
+<span class="cstat-no" title="statement not covered" >  description: string;</span>
+<span class="cstat-no" title="statement not covered" >  location: string;</span>
+<span class="cstat-no" title="statement not covered" >  date: string;</span>
+<span class="cstat-no" title="statement not covered" >  start_time: string;</span>
+<span class="cstat-no" title="statement not covered" >  duration: string;</span>
+<span class="cstat-no" title="statement not covered" >}</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >const EditEventDetails: React.FC = () =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >  const theme = useTheme();</span>
 <span class="cstat-no" title="statement not covered" >  const navigate = useNavigate();</span>
+<span class="cstat-no" title="statement not covered" >  const { society_id, event_id } = useParams&lt;RouteParams&gt;();</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >  useEffect(() =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >      const fetchStudentData = async () =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >        try {</span>
-<span class="cstat-no" title="statement not covered" >          const response = await apiClient.get("/api/user/current");</span>
-<span class="cstat-no" title="statement not covered" >          setStudent(response.data);</span>
-<span class="cstat-no" title="statement not covered" >          console.log(student);</span>
-<span class="cstat-no" title="statement not covered" >        } catch (error) {</span>
-<span class="cstat-no" title="statement not covered" >          console.error("Error retrieving student:", error);</span>
-<span class="cstat-no" title="statement not covered" >          alert("Failed to retrieve student. Please contact an administrator.");</span>
-<span class="cstat-no" title="statement not covered" >        }</span>
-<span class="cstat-no" title="statement not covered" >      };  </span>
-<span class="cstat-no" title="statement not covered" >    fetchStudentData();</span>
-<span class="cstat-no" title="statement not covered" >    }, []);</span>
+<span class="cstat-no" title="statement not covered" >  const [eventDetail, setEventDetail] = useState&lt;EventDetail | null&gt;(null);</span>
+<span class="cstat-no" title="statement not covered" >  const [loading, setLoading] = useState&lt;boolean&gt;(true);</span>
+<span class="cstat-no" title="statement not covered" >  const [submitting, setSubmitting] = useState&lt;boolean&gt;(false);</span>
+<span class="cstat-no" title="statement not covered" >  const [error, setError] = useState&lt;string | null&gt;(null);</span>
+<span class="cstat-no" title="statement not covered" >  const [success, setSuccess] = useState&lt;string | null&gt;(null);</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >  const menuItems = [</span>
-<span class="cstat-no" title="statement not covered" >    { title: "Dashboard", icon: &lt;HomeOutlinedIcon /&gt;, to: "/student" },</span>
-<span class="cstat-no" title="statement not covered" >    { title: "My Societies", icon: &lt;PeopleOutlineIcon /&gt;, to: "/student/my-societies" },</span>
-<span class="cstat-no" title="statement not covered" >    { title: "Start Society", icon: &lt;AddCircleOutlineIcon /&gt;, to: "/student/start-society" },</span>
-<span class="cstat-no" title="statement not covered" >    { title: "View Events", icon: &lt;EventAvailableIcon /&gt;, to: "/student/view-events" },</span>
-<span class="cstat-no" title="statement not covered" >    { title: "Notifications", icon: &lt;NotificationsNoneOutlinedIcon /&gt;, to: "/student/view-notifications" },</span>
-<span class="cstat-no" title="statement not covered" >    { title: "Inbox", icon: &lt;NotificationImportantOutlinedIcon /&gt;, to: "/student/view-inbox" },</span>
-<span class="cstat-no" title="statement not covered" >  ];</span>
+<span class="cstat-no" title="statement not covered" >  const [formData, setFormData] = useState&lt;FormData&gt;({</span>
+<span class="cstat-no" title="statement not covered" >    title: "",</span>
+<span class="cstat-no" title="statement not covered" >    description: "",</span>
+<span class="cstat-no" title="statement not covered" >    location: "",</span>
+<span class="cstat-no" title="statement not covered" >    date: "",</span>
+<span class="cstat-no" title="statement not covered" >    start_time: "",</span>
+<span class="cstat-no" title="statement not covered" >    duration: ""</span>
+<span class="cstat-no" title="statement not covered" >  });</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >  const manageMySocietiesItems = [</span>
-<span class="cstat-no" title="statement not covered" >    { title: "Society Details", icon: &lt;DescriptionOutlinedIcon /&gt;, to: "/president-page/1/manage-society-details" },</span>
-<span class="cstat-no" title="statement not covered" >    { title: "Society Events", icon: &lt;EventNoteOutlinedIcon /&gt;, to: "/president-page/1/manage-society-events" },</span>
-<span class="cstat-no" title="statement not covered" >    { title: "Pending Members", icon: &lt;PeopleOutlineIcon /&gt;, to: "/president-page/1/pending-members" },</span>
-<span class="cstat-no" title="statement not covered" >    { title: "All Members", icon: &lt;GroupOutlinedIcon /&gt;, to: "/president-page/1/view-society-members" },</span>
-<span class="cstat-no" title="statement not covered" >    { title: "Report to Admin", icon: &lt;ReportProblemOutlinedIcon /&gt;, to: "/president-page/1/report-to-admin" },</span>
-<span class="cstat-no" title="statement not covered" >  ];</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >  const logout = () =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >    localStorage.removeItem("access");</span>
-<span class="cstat-no" title="statement not covered" >    localStorage.removeItem("refresh");</span>
-<span class="cstat-no" title="statement not covered" >    navigate("/login");</span>
+<span class="cstat-no" title="statement not covered" >  const handleInputChange = (field: keyof FormData) =&gt; (</span>
+<span class="cstat-no" title="statement not covered" >    e: React.ChangeEvent&lt;HTMLInputElement | HTMLTextAreaElement&gt;</span>
+<span class="cstat-no" title="statement not covered" >  ): void =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    setFormData({</span>
+<span class="cstat-no" title="statement not covered" >      ...formData,</span>
+<span class="cstat-no" title="statement not covered" >      [field]: e.target.value</span>
+<span class="cstat-no" title="statement not covered" >    });</span>
 <span class="cstat-no" title="statement not covered" >  };</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >  return (</span>
-<span class="cstat-no" title="statement not covered" >    &lt;CustomDrawer variant="permanent" open={drawer}&gt;</span>
-<span class="cstat-no" title="statement not covered" >      &lt;CustomDrawerHeader&gt;</span>
-<span class="cstat-no" title="statement not covered" >        &lt;IconButton onClick={toggleDrawer}&gt;</span>
-<span class="cstat-no" title="statement not covered" >          {drawer &amp;&amp; &lt;ChevronLeftIcon /&gt;}</span>
-<span class="cstat-no" title="statement not covered" >        &lt;/IconButton&gt;</span>
-<span class="cstat-no" title="statement not covered" >      &lt;/CustomDrawerHeader&gt;</span>
-<span class="cstat-no" title="statement not covered" >      &lt;Divider /&gt;</span>
+<span class="cstat-no" title="statement not covered" >  useEffect(() =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    if (!event_id) return;</span>
+<span class="cstat-no" title="statement not covered" >    </span>
+<span class="cstat-no" title="statement not covered" >    const fetchEventDetail = async (): Promise&lt;void&gt; =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >      try {</span>
+<span class="cstat-no" title="statement not covered" >        setLoading(true);</span>
+<span class="cstat-no" title="statement not covered" >        const response = await apiClient.get(`/api/event/${event_id}/manage`);</span>
+<span class="cstat-no" title="statement not covered" >        const data: EventDetail = response.data;</span>
+<span class="cstat-no" title="statement not covered" >        setEventDetail(data);</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >      {/* User Info Section */}</span>
-<span class="cstat-no" title="statement not covered" >      &lt;Box padding={2} display="flex" justifyContent="center" alignItems="center"&gt;</span>
-<span class="cstat-no" title="statement not covered" >        {drawer ? (</span>
-<span class="cstat-no" title="statement not covered" >          &lt;Box sx={{ textAlign: "center" }}&gt;</span>
-<span class="cstat-no" title="statement not covered" >            &lt;img</span>
-<span class="cstat-no" title="statement not covered" >            src={"http://localhost:8000/api" + student?.icon}</span>
-<span class="cstat-no" title="statement not covered" >            alt={`${student?.username} icon`}</span>
-<span class="cstat-no" title="statement not covered" >            style={{</span>
-<span class="cstat-no" title="statement not covered" >              width: "72px",</span>
-<span class="cstat-no" title="statement not covered" >              height: "72px",</span>
-<span class="cstat-no" title="statement not covered" >              borderRadius: "50%",</span>
-<span class="cstat-no" title="statement not covered" >              margin: "0 auto"</span>
-<span class="cstat-no" title="statement not covered" >            }}</span>
-<span class="cstat-no" title="statement not covered" >            /&gt;</span>
-<span class="cstat-no" title="statement not covered" >            &lt;Typography variant="h6" fontWeight="bold" sx={{ mt: "10px" }}&gt;</span>
-<span class="cstat-no" title="statement not covered" >              {student?.first_name} {student?.last_name}</span>
-<span class="cstat-no" title="statement not covered" >            &lt;/Typography&gt;</span>
-<span class="cstat-no" title="statement not covered" >            &lt;Typography variant="body2" color="textSecondary"&gt;</span>
-<span class="cstat-no" title="statement not covered" >              President Dashboard</span>
-<span class="cstat-no" title="statement not covered" >            &lt;/Typography&gt;</span>
-<span class="cstat-no" title="statement not covered" >          &lt;/Box&gt;</span>
-<span class="cstat-no" title="statement not covered" >        ) : (</span>
-<span class="cstat-no" title="statement not covered" >          &lt;img</span>
-<span class="cstat-no" title="statement not covered" >            src={"http://localhost:8000/api" + student?.icon}</span>
-<span class="cstat-no" title="statement not covered" >            alt={`${student?.username} icon`}</span>
-<span class="cstat-no" title="statement not covered" >            style={{</span>
-<span class="cstat-no" title="statement not covered" >              width: "25px",</span>
-<span class="cstat-no" title="statement not covered" >              height: "25px",</span>
-<span class="cstat-no" title="statement not covered" >              borderRadius: "50%",</span>
-<span class="cstat-no" title="statement not covered" >            }}</span>
-<span class="cstat-no" title="statement not covered" >          /&gt;</span>
-<span class="cstat-no" title="statement not covered" >        )}</span>
+<span class="cstat-no" title="statement not covered" >        setFormData({</span>
+<span class="cstat-no" title="statement not covered" >          title: data.title,</span>
+<span class="cstat-no" title="statement not covered" >          description: data.description,</span>
+<span class="cstat-no" title="statement not covered" >          location: data.location,</span>
+<span class="cstat-no" title="statement not covered" >          date: data.date,</span>
+<span class="cstat-no" title="statement not covered" >          start_time: data.start_time,</span>
+<span class="cstat-no" title="statement not covered" >          duration: data.duration</span>
+<span class="cstat-no" title="statement not covered" >        });</span>
+<span class="cstat-no" title="statement not covered" >      } catch (err: any) {</span>
+<span class="cstat-no" title="statement not covered" >        console.error("Error fetching event details:", err);</span>
+<span class="cstat-no" title="statement not covered" >        setError("Failed to load event details.");</span>
+<span class="cstat-no" title="statement not covered" >      } finally {</span>
+<span class="cstat-no" title="statement not covered" >        setLoading(false);</span>
+<span class="cstat-no" title="statement not covered" >      }</span>
+<span class="cstat-no" title="statement not covered" >    };</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >    fetchEventDetail();</span>
+<span class="cstat-no" title="statement not covered" >  }, [event_id]);</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >  const handleSubmit = async (e: FormEvent): Promise&lt;void&gt; =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    e.preventDefault();</span>
+<span class="cstat-no" title="statement not covered" >    setSubmitting(true);</span>
+<span class="cstat-no" title="statement not covered" >    setError(null);</span>
+<span class="cstat-no" title="statement not covered" >    setSuccess(null);</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >    try {</span>
+<span class="cstat-no" title="statement not covered" >      const payload = {</span>
+<span class="cstat-no" title="statement not covered" >        title: formData.title.trim() || eventDetail?.title,</span>
+<span class="cstat-no" title="statement not covered" >        description: formData.description.trim() || eventDetail?.description,</span>
+<span class="cstat-no" title="statement not covered" >        location: formData.location.trim() || eventDetail?.location,</span>
+<span class="cstat-no" title="statement not covered" >        date: formData.date || eventDetail?.date,</span>
+<span class="cstat-no" title="statement not covered" >        start_time: formData.start_time || eventDetail?.start_time,</span>
+<span class="cstat-no" title="statement not covered" >        duration: formData.duration || eventDetail?.duration,</span>
+<span class="cstat-no" title="statement not covered" >      };</span>
+<span class="cstat-no" title="statement not covered" >      </span>
+<span class="cstat-no" title="statement not covered" >      await apiClient.patch(`/api/event/${event_id}/manage`, payload);</span>
+<span class="cstat-no" title="statement not covered" >      setSuccess("Event update requested. Await admin approval.");</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >      if (import.meta.env.MODE === "test") {</span>
+<span class="cstat-no" title="statement not covered" >        navigate(-1);</span>
+<span class="cstat-no" title="statement not covered" >      } else {</span>
+<span class="cstat-no" title="statement not covered" >        setTimeout(() =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >          navigate(-1);</span>
+<span class="cstat-no" title="statement not covered" >        }, 2000);</span>
+<span class="cstat-no" title="statement not covered" >      }</span>
+<span class="cstat-no" title="statement not covered" >    } catch (err: any) {</span>
+<span class="cstat-no" title="statement not covered" >      console.error("Error submitting update request:", err.response?.data || err);</span>
+<span class="cstat-no" title="statement not covered" >      setError("Failed to submit update request.");</span>
+<span class="cstat-no" title="statement not covered" >    } finally {</span>
+<span class="cstat-no" title="statement not covered" >      setSubmitting(false);</span>
+<span class="cstat-no" title="statement not covered" >    }</span>
+<span class="cstat-no" title="statement not covered" >  };</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >  if (loading) {</span>
+<span class="cstat-no" title="statement not covered" >    return (</span>
+<span class="cstat-no" title="statement not covered" >      &lt;Box display="flex" justifyContent="center" mt={4}&gt;</span>
+<span class="cstat-no" title="statement not covered" >        &lt;CircularProgress color="secondary" /&gt;</span>
 <span class="cstat-no" title="statement not covered" >      &lt;/Box&gt;</span>
-<span class="cstat-no" title="statement not covered" >      &lt;Divider /&gt;</span>
+<span class="cstat-no" title="statement not covered" >    );</span>
+<span class="cstat-no" title="statement not covered" >  }</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >      {/* Main Menu Items */}</span>
-<span class="cstat-no" title="statement not covered" >      &lt;List&gt;</span>
-<span class="cstat-no" title="statement not covered" >        {menuItems.map((item) =&gt; (</span>
-<span class="cstat-no" title="statement not covered" >          &lt;ListItem key={item.title} disablePadding&gt;</span>
-<span class="cstat-no" title="statement not covered" >            &lt;ListItemButton</span>
-<span class="cstat-no" title="statement not covered" >              component={Link}</span>
-<span class="cstat-no" title="statement not covered" >              to={item.to}</span>
-<span class="cstat-no" title="statement not covered" >              selected={selected === item.title}</span>
-<span class="cstat-no" title="statement not covered" >              onClick={() =&gt; setSelected(item.title)}</span>
-<span class="cstat-no" title="statement not covered" >              sx={{ justifyContent: drawer ? "initial" : "center", px: 2.5 }}</span>
-<span class="cstat-no" title="statement not covered" >            &gt;</span>
-<span class="cstat-no" title="statement not covered" >              &lt;ListItemIcon</span>
-<span class="cstat-no" title="statement not covered" >                sx={{</span>
-<span class="cstat-no" title="statement not covered" >                  minWidth: 0,</span>
-<span class="cstat-no" title="statement not covered" >                  mr: drawer ? 3 : "auto",</span>
-<span class="cstat-no" title="statement not covered" >                  justifyContent: "center",</span>
-<span class="cstat-no" title="statement not covered" >                }}</span>
-<span class="cstat-no" title="statement not covered" >              &gt;</span>
-<span class="cstat-no" title="statement not covered" >                {item.icon}</span>
-<span class="cstat-no" title="statement not covered" >              &lt;/ListItemIcon&gt;</span>
-<span class="cstat-no" title="statement not covered" >              {drawer &amp;&amp; &lt;ListItemText primary={item.title} /&gt;}</span>
-<span class="cstat-no" title="statement not covered" >            &lt;/ListItemButton&gt;</span>
-<span class="cstat-no" title="statement not covered" >          &lt;/ListItem&gt;</span>
-<span class="cstat-no" title="statement not covered" >        ))}</span>
-<span class="cstat-no" title="statement not covered" >      &lt;/List&gt;</span>
-<span class="cstat-no" title="statement not covered" >      &lt;Divider /&gt;</span>
+<span class="cstat-no" title="statement not covered" >  if (!eventDetail) {</span>
+<span class="cstat-no" title="statement not covered" >    return (</span>
+<span class="cstat-no" title="statement not covered" >      &lt;Box textAlign="center" mt={4}&gt;</span>
+<span class="cstat-no" title="statement not covered" >        &lt;Typography variant="h6"&gt;Event not found.&lt;/Typography&gt;</span>
+<span class="cstat-no" title="statement not covered" >        &lt;Button onClick={() =&gt; navigate(-1)}&gt;Go Back&lt;/Button&gt;</span>
+<span class="cstat-no" title="statement not covered" >      &lt;/Box&gt;</span>
+<span class="cstat-no" title="statement not covered" >    );</span>
+<span class="cstat-no" title="statement not covered" >  }</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >      {/* Manage My Societies Section */}</span>
-<span class="cstat-no" title="statement not covered" >      &lt;List&gt;</span>
-<span class="cstat-no" title="statement not covered" >        &lt;ListItem disablePadding&gt;</span>
-<span class="cstat-no" title="statement not covered" >          &lt;ListItemButton</span>
-<span class="cstat-no" title="statement not covered" >            component={Link}</span>
-<span class="cstat-no" title="statement not covered" >            to="/president-page/1"</span>
-<span class="cstat-no" title="statement not covered" >            selected={selected === "Manage My Societies"}</span>
-<span class="cstat-no" title="statement not covered" >            onClick={() =&gt; setSelected("Manage My Societies")}</span>
-<span class="cstat-no" title="statement not covered" >            sx={{ justifyContent: drawer ? "initial" : "center", px: 2.5 }}</span>
-<span class="cstat-no" title="statement not covered" >          &gt;</span>
-<span class="cstat-no" title="statement not covered" >            &lt;ListItemIcon</span>
-<span class="cstat-no" title="statement not covered" >              sx={{</span>
-<span class="cstat-no" title="statement not covered" >                minWidth: 0,</span>
-<span class="cstat-no" title="statement not covered" >                mr: drawer ? 3 : "auto",</span>
-<span class="cstat-no" title="statement not covered" >                justifyContent: "center",</span>
-<span class="cstat-no" title="statement not covered" >              }}</span>
-<span class="cstat-no" title="statement not covered" >            &gt;</span>
-<span class="cstat-no" title="statement not covered" >              &lt;ManageAccountsOutlinedIcon /&gt;</span>
-<span class="cstat-no" title="statement not covered" >            &lt;/ListItemIcon&gt;</span>
-<span class="cstat-no" title="statement not covered" >            {drawer &amp;&amp; &lt;ListItemText primary="Manage My Societies" /&gt;}</span>
-<span class="cstat-no" title="statement not covered" >          &lt;/ListItemButton&gt;</span>
-<span class="cstat-no" title="statement not covered" >        &lt;/ListItem&gt;</span>
+<span class="cstat-no" title="statement not covered" >  const backgroundColorMain = theme.palette.mode === "dark" ? "#141b2d" : "#fcfcfc";</span>
+<span class="cstat-no" title="statement not covered" >  const textColorMain = theme.palette.mode === "dark" ? "#fff" : "#141b2d";</span>
+<span class="cstat-no" title="statement not covered" >  const backgroundColorForm = theme.palette.mode === "dark" ? "#1e293b" : "#ffffff";</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >        {/* Society Management Items */}</span>
-<span class="cstat-no" title="statement not covered" >        {manageMySocietiesItems.map((item) =&gt; (</span>
-<span class="cstat-no" title="statement not covered" >          &lt;ListItem key={item.title} disablePadding&gt;</span>
-<span class="cstat-no" title="statement not covered" >            &lt;ListItemButton</span>
-<span class="cstat-no" title="statement not covered" >              component={Link}</span>
-<span class="cstat-no" title="statement not covered" >              to={item.to}</span>
-<span class="cstat-no" title="statement not covered" >              selected={selected === item.title}</span>
-<span class="cstat-no" title="statement not covered" >              onClick={() =&gt; setSelected(item.title)}</span>
-<span class="cstat-no" title="statement not covered" >              sx={{ </span>
-<span class="cstat-no" title="statement not covered" >                justifyContent: drawer ? "initial" : "center", </span>
-<span class="cstat-no" title="statement not covered" >                px: 2.5</span>
-<span class="cstat-no" title="statement not covered" >              }}</span>
-<span class="cstat-no" title="statement not covered" >            &gt;</span>
-<span class="cstat-no" title="statement not covered" >              &lt;ListItemIcon</span>
-<span class="cstat-no" title="statement not covered" >                sx={{</span>
-<span class="cstat-no" title="statement not covered" >                  minWidth: 0,</span>
-<span class="cstat-no" title="statement not covered" >                  mr: drawer ? 3 : "auto",</span>
-<span class="cstat-no" title="statement not covered" >                  justifyContent: "center",</span>
-<span class="cstat-no" title="statement not covered" >                }}</span>
-<span class="cstat-no" title="statement not covered" >              &gt;</span>
-<span class="cstat-no" title="statement not covered" >                {item.icon}</span>
-<span class="cstat-no" title="statement not covered" >              &lt;/ListItemIcon&gt;</span>
-<span class="cstat-no" title="statement not covered" >              {drawer &amp;&amp; &lt;ListItemText primary={item.title} /&gt;}</span>
-<span class="cstat-no" title="statement not covered" >            &lt;/ListItemButton&gt;</span>
-<span class="cstat-no" title="statement not covered" >          &lt;/ListItem&gt;</span>
-<span class="cstat-no" title="statement not covered" >        ))}</span>
-<span class="cstat-no" title="statement not covered" >      &lt;/List&gt;</span>
-<span class="cstat-no" title="statement not covered" >      &lt;Divider /&gt;</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >      {/* Join Societies Section */}</span>
-<span class="cstat-no" title="statement not covered" >      {drawer &amp;&amp; (</span>
-<span class="cstat-no" title="statement not covered" >        &lt;Box sx={{ px: 2, py: 1 }}&gt;</span>
-<span class="cstat-no" title="statement not covered" >          &lt;Typography variant="subtitle2" color="textSecondary"&gt;</span>
-<span class="cstat-no" title="statement not covered" >            Join Societies</span>
-<span class="cstat-no" title="statement not covered" >          &lt;/Typography&gt;</span>
+<span class="cstat-no" title="statement not covered" >  return (</span>
+<span class="cstat-no" title="statement not covered" >    &lt;Box</span>
+<span class="cstat-no" title="statement not covered" >      minHeight="100vh"</span>
+<span class="cstat-no" title="statement not covered" >      p={4}</span>
+<span class="cstat-no" title="statement not covered" >      sx={{</span>
+<span class="cstat-no" title="statement not covered" >        backgroundColor: backgroundColorMain,</span>
+<span class="cstat-no" title="statement not covered" >        color: textColorMain,</span>
+<span class="cstat-no" title="statement not covered" >      }}</span>
+<span class="cstat-no" title="statement not covered" >    &gt;</span>
+<span class="cstat-no" title="statement not covered" >      &lt;Box textAlign="center" mb={4}&gt;</span>
+<span class="cstat-no" title="statement not covered" >        &lt;Typography variant="h3" fontWeight="bold"&gt;</span>
+<span class="cstat-no" title="statement not covered" >          Edit Event Details</span>
+<span class="cstat-no" title="statement not covered" >        &lt;/Typography&gt;</span>
+<span class="cstat-no" title="statement not covered" >        &lt;Typography variant="subtitle1"&gt;</span>
+<span class="cstat-no" title="statement not covered" >          Make changes to the event. Your changes will be sent for admin approval.</span>
+<span class="cstat-no" title="statement not covered" >        &lt;/Typography&gt;</span>
+<span class="cstat-no" title="statement not covered" >      &lt;/Box&gt;</span>
+<span class="cstat-no" title="statement not covered" >      &lt;Box</span>
+<span class="cstat-no" title="statement not covered" >        component="form"</span>
+<span class="cstat-no" title="statement not covered" >        onSubmit={handleSubmit}</span>
+<span class="cstat-no" title="statement not covered" >        maxWidth="600px"</span>
+<span class="cstat-no" title="statement not covered" >        mx="auto"</span>
+<span class="cstat-no" title="statement not covered" >        p={3}</span>
+<span class="cstat-no" title="statement not covered" >        sx={{</span>
+<span class="cstat-no" title="statement not covered" >          backgroundColor: backgroundColorForm,</span>
+<span class="cstat-no" title="statement not covered" >          borderRadius: "8px",</span>
+<span class="cstat-no" title="statement not covered" >          boxShadow: 3,</span>
+<span class="cstat-no" title="statement not covered" >        }}</span>
+<span class="cstat-no" title="statement not covered" >      &gt;</span>
+<span class="cstat-no" title="statement not covered" >        {error &amp;&amp; (</span>
+<span class="cstat-no" title="statement not covered" >          &lt;Alert severity="error" sx={{ mb: 2 }}&gt;</span>
+<span class="cstat-no" title="statement not covered" >            {error}</span>
+<span class="cstat-no" title="statement not covered" >          &lt;/Alert&gt;</span>
+<span class="cstat-no" title="statement not covered" >        )}</span>
+<span class="cstat-no" title="statement not covered" >        {success &amp;&amp; (</span>
+<span class="cstat-no" title="statement not covered" >          &lt;Alert severity="success" sx={{ mb: 2 }}&gt;</span>
+<span class="cstat-no" title="statement not covered" >            {success}</span>
+<span class="cstat-no" title="statement not covered" >          &lt;/Alert&gt;</span>
+<span class="cstat-no" title="statement not covered" >        )}</span>
+<span class="cstat-no" title="statement not covered" >        &lt;TextField</span>
+<span class="cstat-no" title="statement not covered" >          label="Title"</span>
+<span class="cstat-no" title="statement not covered" >          value={formData.title}</span>
+<span class="cstat-no" title="statement not covered" >          onChange={handleInputChange("title")}</span>
+<span class="cstat-no" title="statement not covered" >          fullWidth</span>
+<span class="cstat-no" title="statement not covered" >          margin="normal"</span>
+<span class="cstat-no" title="statement not covered" >          required</span>
+<span class="cstat-no" title="statement not covered" >        /&gt;</span>
+<span class="cstat-no" title="statement not covered" >        &lt;TextField</span>
+<span class="cstat-no" title="statement not covered" >          label="Description"</span>
+<span class="cstat-no" title="statement not covered" >          value={formData.description}</span>
+<span class="cstat-no" title="statement not covered" >          onChange={handleInputChange("description")}</span>
+<span class="cstat-no" title="statement not covered" >          fullWidth</span>
+<span class="cstat-no" title="statement not covered" >          margin="normal"</span>
+<span class="cstat-no" title="statement not covered" >          multiline</span>
+<span class="cstat-no" title="statement not covered" >          rows={4}</span>
+<span class="cstat-no" title="statement not covered" >        /&gt;</span>
+<span class="cstat-no" title="statement not covered" >        &lt;TextField</span>
+<span class="cstat-no" title="statement not covered" >          label="Location"</span>
+<span class="cstat-no" title="statement not covered" >          value={formData.location}</span>
+<span class="cstat-no" title="statement not covered" >          onChange={handleInputChange("location")}</span>
+<span class="cstat-no" title="statement not covered" >          fullWidth</span>
+<span class="cstat-no" title="statement not covered" >          margin="normal"</span>
+<span class="cstat-no" title="statement not covered" >          required</span>
+<span class="cstat-no" title="statement not covered" >        /&gt;</span>
+<span class="cstat-no" title="statement not covered" >        &lt;TextField</span>
+<span class="cstat-no" title="statement not covered" >          label="Date"</span>
+<span class="cstat-no" title="statement not covered" >          type="date"</span>
+<span class="cstat-no" title="statement not covered" >          value={formData.date}</span>
+<span class="cstat-no" title="statement not covered" >          onChange={handleInputChange("date")}</span>
+<span class="cstat-no" title="statement not covered" >          fullWidth</span>
+<span class="cstat-no" title="statement not covered" >          margin="normal"</span>
+<span class="cstat-no" title="statement not covered" >          InputLabelProps={{ shrink: true }}</span>
+<span class="cstat-no" title="statement not covered" >          required</span>
+<span class="cstat-no" title="statement not covered" >        /&gt;</span>
+<span class="cstat-no" title="statement not covered" >        &lt;TextField</span>
+<span class="cstat-no" title="statement not covered" >          label="Start Time"</span>
+<span class="cstat-no" title="statement not covered" >          type="time"</span>
+<span class="cstat-no" title="statement not covered" >          value={formData.start_time}</span>
+<span class="cstat-no" title="statement not covered" >          onChange={handleInputChange("start_time")}</span>
+<span class="cstat-no" title="statement not covered" >          fullWidth</span>
+<span class="cstat-no" title="statement not covered" >          margin="normal"</span>
+<span class="cstat-no" title="statement not covered" >          InputLabelProps={{ shrink: true }}</span>
+<span class="cstat-no" title="statement not covered" >          required</span>
+<span class="cstat-no" title="statement not covered" >        /&gt;</span>
+<span class="cstat-no" title="statement not covered" >        &lt;TextField</span>
+<span class="cstat-no" title="statement not covered" >          label="Duration"</span>
+<span class="cstat-no" title="statement not covered" >          type="text"</span>
+<span class="cstat-no" title="statement not covered" >          value={formData.duration}</span>
+<span class="cstat-no" title="statement not covered" >          onChange={handleInputChange("duration")}</span>
+<span class="cstat-no" title="statement not covered" >          fullWidth</span>
+<span class="cstat-no" title="statement not covered" >          margin="normal"</span>
+<span class="cstat-no" title="statement not covered" >          helperText="Enter duration (e.g., '01:00:00' for 1 hour)"</span>
+<span class="cstat-no" title="statement not covered" >          required</span>
+<span class="cstat-no" title="statement not covered" >        /&gt;</span>
+<span class="cstat-no" title="statement not covered" >        &lt;Box display="flex" justifyContent="space-between" mt={3}&gt;</span>
+<span class="cstat-no" title="statement not covered" >          &lt;Button variant="contained" color="primary" type="submit" disabled={submitting}&gt;</span>
+<span class="cstat-no" title="statement not covered" >            {submitting ? "Submitting..." : "Submit Changes"}</span>
+<span class="cstat-no" title="statement not covered" >          &lt;/Button&gt;</span>
+<span class="cstat-no" title="statement not covered" >          &lt;Button variant="outlined" onClick={() =&gt; navigate(-1)} disabled={submitting}&gt;</span>
+<span class="cstat-no" title="statement not covered" >            Cancel</span>
+<span class="cstat-no" title="statement not covered" >          &lt;/Button&gt;</span>
 <span class="cstat-no" title="statement not covered" >        &lt;/Box&gt;</span>
-<span class="cstat-no" title="statement not covered" >      )}</span>
-<span class="cstat-no" title="statement not covered" >      &lt;List&gt;</span>
-<span class="cstat-no" title="statement not covered" >        &lt;ListItem disablePadding&gt;</span>
-<span class="cstat-no" title="statement not covered" >          &lt;ListItemButton</span>
-<span class="cstat-no" title="statement not covered" >            component={Link}</span>
-<span class="cstat-no" title="statement not covered" >            to="/student/join-society"</span>
-<span class="cstat-no" title="statement not covered" >            sx={{ justifyContent: drawer ? "initial" : "center", px: 2.5 }}</span>
-<span class="cstat-no" title="statement not covered" >          &gt;</span>
-<span class="cstat-no" title="statement not covered" >            &lt;ListItemIcon</span>
-<span class="cstat-no" title="statement not covered" >              sx={{</span>
-<span class="cstat-no" title="statement not covered" >                minWidth: 0,</span>
-<span class="cstat-no" title="statement not covered" >                mr: drawer ? 3 : "auto",</span>
-<span class="cstat-no" title="statement not covered" >                justifyContent: "center",</span>
-<span class="cstat-no" title="statement not covered" >              }}</span>
-<span class="cstat-no" title="statement not covered" >            &gt;</span>
-<span class="cstat-no" title="statement not covered" >              &lt;GroupAddOutlinedIcon /&gt;</span>
-<span class="cstat-no" title="statement not covered" >            &lt;/ListItemIcon&gt;</span>
-<span class="cstat-no" title="statement not covered" >            {drawer &amp;&amp; &lt;ListItemText primary="Join Societies" /&gt;}</span>
-<span class="cstat-no" title="statement not covered" >          &lt;/ListItemButton&gt;</span>
-<span class="cstat-no" title="statement not covered" >        &lt;/ListItem&gt;</span>
-<span class="cstat-no" title="statement not covered" >      &lt;/List&gt;</span>
-<span class="cstat-no" title="statement not covered" >      &lt;Divider /&gt;</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >      {/* Logout Item */}</span>
-<span class="cstat-no" title="statement not covered" >      &lt;List&gt;</span>
-<span class="cstat-no" title="statement not covered" >        &lt;ListItem disablePadding&gt;</span>
-<span class="cstat-no" title="statement not covered" >          &lt;ListItemButton</span>
-<span class="cstat-no" title="statement not covered" >            sx={{</span>
-<span class="cstat-no" title="statement not covered" >              minHeight: 48,</span>
-<span class="cstat-no" title="statement not covered" >              px: 2.5,</span>
-<span class="cstat-no" title="statement not covered" >              justifyContent: drawer ? "initial" : "center",</span>
-<span class="cstat-no" title="statement not covered" >              color: "red",</span>
-<span class="cstat-no" title="statement not covered" >            }}</span>
-<span class="cstat-no" title="statement not covered" >            onClick={logout}</span>
-<span class="cstat-no" title="statement not covered" >          &gt;</span>
-<span class="cstat-no" title="statement not covered" >            &lt;ListItemIcon</span>
-<span class="cstat-no" title="statement not covered" >              sx={{</span>
-<span class="cstat-no" title="statement not covered" >                minWidth: 0,</span>
-<span class="cstat-no" title="statement not covered" >                mr: drawer ? 3 : "auto",</span>
-<span class="cstat-no" title="statement not covered" >                justifyContent: "center",</span>
-<span class="cstat-no" title="statement not covered" >              }}</span>
-<span class="cstat-no" title="statement not covered" >            &gt;</span>
-<span class="cstat-no" title="statement not covered" >              &lt;LogoutIcon sx={{ color: "red" }} /&gt;</span>
-<span class="cstat-no" title="statement not covered" >            &lt;/ListItemIcon&gt;</span>
-<span class="cstat-no" title="statement not covered" >            {drawer &amp;&amp; &lt;ListItemText primary="Logout" /&gt;}</span>
-<span class="cstat-no" title="statement not covered" >          &lt;/ListItemButton&gt;</span>
-<span class="cstat-no" title="statement not covered" >        &lt;/ListItem&gt;</span>
-<span class="cstat-no" title="statement not covered" >      &lt;/List&gt;</span>
-<span class="cstat-no" title="statement not covered" >    &lt;/CustomDrawer&gt;</span>
+<span class="cstat-no" title="statement not covered" >      &lt;/Box&gt;</span>
+<span class="cstat-no" title="statement not covered" >    &lt;/Box&gt;</span>
 <span class="cstat-no" title="statement not covered" >  );</span>
 <span class="cstat-no" title="statement not covered" >};</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >export default PresidentDrawer;</span></pre></td></tr></table></pre>
+<span class="cstat-no" title="statement not covered" >export default EditEventDetails;</span></pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
             </div><!-- /wrapper -->

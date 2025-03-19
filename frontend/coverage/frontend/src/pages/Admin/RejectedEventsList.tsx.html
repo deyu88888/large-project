@@ -3,7 +3,7 @@
 <html lang="en">
 
 <head>
-    <title>Code coverage report for frontend/src/pages/Admin/PendingSocietyRequest.tsx</title>
+    <title>Code coverage report for frontend/src/pages/Admin/RejectedEventsList.tsx</title>
     <meta charset="utf-8" />
     <link rel="stylesheet" href="../../../../prettify.css" />
     <link rel="stylesheet" href="../../../../base.css" />
@@ -19,13 +19,13 @@
 <body>
 <div class='wrapper'>
     <div class='pad1'>
-        <h1><a href="../../../../index.html">All files</a> / <a href="index.html">frontend/src/pages/Admin</a> PendingSocietyRequest.tsx</h1>
+        <h1><a href="../../../../index.html">All files</a> / <a href="index.html">frontend/src/pages/Admin</a> RejectedEventsList.tsx</h1>
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/127</span>
+                <span class='fraction'>0/151</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/127</span>
+                <span class='fraction'>0/151</span>
             </div>
         
             
@@ -189,7 +189,31 @@
 <a name='L124'></a><a href='#L124'>124</a>
 <a name='L125'></a><a href='#L125'>125</a>
 <a name='L126'></a><a href='#L126'>126</a>
-<a name='L127'></a><a href='#L127'>127</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L127'></a><a href='#L127'>127</a>
+<a name='L128'></a><a href='#L128'>128</a>
+<a name='L129'></a><a href='#L129'>129</a>
+<a name='L130'></a><a href='#L130'>130</a>
+<a name='L131'></a><a href='#L131'>131</a>
+<a name='L132'></a><a href='#L132'>132</a>
+<a name='L133'></a><a href='#L133'>133</a>
+<a name='L134'></a><a href='#L134'>134</a>
+<a name='L135'></a><a href='#L135'>135</a>
+<a name='L136'></a><a href='#L136'>136</a>
+<a name='L137'></a><a href='#L137'>137</a>
+<a name='L138'></a><a href='#L138'>138</a>
+<a name='L139'></a><a href='#L139'>139</a>
+<a name='L140'></a><a href='#L140'>140</a>
+<a name='L141'></a><a href='#L141'>141</a>
+<a name='L142'></a><a href='#L142'>142</a>
+<a name='L143'></a><a href='#L143'>143</a>
+<a name='L144'></a><a href='#L144'>144</a>
+<a name='L145'></a><a href='#L145'>145</a>
+<a name='L146'></a><a href='#L146'>146</a>
+<a name='L147'></a><a href='#L147'>147</a>
+<a name='L148'></a><a href='#L148'>148</a>
+<a name='L149'></a><a href='#L149'>149</a>
+<a name='L150'></a><a href='#L150'>150</a>
+<a name='L151'></a><a href='#L151'>151</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -315,92 +339,134 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" >import { useContext } from "react";</span></span></span>
-<span class="cstat-no" title="statement not covered" >import { Box, Typography, useTheme, Button } from "@mui/material";</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" >import { useState, useEffect, useContext, useRef } from "react";</span></span></span>
+<span class="cstat-no" title="statement not covered" >import { Box, Typography, Button, useTheme } from "@mui/material";</span>
 <span class="cstat-no" title="statement not covered" >import { DataGrid, GridColDef, GridToolbar } from "@mui/x-data-grid";</span>
+<span class="cstat-no" title="statement not covered" >import { apiClient, apiPaths } from "../../api";</span>
+<span class="cstat-no" title="statement not covered" >import { useNavigate } from "react-router-dom";</span>
 <span class="cstat-no" title="statement not covered" >import { tokens } from "../../theme/theme";</span>
 <span class="cstat-no" title="statement not covered" >import { SearchContext } from "../../components/layout/SearchContext";</span>
 <span class="cstat-no" title="statement not covered" >import { useSettingsStore } from "../../stores/settings-store";</span>
-<span class="cstat-no" title="statement not covered" >import { useFetchWebSocket } from "../../hooks/useFetchWebSocket";</span>
-<span class="cstat-no" title="statement not covered" >import { updateRequestStatus } from "../../api/requestApi";</span>
-<span class="cstat-no" title="statement not covered" >import { apiPaths } from "../../api";</span>
-<span class="cstat-no" title="statement not covered" >import { fetchPendingRequests } from "./fetchPendingRequests";</span>
+<span class="cstat-no" title="statement not covered" >import { Event } from '../../types'</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >const PendingSocietyRequest = () =&gt; {</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >const EventListRejected = () =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >  const theme = useTheme();</span>
 <span class="cstat-no" title="statement not covered" >  const colors = tokens(theme.palette.mode);</span>
+<span class="cstat-no" title="statement not covered" >  const navigate = useNavigate();</span>
+<span class="cstat-no" title="statement not covered" >  const { drawer } = useSettingsStore();</span>
+<span class="cstat-no" title="statement not covered" >  const [events, setEvents] = useState&lt;Event[]&gt;([]);</span>
 <span class="cstat-no" title="statement not covered" >  const { searchTerm } = useContext(SearchContext);</span>
-<span class="cstat-no" title="statement not covered" >  const { drawer } = useSettingsStore(); </span>
-<span class="cstat-no" title="statement not covered" >  const societies = useFetchWebSocket(() =&gt; fetchPendingRequests(apiPaths.USER.PENDINGSOCIETYREQUEST), 'society');</span>
+<span class="cstat-no" title="statement not covered" >  const ws = useRef&lt;WebSocket | null&gt;(null);</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >  const filteredSocieties = Array.isArray(societies) </span>
-<span class="cstat-no" title="statement not covered" >  ? societies.filter((society) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >      const searchString = Object.entries(society)</span>
-<span class="cstat-no" title="statement not covered" >        .map(([key, value]) =&gt; Array.isArray(value) ? value.join(", ") : String(value))</span>
-<span class="cstat-no" title="statement not covered" >        .join(" ")</span>
-<span class="cstat-no" title="statement not covered" >        .toLowerCase();</span>
-<span class="cstat-no" title="statement not covered" >      return searchString.includes(searchTerm.toLowerCase());</span>
-<span class="cstat-no" title="statement not covered" >    }).map((society) =&gt; ({</span>
-<span class="cstat-no" title="statement not covered" >      ...society,</span>
-<span class="cstat-no" title="statement not covered" >      society_members: Array.isArray(society.society_members) </span>
-<span class="cstat-no" title="statement not covered" >        ? society.society_members.join(", ") </span>
-<span class="cstat-no" title="statement not covered" >        : society.society_members,</span>
-<span class="cstat-no" title="statement not covered" >    }))</span>
-<span class="cstat-no" title="statement not covered" >  : [];</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >  const handleStatusChange = async (id: number, status: "Approved" | "Rejected") =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >  const fetchEvents = async () =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    try {</span>
-<span class="cstat-no" title="statement not covered" >      await updateRequestStatus(id, status, apiPaths.USER.PENDINGSOCIETYREQUEST);</span>
+<span class="cstat-no" title="statement not covered" >      const res = await apiClient.get(apiPaths.EVENTS.REJECTEDEVENTLIST);</span>
+<span class="cstat-no" title="statement not covered" >      console.log("Fetched Rejected Events:", res.data);</span>
+<span class="cstat-no" title="statement not covered" >      setEvents(res.data || []);</span>
 <span class="cstat-no" title="statement not covered" >    } catch (error) {</span>
-<span class="cstat-no" title="statement not covered" >      alert(`Failed to ${status.toLowerCase()} society request.`);</span>
+<span class="cstat-no" title="statement not covered" >      console.error("Error fetching rejected events:", error);</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
 <span class="cstat-no" title="statement not covered" >  };</span>
 <span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >  useEffect(() =&gt; {</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >      const connectWebSocket = () =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >        ws.current = new WebSocket("ws://127.0.0.1:8000/ws/admin/event/");</span>
+<span class="cstat-no" title="statement not covered" >  </span>
+<span class="cstat-no" title="statement not covered" >        ws.current.onopen = () =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >            console.log("WebSocket Connected for Society List");</span>
+<span class="cstat-no" title="statement not covered" >        };</span>
+<span class="cstat-no" title="statement not covered" >  </span>
+<span class="cstat-no" title="statement not covered" >        ws.current.onmessage = (event) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >            try {</span>
+<span class="cstat-no" title="statement not covered" >                const data = JSON.parse(event.data);</span>
+<span class="cstat-no" title="statement not covered" >                console.log("WebSocket Update Received:", data);</span>
+<span class="cstat-no" title="statement not covered" >                // Re-fetch on any update</span>
+<span class="cstat-no" title="statement not covered" >                fetchEvents();</span>
+<span class="cstat-no" title="statement not covered" >  </span>
+<span class="cstat-no" title="statement not covered" >            } catch (error) {</span>
+<span class="cstat-no" title="statement not covered" >                console.error("Error parsing WebSocket message:", error);</span>
+<span class="cstat-no" title="statement not covered" >            }</span>
+<span class="cstat-no" title="statement not covered" >        };</span>
+<span class="cstat-no" title="statement not covered" >  </span>
+<span class="cstat-no" title="statement not covered" >        ws.current.onerror = (event) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >            console.error("WebSocket Error:", event);</span>
+<span class="cstat-no" title="statement not covered" >        };</span>
+<span class="cstat-no" title="statement not covered" >  </span>
+<span class="cstat-no" title="statement not covered" >        ws.current.onclose = (event) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >            console.log("WebSocket Disconnected:", event.reason);</span>
+<span class="cstat-no" title="statement not covered" >            setTimeout(() =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >                connectWebSocket();</span>
+<span class="cstat-no" title="statement not covered" >            }, 5000);</span>
+<span class="cstat-no" title="statement not covered" >        };</span>
+<span class="cstat-no" title="statement not covered" >    }</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >    fetchEvents();</span>
+<span class="cstat-no" title="statement not covered" >      //Establish websocket connection</span>
+<span class="cstat-no" title="statement not covered" >      connectWebSocket();</span>
+<span class="cstat-no" title="statement not covered" >  </span>
+<span class="cstat-no" title="statement not covered" >    return () =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >        if (ws.current) {</span>
+<span class="cstat-no" title="statement not covered" >          ws.current.close();</span>
+<span class="cstat-no" title="statement not covered" >        }</span>
+<span class="cstat-no" title="statement not covered" >    };</span>
+<span class="cstat-no" title="statement not covered" >  </span>
+<span class="cstat-no" title="statement not covered" >  }, []);</span>
+<span class="cstat-no" title="statement not covered" >     </span>
+<span class="cstat-no" title="statement not covered" >  const filteredEvents = events.filter((event) =&gt;</span>
+<span class="cstat-no" title="statement not covered" >    Object.values(event)</span>
+<span class="cstat-no" title="statement not covered" >      .join(" ")</span>
+<span class="cstat-no" title="statement not covered" >      .toLowerCase()</span>
+<span class="cstat-no" title="statement not covered" >      .includes(searchTerm.toLowerCase())</span>
+<span class="cstat-no" title="statement not covered" >  );</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >  const handleBackToEvents = () =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    navigate("/admin/event-list");</span>
+<span class="cstat-no" title="statement not covered" >  };</span>
+<span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >  const columns: GridColDef[] = [</span>
-<span class="cstat-no" title="statement not covered" >    { field: "id", headerName: "ID", flex: 0.5 },</span>
-<span class="cstat-no" title="statement not covered" >    { field: "name", headerName: "Name", flex: 1 },</span>
-<span class="cstat-no" title="statement not covered" >    // { field: "description", headerName: "Description", flex: 1 },</span>
-<span class="cstat-no" title="statement not covered" >    {      </span>
-<span class="cstat-no" title="statement not covered" >      field: "society_members",</span>
-<span class="cstat-no" title="statement not covered" >      headerName: "Members",</span>
-<span class="cstat-no" title="statement not covered" >      flex: 1,</span>
-<span class="cstat-no" title="statement not covered" >    },</span>
-<span class="cstat-no" title="statement not covered" >    { field: "president", headerName: "president", flex: 1 },</span>
-<span class="cstat-no" title="statement not covered" >    { field: "category", headerName: "Category", flex: 1 },</span>
-<span class="cstat-no" title="statement not covered" >    { field: "timetable", headerName: "Timetable", flex: 1 },</span>
-<span class="cstat-no" title="statement not covered" >    { field: "membershipRequirements", headerName: "Membership Requirements", flex: 1 },</span>
-<span class="cstat-no" title="statement not covered" >    { field: "upcomingProjectsOrPlans", headerName: "Upcoming Projects", flex: 1 },</span>
-<span class="cstat-no" title="statement not covered" >    {</span>
-<span class="cstat-no" title="statement not covered" >      field: "actions",</span>
-<span class="cstat-no" title="statement not covered" >      headerName: "Actions",</span>
-<span class="cstat-no" title="statement not covered" >      renderCell: (params: any) =&gt; (</span>
-<span class="cstat-no" title="statement not covered" >        &lt;&gt;</span>
-<span class="cstat-no" title="statement not covered" >          &lt;Button</span>
-<span class="cstat-no" title="statement not covered" >            variant="contained"</span>
-<span class="cstat-no" title="statement not covered" >            color="success"</span>
-<span class="cstat-no" title="statement not covered" >            onClick={() =&gt; handleStatusChange(params.row.id, "Approved")}</span>
-<span class="cstat-no" title="statement not covered" >            sx={{ marginRight: 1 }}</span>
-<span class="cstat-no" title="statement not covered" >          &gt;</span>
-<span class="cstat-no" title="statement not covered" >            Accept</span>
-<span class="cstat-no" title="statement not covered" >          &lt;/Button&gt;</span>
-<span class="cstat-no" title="statement not covered" >          &lt;Button variant="contained" color="error" onClick={() =&gt; handleStatusChange(params.row.id, "Rejected")}&gt;</span>
-<span class="cstat-no" title="statement not covered" >            Reject</span>
-<span class="cstat-no" title="statement not covered" >          &lt;/Button&gt;</span>
-<span class="cstat-no" title="statement not covered" >        &lt;/&gt;</span>
-<span class="cstat-no" title="statement not covered" >      ),</span>
-<span class="cstat-no" title="statement not covered" >      flex: 1.6,</span>
-<span class="cstat-no" title="statement not covered" >    },</span>
+<span class="cstat-no" title="statement not covered" >    { field: "id", headerName: "ID", flex: 1 },</span>
+<span class="cstat-no" title="statement not covered" >    { field: "title", headerName: "Title", flex: 1 },</span>
+<span class="cstat-no" title="statement not covered" >    { field: "description", headerName: "Description", flex: 1 },</span>
+<span class="cstat-no" title="statement not covered" >    { field: "date", headerName: "Date", flex: 1 },</span>
+<span class="cstat-no" title="statement not covered" >    { field: "startTime", headerName: "Start Time", flex: 1 },</span>
+<span class="cstat-no" title="statement not covered" >    { field: "duration", headerName: "Duration", flex: 1 },</span>
+<span class="cstat-no" title="statement not covered" >    { field: "hostedBy", headerName: "Hosted By", flex: 1 },</span>
+<span class="cstat-no" title="statement not covered" >    { field: "location", headerName: "Location", flex: 1 },</span>
 <span class="cstat-no" title="statement not covered" >  ];</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >  return (</span>
 <span class="cstat-no" title="statement not covered" >    &lt;Box</span>
-<span class="cstat-no" title="statement not covered" >      sx={{</span>
-<span class="cstat-no" title="statement not covered" >        height: "calc(100vh - 64px)", // Full height minus the AppBar height</span>
-<span class="cstat-no" title="statement not covered" >        maxWidth: drawer ? `calc(100% - 3px)`: "100%",</span>
-<span class="cstat-no" title="statement not covered" >      }}</span>
+<span class="cstat-no" title="statement not covered" >    sx={{</span>
+<span class="cstat-no" title="statement not covered" >      height: "calc(100vh - 64px)", // Full height minus AppBar height</span>
+<span class="cstat-no" title="statement not covered" >      maxWidth: drawer ? `calc(100% - 3px)` : "100%",</span>
+<span class="cstat-no" title="statement not covered" >    }}</span>
 <span class="cstat-no" title="statement not covered" >    &gt;</span>
-<span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >      &lt;Box</span>
 <span class="cstat-no" title="statement not covered" >        sx={{</span>
 <span class="cstat-no" title="statement not covered" >          height: "78vh",</span>
@@ -410,11 +476,19 @@
 <span class="cstat-no" title="statement not covered" >            backgroundColor: colors.blueAccent[700],</span>
 <span class="cstat-no" title="statement not covered" >            borderBottom: "none",</span>
 <span class="cstat-no" title="statement not covered" >          },</span>
-<span class="cstat-no" title="statement not covered" >          "&amp; .MuiDataGrid-columnHeader": { whiteSpace: "normal", wordBreak: "break-word" },</span>
-<span class="cstat-no" title="statement not covered" >          "&amp; .MuiDataGrid-virtualScroller": { backgroundColor: colors.primary[400] },</span>
+<span class="cstat-no" title="statement not covered" >          "&amp; .MuiDataGrid-columnHeader": {</span>
+<span class="cstat-no" title="statement not covered" >            whiteSpace: "normal",</span>
+<span class="cstat-no" title="statement not covered" >            wordBreak: "break-word",</span>
+<span class="cstat-no" title="statement not covered" >          },</span>
+<span class="cstat-no" title="statement not covered" >          "&amp; .MuiDataGrid-virtualScroller": {</span>
+<span class="cstat-no" title="statement not covered" >            backgroundColor: colors.primary[400],</span>
+<span class="cstat-no" title="statement not covered" >          },</span>
 <span class="cstat-no" title="statement not covered" >          "&amp; .MuiDataGrid-footerContainer": {</span>
 <span class="cstat-no" title="statement not covered" >            borderTop: "none",</span>
 <span class="cstat-no" title="statement not covered" >            backgroundColor: colors.blueAccent[700],</span>
+<span class="cstat-no" title="statement not covered" >          },</span>
+<span class="cstat-no" title="statement not covered" >          "&amp; .MuiCheckbox-root": {</span>
+<span class="cstat-no" title="statement not covered" >            color: `${colors.greenAccent[200]} !important`,</span>
 <span class="cstat-no" title="statement not covered" >          },</span>
 <span class="cstat-no" title="statement not covered" >          "&amp; .MuiDataGrid-toolbarContainer .MuiButton-text": {</span>
 <span class="cstat-no" title="statement not covered" >            color: `${colors.blueAccent[500]} !important`,</span>
@@ -422,7 +496,7 @@
 <span class="cstat-no" title="statement not covered" >        }}</span>
 <span class="cstat-no" title="statement not covered" >      &gt;</span>
 <span class="cstat-no" title="statement not covered" >        &lt;DataGrid</span>
-<span class="cstat-no" title="statement not covered" >          rows={filteredSocieties}</span>
+<span class="cstat-no" title="statement not covered" >          rows={filteredEvents}</span>
 <span class="cstat-no" title="statement not covered" >          columns={columns}</span>
 <span class="cstat-no" title="statement not covered" >          slots={{ toolbar: GridToolbar }}</span>
 <span class="cstat-no" title="statement not covered" >          initialState={{</span>
@@ -433,22 +507,20 @@
 <span class="cstat-no" title="statement not covered" >          pageSizeOptions={[5, 10, 25]}</span>
 <span class="cstat-no" title="statement not covered" >          checkboxSelection</span>
 <span class="cstat-no" title="statement not covered" >          resizeThrottleMs={0}</span>
-<span class="cstat-no" title="statement not covered" >          disableRowSelectionOnClick  // Disable row selection on row click to temporarily fix accept/reject button issue</span>
 <span class="cstat-no" title="statement not covered" >        /&gt;</span>
-<span class="cstat-no" title="statement not covered" >        {/* &lt;div&gt; {JSON.stringify(filteredSocieties)} &lt;/div&gt; */}</span>
 <span class="cstat-no" title="statement not covered" >      &lt;/Box&gt;</span>
 <span class="cstat-no" title="statement not covered" >    &lt;/Box&gt;</span>
 <span class="cstat-no" title="statement not covered" >  );</span>
 <span class="cstat-no" title="statement not covered" >};</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >export default PendingSocietyRequest;</span></pre></td></tr></table></pre>
+<span class="cstat-no" title="statement not covered" >export default EventListRejected;</span></pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
             </div><!-- /wrapper -->
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-03-10T21:31:58.011Z
+                at 2025-03-19T01:38:58.370Z
             </div>
         <script src="../../../../prettify.js"></script>
         <script>

@@ -72,28 +72,6 @@ class Command(BaseCommand):
 
         self.create_student(100)
 
-        president, _ = Student.objects.get_or_create(
-            username="president_user",
-            defaults={
-                "email": "president@example.com",
-                "first_name": "John",
-                "last_name": "Doe",
-                "password": make_password("presidentpassword"),
-                "major": "Mechanical Engineering",
-            },
-        )
-        self.create_society(name="Robotics Club", president_force=president)
-        self.create_society(35)
-
-        self.create_event(20)
-
-        self.pre_define_awards()
-        self.randomly_assign_awards(50)
-
-        self.broadcast_updates()
-
-        self.stdout.write(self.style.SUCCESS("🎉 Seeding complete!"))
-
         student, _ = get_or_create_user(
             Student,
             username="student_user",
@@ -173,7 +151,6 @@ class Command(BaseCommand):
         self.pre_define_awards()
         self.randomly_assign_awards(50)
 
-        # Broadcast updates to the WebSocket
         self.broadcast_updates()
 
         self.stdout.write(self.style.SUCCESS("Seeding complete!"))
