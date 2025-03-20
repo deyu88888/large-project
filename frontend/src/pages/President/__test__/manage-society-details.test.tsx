@@ -5,7 +5,7 @@ import { vi } from 'vitest';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { apiClient, apiPaths } from '../../../api';
 import { useAuthStore } from '../../../stores/auth-store';
-import ManageSocietyDetails from '../../Admin/ManageSocietyDetails';
+import ManageSocietyDetails from '../ManageSocietyDetails';
 
 const mockNavigate = vi.fn();
 

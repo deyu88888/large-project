@@ -13,7 +13,7 @@ import { useTheme } from "@mui/material/styles";
 import { apiClient, apiPaths } from "../../api";
 import { useAuthStore } from "../../stores/auth-store";
 import { tokens } from "../../theme/theme";
-import SocietyPreviewModal from "../President/SocietyPreviewModal";
+import SocietyPreviewModal from "./SocietyPreviewModal";
 
 interface SocietyData {
   id: number;
