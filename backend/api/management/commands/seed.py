@@ -26,6 +26,12 @@ class Command(BaseCommand):
     """Seeds the database with super admins, admins, students, societies, and events"""
     help = "Seed the database with super admins, normal admins, students, societies, and events"
 
+    def __init__(self):
+        self.event_generator = RandomEventDataGenerator()
+        self.student_generator = RandomStudentDataGenerator()
+        self.society_generator = RandomSocietyDataGenerator()
+        super().__init__()
+
     def handle(self, *args, **kwargs):
         """Handles database seeding"""
         def get_or_create_user(model, username, email, first_name, last_name, defaults):
@@ -43,10 +49,6 @@ class Command(BaseCommand):
             else:
                 self.stdout.write(f"{model.__name__} already exists: {user.username}")
             return user, created
-
-        self.event_generator = RandomEventDataGenerator()
-        self.student_generator = RandomStudentDataGenerator()
-        self.society_generator = RandomSocietyDataGenerator()
 
         # Create/Get Admin using create_admin, to avoid code duplication
         self.create_admin(5)
