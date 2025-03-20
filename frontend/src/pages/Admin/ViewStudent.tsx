@@ -29,6 +29,11 @@ const ViewStudent: React.FC = () => {
   const [formData, setFormData] = useState<Student | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success" as "success" | "error"
+  });
 
   useEffect(() => {
     fetchStudent();
@@ -81,7 +86,11 @@ const ViewStudent: React.FC = () => {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      alert("Student updated successfully!");
+      setSnackbar({
+        open: true,
+        message: "Student updated successfully!",
+        severity: "success"
+      });
     } catch (error) {
       console.error("Error updating student", error);
       alert("There was an error updating the student.");
