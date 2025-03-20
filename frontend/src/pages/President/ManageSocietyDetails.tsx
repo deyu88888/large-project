@@ -131,12 +131,12 @@ const ManageSocietyDetails: React.FC = () => {
         formDataToSend.append("icon", formData.icon);
       }
 
-      await apiClient.patch(`/api/manage-society-details/${societyId}/`, formDataToSend, {
+      await apiClient.patch(`/api/manage-society-details/${societyId}`, formDataToSend, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
       alert("Society update request submitted. Await admin approval.");
-      navigate(`/president-page/${societyId}`);
+      navigate(`/president/${societyId}`);
     } catch (error) {
       console.error("Error updating society", error);
       alert("There was an error submitting your update request.");

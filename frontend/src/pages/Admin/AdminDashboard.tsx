@@ -2,10 +2,10 @@ import React, { useState, useEffect } from "react";
 import { Box, Typography, useTheme } from "@mui/material";
 import { FaUsers, FaCalendarAlt, FaEnvelope } from "react-icons/fa";
 import Header from "../../components/Header";
-import BarChart from "../../components/graphs/BarChart";
 import { tokens } from "../../theme/theme";
 import { apiClient } from "../../api";
 import { useSettingsStore } from "../../stores/settings-store";
+import { useAuthStore } from "../../stores/auth-store";
 
 const AdminDashboard = () => {
   const theme = useTheme();
@@ -18,7 +18,7 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
 
   const { drawer } = useSettingsStore();
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const { user, setUser } = useAuthStore();
 
 
   useEffect(() => {
@@ -30,7 +30,7 @@ const AdminDashboard = () => {
   const fetchCurrentUser = async () => {
     try {
       const response = await apiClient.get("/api/admin/user-stats/"); // Adjust the endpoint
-      setCurrentUser(response.data);
+      setUser(response.data);
     } catch (error) {
       console.error("Error fetching current user:", error);
     }
@@ -125,7 +125,7 @@ const AdminDashboard = () => {
     >
       <div style={{ maxWidth: "1600px", margin: "0 auto" }}>
         <header className="text-center mb-16">
-          <Header title={`Welcome to your Dashboard, ${currentUser?.firstName || "User"}`} subtitle="Manage users, societies, and more." />
+          <Header title={`Welcome to your Dashboard, ${user?.first_name || "User"}!`} subtitle="Manage users, societies, and more." />
         </header>
 
         {loading ? (
@@ -153,21 +153,6 @@ const AdminDashboard = () => {
                 title="Pending Requests"
                 value={notifications.length}
               />
-            </section>
-
-            {/* Societies Bar Chart */}
-            <section className="mb-16">
-              <Typography variant="h5" color={colours.grey[100]} gutterBottom>
-                Societies Overview
-              </Typography>
-              <div style={{ height: "300px" }}>
-                <BarChart
-                  data={societiesData.map((society) => ({
-                    country: society.name,
-                    members: society.societyMembers.length,
-                  }))}
-                />
-              </div>
             </section>
 
             {/* Notifications */}

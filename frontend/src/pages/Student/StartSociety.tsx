@@ -24,7 +24,7 @@ const StartSociety: React.FC = () => {
     try {
       setError("");
       setSuccess("");
-      const response = await axios.post("/api/start-society/", {
+      const response = await axios.post("/api/start-society", {
         name: societyName,
         description,
       });

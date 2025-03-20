@@ -1,5 +1,5 @@
-import { useContext } from "react";
-import { Box, Typography, useTheme, Button } from "@mui/material";
+import { useContext, useEffect, useState } from "react";
+import { Box, useTheme, Button } from "@mui/material";
 import { DataGrid, GridColDef, GridToolbar } from "@mui/x-data-grid";
 import { tokens } from "../../theme/theme";
 import { SearchContext } from "../../components/layout/SearchContext";
@@ -13,9 +13,14 @@ const PendingSocietyRequest = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const { searchTerm } = useContext(SearchContext);
-  const { drawer } = useSettingsStore(); 
-  const societies = useFetchWebSocket(() => fetchPendingRequests(apiPaths.USER.PENDINGSOCIETYREQUEST), 'society');
-
+  const { drawer } = useSettingsStore();   
+  const [societies, setSocieties] = useState<any[]>([]);
+  const fetchedSocieties = useFetchWebSocket(() => fetchPendingRequests(apiPaths.USER.PENDINGSOCIETYREQUEST), 'society');
+  useEffect(() => {
+    if (Array.isArray(fetchedSocieties)) {
+      setSocieties(fetchedSocieties);
+    }
+  }, [fetchedSocieties]);
 
   const filteredSocieties = Array.isArray(societies) 
   ? societies.filter((society) => {
@@ -34,6 +39,8 @@ const PendingSocietyRequest = () => {
 
   const handleStatusChange = async (id: number, status: "Approved" | "Rejected") => {
     try {
+      const updatedSocieties = filteredSocieties.filter(society => society.id !== id);
+      setSocieties(updatedSocieties);
       await updateRequestStatus(id, status, apiPaths.USER.PENDINGSOCIETYREQUEST);
     } catch (error) {
       alert(`Failed to ${status.toLowerCase()} society request.`);
@@ -41,9 +48,9 @@ const PendingSocietyRequest = () => {
   };
 
   const columns: GridColDef[] = [
-    { field: "id", headerName: "ID", flex: 0.5 },
+    { field: "id", headerName: "ID", flex: 0.3 },
     { field: "name", headerName: "Name", flex: 1 },
-    // { field: "description", headerName: "Description", flex: 1 },
+    { field: "description", headerName: "Description", flex: 1 },
     {      
       field: "society_members",
       headerName: "Members",
@@ -51,12 +58,15 @@ const PendingSocietyRequest = () => {
     },
     { field: "president", headerName: "president", flex: 1 },
     { field: "category", headerName: "Category", flex: 1 },
-    { field: "timetable", headerName: "Timetable", flex: 1 },
     { field: "membershipRequirements", headerName: "Membership Requirements", flex: 1 },
     { field: "upcomingProjectsOrPlans", headerName: "Upcoming Projects", flex: 1 },
     {
       field: "actions",
       headerName: "Actions",
+      width: 188,
+      minWidth: 188,
+      sortable: false,
+      filterable: false, 
       renderCell: (params: any) => (
         <>
           <Button
@@ -79,7 +89,7 @@ const PendingSocietyRequest = () => {
   return (
     <Box
       sx={{
-        height: "calc(100vh - 64px)", // Full height minus the AppBar height
+        height: "calc(100vh - 64px)",
         maxWidth: drawer ? `calc(100% - 3px)`: "100%",
       }}
     >
@@ -108,17 +118,9 @@ const PendingSocietyRequest = () => {
           rows={filteredSocieties}
           columns={columns}
           slots={{ toolbar: GridToolbar }}
-          initialState={{
-            pagination: {
-              paginationModel: { pageSize: 25, page: 0 },
-            },
-          }}
-          pageSizeOptions={[5, 10, 25]}
-          checkboxSelection
+          autoHeight
           resizeThrottleMs={0}
-          disableRowSelectionOnClick  // Disable row selection on row click to temporarily fix accept/reject button issue
         />
-        {/* <div> {JSON.stringify(filteredSocieties)} </div> */}
       </Box>
     </Box>
   );

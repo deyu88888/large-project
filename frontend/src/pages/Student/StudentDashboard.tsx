@@ -139,8 +139,11 @@ const StudentDashboard: React.FC = () => {
     try {
       const studentResponse = await apiClient.get("api/user/current");
       setStudent(studentResponse.data);
+      console.log("Student data:", studentResponse.data);
+      
       const societiesResponse = await apiClient.get("/api/student-societies");
       setSocieties(societiesResponse.data || []);
+      
       const allEvents: EventData[] = await getAllEvents();
       const transformed = allEvents
         .filter(ev => ev.status === "Approved")
@@ -158,20 +161,23 @@ const StudentDashboard: React.FC = () => {
           status: ev.status,
         }));
       setEvents(transformed);
+      
       const notificationsResponse = await apiClient.get("/api/notifications/");
       setNotifications(notificationsResponse.data || []);
+      
       const awardsResponse = await apiClient.get(`/api/award-students/${user?.id}`);
       setAwards([awardsResponse.data]);
     } catch (error) {
       console.error("Error fetching award assignments:", error);
     }
     try {
-      const studentResponse = await apiClient.get("api/user/current/");
+      const studentResponse = await apiClient.get("api/user/current");
       console.log("Student data:", studentResponse.data)
       setStudent(studentResponse.data)
     } catch (error) {
       console.error("Error fetching current student:", error);
     }
+    
     setLoading(false);
   };
 
@@ -256,30 +262,30 @@ const StudentDashboard: React.FC = () => {
             Dashboard
           </Typography>
           <Box display="flex" gap={2}>
-          {(student?.is_president === true || 
-            student?.is_vice_president === true || 
-            student?.is_event_manager === true) && (  
-            <Button
-              variant="contained"
-              onClick={() => {
-                if (student?.is_president) {
-                  navigate(`/president-page/${student.president_of}`);
-                } else if (student?.is_vice_president) {
-                  navigate(`/president-page/${student.vice_president_of_society}`);
-                } else if (student?.is_event_manager) {
-                  // Direct event managers straight to events management page
-                  navigate(`/president-page/${student.event_manager_of_society}/manage-society-events`);
-                }
-              }}
-              sx={{
-                backgroundColor: colours.greenAccent[500],
-                color: colours.grey[100],
-              }}
-            >
-              <FaCogs style={{ marginRight: 4 }} />
-              {student?.is_event_manager ? 'Manage Society Events' : 'Manage My Society'}
-            </Button>
-          )}
+            {(student?.is_president === true || 
+              student?.is_vice_president === true || 
+              student?.is_event_manager === true) && (  
+              <Button
+                variant="contained"
+                onClick={() => {
+                  if (student?.is_president) {
+                    navigate(`/president-page/${student.president_of}`);
+                  } else if (student?.is_vice_president) {
+                    navigate(`/president-page/${student.vice_president_of_society}`);
+                  } else if (student?.is_event_manager) {
+                    // Direct event managers straight to events management page
+                    navigate(`/president-page/${student.event_manager_of_society}/manage-society-events`);
+                  }
+                }}
+                sx={{
+                  backgroundColor: colours.greenAccent[500],
+                  color: colours.grey[100],
+                }}
+              >
+                <FaCogs style={{ marginRight: 4 }} />
+                {student?.is_event_manager ? 'Manage Society Events' : 'Manage My Society'}
+              </Button>
+            )}
           </Box>
         </Box>
         <Box
@@ -378,17 +384,17 @@ const StudentDashboard: React.FC = () => {
                             <Typography variant="caption">Vice President</Typography>
                           </Box>
                         )}
-                    {society.is_event_manager && (  
-                      <Box
-                        px={1}
-                        py={0.5}
-                        borderRadius="4px"
-                        bgcolor={colours.blueAccent[500]} 
-                        color={colours.primary[500]}
-                      >
-                        <Typography variant="caption">Event Manager</Typography>
-                      </Box>
-                    )}
+                        {society.is_event_manager && (  
+                          <Box
+                            px={1}
+                            py={0.5}
+                            borderRadius="4px"
+                            bgcolor={colours.blueAccent[500]} 
+                            color={colours.primary[500]}
+                          >
+                            <Typography variant="caption">Event Manager</Typography>
+                          </Box>
+                        )}
                       </Box>
                       {!(society.is_president || society.is_vice_president) && (
                         <Button
