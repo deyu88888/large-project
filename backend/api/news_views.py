@@ -239,20 +239,14 @@ class NewsCommentView(APIView):
     def get(self, request, news_id):
         news_post = get_object_or_404(SocietyNews, id=news_id)
         society = news_post.society
-        
-        # Check membership
         is_member = False
         if hasattr(request.user, 'student'):
             student = request.user.student
-            # M2M check
             is_member = student.societies.filter(id=society.id).exists() or \
                         student.societies_belongs_to.filter(id=society.id).exists()
-
         if not is_member:
-            return Response({"error": "You must be a member of this society to view comments."}, 
+            return Response({"error": "You must be a member of this society to view comments."},
                             status=status.HTTP_403_FORBIDDEN)
-
-        # Retrieve top-level comments
         comments = NewsComment.objects.filter(news_post=news_post, parent_comment=None).order_by('created_at')
         serializer = NewsCommentSerializer(comments, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -260,32 +254,22 @@ class NewsCommentView(APIView):
     def post(self, request, news_id):
         news_post = get_object_or_404(SocietyNews, id=news_id)
         society = news_post.society
-        
         if not hasattr(request.user, 'student'):
             return Response({"error": "Only students can comment."}, status=status.HTTP_403_FORBIDDEN)
-        
         student = request.user.student
-        # Check membership
         is_member = student.societies.filter(id=society.id).exists() or \
                     student.societies_belongs_to.filter(id=society.id).exists()
-
-        # Check officer
         is_officer = has_society_management_permission(student, society)
-
-        # Option B: allow EITHER society member OR officer
         if not (is_member or is_officer):
             return Response({"error": "You must be a member or officer of this society to comment."},
                             status=status.HTTP_403_FORBIDDEN)
-        
         parent_comment_id = request.data.get('parent_comment')
         data = {
             'content': request.data.get('content'),
             'parent_comment': parent_comment_id
         }
-
         serializer = NewsCommentSerializer(data=data, context={'request': request})
         if serializer.is_valid():
-            # If parent_comment given, validate belongs to same news post
             if parent_comment_id:
                 try:
                     parent_comment = NewsComment.objects.get(id=parent_comment_id)
@@ -295,11 +279,9 @@ class NewsCommentView(APIView):
                 except NewsComment.DoesNotExist:
                     return Response({"error": "Parent comment does not exist."},
                                     status=status.HTTP_400_BAD_REQUEST)
-            
             comment = serializer.save(news_post=news_post, user=request.user, parent_comment_id=parent_comment_id)
-            return Response(NewsCommentSerializer(comment, context={'request': request}).data, 
+            return Response(NewsCommentSerializer(comment, context={'request': request}).data,
                             status=status.HTTP_201_CREATED)
-        
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -307,10 +289,13 @@ class NewsCommentDetailView(APIView):
     permission_classes = [IsAuthenticated]
     
     def put(self, request, comment_id):
+        """
+        Edit a comment (author only).
+        """
         comment = get_object_or_404(NewsComment, id=comment_id)
         if comment.user.id != request.user.id:
             return Response({"error": "You can only edit your own comments."}, 
-                           status=status.HTTP_403_FORBIDDEN)
+                            status=status.HTTP_403_FORBIDDEN)
         
         serializer = NewsCommentSerializer(comment, data=request.data, partial=True, context={'request': request})
         if serializer.is_valid():
@@ -320,18 +305,21 @@ class NewsCommentDetailView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     def delete(self, request, comment_id):
+        """
+        Delete a comment (author or officer).
+        """
         comment = get_object_or_404(NewsComment, id=comment_id)
         news_post = comment.news_post
         society = news_post.society
         
-        is_author = comment.user.id == request.user.id
+        is_author = (comment.user.id == request.user.id)
         is_officer = False
         if hasattr(request.user, 'student'):
             is_officer = has_society_management_permission(request.user.student, society)
 
         if not is_author and not is_officer:
             return Response({"error": "You can only delete your own comments or moderate as a society officer."}, 
-                           status=status.HTTP_403_FORBIDDEN)
+                            status=status.HTTP_403_FORBIDDEN)
         
         comment.delete()
         return Response({"message": "Comment deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
@@ -339,30 +327,167 @@ class NewsCommentDetailView(APIView):
 
 class NewsCommentLikeView(APIView):
     permission_classes = [IsAuthenticated]
-    
+
     def post(self, request, comment_id):
-        comment = get_object_or_404(NewsComment, id=comment_id)
-        news_post = comment.news_post
-        society = news_post.society
-        
+        print("\n" + "="*80)
+        print("DEBUG - Entering NewsCommentLikeView.post")
+        print("DEBUG - Request user:", request.user)
+        print("DEBUG - Request headers:", request.headers)
+        print("DEBUG - Comment ID from URL:", comment_id)
+
+        try:
+            comment = get_object_or_404(NewsComment, id=comment_id)
+            print("DEBUG - Retrieved comment:", comment)
+        except Exception as e:
+            print("DEBUG - Error retrieving comment:", e)
+            return Response({"error": "Comment not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            news_post = comment.news_post
+            society = news_post.society
+            print("DEBUG - News post ID:", news_post.id)
+            print("DEBUG - Society ID:", society.id)
+        except Exception as e:
+            print("DEBUG - Error retrieving news_post or society:", e)
+            return Response({"error": "News post or society not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Check membership
         is_member = False
         if hasattr(request.user, 'student'):
-            is_member = request.user.student.societies.filter(id=society.id).exists()
-        
+            student = request.user.student
+            print("DEBUG - Request user is a student (ID: {})".format(student.id))
+            try:
+                is_member = student.societies.filter(id=society.id).exists()
+                print("DEBUG - Membership via student.societies:", is_member)
+                if not is_member:
+                    is_member = student.societies_belongs_to.filter(id=society.id).exists()
+                    print("DEBUG - Membership via student.societies_belongs_to:", is_member)
+            except Exception as e:
+                print("DEBUG - Error during membership check:", e)
+        else:
+            print("DEBUG - Request user does not have a student attribute.")
+
         if not is_member:
-            return Response({"error": "You must be a member of this society to like comments."}, 
-                           status=status.HTTP_403_FORBIDDEN)
-        
+            print("DEBUG - User is not a member of this society. Returning 403.")
+            return Response({"error": "You must be a member of this society to like comments."}, status=status.HTTP_403_FORBIDDEN)
+        print("DEBUG - Membership verified.")
+
+        # Log initial counts
+        initial_likes = comment.likes.count()
+        initial_dislikes = comment.dislikes.count()
+        print("DEBUG - Initial likes count:", initial_likes)
+        print("DEBUG - Initial dislikes count:", initial_dislikes)
+
+        # Remove from dislikes if present
+        if comment.dislikes.filter(id=request.user.id).exists():
+            print("DEBUG - User had disliked this comment. Removing dislike.")
+            comment.dislikes.remove(request.user)
+
+        # Toggle like
         if comment.likes.filter(id=request.user.id).exists():
+            print("DEBUG - User already liked this comment. Removing like.")
             comment.likes.remove(request.user)
             action = "unliked"
         else:
+            print("DEBUG - User has not liked this comment yet. Adding like.")
             comment.likes.add(request.user)
             action = "liked"
-        
+
+        # Log final counts
+        final_likes = comment.likes.count()
+        final_dislikes = comment.dislikes.count()
+        print("DEBUG - Final likes count:", final_likes)
+        print("DEBUG - Final dislikes count:", final_dislikes)
+        print("DEBUG - Like action performed:", action)
+        print("="*80)
+
         return Response({
             "status": action,
-            "likes_count": comment.likes.count()
+            "likes_count": final_likes,
+            "dislikes_count": final_dislikes
+        }, status=status.HTTP_200_OK)
+
+
+class NewsCommentDislikeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, comment_id):
+        print("\n" + "="*80)
+        print("DEBUG - Entering NewsCommentDislikeView.post")
+        print("DEBUG - Request user:", request.user)
+        print("DEBUG - Request headers:", request.headers)
+        print("DEBUG - Comment ID from URL:", comment_id)
+
+        try:
+            comment = get_object_or_404(NewsComment, id=comment_id)
+            print("DEBUG - Retrieved comment:", comment)
+        except Exception as e:
+            print("DEBUG - Error retrieving comment:", e)
+            return Response({"error": "Comment not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            news_post = comment.news_post
+            society = news_post.society
+            print("DEBUG - News post ID:", news_post.id)
+            print("DEBUG - Society ID:", society.id)
+        except Exception as e:
+            print("DEBUG - Error retrieving news_post or society:", e)
+            return Response({"error": "News post or society not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Check membership
+        is_member = False
+        if hasattr(request.user, 'student'):
+            student = request.user.student
+            print("DEBUG - Request user is a student (ID: {})".format(student.id))
+            try:
+                is_member = student.societies.filter(id=society.id).exists()
+                print("DEBUG - Membership via student.societies:", is_member)
+                if not is_member:
+                    is_member = student.societies_belongs_to.filter(id=society.id).exists()
+                    print("DEBUG - Membership via student.societies_belongs_to:", is_member)
+            except Exception as e:
+                print("DEBUG - Error during membership check:", e)
+        else:
+            print("DEBUG - Request user does not have a student attribute.")
+
+        if not is_member:
+            print("DEBUG - User is not a member of this society. Returning 403.")
+            return Response({"error": "You must be a member of this society to dislike comments."}, status=status.HTTP_403_FORBIDDEN)
+        print("DEBUG - Membership verified.")
+
+        # Log initial counts
+        initial_likes = comment.likes.count()
+        initial_dislikes = comment.dislikes.count()
+        print("DEBUG - Initial likes count:", initial_likes)
+        print("DEBUG - Initial dislikes count:", initial_dislikes)
+
+        # Remove from likes if present
+        if comment.likes.filter(id=request.user.id).exists():
+            print("DEBUG - User had liked this comment. Removing like.")
+            comment.likes.remove(request.user)
+
+        # Toggle dislike
+        if comment.dislikes.filter(id=request.user.id).exists():
+            print("DEBUG - User already disliked this comment. Removing dislike.")
+            comment.dislikes.remove(request.user)
+            action = "undisliked"
+        else:
+            print("DEBUG - User has not disliked this comment yet. Adding dislike.")
+            comment.dislikes.add(request.user)
+            action = "disliked"
+
+        # Log final counts
+        final_likes = comment.likes.count()
+        final_dislikes = comment.dislikes.count()
+        print("DEBUG - Final likes count:", final_likes)
+        print("DEBUG - Final dislikes count:", final_dislikes)
+        print("DEBUG - Dislike action performed:", action)
+        print("="*80)
+
+        return Response({
+            "status": action,
+            "likes_count": final_likes,
+            "dislikes_count": final_dislikes
         }, status=status.HTTP_200_OK)
 
 

@@ -889,6 +889,8 @@ class NewsCommentSerializer(serializers.ModelSerializer):
     user_data = serializers.SerializerMethodField()
     likes_count = serializers.SerializerMethodField()
     liked_by_user = serializers.SerializerMethodField()
+    dislikes_count = serializers.SerializerMethodField()
+    disliked_by_user = serializers.SerializerMethodField()
 
     class Meta:
         model = NewsComment
@@ -901,6 +903,8 @@ class NewsCommentSerializer(serializers.ModelSerializer):
             "replies",
             "likes_count",
             "liked_by_user",
+            "dislikes_count",
+            "disliked_by_user",
         ]
 
     def get_replies(self, obj):
@@ -913,10 +917,6 @@ class NewsCommentSerializer(serializers.ModelSerializer):
         return serializer.data
 
     def get_user_data(self, obj):
-        """
-        Safely returns user fields. If obj.user is None,
-        returns None to avoid attribute errors.
-        """
         if not obj.user:
             return None
         return {
@@ -934,6 +934,22 @@ class NewsCommentSerializer(serializers.ModelSerializer):
         if request and request.user and request.user.is_authenticated:
             return obj.likes.filter(id=request.user.id).exists()
         return False
+
+    def get_dislikes_count(self, obj):
+        try:
+            return obj.dislikes.count()
+        except Exception as e:
+            # Fallback to 0 if the dislikes table is not available
+            return 0
+
+    def get_disliked_by_user(self, obj):
+        request = self.context.get("request")
+        try:
+            if request and request.user and request.user.is_authenticated:
+                return obj.dislikes.filter(id=request.user.id).exists()
+            return False
+        except Exception as e:
+            return False
 
 
 class SocietyNewsSerializer(serializers.ModelSerializer):

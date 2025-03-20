@@ -877,8 +877,16 @@ class NewsComment(models.Model):
     """
     Comments on society news posts.
     """
-    news_post = models.ForeignKey(SocietyNews, on_delete=models.CASCADE, related_name="comments")
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="news_comments")
+    news_post = models.ForeignKey(
+        SocietyNews,
+        on_delete=models.CASCADE,
+        related_name="comments"
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="news_comments"
+    )
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     parent_comment = models.ForeignKey(
@@ -890,23 +898,36 @@ class NewsComment(models.Model):
     )
     
     # Reaction tracking
-    likes = models.ManyToManyField(User, related_name="liked_news_comments", blank=True)
+    likes = models.ManyToManyField(
+        User,
+        related_name="liked_news_comments",
+        blank=True
+    )
+    dislikes = models.ManyToManyField(
+        User,
+        related_name="disliked_news_comments",
+        blank=True
+    )
     
     class Meta:
         ordering = ["created_at"]
     
     def __str__(self):
         return f"Comment by {self.user.username} on {self.news_post.title}"
-
-    # ADDED: Optional helper for nested replies
+    
     def total_replies(self) -> int:
-        """
-        Returns how many direct replies this comment has. If you need
-        deeply nested counts, you'd do a recursive approach or separate query.
-        """
         return self.replies.count()
-
-    # ADDED: convenience property to easily see how many likes
+    
     @property
     def total_likes(self) -> int:
         return self.likes.count()
+    
+    @property
+    def total_dislikes(self) -> int:
+        return self.dislikes.count()
+    
+    def liked_by(self, user):
+        return self.likes.filter(id=user.id).exists()
+    
+    def disliked_by(self, user):
+        return self.dislikes.filter(id=user.id).exists()
