@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useContext, useRef } from "react";
-import { Box, Typography, useTheme, Button } from "@mui/material";
+import { Box, Typography, useTheme, Button, DialogTitle, DialogContent, DialogContentText, Dialog, DialogActions, TextField } from "@mui/material";
 import { DataGrid, GridColDef, GridToolbar } from "@mui/x-data-grid";
 import { apiClient, apiPaths } from "../../api";
 import { useNavigate } from "react-router-dom";
@@ -17,6 +17,10 @@ const EventList = () => {
   const { searchTerm } = useContext(SearchContext);
   const ws = useRef<WebSocket | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [reason, setReason] = useState('');
+
 
   const fetchEvents = async () => {
     try {
@@ -84,7 +88,10 @@ const EventList = () => {
     {
       field: "actions",
       headerName: "Actions",
-      flex: 3,
+      width: 170,
+      minWidth: 170,
+      sortable: false,
+      filterable: false, 
       renderCell: (params) => {
         const eventId = params.row.id;
         return (
@@ -98,17 +105,9 @@ const EventList = () => {
               View
             </Button>
             <Button
-              variant="outlined"
-              color="warning"
-              onClick={() => handleEditEvent(eventId)}
-              sx={{ marginRight: "8px" }}
-            >
-              Edit
-            </Button>
-            <Button
               variant="contained"
               color="error"
-              onClick={() => handleDeleteEvent(eventId)}
+              onClick={() => handleOpenDialog(params.row)}
             >
               Delete
             </Button>
@@ -119,20 +118,41 @@ const EventList = () => {
   ];
 
   const handleViewEvent = (eventId: string) => {
-    navigate(`/admin/event/${eventId}`);
+    navigate(`/admin/view-event/${eventId}`);
+  };
+  
+  const handleOpenDialog = (event: Event) => {
+    setSelectedEvent(event);
+    setOpenDialog(true);
   };
 
-  const handleEditEvent = (eventId: string) => {
-    navigate(`/admin/edit-event/${eventId}`);
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+    setSelectedEvent(null);
   };
 
-  const handleDeleteEvent = async (eventId: string) => {
-    try {
-      await apiClient.delete(`${apiPaths.EVENTS.APPROVEDEVENTLIST}/${eventId}`);
-      fetchEvents(); 
-    } catch (error) {
-      console.error("Error deleting event:", error);
+  const handleDeleteConfirmed = async (reason: string) => {
+    if (selectedEvent !== null) {
+      try {
+        await apiClient.request({
+          method: "DELETE",
+          url: apiPaths.USER.DELETE("Event", selectedEvent.id),
+          data: { reason: reason },
+        });
+        fetchEvents();
+      } catch (error) {
+        console.error("Error deleting event:", error);
+      }
+      handleCloseDialog();
     }
+  };
+
+  const handleReasonChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setReason(event.target.value);
+  };
+
+  const handleConfirmDelete = () => {
+    handleDeleteConfirmed(reason);
   };
 
   const filteredEvents = events.filter((event) =>
@@ -182,16 +202,38 @@ const EventList = () => {
           rows={filteredEvents}
           columns={columns}
           slots={{ toolbar: GridToolbar }}
-          initialState={{
-            pagination: {
-              paginationModel: { pageSize: 25, page: 0 },
-            },
-          }}
-          pageSizeOptions={[5, 10, 25]}
-          checkboxSelection
           resizeThrottleMs={0}
+          autoHeight
         />
       </Box>
+      <Dialog open={openDialog} onClose={handleCloseDialog}>
+        <DialogTitle>
+          Please confirm that you would like to delete {selectedEvent?.title}.
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            You may undo this action in the Activity Log. <br />
+            <strong>Compulsory:</strong> Provide a reason for deleting this event.
+          </DialogContentText>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Reason for Deletion"
+            fullWidth
+            variant="standard"
+            value={reason}
+            onChange={handleReasonChange}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleConfirmDelete} color="error">
+            Confirm
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

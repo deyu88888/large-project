@@ -1,6 +1,7 @@
 import datetime
-from api.models import AdminReportRequest, Award, AwardStudent, BroadcastMessage, SiteSettings, User, Student, Society, Event, \
-    Notification, Request, SocietyRequest, SocietyShowreel, SocietyShowreelRequest, EventRequest, UserRequest, Comment, DescriptionRequest
+from api.models import AdminReportRequest, Award, AwardStudent, SiteSettings, User, Student, Society, Event, \
+    Notification, Request, SocietyRequest, SocietyShowreel, SocietyShowreelRequest, EventRequest, UserRequest, \
+    Comment, DescriptionRequest, ActivityLog, ReportReply, BroadcastMessage
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 from django.utils.translation import gettext_lazy as _
@@ -211,11 +212,11 @@ class SocietySerializer(serializers.ModelSerializer):
         """SocietySerializer meta data"""
         model = Society
         fields = [
-            'id', 'name', 'description', 'society_members', 'president', 'approved_by',
+            'id', 'name', 'description', 'society_members', 'approved_by',
             'status', 'category', 'social_media_links', 'showreel_images',
-            'membership_requirements', 'upcoming_projects_or_plans', 'icon','tags',
-            'vice_president', 'event_manager', 'president_id',
-            'vice_president_id', 'event_manager_id', 
+            'membership_requirements', 'upcoming_projects_or_plans', 'icon','tags','president_id',
+            'vice_president', 'event_manager','event_manager_id', 'vice_president_id',
+            'president',
         ]
         extra_kwargs = {
             'society_members': {'required': False},  # Allows empty or missing data
@@ -297,9 +298,11 @@ class EventSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         """ Update 'instance' object according to provided json data """
+        current_attendees_data = validated_data.pop('current_attendees', None)
         for key, value in validated_data.items():
             setattr(instance, key, value)
-
+        if current_attendees_data is not None:
+            instance.current_attendees.set(current_attendees_data)
         instance.save()
         return instance
 
@@ -810,11 +813,39 @@ class AdminReportRequestSerializer(serializers.ModelSerializer):
     """
     Serializer for the AdminReportRequest model
     """
+    from_student_username = serializers.CharField(source='from_student.username', read_only=True)
+    top_level_replies = serializers.SerializerMethodField()
+
     class Meta:
         """AdminReportRequest meta data"""
         model = AdminReportRequest
-        fields = ["id", "report_type", "subject", "details", "requested_at", "from_student"]
+        fields = ["id", "report_type", "subject", "details", "requested_at", "from_student", "from_student_username", "top_level_replies"]
         extra_kwargs = {"from_student": {"read_only": True}}  # Auto-assign the user
+
+    def get_top_level_replies(self, obj):
+        replies = ReportReply.objects.filter(report=obj, parent_reply=None).order_by('created_at')
+        return ReportReplySerializer(replies, many=True).data
+
+
+class ReportReplySerializer(serializers.ModelSerializer):
+    """
+    Serializer for the ReportReply model
+    """
+    replied_by_username = serializers.CharField(source='replied_by.username', read_only=True)
+    child_replies = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = ReportReply
+        fields = ['id', 'report', 'parent_reply', 'content', 'created_at', 
+                  'replied_by', 'replied_by_username', 'is_admin_reply', 'child_replies']
+        extra_kwargs = {
+            'replied_by': {'read_only': True},
+            'is_admin_reply': {'read_only': True}
+        }
+    
+    def get_child_replies(self, obj):
+        children = obj.child_replies.all().order_by('created_at')
+        return ReportReplySerializer(children, many=True).data
 
 class CommentSerializer(serializers.ModelSerializer):
     """
@@ -881,3 +912,8 @@ class BroadcastSerializer(serializers.ModelSerializer):
         model = BroadcastMessage
         fields = ['id', 'sender', 'societies', 'events', 'recipients', 'message', 'created_at']
         read_only_fields = ['id', 'created_at', 'sender']
+class ActivityLogSerializer(serializers.ModelSerializer):
+    timestamp = serializers.DateTimeField(format='%d-%m-%Y %H:%M:%S')
+    class Meta:
+        model = ActivityLog
+        fields = '__all__'

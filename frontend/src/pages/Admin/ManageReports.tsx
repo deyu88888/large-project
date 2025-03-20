@@ -1,10 +1,10 @@
 import React, { ReactNode, useState } from "react";
 import { Box, Tabs, Tab, useTheme, Typography } from "@mui/material";
 import { tokens } from "../../theme/theme";
-import SocietyList from "./SocietyList";
-import SocietyListRejected from "./RejectedSocietiesList";
-import PendingSocietyRequest from "./SocietyCreationRequests";
-import PendingDescriptionRequest from "./SocietyDesChangeRequest";
+import { AdUnits } from "@mui/icons-material";
+import AdminReportList from "./AdminReportList";
+import ReportRepliedList from "./ReportRepliedList";
+import ReportRepliesList from "./ReportRepliesList";
 
 const CustomTabPanel = ({ children, value, index }: { children: ReactNode, value: number, index: number }) => (
   value === index ? (
@@ -15,13 +15,12 @@ const CustomTabPanel = ({ children, value, index }: { children: ReactNode, value
 );
 
 const tabs = [
-  { label: "Current societies", component: <SocietyList /> },
-  { label: "Pending societies", component: <PendingSocietyRequest /> },
-  { label: "Rejected societies", component: <SocietyListRejected /> },
-  { label: "Description requests", component: <PendingDescriptionRequest /> },
+  { label: "New reports", component: <AdminReportList /> },
+  { label: "New replies", component: <ReportRepliesList /> },
+  { label: "Replied", component: <ReportRepliedList /> },
 ];
 
-const ManageSocieties = () => {
+const ManageReports = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
 
@@ -49,7 +48,7 @@ const ManageSocieties = () => {
           { fontSize: "1.75rem", fontWeight: 800, mb: 1 },
         ]}
       >
-        Manage Societies
+        Manage Reports
       </Typography>
       <Box
         sx={{
@@ -80,4 +79,4 @@ const ManageSocieties = () => {
   );
 };
 
-export default ManageSocieties;
+export default ManageReports;

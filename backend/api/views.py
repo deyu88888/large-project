@@ -1,6 +1,10 @@
 import logging
+import json
 from django.utils import timezone
-from datetime import datetime, timezone
+from datetime import datetime, date, timedelta, time
+from django.db.models.fields.files import ImageFieldFile
+from django.db.models import ForeignKey, ManyToManyField
+from django.forms.models import model_to_dict
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from django.contrib.auth import authenticate
@@ -19,8 +23,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticate
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from api.models import  AdminReportRequest, BroadcastMessage, Event, Notification, Society, SocietyRequest, Student, User, Award, AwardStudent, \
-    UserRequest, DescriptionRequest, AdminReportRequest, Comment
+from api.models import AdminReportRequest, Event, Notification, Society, Student, User, Award, AwardStudent, \
+    UserRequest, DescriptionRequest, AdminReportRequest, Comment, ActivityLog, ReportReply
 from api.serializers import (
     AdminReportRequestSerializer,
     BroadcastSerializer,
@@ -42,7 +46,10 @@ from api.serializers import (
     AwardSerializer,
     AwardStudentSerializer,
     PendingMemberSerializer,
-    DescriptionRequestSerializer, CommentSerializer,
+    DescriptionRequestSerializer, 
+    CommentSerializer,
+    ActivityLogSerializer,
+    ReportReplySerializer,
 )
 from api.utils import *
 from django.db.models import Q
@@ -488,6 +495,40 @@ class StudentNotificationsView(APIView):
 
         return Response({"message": "Notification marked as read.", "id": pk}, status=status.HTTP_200_OK)
 
+class ManageStudentDetailsAdminView(APIView):
+    """
+    API View for admins to manage any student's details.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, student_id):
+        user = request.user
+        if not (user.role == "admin" or user.is_super_admin):
+            return Response({"error": "Only admins can access this endpoint."}, status=status.HTTP_403_FORBIDDEN)
+        
+        student = Student.objects.filter(id=student_id).first()
+        if not student:
+            return Response({"error": "Student not found."}, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = StudentSerializer(student)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def patch(self, request, student_id):
+        user = request.user
+        if not (user.role == "admin" or user.is_super_admin):
+            return Response({"error": "Only admins can update student details."}, status=status.HTTP_403_FORBIDDEN)
+
+        student = Student.objects.filter(id=student_id).first()
+        if not student:
+            return Response({"error": "Student not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = StudentSerializer(student, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "Student details updated successfully.", "data": serializer.data}, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class StudentInboxView(StudentNotificationsView):
     """
@@ -524,14 +565,13 @@ class StartSocietyRequestView(APIView):
 
 
 class SocietyRequestView(APIView):
+    permission_classes = [IsAdminUser]
     """
     GET request to get all the society requests that are pending in status for admins.
     """
     def get(self, request, society_status):
         user = request.user
-
-        # Ensure the user is an admin
-        if not hasattr(user, "admin"):
+        if not (user.role == "admin" or user.is_super_admin):
             return Response(
                 {"error": "Only admins can view society requests."},
                 status=status.HTTP_403_FORBIDDEN
@@ -549,9 +589,7 @@ class SocietyRequestView(APIView):
         PUT request to update the status of the society request from pending to approved or rejected for admins.
         """
         user = request.user
-        print("society_id", society_id, type(society_id))
-        # Ensure the user is an admin
-        if not hasattr(user, "admin"):
+        if not (user.role == "admin" or user.is_super_admin):
             return Response(
                 {"error": "Only admins can approve or reject society requests."},
                 status=status.HTTP_403_FORBIDDEN
@@ -577,6 +615,24 @@ class SocietyRequestView(APIView):
 
             # If society was approved, notify the society view WebSocket clients
             society_status = serializer.validated_data.get("status")
+            action_type_map = {
+                "Approved": "Approve",
+                "Rejected": "Reject",
+                "Pending": "Update",
+            }
+            action_type = action_type_map.get(society_status, "Update")
+
+            ActivityLog.objects.create(
+                action_type=action_type,
+                target_type="Society",
+                target_id=society.id,
+                target_name=society.name,
+                performed_by=user,
+                timestamp=timezone.now(),
+                expiration_date=timezone.now() + timedelta(days=30),
+            )
+            ActivityLog.delete_expired_logs()
+
             if society_status in ["Approved", "Rejected", "Pending"]:
                 async_to_sync(channel_layer.group_send)(
                     "society_updates",
@@ -692,6 +748,1104 @@ class ManageSocietyDetailsView(APIView):
                 status=status.HTTP_200_OK,
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class ManageSocietyDetailsAdminView(APIView):
+    """
+    API View for admins to manage any society's details.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, society_id):
+        user = request.user
+        if not (user.role == "admin" or user.is_super_admin):
+            return Response({"error": "Only admins can access this endpoint."}, status=status.HTTP_403_FORBIDDEN)
+        society = Society.objects.filter(id=society_id).first()
+        if not society:
+            return Response({"error": "Society not found."}, status=status.HTTP_404_NOT_FOUND)
+        serializer = SocietySerializer(society)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def patch(self, request, society_id):
+        user = request.user
+        if not (user.role == "admin" or user.is_super_admin):
+            return Response({"error": "Only admins can update society details."}, status=status.HTTP_403_FORBIDDEN)
+
+        society = Society.objects.filter(id=society_id).first()
+        if not society:
+            return Response({"error": "Society not found."}, status=status.HTTP_404_NOT_FOUND)
+        
+        # IMPORTANT: Store the original data BEFORE making any changes
+        original_data = {}
+        
+        # Handle regular fields first
+        for field in society._meta.fields:
+            field_name = field.name
+            if field_name not in ['id', 'user_ptr']:  # Skip certain fields
+                value = getattr(society, field_name)
+                
+                # Handle date/time objects
+                if isinstance(value, (date, datetime)):
+                    original_data[field_name] = value.isoformat()
+                # Handle foreign keys - store the ID instead of the object
+                elif hasattr(value, 'id') and not isinstance(value, (list, dict)):
+                    original_data[field_name] = value.id
+                # Handle ImageField and FileField objects
+                elif hasattr(value, 'url') and hasattr(value, 'name'):
+                    # Store the filename or URL path instead of the file object
+                    original_data[field_name] = value.name if value.name else None
+                else:
+                    original_data[field_name] = value
+        
+        # Handle many-to-many fields separately
+        for field in society._meta.many_to_many:
+            field_name = field.name
+            # Get IDs of related objects instead of objects themselves
+            related_ids = [item.id for item in getattr(society, field_name).all()]
+            original_data[field_name] = related_ids
+        
+        # Store the original data as JSON
+        try:
+            original_data_json = json.dumps(original_data)
+        except TypeError as e:
+            # Debug info if serialization fails
+            problematic_fields = {}
+            for key, value in original_data.items():
+                try:
+                    json.dumps({key: value})
+                except TypeError:
+                    problematic_fields[key] = str(type(value))
+            
+            return Response({
+                "error": f"JSON serialization error: {str(e)}",
+                "problematic_fields": problematic_fields
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        # Process the update
+        serializer = SocietySerializer(society, data=request.data, partial=True)
+        if serializer.is_valid():
+            # Create log entry with original data
+            log_entry = ActivityLog.objects.create(
+                action_type="Update",
+                target_type="Society",
+                target_id=society.id,
+                target_name=society.name,
+                performed_by=user,
+                timestamp=timezone.now(),
+                expiration_date=timezone.now() + timedelta(days=30),
+                original_data=original_data_json  # Store original data here
+            )
+            
+            # Now save the changes
+            serializer.save()
+            ActivityLog.delete_expired_logs()
+            
+            return Response({
+                "message": "Society details updated successfully.",
+                "data": serializer.data
+            }, status=status.HTTP_200_OK)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class ManageEventDetailsAdminView(APIView):
+    """
+    API View for admins to manage any event's details.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, event_id):
+        user = request.user
+        if not (user.role == "admin" or user.is_super_admin):
+            return Response({"error": "Only admins can access this endpoint."}, status=status.HTTP_403_FORBIDDEN)
+        event = Event.objects.filter(id=event_id).first()
+        if not event:
+            return Response({"error": "Event not found."}, status=status.HTTP_404_NOT_FOUND)
+        serializer = EventSerializer(event)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def patch(self, request, event_id):
+        user = request.user
+        if not (user.role == "admin" or user.is_super_admin):
+            return Response({"error": "Only admins can update event details."}, status=status.HTTP_403_FORBIDDEN)
+        
+        event = Event.objects.filter(id=event_id).first()
+        if not event:
+            return Response({"error": "Event not found."}, status=status.HTTP_404_NOT_FOUND)
+        
+        # IMPORTANT: Store the original data BEFORE making any changes
+        original_data = {}
+        
+        # Handle regular fields first
+        for field in event._meta.fields:
+            field_name = field.name
+            if field_name not in ['id', 'user_ptr']:  # Skip certain fields
+                value = getattr(event, field_name)
+                
+                # Handle datetime objects
+                if isinstance(value, datetime):
+                    original_data[field_name] = value.isoformat()
+                # Handle date objects
+                elif isinstance(value, date) and not isinstance(value, datetime):
+                    original_data[field_name] = value.isoformat()
+                # Handle time objects
+                elif isinstance(value, time):
+                    original_data[field_name] = value.strftime('%H:%M:%S')
+                # Handle timedelta objects
+                elif isinstance(value, timedelta):
+                    original_data[field_name] = value.total_seconds()
+                # Handle foreign keys - store the ID instead of the object
+                elif hasattr(value, 'id') and not isinstance(value, (list, dict)):
+                    original_data[field_name] = value.id
+                # Handle ImageField and FileField objects
+                elif hasattr(value, 'url') and hasattr(value, 'name'):
+                    # Store the filename or URL path instead of the file object
+                    original_data[field_name] = value.name if value.name else None
+                else:
+                    original_data[field_name] = value
+        
+        # Handle many-to-many fields separately
+        for field in event._meta.many_to_many:
+            field_name = field.name
+            # Get IDs of related objects instead of objects themselves
+            related_ids = [item.id for item in getattr(event, field_name).all()]
+            original_data[field_name] = related_ids
+        
+        # Store the original data as JSON
+        try:
+            original_data_json = json.dumps(original_data)
+        except TypeError as e:
+            # Debug info if serialization fails
+            problematic_fields = {}
+            for key, value in original_data.items():
+                try:
+                    json.dumps({key: value})
+                except TypeError:
+                    problematic_fields[key] = str(type(value))
+            
+            return Response({
+                "error": f"JSON serialization error: {str(e)}",
+                "problematic_fields": problematic_fields
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        # Process the update
+        data = request.data.copy()
+        current_attendees_data = data.pop("current_attendees", None)
+        serializer = EventSerializer(event, data=data, partial=True)
+        
+        if serializer.is_valid():
+            # Create log entry with original data
+            log_entry = ActivityLog.objects.create(
+                action_type="Update",
+                target_type="Event",
+                target_id=event.id,
+                target_name=event.title,
+                performed_by=user,
+                timestamp=timezone.now(),
+                expiration_date=timezone.now() + timedelta(days=30),
+                original_data=original_data_json  # Store original data here
+            )
+            
+            # Now save the changes
+            serializer.save()
+            
+            # Handle current_attendees separately if provided
+            if current_attendees_data is not None:
+                event.current_attendees.set(current_attendees_data)
+            
+            ActivityLog.delete_expired_logs()
+            
+            return Response({
+                "message": "Event details updated successfully.",
+                "data": serializer.data
+            }, status=status.HTTP_200_OK)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class DeleteView(APIView):
+    """
+    View for admins to delete students, societies, and events
+    """
+    permission_classes = [IsAuthenticated]
+
+    model_mapping = {
+        "Student": Student,
+        "Society": Society,
+        "Event": Event,
+    }
+
+    def delete(self, request, target_type, target_id):
+        user = request.user
+        if not (user.role == "admin" or user.is_super_admin):
+            return Response({"error": "Only admins can delete resources."}, status=status.HTTP_403_FORBIDDEN)
+
+        model = self.model_mapping.get(target_type)
+        if not model:
+            return Response({"error": "Invalid target type."}, status=status.HTTP_400_BAD_REQUEST)
+
+        target = model.objects.filter(id=target_id).first()
+        if not target:
+            return Response({"error": f"{target_type} not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        original_data = model_to_dict(target)
+
+        reason = request.data.get('reason', None)  # Extract the reason (it might be optional)
+        if not reason:
+            return Response({"error": "Reason for deletion is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        
+        serializable_data = {}
+        for key, value in original_data.items():
+            if value is None:
+                serializable_data[key] = None
+            elif isinstance(value, (datetime, date)):
+                serializable_data[key] = value.isoformat()
+            elif isinstance(value, time):
+                serializable_data[key] = value.strftime("%H:%M:%S")
+            elif isinstance(value, timedelta):
+                serializable_data[key] = str(value)
+            elif isinstance(value, ImageFieldFile):
+                serializable_data[key] = value.url if value else None
+            elif isinstance(value, (list, tuple)) and value and hasattr(value[0], 'email'):
+                serializable_data[key] = [item.email if hasattr(item, 'email') else str(item) for item in value]
+            elif hasattr(value, 'email'):
+                serializable_data[key] = value.email
+            elif hasattr(value, 'all'):
+                related_items = list(value.all())
+                if related_items and hasattr(related_items[0], 'email'):
+                    serializable_data[key] = [item.email for item in related_items]
+                else:
+                    serializable_data[key] = [str(item) for item in related_items]
+            elif hasattr(value, 'pk'):
+                serializable_data[key] = str(value)
+            else:
+                serializable_data[key] = value
+        
+        try:
+            original_data_json = json.dumps(serializable_data)
+        except TypeError as e:
+            return Response({
+                "error": f"Serialization error: {str(e)}",
+                "details": "Cannot serialize data for activity log"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        ActivityLog.objects.create(
+            action_type="Delete",
+            target_type=target_type,
+            target_id=target_id,
+            target_name=str(target),
+            performed_by=user,
+            timestamp=timezone.now(),
+            reason=reason,
+            expiration_date=timezone.now() + timedelta(days=30),
+            original_data=original_data_json,
+        )
+        target.delete()
+        ActivityLog.delete_expired_logs()
+
+        return Response({"message": f"Deleted {target_type.lower()} moved to Activity Log."}, status=status.HTTP_200_OK)
+
+    
+    def post(self, request, log_id):
+        """
+        Handle undo requests for various actions (Delete, Approve, Reject, Update)
+        """
+        try:
+            log_entry = ActivityLog.objects.get(id=log_id)
+
+            # Check if the action type is supported
+            supported_actions = ["Delete", "Approve", "Reject", "Update"]
+            if log_entry.action_type not in supported_actions:
+                return Response({"error": "Invalid action type."}, status=status.HTTP_400_BAD_REQUEST)
+
+            target_type = log_entry.target_type
+            
+            # For Delete and Update actions, we need original data
+            if log_entry.action_type in ["Delete", "Update"]:
+                original_data_json = log_entry.original_data  # Get JSON string
+
+                if not original_data_json:
+                    return Response({"error": "No original data found for restoration."}, status=status.HTTP_400_BAD_REQUEST)
+
+                try:
+                    original_data = json.loads(original_data_json)  # Convert back to dict
+                except json.JSONDecodeError:
+                    return Response({"error": "Error decoding original data."}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                # For Approve/Reject, we don't necessarily need original data
+                original_data = {}
+                if log_entry.original_data:
+                    try:
+                        original_data = json.loads(log_entry.original_data)
+                    except json.JSONDecodeError:
+                        pass  # Just use empty dict if we can't parse it
+
+            model = self.model_mapping.get(target_type)
+
+            if not model:
+                return Response({"error": "Unsupported target type."}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Process restoration based on action type and target type
+            if log_entry.action_type == "Delete":
+                # Handle delete undos
+                if target_type == "Student":
+                    return self._restore_student(original_data, log_entry)
+                elif target_type == "Society":
+                    return self._restore_society(original_data, log_entry)
+                elif target_type == "Event":
+                    return self._restore_event(original_data, log_entry)
+                else:
+                    return Response({"error": "Unsupported target type."}, status=status.HTTP_400_BAD_REQUEST)
+            elif log_entry.action_type == "Update":
+                # Handle update undos
+                if target_type == "Society":
+                    return self._undo_society_update(original_data, log_entry)
+                elif target_type == "Event":
+                    return self._undo_event_update(original_data, log_entry)
+                else:
+                    return Response({"error": "Unsupported target type for this action."}, status=status.HTTP_400_BAD_REQUEST)
+            elif log_entry.action_type in ["Approve", "Reject"]:
+                # Handle approve/reject undos
+                if target_type == "Society":
+                    return self._undo_society_status_change(original_data, log_entry)
+                elif target_type == "Event":
+                    return self._undo_event_status_change(original_data, log_entry)
+                else:
+                    return Response({"error": "Unsupported target type for this action."}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                return Response({"error": "Unsupported action type."}, status=status.HTTP_400_BAD_REQUEST)
+                
+        except ActivityLog.DoesNotExist:
+            return Response({"error": "Log entry not found."}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def _undo_society_update(self, original_data, log_entry):
+        """Handle undoing society detail updates with comprehensive relationship handling"""
+        try:
+            # Find the society
+            society_id = log_entry.target_id
+            society = Society.objects.filter(id=society_id).first()
+            
+            if not society:
+                society_name = log_entry.target_name
+                society = Society.objects.filter(name=society_name).first()
+                
+            if not society:
+                return Response({"error": "Society not found."}, status=status.HTTP_404_NOT_FOUND)
+            
+            # Define all special fields that need specialized treatment
+            many_to_many_fields = ['society_members', 'tags', 'showreel_images']
+            foreign_key_fields = ['leader', 'vice_president', 'event_manager', 'treasurer', 'approved_by']
+            complex_json_fields = ['social_media_links']
+            
+            # Create a working copy of the original data
+            data = original_data.copy()
+            
+            # First, apply simple fields that don't involve relationships
+            for key, value in data.items():
+                if (key not in many_to_many_fields and 
+                    key not in foreign_key_fields and 
+                    key not in complex_json_fields):
+                    if hasattr(society, key) and value is not None:
+                        setattr(society, key, value)
+            
+            # Handle complex JSON fields
+            if 'social_media_links' in data and isinstance(data['social_media_links'], dict):
+                society.social_media_links = data['social_media_links']
+            
+            # Save basic field changes
+            society.save()
+            
+            # Handle the approved_by field specifically
+            if 'approved_by' in data and data['approved_by']:
+                admin_id = data['approved_by']
+                try:
+                    from users.models import Admin
+                    admin_obj = Admin.objects.get(id=admin_id)
+                    society.approved_by = admin_obj
+                    society.save()
+                except Exception as e:
+                    print(f"Error setting approved_by: {str(e)}")
+            
+            # Handle student role foreign keys
+            for role in ['leader', 'vice_president', 'event_manager']:
+                if role in data and data[role] and isinstance(data[role], dict):
+                    role_id = data[role].get('id')
+                    if role_id:
+                        setattr(society, f"{role}_id", role_id)
+            
+            # Save after setting foreign keys
+            society.save()
+            
+            # Handle society_members (many-to-many)
+            if 'society_members' in data and isinstance(data['society_members'], list):
+                society.society_members.clear()
+                for member_id in data['society_members']:
+                    try:
+                        # Assuming Student model is imported or accessible
+                        from users.models import Student
+                        student = Student.objects.get(id=member_id)
+                        society.society_members.add(student)
+                    except Exception as e:
+                        print(f"Error adding member {member_id}: {str(e)}")
+            
+            # Handle tags (many-to-many)
+            if 'tags' in data and isinstance(data['tags'], list):
+                society.tags.clear()
+                for tag_value in data['tags']:
+                    # Tags might be complex - handle different possible formats
+                    try:
+                        # If it's a JSON string within the list (unusual but possible)
+                        if isinstance(tag_value, str) and tag_value.startswith('['):
+                            import json
+                            tag_objects = json.loads(tag_value)
+                            # Now handle tag_objects appropriately...
+                            # This depends on your tag model structure
+                        # If it's a direct tag ID
+                        else:
+                            society.tags.add(tag_value)
+                    except Exception as e:
+                        print(f"Error adding tag {tag_value}: {str(e)}")
+            
+            # Handle showreel_images (many-to-many or similar)
+            if 'showreel_images' in data:
+                # You may need specialized handling depending on exactly what showreel_images is
+                try:
+                    # If it's a clear/add situation:
+                    society.showreel_images.clear()
+                    if data['showreel_images'] and isinstance(data['showreel_images'], list):
+                        for image in data['showreel_images']:
+                            society.showreel_images.add(image)
+                except Exception as e:
+                    print(f"Error handling showreel_images: {str(e)}")
+            
+            # Final save after all relationships are set
+            society.save()
+            
+            # Delete the log entry
+            log_entry.delete()
+            
+            return Response({"message": "Society update undone successfully!"}, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                "error": f"Failed to undo Society update: {str(e)}",
+                "original_data_content": original_data
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+    def _undo_society_status_change(self, original_data, log_entry):
+        """Handle undoing society status changes (approve/reject)"""
+        try:
+            # Find the society by ID
+            society_id = log_entry.target_id
+            society = Society.objects.filter(id=society_id).first()
+            
+            if not society:
+                # Try to find by name if the ID doesn't work
+                society_name = log_entry.target_name
+                society = Society.objects.filter(name=society_name).first()
+                
+            if not society:
+                return Response({"error": "Society not found."}, status=status.HTTP_404_NOT_FOUND)
+            
+            # Simply set the status back to Pending regardless of original data
+            society.status = "Pending"
+            
+            # If there was an approved_by field and we're undoing an approval, clear it
+            if log_entry.action_type == "Approve" and hasattr(society, 'approved_by'):
+                society.approved_by = None
+            
+            society.save()
+            
+            # Create a new activity log for this undo action
+            ActivityLog.objects.create(
+                action_type="Update",
+                target_type="Society",
+                target_id=society.id,
+                target_name=society.name,
+                performed_by=log_entry.performed_by,  # Use the same user who performed the original action
+                timestamp=timezone.now(),
+                expiration_date=timezone.now() + timedelta(days=30),
+            )
+            
+            # Delete the original log entry
+            log_entry.delete()
+            
+            return Response({
+                "message": "Society status change undone successfully. Status set back to Pending."
+            }, status=status.HTTP_200_OK)
+        
+        except Exception as e:
+            return Response({"error": f"Failed to undo society status change: {str(e)}"}, 
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def _undo_event_update(self, original_data, log_entry):
+        """Handle undoing event detail updates with comprehensive relationship handling"""
+        try:
+            # Find the event
+            event_id = log_entry.target_id
+            event = Event.objects.filter(id=event_id).first()
+            
+            if not event:
+                event_name = log_entry.target_name
+                event = Event.objects.filter(title=event_name).first()
+                
+            if not event:
+                return Response({"error": "Event not found."}, status=status.HTTP_404_NOT_FOUND)
+            
+            # Define all special fields that need specialized treatment
+            many_to_many_fields = ['attendees', 'tags', 'images', 'current_attendees']
+            foreign_key_fields = ['society', 'organizer', 'approved_by', 'hosted_by']
+            complex_json_fields = ['location_details']
+            date_fields = ['date']
+            time_fields = ['start_time']
+            timedelta_fields = ['duration']
+            
+            # Create a working copy of the original data
+            data = original_data.copy()
+            
+            # Process date fields
+            for field_name in date_fields:
+                if field_name in data and data[field_name]:
+                    try:
+                        # Convert string date back to date object
+                        date_str = data[field_name]
+                        date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
+                        setattr(event, field_name, date_obj)
+                    except Exception as e:
+                        print(f"Error restoring date field {field_name}: {str(e)}")
+            
+            # Process time fields
+            for field_name in time_fields:
+                if field_name in data and data[field_name]:
+                    try:
+                        # Convert string time back to time object
+                        time_str = data[field_name]
+                        hour, minute, second = map(int, time_str.split(':'))
+                        time_obj = time(hour, minute, second)
+                        setattr(event, field_name, time_obj)
+                    except Exception as e:
+                        print(f"Error restoring time field {field_name}: {str(e)}")
+            
+            # Process timedelta fields
+            for field_name in timedelta_fields:
+                if field_name in data and data[field_name] is not None:
+                    try:
+                        # Convert seconds back to timedelta
+                        seconds = float(data[field_name])
+                        delta = timedelta(seconds=seconds)
+                        setattr(event, field_name, delta)
+                    except Exception as e:
+                        print(f"Error restoring timedelta field {field_name}: {str(e)}")
+            
+            # Apply simple fields that don't involve relationships
+            for key, value in data.items():
+                if (key not in many_to_many_fields and 
+                    key not in foreign_key_fields and 
+                    key not in complex_json_fields and
+                    key not in date_fields and
+                    key not in time_fields and
+                    key not in timedelta_fields):
+                    if hasattr(event, key) and value is not None:
+                        setattr(event, key, value)
+            
+            # Handle complex JSON fields
+            if 'location_details' in data and isinstance(data['location_details'], dict):
+                event.location_details = data['location_details']
+            
+            # Save basic field changes
+            event.save()
+            
+            # Handle the approved_by field specifically
+            if 'approved_by' in data and data['approved_by']:
+                admin_id = data['approved_by']
+                try:
+                    from users.models import Admin
+                    admin_obj = Admin.objects.get(id=admin_id)
+                    event.approved_by = admin_obj
+                    event.save()
+                except Exception as e:
+                    print(f"Error setting approved_by: {str(e)}")
+            
+            # Handle society foreign key
+            if 'society' in data and data['society']:
+                try:
+                    society_id = data['society'] if isinstance(data['society'], int) else data['society'].get('id')
+                    if society_id:
+                        event.society_id = society_id
+                except Exception as e:
+                    print(f"Error setting society: {str(e)}")
+            
+            # Handle organizer foreign key
+            if 'organizer' in data and data['organizer']:
+                try:
+                    organizer_id = data['organizer'] if isinstance(data['organizer'], int) else data['organizer'].get('id')
+                    if organizer_id:
+                        event.organizer_id = organizer_id
+                except Exception as e:
+                    print(f"Error setting organizer: {str(e)}")
+                    
+            # Handle hosted_by foreign key
+            if 'hosted_by' in data and data['hosted_by']:
+                try:
+                    society_id = data['hosted_by'] if isinstance(data['hosted_by'], int) else data['hosted_by'].get('id')
+                    if society_id:
+                        event.hosted_by_id = society_id
+                except Exception as e:
+                    print(f"Error setting hosted_by: {str(e)}")
+            
+            # Save after setting foreign keys
+            event.save()
+            
+            # Handle attendees (many-to-many)
+            if 'attendees' in data and isinstance(data['attendees'], list):
+                event.attendees.clear()
+                for attendee_id in data['attendees']:
+                    try:
+                        from users.models import Student
+                        student = Student.objects.get(id=attendee_id)
+                        event.attendees.add(student)
+                    except Exception as e:
+                        print(f"Error adding attendee {attendee_id}: {str(e)}")
+            
+            # Handle current_attendees (many-to-many)
+            if 'current_attendees' in data and isinstance(data['current_attendees'], list):
+                event.current_attendees.clear()
+                for attendee_id in data['current_attendees']:
+                    try:
+                        from users.models import Student
+                        student = Student.objects.get(id=attendee_id)
+                        event.current_attendees.add(student)
+                    except Exception as e:
+                        print(f"Error adding current attendee {attendee_id}: {str(e)}")
+            
+            # Handle tags (many-to-many)
+            if 'tags' in data and isinstance(data['tags'], list):
+                event.tags.clear()
+                for tag_value in data['tags']:
+                    try:
+                        event.tags.add(tag_value)
+                    except Exception as e:
+                        print(f"Error adding tag {tag_value}: {str(e)}")
+            
+            # Handle images (many-to-many or similar)
+            if 'images' in data:
+                try:
+                    event.images.clear()
+                    if data['images'] and isinstance(data['images'], list):
+                        for image in data['images']:
+                            event.images.add(image)
+                except Exception as e:
+                    print(f"Error handling images: {str(e)}")
+            
+            # Final save after all relationships are set
+            event.save()
+            
+            # Delete the log entry
+            log_entry.delete()
+            
+            return Response({"message": "Event update undone successfully!"}, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                "error": f"Failed to undo Event update: {str(e)}",
+                "original_data_content": original_data
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def _undo_event_status_change(self, original_data, log_entry):
+        """Handle undoing event status changes (approve/reject)"""
+        try:
+            # Find the event by ID
+            event_id = log_entry.target_id
+            event = Event.objects.filter(id=event_id).first()
+            
+            if not event:
+                # Try to find by name if the ID doesn't work
+                event_name = log_entry.target_name
+                event = Event.objects.filter(name=event_name).first()
+                
+            if not event:
+                return Response({"error": "Event not found."}, status=status.HTTP_404_NOT_FOUND)
+            
+            # Simply set the status back to Pending regardless of original data
+            event.status = "Pending"
+            
+            # If there was an approved_by field and we're undoing an approval, clear it
+            if log_entry.action_type == "Approve" and hasattr(event, 'approved_by'):
+                event.approved_by = None
+            
+            event.save()
+            
+            # Create a new activity log for this undo action
+            ActivityLog.objects.create(
+                action_type="Update",
+                target_type="Event",
+                target_id=event.id,
+                target_name=event.name,
+                performed_by=log_entry.performed_by,  # Use the same user who performed the original action
+                timestamp=timezone.now(),
+                expiration_date=timezone.now() + timedelta(days=30),
+            )
+            
+            # Delete the original log entry
+            log_entry.delete()
+            
+            return Response({
+                "message": "Event status change undone successfully. Status set back to Pending."
+            }, status=status.HTTP_200_OK)
+        
+        except Exception as e:
+            return Response({"error": f"Failed to undo event status change: {str(e)}"}, 
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    def _restore_student(self, original_data, log_entry):
+        """Handle student restoration"""
+        try:
+            # Extract basic fields for the User model - INCLUDE ROLE HERE
+            user_data = {
+                'username': original_data.get('username'),
+                'email': original_data.get('email'),
+                'first_name': original_data.get('first_name'),
+                'last_name': original_data.get('last_name'),
+                'is_active': original_data.get('is_active', True),
+                'role': original_data.get('role', 'student'),  # Make sure role goes in User model
+            }
+            
+            # Try to find existing user
+            user_id = original_data.get('id')
+            email = user_data.get('email')
+            username = user_data.get('username')
+            
+            user = None
+            if user_id:
+                try:
+                    user = User.objects.filter(id=int(user_id)).first()
+                except (ValueError, TypeError):
+                    pass
+                    
+            if not user and email:
+                user = User.objects.filter(email=email).first()
+                
+            if not user and username:
+                user = User.objects.filter(username=username).first()
+            
+            # If user doesn't exist, create a new one
+            if not user:
+                # Make email unique if needed
+                if email:
+                    while User.objects.filter(email=email).exists():
+                        timestamp = int(time.time())
+                        email_parts = email.split('@')
+                        if len(email_parts) == 2:
+                            email = f"{email_parts[0]}+{timestamp}@{email_parts[1]}"
+                        else:
+                            email = f"restored_{timestamp}@example.com"
+                    user_data['email'] = email
+                
+                # Make username unique if needed
+                if username:
+                    while User.objects.filter(username=username).exists():
+                        timestamp = int(time.time())
+                        username = f"{username}_{timestamp}"
+                    user_data['username'] = username
+                    
+                # Create new user
+                user = User.objects.create(**user_data)
+            
+            # Check if student already exists for this user
+            student = Student.objects.filter(user_ptr=user).first()
+            
+            # Prepare student-specific data - EXCLUDE ROLE
+            student_data = {k: v for k, v in original_data.items() if k not in [
+                'id', 'username', 'email', 'first_name', 'last_name', 'is_active',
+                'password', 'last_login', 'is_superuser', 'is_staff', 'date_joined',
+                'groups', 'user_permissions', 'societies', 'attended_events', 'followers',
+                'following', 'president_of', 'user_ptr', 'role'  # Exclude role from student data
+            ]}
+            
+            if not student:
+                # Create new student using the proper inheritance approach
+                from django.contrib.contenttypes.models import ContentType
+                
+                # Create student with proper User inheritance
+                student = Student(user_ptr_id=user.id)
+                student.__dict__.update(user.__dict__)
+                
+                # Apply student-specific fields
+                for key, value in student_data.items():
+                    if value is not None:  # Only set non-None values
+                        setattr(student, key, value)
+                
+                # Save with raw=True to avoid problems with inheritance
+                student.save_base(raw=True)
+            else:
+                # Update existing student with student-specific fields
+                for key, value in student_data.items():
+                    if value is not None:  # Only set non-None values
+                        setattr(student, key, value)
+                student.save()
+            
+            # Handle M2M relationships using .set() method
+            society_ids = original_data.get('societies', [])
+            if society_ids:
+                try:
+                    societies = []
+                    for society_id in society_ids:
+                        try:
+                            society = Society.objects.get(id=int(society_id))
+                            societies.append(society)
+                        except (Society.DoesNotExist, ValueError, TypeError):
+                            pass
+                    student.societies.set(societies)
+                except Exception:
+                    pass
+            
+            event_ids = original_data.get('attended_events', [])
+            if event_ids:
+                try:
+                    events = []
+                    for event_id in event_ids:
+                        try:
+                            event = Event.objects.get(id=int(event_id))
+                            events.append(event)
+                        except (Event.DoesNotExist, ValueError, TypeError):
+                            pass
+                    student.attended_events.set(events)
+                except Exception:
+                    pass
+            
+            follower_ids = original_data.get('followers', [])
+            if follower_ids:
+                try:
+                    followers = []
+                    for follower_id in follower_ids:
+                        try:
+                            follower = User.objects.get(id=int(follower_id))
+                            followers.append(follower)
+                        except (User.DoesNotExist, ValueError, TypeError):
+                            pass
+                    student.followers.set(followers)
+                except Exception:
+                    pass
+            
+            # Add handling for following relationship
+            following_ids = original_data.get('following', [])
+            if following_ids:
+                try:
+                    following = []
+                    for following_id in following_ids:
+                        try:
+                            follow_user = User.objects.get(id=int(following_id))
+                            following.append(follow_user)
+                        except (User.DoesNotExist, ValueError, TypeError):
+                            pass
+                    student.following.set(following)
+                except Exception:
+                    pass
+            
+            # Handle president_of relationship
+            president_of_id = original_data.get('president_of')
+            if president_of_id:
+                try:
+                    society = Society.objects.get(id=int(president_of_id))
+                    student.president_of = society
+                    student.save()
+                except (Society.DoesNotExist, ValueError, TypeError):
+                    pass
+            
+            log_entry.delete()  # Remove log after restoration
+            return Response({"message": "Student restored successfully!"}, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({"error": f"Failed to restore Student: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def _restore_society(self, original_data, log_entry):
+        """Handle society restoration"""
+        try:
+            # Extract basic fields for Society
+            society_data = {k: v for k, v in original_data.items() if k not in [
+                'id', 'president', 'vice_president', 'treasurer', 'event_manager', 
+                'leader', 'approved_by', 'members', 'society_members', 'events'
+            ]}
+            
+            # Create the society without relationship fields first
+            society = Society.objects.create(**society_data)
+            
+            # Handle ForeignKey relationships
+            president_id = original_data.get('president')
+            if president_id:
+                try:
+                    president = Student.objects.get(id=int(president_id))
+                    society.president = president
+                except (Student.DoesNotExist, ValueError, TypeError):
+                    pass
+            
+            vice_president_id = original_data.get('vice_president')
+            if vice_president_id:
+                try:
+                    vice_president = Student.objects.get(id=int(vice_president_id))
+                    society.vice_president = vice_president
+                except (Student.DoesNotExist, ValueError, TypeError):
+                    pass
+            
+            treasurer_id = original_data.get('treasurer')
+            if treasurer_id:
+                try:
+                    treasurer = Student.objects.get(id=int(treasurer_id))
+                    society.treasurer = treasurer
+                except (Student.DoesNotExist, ValueError, TypeError):
+                    pass
+            
+            event_manager_id = original_data.get('event_manager')
+            if event_manager_id:
+                try:
+                    event_manager = Student.objects.get(id=int(event_manager_id))
+                    society.event_manager = event_manager
+                except (Student.DoesNotExist, ValueError, TypeError):
+                    pass
+            
+            leader_id = original_data.get('leader')
+            if leader_id:
+                try:
+                    leader = Student.objects.get(id=int(leader_id))
+                    society.leader = leader
+                except (Student.DoesNotExist, ValueError, TypeError):
+                    pass
+            
+            approved_by_id = original_data.get('approved_by')
+            if approved_by_id:
+                try:
+                    approved_by = Admin.objects.get(id=int(approved_by_id))
+                    society.approved_by = approved_by
+                except (Admin.DoesNotExist, ValueError, TypeError):
+                    pass
+            
+            society.save()
+            
+            # Handle M2M relationships using .set() method
+            member_ids = original_data.get('members', [])
+            if member_ids:
+                try:
+                    members = []
+                    for member_id in member_ids:
+                        try:
+                            member = Student.objects.get(id=int(member_id))
+                            members.append(member)
+                        except (Student.DoesNotExist, ValueError, TypeError):
+                            pass
+                    society.members.set(members)
+                except Exception:
+                    pass  # If this fails, continue with restoration
+            
+            # Handle society_members if it exists
+            society_member_ids = original_data.get('society_members', [])
+            if society_member_ids:
+                try:
+                    society_members = []
+                    for member_id in society_member_ids:
+                        try:
+                            member = Student.objects.get(id=int(member_id))
+                            society_members.append(member)
+                        except (Student.DoesNotExist, ValueError, TypeError):
+                            pass
+                    society.society_members.set(society_members)
+                except Exception:
+                    pass  # If this fails, continue with restoration
+            
+            event_ids = original_data.get('events', [])
+            if event_ids:
+                try:
+                    events = []
+                    for event_id in event_ids:
+                        try:
+                            event = Event.objects.get(id=int(event_id))
+                            events.append(event)
+                        except (Event.DoesNotExist, ValueError, TypeError):
+                            pass
+                    society.events.set(events)
+                except Exception:
+                    pass  # If this fails, continue with restoration
+            
+            log_entry.delete()  # Remove log after restoration
+            return Response({"message": "Society restored successfully!"}, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({"error": f"Failed to restore Society: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def _restore_event(self, original_data, log_entry):
+        """Handle event restoration"""
+        try:
+            # Extract basic fields for Event - excluding relationship fields
+            event_data = {k: v for k, v in original_data.items() if k not in [
+                'id', 'hosted_by', 'current_attendees', 'duration'  # Exclude duration for now
+            ]}
+            
+            for field in ['date', 'start_time', 'end_time']:
+                if field in event_data:
+                    if event_data[field] and isinstance(event_data[field], str):
+                        if field == 'date':
+                            try:
+                                event_data[field] = datetime.strptime(event_data[field], '%Y-%m-%d').date()
+                            except ValueError:
+                                event_data[field] = None
+                        else:
+                            try:
+                                event_data[field] = datetime.strptime(event_data[field], '%H:%M:%S').time()
+                            except ValueError:
+                                event_data[field] = None
+            
+            event = Event.objects.create(**event_data)
+            duration_str = original_data.get('duration')
+            if duration_str:
+                try:
+                    if isinstance(duration_str, str):
+                        if ',' in duration_str:
+                            days_part, time_part = duration_str.split(',', 1)
+                            days = int(days_part.strip().split()[0])
+                            hours, minutes, seconds = map(int, time_part.strip().split(':'))
+                            duration = timedelta(days=days, hours=hours, minutes=minutes, seconds=seconds)
+                        else:
+                            time_parts = duration_str.strip().split(':')
+                            if len(time_parts) == 3:
+                                hours, minutes, seconds = map(int, time_parts)
+                                duration = timedelta(hours=hours, minutes=minutes, seconds=seconds)
+                            else:
+                                duration = timedelta(hours=1)
+                        
+                        event.duration = duration
+                        event.save()
+                except Exception:
+                    event.duration = timedelta(hours=1)
+                    event.save()
+            
+            hosted_by_id = original_data.get('hosted_by')
+            if hosted_by_id:
+                try:
+                    society = Society.objects.get(id=int(hosted_by_id))
+                    event.hosted_by = society
+                    event.save()
+                except (Society.DoesNotExist, ValueError, TypeError):
+                    pass
+            
+            attendee_ids = original_data.get('current_attendees', [])
+            if attendee_ids:
+                try:
+                    attendees = []
+                    for attendee_id in attendee_ids:
+                        try:
+                            attendee = Student.objects.get(id=int(attendee_id))
+                            attendees.append(attendee)
+                        except (Student.DoesNotExist, ValueError, TypeError):
+                            pass
+                    event.current_attendees.set(attendees)
+                except Exception:
+                    pass
+            
+            log_entry.delete()
+            return Response({"message": "Event restored successfully!"}, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({"error": f"Failed to restore Event: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class CreateEventRequestView(APIView):
@@ -1012,8 +2166,7 @@ class EventRequestView(APIView):
         PUT request to update the status of the event request from pending to approved or rejected for admins
         """
         user = request.user
-
-        if not hasattr(user, "admin"):
+        if not (user.role == "admin" or user.is_super_admin):
             return Response({"error": "Only admins can approve or reject event requests."}, status=status.HTTP_403_FORBIDDEN)
 
         event = Event.objects.filter(id=event_id).first()
@@ -1306,22 +2459,296 @@ class AwardStudentView(APIView):
 
 class AdminReportView(APIView):
     """
-    API view for students and society presidents to submit reports to admins.
+    API view for students and society presidents to submit reports to admins and admins receive reports.
     """
     permission_classes = [IsAuthenticated]
-
+    
     def post(self, request):
         serializer = AdminReportRequestSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(from_student=request.user.student)  #  Auto-assign the reporter
+            serializer.save(from_student=request.user.student)
             return Response({"message": "Report submitted successfully."}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def get(self, request):
-        reports = AdminReportRequest.objects.all().order_by("-requested_at")
-
+    
+    def get(self, request, report_id=None):
+        if report_id:
+            try:
+                report = AdminReportRequest.objects.get(id=report_id)
+                serializer = AdminReportRequestSerializer(report)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            except AdminReportRequest.DoesNotExist:
+                return Response({"error": "Report not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        reports = AdminReportRequest.objects.exclude(
+            replies__is_admin_reply=True
+        ).order_by("-requested_at")
         serializer = AdminReportRequestSerializer(reports, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+class ReportReplyView(APIView):
+    """
+    API view for admins and presidents to reply to reports or other replies.
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        serializer = ReportReplySerializer(data=request.data)
+        if serializer.is_valid():
+            # Get the report
+            report_id = serializer.validated_data.get('report').id
+            report = AdminReportRequest.objects.get(id=report_id)
+            
+            # Get parent reply if provided
+            parent_reply_id = serializer.validated_data.get('parent_reply')
+            print("Parent reply ID:", parent_reply_id)  # Debug line
+            # Check permissions
+            user = request.user
+            if parent_reply_id is None and not (user.role == "admin" or user.is_super_admin):
+                return Response(
+                    {"error": "Only admins or super admins can reply to reports directly."}, 
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+            
+            # Rule 2: If there's a parent reply, check if it's an admin reply
+            if parent_reply_id:
+                parent_reply = ReportReply.objects.get(id=parent_reply_id.id)
+                # Presidents can only reply to admin replies
+                if is_president and not parent_reply.is_admin_reply:
+                    return Response({"error": "Presidents can only reply to admin replies."}, 
+                                    status=status.HTTP_403_FORBIDDEN)
+            
+            # Save the reply with appropriate flags
+            reply = serializer.save(
+                replied_by=user,
+                is_admin_reply=is_admin
+            )
+            
+            return Response(ReportReplySerializer(reply).data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def get(self, request, report_id=None):
+        """Get all replies or replies for a specific report"""
+        if report_id:
+            replies = ReportReply.objects.filter(report_id=report_id, parent_reply=None).order_by('created_at')
+        else:
+            replies = ReportReply.objects.all().order_by('created_at')
+        
+        serializer = ReportReplySerializer(replies, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class MyReportsView(APIView):
+    """
+    API view for users to view their own submitted reports.
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        reports = AdminReportRequest.objects.filter(from_student=request.user.student).order_by("-requested_at")
+        serializer = AdminReportRequestSerializer(reports, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class MyReportsWithRepliesView(APIView):
+    """
+    API view for users to view their own submitted reports with associated replies.
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        reports = AdminReportRequest.objects.filter(from_student=request.user.student).order_by("-requested_at")
+        
+        reports_with_replies = []
+        
+        for report in reports:
+            replies = ReportReply.objects.filter(report=report).order_by('created_at')
+            
+            report_data = AdminReportRequestSerializer(report).data
+            report_data['replies'] = ReportReplySerializer(replies, many=True).data
+            reports_with_replies.append(report_data)
+        
+        return Response(reports_with_replies, status=status.HTTP_200_OK)
+
+class AdminReportsWithRepliesView(APIView):
+    """
+    API view for admins to view reports they've replied to without user response.
+    """
+    permission_classes = [IsAuthenticated, IsAdminUser]
+    
+    def get(self, request):
+        user = request.user
+        if not (user.role == "admin" or user.is_super_admin):
+            return Response({"error": "Only admins can access this endpoint."}, 
+                            status=status.HTTP_403_FORBIDDEN)
+        
+        all_reports = AdminReportRequest.objects.all().order_by("-requested_at")
+        
+        reports_with_admin_replies = []
+        
+        for report in all_reports:
+            admin_replies = ReportReply.objects.filter(
+                report=report,
+                is_admin_reply=True
+            ).order_by('-created_at')
+            
+            if admin_replies.exists():
+                latest_admin_reply = admin_replies.first()
+                
+                newer_user_replies = ReportReply.objects.filter(
+                    report=report,
+                    is_admin_reply=False,
+                    created_at__gt=latest_admin_reply.created_at
+                ).exists()
+                
+                if not newer_user_replies:
+                    report_data = AdminReportRequestSerializer(report).data
+                    all_replies = ReportReply.objects.filter(report=report).order_by('created_at')
+                    report_data['replies'] = ReportReplySerializer(all_replies, many=True).data
+                    reports_with_admin_replies.append(report_data)
+        
+        return Response(reports_with_admin_replies, status=status.HTTP_200_OK)
+
+class AdminRepliesListView(APIView):
+    """
+    API view for admins to view reports where students have replied but admin hasn't responded yet.
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        user = request.user
+        if not (user.role == "admin" or user.is_super_admin):
+            return Response({"error": "Only admins can access this endpoint."}, 
+                            status=status.HTTP_403_FORBIDDEN)
+        
+        all_reports = AdminReportRequest.objects.all().order_by("-requested_at")
+        
+        reports_needing_attention = []
+        
+        for report in all_reports:
+            replies = ReportReply.objects.filter(report=report).order_by('created_at')
+            
+            if replies.exists():
+                latest_reply = replies.order_by('-created_at').first()
+                
+                if not latest_reply.is_admin_reply:
+                    report_data = AdminReportRequestSerializer(report).data
+                    if report.from_student:
+                        report_data['from_student_name'] = report.from_student.get_full_name() or report.from_student.username
+                    else:
+                        report_data['from_student_name'] = "Unknown"
+                    report_data['replies'] = ReportReplySerializer(replies, many=True).data
+                    report_data['latest_reply'] = {
+                        'content': latest_reply.content,
+                        'created_at': latest_reply.created_at,
+                        'replied_by': latest_reply.replied_by.get_full_name() if latest_reply.replied_by else "Unknown"
+                    }
+                    reports_needing_attention.append(report_data)
+        
+        return Response(reports_needing_attention, status=status.HTTP_200_OK)
+
+class ReportReplyNotificationsView(APIView):
+    """
+    student notifications for replies to their reports
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        student = request.user.student
+        
+        student_reports = AdminReportRequest.objects.filter(from_student=student)
+        replies = ReportReply.objects.filter(
+            report__in=student_reports
+        ).filter(
+            Q(replied_by__role="admin") | Q(replied_by__is_super_admin=True)
+        ).order_by('-created_at')
+
+        notifications = []
+        for reply in replies:
+            replier_name = reply.replied_by.get_full_name() if reply.replied_by else "Admin"
+            is_read = request.user in reply.read_by_students.all()
+            notifications.append({
+                'id': reply.id,
+                'report_id': reply.report.id,
+                'header': f"New Reply to Your Report",
+                'body': f"{replier_name} replied to your report regarding {reply.report.report_type}",
+                'created_at': reply.created_at,
+                'is_read': is_read,
+                'type': "report_reply",
+                'content_preview': reply.content[:100] + "..." if len(reply.content) > 100 else reply.content
+            })
+        
+        return Response(notifications, status=status.HTTP_200_OK)
+
+    def patch(self, request, reply_id):
+        """
+        Mark a specific reply as read
+        """
+        try:
+            student = request.user.student
+            
+            # Verify this reply belongs to one of the student's reports
+            reply = ReportReply.objects.get(
+                id=reply_id,
+                report__from_student=student
+            )
+            
+            # Mark as read by adding user to read_by_students
+            reply.read_by_students.add(request.user)
+            
+            return Response({"status": "success"}, status=status.HTTP_200_OK)
+        except ReportReply.DoesNotExist:
+            return Response({"error": "Reply not found or not authorized"}, status=status.HTTP_404_NOT_FOUND)
+
+
+class ReportThreadView(APIView):
+    """
+    API view for viewing a complete report thread with hierarchical replies.
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, report_id):
+        try:
+            report = AdminReportRequest.objects.get(id=report_id)
+            
+            user = request.user
+            is_admin = hasattr(user, 'admin')
+            is_creator = hasattr(user, 'student') and user.student == report.from_student
+            
+            is_president = False
+            if hasattr(user, 'student'):
+                is_president = user.student.is_president
+            
+            has_replied = ReportReply.objects.filter(
+                report=report, 
+                replied_by=user
+            ).exists()
+            
+            if not (is_admin or is_creator or is_president or has_replied):
+                return Response(
+                    {"error": "You don't have permission to view this report thread."}, 
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            top_replies = ReportReply.objects.filter(
+                report=report, 
+                parent_reply=None
+            ).order_by('created_at')
+            
+            def get_nested_replies(reply):
+                reply_data = ReportReplySerializer(reply).data
+                child_replies = ReportReply.objects.filter(parent_reply=reply).order_by('created_at')
+                if child_replies.exists():
+                    reply_data['child_replies'] = [get_nested_replies(child) for child in child_replies]
+                else:
+                    reply_data['child_replies'] = []
+                return reply_data
+            
+            report_data = AdminReportRequestSerializer(report).data
+            report_data['replies'] = [get_nested_replies(reply) for reply in top_replies]
+            
+            return Response(report_data, status=status.HTTP_200_OK)
+            
+        except AdminReportRequest.DoesNotExist:
+            return Response({"error": "Report not found"}, status=status.HTTP_404_NOT_FOUND)
 
 
 class StudentSocietyDataView(APIView):
@@ -1452,8 +2879,7 @@ class DescriptionRequestView(APIView):
     def get(self, request):
         """Get all pending description requests (Admins only)."""
         user = request.user
-
-        if not hasattr(user, "admin"):
+        if not (user.role == "admin" or user.is_super_admin):
             return Response(
                 {"error": "Only admins can view pending description requests."},
                 status=status.HTTP_403_FORBIDDEN
@@ -1466,9 +2892,7 @@ class DescriptionRequestView(APIView):
     def put(self, request, request_id):
         """Approve or reject a pending description request."""
         user = request.user
-
-        # ensure the user is an admin
-        if not hasattr(user, "admin"):
+        if not (user.role == "admin" or user.is_super_admin):
             return Response(
                 {"error": "Only admins can approve or reject description requests."},
                 status=status.HTTP_403_FORBIDDEN
@@ -1620,3 +3044,20 @@ class BroadcastListAPIView(APIView):
 
         serializer = BroadcastSerializer(broadcasts, many=True)
         return Response(serializer.data)
+class ActivityLogView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, log_id=None):
+        logs = ActivityLog.objects.all().order_by('-timestamp')
+        serializer = ActivityLogSerializer(logs, many=True)
+        return Response(serializer.data)
+    
+    def delete(self, request, log_id):
+        user = request.user
+        if not (user.role == "admin" or user.is_super_admin):
+            return Response({"error": "Only admins can delete activity logs."}, status=status.HTTP_403_FORBIDDEN)
+        activity_log = ActivityLog.objects.filter(id=log_id).first()
+        if not activity_log:
+            return Response({"error": "Activity log not found."}, status=status.HTTP_404_NOT_FOUND)
+        activity_log.delete()
+        return Response({"message": "Activity log deleted successfully."}, status=status.HTTP_200_OK)

@@ -168,7 +168,14 @@ const StudentDashboard: React.FC = () => {
       const awardsResponse = await apiClient.get(`/api/award-students/${user?.id}`);
       setAwards([awardsResponse.data]);
     } catch (error) {
-      console.error("Error fetching dashboard data:", error);
+      console.error("Error fetching award assignments:", error);
+    }
+    try {
+      const studentResponse = await apiClient.get("api/user/current");
+      console.log("Student data:", studentResponse.data)
+      setStudent(studentResponse.data)
+    } catch (error) {
+      console.error("Error fetching current student:", error);
     }
     
     setLoading(false);

@@ -67,6 +67,7 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
     { title: "View Events", icon: <EventAvailableIcon />, to: "/student/view-events" },
     { title: "Notifications", icon: <NotificationsNoneOutlinedIcon />, to: "/student/view-notifications" },
     { title: "Inbox", icon: <NotificationImportantOutlinedIcon />, to: "/student/view-inbox" },
+    { title: "Mail", icon: <ReportProblemOutlinedIcon />, to: "/student/replies" },
   ];
 
   const manageMySocietiesItems = [
@@ -159,7 +160,7 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
         <ListItem disablePadding>
           <ListItemButton
             component={Link}
-            to="/president-page/1"
+            to="/president/1"
             selected={selected === "Manage My Societies"}
             onClick={() => setSelected("Manage My Societies")}
             sx={{ justifyContent: drawer ? "initial" : "center", px: 2.5 }}

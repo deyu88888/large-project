@@ -1,29 +1,27 @@
-import React, { useState, useEffect, useRef, useContext, useMemo } from "react";
-import { Box, Typography, useTheme, Button } from "@mui/material";
+import { useState, useEffect, useRef, useContext, useMemo } from "react";
+import { Box, Typography, useTheme, Button, DialogContent, DialogTitle, Dialog, DialogContentText, DialogActions, TextField } from "@mui/material";
 import { DataGrid, GridColDef, GridToolbar } from "@mui/x-data-grid";
 import { apiClient, apiPaths } from "../../api";
 import { tokens } from "../../theme/theme";
 import { useSettingsStore } from "../../stores/settings-store";
 import { SearchContext } from "../../components/layout/SearchContext";
+import { Society } from '../../types'
+import { useNavigate, useParams } from "react-router-dom";
 
-interface Society {
-  id: number;
-  name: string;
-  description: string;
-  president: string;
-  members: string[];
-  roles: Record<string, string>;
-  approvedBy: string;
-}
 
 const SocietyList = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
+  const navigate = useNavigate();
   const [societies, setSocieties] = useState<Society[]>([]);
   const ws = useRef<WebSocket | null>(null);
   const [socket, setSocket] = useState<WebSocket | null>(null);
   const { drawer } = useSettingsStore();
   const { searchTerm } = useContext(SearchContext);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [selectedSociety, setSelectedSociety] = useState<Society | null>(null);
+  const [reason, setReason] = useState('');
+
 
   const fetchSocieties = async () => {
     try {
@@ -74,17 +72,86 @@ const SocietyList = () => {
     };
   }, []);
 
-  const columns = useMemo<GridColDef[]>(
-    () => [
+  const columns: GridColDef[] = [
+      { field: "id", headerName: "ID", flex: 0.3 },
       { field: "name", headerName: "Name", flex: 1 },
       { field: "description", headerName: "Description", flex: 1},
       { field: "president", headerName: "president", flex: 1 },
       { field: "members", headerName: "Members", flex: 1 },
       { field: "roles", headerName: "Roles", flex: 1 },
       { field: "approvedBy", headerName: "Approved By", flex: 1 },
-    ],
-    []
-  );
+      { field: "category", headerName: "Category", flex: 1 },
+      { field: "membershipRequirements", headerName: "Membership Requirements", flex: 1 },
+      { field: "upcomingProjectsOrPlans", headerName: "Upcoming Projects", flex: 1 },
+      {
+        field: "actions",
+        headerName: "Actions",
+        width: 170,
+        minWidth: 170,
+        sortable: false,
+        filterable: false, 
+        renderCell: (params) => {
+          const societyId = params.row.id;
+          return (
+            <Box>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={() => handleViewSociety(societyId)}
+                sx={{ marginRight: "8px" }}
+              >
+                View
+              </Button>
+              <Button
+                variant="contained"
+                color="error"
+                onClick={() => handleOpenDialog(params.row)}
+              >
+                Delete
+              </Button>
+            </Box>
+          );
+        },
+      },
+    ];
+
+    const handleViewSociety = (societyId: string) => {
+      navigate(`/admin/view-society/${societyId}`);
+    };
+    
+    const handleOpenDialog = (society: Society) => {
+      setSelectedSociety(society);
+      setOpenDialog(true);
+    };
+  
+    const handleCloseDialog = () => {
+      setOpenDialog(false);
+      setSelectedSociety(null);
+    };
+
+    const handleDeleteConfirmed = async (reason: string) => {
+      if (selectedSociety !== null) {
+        try {
+          await apiClient.request({
+            method: "DELETE",
+            url: apiPaths.USER.DELETE("Society", selectedSociety.id),
+            data: { reason: reason },
+          });
+          fetchSocieties();
+        } catch (error) {
+          console.error("Error deleting society:", error);
+        }
+        handleCloseDialog();
+      }
+    };
+
+    const handleReasonChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+      setReason(event.target.value);
+    };
+  
+    const handleConfirmDelete = () => {
+      handleDeleteConfirmed(reason);
+    };
 
   const filteredSocieties = useMemo(
     () =>
@@ -144,16 +211,38 @@ const SocietyList = () => {
           rows={filteredSocieties}
           columns={columns}
           slots={{ toolbar: GridToolbar }}
-          initialState={{
-            pagination: {
-              paginationModel: { pageSize: 25, page: 0 },
-            },
-          }}
-          pageSizeOptions={[5, 10, 25]}
-          checkboxSelection
+          autoHeight
           resizeThrottleMs={0}
         />
       </Box>
+      <Dialog open={openDialog} onClose={handleCloseDialog}>
+        <DialogTitle>
+          Please confirm that you would like to delete {selectedSociety?.name}.
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            You may undo this action in the Activity Log. <br />
+            <strong>Compulsory:</strong> Provide a reason for deleting this society.
+          </DialogContentText>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Reason for Deletion"
+            fullWidth
+            variant="standard"
+            value={reason}
+            onChange={handleReasonChange}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleConfirmDelete} color="error">
+            Confirm
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
