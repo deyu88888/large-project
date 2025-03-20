@@ -28,6 +28,11 @@ const ViewSociety: React.FC = () => {
   const [formData, setFormData] = useState<Society | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success" as "success" | "error"
+  });
 
   useEffect(() => {
     fetchSociety();
@@ -86,7 +91,11 @@ const ViewSociety: React.FC = () => {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      alert("Society updated successfully!");
+      setSnackbar({
+        open: true,
+        message: "Society updated successfully!",
+        severity: "success"
+      });
     } catch (error) {
       console.error("Error updating society", error);
       alert("There was an error updating the society.");

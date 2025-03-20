@@ -27,6 +27,11 @@ const ViewEvent: React.FC = () => {
   const [formData, setFormData] = useState<Event | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success" as "success" | "error"
+  });
 
   useEffect(() => {
     fetchEvent();
@@ -63,7 +68,11 @@ const ViewEvent: React.FC = () => {
         `/api/admin-manage-event-details/${eventId}`,
         formData
       );
-      alert("Event updated successfully!");
+      setSnackbar({
+        open: true,
+        message: "Event updated successfully!",
+        severity: "success"
+      });
     } catch (error) {
       console.error("Error updating event", error);
       alert("There was an error updating the event.");
