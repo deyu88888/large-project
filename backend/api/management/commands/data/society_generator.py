@@ -39,7 +39,7 @@ class RandomSocietyDataGenerator():
             "Union",
         ]
 
-        self.generated_names = []
+        self.generated_names = set()
 
         self.opening_phrases = [
             "A vibrant community dedicated to",
@@ -178,11 +178,11 @@ class RandomSocietyDataGenerator():
         sufname = choice(self.suffix_names)
 
         if len(self.generated_names) < len(self.suffix_names) * len(self.prefix_names) - 1:
-            while hash(prename + sufname) in self.generated_names:
+            while f"{prename} {sufname}" in self.generated_names:
                 prename = choice(self.prefix_names)
                 sufname = choice(self.suffix_names)
 
-        self.generated_names.append(hash(prename + sufname))
+        self.generated_names.add(f"{prename} {sufname}")
         return f"{prename} {sufname}"
 
     def generate_description(self) -> str:
