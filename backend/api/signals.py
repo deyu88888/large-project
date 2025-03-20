@@ -76,7 +76,7 @@ def broadcast_dashboard_update():
     """
     Fetch updated dashboard statistics and send them to the WebSocket group.
     """
-    print("[broadcast_dashboard_update] Broadcasting updates...")
+    # print("[broadcast_dashboard_update] Broadcasting updates...") # Debug statement
     from .models import Society, Event, Student
 
     try:
@@ -87,7 +87,7 @@ def broadcast_dashboard_update():
             "pendingApprovals": Society.objects.filter(status="Pending").count(),
             "activeMembers": Student.objects.count(),
         }
-        print(f"Calculated stats: {stats}")
+        # print(f"Calculated stats: {stats}") # Debug statement
 
         # Send the data through WebSocket
         channel_layer = get_channel_layer()
@@ -98,11 +98,13 @@ def broadcast_dashboard_update():
                 "data": stats,               # Data payload
             }
         )
-        print("[broadcast_dashboard_update] Successfully sent updates to WebSocket.")
+        # print("[broadcast_dashboard_update] Successfully sent updates to WebSocket.") # Debug statement
     except ChannelFull:
-        print("[broadcast_dashboard_update] Error: Channel is full, unable to send the message.")
+        # print("[broadcast_dashboard_update] Error: Channel is full, unable to send the message.") # Debug statement
+        pass
     except Exception as e:
-        print(f"[broadcast_dashboard_update] Error broadcasting updates: {e}")
+        # print(f"[broadcast_dashboard_update] Error broadcasting updates: {e}") # Debug statement
+        pass
 
 @receiver(post_save, sender=EventRequest)
 def notify_on_event_requested(sender, instance, created, **kwargs):
