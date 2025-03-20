@@ -473,16 +473,50 @@ class ManageStudentDetailsAdminView(APIView):
         user = request.user
         if not (user.role == "admin" or user.is_super_admin):
             return Response({"error": "Only admins can update student details."}, status=status.HTTP_403_FORBIDDEN)
-
+        
         student = Student.objects.filter(id=student_id).first()
         if not student:
             return Response({"error": "Student not found."}, status=status.HTTP_404_NOT_FOUND)
-
-        serializer = StudentSerializer(student, data=request.data, partial=True)
+        
+        data = request.data.copy()
+        original_societies = None
+        if 'societies' in data:
+            original_societies = data['societies']
+            del data['societies']
+        
+        serializer = StudentSerializer(student, data=data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            return Response({"message": "Student details updated successfully.", "data": serializer.data}, status=status.HTTP_200_OK)
-
+            
+            if original_societies is not None:
+                student.societies.clear()
+                
+                if isinstance(original_societies, list):
+                    for society_id in original_societies:
+                        try:
+                            society_id = int(society_id)
+                            society = Society.objects.get(id=society_id)
+                            student.societies.add(society)
+                        except (ValueError, Society.DoesNotExist):
+                            pass  # Skip invalid IDs
+                
+                student.save()
+            
+            updated_serializer = StudentSerializer(student)
+            
+            ActivityLog.objects.create(
+                action_type="Update",
+                target_type="Student",
+                target_id=student.id,
+                target_name=student.full_name,
+                target_email=student.email,
+                performed_by=user,
+                reason=data.get('reason', 'Admin update of student details')
+            )
+            
+            return Response({"message": "Student details updated successfully.", "data": updated_serializer.data}, 
+                           status=status.HTTP_200_OK)
+        
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
