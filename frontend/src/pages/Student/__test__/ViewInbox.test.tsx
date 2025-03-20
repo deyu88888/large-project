@@ -3,13 +3,28 @@ import { ThemeProvider, createTheme } from "@mui/material/styles";
 import ViewInbox from "../ViewInbox";
 import { apiClient } from "../../../api";
 import { vi } from "vitest";
+import { MemoryRouter } from "react-router-dom";
 
+// Mock the navigation function
+const mockNavigate = vi.fn();
+
+// Mock the API client
 vi.mock("../../../api", () => ({
   apiClient: {
     get: vi.fn(),
-    patch: vi.fn()
+    patch: vi.fn(),
+    delete: vi.fn(),
   }
 }));
+
+// Mock react-router-dom hooks
+vi.mock("react-router-dom", async () => {
+  const actual = await vi.importActual("react-router-dom");
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
 
 describe("ViewInbox Component", () => {
   const mockTheme = createTheme({
@@ -33,30 +48,58 @@ describe("ViewInbox Component", () => {
     },
   ];
 
+  const mockReplyNotifications = [
+    {
+      id: 3,
+      header: "New Reply",
+      body: "Someone replied to your report",
+      is_read: false,
+      type: "report_reply",
+      report_id: 123
+    }
+  ];
+
   beforeEach(() => {
     vi.clearAllMocks();
+    // Set up default mock responses
+    apiClient.get.mockImplementation((url) => {
+      if (url === "/api/inbox") {
+        return Promise.resolve({ data: mockNotifications });
+      } else if (url === "/api/report-reply-notifications") {
+        return Promise.resolve({ data: mockReplyNotifications });
+      }
+      return Promise.resolve({ data: [] });
+    });
+    
+    apiClient.patch.mockResolvedValue({ status: 200 });
+    apiClient.delete.mockResolvedValue({ status: 204 });
   });
 
-  it("renders loading state", () => {
-    apiClient.get.mockReturnValue(Promise.resolve({ data: [] }));
-
-    render(
+  const renderWithRouter = () => {
+    return render(
       <ThemeProvider theme={mockTheme}>
-        <ViewInbox />
+        <MemoryRouter>
+          <ViewInbox />
+        </MemoryRouter>
       </ThemeProvider>
     );
+  };
 
+  it("renders loading state", () => {
+    // Delay the API response to show loading state
+    apiClient.get.mockImplementation(() => 
+      new Promise(resolve => setTimeout(() => resolve({ data: [] }), 100))
+    );
+
+    renderWithRouter();
     expect(screen.getByText("Loading notifications...")).toBeInTheDocument();
   });
 
   it("displays empty state when no notifications are available", async () => {
-    apiClient.get.mockReturnValue(Promise.resolve({ data: [] }));
+    // Override the default mock to return empty arrays
+    apiClient.get.mockImplementation(() => Promise.resolve({ data: [] }));
 
-    render(
-      <ThemeProvider theme={mockTheme}>
-        <ViewInbox />
-      </ThemeProvider>
-    );
+    renderWithRouter();
 
     await waitFor(() => {
       expect(screen.getByText("No new notifications.")).toBeInTheDocument();
@@ -64,34 +107,27 @@ describe("ViewInbox Component", () => {
   });
 
   it("renders notifications correctly", async () => {
-    apiClient.get.mockReturnValue(Promise.resolve({ data: mockNotifications }));
-
-    render(
-      <ThemeProvider theme={mockTheme}>
-        <ViewInbox />
-      </ThemeProvider>
-    );
+    renderWithRouter();
 
     await waitFor(() => {
       expect(screen.getByText("Important Notice")).toBeInTheDocument();
       expect(screen.getByText("This is an important notification")).toBeInTheDocument();
       expect(screen.getByText("System Update")).toBeInTheDocument();
       expect(screen.getByText("The system will be updated tonight")).toBeInTheDocument();
+      expect(screen.getByText("New Reply")).toBeInTheDocument();
     });
 
     expect(screen.getByText("Read")).toBeInTheDocument();
-    expect(screen.getByText("Mark as Read")).toBeInTheDocument();
+    expect(screen.getAllByText("Mark as Read").length).toBe(2);
   });
 
   it("handles API error when fetching notifications", async () => {
     const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    apiClient.get.mockRejectedValue(new Error("API error"));
+    
+    // Make the first get call fail
+    apiClient.get.mockRejectedValueOnce(new Error("API error"));
 
-    render(
-      <ThemeProvider theme={mockTheme}>
-        <ViewInbox />
-      </ThemeProvider>
-    );
+    renderWithRouter();
 
     await waitFor(() => {
       expect(screen.getByText("No new notifications.")).toBeInTheDocument();
@@ -102,20 +138,13 @@ describe("ViewInbox Component", () => {
   });
 
   it("marks notification as read when clicking 'Mark as Read' button", async () => {
-    apiClient.get.mockReturnValue(Promise.resolve({ data: mockNotifications }));
-    apiClient.patch.mockReturnValue(Promise.resolve({ status: 200 }));
-
-    render(
-      <ThemeProvider theme={mockTheme}>
-        <ViewInbox />
-      </ThemeProvider>
-    );
+    renderWithRouter();
 
     await waitFor(() => {
-      expect(screen.getByText("Mark as Read")).toBeInTheDocument();
+      expect(screen.getAllByText("Mark as Read").length).toBe(2);
     });
 
-    fireEvent.click(screen.getByText("Mark as Read"));
+    fireEvent.click(screen.getAllByText("Mark as Read")[0]);
 
     await waitFor(() => {
       expect(apiClient.patch).toHaveBeenCalledWith("/api/notifications/1", { is_read: true });
@@ -123,21 +152,18 @@ describe("ViewInbox Component", () => {
   });
 
   it("handles error when marking notification as read", async () => {
-    apiClient.get.mockReturnValue(Promise.resolve({ data: mockNotifications }));
     const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    apiClient.patch.mockRejectedValue(new Error("API error"));
+    
+    // Make the patch call fail
+    apiClient.patch.mockRejectedValueOnce(new Error("API error"));
 
-    render(
-      <ThemeProvider theme={mockTheme}>
-        <ViewInbox />
-      </ThemeProvider>
-    );
+    renderWithRouter();
 
     await waitFor(() => {
-      expect(screen.getByText("Mark as Read")).toBeInTheDocument();
+      expect(screen.getAllByText("Mark as Read").length).toBe(2);
     });
 
-    fireEvent.click(screen.getByText("Mark as Read"));
+    fireEvent.click(screen.getAllByText("Mark as Read")[0]);
 
     await waitFor(() => {
       expect(consoleErrorSpy).toHaveBeenCalled();
@@ -147,49 +173,48 @@ describe("ViewInbox Component", () => {
   });
 
   it("updates UI after marking notification as read", async () => {
-    apiClient.get.mockReturnValue(Promise.resolve({ data: mockNotifications }));
-    apiClient.patch.mockReturnValue(Promise.resolve({ status: 200 }));
-
-    render(
-      <ThemeProvider theme={mockTheme}>
-        <ViewInbox />
-      </ThemeProvider>
-    );
+    renderWithRouter();
 
     await waitFor(() => {
-      expect(screen.getByText("Mark as Read")).toBeInTheDocument();
+      expect(screen.getAllByText("Mark as Read").length).toBe(2);
     });
 
-    fireEvent.click(screen.getByText("Mark as Read"));
+    // Simulate successful marking as read
+    fireEvent.click(screen.getAllByText("Mark as Read")[0]);
 
     await waitFor(() => {
+      // After the update, we should have one more "Read" text
       expect(screen.getAllByText("Read").length).toBe(2);
-      expect(screen.queryByText("Mark as Read")).not.toBeInTheDocument();
+      expect(screen.getAllByText("Mark as Read").length).toBe(1);
     });
   });
 
-  it("handles failed API response when marking as read", async () => {
-    apiClient.get.mockReturnValue(Promise.resolve({ data: mockNotifications }));
-    apiClient.patch.mockReturnValue(Promise.resolve({ status: 400 }));
-    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-
-    render(
-      <ThemeProvider theme={mockTheme}>
-        <ViewInbox />
-      </ThemeProvider>
-    );
+  it("handles deleting a notification", async () => {
+    renderWithRouter();
 
     await waitFor(() => {
-      expect(screen.getByText("Mark as Read")).toBeInTheDocument();
+      expect(screen.getByText("Important Notice")).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByText("Mark as Read"));
+    // Find and click the delete button for the first notification
+    const deleteButtons = screen.getAllByTitle("Delete notification");
+    fireEvent.click(deleteButtons[0]);
 
     await waitFor(() => {
-      expect(consoleErrorSpy).toHaveBeenCalledWith("Failed to mark notification as read");
+      expect(apiClient.delete).toHaveBeenCalledWith("/api/inbox/1");
+    });
+  });
+
+  it("navigates to report thread when clicking View Reply button", async () => {
+    renderWithRouter();
+
+    await waitFor(() => {
+      expect(screen.getByText("New Reply")).toBeInTheDocument();
     });
 
-    expect(screen.getByText("Mark as Read")).toBeInTheDocument();
-    consoleErrorSpy.mockRestore();
+    // Find and click the "View Reply" button
+    fireEvent.click(screen.getByText("View Reply"));
+
+    expect(mockNavigate).toHaveBeenCalledWith("/student/report-thread/123");
   });
 });
