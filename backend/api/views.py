@@ -1230,6 +1230,8 @@ class DeleteView(APIView):
                     return self._undo_society_update(original_data, log_entry)
                 elif target_type == "Event":
                     return self._undo_event_update(original_data, log_entry)
+                elif target_type == "Admin":
+                    return self._undo_admin_update(original_data, log_entry)
                 else:
                     return Response({"error": "Unsupported target type for this action."}, status=status.HTTP_400_BAD_REQUEST)
             elif log_entry.action_type in ["Approve", "Reject"]:
@@ -1627,6 +1629,74 @@ class DeleteView(APIView):
         except Exception as e:
             return Response({"error": f"Failed to undo event status change: {str(e)}"}, 
                         status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def _undo_admin_update(self, original_data, log_entry):
+        """Handle undoing admin detail updates with comprehensive relationship handling"""
+        try:
+            admin_id = log_entry.target_id
+            admin = User.objects.filter(id=admin_id, role='admin').first()
+            
+            if not admin:
+                admin_username = log_entry.target_name
+                admin = User.objects.filter(username=admin_username, role='admin').first()
+                
+            if not admin:
+                return Response({"error": "Admin not found."}, status=status.HTTP_404_NOT_FOUND)
+            
+            many_to_many_fields = ['managed_societies', 'permissions', 'groups', 'user_permissions']
+            foreign_key_fields = []
+            complex_json_fields = []
+            
+            data = original_data.copy()
+            
+            for key, value in data.items():
+                if (key not in many_to_many_fields and 
+                    key not in foreign_key_fields and 
+                    key not in complex_json_fields and
+                    key not in ['following', 'followers']):
+                    if hasattr(admin, key) and value is not None:
+                        setattr(admin, key, value)
+            
+            admin.save()
+            
+            if 'managed_societies' in data and isinstance(data['managed_societies'], list):
+                admin.managed_societies.clear()
+                for society_id in data['managed_societies']:
+                    try:
+                        society = Society.objects.get(id=society_id)
+                        admin.managed_societies.add(society)
+                    except Exception as e:
+                        print(f"Error adding society {society_id}: {str(e)}")
+            
+            if 'permissions' in data and isinstance(data['permissions'], list):
+                admin.user_permissions.clear()
+                for permission_id in data['permissions']:
+                    try:
+                        permission = Permission.objects.get(id=permission_id)
+                        admin.user_permissions.add(permission)
+                    except Exception as e:
+                        print(f"Error adding permission {permission_id}: {str(e)}")
+            
+            if 'groups' in data and isinstance(data['groups'], list):
+                admin.groups.clear()
+                for group_id in data['groups']:
+                    try:
+                        group = Group.objects.get(id=group_id)
+                        admin.groups.add(group)
+                    except Exception as e:
+                        print(f"Error adding group {group_id}: {str(e)}")
+            
+            admin.save()
+            
+            log_entry.delete()
+            
+            return Response({"message": "Admin update undone successfully!"}, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                "error": f"Failed to undo Admin update: {str(e)}",
+                "original_data_content": original_data
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     def _restore_student(self, original_data, log_entry):
         """Handle student restoration"""
