@@ -565,6 +565,7 @@ class StartSocietyRequestView(APIView):
 
 
 class SocietyRequestView(APIView):
+    permission_classes = [IsAdminUser]
     """
     GET request to get all the society requests that are pending in status for admins.
     """
