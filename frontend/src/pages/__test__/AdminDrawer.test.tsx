@@ -132,9 +132,8 @@ describe('AdminDrawer Component', () => {
     expect(screen.getByText('Manage Students')).toBeInTheDocument();
     expect(screen.getByText('Manage Societies')).toBeInTheDocument();
     expect(screen.getByText('Manage Events')).toBeInTheDocument();
-    expect(screen.getByText('Pending Societies')).toBeInTheDocument();
-    expect(screen.getByText('Pending Events')).toBeInTheDocument();
-    expect(screen.getByText('Pending Descriptions')).toBeInTheDocument();
+    expect(screen.getByText('Calendar')).toBeInTheDocument();
+    expect(screen.getByText('Reports')).toBeInTheDocument();
     
     // Create Admin should not be present for regular admin
     expect(screen.queryByText('Create Admin')).not.toBeInTheDocument();
@@ -149,8 +148,7 @@ describe('AdminDrawer Component', () => {
   it('renders additional menu items', async () => {
     await setup();
     
-    expect(screen.getByText('Reports')).toBeInTheDocument();
-    expect(screen.getByText('Calendar')).toBeInTheDocument();
+    expect(screen.getByText('My Team')).toBeInTheDocument();
     expect(screen.getByText('Activity Log')).toBeInTheDocument();
   });
 
@@ -215,13 +213,13 @@ describe('AdminDrawer Component', () => {
     await setup();
     
     const reportsLink = screen.getByText('Reports').closest('a');
-    expect(reportsLink).toHaveAttribute('href', '/admin/report-list');
+    expect(reportsLink).toHaveAttribute('href', '/admin/reports');
     
     const calendarLink = screen.getByText('Calendar').closest('a');
     expect(calendarLink).toHaveAttribute('href', '/admin/calendar');
     
     const activityLogLink = screen.getByText('Activity Log').closest('a');
-    expect(activityLogLink).toHaveAttribute('href', '/admin/admin-dashboard');
+    expect(activityLogLink).toHaveAttribute('href', '/admin/activity-log');
   });
 
   it('navigates to create admin page for super admin', async () => {
