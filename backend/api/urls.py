@@ -11,7 +11,7 @@ from .views import (
     get_popular_societies, CreateEventRequestView, custom_media_view, get_sorted_events, StudentSocietyDataView,
     AllEventsView, EventDetailView, EventCommentsView, DescriptionRequestView, ManageSocietyDetailsAdminView, 
     like_comment, dislike_comment, EventCommentsView, toggle_follow, StudentProfileView, AdminRepliesListView,
-    ActivityLogView, ManageEventDetailsAdminView, DeleteView, ManageStudentDetailsAdminView, ReportReplyView, 
+    ActivityLogView, ManageEventDetailsAdminView, DeleteView, ManageStudentDetailsAdminView, ManageAdminDetailsView, ReportReplyView, 
     MyReportsView, MyReportsWithRepliesView, ReportThreadView, AdminReportsWithRepliesView, ReportReplyNotificationsView)
 from .utils import request_otp, verify_otp
 from .recommendation_views import RecommendedSocietiesView, SocietyRecommendationExplanationView
@@ -70,6 +70,7 @@ urlpatterns = [
     path("admin-manage-society-details/<int:society_id>", ManageSocietyDetailsAdminView.as_view(), name="manage_society_details_admin"),
     path("admin-manage-student-details/<int:student_id>", ManageStudentDetailsAdminView.as_view(), name="manage_student_details_admin"),
     path("admin-manage-event-details/<int:event_id>", ManageEventDetailsAdminView.as_view(), name="manage_event_details_admin"),
+    path("admin-manage-admin-details/<int:admin_id>", ManageAdminDetailsView.as_view(), name="manage_admin_details"),
     path("activity-log", ActivityLogView.as_view(), name="activity_log"),
     path("delete-activity-log/<int:log_id>", ActivityLogView.as_view(), name="delete_activity_log"),
 
