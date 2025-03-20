@@ -1199,6 +1199,8 @@ class DeleteView(APIView):
                     return self._restore_society(original_data, log_entry)
                 elif target_type == "Event":
                     return self._restore_event(original_data, log_entry)
+                elif target_type == "Admin":
+                    return self._restore_admin(original_data, log_entry)
                 else:
                     return Response({"error": "Unsupported target type."}, status=status.HTTP_400_BAD_REQUEST)
             elif log_entry.action_type == "Update":
@@ -1766,19 +1768,157 @@ class DeleteView(APIView):
         except Exception as e:
             return Response({"error": f"Failed to restore Student: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+    def _restore_admin(self, original_data, log_entry):
+        """Handle admin restoration"""
+        try:
+            user_data = {
+                'username': original_data.get('username'),
+                'email': original_data.get('email'),
+                'first_name': original_data.get('first_name'),
+                'last_name': original_data.get('last_name'),
+                'is_active': original_data.get('is_active', True),
+                'role': original_data.get('role', 'admin'),
+                'is_staff': original_data.get('is_staff', True),
+                'is_superuser': original_data.get('is_superuser', False),
+            }
+            
+            user_id = original_data.get('id')
+            email = user_data.get('email')
+            username = user_data.get('username')
+            
+            user = None
+            if user_id:
+                try:
+                    user = User.objects.filter(id=int(user_id)).first()
+                except (ValueError, TypeError):
+                    pass
+                    
+            if not user and email:
+                user = User.objects.filter(email=email).first()
+                
+            if not user and username:
+                user = User.objects.filter(username=username).first()
+            
+            if not user:
+                if email:
+                    while User.objects.filter(email=email).exists():
+                        timestamp = int(time.time())
+                        email_parts = email.split('@')
+                        if len(email_parts) == 2:
+                            email = f"{email_parts[0]}+{timestamp}@{email_parts[1]}"
+                        else:
+                            email = f"restored_{timestamp}@example.com"
+                    user_data['email'] = email
+                
+                if username:
+                    while User.objects.filter(username=username).exists():
+                        timestamp = int(time.time())
+                        username = f"{username}_{timestamp}"
+                    user_data['username'] = username
+                    
+                user = User.objects.create(**user_data)
+            
+            admin = User.objects.filter(id=user.id, role='admin').first()
+            admin_data = {k: v for k, v in original_data.items() if k not in [
+                'id', 'username', 'email', 'first_name', 'last_name', 'is_active',
+                'password', 'last_login', 'is_superuser', 'is_staff', 'date_joined',
+                'groups', 'user_permissions', 'user_ptr'
+            ]}
+            
+            if not admin:
+                user.role = 'admin'
+                user.save()
+                admin = user
+
+            m2m_fields = ['managed_societies', 'permissions', 'groups']
+
+            extra_fields = ['following', 'followers']
+        
+            for field in m2m_fields + extra_fields:
+                if field in admin_data:
+                    del admin_data[field]
+            
+            for key, value in admin_data.items():
+                if value is not None:
+                    setattr(admin, key, value)
+            admin.save()
+            
+            for key, value in admin_data.items():
+                if value is not None:
+                    setattr(admin, key, value)
+            admin.save()
+            
+            managed_society_ids = original_data.get('managed_societies', [])
+            if managed_society_ids:
+                try:
+                    societies = []
+                    for society_id in managed_society_ids:
+                        try:
+                            society = Society.objects.get(id=int(society_id))
+                            societies.append(society)
+                        except (Society.DoesNotExist, ValueError, TypeError):
+                            pass
+                    admin.managed_societies.set(societies)
+                except Exception:
+                    pass
+            
+            permission_ids = original_data.get('permissions', [])
+            if permission_ids:
+                try:
+                    permissions = []
+                    for permission_id in permission_ids:
+                        try:
+                            permission = Permission.objects.get(id=int(permission_id))
+                            permissions.append(permission)
+                        except (Permission.DoesNotExist, ValueError, TypeError):
+                            pass
+                    admin.user_permissions.set(permissions)
+                except Exception:
+                    pass
+            
+            group_ids = original_data.get('groups', [])
+            if group_ids:
+                try:
+                    groups = []
+                    for group_id in group_ids:
+                        try:
+                            group = Group.objects.get(id=int(group_id))
+                            groups.append(group)
+                        except (Group.DoesNotExist, ValueError, TypeError):
+                            pass
+                    admin.groups.set(groups)
+                except Exception:
+                    pass
+            following_ids = original_data.get('following', [])
+            if following_ids:
+                try:
+                    following_objects = []
+                    for following_id in following_ids:
+                        try:
+                            following_obj = FollowingModel.objects.get(id=int(following_id))
+                            following_objects.append(following_obj)
+                        except (FollowingModel.DoesNotExist, ValueError, TypeError):
+                            pass
+                    admin.following.set(following_objects)
+                except Exception:
+                    pass
+            
+            log_entry.delete()
+            return Response({"message": "Admin restored successfully!"}, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({"error": f"Failed to restore Admin: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
     def _restore_society(self, original_data, log_entry):
         """Handle society restoration"""
         try:
-            # Extract basic fields for Society
             society_data = {k: v for k, v in original_data.items() if k not in [
                 'id', 'president', 'vice_president', 'treasurer', 'event_manager', 
                 'leader', 'approved_by', 'members', 'society_members', 'events'
             ]}
             
-            # Create the society without relationship fields first
             society = Society.objects.create(**society_data)
             
-            # Handle ForeignKey relationships
             president_id = original_data.get('president')
             if president_id:
                 try:
