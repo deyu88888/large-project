@@ -12,6 +12,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from django.views.static import serve
 from rest_framework import generics, status
+import traceback
+import sys
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser, BasePermission
 from django.views.decorators.csrf import csrf_exempt
@@ -90,10 +92,6 @@ class RegisterView(APIView):
         serializer.save()
 
         return Response({"message": "Student registered successfully"}, status=status.HTTP_201_CREATED)
-
-
-import traceback
-import sys
 
 class CurrentUserView(APIView):
     """
@@ -765,7 +763,7 @@ logger = logging.getLogger(__name__)
 
 class EventListView(APIView):
     """
-    Lists events for all societies the currently logged-in student is part of.
+    Lists events for the society the currently logged-in president/vice-president/event manager is managing.
     Optionally applies a filter (upcoming, previous, pending).
     """
     permission_classes = [IsAuthenticated]
@@ -814,7 +812,7 @@ class EventListView(APIView):
 
 class ManageEventDetailsView(APIView):
     """
-    API View for society presidents and vice presidents to edit or delete events.
+    API View for society presidents, vice presidents, and event manager to edit or delete events.
     """
     permission_classes = [IsAuthenticated]
     
