@@ -19,6 +19,7 @@ import PeopleOutlineIcon from "@mui/icons-material/PeopleOutline";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import EventAvailableIcon from "@mui/icons-material/EventAvailable";
 import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";
+import NotificationImportantOutlinedIcon from '@mui/icons-material/NotificationImportantOutlined';
 import InboxIcon from "@mui/icons-material/MoveToInbox";
 import MailIcon from "@mui/icons-material/Mail";
 import GroupAddOutlinedIcon from "@mui/icons-material/GroupAddOutlined";
@@ -63,7 +64,8 @@ const StudentDrawer: React.FC<StudentDrawerProps> = ({
     { title: "View Events", icon: <EventAvailableIcon />, to: "/student/view-events" },
     { title: "News", icon: <NotificationsNoneOutlinedIcon />, to: "/student/view-notifications" },
     { title: "Notifications", icon: <NotificationsNoneOutlinedIcon />, to: "/student/view-notifications" },
-    { title: "Mail", icon: <ReportProblemOutlinedIcon />, to: "/student/replies" },
+    { title: "Inbox", icon: <NotificationImportantOutlinedIcon />, to: "/student/view-inbox" },
+    { title: "Report to Admin", icon: <ReportProblemOutlinedIcon />, to: "/student/report-to-admin" },
   ];
 
   const logout = () => {
