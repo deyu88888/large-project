@@ -94,8 +94,15 @@ export type ReportReply = {
 }
 
 export type Admin = {
-  firstName: string;
-  lastName: string;
+  id: number;
+  first_name: string;
+  last_name: string;
   username: string;
   email: string;
-}
+  is_active: boolean;
+  role: string;
+  is_super_admin: boolean;
+  full_name?: string;
+  following?: number[];
+  followers?: number[];
+};

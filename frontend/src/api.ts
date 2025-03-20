@@ -49,6 +49,7 @@ export const apiPaths = {
     ADMINSTUDENTVIEW: (studentId: number) => `/api/admin-manage-student-details/${studentId}`,
     ADMINSOCIETYVIEW: (societyId: number) => `/api/admin-manage-society-details/${societyId}`, // admin society view
     ADMINEVENTVIEW: (eventId: number) => `/api/admin-manage-event-details/${eventId}`,
+    ADMINVIEW: (adminId: number) => `/api/admin-manage-admin-details/${adminId}`,
     DELETE: (targetType: string, targetId: number) => `/api/delete/${targetType}/${targetId}`,
     UNDO_DELETE: (logId: number) => `/api/undo-delete/${logId}`,
     ACTIVITYLOG: "/api/activity-log",

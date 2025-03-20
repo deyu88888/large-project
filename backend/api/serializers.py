@@ -57,6 +57,31 @@ class UserSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
+class AdminSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Admin users.
+    """
+    full_name = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = User
+        fields = [
+            'id', 
+            'first_name', 
+            'last_name', 
+            'username', 
+            'email', 
+            'is_active', 
+            'role', 
+            'is_super_admin',
+            'full_name',
+            'following',
+            'followers'
+        ]
+        read_only_fields = ['id']
+    
+    def get_full_name(self, obj):
+        return f"{obj.first_name} {obj.last_name}".strip()
 
 class StudentSerializer(UserSerializer):
     """

@@ -10,7 +10,6 @@ import Layout from "../components/layout";
 import PageWithTitle from "../components/PageWithTitle";
 import ViewSocietyEvents from "../pages/view-society-events";
 import ManageReports from "../pages/Admin/ManageReports";
-import ViewReports from "../pages/President/ViewReports";
 
 // Lazy-loaded pages
 const LoginPage = lazy(() => import("../pages/login"));
@@ -69,6 +68,8 @@ const RequestDescriptionPage = lazy(() => import("../pages/Admin/SocietyDesChang
 const AdminViewStudentPage = lazy(() => import("../pages/Admin/ViewStudent"));
 const AdminViewEventPage = lazy(() => import("../pages/Admin/ViewEvent"));
 const ActivityLogPage = lazy(() => import("../pages/Admin/ActivityLog"));
+const AdminViewAdminPage = lazy(() => import("../pages/Admin/ViewAdmin"));
+
 
 
 const routes = [
@@ -179,6 +180,10 @@ const routes = [
           {
             path: "view-event/:event_id",
             element: <AdminViewEventPage />,
+          },
+          {
+            path: "view-admin/:admin_id",
+            element: <AdminViewAdminPage />,
           },
           {
             path: "activity-log",
