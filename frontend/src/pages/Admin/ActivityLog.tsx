@@ -1,5 +1,18 @@
 import React, { useState, useEffect, useContext } from "react";
-import { Box, Typography, Button, CircularProgress, Paper, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, useTheme } from "@mui/material";
+import { 
+  Box, 
+  Typography, 
+  Button, 
+  CircularProgress, 
+  Dialog, 
+  DialogTitle, 
+  DialogContent, 
+  DialogContentText, 
+  DialogActions, 
+  useTheme,
+  Snackbar,
+  Alert
+} from "@mui/material";
 import { DataGrid, GridColDef, GridToolbar } from "@mui/x-data-grid";
 import { apiClient, apiPaths } from "../../api.ts";
 import { ActivityLog } from "../../types.ts"
@@ -7,30 +20,30 @@ import { tokens } from "../../theme/theme.ts";
 import { useSettingsStore } from "../../stores/settings-store.ts";
 import { SearchContext } from "../../components/layout/SearchContext";
 
-
 const ActivityLogList: React.FC = () => {
   const [data, setData] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedLog, setSelectedLog] = useState<ActivityLog | null>(null);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const { drawer } = useSettingsStore(); 
   const { searchTerm } = useContext(SearchContext);
-
   
-    const fetchData = async () => {
-      try {
-        const response = await apiClient.get(apiPaths.USER.ACTIVITYLOG);
-        setData(response.data);
-      } catch (error) {
-        console.error("Failed to fetch data", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchData = async () => {
+    try {
+      const response = await apiClient.get(apiPaths.USER.ACTIVITYLOG);
+      setData(response.data);
+    } catch (error) {
+      console.error("Failed to fetch data", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-useEffect(() => {
+  useEffect(() => {
     fetchData();
   }, []);
 
@@ -50,68 +63,99 @@ useEffect(() => {
     { field: "timestamp", headerName: "Timestamp", flex: 1 },
     { field: "reason", headerName: "Reason", flex: 2 },
     {
-        field: "actions",
-        headerName: "Actions",
-        width: 170,
-        minWidth: 170,
-        sortable: false,
-        filterable: false,
-        renderCell: (params: any) => {
-            return (
-              <Box>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={() => handleUndo(params.row.id)}
-                  sx={{ marginRight: "8px" }}
-                >
-                  Undo
-                </Button>
-                <Button
-                  variant="contained"
-                  color="error"
-                  onClick={() => handleOpenDialog(params.row)}
-                >
-                  Delete
-                </Button>
-              </Box>
-            );
-        },
+      field: "actions",
+      headerName: "Actions",
+      width: 170,
+      minWidth: 170,
+      sortable: false,
+      filterable: false,
+      renderCell: (params: any) => {
+        return (
+          <Box>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => handleUndo(params.row)}
+              sx={{ marginRight: "8px" }}
+            >
+              Undo
+            </Button>
+            <Button
+              variant="contained"
+              color="error"
+              onClick={() => handleOpenDialog(params.row)}
+            >
+              Delete
+            </Button>
+          </Box>
+        );
+      },
+    }
+  ];
+
+  const handleOpenDialog = (log: ActivityLog) => {
+    setSelectedLog(log);
+    setOpenDialog(true);
+  };
+
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+    setSelectedLog(null);
+  };
+
+  const handleDeleteConfirmed = async () => {
+    if (selectedLog !== null) {
+      try {
+        if (selectedLog.target_type.toLowerCase().includes('admin')) {
+          await apiClient.delete(apiPaths.USER.DELETEACTIVITYLOG(selectedLog.id));
+          fetchData();
+          setSnackbarMessage("Activity log deleted successfully!");
+          setSnackbarOpen(true);
+        } else {
+          await apiClient.delete(apiPaths.USER.DELETEACTIVITYLOG(selectedLog.id));
+          fetchData();
+        }
+      } catch (error: any) {
+        console.error("Error deleting log:", error);
+        
+        if (error.response && error.response.status === 403) {
+          setSnackbarMessage("Only Super Admin Users can delete operations related to admins.");
+          setSnackbarOpen(true);
+        } else {
+          setSnackbarMessage("Failed to delete activity log. Please try again.");
+          setSnackbarOpen(true);
+        }
       }
-    ];
+      handleCloseDialog();
+    }
+  };
 
-    const handleOpenDialog = (log: ActivityLog) => {
-        setSelectedLog(log);
-        setOpenDialog(true);
-      };
-    
-      const handleCloseDialog = () => {
-        setOpenDialog(false);
-        setSelectedLog(null);
-      };
-  
-      const handleDeleteConfirmed = async () => {
-        if (selectedLog !== null) {
-          try {
-            await apiClient.delete(apiPaths.USER.DELETEACTIVITYLOG(selectedLog.id));
-            fetchData();
-          } catch (error) {
-            console.error("Error deleting log:", error);
-          }
-          handleCloseDialog();
-        }
-      };
-
-      const handleUndo = async (id: number) => {
-        try {
-          await apiClient.post(apiPaths.USER.UNDO_DELETE(id));
-          alert("Action undone successfully!");
-          setData((prev) => prev.filter((item) => item.id !== id));
-        } catch (error) {
-          console.error("Error undoing action", error);
-        }
-      };
+  const handleUndo = async (log: ActivityLog) => {
+    try {
+      const response = await apiClient.post(apiPaths.USER.UNDO_DELETE(log.id));
+      fetchData();
+      setSnackbarMessage("Action undone successfully!");
+      setSnackbarOpen(true);
       
+    } catch (error: any) {
+      console.error("Error undoing action", error);
+      
+      if (error.response && error.response.status === 403) {
+        setSnackbarMessage("Only Super Admin Users can undo operations related to admins.");
+      } else {
+        setSnackbarMessage("Failed to undo action. Please try again.");
+      }
+      
+      setSnackbarOpen(true);
+    }
+  };
+  
+  const handleCloseSnackbar = (event?: React.SyntheticEvent | Event, reason?: string) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setSnackbarOpen(false);
+  };
 
   return (
     <Box
@@ -156,19 +200,20 @@ useEffect(() => {
             color: `${colors.blueAccent[400]} !important`,
           },
           "& .MuiDataGrid-toolbarContainer .MuiButton-text": {
-          color: `${colors.blueAccent[500]} !important`,
-        },
+            color: `${colors.blueAccent[500]} !important`,
+          },
         }}
       >
-      <DataGrid
-        rows={filteredActivityLogs}
-        columns={columns}
-        slots={{ toolbar: GridToolbar }}
-        resizeThrottleMs={0}
-        autoHeight
-      />
-    </Box>
+        <DataGrid
+          rows={filteredActivityLogs}
+          columns={columns}
+          slots={{ toolbar: GridToolbar }}
+          resizeThrottleMs={0}
+          autoHeight
+        />
+      </Box>
       )}
+      
       <Dialog open={openDialog} onClose={handleCloseDialog}>
         <DialogTitle>Please confirm that you would like to permanently delete {selectedLog?.action_type} {selectedLog?.target_type}.</DialogTitle>
         <DialogContent>
@@ -185,6 +230,21 @@ useEffect(() => {
           </Button>
         </DialogActions>
       </Dialog>
+      
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity={snackbarMessage.includes("successfully") ? "success" : "warning"} 
+          sx={{ width: '100%' }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

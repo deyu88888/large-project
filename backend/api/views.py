@@ -1178,13 +1178,19 @@ class DeleteView(APIView):
         """
         try:
             log_entry = ActivityLog.objects.get(id=log_id)
+            target_type = log_entry.target_type
+
+            if target_type == "Admin":
+                if not request.user.is_authenticated or not request.user.is_super_admin:
+                    return Response(
+                        {"error": "Only super admins can undo operations related to admins."}, 
+                        status=status.HTTP_403_FORBIDDEN
+                    )
 
             # Check if the action type is supported
             supported_actions = ["Delete", "Approve", "Reject", "Update"]
             if log_entry.action_type not in supported_actions:
                 return Response({"error": "Invalid action type."}, status=status.HTTP_400_BAD_REQUEST)
-
-            target_type = log_entry.target_type
             
             # For Delete and Update actions, we need original data
             if log_entry.action_type in ["Delete", "Update"]:
@@ -3392,6 +3398,7 @@ class BroadcastListAPIView(APIView):
 
         serializer = BroadcastSerializer(broadcasts, many=True)
         return Response(serializer.data)
+
 class ActivityLogView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -3402,10 +3409,16 @@ class ActivityLogView(APIView):
     
     def delete(self, request, log_id):
         user = request.user
-        if not (user.role == "admin" or user.is_super_admin):
-            return Response({"error": "Only admins can delete activity logs."}, status=status.HTTP_403_FORBIDDEN)
         activity_log = ActivityLog.objects.filter(id=log_id).first()
         if not activity_log:
             return Response({"error": "Activity log not found."}, status=status.HTTP_404_NOT_FOUND)
+        is_admin_log = activity_log.performed_by.role == "admin" if hasattr(activity_log.performed_by, 'role') else False
+        if is_admin_log and not user.is_super_admin:
+            return Response({"error": "Only superadmins can delete admin activity logs."}, 
+                            status=status.HTTP_403_FORBIDDEN)
+        elif not (user.role == "admin" or user.is_super_admin):
+            return Response({"error": "Only admins can delete activity logs."}, 
+                            status=status.HTTP_403_FORBIDDEN)
         activity_log.delete()
-        return Response({"message": "Activity log deleted successfully."}, status=status.HTTP_200_OK)
+        return Response({"message": "Activity log deleted successfully."}, 
+                        status=status.HTTP_200_OK)
