@@ -2494,31 +2494,27 @@ class ReportReplyView(APIView):
     def post(self, request):
         serializer = ReportReplySerializer(data=request.data)
         if serializer.is_valid():
-            # Get the report
             report_id = serializer.validated_data.get('report').id
             report = AdminReportRequest.objects.get(id=report_id)
             
-            # Get parent reply if provided
             parent_reply_id = serializer.validated_data.get('parent_reply')
-            print("Parent reply ID:", parent_reply_id)  # Debug line
-            # Check permissions
+
             user = request.user
-            if parent_reply_id is None and not (user.role == "admin" or user.is_super_admin):
+            is_admin = user.role == "admin" or user.is_super_admin
+            is_president = user.role == "president"
+            
+            if parent_reply_id is None and not is_admin:
                 return Response(
                     {"error": "Only admins or super admins can reply to reports directly."}, 
                     status=status.HTTP_403_FORBIDDEN
                 )
 
-            
-            # Rule 2: If there's a parent reply, check if it's an admin reply
             if parent_reply_id:
                 parent_reply = ReportReply.objects.get(id=parent_reply_id.id)
-                # Presidents can only reply to admin replies
                 if is_president and not parent_reply.is_admin_reply:
                     return Response({"error": "Presidents can only reply to admin replies."}, 
                                     status=status.HTTP_403_FORBIDDEN)
             
-            # Save the reply with appropriate flags
             reply = serializer.save(
                 replied_by=user,
                 is_admin_reply=is_admin
@@ -2685,13 +2681,11 @@ class ReportReplyNotificationsView(APIView):
         try:
             student = request.user.student
             
-            # Verify this reply belongs to one of the student's reports
             reply = ReportReply.objects.get(
                 id=reply_id,
                 report__from_student=student
             )
             
-            # Mark as read by adding user to read_by_students
             reply.read_by_students.add(request.user)
             
             return Response({"status": "success"}, status=status.HTTP_200_OK)

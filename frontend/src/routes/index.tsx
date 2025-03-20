@@ -213,6 +213,7 @@ const routes = [
           { path: "view-society/:society_id", element: <PageWithTitle title="Society Details"><ViewSocietyPage /></PageWithTitle> },
           { path: "profile/:userId", element: <PageWithTitle title="User Profile"><ProfilePage /></PageWithTitle> },
           { path: "report-thread/:reportId", element:  <PageWithTitle title="Report Thread"><ReportThread /></PageWithTitle>},
+          { path: "report-to-admin", element: <PageWithTitle title="Report to Admin"><ReportToAdmin /></PageWithTitle> },
         ],
       },
       {
@@ -230,7 +231,6 @@ const routes = [
           { path: "manage-society-events/:filter?", element: <PageWithTitle title="Society Events"><ManageSocietyEvents /></PageWithTitle> },
           { path: "pending-members", element: <PageWithTitle title="Pending Members"><PendingMembers /></PageWithTitle> },
           { path: "view-society-members", element: <PageWithTitle title="Society Members"><ViewSocietyMembers /></PageWithTitle> },
-          { path: "report-to-admin", element: <PageWithTitle title="Report to Admin"><ReportToAdmin /></PageWithTitle> },
           { path: "create-event", element: <PageWithTitle title="Create Event"><CreateEventPage /></PageWithTitle> },
           { path: "edit-event/:eventId", element: <PageWithTitle title="Edit Event"><EditEventDetails /></PageWithTitle> },
           { path: "give-award/:memberId", element: <PageWithTitle title="Give Award to Member"><GiveAwardPage /></PageWithTitle> },
