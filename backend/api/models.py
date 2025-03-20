@@ -10,7 +10,8 @@ from django.contrib.auth.models import AbstractUser
 from django.dispatch import receiver
 from django.utils import timezone
 from django.db.models.signals import pre_save
-from django.utils.translation import gettext_lazy as _  # Import for i18n
+from django.utils.translation import gettext_lazy as _
+from django.db.models import F
 
 
 class User(AbstractUser):
@@ -791,6 +792,10 @@ class BroadcastMessage(models.Model):
     message = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
 
+    def __str__(self):
+        # ADDED: A convenient string representation
+        return f"Broadcast from {self.sender.username} at {self.created_at:%Y-%m-%d %H:%M}"
+
 class SocietyNews(models.Model):
     """
     News posts for societies.
@@ -857,7 +862,16 @@ class SocietyNews(models.Model):
             self.published_at = timezone.now()
             
         super().save(*args, **kwargs)
-        
+
+    # ADDED: Concurrency-safe increment for view_count
+    def increment_view_count(self, amount: int = 1):
+        """
+        Increments the view_count field by the specified amount (default=1).
+        This uses F expressions for an atomic database update.
+        """
+        SocietyNews.objects.filter(pk=self.pk).update(view_count=F('view_count') + amount)
+        # Refresh in-memory instance to get the updated value
+        self.refresh_from_db(fields=['view_count'])
 
 class NewsComment(models.Model):
     """
@@ -882,4 +896,17 @@ class NewsComment(models.Model):
         ordering = ["created_at"]
     
     def __str__(self):
-        return f"Comment by {self.user.username} on {self.news_post.title}"    
+        return f"Comment by {self.user.username} on {self.news_post.title}"
+
+    # ADDED: Optional helper for nested replies
+    def total_replies(self) -> int:
+        """
+        Returns how many direct replies this comment has. If you need
+        deeply nested counts, you'd do a recursive approach or separate query.
+        """
+        return self.replies.count()
+
+    # ADDED: convenience property to easily see how many likes
+    @property
+    def total_likes(self) -> int:
+        return self.likes.count()

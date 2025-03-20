@@ -9,6 +9,7 @@ import { HiMenu } from "react-icons/hi";
 import { motion } from 'framer-motion';
 import { useFetchWebSocket } from "../hooks/useFetchWebSocket";
 import { getAllEvents, apiClient } from "../api";
+import { ACCESS_TOKEN } from "../constants";
 
 // -- Type Definitions --
 interface StatData {
@@ -142,6 +143,21 @@ const TabPanel: React.FC<TabPanelProps> = ({ children, label }) => (
 // -- API Functions to use with useFetchWebSocket --
 const fetchDashboardStats = async (): Promise<StatData> => {
   try {
+    // Check if user is authenticated before making protected API call
+    const token = localStorage.getItem(ACCESS_TOKEN);
+    
+    if (!token) {
+      // Return default data for public access without making API call that would fail
+      console.log("Public access - using default dashboard stats");
+      return {
+        totalSocieties: 5,
+        totalEvents: 10,
+        pendingApprovals: 3,
+        activeMembers: 125
+      };
+    }
+    
+    // Only make API request if user is authenticated
     const response = await apiClient.get("/api/dashboard/stats");
     return response.data || {
       totalSocieties: 5,
@@ -162,6 +178,20 @@ const fetchDashboardStats = async (): Promise<StatData> => {
 
 const fetchActivities = async (): Promise<Activity[]> => {
   try {
+    // Check if user is authenticated before making protected API call
+    const token = localStorage.getItem(ACCESS_TOKEN);
+    
+    if (!token) {
+      // Return default data for public access without making API call that would fail
+      console.log("Public access - using default activities");
+      return [
+        { description: "Chess Society organized a tournament" },
+        { description: "New Debate Society was created" },
+        { description: "Music Club scheduled a concert for next month" }
+      ];
+    }
+    
+    // Only make API request if user is authenticated
     const response = await apiClient.get("/api/dashboard/activities");
     return response.data || [
       { description: "Chess Society organized a tournament" },
@@ -180,6 +210,19 @@ const fetchActivities = async (): Promise<Activity[]> => {
 
 const fetchNotifications = async (): Promise<Notification[]> => {
   try {
+    // Check if user is authenticated before making protected API call
+    const token = localStorage.getItem(ACCESS_TOKEN);
+    
+    if (!token) {
+      // Return default data for public access without making API call that would fail
+      console.log("Public access - using default notifications");
+      return [
+        { message: "New event proposal requires approval" },
+        { message: "Society budget reports due next week" }
+      ];
+    }
+    
+    // Only make API request if user is authenticated
     const response = await apiClient.get("/api/dashboard/notifications");
     return response.data || [
       { message: "New event proposal requires approval" },
@@ -238,6 +281,26 @@ const Dashboard: React.FC = () => {
       return false;
     }
   });
+
+  // -- WebSocket Configuration for Public Dashboard --
+  useEffect(() => {
+    // Check if we're accessing the dashboard without authentication
+    const isPublicDashboard = !localStorage.getItem(ACCESS_TOKEN);
+    
+    if (isPublicDashboard) {
+      // Disable WebSockets for public dashboard to prevent connection errors
+      localStorage.setItem('useWebSockets', 'false');
+      console.log("Public dashboard detected - WebSockets disabled for public access");
+    }
+    
+    // Clean up when component unmounts
+    return () => {
+      if (isPublicDashboard) {
+        localStorage.removeItem('useWebSockets');
+        console.log("Dashboard unmounted - WebSocket settings restored");
+      }
+    };
+  }, []);
 
   // Apply or remove .dark class on <html> or <body>
   useEffect(() => {
@@ -484,9 +547,7 @@ const Dashboard: React.FC = () => {
   // Loading state check
   useEffect(() => {
     if (
-      dashboardStats && 
-      activities && 
-      notificationData && 
+      (dashboardStats && activities && notificationData) || 
       upcomingEvents.length > 0
     ) {
       setLoading(false);

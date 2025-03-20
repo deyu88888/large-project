@@ -4,6 +4,8 @@ from api.models import AdminReportRequest, Award, AwardStudent, BroadcastMessage
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 from django.utils.translation import gettext_lazy as _
+from django.utils.dateformat import format as django_format
+from django.utils.timezone import localtime
 
 class SiteSettingsSerializer(serializers.ModelSerializer):
     """
@@ -883,9 +885,6 @@ class BroadcastSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at', 'sender']
 
 class NewsCommentSerializer(serializers.ModelSerializer):
-    """
-    Serializer for the NewsComment model
-    """
     replies = serializers.SerializerMethodField()
     user_data = serializers.SerializerMethodField()
     likes_count = serializers.SerializerMethodField()
@@ -894,21 +893,32 @@ class NewsCommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = NewsComment
         fields = [
-            "id", "content", "created_at", "user_data", "parent_comment", 
-            "replies", "likes_count", "liked_by_user"
+            "id",
+            "content",
+            "created_at",
+            "user_data",
+            "parent_comment",
+            "replies",
+            "likes_count",
+            "liked_by_user",
         ]
 
     def get_replies(self, obj):
-        """Get all the replies of the comment"""
-        request = self.context.get("request", None)
+        request = self.context.get("request")
         serializer = NewsCommentSerializer(
             obj.replies.all().order_by("created_at"),
             many=True,
-            context={"request": request}
+            context={"request": request},
         )
         return serializer.data
 
     def get_user_data(self, obj):
+        """
+        Safely returns user fields. If obj.user is None,
+        returns None to avoid attribute errors.
+        """
+        if not obj.user:
+            return None
         return {
             "id": obj.user.id,
             "username": obj.user.username,
@@ -920,9 +930,8 @@ class NewsCommentSerializer(serializers.ModelSerializer):
         return obj.likes.count()
 
     def get_liked_by_user(self, obj):
-        """Check if the user liked this comment"""
-        request = self.context.get("request", None)
-        if request and request.user.is_authenticated:
+        request = self.context.get("request")
+        if request and request.user and request.user.is_authenticated:
             return obj.likes.filter(id=request.user.id).exists()
         return False
 
@@ -942,9 +951,9 @@ class SocietyNewsSerializer(serializers.ModelSerializer):
     class Meta:
         model = SocietyNews
         fields = [
-            'id', 'society', 'title', 'content', 'image', 'image_url', 
-            'attachment', 'attachment_name', 'author', 'author_data', 
-            'society_data', 'created_at', 'updated_at', 'published_at', 
+            'id', 'society', 'title', 'content', 'image', 'image_url',
+            'attachment', 'attachment_name', 'author', 'author_data',
+            'society_data', 'created_at', 'updated_at', 'published_at',
             'status', 'is_featured', 'is_pinned', 'tags', 'view_count',
             'comment_count', 'is_author', 'comments'
         ]
@@ -955,69 +964,253 @@ class SocietyNewsSerializer(serializers.ModelSerializer):
             'author': {'write_only': True},
             'society': {'write_only': True},
         }
-
+    
+    def __init__(self, *args, **kwargs):
+        print("\n" + "=" * 80)
+        print(f"DEBUG - SocietyNewsSerializer.__init__()")
+        print(f"DEBUG - Args: {args}")
+        print(f"DEBUG - Kwargs: {kwargs}")
+        
+        if 'data' in kwargs:
+            print(f"DEBUG - Incoming data: {kwargs['data']}")
+            if hasattr(kwargs['data'], 'dict'):
+                print(f"DEBUG - Data is QueryDict, keys: {kwargs['data'].keys()}")
+                print(f"DEBUG - Content type: {kwargs.get('context', {}).get('request', {}).content_type}")
+        
+        super().__init__(*args, **kwargs)
+        print(f"DEBUG - Serializer initialized successfully")
+        print("=" * 80)
+    
+    def to_internal_value(self, data):
+        """
+        Debug data conversion before validation
+        """
+        print("\n" + "=" * 80)
+        print(f"DEBUG - to_internal_value() called")
+        print(f"DEBUG - Data received: {data}")
+        print(f"DEBUG - Data type: {type(data)}")
+        
+        if hasattr(data, 'dict'):
+            print(f"DEBUG - QueryDict keys: {data.keys()}")
+            for key in data.keys():
+                print(f"DEBUG - Key: {key}, Value: {data.get(key)}, Type: {type(data.get(key))}")
+        
+        try:
+            converted = super().to_internal_value(data)
+            print(f"DEBUG - Data after conversion: {converted}")
+            return converted
+        except Exception as e:
+            print(f"DEBUG - Error in to_internal_value: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            print("=" * 80)
+            raise
+    
     def get_author_data(self, obj):
         """Get basic author information"""
+        print(f"DEBUG - get_author_data() for object ID {getattr(obj, 'id', 'None')}")
         if not obj.author:
+            print(f"DEBUG - No author found")
             return None
-        return {
+        
+        author_data = {
             "id": obj.author.id,
             "username": obj.author.username,
             "first_name": obj.author.first_name,
             "last_name": obj.author.last_name,
             "full_name": obj.author.full_name,
         }
+        print(f"DEBUG - Author data: {author_data}")
+        return author_data
 
     def get_society_data(self, obj):
         """Get basic society information"""
-        return {
-            "id": obj.society.id,
-            "name": obj.society.name,
-            "icon": self.context.get('request').build_absolute_uri(obj.society.icon.url) if obj.society.icon else None,
-        }
+        print(f"DEBUG - get_society_data() for object ID {getattr(obj, 'id', 'None')}")
+        try:
+            request = self.context.get('request')
+            icon_url = None
+            if obj.society.icon:
+                icon_url = request.build_absolute_uri(obj.society.icon.url) if request else obj.society.icon.url
+            
+            society_data = {
+                "id": obj.society.id,
+                "name": obj.society.name,
+                "icon": icon_url,
+            }
+            print(f"DEBUG - Society data: {society_data}")
+            return society_data
+        except Exception as e:
+            print(f"DEBUG - Error in get_society_data: {str(e)}")
+            return {
+                "id": getattr(obj.society, 'id', None),
+                "name": getattr(obj.society, 'name', "Unknown"),
+                "icon": None,
+            }
 
     def get_comment_count(self, obj):
         """Get total comment count including replies"""
-        return NewsComment.objects.filter(news_post=obj).count()
+        try:
+            count = NewsComment.objects.filter(news_post=obj).count()
+            print(f"DEBUG - Comment count for post {getattr(obj, 'id', 'None')}: {count}")
+            return count
+        except Exception as e:
+            print(f"DEBUG - Error in get_comment_count: {str(e)}")
+            return 0
 
     def get_is_author(self, obj):
         """Check if the current user is the author of this post"""
-        request = self.context.get("request", None)
-        if request and request.user.is_authenticated and hasattr(request.user, 'student'):
-            return obj.author and obj.author.id == request.user.student.id
-        return False
+        try:
+            request = self.context.get("request", None)
+            if request and request.user.is_authenticated and hasattr(request.user, 'student'):
+                is_author = obj.author and obj.author.id == request.user.student.id
+                print(f"DEBUG - is_author check for user {request.user.id}: {is_author}")
+                return is_author
+            return False
+        except Exception as e:
+            print(f"DEBUG - Error in get_is_author: {str(e)}")
+            return False
 
     def get_image_url(self, obj):
         """Get full image URL"""
-        request = self.context.get("request")
-        if obj.image:
-            return request.build_absolute_uri(obj.image.url) if request else obj.image.url
-        return None
+        try:
+            request = self.context.get("request")
+            if obj.image:
+                url = request.build_absolute_uri(obj.image.url) if request else obj.image.url
+                print(f"DEBUG - Image URL for post {getattr(obj, 'id', 'None')}: {url}")
+                return url
+            return None
+        except Exception as e:
+            print(f"DEBUG - Error in get_image_url: {str(e)}")
+            return None
 
     def get_attachment_name(self, obj):
         """Get the attachment filename"""
-        if obj.attachment:
-            return obj.attachment.name.split('/')[-1]
-        return None
-        
+        try:
+            if obj.attachment:
+                name = obj.attachment.name.split('/')[-1]
+                print(f"DEBUG - Attachment name for post {getattr(obj, 'id', 'None')}: {name}")
+                return name
+            return None
+        except Exception as e:
+            print(f"DEBUG - Error in get_attachment_name: {str(e)}")
+            return None
+
     def get_comments(self, obj):
         """Get top-level comments"""
-        request = self.context.get("request", None)
-        comments = NewsComment.objects.filter(news_post=obj, parent_comment=None).order_by("created_at")
-        serializer = NewsCommentSerializer(comments, many=True, context={"request": request})
-        return serializer.data
+        try:
+            request = self.context.get("request", None)
+            comments = NewsComment.objects.filter(news_post=obj, parent_comment=None).order_by("created_at")
+            serializer = NewsCommentSerializer(comments, many=True, context={"request": request})
+            print(f"DEBUG - Retrieved {comments.count()} top-level comments for post {getattr(obj, 'id', 'None')}")
+            return serializer.data
+        except Exception as e:
+            print(f"DEBUG - Error in get_comments: {str(e)}")
+            return []
 
     def validate(self, data):
         """Validate the news post data"""
+        print("\n" + "=" * 80)
+        print(f"DEBUG - validate() called")
+        print(f"DEBUG - Data to validate: {data}")
+        
+        # Check for required fields
+        for field in ['title', 'content', 'status']:
+            print(f"DEBUG - Checking field '{field}': {field in data}")
+        
         if data.get('status') == 'Published' and not data.get('title'):
+            print(f"DEBUG - Validation error: Published news must have a title")
             raise serializers.ValidationError({"title": "Published news must have a title."})
+        
+        # Check status value
+        status_value = data.get('status')
+        print(f"DEBUG - Status value: {status_value}")
+        if status_value and status_value not in ['Draft', 'Published', 'Archived']:
+            print(f"DEBUG - Invalid status: {status_value}")
+            raise serializers.ValidationError({"status": f"Invalid status: {status_value}. Must be one of: Draft, Published, Archived"})
+        
+        # Validate other fields if necessary
+        if 'tags' in data:
+            tags = data.get('tags')
+            print(f"DEBUG - Tags: {tags}, Type: {type(tags)}")
+            
+            # Ensure tags is a list
+            if tags and not isinstance(tags, list):
+                print(f"DEBUG - Tags is not a list, attempting conversion")
+                try:
+                    import json
+                    if isinstance(tags, str):
+                        data['tags'] = json.loads(tags)
+                        print(f"DEBUG - Converted tags: {data['tags']}")
+                except Exception as e:
+                    print(f"DEBUG - Error converting tags: {str(e)}")
+                    raise serializers.ValidationError({"tags": "Tags must be a list"})
+        
+        print(f"DEBUG - Validation successful")
+        print("=" * 80)
         return data
+    
+    def is_valid(self, raise_exception=False):
+        """Debug the validation process"""
+        print("\n" + "=" * 80)
+        print(f"DEBUG - is_valid() called with raise_exception={raise_exception}")
+        
+        result = super().is_valid(raise_exception=False)
+        
+        if not result:
+            print(f"DEBUG - Validation errors: {self.errors}")
+        
+        print(f"DEBUG - is_valid result: {result}")
+        print("=" * 80)
+        
+        if raise_exception and not result:
+            raise serializers.ValidationError(self.errors)
+        
+        return result
 
     def create(self, validated_data):
         """Create a new news post"""
+        print("\n" + "=" * 80)
+        print(f"DEBUG - create() called")
+        print(f"DEBUG - Validated data: {validated_data}")
+        
         # Ensure the author is set to the current user's student profile
         request = self.context.get("request")
+        
+        if request:
+            print(f"DEBUG - Request user: {request.user}, authenticated: {request.user.is_authenticated}")
+            
+            if hasattr(request.user, 'student'):
+                print(f"DEBUG - Request user has student profile: {request.user.student}")
+            else:
+                print(f"DEBUG - Request user does not have student profile")
+        
         if not validated_data.get('author') and request and hasattr(request.user, 'student'):
             validated_data['author'] = request.user.student
-            
-        return super().create(validated_data)        
+            print(f"DEBUG - Setting author to current user's student profile: {request.user.student}")
+        
+        # Check for tags conversion
+        if 'tags' in validated_data:
+            print(f"DEBUG - Tags before final processing: {validated_data['tags']}, Type: {type(validated_data['tags'])}")
+        
+        try:
+            instance = super().create(validated_data)
+            print(f"DEBUG - Created news post successfully: ID={instance.id}, Title={instance.title}")
+            print("=" * 80)
+            return instance
+        except Exception as e:
+            print(f"DEBUG - Error creating news post: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            print("=" * 80)
+            raise
+
+    def get_published_at(self, obj):
+        """
+        Return a formatted timestamp of when the news was published.
+        Format: YYYY-MM-DD HH:MM:SS
+        """
+        if obj.published_at:
+            formatted_time = django_format(localtime(obj.published_at), "Y-m-d H:i:s")
+            print(f"DEBUG - Formatted published_at: {formatted_time}")
+            return formatted_time
+        return None

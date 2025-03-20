@@ -19,7 +19,7 @@ interface Member {
 }
 
 interface RouteParams {
-  societyId: string; // Changed from society_id to match the route param name
+  societyId: string;
 }
 
 interface NavigationItem {
@@ -32,7 +32,7 @@ const PresidentPage: React.FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const navigate = useNavigate();
-  const { societyId } = useParams<RouteParams>(); // Changed from society_id to match the route param name
+  const { societyId } = useParams<RouteParams>();
   const [society, setSociety] = useState<Society | null>(null);
   const [pendingMembers, setPendingMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -41,7 +41,10 @@ const PresidentPage: React.FC = () => {
   useEffect(() => {
     const fetchData = async (): Promise<void> => {
       try {
-        const id = societyId || user?.president_of || user?.vice_president_of;
+        // Always prioritize the user's president_of society ID
+        const id = user?.president_of || societyId;
+        console.log(`Using society ID: ${id} for API requests`);
+        
         if (!id) throw new Error("No society ID available");
 
         const societyResponse = await apiClient.get(`/api/manage-society-details/${id}/`);
@@ -86,8 +89,8 @@ const PresidentPage: React.FC = () => {
     );
   }
 
-  // Get the current society ID for navigation
-  const currentSocietyId = societyId || (society ? society.id : null) || user?.president_of || user?.vice_president_of;
+  // Prioritize the user's president_of society ID for navigation
+  const currentSocietyId = user?.president_of || societyId || (society ? society.id : null);
 
   return (
     <Box
