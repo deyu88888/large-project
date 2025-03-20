@@ -279,6 +279,30 @@ class StudentSocietiesView(APIView):
         # Check if the user is actually a member of the society
         if not user.student.societies_belongs_to.filter(id=society_id).exists():
             return Response({"error": "You are not a member of this society."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Check if the user is in a leadership position (president, vice president, or event manager)
+        student = user.student
+        
+        # Check for president role
+        if society.president == student:
+            return Response(
+                {"error": "As the president, you cannot leave the society. Please transfer presidency first."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Check for vice president role
+        if society.vice_president == student:
+            return Response(
+                {"error": "As the vice president, you cannot leave the society. Please resign from your position first."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Check for event manager role
+        if society.event_manager == student:
+            return Response(
+                {"error": "As the event manager, you cannot leave the society. Please resign from your position first."},
+                status=status.HTTP_403_FORBIDDEN
+            )
 
         # Remove the student from the society
         user.student.societies_belongs_to.remove(society)
