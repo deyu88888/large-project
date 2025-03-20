@@ -36,8 +36,7 @@ const ViewSocietyMembers = lazy(() => import("../pages/President/ViewSocietyMemb
 const PendingMembers = lazy(() => import("../pages/President/PendingMembers"));
 const GiveAwardPage = lazy(() => import("../pages/President/GiveAwardPage"));
 const AssignRolePage = lazy(() => import("../pages/President/AssignSocietyRole"));
-const ReportThread = lazy(() => import("../pages/Admin/ReportThread"));
-const RepliesPage = lazy(() => import("../pages/President/replies"));
+const ReportThread = lazy(() => import("../pages/ReportThread"));
 
 // Public event pages
 const AllEventsPage = lazy(() => import("../pages/allEventsPage"));

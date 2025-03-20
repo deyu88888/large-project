@@ -35,6 +35,9 @@ urlpatterns = [
     path("notifications/<int:pk>", StudentNotificationsView.as_view(), name="mark_notification_read"),
     path("inbox/", StudentInboxView.as_view(), name="student_inbox"),
 
+    path('inbox/<int:notification_id>', StudentInboxView.as_view(), name='student-inbox-delete'),
+    path('report-reply-notifications/<int:reply_id>', ReportReplyNotificationsView.as_view(), name='report-reply-notifications-detail'),
+
     # Society creation/management endpoints
     path("start-society", StartSocietyRequestView.as_view(), name="start_society"),
     path("manage-society-details/<int:society_id>/", ManageSocietyDetailsView.as_view(), name="manage_society_details"),
