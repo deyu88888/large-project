@@ -71,7 +71,11 @@ describe('Society List Page', () => {
     
     expect(screen.getByText(/Society List/i)).toBeInTheDocument();
     expect(screen.getByText(/Name/i)).toBeInTheDocument();
-    expect(screen.getByText(/Members/i)).toBeInTheDocument();
+    
+    // Use getAllByText and check that one of them exists instead of getByText
+    const membersElements = screen.getAllByText(/^Members$/i);
+    expect(membersElements.length).toBeGreaterThan(0);
+    
     expect(screen.getByText(/president/i)).toBeInTheDocument();
   });
 });
