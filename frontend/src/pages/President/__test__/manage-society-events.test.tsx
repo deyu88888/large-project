@@ -10,7 +10,7 @@ import {
 import { vi } from 'vitest';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import ManageSocietyEvents from '../../Admin/ManageSocietyEvents';
+import ManageSocietyEvents from '../ManageSocietyEvents';
 import { apiClient } from '../../../api';
 
 const mockNavigate = vi.fn();
