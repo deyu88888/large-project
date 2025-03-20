@@ -130,7 +130,7 @@ class Command(BaseCommand):
             print(f"Seeding student {created_count}/{n}", end='\r', flush=True)
 
             data = self.student_generator.generate()
-            
+
             email = f"{data['username']}@kcl.ac.uk"
 
             student = Student.objects.create(
@@ -141,21 +141,46 @@ class Command(BaseCommand):
                 major=data["major"],
                 password=make_password("studentpassword"),
             )
-            self.handle_user_status(student)
+            if self.handle_user_status(student):
+                student.is_active = True
+            else:
+                student.is_active = False
+            student.save()
 
         print(self.style.SUCCESS(f"Seeding student {created_count}/{n}"), flush=True)
         return created_count
 
     def handle_user_status(self, user):
         """Creates user requests if pending"""
-        update_request = choice((True, False))
-
-        if update_request:
+        create_request = choice((True, True, True, False, None))
+        if create_request:
             UserRequest.objects.create(
-                major="CompSci",
                 from_student=user,
-                intent="UpdateUse",
+                intent="CreateUse",
+                approved=True
             )
+            update_request = choice((True, False))
+
+            if update_request:
+                UserRequest.objects.create(
+                    major="CompSci",
+                    from_student=user,
+                    intent="UpdateUse",
+                )
+            return True
+        elif create_request is False:
+            UserRequest.objects.create(
+                from_student=user,
+                intent="CreateUse",
+                approved=False
+            )
+            return False
+        else:
+            UserRequest.objects.create(
+                from_student=user,
+                intent="CreateUse",
+            )
+            return False
 
     def create_admin(self, n):
         """Create n different admins"""
@@ -223,7 +248,7 @@ class Command(BaseCommand):
         for i in range(1, n+1):
             print(f"Seeding society {i}/{n}", end='\r', flush=True)
 
-            available_students = Student.objects.order_by("?")
+            available_students = Student.objects.order_by("?").filter(is_active=True)
             if not available_students.exists():
                 print(self.style.WARNING("No available students."))
                 break
@@ -290,9 +315,9 @@ class Command(BaseCommand):
         society.president.is_president = True
 
         # Ensure at least 5 members
-        all_students = list(Student.objects.exclude(id=society.president.id).order_by("?"))
+        all_students = list(Student.objects.exclude(id=society.president.id).order_by("?").filter(is_active=True))
         members_num = 5
-        while members_num < Student.objects.count()-1 and random() <= 0.912:
+        while members_num < Student.objects.filter(is_active=True).count()-1 and random() <= 0.912:
             members_num += 1
         selected_members = all_students[:members_num]
 
@@ -411,7 +436,7 @@ class Command(BaseCommand):
             data = self.event_generator.generate(society.name)
 
         # If the society has no president, pick any random student to avoid NULL
-        default_student = society.president if society.president else Student.objects.first()
+        default_student = society.president if society.president else Student.objects.filter(is_active=True).first()
         if not default_student:
             print(
                 "No student available to assign from_student. "
@@ -518,7 +543,7 @@ class Command(BaseCommand):
 
     def randomly_assign_awards(self, n):
         """Give out n random awards to random students"""
-        students = list(Student.objects.all())
+        students = list(Student.objects.filter(is_active=True))
         awards = list(Award.objects.all())
         for i in range(1, n+1):
             print(f"Seeding awards {i}/{n}", end='\r')
