@@ -1051,7 +1051,7 @@ class ManageAdminDetailsView(APIView):
 
 class DeleteView(APIView):
     """
-    View for admins to delete students, societies, and events
+    View for admins to delete students, societies, events, and other admins
     """
     permission_classes = [IsAuthenticated]
 
@@ -1059,6 +1059,7 @@ class DeleteView(APIView):
         "Student": Student,
         "Society": Society,
         "Event": Event,
+        "Admin": User
     }
 
     def delete(self, request, target_type, target_id):
@@ -1066,23 +1067,35 @@ class DeleteView(APIView):
         if not (user.role == "admin" or user.is_super_admin):
             return Response({"error": "Only admins can delete resources."}, status=status.HTTP_403_FORBIDDEN)
 
+        if target_type == "Admin" and not user.is_super_admin:
+            return Response({"error": "Only super admins can delete admin users."}, status=status.HTTP_403_FORBIDDEN)
+
         model = self.model_mapping.get(target_type)
         if not model:
             return Response({"error": "Invalid target type."}, status=status.HTTP_400_BAD_REQUEST)
 
-        target = model.objects.filter(id=target_id).first()
+        if target_type == "Admin":
+            target = model.objects.filter(id=target_id, role="admin").first()
+        else:
+            target = model.objects.filter(id=target_id).first()
+            
         if not target:
             return Response({"error": f"{target_type} not found."}, status=status.HTTP_404_NOT_FOUND)
 
+        if target_type == "Admin" and target.id == user.id:
+            return Response({"error": "You cannot delete your own account."}, status=status.HTTP_400_BAD_REQUEST)
+
         original_data = model_to_dict(target)
 
-        reason = request.data.get('reason', None)  # Extract the reason (it might be optional)
+        reason = request.data.get('reason', None)
         if not reason:
             return Response({"error": "Reason for deletion is required."}, status=status.HTTP_400_BAD_REQUEST)
 
-        
         serializable_data = {}
         for key, value in original_data.items():
+            if key == 'password':
+                continue
+            
             if value is None:
                 serializable_data[key] = None
             elif isinstance(value, (datetime, date)):
@@ -1116,11 +1129,16 @@ class DeleteView(APIView):
                 "details": "Cannot serialize data for activity log"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+        if target_type == "Admin":
+            target_name = f"{target.first_name} {target.last_name} ({target.email})"
+        else:
+            target_name = str(target)
+
         ActivityLog.objects.create(
             action_type="Delete",
             target_type=target_type,
             target_id=target_id,
-            target_name=str(target),
+            target_name=target_name,
             performed_by=user,
             timestamp=timezone.now(),
             reason=reason,
