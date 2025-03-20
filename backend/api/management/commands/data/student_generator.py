@@ -24,7 +24,7 @@ class RandomStudentDataGenerator():
             "Religious Studies", "Theology", "Ethnic Studies",
             "Physics Education", "Chemistry Education", "Biology Education",
         ]
-        self.generated_usernames = []
+        self.generated_usernames = set()
 
         self.fake = Faker()
 
@@ -49,7 +49,10 @@ class RandomStudentDataGenerator():
 
     def gen_unique_username(self, fn, ln):
         "Ensures the generated username hasn't been generated befores"
+        if f"{fn}-{ln}" not in self.generated_usernames:
+            self.generated_usernames.add(f"{fn}-{ln}")
+            return f"{fn}-{ln}"
         for i in range(1, 101):
-            if hash(f"{fn}-{ln}{i}") not in self.generated_usernames:
-                self.generated_usernames.append(hash(f"{fn}-{ln}{i}"))
+            if f"{fn}-{ln}{i}" not in self.generated_usernames:
+                self.generated_usernames.add(f"{fn}-{ln}{i}")
                 return f"{fn}-{ln}{i}"
