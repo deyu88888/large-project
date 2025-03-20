@@ -532,7 +532,7 @@ class ManageStudentDetailsAdminView(APIView):
 
 class StudentInboxView(StudentNotificationsView):
     """
-    View to retrieve and update important notifications for a student.
+    View to retrieve, update, and delete important notifications for a student.
     """
     def get(self, request):
         user = request.user
@@ -541,6 +541,14 @@ class StudentInboxView(StudentNotificationsView):
         serializer = NotificationSerializer(notifications, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    def delete(self, request, notification_id):
+        try:
+            user = request.user
+            notification = Notification.objects.get(id=notification_id, for_user=user)
+            notification.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Notification.DoesNotExist:
+            return Response({"error": "Notification not found or not authorized"}, status=status.HTTP_404_NOT_FOUND)
 
 class StartSocietyRequestView(APIView):
     """View to handle society creation requests."""
@@ -2655,6 +2663,8 @@ class ReportReplyNotificationsView(APIView):
             report__in=student_reports
         ).filter(
             Q(replied_by__role="admin") | Q(replied_by__is_super_admin=True)
+        ).exclude(
+            hidden_for_students=request.user
         ).order_by('-created_at')
 
         notifications = []
@@ -2679,16 +2689,30 @@ class ReportReplyNotificationsView(APIView):
         Mark a specific reply as read
         """
         try:
-            student = request.user.student
-            
+            student = request.user.student     
             reply = ReportReply.objects.get(
                 id=reply_id,
                 report__from_student=student
             )
-            
             reply.read_by_students.add(request.user)
             
             return Response({"status": "success"}, status=status.HTTP_200_OK)
+        except ReportReply.DoesNotExist:
+            return Response({"error": "Reply not found or not authorized"}, status=status.HTTP_404_NOT_FOUND)
+
+    def delete(self, request, reply_id):
+        """
+        Delete a notification for a specific reply (remove from student's view)
+        """
+        try:
+            student = request.user.student
+            reply = ReportReply.objects.get(
+                id=reply_id,
+                report__from_student=student
+            )
+            reply.hidden_for_students.add(request.user)
+            
+            return Response(status=status.HTTP_204_NO_CONTENT)
         except ReportReply.DoesNotExist:
             return Response({"error": "Reply not found or not authorized"}, status=status.HTTP_404_NOT_FOUND)
 
