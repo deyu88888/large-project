@@ -532,7 +532,7 @@ class ManageStudentDetailsAdminView(APIView):
 
 class StudentInboxView(StudentNotificationsView):
     """
-    View to retrieve and update important notifications for a student.
+    View to retrieve, update, and delete important notifications for a student.
     """
     def get(self, request):
         user = request.user
@@ -541,6 +541,14 @@ class StudentInboxView(StudentNotificationsView):
         serializer = NotificationSerializer(notifications, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    def delete(self, request, notification_id):
+        try:
+            user = request.user
+            notification = Notification.objects.get(id=notification_id, for_user=user)
+            notification.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Notification.DoesNotExist:
+            return Response({"error": "Notification not found or not authorized"}, status=status.HTTP_404_NOT_FOUND)
 
 class StartSocietyRequestView(APIView):
     """View to handle society creation requests."""
@@ -2494,31 +2502,27 @@ class ReportReplyView(APIView):
     def post(self, request):
         serializer = ReportReplySerializer(data=request.data)
         if serializer.is_valid():
-            # Get the report
             report_id = serializer.validated_data.get('report').id
             report = AdminReportRequest.objects.get(id=report_id)
             
-            # Get parent reply if provided
             parent_reply_id = serializer.validated_data.get('parent_reply')
-            print("Parent reply ID:", parent_reply_id)  # Debug line
-            # Check permissions
+
             user = request.user
-            if parent_reply_id is None and not (user.role == "admin" or user.is_super_admin):
+            is_admin = user.role == "admin" or user.is_super_admin
+            is_president = user.role == "president"
+            
+            if parent_reply_id is None and not is_admin:
                 return Response(
                     {"error": "Only admins or super admins can reply to reports directly."}, 
                     status=status.HTTP_403_FORBIDDEN
                 )
 
-            
-            # Rule 2: If there's a parent reply, check if it's an admin reply
             if parent_reply_id:
                 parent_reply = ReportReply.objects.get(id=parent_reply_id.id)
-                # Presidents can only reply to admin replies
                 if is_president and not parent_reply.is_admin_reply:
                     return Response({"error": "Presidents can only reply to admin replies."}, 
                                     status=status.HTTP_403_FORBIDDEN)
             
-            # Save the reply with appropriate flags
             reply = serializer.save(
                 replied_by=user,
                 is_admin_reply=is_admin
@@ -2659,6 +2663,8 @@ class ReportReplyNotificationsView(APIView):
             report__in=student_reports
         ).filter(
             Q(replied_by__role="admin") | Q(replied_by__is_super_admin=True)
+        ).exclude(
+            hidden_for_students=request.user
         ).order_by('-created_at')
 
         notifications = []
@@ -2683,18 +2689,30 @@ class ReportReplyNotificationsView(APIView):
         Mark a specific reply as read
         """
         try:
-            student = request.user.student
-            
-            # Verify this reply belongs to one of the student's reports
+            student = request.user.student     
             reply = ReportReply.objects.get(
                 id=reply_id,
                 report__from_student=student
             )
-            
-            # Mark as read by adding user to read_by_students
             reply.read_by_students.add(request.user)
             
             return Response({"status": "success"}, status=status.HTTP_200_OK)
+        except ReportReply.DoesNotExist:
+            return Response({"error": "Reply not found or not authorized"}, status=status.HTTP_404_NOT_FOUND)
+
+    def delete(self, request, reply_id):
+        """
+        Delete a notification for a specific reply (remove from student's view)
+        """
+        try:
+            student = request.user.student
+            reply = ReportReply.objects.get(
+                id=reply_id,
+                report__from_student=student
+            )
+            reply.hidden_for_students.add(request.user)
+            
+            return Response(status=status.HTTP_204_NO_CONTENT)
         except ReportReply.DoesNotExist:
             return Response({"error": "Reply not found or not authorized"}, status=status.HTTP_404_NOT_FOUND)
 

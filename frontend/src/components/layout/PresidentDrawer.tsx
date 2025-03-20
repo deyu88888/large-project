@@ -67,7 +67,7 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
     { title: "View Events", icon: <EventAvailableIcon />, to: "/student/view-events" },
     { title: "Notifications", icon: <NotificationsNoneOutlinedIcon />, to: "/student/view-notifications" },
     { title: "Inbox", icon: <NotificationImportantOutlinedIcon />, to: "/student/view-inbox" },
-    { title: "Mail", icon: <ReportProblemOutlinedIcon />, to: "/student/replies" },
+    { title: "Report to Admin", icon: <ReportProblemOutlinedIcon />, to: "/student/report-to-admin" },
   ];
 
   const manageMySocietiesItems = [
@@ -75,7 +75,7 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
     { title: "Society Events", icon: <EventNoteOutlinedIcon />, to: "/president-page/1/manage-society-events" },
     { title: "Pending Members", icon: <PeopleOutlineIcon />, to: "/president-page/1/pending-members" },
     { title: "All Members", icon: <GroupOutlinedIcon />, to: "/president-page/1/view-society-members" },
-    { title: "Report to Admin", icon: <ReportProblemOutlinedIcon />, to: "/president-page/1/report-to-admin" },
+    // { title: "Report to Admin", icon: <ReportProblemOutlinedIcon />, to: "/president-page/1/report-to-admin" },
   ];
 
   const logout = () => {

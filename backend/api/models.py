@@ -640,6 +640,7 @@ class ReportReply(models.Model):
     replied_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='report_replies')
     is_admin_reply = models.BooleanField(default=False)  # To distinguish between admin and president replies
     read_by_students = models.ManyToManyField(User, related_name='read_report_replies', blank=True)
+    hidden_for_students = models.ManyToManyField(User, related_name='hidden_replies', blank=True)
     
     def __str__(self):
         reply_type = "Admin" if self.is_admin_reply else "President"

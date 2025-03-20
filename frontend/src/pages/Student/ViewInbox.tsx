@@ -3,6 +3,7 @@ import { apiClient } from "../../api";
 import { useTheme } from "@mui/material/styles";
 import { tokens } from "../../theme/theme";
 import { useNavigate } from "react-router-dom";
+import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined';
 
 const ViewInbox: React.FC = () => {
   const theme = useTheme();
@@ -41,7 +42,6 @@ const ViewInbox: React.FC = () => {
   const markNotificationAsRead = async (id: number, type: string = "notification") => {
     try {
       if (type === "report_reply") {
-        // Using the same view but with reply_id in URL
         const response = await apiClient.patch(`/api/report-reply-notifications/${id}`);
         if (response.status === 200) {
           setNotifications((prev) =>
@@ -53,7 +53,6 @@ const ViewInbox: React.FC = () => {
           );
         }
       } else {
-        // Original endpoint for regular notifications
         const response = await apiClient.patch(`/api/notifications/${id}`, { is_read: true });
         if (response.status === 200) {
           setNotifications((prev) =>
@@ -67,6 +66,30 @@ const ViewInbox: React.FC = () => {
       }
     } catch (error) {
       console.error("Error marking notification as read:", error);
+    }
+  };
+
+  const deleteNotification = async (id: number, type: string = "notification") => {
+    try {
+      if (type === "report_reply") {
+        const response = await apiClient.delete(`/api/report-reply-notifications/${id}`);
+        if (response.status === 204 || response.status === 200) {
+          setNotifications((prev) => 
+            prev.filter((notification) => 
+              !(notification.id === id && notification.type === "report_reply")
+            )
+          );
+        }
+      } else {
+        const response = await apiClient.delete(`/api/inbox/${id}`);
+        if (response.status === 204 || response.status === 200) {
+          setNotifications((prev) => 
+            prev.filter((notification) => notification.id !== id)
+          );
+        }
+      }
+    } catch (error) {
+      console.error("Error deleting notification:", error);
     }
   };
 
@@ -133,7 +156,7 @@ const ViewInbox: React.FC = () => {
                     <b>{notification.header}</b>
                     <p>{notification.body}</p>
                   </div>
-                  <div style={{ display: "flex", gap: "1rem" }}>
+                  <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
                     {notification.is_read ? (
                       <span style={{ color: colours.greenAccent[500], fontSize: "0.875rem", fontWeight: 500 }}>
                         Read
@@ -154,10 +177,23 @@ const ViewInbox: React.FC = () => {
                         Mark as Read
                       </button>
                     )}
+                    <button
+                      onClick={() => deleteNotification(notification.id, notification.type)}
+                      style={{
+                        color: isLight ? colours.redAccent[400] : colours.redAccent[300],
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                      }}
+                      title="Delete notification"
+                    >
+                      <DeleteOutlinedIcon />
+                    </button>
                   </div>
                 </div>
 
-                {/* View Thread Button (Only for report replies) */}
                 {notification.type === "report_reply" && (
                   <button
                     onClick={() => navigate(`/student/report-thread/${notification.report_id}`)}
@@ -172,7 +208,7 @@ const ViewInbox: React.FC = () => {
                       textDecoration: "underline",
                     }}
                   >
-                    View Thread
+                    View Reply
                   </button>
                 )}
               </div>

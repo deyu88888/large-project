@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { apiClient } from "../../api";
-import { tokens } from "../../theme/theme";
+import { apiClient } from "../api";
+import { tokens } from "../theme/theme";
 import { 
     Box, Typography, Button, TextField, Paper, Avatar, 
     Divider, CircularProgress, Card, CardHeader, CardContent,
