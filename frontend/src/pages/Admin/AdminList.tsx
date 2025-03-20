@@ -18,7 +18,7 @@ const AdminList: React.FC = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedAdmin, setSelectedAdmin] = useState<any | null>(null);
   const [reason, setReason] = useState('');
-  const { user } = useAuthStore();
+  const { user, setUser } = useAuthStore();
   const isSuperAdmin = user?.is_super_admin === true;
   const actionsColumnWidth = isSuperAdmin ? 170 : 85;
 
@@ -39,7 +39,7 @@ const AdminList: React.FC = () => {
   const getCurrentUser = async () => {
     try {
       const res = await apiClient.get(apiPaths.USER.CURRENT);
-      setCurrentUser(res.data);
+      setUser(res.data);
     } catch (error) {
       console.error("Error fetching current user:", error);
     }
@@ -86,7 +86,7 @@ const AdminList: React.FC = () => {
       filterable: false,
       renderCell: (params: any) => {
         const adminId = params.row.id;
-        const isSuperAdmin = currentUser?.is_super_admin === true;
+        const isSuperAdmin = user?.is_super_admin === true;
         
         return (
           <Box>

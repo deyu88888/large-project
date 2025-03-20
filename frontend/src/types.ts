@@ -92,3 +92,10 @@ export type ReportReply = {
   created_at: string;
   is_new: boolean;
 }
+
+export type Admin = {
+  firstName: string;
+  lastName: string;
+  username: string;
+  email: string;
+}
