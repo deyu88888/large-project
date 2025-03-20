@@ -6,9 +6,10 @@ import {
   Box, Typography, Paper, Button, TextField, 
   Tabs, Tab, Select, MenuItem, FormControl, 
   InputLabel, Chip, IconButton, CircularProgress, 
-  Grid, Divider, Menu, Switch, FormControlLabel
+  Grid, Divider, Menu, Switch, FormControlLabel,
+  Avatar, Tooltip, Card, CardMedia, CardContent, CardActions
 } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
+import { alpha, useTheme } from '@mui/material/styles';
 import { tokens } from '../../theme/theme';
 import {
   Add as AddIcon,
@@ -21,7 +22,11 @@ import {
   Image as ImageIcon,
   AttachFile as AttachFileIcon,
   MoreVert as MoreVertIcon,
-  ArrowBack as ArrowBackIcon
+  ArrowBack as ArrowBackIcon,
+  CalendarToday as CalendarIcon,
+  Person as PersonIcon,
+  Comment as CommentIcon,
+  CloudUpload as CloudUploadIcon
 } from '@mui/icons-material';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
@@ -73,7 +78,6 @@ interface SocietyNewsManagerProps {
 }
 
 const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
-  // Changed parameter name to match the route parameter
   const { societyId } = useParams<{ societyId: string }>();
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
@@ -94,6 +98,7 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState<string>('');
   const [image, setImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [attachment, setAttachment] = useState<File | null>(null);
   
   // Loading and action states
@@ -120,15 +125,14 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
   ];
 
   useEffect(() => {
-    if (societyId) { // Changed parameter name
+    if (societyId) {
       fetchNews();
     }
-  }, [societyId]); // Changed parameter name
+  }, [societyId]);
 
   const fetchNews = async () => {
     setLoading(true);
     try {
-      // Changed parameter name
       const response = await apiClient.get(`/api/society/${societyId}/news/`);
       setNews(response.data);
     } catch (error) {
@@ -162,6 +166,7 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
     setTags([]);
     setTagInput('');
     setImage(null);
+    setImagePreview(null);
     setAttachment(null);
     
     // Switch to create mode
@@ -178,6 +183,7 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
     setTags(news.tags || []);
     setTagInput('');
     setImage(null);
+    setImagePreview(news.image_url);
     setAttachment(null);
     
     setEditorMode('edit');
@@ -218,7 +224,15 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
-      setImage(event.target.files[0]);
+      const file = event.target.files[0];
+      setImage(file);
+      
+      // Create a preview for the image
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -252,7 +266,6 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
       let response;
       
       if (editorMode === 'create') {
-        // Changed parameter name
         response = await apiClient.post(`/api/society/${societyId}/news/`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
@@ -282,14 +295,39 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
 
   const handleBack = () => {
     if (editorMode !== 'view') {
-      if (window.confirm('Discard changes?')) {
+      if (title || content || isPinned || isFeatured || tags.length > 0 || image || attachment) {
+        if (window.confirm('Discard changes?')) {
+          setEditorMode('view');
+          setSelectedNews(null);
+        }
+      } else {
         setEditorMode('view');
         setSelectedNews(null);
       }
     } else if (selectedNews) {
       setSelectedNews(null);
-    } else if (onBack) {
-      onBack();
+    } else {
+      // Instead of just relying on onBack, use navigate if available
+      if (onBack) {
+        onBack();
+      } else {
+        // Navigate back using the router
+        navigate(-1);
+      }
+    }
+  };
+
+  // Get status color
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'Published':
+        return colors.greenAccent[500];
+      case 'Draft':
+        return colors.grey[500];
+      case 'Archived':
+        return colors.redAccent[500];
+      default:
+        return colors.grey[500];
     }
   };
 
@@ -299,90 +337,190 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
     const formattedDate = new Date(isPublished ? post.published_at || post.created_at : post.created_at).toLocaleDateString();
     
     return (
-      <Paper 
+      <Card 
         key={post.id}
         elevation={3}
         sx={{
-          p: 2,
-          mb: 2,
+          mb: 3,
           backgroundColor: colors.primary[400],
-          position: 'relative',
+          transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+          '&:hover': {
+            transform: 'translateY(-5px)',
+            boxShadow: '0 12px 24px -10px rgba(0,0,0,0.3)',
+          },
           borderLeft: post.is_pinned ? `4px solid ${colors.greenAccent[500]}` : 'none',
+          overflow: 'visible'
         }}
       >
-        <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Box>
-            <Typography variant="h5" fontWeight="bold">
-              {post.is_pinned && <PushPinIcon sx={{ mr: 1, verticalAlign: 'middle', color: colors.greenAccent[500] }} />}
-              {post.title || '(Untitled)'}
-            </Typography>
-            
-            <Box display="flex" alignItems="center" mt={1} mb={1}>
-              <Chip 
-                label={post.status} 
-                size="small" 
-                sx={{ 
-                  backgroundColor: post.status === 'Published' 
-                    ? colors.greenAccent[700] 
-                    : colors.grey[700],
-                  mr: 1 
-                }} 
-              />
-              
-              {post.is_featured && (
-                <Chip 
-                  icon={<StarIcon />} 
-                  label="Featured" 
-                  size="small" 
-                  sx={{ backgroundColor: colors.blueAccent[700], mr: 1 }} 
-                />
-              )}
-              
-              {post.tags && post.tags.length > 0 && (
-                <Box display="flex" alignItems="center" sx={{ flexWrap: 'wrap' }}>
-                  {post.tags.slice(0, 3).map(tag => (
-                    <Chip 
-                      key={tag} 
-                      label={tag} 
-                      size="small" 
-                      sx={{ mr: 1, mb: 0.5 }} 
-                    />
-                  ))}
-                  {post.tags.length > 3 && (
-                    <Typography variant="caption" sx={{ ml: 1 }}>
-                      +{post.tags.length - 3} more
-                    </Typography>
-                  )}
-                </Box>
-              )}
-            </Box>
-            
-            <Typography variant="body2" color={colors.grey[300]}>
-              {post.status === 'Published' ? 'Published' : 'Created'} on {formattedDate} by {post.author_data?.full_name || 'Unknown'}
-            </Typography>
-            
-            <Box mt={1} display="flex" alignItems="center">
-              <VisibilityIcon sx={{ fontSize: 16, mr: 0.5, color: colors.grey[400] }} />
-              <Typography variant="caption" color={colors.grey[400]}>
-                {post.view_count} views
+        <CardContent sx={{ p: 3 }}>
+          <Box display="flex" justifyContent="space-between" alignItems="flex-start">
+            <Box>
+              <Typography variant="h5" fontWeight="bold" sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
+                {post.is_pinned && (
+                  <Tooltip title="Pinned">
+                    <PushPinIcon sx={{ mr: 1, color: colors.greenAccent[500] }} />
+                  </Tooltip>
+                )}
+                {post.title || '(Untitled)'}
               </Typography>
+              
+              <Box display="flex" alignItems="center" gap={1} flexWrap="wrap" mb={2}>
+                <Chip 
+                  label={post.status} 
+                  size="small" 
+                  sx={{ 
+                    backgroundColor: getStatusColor(post.status),
+                    color: '#fff',
+                    fontWeight: 'bold'
+                  }} 
+                />
+                
+                {post.is_featured && (
+                  <Chip 
+                    icon={<StarIcon sx={{ color: '#fff !important' }} />} 
+                    label="Featured" 
+                    size="small" 
+                    sx={{ 
+                      backgroundColor: colors.blueAccent[500],
+                      color: '#fff'
+                    }} 
+                  />
+                )}
+              </Box>
             </Box>
-          </Box>
-          
-          <Box>
-            <IconButton onClick={(e) => handleMenuOpen(e, post.id)}>
+            
+            <IconButton 
+              onClick={(e) => handleMenuOpen(e, post.id)}
+              sx={{
+                backgroundColor: alpha(colors.grey[500], 0.1),
+                '&:hover': {
+                  backgroundColor: alpha(colors.grey[500], 0.2),
+                }
+              }}
+            >
               <MoreVertIcon />
             </IconButton>
           </Box>
-        </Box>
-      </Paper>
+          
+          <Box 
+            sx={{ 
+              mb: 2, 
+              maxHeight: '80px', 
+              overflow: 'hidden', 
+              textOverflow: 'ellipsis',
+              color: alpha(colors.grey[100], 0.8)
+            }}
+          >
+            <div 
+              dangerouslySetInnerHTML={{ 
+                __html: post.content.length > 150 
+                  ? post.content.substring(0, 150) + '...' 
+                  : post.content 
+              }} 
+            />
+          </Box>
+          
+          {post.tags && post.tags.length > 0 && (
+            <Box display="flex" alignItems="center" sx={{ flexWrap: 'wrap', gap: 0.5, mb: 2 }}>
+              {post.tags.slice(0, 3).map(tag => (
+                <Chip 
+                  key={tag} 
+                  label={tag} 
+                  size="small" 
+                  sx={{ 
+                    backgroundColor: alpha(colors.grey[500], 0.2),
+                    color: colors.grey[100]
+                  }} 
+                />
+              ))}
+              {post.tags.length > 3 && (
+                <Typography variant="caption" sx={{ ml: 1, color: colors.grey[300] }}>
+                  +{post.tags.length - 3} more
+                </Typography>
+              )}
+            </Box>
+          )}
+          
+          <Divider sx={{ mb: 2 }} />
+          
+          <Box display="flex" justifyContent="space-between" alignItems="center">
+            <Box display="flex" alignItems="center" gap={2}>
+              <Box display="flex" alignItems="center">
+                <CalendarIcon sx={{ fontSize: 16, mr: 0.5, color: colors.grey[300] }} />
+                <Typography variant="caption" color={colors.grey[300]}>
+                  {formattedDate}
+                </Typography>
+              </Box>
+              
+              <Box display="flex" alignItems="center">
+                <PersonIcon sx={{ fontSize: 16, mr: 0.5, color: colors.grey[300] }} />
+                <Typography variant="caption" color={colors.grey[300]}>
+                  {post.author_data?.full_name || 'Unknown'}
+                </Typography>
+              </Box>
+            </Box>
+            
+            <Box display="flex" alignItems="center" gap={2}>
+              <Box display="flex" alignItems="center">
+                <VisibilityIcon sx={{ fontSize: 16, mr: 0.5, color: colors.grey[300] }} />
+                <Typography variant="caption" color={colors.grey[300]}>
+                  {post.view_count}
+                </Typography>
+              </Box>
+              
+              {post.comment_count > 0 && (
+                <Box display="flex" alignItems="center">
+                  <CommentIcon sx={{ fontSize: 16, mr: 0.5, color: colors.grey[300] }} />
+                  <Typography variant="caption" color={colors.grey[300]}>
+                    {post.comment_count}
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+          </Box>
+        </CardContent>
+        
+        <CardActions sx={{ p: 0 }}>
+          <Button 
+            fullWidth 
+            onClick={() => handleViewNews(post.id)}
+            sx={{ 
+              py: 1,
+              color: colors.grey[100],
+              '&:hover': {
+                backgroundColor: alpha(colors.blueAccent[700], 0.2),
+              }
+            }}
+            startIcon={<VisibilityIcon />}
+          >
+            View Details
+          </Button>
+        </CardActions>
+      </Card>
     );
   };
 
   return (
-    <Box sx={{ width: '100%', p: 2 }}>
-      <Box display="flex" alignItems="center" mb={3}>
-        <IconButton onClick={handleBack} sx={{ mr: 1 }}>
+    <Box sx={{ width: '100%', p: { xs: 2, md: 3 } }}>
+      <Box 
+        display="flex" 
+        alignItems="center" 
+        mb={3}
+        sx={{
+          pb: 2,
+          borderBottom: `1px solid ${alpha(colors.grey[500], 0.3)}`
+        }}
+      >
+        <IconButton 
+          onClick={handleBack} 
+          sx={{ 
+            mr: 1.5,
+            backgroundColor: alpha(colors.grey[500], 0.1),
+            '&:hover': {
+              backgroundColor: alpha(colors.grey[500], 0.2),
+            }
+          }}
+        >
           <ArrowBackIcon />
         </IconButton>
         <Typography variant="h4" fontWeight="bold">
@@ -398,21 +536,68 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
       
       {editorMode === 'view' && !selectedNews && (
         <>
-          <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-            <Tabs value={tab} onChange={handleTabChange}>
-              <Tab label="All News" />
-              <Tab label="Published" />
-              <Tab label="Drafts" />
+          <Box 
+            display="flex" 
+            flexDirection={{ xs: 'column', sm: 'row' }} 
+            justifyContent="space-between" 
+            alignItems={{ xs: 'flex-start', sm: 'center' }} 
+            mb={3} 
+            gap={2}
+          >
+            <Tabs 
+              value={tab} 
+              onChange={handleTabChange}
+              sx={{
+                '.MuiTabs-indicator': {
+                  backgroundColor: colors.blueAccent[500],
+                },
+                '.MuiTab-root': {
+                  color: colors.grey[300],
+                  '&.Mui-selected': {
+                    color: colors.blueAccent[500],
+                    fontWeight: 'bold',
+                  },
+                  '&:hover': {
+                    color: colors.blueAccent[400],
+                  }
+                }
+              }}
+            >
+              <Tab 
+                label={
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <span>All News</span>
+                  </Box>
+                } 
+              />
+              <Tab 
+                label={
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <span>Published</span>
+                  </Box>
+                } 
+              />
+              <Tab 
+                label={
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <span>Drafts</span>
+                  </Box>
+                } 
+              />
             </Tabs>
+            
             
             <Button
               variant="contained"
-              color="primary"
               startIcon={<AddIcon />}
               onClick={handleCreateNews}
               sx={{
                 backgroundColor: colors.greenAccent[600],
-                '&:hover': { backgroundColor: colors.greenAccent[700] }
+                '&:hover': { backgroundColor: colors.greenAccent[700] },
+                fontWeight: 'bold',
+                px: 3,
+                py: 1,
+                borderRadius: '8px'
               }}
             >
               Create News
@@ -424,11 +609,45 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
               <CircularProgress />
             </Box>
           ) : news.length === 0 ? (
-            <Typography align="center" sx={{ py: 4 }}>
-              No news posts found. Create your first news post!
-            </Typography>
+            <Paper 
+              elevation={3} 
+              sx={{ 
+                p: 6, 
+                textAlign: 'center',
+                backgroundColor: colors.primary[400],
+                borderRadius: '10px',
+              }}
+            >
+              <ImageIcon sx={{ fontSize: 60, color: colors.grey[500], mb: 2 }} />
+              <Typography variant="h5" gutterBottom>
+                No news posts found
+              </Typography>
+              <Typography color={colors.grey[300]} mb={3}>
+                Create your first news post to get started
+              </Typography>
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={handleCreateNews}
+                sx={{
+                  backgroundColor: colors.greenAccent[600],
+                  '&:hover': { backgroundColor: colors.greenAccent[700] },
+                  fontWeight: 'bold',
+                  px: 3,
+                  py: 1,
+                }}
+              >
+                Create News
+              </Button>
+            </Paper>
           ) : (
-            <Box>
+            <Box 
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' },
+                gap: 3
+              }}
+            >
               {news
                 .filter(post => {
                   if (tab === 0) return true;
@@ -444,20 +663,30 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
             anchorEl={anchorEl}
             open={Boolean(anchorEl)}
             onClose={handleMenuClose}
+            sx={{
+              '& .MuiPaper-root': {
+                backgroundColor: colors.primary[400],
+                borderRadius: '8px',
+                boxShadow: '0 8px 16px rgba(0,0,0,0.2)'
+              }
+            }}
           >
             <MenuItem onClick={() => selectedId && handleViewNews(selectedId)}>
-              <VisibilityIcon fontSize="small" sx={{ mr: 1 }} />
+              <VisibilityIcon fontSize="small" sx={{ mr: 1.5 }} />
               View
             </MenuItem>
             <MenuItem onClick={() => {
               const post = news.find(n => n.id === selectedId);
               if (post) handleEditNews(post);
             }}>
-              <EditIcon fontSize="small" sx={{ mr: 1 }} />
+              <EditIcon fontSize="small" sx={{ mr: 1.5 }} />
               Edit
             </MenuItem>
-            <MenuItem onClick={() => selectedId && handleDeleteNews(selectedId)}>
-              <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
+            <MenuItem 
+              onClick={() => selectedId && handleDeleteNews(selectedId)}
+              sx={{ color: colors.redAccent[500] }}
+            >
+              <DeleteIcon fontSize="small" sx={{ mr: 1.5 }} />
               Delete
             </MenuItem>
           </Menu>
@@ -465,79 +694,161 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
       )}
       
       {editorMode === 'view' && selectedNews && (
-        <Paper sx={{ p: 3, backgroundColor: colors.primary[400] }}>
-          <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-            <Typography variant="h4">{selectedNews.title || '(Untitled)'}</Typography>
+        <Paper 
+          sx={{ 
+            p: 4, 
+            backgroundColor: colors.primary[400],
+            borderRadius: '10px',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+          }}
+        >
+          <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+            <Typography variant="h4" fontWeight="bold">{selectedNews.title || '(Untitled)'}</Typography>
             <Button
-              variant="outlined"
+              variant="contained"
               startIcon={<EditIcon />}
               onClick={() => handleEditNews(selectedNews)}
+              sx={{
+                backgroundColor: colors.blueAccent[600],
+                '&:hover': { backgroundColor: colors.blueAccent[700] },
+                fontWeight: 'bold',
+                borderRadius: '8px'
+              }}
             >
               Edit
             </Button>
           </Box>
           
-          <Box display="flex" alignItems="center" mb={2}>
+          <Box display="flex" alignItems="center" flexWrap="wrap" gap={1} mb={3}>
             <Chip 
               label={selectedNews.status} 
               sx={{ 
-                backgroundColor: selectedNews.status === 'Published' 
-                  ? colors.greenAccent[700] 
-                  : colors.grey[700],
-                mr: 1 
+                backgroundColor: getStatusColor(selectedNews.status),
+                color: '#fff',
+                fontWeight: 'bold'
               }} 
             />
             
             {selectedNews.is_pinned && (
               <Chip 
-                icon={<PushPinIcon />} 
+                icon={<PushPinIcon sx={{ color: '#fff !important' }} />} 
                 label="Pinned" 
-                sx={{ backgroundColor: colors.greenAccent[700], mr: 1 }} 
+                sx={{ 
+                  backgroundColor: colors.greenAccent[600],
+                  color: '#fff',
+                  fontWeight: 'bold'
+                }} 
               />
             )}
             
             {selectedNews.is_featured && (
               <Chip 
-                icon={<StarIcon />} 
+                icon={<StarIcon sx={{ color: '#fff !important' }} />} 
                 label="Featured" 
-                sx={{ backgroundColor: colors.blueAccent[700], mr: 1 }} 
+                sx={{ 
+                  backgroundColor: colors.blueAccent[600],
+                  color: '#fff',
+                  fontWeight: 'bold'
+                }} 
               />
             )}
           </Box>
           
-          <Typography variant="body2" color={colors.grey[300]} mb={2}>
-            {selectedNews.status === 'Published' 
-              ? `Published on ${new Date(selectedNews.published_at || selectedNews.created_at).toLocaleString()}` 
-              : `Created on ${new Date(selectedNews.created_at).toLocaleString()}`} 
-            by {selectedNews.author_data?.full_name || 'Unknown'}
-          </Typography>
+          <Box 
+            display="flex" 
+            alignItems="center" 
+            gap={2} 
+            mb={3}
+            sx={{
+              backgroundColor: alpha(colors.grey[500], 0.1),
+              borderRadius: '8px',
+              p: 2
+            }}
+          >
+            <Avatar sx={{ bgcolor: colors.blueAccent[500] }}>
+              {selectedNews.author_data?.full_name?.[0]?.toUpperCase() || 'U'}
+            </Avatar>
+            <Box>
+              <Typography variant="subtitle1">
+                {selectedNews.author_data?.full_name || 'Unknown'}
+              </Typography>
+              <Typography variant="body2" color={colors.grey[300]}>
+                {selectedNews.status === 'Published' 
+                  ? `Published on ${new Date(selectedNews.published_at || selectedNews.created_at).toLocaleString()}` 
+                  : `Created on ${new Date(selectedNews.created_at).toLocaleString()}`}
+              </Typography>
+            </Box>
+          </Box>
           
           {selectedNews.image_url && (
-            <Box mb={3}>
+            <Box mb={4} sx={{ borderRadius: '10px', overflow: 'hidden' }}>
               <img 
                 src={selectedNews.image_url} 
                 alt={selectedNews.title} 
                 style={{ 
-                  maxWidth: '100%', 
-                  maxHeight: '400px', 
-                  objectFit: 'contain',
-                  borderRadius: '4px'
+                  width: '100%', 
+                  maxHeight: '500px', 
+                  objectFit: 'cover',
+                  borderRadius: '10px'
                 }} 
               />
             </Box>
           )}
           
-          <Box mb={3} className="quill-content-viewer">
+          <Box 
+            mb={4} 
+            className="quill-content-viewer"
+            sx={{
+              '& p': { 
+                lineHeight: 1.7,
+                color: colors.grey[100]
+              },
+              '& h1, & h2, & h3': {
+                color: colors.grey[100],
+                my: 2
+              },
+              '& ul, & ol': {
+                pl: 3
+              },
+              '& li': {
+                mb: 1
+              },
+              '& blockquote': {
+                borderLeft: `4px solid ${colors.blueAccent[500]}`,
+                pl: 2,
+                py: 1,
+                ml: 0,
+                my: 2,
+                backgroundColor: alpha(colors.grey[500], 0.1),
+                borderRadius: '4px'
+              }
+            }}
+          >
             <div dangerouslySetInnerHTML={{ __html: selectedNews.content }} />
           </Box>
           
           {selectedNews.attachment_name && (
-            <Box mb={2}>
-              <Typography variant="subtitle2">Attachment:</Typography>
+            <Box 
+              mb={3}
+              sx={{ 
+                backgroundColor: alpha(colors.grey[500], 0.1),
+                p: 2, 
+                borderRadius: '8px'
+              }}
+            >
+              <Typography variant="subtitle2" mb={1} fontWeight="bold">Attachment</Typography>
               <Button
                 variant="outlined"
                 startIcon={<AttachFileIcon />}
-                size="small"
+                size="medium"
+                sx={{
+                  color: colors.blueAccent[400],
+                  borderColor: colors.blueAccent[400],
+                  '&:hover': {
+                    backgroundColor: alpha(colors.blueAccent[400], 0.1),
+                    borderColor: colors.blueAccent[300],
+                  }
+                }}
               >
                 {selectedNews.attachment_name}
               </Button>
@@ -545,42 +856,113 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
           )}
           
           {selectedNews.tags && selectedNews.tags.length > 0 && (
-            <Box mb={2}>
-              <Typography variant="subtitle2" mb={1}>Tags:</Typography>
+            <Box mb={3}>
+              <Typography variant="subtitle2" mb={1} fontWeight="bold">Tags</Typography>
               <Box display="flex" flexWrap="wrap" gap={1}>
                 {selectedNews.tags.map(tag => (
-                  <Chip key={tag} label={tag} size="small" />
+                  <Chip 
+                    key={tag} 
+                    label={tag} 
+                    size="medium"
+                    sx={{
+                      backgroundColor: alpha(colors.grey[500], 0.2),
+                      color: colors.grey[100],
+                      '&:hover': {
+                        backgroundColor: alpha(colors.grey[500], 0.3),
+                      }
+                    }}
+                  />
                 ))}
               </Box>
             </Box>
           )}
           
-          <Divider sx={{ my: 2 }} />
+          <Divider sx={{ my: 3 }} />
           
-          <Box display="flex" alignItems="center">
-            <VisibilityIcon sx={{ mr: 1, color: colors.grey[300] }} />
-            <Typography variant="body2" color={colors.grey[300]}>
-              {selectedNews.view_count} views
-            </Typography>
+          <Box display="flex" alignItems="center" justifyContent="space-between">
+            <Box display="flex" alignItems="center" gap={3}>
+              <Box display="flex" alignItems="center">
+                <VisibilityIcon sx={{ mr: 1, color: colors.grey[300] }} />
+                <Typography variant="body2" color={colors.grey[300]}>
+                  {selectedNews.view_count} views
+                </Typography>
+              </Box>
+              
+              {selectedNews.comment_count > 0 && (
+                <Box display="flex" alignItems="center">
+                  <CommentIcon sx={{ mr: 1, color: colors.grey[300] }} />
+                  <Typography variant="body2" color={colors.grey[300]}>
+                    {selectedNews.comment_count} comments
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+            
+            <Button
+              variant="contained"
+              color="error"
+              startIcon={<DeleteIcon />}
+              onClick={() => handleDeleteNews(selectedNews.id)}
+              sx={{
+                fontWeight: 'bold',
+                '&:hover': { backgroundColor: colors.redAccent[600] },
+                borderRadius: '8px',
+              }}
+            >
+              Delete
+            </Button>
           </Box>
         </Paper>
       )}
       
       {(editorMode === 'create' || editorMode === 'edit') && (
-        <Paper sx={{ p: 3, backgroundColor: colors.primary[400] }}>
+        <Paper 
+          sx={{ 
+            p: 4, 
+            backgroundColor: colors.primary[400],
+            borderRadius: '10px',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+          }}
+        >
           <form onSubmit={handleSubmit}>
+          <Typography variant="h6" mb={2} fontWeight="bold">Title</Typography>
             <TextField
-              label="Title"
+              placeholder="Enter title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               fullWidth
-              variant="outlined"
-              margin="normal"
+              variant="filled"
               required
+              InputProps={{
+                style: { 
+                  color: colors.grey[100],
+                  backgroundColor: alpha(colors.primary[600], 0.6),
+                  padding: '12px 12px',
+                  fontSize: '16px',
+                  fontWeight: '500',
+                  height: '48px',
+                  display: 'flex',
+                  alignItems: 'center'
+                },
+                disableUnderline: true
+              }}
+              sx={{
+                mb: 3,
+                "& .MuiFilledInput-root": {
+                  backgroundColor: alpha(colors.primary[600], 0.6),
+                  borderRadius: '8px',
+                  "&:hover": {
+                    backgroundColor: alpha(colors.primary[600], 0.8),
+                  },
+                  "&.Mui-focused": {
+                    backgroundColor: alpha(colors.primary[600], 0.8),
+                  }
+                }
+              }}
             />
             
-            <Box my={3}>
-              <Typography variant="subtitle1" mb={1}>Content</Typography>
+            <Box mb={4}>
+              <Typography variant="subtitle1" mb={1} fontWeight="bold">Content</Typography>
               <QuillWrapper
                 theme="snow"
                 value={content}
@@ -588,132 +970,461 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
                 modules={modules}
                 formats={formats}
                 style={{ 
-                  backgroundColor: colors.primary[500],
-                  borderRadius: '4px',
+                  backgroundColor: alpha(colors.primary[600], 0.6),
+                  borderRadius: '8px',
+                  border: `1px solid ${alpha(colors.grey[500], 0.3)}`,
                   marginBottom: '20px',
+                  '.ql-toolbar': {
+                    borderColor: alpha(colors.grey[500], 0.3),
+                    backgroundColor: alpha(colors.primary[400], 0.7),
+                  },
+                  '.ql-container': {
+                    borderColor: alpha(colors.grey[500], 0.3),
+                  },
                 }}
               />
             </Box>
             
-            <Grid container spacing={3}>
-              <Grid item xs={12} sm={6}>
-                <FormControl fullWidth margin="normal">
-                  <InputLabel>Status</InputLabel>
-                  <Select
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value as 'Draft' | 'Published')}
-                    label="Status"
+            <Grid container spacing={3} mb={4}>
+              <Grid item xs={12} md={6}>
+                <Paper 
+                  sx={{ 
+                    p: 3, 
+                    backgroundColor: alpha(colors.primary[500], 0.5),
+                    borderRadius: '8px',
+                    height: '100%',
+                  }}
+                >
+                  <Typography variant="h6" mb={2} fontWeight="bold">Publication Settings</Typography>
+                  
+                  <Box mb={3}>
+                    <Typography variant="body1" mb={1} fontWeight="medium">Publication Status</Typography>
+                    <FormControl 
+                    fullWidth 
+                    sx={{ 
+                      mb: 3,
+                      "& .MuiOutlinedInput-root": {
+                        color: colors.grey[100],
+                        "& fieldset": {
+                          borderColor: alpha(colors.grey[500], 0.3),
+                        },
+                        "&:hover fieldset": {
+                          borderColor: colors.grey[500],
+                        },
+                        "&.Mui-focused fieldset": {
+                          borderColor: colors.blueAccent[400],
+                        }
+                      }
+                    }}
                   >
-                    <MenuItem value="Draft">Draft</MenuItem>
-                    <MenuItem value="Published">Published</MenuItem>
-                  </Select>
-                </FormControl>
+                    <Select
+                      value={status}
+                      onChange={(e) => setStatus(e.target.value as 'Draft' | 'Published')}
+                      displayEmpty
+                      sx={{
+                        backgroundColor: alpha(colors.primary[600], 0.6),
+                        borderRadius: '8px'
+                      }}
+                    >
+                      <MenuItem value="Draft">Draft</MenuItem>
+                      <MenuItem value="Published">Published</MenuItem>
+                    </Select>
+                  </FormControl>
+                  </Box>
+                  
+                  <Box>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={isPinned}
+                          onChange={(e) => setIsPinned(e.target.checked)}
+                          color="primary"
+                          sx={{
+                            '& .MuiSwitch-switchBase.Mui-checked': {
+                              color: colors.greenAccent[600],
+                            },
+                            '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                              backgroundColor: colors.greenAccent[600],
+                            },
+                          }}
+                        />
+                      }
+                      label={
+                        <Box display="flex" alignItems="center">
+                          <PushPinIcon sx={{ mr: 1, color: isPinned ? colors.greenAccent[500] : colors.grey[500] }} />
+                          <Typography>Pin to top</Typography>
+                        </Box>
+                      }
+                    />
+                    
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={isFeatured}
+                          onChange={(e) => setIsFeatured(e.target.checked)}
+                          color="primary"
+                          sx={{
+                            '& .MuiSwitch-switchBase.Mui-checked': {
+                              color: colors.blueAccent[600],
+                            },
+                            '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                              backgroundColor: colors.blueAccent[600],
+                            },
+                          }}
+                        />
+                      }
+                      label={
+                        <Box display="flex" alignItems="center">
+                          <StarIcon sx={{ mr: 1, color: isFeatured ? colors.blueAccent[500] : colors.grey[500] }} />
+                          <Typography>Feature this post</Typography>
+                        </Box>
+                      }
+                    />
+                  </Box>
+                </Paper>
               </Grid>
               
-              <Grid item xs={12} sm={6}>
-                <Box mt={2}>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={isPinned}
-                        onChange={(e) => setIsPinned(e.target.checked)}
-                        color="primary"
-                      />
-                    }
-                    label="Pin to top"
-                  />
+              <Grid item xs={12} md={6}>
+                <Paper 
+                  sx={{ 
+                    p: 3, 
+                    backgroundColor: alpha(colors.primary[500], 0.5),
+                    borderRadius: '8px',
+                    height: '100%',
+                  }}
+                >
+                  <Typography variant="h6" mb={2} fontWeight="bold">Tags</Typography>
                   
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={isFeatured}
-                        onChange={(e) => setIsFeatured(e.target.checked)}
-                        color="primary"
-                      />
-                    }
-                    label="Feature this post"
-                  />
-                </Box>
+                  <Box display="flex" alignItems="center" mb={2}>
+                  <TextField
+                      placeholder="Add a tag"
+                      variant="filled"
+                      size="small"
+                      value={tagInput}
+                      onChange={(e) => setTagInput(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
+                      sx={{ 
+                        flexGrow: 1,
+                        mr: 1,
+                        ".MuiFilledInput-root": {
+                          color: colors.grey[100],
+                          backgroundColor: alpha(colors.primary[600], 0.6),
+                          borderRadius: '8px',
+                          padding: '12px 12px',
+                          fontSize: '16px',
+                          fontWeight: '500',
+                          height: '40px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          "&:hover": {
+                            backgroundColor: alpha(colors.primary[600], 0.8),
+                          },
+                          "&.Mui-focused": {
+                            backgroundColor: alpha(colors.primary[600], 0.8),
+                          },
+                          "&::before, &::after": {
+                            display: "none"
+                          }
+                        }
+                      }}
+                      InputProps={{
+                        disableUnderline: true
+                      }}
+                    />
+                    <Button 
+                      variant="contained" 
+                      onClick={handleAddTag}
+                      disabled={!tagInput}
+                      sx={{
+                        backgroundColor: colors.blueAccent[600],
+                        '&:hover': { backgroundColor: colors.blueAccent[700] },
+                        '&.Mui-disabled': {
+                          backgroundColor: alpha(colors.grey[500], 0.3),
+                        }
+                      }}
+                    >
+                      Add
+                    </Button>
+                  </Box>
+                  
+                  <Box display="flex" flexWrap="wrap" gap={1}>
+                    {tags.length === 0 ? (
+                      <Typography variant="body2" color={colors.grey[400]}>
+                        No tags added yet. Tags help users find your content.
+                      </Typography>
+                    ) : (
+                      tags.map(tag => (
+                        <Chip
+                          key={tag}
+                          label={tag}
+                          onDelete={() => handleRemoveTag(tag)}
+                          sx={{
+                            backgroundColor: alpha(colors.grey[500], 0.2),
+                            color: colors.grey[100],
+                            '&:hover': {
+                              backgroundColor: alpha(colors.grey[500], 0.3),
+                            },
+                            '& .MuiChip-deleteIcon': {
+                              color: colors.grey[300],
+                              '&:hover': {
+                                color: colors.redAccent[400],
+                              }
+                            }
+                          }}
+                        />
+                      ))
+                    )}
+                  </Box>
+                </Paper>
               </Grid>
             </Grid>
             
-            <Box mt={3}>
-              <Typography variant="subtitle1" mb={1}>Add Tags</Typography>
-              <Box display="flex" alignItems="center">
-                <TextField
-                  label="Tag"
-                  variant="outlined"
-                  size="small"
-                  value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
-                  sx={{ mr: 1 }}
-                />
-                <Button 
-                  variant="contained" 
-                  onClick={handleAddTag}
-                  disabled={!tagInput}
-                >
-                  Add
-                </Button>
-              </Box>
+            <Paper 
+              sx={{ 
+                p: 3, 
+                backgroundColor: alpha(colors.primary[500], 0.5),
+                borderRadius: '8px',
+                mb: 4,
+              }}
+            >
+              <Typography variant="h6" mb={2} fontWeight="bold">Media</Typography>
               
-              <Box display="flex" flexWrap="wrap" gap={1} mt={2}>
-                {tags.map(tag => (
-                  <Chip
-                    key={tag}
-                    label={tag}
-                    onDelete={() => handleRemoveTag(tag)}
-                  />
-                ))}
-              </Box>
-            </Box>
-            
-            <Box mt={3}>
-              <Typography variant="subtitle1" mb={1}>Media</Typography>
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
-                  <Button
-                    variant="outlined"
-                    component="label"
-                    startIcon={<ImageIcon />}
-                    fullWidth
-                    sx={{ py: 1.5 }}
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={6}>
+                  <Box 
+                    sx={{ 
+                      border: `2px dashed ${alpha(colors.grey[500], 0.3)}`,
+                      borderRadius: '8px',
+                      p: 3,
+                      textAlign: 'center',
+                      backgroundColor: alpha(colors.primary[600], 0.3),
+                      transition: 'all 0.2s ease-in-out',
+                      '&:hover': {
+                        backgroundColor: alpha(colors.primary[600], 0.5),
+                        borderColor: alpha(colors.grey[500], 0.5),
+                      }
+                    }}
                   >
-                    {image ? image.name : 'Upload Image'}
-                    <input
-                      type="file"
-                      hidden
-                      accept="image/*"
-                      onChange={handleImageChange}
-                    />
-                  </Button>
+                    {imagePreview ? (
+                      <Box>
+                        <Box 
+                          sx={{ 
+                            position: 'relative', 
+                            width: '100%', 
+                            height: '200px',
+                            mb: 2,
+                            borderRadius: '8px',
+                            overflow: 'hidden',
+                          }}
+                        >
+                          <img 
+                            src={imagePreview} 
+                            alt="Preview" 
+                            style={{ 
+                              width: '100%', 
+                              height: '100%', 
+                              objectFit: 'cover',
+                            }} 
+                          />
+                          <Box 
+                            sx={{ 
+                              position: 'absolute', 
+                              top: 0, 
+                              right: 0, 
+                              m: 1 
+                            }}
+                          >
+                            <IconButton 
+                              onClick={() => {
+                                setImage(null);
+                                setImagePreview(null);
+                              }}
+                              sx={{ 
+                                backgroundColor: alpha(colors.primary[900], 0.7),
+                                '&:hover': {
+                                  backgroundColor: alpha(colors.primary[900], 0.9),
+                                }
+                              }}
+                            >
+                              <DeleteIcon sx={{ color: colors.grey[100] }} />
+                            </IconButton>
+                          </Box>
+                        </Box>
+                        
+                        <Button
+                          component="label"
+                          variant="outlined"
+                          startIcon={<CloudUploadIcon />}
+                          sx={{
+                            borderColor: colors.blueAccent[500],
+                            color: colors.blueAccent[500],
+                            '&:hover': {
+                              borderColor: colors.blueAccent[400],
+                              backgroundColor: alpha(colors.blueAccent[400], 0.1),
+                            }
+                          }}
+                        >
+                          Change Image
+                          <input
+                            type="file"
+                            hidden
+                            accept="image/*"
+                            onChange={handleImageChange}
+                          />
+                        </Button>
+                      </Box>
+                    ) : (
+                      <Button
+                        component="label"
+                        sx={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          height: '100%',
+                          width: '100%',
+                          cursor: 'pointer',
+                          py: 4,
+                          color: colors.grey[300],
+                        }}
+                      >
+                        <CloudUploadIcon sx={{ fontSize: 48, mb: 2, color: colors.grey[400] }} />
+                        <Typography variant="body1" fontWeight="bold" mb={1}>
+                          Upload Featured Image
+                        </Typography>
+                        <Typography variant="body2" color={colors.grey[400]}>
+                          Drag & drop or click to browse
+                        </Typography>
+                        <input
+                          type="file"
+                          hidden
+                          accept="image/*"
+                          onChange={handleImageChange}
+                        />
+                      </Button>
+                    )}
+                  </Box>
                 </Grid>
                 
-                <Grid item xs={12} sm={6}>
-                  <Button
-                    variant="outlined"
-                    component="label"
-                    startIcon={<AttachFileIcon />}
-                    fullWidth
-                    sx={{ py: 1.5 }}
+                <Grid item xs={12} md={6}>
+                  <Box 
+                    sx={{ 
+                      border: `2px dashed ${alpha(colors.grey[500], 0.3)}`,
+                      borderRadius: '8px',
+                      p: 3,
+                      textAlign: 'center',
+                      backgroundColor: alpha(colors.primary[600], 0.3),
+                      transition: 'all 0.2s ease-in-out',
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'center',
+                      '&:hover': {
+                        backgroundColor: alpha(colors.primary[600], 0.5),
+                        borderColor: alpha(colors.grey[500], 0.5),
+                      }
+                    }}
                   >
-                    {attachment ? attachment.name : 'Upload Attachment'}
-                    <input
-                      type="file"
-                      hidden
-                      onChange={handleAttachmentChange}
-                    />
-                  </Button>
+                    {attachment ? (
+                      <Box>
+                        <Box 
+                          sx={{ 
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            mb: 2,
+                            p: 2,
+                            backgroundColor: alpha(colors.primary[700], 0.5),
+                            borderRadius: '8px',
+                          }}
+                        >
+                          <AttachFileIcon sx={{ fontSize: 32, mr: 2, color: colors.grey[300] }} />
+                          <Typography noWrap sx={{ maxWidth: '80%' }}>
+                            {attachment.name}
+                          </Typography>
+                          <IconButton 
+                            onClick={() => setAttachment(null)}
+                            sx={{ 
+                              ml: 'auto',
+                              color: colors.grey[300],
+                              '&:hover': {
+                                color: colors.redAccent[400],
+                              }
+                            }}
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </Box>
+                        
+                        <Button
+                          component="label"
+                          variant="outlined"
+                          startIcon={<CloudUploadIcon />}
+                          sx={{
+                            borderColor: colors.blueAccent[500],
+                            color: colors.blueAccent[500],
+                            '&:hover': {
+                              borderColor: colors.blueAccent[400],
+                              backgroundColor: alpha(colors.blueAccent[400], 0.1),
+                            }
+                          }}
+                        >
+                          Change Attachment
+                          <input
+                            type="file"
+                            hidden
+                            onChange={handleAttachmentChange}
+                          />
+                        </Button>
+                      </Box>
+                    ) : (
+                      <Button
+                        component="label"
+                        sx={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          height: '100%',
+                          width: '100%',
+                          cursor: 'pointer',
+                          py: 4,
+                          color: colors.grey[300],
+                        }}
+                      >
+                        <AttachFileIcon sx={{ fontSize: 48, mb: 2, color: colors.grey[400] }} />
+                        <Typography variant="body1" fontWeight="bold" mb={1}>
+                          Upload Attachment
+                        </Typography>
+                        <Typography variant="body2" color={colors.grey[400]}>
+                          PDF, DOC, or other files
+                        </Typography>
+                        <input
+                          type="file"
+                          hidden
+                          onChange={handleAttachmentChange}
+                        />
+                      </Button>
+                    )}
+                  </Box>
                 </Grid>
               </Grid>
-            </Box>
+            </Paper>
             
-            <Box mt={4} display="flex" justifyContent="flex-end" gap={2}>
+            <Box display="flex" justifyContent="space-between" alignItems="center">
               <Button 
                 variant="outlined" 
                 onClick={handleBack}
                 disabled={isSubmitting}
+                startIcon={<ArrowBackIcon />}
+                sx={{
+                  borderColor: alpha(colors.grey[500], 0.5),
+                  color: colors.grey[300],
+                  '&:hover': {
+                    borderColor: colors.grey[300],
+                    backgroundColor: alpha(colors.grey[500], 0.1),
+                  }
+                }}
               >
                 Cancel
               </Button>
@@ -721,18 +1432,18 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
               <Button 
                 type="submit" 
                 variant="contained" 
-                color="primary" 
                 disabled={isSubmitting || !title || !content}
+                startIcon={isSubmitting ? <CircularProgress size={20} /> : null}
                 sx={{
                   backgroundColor: colors.greenAccent[600],
-                  '&:hover': { backgroundColor: colors.greenAccent[700] }
+                  '&:hover': { backgroundColor: colors.greenAccent[700] },
+                  fontWeight: 'bold',
+                  px: 4,
+                  py: 1.2,
+                  borderRadius: '8px'
                 }}
               >
-                {isSubmitting ? (
-                  <CircularProgress size={24} sx={{ color: 'white' }} />
-                ) : (
-                  status === 'Published' ? 'Publish' : 'Save Draft'
-                )}
+                {!isSubmitting && (status === 'Published' ? 'Publish' : 'Save Draft')}
               </Button>
             </Box>
           </form>
