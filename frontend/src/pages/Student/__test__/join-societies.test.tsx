@@ -77,7 +77,6 @@ describe('JoinSocieties Page', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     themeModeOverride = 'light';
-
     (getRecommendedSocieties as vi.Mock).mockResolvedValue([
       {
         society: {
@@ -106,7 +105,6 @@ describe('JoinSocieties Page', () => {
         },
       },
     ]);
-
     (apiClient.get as vi.Mock).mockImplementation((url: string) => {
       if (url === '/api/join-society') {
         return Promise.resolve({
@@ -126,7 +124,6 @@ describe('JoinSocieties Page', () => {
       }
       return Promise.resolve({ data: [] });
     });
-    
     (apiClient.post as vi.Mock).mockResolvedValue({ status: 200 });
   });
 
@@ -142,12 +139,10 @@ describe('JoinSocieties Page', () => {
   it('displays a loading message initially and then renders societies', async () => {
     renderComponent();
     expect(screen.getByText(/Loading/i)).toBeInTheDocument();
-    await waitFor(() =>
-      expect(screen.queryByText(/Loading/i)).not.toBeInTheDocument()
-    );
+    await waitFor(() => expect(screen.queryByText(/Loading/i)).not.toBeInTheDocument());
     expect(screen.getByText(/Recommended Societies/i)).toBeInTheDocument();
     const societyElements = screen.getAllByRole('heading', { level: 3 });
-    const societyNames = societyElements.map((el) => el.textContent);
+    const societyNames = societyElements.map(el => el.textContent);
     expect(societyNames).toContain('Photography Club');
     expect(societyNames).toContain('Chess Club');
   });
@@ -155,67 +150,44 @@ describe('JoinSocieties Page', () => {
   it('renders empty state when no societies are returned', async () => {
     (getRecommendedSocieties as vi.Mock).mockResolvedValueOnce([]);
     renderComponent();
-    await waitFor(() =>
-      expect(screen.getByText(/Join a Society/i)).toBeInTheDocument()
-    );
+    await waitFor(() => expect(screen.getByText(/Join a Society/i)).toBeInTheDocument());
     expect(screen.getByText(/No societies available to join/i)).toBeInTheDocument();
   });
 
   it('calls the view society function when the "View Society" button is clicked', async () => {
     renderComponent();
-    await waitFor(() =>
-      expect(screen.queryByText(/Loading/i)).not.toBeInTheDocument()
-    );
-
+    await waitFor(() => expect(screen.queryByText(/Loading/i)).not.toBeInTheDocument());
     const viewButtons = screen.getAllByText(/View Society/i);
     await act(async () => {
       fireEvent.click(viewButtons[0]);
     });
-
     expect(mockNavigate).toHaveBeenCalledWith('/student/view-society/1');
   });
 
   it('calls view society for the second society', async () => {
     renderComponent();
-    await waitFor(() =>
-      expect(screen.getByText('Chess Club')).toBeInTheDocument()
-    );
-
+    await waitFor(() => expect(screen.getByText('Chess Club')).toBeInTheDocument());
     const viewButtons = screen.getAllByText(/View Society/i);
-    
     await act(async () => {
       fireEvent.click(viewButtons[1]);
     });
-
     expect(mockNavigate).toHaveBeenCalledWith('/student/view-society/2');
   });
 
   it('handles error when fetching society recommendations fails', async () => {
     (getRecommendedSocieties as vi.Mock).mockRejectedValueOnce(new Error('Fetch error'));
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    
     renderComponent();
-    
-    await waitFor(() =>
-      expect(screen.queryByText(/Loading/i)).not.toBeInTheDocument()
-    );
-    
-    expect(consoleErrorSpy).toHaveBeenCalledWith(
-      'Error fetching society recommendations:',
-      expect.any(Error)
-    );
-    
+    await waitFor(() => expect(screen.queryByText(/Loading/i)).not.toBeInTheDocument());
+    expect(consoleErrorSpy).toHaveBeenCalledWith('Error fetching society recommendations:', expect.any(Error));
     expect(screen.getByText(/Failed to load recommendations/i)).toBeInTheDocument();
-    
     consoleErrorSpy.mockRestore();
   });
 
   it('renders correctly with dark theme', async () => {
     themeModeOverride = 'dark';
     renderComponent();
-    await waitFor(() =>
-      expect(screen.queryByText(/Loading/i)).not.toBeInTheDocument()
-    );
+    await waitFor(() => expect(screen.queryByText(/Loading/i)).not.toBeInTheDocument());
     expect(screen.getByText(/Recommended Societies/i)).toBeInTheDocument();
   });
 
@@ -234,37 +206,28 @@ describe('JoinSocieties Page', () => {
         },
       },
     ]);
-    
     renderComponent();
-    
-    await waitFor(() =>
-      expect(screen.queryByText(/Loading/i)).not.toBeInTheDocument()
-    );
-    
+    await waitFor(() => expect(screen.queryByText(/Loading/i)).not.toBeInTheDocument());
     expect(screen.getByText(/No description available/i)).toBeInTheDocument();
   });
 
   it('toggles between category view and all view', async () => {
     renderComponent();
-    
-    await waitFor(() =>
-      expect(screen.queryByText(/Loading/i)).not.toBeInTheDocument()
-    );
-    
+    await waitFor(() => expect(screen.queryByText(/Loading/i)).not.toBeInTheDocument());
     const categoryButton = screen.getByText(/Group by Category/i);
     const allViewButton = screen.getByText(/View All/i);
-    
+    const categoryHeadings = screen.getAllByRole('heading', { level: 2 });
+    expect(categoryHeadings.length).toBeGreaterThan(0);
     await act(async () => {
       fireEvent.click(allViewButton);
     });
-    
-    expect(screen.queryByText(/Arts Societies/i)).not.toBeInTheDocument();
-    
+    expect(screen.queryAllByRole('heading', { level: 2 })).toHaveLength(0);
     await act(async () => {
       fireEvent.click(categoryButton);
     });
-    
-    expect(screen.getByText(/Arts Societies/i)).toBeInTheDocument();
-    expect(screen.getByText(/Games Societies/i)).toBeInTheDocument();
+    const newCategoryHeadings = screen.getAllByRole('heading', { level: 2 });
+    expect(newCategoryHeadings.length).toBeGreaterThan(0);
+    expect(screen.getByRole('heading', { level: 2, name: 'Arts' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'Games' })).toBeInTheDocument();
   });
 });
