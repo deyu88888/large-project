@@ -505,6 +505,7 @@ class StudentInboxView(StudentNotificationsView):
         except Notification.DoesNotExist:
             return Response({"error": "Notification not found or not authorized"}, status=status.HTTP_404_NOT_FOUND)
 
+
 class StartSocietyRequestView(APIView):
     """View to handle society creation requests."""
     permission_classes = [IsAuthenticated]
@@ -515,6 +516,29 @@ class StartSocietyRequestView(APIView):
         # Ensure the user is a student
         if not hasattr(user, "student"):
             return Response({"error": "Only students can request a new society."}, status=status.HTTP_403_FORBIDDEN)
+        
+        student = user.student
+        
+        # Check if student is already a president of a society
+        if hasattr(student, 'president_of') and student.president_of:
+            return Response(
+                {"error": "As a society president, you cannot start another society."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+            
+        # Check if student is already a vice president of a society
+        if hasattr(student, 'vice_president_of_society') and student.vice_president_of_society:
+            return Response(
+                {"error": "As a society vice president, you cannot start another society."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+            
+        # Check if student is already an event manager of a society
+        if hasattr(student, 'event_manager_of_society') and student.event_manager_of_society:
+            return Response(
+                {"error": "As a society event manager, you cannot start another society."},
+                status=status.HTTP_403_FORBIDDEN
+            )
 
         # Validate and save the data
         serializer = StartSocietyRequestSerializer(data=request.data)

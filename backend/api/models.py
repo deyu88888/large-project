@@ -166,6 +166,19 @@ class Student(User):
 
     def save(self, *args, **kwargs):
         self.role = "student"
+        
+    
+    # Check for conflicting leadership roles
+        leadership_roles = []
+        if self.is_president:
+            leadership_roles.append("president")
+        if self.is_vice_president:
+            leadership_roles.append("vice president")
+        if self.is_event_manager:
+            leadership_roles.append("event manager")
+        
+        if len(leadership_roles) > 1:
+            raise ValidationError(f"A student can only hold one leadership role. This student is assigned as: {', '.join(leadership_roles)}")
 
         super().save(*args, **kwargs)
 
@@ -249,7 +262,7 @@ class Society(models.Model):
     president = models.ForeignKey(
         "Student",
         on_delete=models.DO_NOTHING,
-        related_name="society",
+        related_name="society", #TODO: change name to president_of_society?
         null=True,
     )
 
