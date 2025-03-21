@@ -143,10 +143,7 @@ class Command(BaseCommand):
                 major=data["major"],
                 password=make_password("studentpassword"),
             )
-            if self.handle_user_status(student):
-                student.is_active = True
-            else:
-                student.is_active = False
+            self.handle_user_status(student)
             student.save()
 
         print(self.style.SUCCESS(f"Seeding student {created_count}/{n}"), flush=True)
@@ -154,35 +151,15 @@ class Command(BaseCommand):
 
     def handle_user_status(self, user):
         """Creates user requests if pending"""
-        create_request = choice((True, True, True, False, None))
-        if create_request:
-            UserRequest.objects.create(
-                from_student=user,
-                intent="CreateUse",
-                approved=True
-            )
-            update_request = choice((True, False))
+        update_request = choice((True, False))
 
-            if update_request:
-                UserRequest.objects.create(
-                    major="CompSci",
-                    from_student=user,
-                    intent="UpdateUse",
-                )
-            return True
-        elif create_request is False:
+        if update_request:
             UserRequest.objects.create(
+                major="CompSci",
                 from_student=user,
-                intent="CreateUse",
-                approved=False
+                intent="UpdateUse",
             )
-            return False
-        else:
-            UserRequest.objects.create(
-                from_student=user,
-                intent="CreateUse",
-            )
-            return False
+        return update_request
 
     def create_admin(self, n):
         """Create n different admins"""
@@ -273,9 +250,7 @@ class Command(BaseCommand):
                 .filter(is_event_manager=False)
             )
             if not president_force:
-                for student in viable_presidents:
-                    president = available_students.first()
-                    break
+                president = viable_presidents.first()
             if not name:
                 approved = self.handle_society_status(
                     president,
