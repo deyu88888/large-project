@@ -1718,7 +1718,10 @@ class NewsPublicationRequestView(APIView):
         """List publication requests for the current user"""
         user = request.user
         
-        print(f"DEBUG - User: {user.username}, is_admin: {user.is_admin()}")
+        # Check if we should include all statuses (from query parameter)
+        all_statuses = request.query_params.get('all_statuses') == 'true'
+        
+        print(f"DEBUG - User: {user.username}, is_admin: {user.is_admin()}, all_statuses: {all_statuses}")
         
         if hasattr(user, "student"):
             # For students, return their own requests
@@ -1727,11 +1730,17 @@ class NewsPublicationRequestView(APIView):
             ).order_by('-requested_at')
             print(f"DEBUG - Student view, found {requests.count()} requests")
         elif user.is_admin():
-            # For admins, return all pending requests
-            requests = NewsPublicationRequest.objects.filter(
-                status="Pending"
-            ).order_by('-requested_at')
-            print(f"DEBUG - Admin view, found {requests.count()} requests")
+            if all_statuses:
+                # Return ALL requests regardless of status
+                requests = NewsPublicationRequest.objects.all().order_by('-requested_at')
+                print(f"DEBUG - Admin view with all_statuses=true, found {requests.count()} total requests")
+            else:
+                # Return only pending requests (original behavior)
+                requests = NewsPublicationRequest.objects.filter(
+                    status="Pending"
+                ).order_by('-requested_at')
+                print(f"DEBUG - Admin view with all_statuses=false, found {requests.count()} pending requests")
+                
             # Check if any requests exist at all
             all_requests = NewsPublicationRequest.objects.all()
             print(f"DEBUG - Total requests in database: {all_requests.count()}")

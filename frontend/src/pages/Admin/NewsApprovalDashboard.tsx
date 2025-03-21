@@ -15,7 +15,7 @@ import {
   Tabs,
   Tab,
   IconButton,
-  Tooltip,
+  Collapse,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -25,7 +25,7 @@ import {
 import {
   CheckCircle as ApproveIcon,
   Cancel as RejectIcon,
-  Visibility as ViewIcon,
+  ExpandMore as ExpandMoreIcon,
   ArrowBack as BackIcon,
   Person as PersonIcon,
   AccessTime as TimeIcon,
@@ -53,6 +53,17 @@ interface PublicationRequest {
   };
 }
 
+interface NewsContent {
+  id: number;
+  title: string;
+  content: string;
+  status: string;
+  society_data?: {
+    id: number;
+    name: string;
+  };
+}
+
 const NewsApprovalDashboard: React.FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
@@ -61,15 +72,16 @@ const NewsApprovalDashboard: React.FC = () => {
   const [requests, setRequests] = useState<PublicationRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [tabValue, setTabValue] = useState(0);
-  const [selectedRequest, setSelectedRequest] = useState<PublicationRequest | null>(null);
-  const [newsContent, setNewsContent] = useState<any>(null);
-  const [loadingContent, setLoadingContent] = useState(false);
+  const [expandedRequestId, setExpandedRequestId] = useState<number | null>(null);
+  const [newsContents, setNewsContents] = useState<Record<number, NewsContent>>({});
+  const [loadingContents, setLoadingContents] = useState<Record<number, boolean>>({});
   
   // Approval/rejection dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogAction, setDialogAction] = useState<'approve' | 'reject' | null>(null);
   const [adminNotes, setAdminNotes] = useState('');
   const [processingAction, setProcessingAction] = useState(false);
+  const [currentRequest, setCurrentRequest] = useState<PublicationRequest | null>(null);
 
   useEffect(() => {
     fetchRequests();
@@ -78,7 +90,10 @@ const NewsApprovalDashboard: React.FC = () => {
   const fetchRequests = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get('/api/news/publication-request/');
+      const response = await apiClient.get('/api/news/publication-request/', {
+        params: { all_statuses: 'true' }
+      });
+      console.log("Fetched requests:", response.data);
       setRequests(response.data);
     } catch (error) {
       console.error('Error fetching publication requests:', error);
@@ -89,23 +104,40 @@ const NewsApprovalDashboard: React.FC = () => {
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
+    setExpandedRequestId(null); // Collapse all when changing tabs
   };
 
-  const handleViewRequest = async (request: PublicationRequest) => {
-    setSelectedRequest(request);
-    setLoadingContent(true);
+  const toggleRequestExpansion = async (request: PublicationRequest) => {
+    // If already expanded, collapse it
+    if (expandedRequestId === request.id) {
+      setExpandedRequestId(null);
+      return;
+    }
+
+    // Otherwise, expand it and load its content
+    setExpandedRequestId(request.id);
+    
+    // If we already have the content, don't fetch it again
+    if (newsContents[request.news_post]) return;
+    
+    // Mark as loading
+    setLoadingContents(prev => ({ ...prev, [request.news_post]: true }));
     
     try {
       const response = await apiClient.get(`/api/news/${request.news_post}/`);
-      setNewsContent(response.data);
+      setNewsContents(prev => ({ 
+        ...prev, 
+        [request.news_post]: response.data 
+      }));
     } catch (error) {
       console.error('Error fetching news content:', error);
     } finally {
-      setLoadingContent(false);
+      setLoadingContents(prev => ({ ...prev, [request.news_post]: false }));
     }
   };
 
-  const handleOpenDialog = (action: 'approve' | 'reject') => {
+  const handleOpenDialog = (request: PublicationRequest, action: 'approve' | 'reject') => {
+    setCurrentRequest(request);
     setDialogAction(action);
     setAdminNotes('');
     setDialogOpen(true);
@@ -114,36 +146,63 @@ const NewsApprovalDashboard: React.FC = () => {
   const handleCloseDialog = () => {
     setDialogOpen(false);
     setDialogAction(null);
+    setCurrentRequest(null);
   };
 
   const handleProcessRequest = async () => {
-    if (!selectedRequest || !dialogAction) return;
+    if (!currentRequest || !dialogAction) return;
     
     setProcessingAction(true);
     
     try {
-      await apiClient.put(`/api/news/publication-request/${selectedRequest.id}/`, {
-        status: dialogAction === 'approve' ? 'Approved' : 'Rejected',
+      // 1. Create the new status
+      const newStatus = dialogAction === 'approve' ? 'Approved' : 'Rejected';
+      
+      // 2. Update local state FIRST (optimistic update)
+      const updatedRequest = { ...currentRequest, status: newStatus };
+      
+      // Update requests array with the new status
+      setRequests(prev => 
+        prev.map(req => req.id === currentRequest.id ? updatedRequest : req)
+      );
+      
+      // 3. Switch to the appropriate tab (do this before closing dialog for smoother transition)
+      setTabValue(dialogAction === 'approve' ? 1 : 2);
+      
+      // 4. Close dialog
+      setDialogOpen(false);
+      setCurrentRequest(null);
+      
+      // 5. Update the expanded state to show the processed request
+      setExpandedRequestId(updatedRequest.id);
+      
+      // 6. Now send the API request (after UI is already updated)
+      await apiClient.put(`/api/news/publication-request/${currentRequest.id}/`, {
+        status: newStatus,
         admin_notes: adminNotes
       });
       
-      // Update the local state
-      setRequests(requests.map(req => 
-        req.id === selectedRequest.id
-          ? { ...req, status: dialogAction === 'approve' ? 'Approved' : 'Rejected' }
-          : req
-      ));
+      // 7. Refresh data from the server (just to be sure everything is in sync)
+      const updatedRequestsResponse = await apiClient.get('/api/news/publication-request/', {
+        params: { all_statuses: 'true' }
+      });
       
-      // Close dialog and reset
-      setDialogOpen(false);
-      setSelectedRequest(null);
-      setNewsContent(null);
+      // Update our local data with fresh server data
+      setRequests(updatedRequestsResponse.data);
       
-      // Refresh the requests
-      fetchRequests();
-      
+      // 8. Also update the news content with the latest status
+      if (newsContents[currentRequest.news_post]) {
+        const newsResponse = await apiClient.get(`/api/news/${currentRequest.news_post}/`);
+        setNewsContents(prev => ({
+          ...prev,
+          [currentRequest.news_post]: newsResponse.data
+        }));
+      }
     } catch (error) {
       console.error('Error processing request:', error);
+      
+      // If the API call fails, revert the optimistic update
+      fetchRequests();
     } finally {
       setProcessingAction(false);
     }
@@ -165,163 +224,190 @@ const NewsApprovalDashboard: React.FC = () => {
         <Typography variant="h4">News Publication Approval</Typography>
       </Box>
       
-      <Tabs value={tabValue} onChange={handleTabChange} sx={{ mb: 3 }}>
+      <Tabs 
+        value={tabValue} 
+        onChange={handleTabChange} 
+        sx={{ 
+          mb: 3,
+          '& .MuiTab-root': {
+            color: colors.grey[300],
+            '&.Mui-selected': {
+              color: colors.blueAccent[400],
+              fontWeight: 'bold',
+            },
+          },
+          '& .MuiTabs-indicator': {
+            backgroundColor: colors.blueAccent[400],
+          },
+        }}
+      >
         <Tab label={`Pending (${requests.filter(r => r.status === 'Pending').length})`} />
         <Tab label={`Approved (${requests.filter(r => r.status === 'Approved').length})`} />
         <Tab label={`Rejected (${requests.filter(r => r.status === 'Rejected').length})`} />
       </Tabs>
       
-      <Grid container spacing={3}>
-        <Grid item xs={12} md={selectedRequest ? 5 : 12}>
-          {loading ? (
-            <Box display="flex" justifyContent="center" p={4}>
-              <CircularProgress />
-            </Box>
-          ) : filteredRequests.length === 0 ? (
-            <Paper sx={{ p: 4, textAlign: 'center' }}>
-              <Typography variant="h6">No {tabValue === 0 ? 'pending' : tabValue === 1 ? 'approved' : 'rejected'} publication requests</Typography>
-            </Paper>
-          ) : (
-            <Box>
-              {filteredRequests.map((request) => (
-                <Card 
-                  key={request.id} 
-                  sx={{ 
-                    mb: 2, 
-                    cursor: 'pointer',
-                    border: selectedRequest?.id === request.id ? `2px solid ${colors.blueAccent[500]}` : 'none' 
-                  }}
-                  onClick={() => handleViewRequest(request)}
-                >
-                  <CardContent>
-                    <Box display="flex" justifyContent="space-between" alignItems="flex-start">
-                      <Box>
-                        <Typography variant="h6" gutterBottom>
-                          {request.news_post_title || 'Untitled News Post'}
-                        </Typography>
-                        <Typography variant="body2" color="textSecondary" gutterBottom>
-                          Society: {request.society_name}
-                        </Typography>
-                        <Box display="flex" alignItems="center" gap={1}>
-                          <PersonIcon fontSize="small" />
-                          <Typography variant="body2">
-                            Requested by: {request.requester_name}
-                          </Typography>
-                        </Box>
-                        <Box display="flex" alignItems="center" gap={1} mt={1}>
-                          <TimeIcon fontSize="small" />
-                          <Typography variant="body2">
-                            {new Date(request.requested_at).toLocaleString()}
-                          </Typography>
-                        </Box>
-                      </Box>
-                      <Chip 
-                        label={request.status} 
-                        color={
-                          request.status === 'Pending' ? 'warning' :
-                          request.status === 'Approved' ? 'success' : 'error'
-                        }
-                      />
-                    </Box>
-                  </CardContent>
-                  <CardActions>
-                    <Button 
-                      startIcon={<ViewIcon />} 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleViewRequest(request);
-                      }}
-                    >
-                      View Details
-                    </Button>
-                  </CardActions>
-                </Card>
-              ))}
-            </Box>
-          )}
-        </Grid>
-        
-        {selectedRequest && (
-          <Grid item xs={12} md={7}>
-            <Paper sx={{ p: 3, height: '100%' }}>
-              {loadingContent ? (
-                <Box display="flex" justifyContent="center" alignItems="center" height="100%">
-                  <CircularProgress />
-                </Box>
-              ) : newsContent ? (
-                <Box>
-                  <Typography variant="h5" gutterBottom>
-                    {newsContent.title}
-                  </Typography>
-                  
-                  <Box display="flex" alignItems="center" gap={1} mb={2}>
-                    <Chip label={`Society: ${newsContent.society_data?.name}`} />
-                    <Chip label={`Status: ${newsContent.status}`} />
-                  </Box>
-                  
-                  <Divider sx={{ my: 2 }} />
-                  
-                  <Box mb={3}>
-                    <Typography variant="subtitle1" fontWeight="bold">Content Preview:</Typography>
-                    <Box sx={{ 
-                      mt: 1, 
-                      p: 2, 
-                      border: `1px solid ${colors.grey[300]}`,
-                      borderRadius: 1,
-                      maxHeight: '300px',
-                      overflow: 'auto'
-                    }}>
-                      <div dangerouslySetInnerHTML={{ __html: newsContent.content }} />
-                    </Box>
-                  </Box>
-                  
-                  {selectedRequest.status === 'Pending' && (
-                    <Box display="flex" gap={2} mt={3}>
-                      <Button
-                        variant="contained"
-                        color="success"
-                        startIcon={<ApproveIcon />}
-                        onClick={() => handleOpenDialog('approve')}
-                      >
-                        Approve
-                      </Button>
-                      <Button
-                        variant="contained"
-                        color="error"
-                        startIcon={<RejectIcon />}
-                        onClick={() => handleOpenDialog('reject')}
-                      >
-                        Reject
-                      </Button>
-                    </Box>
-                  )}
-                  
-                  {selectedRequest.status !== 'Pending' && (
-                    <Box mt={3} p={2} bgcolor={colors.primary[400]} borderRadius={1}>
-                      <Typography variant="subtitle1">
-                        This request has been {selectedRequest.status.toLowerCase()}.
+      {loading ? (
+        <Box display="flex" justifyContent="center" p={4}>
+          <CircularProgress />
+        </Box>
+      ) : filteredRequests.length === 0 ? (
+        <Paper sx={{ 
+          p: 4, 
+          textAlign: 'center',
+          backgroundColor: colors.primary[400],
+        }}>
+          <Typography variant="h6">No {tabValue === 0 ? 'pending' : tabValue === 1 ? 'approved' : 'rejected'} publication requests</Typography>
+        </Paper>
+      ) : (
+        <Box>
+          {filteredRequests.map((request) => (
+            <Card 
+              key={request.id} 
+              sx={{ 
+                mb: 2,
+                backgroundColor: colors.primary[400],
+                transition: 'all 0.3s ease',
+              }}
+            >
+              <CardContent 
+                sx={{ 
+                  cursor: 'pointer',
+                  '&:hover': {
+                    backgroundColor: colors.primary[500],
+                  }
+                }}
+                onClick={() => toggleRequestExpansion(request)}
+              >
+                <Box display="flex" justifyContent="space-between" alignItems="flex-start">
+                  <Box>
+                    <Box display="flex" alignItems="center" gap={1}>
+                      <Typography variant="h6" gutterBottom>
+                        {request.news_post_title || 'Untitled News Post'}
                       </Typography>
-                      {selectedRequest.admin_notes && (
-                        <Box mt={1}>
-                          <Typography variant="subtitle2">Admin notes:</Typography>
-                          <Typography variant="body2">{selectedRequest.admin_notes}</Typography>
+                      <IconButton
+                        size="small"
+                        sx={{
+                          transform: expandedRequestId === request.id ? 'rotate(180deg)' : 'rotate(0deg)',
+                          transition: 'transform 0.3s'
+                        }}
+                      >
+                        <ExpandMoreIcon />
+                      </IconButton>
+                    </Box>
+                    <Typography variant="body2" color={colors.grey[300]} gutterBottom>
+                      Society: {request.society_name}
+                    </Typography>
+                    <Box display="flex" alignItems="center" gap={1}>
+                      <PersonIcon fontSize="small" sx={{ color: colors.grey[300] }} />
+                      <Typography variant="body2" color={colors.grey[300]}>
+                        Requested by: {request.requester_name}
+                      </Typography>
+                    </Box>
+                    <Box display="flex" alignItems="center" gap={1} mt={1}>
+                      <TimeIcon fontSize="small" sx={{ color: colors.grey[300] }} />
+                      <Typography variant="body2" color={colors.grey[300]}>
+                        {new Date(request.requested_at).toLocaleString()}
+                      </Typography>
+                    </Box>
+                  </Box>
+                  <Chip 
+                    label={request.status} 
+                    color={
+                      request.status === 'Pending' ? 'warning' :
+                      request.status === 'Approved' ? 'success' : 'error'
+                    }
+                    sx={{
+                      fontWeight: 'bold'
+                    }}
+                  />
+                </Box>
+              </CardContent>
+              
+              <Collapse in={expandedRequestId === request.id}>
+                <Divider />
+                <CardContent>
+                  {loadingContents[request.news_post] ? (
+                    <Box display="flex" justifyContent="center" p={2}>
+                      <CircularProgress size={30} />
+                    </Box>
+                  ) : newsContents[request.news_post] ? (
+                    <Box>
+                      <Typography variant="subtitle1" fontWeight="bold" mb={2}>Content Preview:</Typography>
+                      <Box sx={{ 
+                        p: 2, 
+                        border: `1px solid ${colors.grey[700]}`,
+                        borderRadius: 1,
+                        maxHeight: '300px',
+                        overflow: 'auto',
+                        backgroundColor: colors.primary[500],
+                      }}>
+                        <div dangerouslySetInnerHTML={{ __html: newsContents[request.news_post].content }} />
+                      </Box>
+                      
+                      {request.status === 'Pending' && (
+                        <Box display="flex" gap={2} mt={3}>
+                          <Button
+                            variant="contained"
+                            color="success"
+                            startIcon={<ApproveIcon />}
+                            onClick={() => handleOpenDialog(request, 'approve')}
+                          >
+                            Approve
+                          </Button>
+                          <Button
+                            variant="contained"
+                            color="error"
+                            startIcon={<RejectIcon />}
+                            onClick={() => handleOpenDialog(request, 'reject')}
+                          >
+                            Reject
+                          </Button>
+                        </Box>
+                      )}
+                      
+                      {request.status !== 'Pending' && (
+                        <Box 
+                          mt={3} 
+                          p={2} 
+                          bgcolor={
+                            request.status === 'Approved' ? colors.greenAccent[900] : colors.redAccent[900]
+                          } 
+                          borderRadius={1}
+                        >
+                          <Typography variant="subtitle1" fontWeight="bold">
+                            This request has been {request.status.toLowerCase()}.
+                          </Typography>
+                          {request.admin_notes && (
+                            <Box mt={1}>
+                              <Typography variant="subtitle2" fontWeight="bold">Admin notes:</Typography>
+                              <Typography variant="body2">{request.admin_notes}</Typography>
+                            </Box>
+                          )}
                         </Box>
                       )}
                     </Box>
+                  ) : (
+                    <Typography>Error loading content.</Typography>
                   )}
-                </Box>
-              ) : (
-                <Box display="flex" justifyContent="center" alignItems="center" height="100%">
-                  <Typography>Select a publication request to view details</Typography>
-                </Box>
-              )}
-            </Paper>
-          </Grid>
-        )}
-      </Grid>
+                </CardContent>
+              </Collapse>
+            </Card>
+          ))}
+        </Box>
+      )}
       
       {/* Approval/Rejection Dialog */}
-      <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+      <Dialog 
+        open={dialogOpen} 
+        onClose={handleCloseDialog} 
+        maxWidth="sm" 
+        fullWidth
+        PaperProps={{
+          sx: {
+            backgroundColor: colors.primary[400],
+          }
+        }}
+      >
         <DialogTitle>
           {dialogAction === 'approve' ? 'Approve' : 'Reject'} Publication Request
         </DialogTitle>
@@ -342,11 +428,32 @@ const NewsApprovalDashboard: React.FC = () => {
             placeholder={dialogAction === 'approve' 
               ? 'Any comments about the approved content...' 
               : 'Reason for rejection or suggestions for improvement...'}
-            sx={{ mt: 2 }}
+            sx={{ 
+              mt: 2,
+              '& .MuiOutlinedInput-root': {
+                '& fieldset': {
+                  borderColor: colors.grey[500],
+                },
+                '&:hover fieldset': {
+                  borderColor: colors.grey[400],
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: colors.blueAccent[400],
+                },
+              },
+              '& .MuiInputLabel-root': {
+                color: colors.grey[300],
+              },
+              '& .MuiInputBase-input': {
+                color: colors.grey[100],
+              }
+            }}
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancel</Button>
+          <Button onClick={handleCloseDialog} sx={{ color: colors.grey[300] }}>
+            Cancel
+          </Button>
           <Button 
             onClick={handleProcessRequest}
             variant="contained"
