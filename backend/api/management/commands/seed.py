@@ -266,8 +266,14 @@ class Command(BaseCommand):
             approved = True
             society = None
             president = president_force
+            viable_presidents = (
+                available_students
+                .filter(president_of=None)
+                .filter(is_vice_president=False)
+                .filter(is_event_manager=False)
+            )
             if not president_force:
-                for student in available_students.filter(president_of=None):
+                for student in viable_presidents:
                     president = available_students.first()
                     break
             if not name:
@@ -326,7 +332,14 @@ class Command(BaseCommand):
         # Ensure the president is always a member
         society.society_members.add(society.president)
         society.society_members.add(*selected_members)
+        society.save()
 
+        selected_members = list(
+            society.society_members
+            .filter(is_vice_president=False)
+            .filter(is_event_manager=False)
+            .filter(is_president=False)
+        )
         # Assign roles (ensure at least 2 for vp and event manager)
         if len(selected_members) >= 2:
             # Assign vice president and set flag
