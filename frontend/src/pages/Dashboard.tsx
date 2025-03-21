@@ -7,6 +7,7 @@ import PopularSocieties from "../components/PopularSocieties";
 import Sidebar from "../components/Sidebar";
 import { HiMenu } from "react-icons/hi";
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { useFetchWebSocket } from "../hooks/useFetchWebSocket";
 import { getAllEvents, apiClient } from "../api";
 
@@ -165,6 +166,7 @@ const Dashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("Recent Activities");
   const [dataVersion, setDataVersion] = useState(0);
+  const navigate = useNavigate();
 
   // Sidebar control - Now manages width instead of open/closed state
   const [sidebarWidth, setSidebarWidth] = useState<'collapsed' | 'expanded'>('collapsed');
@@ -185,6 +187,12 @@ const Dashboard: React.FC = () => {
       return false;
     }
   });
+
+  const handleSearchSubmit = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
 
   // Apply or remove .dark class on <html> or <body>
   useEffect(() => {
@@ -673,6 +681,7 @@ const Dashboard: React.FC = () => {
                   placeholder="Search..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={handleSearchSubmit}
                   className="px-4 py-2 rounded-full border border-gray-300
                               dark:border-gray-700 dark:bg-gray-700 dark:text-gray-100
                               focus:outline-none focus:ring-2 focus:ring-purple-500"

@@ -26,7 +26,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from api.models import AdminReportRequest, Event, Notification, Society, Student, User, Award, AwardStudent, \
-    UserRequest, DescriptionRequest, AdminReportRequest, Comment, ActivityLog, ReportReply, SocietyRequest
+    UserRequest, DescriptionRequest, AdminReportRequest, Comment, ActivityLog, ReportReply, SocietyRequest, \
+    BroadcastMessage
 from api.serializers import (
     AdminReportRequestSerializer,
     BroadcastSerializer,
@@ -3058,3 +3059,30 @@ class ActivityLogView(APIView):
             return Response({"error": "Activity log not found."}, status=status.HTTP_404_NOT_FOUND)
         activity_log.delete()
         return Response({"message": "Activity log deleted successfully."}, status=status.HTTP_200_OK)
+
+class SearchView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        query = request.query_params.get('q', '').strip()
+
+        if not query:
+            return Response({"error": "No search query provided."}, status=400)
+
+        student_results = Student.objects.filter(username__icontains=query)
+        student_serializer = StudentSerializer(student_results, many=True)
+
+        event_results = Event.objects.filter(
+            title__icontains=query,
+            status="Approved"
+        )
+        event_serializer = EventSerializer(event_results, many=True)
+
+        society_results = Society.objects.filter(name__icontains=query)
+        society_serializer = SocietySerializer(society_results, many=True)
+
+        return Response({
+            "students": student_serializer.data,
+            "events": event_serializer.data,
+            "societies": society_serializer.data
+        })

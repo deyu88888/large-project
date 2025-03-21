@@ -1,7 +1,8 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from .views import (
-    AdminReportView, AwardStudentView, AwardView, BroadcastListAPIView, EventListView, EventRequestView, ManageEventDetailsView, NewsView, PendingMembersView, PendingRequestsView, RegisterView,
+    AdminReportView, AwardStudentView, AwardView, BroadcastListAPIView, EventListView, EventRequestView,
+    ManageEventDetailsView, NewsView, PendingMembersView, PendingRequestsView, RegisterView,
     CurrentUserView, SocietyMembersListView,
     StudentNotificationsView, StartSocietyRequestView, ManageSocietyDetailsView, StudentInboxView,
     AdminView, StudentView, EventView,
@@ -9,10 +10,11 @@ from .views import (
     RecentActivitiesView, NotificationsView, EventCalendarView,
     StudentSocietiesView, JoinSocietyView, RSVPEventView, EventHistoryView,
     get_popular_societies, CreateEventRequestView, custom_media_view, get_sorted_events, StudentSocietyDataView,
-    AllEventsView, EventDetailView, EventCommentsView, DescriptionRequestView, ManageSocietyDetailsAdminView, 
+    AllEventsView, EventDetailView, EventCommentsView, DescriptionRequestView, ManageSocietyDetailsAdminView,
     like_comment, dislike_comment, EventCommentsView, toggle_follow, StudentProfileView, AdminRepliesListView,
-    ActivityLogView, ManageEventDetailsAdminView, DeleteView, ManageStudentDetailsAdminView, ReportReplyView, 
-    MyReportsView, MyReportsWithRepliesView, ReportThreadView, AdminReportsWithRepliesView, ReportReplyNotificationsView)
+    ActivityLogView, ManageEventDetailsAdminView, DeleteView, ManageStudentDetailsAdminView, ReportReplyView,
+    MyReportsView, MyReportsWithRepliesView, ReportThreadView, AdminReportsWithRepliesView,
+    ReportReplyNotificationsView, SearchView)
 from .utils import request_otp, verify_otp
 from .recommendation_views import RecommendedSocietiesView, SocietyRecommendationExplanationView
 from .recommendation_feedback_views import RecommendationFeedbackView, RecommendationFeedbackAnalyticsView
@@ -144,4 +146,7 @@ urlpatterns = [
     path("news/", NewsView.as_view(), name="news"),
     path("news/<int:pk>", NewsView.as_view(), name="mark_news_read"),   # TODO: implement this later
     path("get-news/", BroadcastListAPIView.as_view(), name="get-news"),
+
+    # search engine
+    path("search/", SearchView.as_view(), name="search"),
 ]

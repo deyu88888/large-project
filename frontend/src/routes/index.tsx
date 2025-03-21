@@ -15,6 +15,7 @@ import ViewReports from "../pages/President/ViewReports";
 // Lazy-loaded pages
 const LoginPage = lazy(() => import("../pages/login"));
 const RegisterPage = lazy(() => import("../pages/register"));
+const SearchResultsPage = lazy(() => import("../pages/SearchResultsPage"))
 const ProfilePage = lazy(() => import("../pages/profile"));
 const StudentDashboard = lazy(() => import("../pages/Student/StudentDashboard"));
 const MySocieties = lazy(() => import("../pages/Student/MyJoinedSocieties"));
@@ -292,6 +293,7 @@ const routes = [
       { index: true, element: <PageWithTitle title="Home"><DashboardPage /></PageWithTitle> },
       { path: "login", element: <PageWithTitle title="Login"><LoginPage /></PageWithTitle> },
       { path: "register", element: <PageWithTitle title="Register"><RegisterPage /></PageWithTitle> },
+      { path: "search", element: <PageWithTitle title="Search"><SearchResultsPage /></PageWithTitle> },
       { path: "all-events", element: <PageWithTitle title="All Events"><AllEventsPage /></PageWithTitle>},
       { path: "event-list", element: <PageWithTitle title="All Events"><EventListPage /></PageWithTitle> },
     ],
