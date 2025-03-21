@@ -5,8 +5,8 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.utils import timezone
 from django.db.models import Manager
-from api.models import Society, SocietyNews, NewsComment, Student
-from api.serializers import SocietyNewsSerializer, NewsCommentSerializer
+from api.models import Society, SocietyNews, NewsComment, Student, NewsPublicationRequest
+from api.serializers import SocietyNewsSerializer, NewsCommentSerializer, NewsPublicationRequestSerializer
 
 def has_society_management_permission(student, society):
     print("\n" + "=" * 80)
@@ -52,7 +52,6 @@ class SocietyNewsListView(APIView):
         print(f"DEBUG - SocietyNewsListView GET request at {timezone.now()}")
         print(f"DEBUG - Request URL: {request.path}")
         print(f"DEBUG - Query params: {request.query_params}")
-        print(f"DEBUG - Auth header: {request.headers.get('Authorization', 'None')}")
         print(f"DEBUG - Society ID requested: {society_id}")
         print(f"DEBUG - User ID: {request.user.id}, Username: {request.user.username}")
 
@@ -67,7 +66,6 @@ class SocietyNewsListView(APIView):
 
                 try:
                     societies = student.societies
-                    print(f"DEBUG - Checking membership via student.societies")
                     if societies.filter(id=society_id).exists():
                         is_member = True
                 except Exception as e:
@@ -76,7 +74,6 @@ class SocietyNewsListView(APIView):
                 if not is_member:
                     try:
                         societies_belongs_to = student.societies_belongs_to
-                        print(f"DEBUG - Checking membership via student.societies_belongs_to")
                         if societies_belongs_to.filter(id=society_id).exists():
                             is_member = True
                     except Exception as e:
@@ -107,19 +104,50 @@ class SocietyNewsListView(APIView):
             if is_member:
                 try:
                     if has_society_management_permission(request.user.student, society):
-                        print("DEBUG - User is an officer, returning all posts")
+                        print("DEBUG - User is an officer, returning all posts with original status values")
                         news_posts = SocietyNews.objects.filter(society=society)
+                        
+                        # START EXTRA DEBUGGING
+                        # Check status directly from the database
+                        print(f"DEBUG - STATUS CHECK BEFORE SERIALIZATION")
+                        for post in news_posts:
+                            print(f"DEBUG - Direct DB query: Post ID={post.id}, Title={post.title}")
+                            print(f"DEBUG - Status from model: {post.status}")
+                            print(f"DEBUG - Status type: {type(post.status)}")
+                            
+                            # Explicitly check for rejected posts
+                            if post.status == 'Rejected':
+                                print(f"DEBUG - FOUND REJECTED POST ID={post.id}")
+                                
+                                # Check for any related publication requests
+                                from api.models import NewsPublicationRequest
+                                requests = NewsPublicationRequest.objects.filter(news_post=post)
+                                print(f"DEBUG - Publication requests for this post: {requests.count()}")
+                                for req in requests:
+                                    print(f"DEBUG - Request ID={req.id}, Status={req.status}")
+                        # END EXTRA DEBUGGING
                     else:
                         print("DEBUG - User is a regular member, returning published posts only")
                         news_posts = SocietyNews.objects.filter(society=society, status="Published")
 
                     news_posts = news_posts.order_by('-is_pinned', '-created_at')
                     serializer = SocietyNewsSerializer(news_posts, many=True, context={'request': request})
+                    
+                    # START EXTRA DEBUGGING
+                    # Debug serialized output
+                    print("DEBUG - SERIALIZED DATA CHECK:")
+                    for post in serializer.data:
+                        print(f"DEBUG - Serialized post: ID={post['id']}, Title={post.get('title', 'No title')}")
+                        print(f"DEBUG - Serialized status: {post.get('status', 'No status')}")
+                    # END EXTRA DEBUGGING
+                    
                     print("DEBUG - Returning serialized data")
                     print("=" * 80)
                     return Response(serializer.data, status=status.HTTP_200_OK)
                 except Exception as e:
                     print(f"DEBUG - Error processing news posts: {str(e)}")
+                    import traceback
+                    traceback.print_exc()
                     return Response({"error": "An error occurred processing news posts."}, 
                                     status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             else:
@@ -129,6 +157,8 @@ class SocietyNewsListView(APIView):
                                 status=status.HTTP_403_FORBIDDEN)
         except Exception as e:
             print(f"DEBUG - Unexpected error: {str(e)}")
+            import traceback
+            traceback.print_exc()
             return Response({"error": "An unexpected error occurred."}, 
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
@@ -154,6 +184,9 @@ class SocietyNewsListView(APIView):
             data = request_data.copy()
             data._mutable = True
             data['society'] = society.id
+
+            if 'status' in data and data['status'] == 'Published':
+                data['status'] = 'Draft'
 
             for field in ['is_pinned', 'is_featured']:
                 if field in data:
@@ -182,54 +215,124 @@ class SocietyNewsDetailView(APIView):
     permission_classes = [IsAuthenticated]
     
     def get(self, request, news_id):
+        print(f"DEBUG - SocietyNewsDetailView GET called with news_id={news_id}")
+        print(f"DEBUG - User: {request.user.username}, ID: {request.user.id}, "
+              f"is_admin={getattr(request.user, 'is_admin', lambda: None)()}")
+
         news_post = get_object_or_404(SocietyNews, id=news_id)
         society = news_post.society
 
-        is_member = False
-        if hasattr(request.user, 'student'):
-            is_member = request.user.student.societies.filter(id=society.id).exists()
+        # ==========================
+        # 1) If user is admin, skip membership checks
+        # ==========================
+        if request.user.is_admin():
+            print("DEBUG - Admin user detected. Skipping membership check.")
+            # Admin can see anything (even unpublished). No membership needed.
+            pass
+        else:
+            # ==========================
+            # 2) Normal user path: must be a society member to see any news
+            # ==========================
+            is_member = False
+            if hasattr(request.user, 'student'):
+                is_member = request.user.student.societies.filter(id=society.id).exists()
+            print(f"DEBUG - Society ID={society.id}, Society Name={society.name}, Is member={is_member}")
 
-        if not is_member:
-            return Response({"error": "You must be a member of this society to view its news."}, 
-                           status=status.HTTP_403_FORBIDDEN)
+            if not is_member:
+                print("DEBUG - User is not a member of the society. Returning 403.")
+                return Response({"error": "You must be a member of this society to view its news."}, 
+                                status=status.HTTP_403_FORBIDDEN)
 
-        if news_post.status != "Published" and not has_society_management_permission(request.user.student, society):
-            return Response({"error": "This news post is not published."}, 
-                           status=status.HTTP_403_FORBIDDEN)
+            # ==========================
+            # 3) If post is not published, need society management permission
+            # ==========================
+            if news_post.status != "Published":
+                has_management = False
+                if hasattr(request.user, 'student'):
+                    has_management = has_society_management_permission(request.user.student, society)
+                print(f"DEBUG - Post status={news_post.status}, has_management={has_management}")
 
-        # Use the model method to increment view count
+                if not has_management:
+                    print("DEBUG - Post is not published and user has no management permission. Returning 403.")
+                    return Response({"error": "This news post is not published."}, 
+                                    status=status.HTTP_403_FORBIDDEN)
+
+        # ==========================
+        # 4) Everyone who got here can see the post. Increment view count.
+        # ==========================
         news_post.increment_view_count()
+        print(f"DEBUG - Incremented view count for news_id={news_id}. New view_count={news_post.view_count}")
 
         serializer = SocietyNewsSerializer(news_post, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     def put(self, request, news_id):
+        print(f"DEBUG - SocietyNewsDetailView PUT called with news_id={news_id}")
+        print(f"DEBUG - User: {request.user.username}, ID: {request.user.id}, "
+              f"is_admin={getattr(request.user, 'is_admin', lambda: None)()}")
+
         news_post = get_object_or_404(SocietyNews, id=news_id)
         society = news_post.society
         
+        # Check management permission (no admin bypass here unless you want admin to update posts directly)
         if not hasattr(request.user, 'student') or not has_society_management_permission(request.user.student, society):
+            print("DEBUG - User lacks management permission or is not a student. Returning 403.")
             return Response({"error": "Only society presidents and vice presidents can update news posts."}, 
-                           status=status.HTTP_403_FORBIDDEN)
-
-        serializer = SocietyNewsSerializer(news_post, data=request.data, partial=True, context={'request': request})
-        if serializer.is_valid():
-            if news_post.status != "Published" and request.data.get('status') == "Published":
-                serializer.save(published_at=timezone.now())
-            else:
-                serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
+                            status=status.HTTP_403_FORBIDDEN)
         
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        # Make a copy of data
+        data = request.data.copy() if hasattr(request.data, 'copy') else dict(request.data)
+        
+        # Debug current and requested statuses
+        current_status = news_post.status
+        requested_status = data.get('status', None)
+        print(f"DEBUG - Current post status={current_status}, Requested status={requested_status}")
+
+        # Prevent direct status change to Published
+        if 'status' in data:
+            # If admin wants to override, we allow it (remove the condition if you prefer only the request system)
+            if request.user.is_admin():
+                print("DEBUG - Admin user, allowing any status change.")
+            
+            elif current_status == "Draft" and data['status'] == "Published":
+                print("DEBUG - Attempting to publish from Draft. Forcing to use publication request.")
+                data['status'] = "Draft"
+                return Response({
+                    "error": "Cannot directly publish posts. Please use the 'Submit for Approval' feature.",
+                    "code": "use_publication_request"
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            elif current_status == "PendingApproval" and data['status'] == "Draft":
+                print("DEBUG - Changing from PendingApproval to Draft. Cancelling pending requests.")
+                NewsPublicationRequest.objects.filter(
+                    news_post=news_post,
+                    status="Pending"
+                ).update(status="Cancelled")
+        
+        serializer = SocietyNewsSerializer(news_post, data=data, partial=True, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            print("DEBUG - Successfully updated news post.")
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            print(f"DEBUG - Validation errors: {serializer.errors}")
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     def delete(self, request, news_id):
+        print(f"DEBUG - SocietyNewsDetailView DELETE called with news_id={news_id}")
+        print(f"DEBUG - User: {request.user.username}, ID: {request.user.id}, "
+              f"is_admin={getattr(request.user, 'is_admin', lambda: None)()}")
+
         news_post = get_object_or_404(SocietyNews, id=news_id)
         society = news_post.society
         
         if not hasattr(request.user, 'student') or not has_society_management_permission(request.user.student, society):
+            print("DEBUG - User not manager or not a student. Returning 403.")
             return Response({"error": "Only society presidents and vice presidents can delete news posts."}, 
-                           status=status.HTTP_403_FORBIDDEN)
+                            status=status.HTTP_403_FORBIDDEN)
         
         news_post.delete()
+        print(f"DEBUG - News post ID={news_id} deleted successfully.")
         return Response({"message": "News post deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
 
 

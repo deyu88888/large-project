@@ -9,7 +9,8 @@ from .views import (
     StudentSocietiesView, JoinSocietyView, RSVPEventView, EventHistoryView, get_popular_societies,
     CreateEventRequestView, custom_media_view, get_sorted_events, StudentSocietyDataView,
     AllEventsView, EventDetailView, DescriptionRequestView, toggle_follow, StudentProfileView,
-    like_comment, dislike_comment, EventCommentsView
+    like_comment, dislike_comment, EventCommentsView, NewsPublicationRequestView,
+    AdminNewsApprovalView,
 )
 from .utils import request_otp, verify_otp
 from .recommendation_views import RecommendedSocietiesView, SocietyRecommendationExplanationView
@@ -136,4 +137,7 @@ urlpatterns = [
 
     # This is the "feed" for the student's societies:
     path("my-news-feed/", MemberNewsView.as_view(), name="member_news_feed"),
+
+    path('news/publication-request/', NewsPublicationRequestView.as_view(), name='news_publication_request'),
+    path('news/publication-request/<int:request_id>/', AdminNewsApprovalView.as_view(), name='admin_news_approval'),
 ]

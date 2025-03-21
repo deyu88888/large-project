@@ -31,6 +31,7 @@ import {
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { apiClient } from '../../api';
+import NewsPublicationRequestButton from '../../components/NewsPublicationRequestButton';
 
 // Custom wrapper component to avoid findDOMNode deprecation warning
 const QuillWrapper = ({ value, onChange, style, modules, formats, theme }) => {
@@ -58,7 +59,8 @@ interface NewsPost {
   created_at: string;
   updated_at: string;
   published_at: string | null;
-  status: 'Draft' | 'Published' | 'Archived';
+  status: 'Draft' | 'PendingApproval' | 'Rejected' | 'Published' | 'Archived';
+  admin_notes?: string | null;
   is_featured: boolean;
   is_pinned: boolean;
   tags: string[];
@@ -92,7 +94,7 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
   // New post state
   const [title, setTitle] = useState<string>('');
   const [content, setContent] = useState<string>('');
-  const [status, setStatus] = useState<'Draft' | 'Published'>('Draft');
+  const [status, setStatus] = useState<'Draft' | 'PendingApproval' | 'Rejected' | 'Published'>('Draft');
   const [isPinned, setIsPinned] = useState<boolean>(false);
   const [isFeatured, setIsFeatured] = useState<boolean>(false);
   const [tags, setTags] = useState<string[]>([]);
@@ -278,6 +280,18 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
           },
         });
       }
+
+      if (status === 'PendingApproval' && response?.data?.id) {
+                  try {
+                    await apiClient.post('/api/news/publication-request/', {
+                      news_post: response.data.id,
+                    });
+                    alert('Submitted for admin approval!');
+                  } catch (err) {
+                    console.error('Failed to create publication request:', err);
+                    alert('News post saved as draft, but failed to request publication.');
+                  }
+                }
       
       // Refresh news list
       fetchNews();
@@ -322,6 +336,10 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
     switch (status) {
       case 'Published':
         return colors.greenAccent[500];
+      case 'PendingApproval':
+        return colors.blueAccent[500];
+      case 'Rejected':
+        return colors.redAccent[500];  
       case 'Draft':
         return colors.grey[500];
       case 'Archived':
@@ -584,6 +602,13 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
                   </Box>
                 } 
               />
+              <Tab 
+                label={
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <span>Rejected</span>
+                  </Box>
+                } 
+              />
             </Tabs>
             
             
@@ -650,9 +675,11 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
             >
               {news
                 .filter(post => {
+                  console.log(`Post ID=${post.id}, Title=${post.title}, Status=${post.status}`);
                   if (tab === 0) return true;
                   if (tab === 1) return post.status === 'Published';
                   if (tab === 2) return post.status === 'Draft';
+                  if (tab === 3) return post.status === 'Rejected';
                   return true;
                 })
                 .map(renderNewsItem)}
@@ -912,6 +939,48 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
               Delete
             </Button>
           </Box>
+          
+          {selectedNews.status === 'Rejected' && (
+          <Box mt={3} p={3} bgcolor={alpha(colors.redAccent[500], 0.1)} borderRadius={1} border={`1px solid ${alpha(colors.redAccent[500], 0.3)}`}>
+            <Typography variant="h6" color={colors.redAccent[500]} fontWeight="bold">
+              This post was rejected by the admin
+            </Typography>
+            {selectedNews.admin_notes ? (
+              <Box mt={2} p={2} bgcolor={alpha(colors.primary[800], 0.3)} borderRadius={1}>
+                <Typography variant="subtitle1" fontWeight="bold" color={colors.grey[100]}>
+                  Admin Feedback:
+                </Typography>
+                <Typography variant="body1" color={colors.grey[100]} mt={1}>
+                  {selectedNews.admin_notes}
+                </Typography>
+              </Box>
+            ) : (
+              <Typography variant="body2" color={colors.grey[300]} mt={1}>
+                No specific feedback was provided.
+              </Typography>
+            )}
+            <Button
+              variant="contained"
+              sx={{
+                mt: 2,
+                backgroundColor: colors.greenAccent[600],
+                '&:hover': { backgroundColor: colors.greenAccent[700] },
+              }}
+              onClick={() => handleEditNews(selectedNews)}
+            >
+              Revise and Resubmit
+            </Button>
+          </Box>
+        )}
+
+          {(selectedNews.status === 'Draft' || selectedNews.status === 'Rejected') && (
+          <Box mt={2}>
+            <NewsPublicationRequestButton
+              newsId={selectedNews.id}
+              onSuccess={fetchNews}
+            />
+          </Box>
+        )}
         </Paper>
       )}
       
@@ -1027,7 +1096,7 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
                       }}
                     >
                       <MenuItem value="Draft">Draft</MenuItem>
-                      <MenuItem value="Published">Published</MenuItem>
+                      <MenuItem value="PendingApproval">Submit for Approval</MenuItem>
                     </Select>
                   </FormControl>
                   </Box>
@@ -1443,7 +1512,7 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
                   borderRadius: '8px'
                 }}
               >
-                {!isSubmitting && (status === 'Published' ? 'Publish' : 'Save Draft')}
+                {!isSubmitting && (status === 'Published' ? 'Publish' : status === 'PendingApproval' ? 'Submit for Approval' : 'Save Draft')}
               </Button>
             </Box>
           </form>

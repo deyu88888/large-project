@@ -1,6 +1,6 @@
 import datetime
 from api.models import AdminReportRequest, Award, AwardStudent, BroadcastMessage, SiteSettings, User, Student, Society, Event, \
-    Notification, Request, SocietyRequest, SocietyShowreel, SocietyShowreelRequest, EventRequest, UserRequest, Comment, DescriptionRequest, SocietyNews, NewsComment
+    Notification, Request, SocietyRequest, SocietyShowreel, SocietyShowreelRequest, EventRequest, UserRequest, Comment, DescriptionRequest, SocietyNews, NewsComment, NewsPublicationRequest
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 from django.utils.translation import gettext_lazy as _
@@ -964,6 +964,8 @@ class SocietyNewsSerializer(serializers.ModelSerializer):
     attachment_name = serializers.SerializerMethodField()
     comments = serializers.SerializerMethodField(read_only=True)
 
+    admin_notes = serializers.SerializerMethodField()
+
     class Meta:
         model = SocietyNews
         fields = [
@@ -971,7 +973,8 @@ class SocietyNewsSerializer(serializers.ModelSerializer):
             'attachment', 'attachment_name', 'author', 'author_data',
             'society_data', 'created_at', 'updated_at', 'published_at',
             'status', 'is_featured', 'is_pinned', 'tags', 'view_count',
-            'comment_count', 'is_author', 'comments'
+            'comment_count', 'is_author', 'comments',
+            'admin_notes',  # <-- Include the new field in your JSON output
         ]
         read_only_fields = ['created_at', 'updated_at', 'published_at', 'view_count']
         extra_kwargs = {
@@ -980,7 +983,7 @@ class SocietyNewsSerializer(serializers.ModelSerializer):
             'author': {'write_only': True},
             'society': {'write_only': True},
         }
-    
+
     def __init__(self, *args, **kwargs):
         print("\n" + "=" * 80)
         print(f"DEBUG - SocietyNewsSerializer.__init__()")
@@ -991,12 +994,13 @@ class SocietyNewsSerializer(serializers.ModelSerializer):
             print(f"DEBUG - Incoming data: {kwargs['data']}")
             if hasattr(kwargs['data'], 'dict'):
                 print(f"DEBUG - Data is QueryDict, keys: {kwargs['data'].keys()}")
-                print(f"DEBUG - Content type: {kwargs.get('context', {}).get('request', {}).content_type}")
+                req = kwargs.get('context', {}).get('request', {})
+                print(f"DEBUG - Content type: {getattr(req, 'content_type', 'Unknown')}")
         
         super().__init__(*args, **kwargs)
         print(f"DEBUG - Serializer initialized successfully")
         print("=" * 80)
-    
+
     def to_internal_value(self, data):
         """
         Debug data conversion before validation
@@ -1021,12 +1025,12 @@ class SocietyNewsSerializer(serializers.ModelSerializer):
             traceback.print_exc()
             print("=" * 80)
             raise
-    
+
     def get_author_data(self, obj):
         """Get basic author information"""
         print(f"DEBUG - get_author_data() for object ID {getattr(obj, 'id', 'None')}")
         if not obj.author:
-            print(f"DEBUG - No author found")
+            print("DEBUG - No author found")
             return None
         
         author_data = {
@@ -1078,7 +1082,7 @@ class SocietyNewsSerializer(serializers.ModelSerializer):
         try:
             request = self.context.get("request", None)
             if request and request.user.is_authenticated and hasattr(request.user, 'student'):
-                is_author = obj.author and obj.author.id == request.user.student.id
+                is_author = (obj.author and obj.author.id == request.user.student.id)
                 print(f"DEBUG - is_author check for user {request.user.id}: {is_author}")
                 return is_author
             return False
@@ -1123,10 +1127,36 @@ class SocietyNewsSerializer(serializers.ModelSerializer):
             print(f"DEBUG - Error in get_comments: {str(e)}")
             return []
 
+    def get_admin_notes(self, obj):
+        """
+        Return the admin_notes from the latest Rejected NewsPublicationRequest, if status=Rejected
+        """
+        print(f"DEBUG - get_admin_notes() called for post ID={obj.id}, status='{obj.status}'")
+
+        if obj.status != "Rejected":
+            print("DEBUG - Post is not Rejected. Returning None for admin_notes.")
+            return None
+
+        try:
+            # Get the most recently reviewed request with status="Rejected"
+            rejected_req = NewsPublicationRequest.objects.filter(
+                news_post=obj, status="Rejected"
+            ).order_by('-reviewed_at').first()
+
+            if rejected_req:
+                print(f"DEBUG - Found Rejected request ID={rejected_req.id}, admin_notes='{rejected_req.admin_notes}'")
+                return rejected_req.admin_notes
+            else:
+                print("DEBUG - No Rejected request found. Returning None.")
+                return None
+        except Exception as e:
+            print(f"DEBUG - Error retrieving admin_notes: {str(e)}")
+            return None
+
     def validate(self, data):
         """Validate the news post data"""
         print("\n" + "=" * 80)
-        print(f"DEBUG - validate() called")
+        print("DEBUG - validate() called")
         print(f"DEBUG - Data to validate: {data}")
         
         # Check for required fields
@@ -1134,24 +1164,22 @@ class SocietyNewsSerializer(serializers.ModelSerializer):
             print(f"DEBUG - Checking field '{field}': {field in data}")
         
         if data.get('status') == 'Published' and not data.get('title'):
-            print(f"DEBUG - Validation error: Published news must have a title")
+            print("DEBUG - Validation error: Published news must have a title")
             raise serializers.ValidationError({"title": "Published news must have a title."})
         
-        # Check status value
         status_value = data.get('status')
         print(f"DEBUG - Status value: {status_value}")
-        if status_value and status_value not in ['Draft', 'Published', 'Archived']:
+        if status_value and status_value not in ['Draft', 'PendingApproval', 'Rejected', 'Published', 'Archived']:
             print(f"DEBUG - Invalid status: {status_value}")
-            raise serializers.ValidationError({"status": f"Invalid status: {status_value}. Must be one of: Draft, Published, Archived"})
+            raise serializers.ValidationError({
+                "status": f"Invalid status: {status_value}. Must be one of: Draft, PendingApproval, Rejected, Published, Archived"
+            })
         
-        # Validate other fields if necessary
         if 'tags' in data:
             tags = data.get('tags')
             print(f"DEBUG - Tags: {tags}, Type: {type(tags)}")
-            
-            # Ensure tags is a list
             if tags and not isinstance(tags, list):
-                print(f"DEBUG - Tags is not a list, attempting conversion")
+                print("DEBUG - Tags is not a list, attempting conversion")
                 try:
                     import json
                     if isinstance(tags, str):
@@ -1161,7 +1189,7 @@ class SocietyNewsSerializer(serializers.ModelSerializer):
                     print(f"DEBUG - Error converting tags: {str(e)}")
                     raise serializers.ValidationError({"tags": "Tags must be a list"})
         
-        print(f"DEBUG - Validation successful")
+        print("DEBUG - Validation successful")
         print("=" * 80)
         return data
     
@@ -1184,27 +1212,26 @@ class SocietyNewsSerializer(serializers.ModelSerializer):
         return result
 
     def create(self, validated_data):
-        """Create a new news post"""
+        """
+        Create a new news post
+        """
         print("\n" + "=" * 80)
-        print(f"DEBUG - create() called")
+        print("DEBUG - create() called")
         print(f"DEBUG - Validated data: {validated_data}")
         
-        # Ensure the author is set to the current user's student profile
         request = self.context.get("request")
-        
+
         if request:
             print(f"DEBUG - Request user: {request.user}, authenticated: {request.user.is_authenticated}")
-            
             if hasattr(request.user, 'student'):
                 print(f"DEBUG - Request user has student profile: {request.user.student}")
             else:
-                print(f"DEBUG - Request user does not have student profile")
+                print("DEBUG - Request user does not have student profile")
         
         if not validated_data.get('author') and request and hasattr(request.user, 'student'):
             validated_data['author'] = request.user.student
             print(f"DEBUG - Setting author to current user's student profile: {request.user.student}")
         
-        # Check for tags conversion
         if 'tags' in validated_data:
             print(f"DEBUG - Tags before final processing: {validated_data['tags']}, Type: {type(validated_data['tags'])}")
         
@@ -1230,3 +1257,65 @@ class SocietyNewsSerializer(serializers.ModelSerializer):
             print(f"DEBUG - Formatted published_at: {formatted_time}")
             return formatted_time
         return None
+    
+class NewsPublicationRequestSerializer(serializers.ModelSerializer):
+    """
+    Serializer for tracking news publication requests from society presidents
+    """
+    news_post_title = serializers.SerializerMethodField()
+    society_name = serializers.SerializerMethodField()
+    requester_name = serializers.SerializerMethodField()
+    reviewer_name = serializers.SerializerMethodField()
+    author_data = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = NewsPublicationRequest
+        fields = [
+            'id', 'news_post', 'news_post_title', 'society_name', 
+            'requested_by', 'requester_name', 'reviewed_by', 'reviewer_name',
+            'status', 'requested_at', 'reviewed_at', 'admin_notes', 'author_data'
+        ]
+        read_only_fields = [
+            'requested_at',
+            'reviewed_at',
+            'requested_by',
+            'reviewed_by',
+            'status',
+            'news_post_title',
+            'society_name',
+            'requester_name',
+            'reviewer_name',
+            'author_data',
+        ]
+    
+    def get_news_post_title(self, obj):
+        return obj.news_post.title if obj.news_post else "Unknown"
+    
+    def get_society_name(self, obj):
+        return obj.news_post.society.name if obj.news_post and obj.news_post.society else "Unknown"
+    
+    def get_requester_name(self, obj):
+        return obj.requested_by.full_name if obj.requested_by else "Unknown"
+    
+    def get_reviewer_name(self, obj):
+        return obj.reviewed_by.full_name if obj.reviewed_by else None
+        
+    def get_author_data(self, obj):
+        """Get basic author information"""
+        if not obj.news_post or not obj.news_post.author:
+            return None
+        
+        return {
+            "id": obj.news_post.author.id,
+            "username": obj.news_post.author.username,
+            "first_name": obj.news_post.author.first_name,
+            "last_name": obj.news_post.author.last_name,
+            "full_name": obj.news_post.author.full_name,
+        }
+    
+    def validate(self, data):
+        """Validate publication request"""
+        if 'status' in data and data['status'] not in ['Pending', 'Approved', 'Rejected']:
+            raise serializers.ValidationError({"status": "Status must be Pending, Approved, or Rejected"})
+            
+        return data    

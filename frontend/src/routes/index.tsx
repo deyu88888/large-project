@@ -53,6 +53,7 @@ const RequestEventPage = lazy(() => import("../pages/Admin/PendingEventRequest")
 const AdminReportList = lazy(() => import("../pages/Admin/AdminReportList"));
 const ManageSocietiesPage = lazy(() => import("../pages/Admin/AdminSocietyManagement"));
 const ManageEventsPage = lazy(() => import("../pages/Admin/AdminEventManagement"));
+const NewsApprovalDashboard = lazy(() => import("../pages/Admin/NewsApprovalDashboard"));
 
 const routes = [
   {
@@ -92,6 +93,7 @@ const routes = [
           { path: "request-society", element: <PageWithTitle title="Society Creation Requests"><RequestSocietyPage /></PageWithTitle> },
           { path: "request-event", element: <PageWithTitle title="Pending Event Requests"><RequestEventPage /></PageWithTitle> },
           { path: "report-list", element: <PageWithTitle title="Admin Reports"><AdminReportList /></PageWithTitle> },
+          { path: "news-approval", element: <PageWithTitle title="News Publication Approval"><NewsApprovalDashboard /></PageWithTitle> },
         ],
       },
       {
