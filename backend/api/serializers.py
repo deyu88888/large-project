@@ -88,7 +88,6 @@ class StudentSerializer(UserSerializer):
             if hasattr(obj.event_manager_of_society, 'all'):
                 society = obj.event_manager_of_society.first()
                 if society:
-                    print(f"DEBUG - Found society for event manager: {society.id}")
                     return society.id
             
             # If it's not a RelatedManager but a direct reference
@@ -99,25 +98,6 @@ class StudentSerializer(UserSerializer):
             print(f"DEBUG - Error in get_event_manager_of_society: {str(e)}")
         
         return None
-    def get_is_vice_president(self, obj):
-        """Get whether the student is a vice president"""
-        # For debugging
-        print(f"DEBUG - Checking is_vice_president for {obj.username}")
-        
-        # First check the direct field
-        if hasattr(obj, 'is_vice_president'):
-            print(f"DEBUG - Direct is_vice_president attribute: {obj.is_vice_president}")
-            
-        # Try the query method
-        try:
-            is_vp = Society.objects.filter(vice_president=obj).exists()
-            print(f"DEBUG - Query result for is_vice_president: {is_vp}")
-            return is_vp
-        except Exception as e:
-            print(f"DEBUG - Error querying vice president status: {str(e)}")
-            
-        # Fallback to the attribute
-        return getattr(obj, 'is_vice_president', False)
     
     def get_vice_president_of_society(self, obj):
         """Get the ID of the society where the student is vice president"""
@@ -126,7 +106,6 @@ class StudentSerializer(UserSerializer):
             if hasattr(obj.vice_president_of_society, 'all'):
                 society = obj.vice_president_of_society.first()
                 if society:
-                    print(f"DEBUG - Found society for VP: {society.id}")
                     return society.id
             
             # If it's not a RelatedManager but a direct reference

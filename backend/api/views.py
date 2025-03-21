@@ -16,6 +16,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from django.views.static import serve
 from rest_framework import generics, status
+import traceback
+import sys
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser, BasePermission
 from django.views.decorators.csrf import csrf_exempt
@@ -98,106 +100,44 @@ class RegisterView(APIView):
 
         return Response({"message": "Student registered successfully"}, status=status.HTTP_201_CREATED)
 
-
-import traceback
-import sys
-
 class CurrentUserView(APIView):
     """
-    View for retrieving the currently authenticated user. This view provides information about the logged-in user
-    based on the provided JWT authentication token.
-
-    - **GET**: Retrieves the details of the currently authenticated user. Expects an authorization token in the request
-    header as 'Authorization: Bearer <token>'.
-
-    Returns the user data using the `UserSerializer` if a valid token is provided. If the token is missing or invalid,
-    an error message is returned.
-
+    View for retrieving and updating the currently authenticated user.
+    
+    - **GET**: Retrieves the details of the currently authenticated user.
+    - **PUT**: Updates the details of the currently authenticated user.
+    
     Permissions:
-        - Requires a valid JWT token to access (authentication via JWT).
+        - Requires a valid JWT token to access.
     """
 
     def get(self, request):
         try:
-            print("\n" + "="*80)
-            print(f"DEBUG - CurrentUserView - User ID: {request.user.id}")
-            print(f"DEBUG - CurrentUserView - Username: {request.user.username}")
-            print(f"DEBUG - CurrentUserView - User type: {type(request.user).__name__}")
-            
             jwt_authenticator = JWTAuthentication()
-            print(f"DEBUG - About to authenticate with JWT")
             decoded_auth = jwt_authenticator.authenticate(request)
-            print(f"DEBUG - JWT authentication result: {decoded_auth is not None}")
 
             if decoded_auth is None:
-                print(f"DEBUG - JWT authentication failed")
                 return Response({
                     "error": "Invalid or expired token. Please log in again."
                 }, status=status.HTTP_401_UNAUTHORIZED)
 
             user, _ = decoded_auth
-            print(f"DEBUG - Authenticated user ID: {user.id}")
-            print(f"DEBUG - Authenticated username: {user.username}")
             
             try:
-                print(f"DEBUG - Trying to get Student with pk={user.pk}")
                 student_user = Student.objects.get(pk=user.pk)
-                print(f"DEBUG - Found student: {student_user.username}")
-                print(f"DEBUG - Student fields: {dir(student_user)}")
-                print(f"DEBUG - Is president: {getattr(student_user, 'is_president', None)}")
-                print(f"DEBUG - Is vice president: {getattr(student_user, 'is_vice_president', None)}")
-                
-                # Check for president relationship
-                if hasattr(student_user, 'president_of'):
-                    print(f"DEBUG - President of society: {getattr(student_user.president_of, 'id', None) if student_user.president_of else None}")
-                else:
-                    print(f"DEBUG - No president_of attribute")
-                
-                # Check for vice president relationship
-                try:
-                    vp_societies = getattr(student_user, 'vice_president_of_society', None)
-                    print(f"DEBUG - VP society type: {type(vp_societies).__name__}")
-                    print(f"DEBUG - VP society: {vp_societies}")
-                except Exception as e:
-                    print(f"DEBUG - Error getting vice_president_of_society: {str(e)}")
-                
-                # Create serializer
-                print(f"DEBUG - Creating StudentSerializer")
                 serializer = StudentSerializer(student_user)
-                print(f"DEBUG - StudentSerializer created")
             except Student.DoesNotExist:
-                # No matching Student row, so just use User
-                print(f"DEBUG - No Student found, using UserSerializer instead")
-                serializer = UserSerializer(user)
-            except Exception as e:
-                print(f"DEBUG - Unexpected error handling student: {str(e)}")
-                print(traceback.format_exc())
-                # Fallback to UserSerializer
                 serializer = UserSerializer(user)
 
-            # Check if serializer.data exists
-            print(f"DEBUG - About to access serializer.data")
             if not serializer.data:
-                print(f"DEBUG - serializer.data is empty or None")
                 return Response(
                     {"error": "User data could not be retrieved. Please try again later."},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
             
-            print(f"DEBUG - Serializer data keys: {serializer.data.keys()}")
-            print(f"DEBUG - Response data: {serializer.data}")
             return Response(serializer.data, status=status.HTTP_200_OK)
             
         except Exception as e:
-            # Print detailed error information
-            print("\nCRITICAL ERROR IN CURRENT USER VIEW:")
-            print("-"*80)
-            print(f"Exception: {str(e)}")
-            print("-"*80)
-            traceback.print_exc(file=sys.stdout)
-            print("="*80)
-            
-            # Return a proper error response
             return Response(
                 {"error": "Server error fetching user data", "detail": str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -205,39 +145,30 @@ class CurrentUserView(APIView):
 
     def put(self, request):
         """
-        update user details
-        note: this current implmentation is not secure, it should not be able to update the user role
+        Update user details
         """
         try:
-            print(f"DEBUG - PUT request to CurrentUserView")
             jwt_authenticator = JWTAuthentication()
             decoded_auth = jwt_authenticator.authenticate(request)
 
             if decoded_auth is None:
-                print(f"DEBUG - JWT authentication failed in PUT")
                 return Response({
                     "error": "Invalid or expired token. Please log in again."
                 }, status=status.HTTP_401_UNAUTHORIZED)
 
             user, _ = decoded_auth
-            print(f"DEBUG - PUT request data: {request.data}")
             serializer = UserSerializer(user, data=request.data, partial=True)
             
             if serializer.is_valid():
-                print(f"DEBUG - Serializer is valid, saving changes")
-                serializer.save()   # save the update
+                serializer.save()
                 return Response(serializer.data, status=status.HTTP_200_OK)
             else:
-                print(f"DEBUG - Serializer validation errors: {serializer.errors}")
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            print(f"DEBUG - Error in PUT method: {str(e)}")
-            print(traceback.format_exc())
             return Response(
                 {"error": "Server error updating user data", "detail": str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-
 
 class StudentSocietiesView(APIView):
     """
@@ -288,6 +219,30 @@ class StudentSocietiesView(APIView):
         # Check if the user is actually a member of the society
         if not user.student.societies_belongs_to.filter(id=society_id).exists():
             return Response({"error": "You are not a member of this society."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Check if the user is in a leadership position (president, vice president, or event manager)
+        student = user.student
+        
+        # Check for president role
+        if society.president == student:
+            return Response(
+                {"error": "As the president, you cannot leave the society. Please transfer presidency first."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Check for vice president role
+        if society.vice_president == student:
+            return Response(
+                {"error": "As the vice president, you cannot leave the society. Please resign from your position first."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Check for event manager role
+        if society.event_manager == student:
+            return Response(
+                {"error": "As the event manager, you cannot leave the society. Please resign from your position first."},
+                status=status.HTTP_403_FORBIDDEN
+            )
 
         # Remove the student from the society
         user.student.societies_belongs_to.remove(society)
@@ -550,6 +505,7 @@ class StudentInboxView(StudentNotificationsView):
         except Notification.DoesNotExist:
             return Response({"error": "Notification not found or not authorized"}, status=status.HTTP_404_NOT_FOUND)
 
+
 class StartSocietyRequestView(APIView):
     """View to handle society creation requests."""
     permission_classes = [IsAuthenticated]
@@ -560,6 +516,29 @@ class StartSocietyRequestView(APIView):
         # Ensure the user is a student
         if not hasattr(user, "student"):
             return Response({"error": "Only students can request a new society."}, status=status.HTTP_403_FORBIDDEN)
+        
+        student = user.student
+        
+        # Check if student is already a president of a society
+        if hasattr(student, 'president_of') and student.president_of:
+            return Response(
+                {"error": "As a society president, you cannot start another society."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+            
+        # Check if student is already a vice president of a society
+        if hasattr(student, 'vice_president_of_society') and student.vice_president_of_society:
+            return Response(
+                {"error": "As a society vice president, you cannot start another society."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+            
+        # Check if student is already an event manager of a society
+        if hasattr(student, 'event_manager_of_society') and student.event_manager_of_society:
+            return Response(
+                {"error": "As a society event manager, you cannot start another society."},
+                status=status.HTTP_403_FORBIDDEN
+            )
 
         # Validate and save the data
         serializer = StartSocietyRequestSerializer(data=request.data)
@@ -1927,7 +1906,7 @@ logger = logging.getLogger(__name__)
 
 class EventListView(APIView):
     """
-    Lists events for all societies the currently logged-in student is part of.
+    Lists events for the society the currently logged-in president/vice-president/event manager is managing.
     Optionally applies a filter (upcoming, previous, pending).
     """
     permission_classes = [IsAuthenticated]
@@ -1976,7 +1955,7 @@ class EventListView(APIView):
 
 class ManageEventDetailsView(APIView):
     """
-    API View for society presidents and vice presidents to edit or delete events.
+    API View for society presidents, vice presidents, and event manager to edit or delete events.
     """
     permission_classes = [IsAuthenticated]
     
