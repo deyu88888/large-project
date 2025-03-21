@@ -2751,34 +2751,29 @@ class ReportThreadView(APIView):
 
 class StudentSocietyDataView(APIView):
     """
-    API View to inspect a specific society.
+    API View to inspect a specific society (accessible to anyone).
     """
     permission_classes = [AllowAny]
 
     def get(self, request, society_id):
-        # Manual society access via id
         society = get_object_or_404(Society, id=society_id)
-        serializer = SocietySerializer(society)
-
-        # Return extra data indicating membership
+        serializer = SocietySerializer(society, context={"request": request})
         serializer_data = serializer.data
-        is_member = society.society_members.filter(
-            id=request.user.student.id
-        ).exists()
-        if is_member:
-            serializer_data["is_member"] = 2
-        else:
-            request_exists = SocietyRequest.objects.filter(
-                society=society,
-                from_student=request.user.student,
-                intent="JoinSoc"
-            ).exists()
-            if request_exists:
-                serializer_data["is_member"] = 1
+
+        if request.user.is_authenticated and hasattr(request.user, 'student'):
+            is_member = society.society_members.filter(id=request.user.student.id).exists()
+            if is_member:
+                serializer_data["is_member"] = 2
             else:
-                serializer_data["is_member"] = 0
+                request_exists = SocietyRequest.objects.filter(
+                    society=society,
+                    from_student=request.user.student,
+                    intent="JoinSoc"
+                ).exists()
+                serializer_data["is_member"] = 1 if request_exists else 0
 
         return Response(serializer_data, status=status.HTTP_200_OK)
+
 
 
 def custom_media_view(request, path):

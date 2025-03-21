@@ -1,10 +1,30 @@
 import React, { useEffect, useState, useRef } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { apiClient } from "../api";
 import { CircularProgress, Typography, Card, CardContent } from "@mui/material";
 import { format } from "date-fns";
-import { Link } from "react-router-dom";
 import { CommentSection } from "../components/CommentSection";
+
+function isUserAuthenticated(): boolean {
+  const token = localStorage.getItem("token");
+  if (!token) return false;
+  try {
+    const base64Url = token.split('.')[1];
+    if (!base64Url) return false;
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    const payload = JSON.parse(jsonPayload);
+    return payload.exp * 1000 > Date.now();
+  } catch (error) {
+    console.error("Error decoding token:", error);
+    return false;
+  }
+}
 
 const CommentsSectionWrapper: React.FC<{ isAuthenticated: boolean; children: React.ReactNode }> = ({
   isAuthenticated,
@@ -13,11 +33,11 @@ const CommentsSectionWrapper: React.FC<{ isAuthenticated: boolean; children: Rea
   if (!isAuthenticated) {
     return (
       <Typography
-          variant="body2"
-          color="text.primary"
-          align="center"
-          marginTop="20px"
-          fontSize="14px"
+        variant="body2"
+        color="text.primary"
+        align="center"
+        marginTop="20px"
+        fontSize="14px"
       >
         Please{" "}
         <Link to="/login" style={{ textDecoration: "underline", color: "blue" }}>
@@ -39,7 +59,8 @@ const EventDetailPage: React.FC = () => {
   const numericEventId = eventId ? parseInt(eventId, 10) : undefined;
   const [event, setEvent] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated] = useState<boolean>(isUserAuthenticated());
+  // const isAuthenticated = Boolean(localStorage.getItem("token"));
   const [, setComments] = useState<any[]>([]);
   const wsRef = useRef<WebSocket | null>(null);
 
@@ -59,21 +80,6 @@ const EventDetailPage: React.FC = () => {
 
     fetchEvent();
   }, [numericEventId]);
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const authRes = await apiClient.get("/api/user/current");
-        if (authRes.status === 200) {
-          setIsAuthenticated(true);
-        }
-      } catch {
-        setIsAuthenticated(false); // 401 Unauthorized
-      }
-    };
-
-    checkAuth();
-  }, []);
 
   useEffect(() => {
     const fetchComments = async () => {

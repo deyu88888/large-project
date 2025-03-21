@@ -1,9 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import {Card, CardContent, Typography, CardActionArea, Avatar, Box} from '@mui/material';
-import { FaSearch } from 'react-icons/fa';
+import {FaCalendarAlt, FaSearch} from 'react-icons/fa';
 import axios from 'axios';
-import { apiClient } from "../api";
+
+function isUserAuthenticated(): boolean {
+  const token = localStorage.getItem("token");
+  if (!token) return false;
+  try {
+    const base64Url = token.split('.')[1];
+    if (!base64Url) return false;
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    const payload = JSON.parse(jsonPayload);
+    return payload.exp * 1000 > Date.now();
+  } catch (error) {
+    console.error("Error decoding token:", error);
+    return false;
+  }
+}
 
 const SearchResultsPage = () => {
   const [searchParams] = useSearchParams();
@@ -13,21 +33,7 @@ const SearchResultsPage = () => {
   const [results, setResults] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('all');
   const [loading, setLoading] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const authRes = await apiClient.get("/api/user/current");
-        if (authRes.status === 200) {
-          setIsAuthenticated(true);
-        }
-      } catch {
-        setIsAuthenticated(false);
-      }
-    };
-    checkAuth();
-  }, []);
+  const [isAuthenticated] = useState<boolean>(isUserAuthenticated());
 
   useEffect(() => {
     if (!queryParam) return;
@@ -91,10 +97,13 @@ const SearchResultsPage = () => {
               <Card key={idx} variant="outlined">
                 <CardActionArea component={Link} to={link}>
                   <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <Avatar
-                      src={avatarSrc}
-                      sx={{ width: 48, height: 48 }}
-                    />
+                    {type === 'event' ? (
+                      <Avatar sx={{ bgcolor: 'success.main', width: 48, height: 48 }}>
+                        <FaCalendarAlt />
+                      </Avatar>
+                    ) : (
+                      <Avatar src={avatarSrc} sx={{ width: 48, height: 48 }} />
+                    )}
                     <Box>
                       <Typography variant="subtitle1" fontWeight="bold">{primaryText}</Typography>
                       {secondaryText && (
