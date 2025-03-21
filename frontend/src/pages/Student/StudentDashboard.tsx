@@ -132,7 +132,7 @@ const StudentDashboard: React.FC = () => {
       await fetchData();
     };
     callFetchData();
-  }, []);
+  }, [user?.id]);
 
   async function fetchData() {
     setLoading(true);
@@ -169,13 +169,6 @@ const StudentDashboard: React.FC = () => {
       setAwards([awardsResponse.data]);
     } catch (error) {
       console.error("Error fetching award assignments:", error);
-    }
-    try {
-      const studentResponse = await apiClient.get("api/user/current");
-      console.log("Student data:", studentResponse.data)
-      setStudent(studentResponse.data)
-    } catch (error) {
-      console.error("Error fetching current student:", error);
     }
     
     setLoading(false);
