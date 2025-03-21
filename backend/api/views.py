@@ -2753,7 +2753,7 @@ class StudentSocietyDataView(APIView):
     """
     API View to inspect a specific society.
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def get(self, request, society_id):
         # Manual society access via id
@@ -3070,16 +3070,16 @@ class SearchView(APIView):
             return Response({"error": "No search query provided."}, status=400)
 
         student_results = Student.objects.filter(username__icontains=query)
-        student_serializer = StudentSerializer(student_results, many=True)
+        student_serializer = StudentSerializer(student_results, many=True, context={'request': request})
 
         event_results = Event.objects.filter(
             title__icontains=query,
             status="Approved"
         )
-        event_serializer = EventSerializer(event_results, many=True)
+        event_serializer = EventSerializer(event_results, many=True, context={'request': request})
 
         society_results = Society.objects.filter(name__icontains=query)
-        society_serializer = SocietySerializer(society_results, many=True)
+        society_serializer = SocietySerializer(society_results, many=True, context={'request': request})
 
         return Response({
             "students": student_serializer.data,

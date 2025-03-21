@@ -71,6 +71,7 @@ class StudentSerializer(UserSerializer):
     #awards = AwardStudentSerializer(source='award_students', many=True, read_only=True) this will work when files are seperated
     is_vice_president = serializers.BooleanField(read_only=True)
     is_event_manager = serializers.BooleanField(read_only=True)
+    icon = serializers.SerializerMethodField()
     
 
     class Meta(UserSerializer.Meta):
@@ -135,6 +136,13 @@ class StudentSerializer(UserSerializer):
             raise serializers.ValidationError("user with this username already exists.")
         return value
 
+    def get_icon(self, obj):
+        """Return full URL for the icon image"""
+        if obj.icon:
+            request = self.context.get("request")
+            return request.build_absolute_uri(obj.icon.url) if request else obj.icon.url
+        return None
+
     def create(self, validated_data):
         """
         Override create to handle Student-specific fields.
@@ -186,6 +194,7 @@ class SocietySerializer(serializers.ModelSerializer):
         queryset=Student.objects.all(), write_only=True, source='event_manager', required=False
     )
     tags = serializers.ListField(child=serializers.CharField(), required=False)
+    icon = serializers.SerializerMethodField()
 
     class Meta:
         """SocietySerializer meta data"""

@@ -308,6 +308,7 @@ const routes = [
     children: [
       { path: "all-events", element: <PageWithTitle title="All Events"><AllEventsPage /></PageWithTitle> },
       { path: "event/:eventId", element: <PageWithTitle title="Event Details"><EventDetailPage /></PageWithTitle> },
+      { path: "view-society/:society_id", element: <PageWithTitle title="Society Details"><ViewSocietyPage /></PageWithTitle> },
     ],
   },
   {

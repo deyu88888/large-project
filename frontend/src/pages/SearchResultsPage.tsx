@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import { FaSearch, FaUser, FaCalendarAlt, FaUniversity } from 'react-icons/fa';
+import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import {Card, CardContent, Typography, CardActionArea, Avatar, Box} from '@mui/material';
+import { FaSearch } from 'react-icons/fa';
 import axios from 'axios';
+import { apiClient } from "../api";
 
 const SearchResultsPage = () => {
   const [searchParams] = useSearchParams();
@@ -11,6 +13,21 @@ const SearchResultsPage = () => {
   const [results, setResults] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('all');
   const [loading, setLoading] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const authRes = await apiClient.get("/api/user/current");
+        if (authRes.status === 200) {
+          setIsAuthenticated(true);
+        }
+      } catch {
+        setIsAuthenticated(false);
+      }
+    };
+    checkAuth();
+  }, []);
 
   useEffect(() => {
     if (!queryParam) return;
@@ -36,35 +53,60 @@ const SearchResultsPage = () => {
     }
   };
 
-  const ResultSection = ({ title, items, type }: { title: string; items: any[]; type: string }) => {
+  const ResultSection = ({title, items, type
+  }: {
+    title: string;
+    items: any[];
+    type: string;
+  }) => {
     if (!items.length) return null;
+
     return (
-      <div className="mb-4">
-        <h2 className="text-xl font-semibold mb-2">{title}</h2>
-        <ul className="space-y-2">
-          {items.map((item, idx) => (
-            <li key={idx} className="border p-3 rounded">
-              {type === 'student' && (
-                <p className="flex items-center gap-2">
-                  <FaUser className="text-blue-600" />
-                  {item.first_name} {item.last_name} (@{item.username})
-                </p>
-              )}
-              {type === 'event' && (
-                <p className="flex items-center gap-2">
-                  <FaCalendarAlt className="text-green-600" />
-                  {item.title} - {item.date}
-                </p>
-              )}
-              {type === 'society' && (
-                <p className="flex items-center gap-2">
-                  <FaUniversity className="text-purple-600" />
-                  {item.name}
-                </p>
-              )}
-            </li>
-          ))}
-        </ul>
+      <div className="mb-6">
+        <Typography variant="h6" gutterBottom>{title}</Typography>
+        <Box display="grid" gap={2}>
+          {items.map((item, idx) => {
+            const link =
+              type === 'society'
+                ? `/view-society/${item.id}`
+                : type === 'event'
+                ? `/event/${item.id}`
+                : `/profile/${item.id}`;
+
+            const primaryText =
+              type === 'student'
+                ? `${item.first_name} ${item.last_name}`
+                : item.title || item.name;
+
+            const secondaryText =
+              type === 'student'
+                ? `@${item.username}`
+                : type === 'event'
+                ? item.date
+                : '';
+
+            const avatarSrc = item.icon || undefined;
+
+            return (
+              <Card key={idx} variant="outlined">
+                <CardActionArea component={Link} to={link}>
+                  <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Avatar
+                      src={avatarSrc}
+                      sx={{ width: 48, height: 48 }}
+                    />
+                    <Box>
+                      <Typography variant="subtitle1" fontWeight="bold">{primaryText}</Typography>
+                      {secondaryText && (
+                        <Typography variant="body2" color="text.secondary">{secondaryText}</Typography>
+                      )}
+                    </Box>
+                  </CardContent>
+                </CardActionArea>
+              </Card>
+            );
+          })}
+        </Box>
       </div>
     );
   };
@@ -72,6 +114,41 @@ const SearchResultsPage = () => {
   const NoResult = ({ label }: { label: string }) => (
     <p className="text-gray-500">No {label} Found.</p>
   );
+
+  const UserSection = ({users, isAuthenticated
+  }: {
+    users: any[];
+    isAuthenticated: boolean;
+  }) => {
+    if (!users.length) return null;
+
+    return (
+      <>
+        <Typography variant="h6" gutterBottom>Users</Typography>
+        {!isAuthenticated ? (
+          <Typography
+            variant="body2"
+            color="text.primary"
+            marginBottom="20px"
+            fontSize="14px"
+            align="center"
+          >
+            Please{" "}
+            <Link to="/login" style={{ textDecoration: "underline", color: "blue" }}>
+              login
+            </Link>{" "}
+            to view user profiles (don't have an account? click{" "}
+            <Link to="/register" style={{ textDecoration: "underline", color: "blue" }}>
+              here
+            </Link>
+            )
+          </Typography>
+        ) : (
+          <ResultSection title="Users" items={users} type="student" />
+        )}
+      </>
+    );
+  };
 
   const renderTabContent = () => {
     if (!results) return null;
@@ -84,32 +161,45 @@ const SearchResultsPage = () => {
       case 'all':
         return (
           <>
-            {hasSocieties && <ResultSection title="Societies" items={results.societies} type="society" />}
-            {hasEvents && <ResultSection title="Events" items={results.events} type="event" />}
-            {hasUsers && <ResultSection title="Users" items={results.students} type="student" />}
+            {hasSocieties && (
+              <ResultSection title="Societies" items={results.societies} type="society" />
+            )}
+
+            {hasEvents && (
+              <ResultSection title="Events" items={results.events} type="event" />
+            )}
+
+            {hasUsers && (
+              <UserSection users={results.students} isAuthenticated={isAuthenticated} />
+            )}
+
             {!hasUsers && !hasEvents && !hasSocieties && (
               <p className="text-gray-500">No results found.</p>
             )}
           </>
         );
+
       case 'societies':
         return hasSocieties ? (
           <ResultSection title="Societies" items={results.societies} type="society" />
         ) : (
           <NoResult label="Society" />
         );
+
       case 'events':
         return hasEvents ? (
           <ResultSection title="Events" items={results.events} type="event" />
         ) : (
           <NoResult label="Event" />
         );
+
       case 'users':
         return hasUsers ? (
-          <ResultSection title="Users" items={results.students} type="student" />
+          <UserSection users={results.students} isAuthenticated={isAuthenticated} />
         ) : (
           <NoResult label="User" />
         );
+
       default:
         return null;
     }
@@ -117,31 +207,30 @@ const SearchResultsPage = () => {
 
   return (
     <div className="p-4 max-w-3xl mx-auto">
-      {/* 搜索框 */}
-        <div className="flex gap-2 mb-4">
-            <input
-                type="text"
-                placeholder="Search..."
-                className="border p-2 flex-1 rounded"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={handleSearch}
-            />
-            <button
-                onClick={() => query.trim() && navigate(`/search?q=${encodeURIComponent(query.trim())}`)}
-                className="bg-blue-600 text-white px-4 py-2 rounded flex items-center justify-center"
-            >
-                <FaSearch/>
-            </button>
-        </div>
+      <div className="flex gap-2 mb-4">
+        <input
+          type="text"
+          placeholder="Search..."
+          className="border p-2 flex-1 rounded"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={handleSearch}
+        />
+        <button
+          onClick={() => query.trim() && navigate(`/search?q=${encodeURIComponent(query.trim())}`)}
+          className="bg-blue-600 text-white px-4 py-2 rounded flex items-center justify-center"
+        >
+          <FaSearch />
+        </button>
+      </div>
 
-        {/* Tabs */}
-        <div className="flex gap-2 mb-6">
-            {['all', 'societies', 'events', 'users'].map(tab => (
-                <button
-                    key={tab}
-                    onClick={() => setActiveTab(tab)}
-                    className={`px-4 py-2 rounded ${activeTab === tab ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+      {/* Tabs */}
+      <div className="flex gap-2 mb-6">
+        {['all', 'societies', 'events', 'users'].map(tab => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`px-4 py-2 rounded ${activeTab === tab ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
           >
             {tab === 'all' ? 'All Results' : tab.charAt(0).toUpperCase() + tab.slice(1)}
           </button>
