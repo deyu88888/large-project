@@ -1,4 +1,5 @@
 from random import choice, randint, random
+from datetime import date
 from io import BytesIO
 from PIL import Image
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -113,6 +114,7 @@ class Command(BaseCommand):
 
         self.create_society(35)
         self.create_event(35)
+        self.create_event(5, True)
 
         self.pre_define_awards()
         self.randomly_assign_awards(50)
@@ -382,7 +384,7 @@ class Command(BaseCommand):
             )
         return False
 
-    def create_event(self, n):
+    def create_event(self, n, past=False):
         """Create n different events"""
         societies = list(Society.objects.all())
         if not societies:
@@ -393,13 +395,25 @@ class Command(BaseCommand):
             print(f"Seeding event {i}/{n}", end='\r')
             society = choice(societies)
 
-            data = self.event_generator.generate(society.name)
+            data = self.event_generator.generate(society.name, past)
 
             approved = self.handle_event_status(society, data)
             if approved:
-                self.generate_random_event(society, data)
+                event, _ = self.generate_random_event(society, data)
+                if past:
+                    self.handle_attendance(event)
 
-        print(self.style.SUCCESS(f"Seeding event {n}/{n}"), flush=True)
+        print(self.style.SUCCESS(
+            f"Seeding {"past" if past else ""} event {n}/{n}"
+        ), flush=True)
+
+    def handle_attendance(self, event):
+        """Records seeded attendance for event attendees"""
+        attendees = event.current_attendees.all()
+        for attendee in attendees:
+            attended = choice((True, False))
+            if attended:
+                attendee.attended_events.add(event)
 
     def generate_random_event(self, society, data=None):
         """Generate a random event and ensure attendees are added."""
@@ -434,6 +448,8 @@ class Command(BaseCommand):
         random_status = choice(["Pending", "Approved", "Rejected"])
         if not data:
             data = self.event_generator.generate(society.name)
+        if data["event_date"] < date.today():
+            random_status = "Approved" if random_status == "Pending" else random_status
 
         # If the society has no president, pick any random student to avoid NULL
         default_student = society.president if society.president else Student.objects.filter(is_active=True).first()
