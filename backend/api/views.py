@@ -523,11 +523,66 @@ class ManageStudentDetailsAdminView(APIView):
         if not student:
             return Response({"error": "Student not found."}, status=status.HTTP_404_NOT_FOUND)
         
+        original_data = {}
+        
+        for field in student._meta.fields:
+            field_name = field.name
+            if field_name not in ['id', 'password']:
+                value = getattr(student, field_name)
+                
+                if isinstance(value, datetime):
+                    original_data[field_name] = value.isoformat()
+                elif isinstance(value, date) and not isinstance(value, datetime):
+                    original_data[field_name] = value.isoformat()
+                elif isinstance(value, time):
+                    original_data[field_name] = value.strftime('%H:%M:%S')
+                elif isinstance(value, timedelta):
+                    original_data[field_name] = value.total_seconds()
+                elif hasattr(value, 'id') and not isinstance(value, (list, dict)):
+                    original_data[field_name] = value.id
+                elif hasattr(value, 'url') and hasattr(value, 'name'):
+                    original_data[field_name] = value.name if value.name else None
+                else:
+                    original_data[field_name] = value
+        
+        for field in student._meta.many_to_many:
+            field_name = field.name
+            related_ids = [item.id for item in getattr(student, field_name).all()]
+            original_data[field_name] = related_ids
+        
+        try:
+            original_data_json = json.dumps(original_data)
+        except TypeError as e:
+            problematic_fields = {}
+            for key, value in original_data.items():
+                try:
+                    json.dumps({key: value})
+                except TypeError:
+                    problematic_fields[key] = str(type(value))
+            
+            return Response({
+                "error": f"JSON serialization error: {str(e)}",
+                "problematic_fields": problematic_fields
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
         data = request.data.copy()
         original_societies = None
         if 'societies' in data:
             original_societies = data['societies']
             del data['societies']
+        
+        log_entry = ActivityLog.objects.create(
+            action_type="Update",
+            target_type="Student",
+            target_id=student.id,
+            target_name=student.full_name,
+            target_email=student.email,
+            performed_by=user,
+            reason=data.get('reason', 'Admin update of student details'),
+            timestamp=timezone.now(),
+            expiration_date=timezone.now() + timedelta(days=30),
+            original_data=original_data_json
+        )
         
         serializer = StudentSerializer(student, data=data, partial=True)
         if serializer.is_valid():
@@ -543,25 +598,18 @@ class ManageStudentDetailsAdminView(APIView):
                             society = Society.objects.get(id=society_id)
                             student.societies.add(society)
                         except (ValueError, Society.DoesNotExist):
-                            pass  # Skip invalid IDs
+                            pass
                 
                 student.save()
             
             updated_serializer = StudentSerializer(student)
             
-            ActivityLog.objects.create(
-                action_type="Update",
-                target_type="Student",
-                target_id=student.id,
-                target_name=student.full_name,
-                target_email=student.email,
-                performed_by=user,
-                reason=data.get('reason', 'Admin update of student details')
-            )
+            ActivityLog.delete_expired_logs()
             
             return Response({"message": "Student details updated successfully.", "data": updated_serializer.data}, 
-                           status=status.HTTP_200_OK)
+                        status=status.HTTP_200_OK)
         
+        log_entry.delete()
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -1228,7 +1276,7 @@ class DeleteView(APIView):
             
             # For Delete and Update actions, we need original data
             if log_entry.action_type in ["Delete", "Update"]:
-                original_data_json = log_entry.original_data  # Get JSON string
+                original_data_json = log_entry.original_data
 
                 if not original_data_json:
                     return Response({"error": "No original data found for restoration."}, status=status.HTTP_400_BAD_REQUEST)
@@ -1265,8 +1313,9 @@ class DeleteView(APIView):
                 else:
                     return Response({"error": "Unsupported target type."}, status=status.HTTP_400_BAD_REQUEST)
             elif log_entry.action_type == "Update":
-                # Handle update undos
-                if target_type == "Society":
+                if target_type == "Student":
+                    return self._undo_student_update(original_data, log_entry)
+                elif target_type == "Society":
                     return self._undo_society_update(original_data, log_entry)
                 elif target_type == "Event":
                     return self._undo_event_update(original_data, log_entry)
@@ -1737,7 +1786,102 @@ class DeleteView(APIView):
                 "error": f"Failed to undo Admin update: {str(e)}",
                 "original_data_content": original_data
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    
+
+    def _undo_student_update(self, original_data, log_entry):
+        """Handle undoing student detail updates with comprehensive relationship handling"""
+        try:
+            student_id = log_entry.target_id
+            student = Student.objects.filter(id=student_id).first()
+            
+            if not student:
+                student_username = log_entry.target_name
+                student = Student.objects.filter(username=student_username).first()
+                
+            if not student:
+                return Response({"error": "Student not found."}, status=status.HTTP_404_NOT_FOUND)
+            
+            many_to_many_fields = ['societies', 'attended_events', 'following', 'followers', 'groups', 'user_permissions']
+            foreign_key_fields = ['president_of']
+            complex_json_fields = []
+            
+            data = original_data.copy()
+            
+            for key, value in data.items():
+                if (key not in many_to_many_fields and 
+                    key not in foreign_key_fields and 
+                    key not in complex_json_fields):
+                    if hasattr(student, key) and value is not None:
+                        setattr(student, key, value)
+            
+            student.save()
+            
+            if 'societies' in data and isinstance(data['societies'], list):
+                student.societies.clear()
+                for society_id in data['societies']:
+                    try:
+                        society = Society.objects.get(id=society_id)
+                        student.societies.add(society)
+                    except Exception as e:
+                        print(f"Error adding society {society_id}: {str(e)}")
+            
+            if 'attended_events' in data and isinstance(data['attended_events'], list):
+                student.attended_events.clear()
+                for event_id in data['attended_events']:
+                    try:
+                        event = Event.objects.get(id=event_id)
+                        student.attended_events.add(event)
+                    except Exception as e:
+                        print(f"Error adding event {event_id}: {str(e)}")
+            
+            if 'following' in data and isinstance(data['following'], list):
+                student.following.clear()
+                for user_id in data['following']:
+                    try:
+                        user = User.objects.get(id=user_id)
+                        student.following.add(user)
+                    except Exception as e:
+                        print(f"Error adding following user {user_id}: {str(e)}")
+            
+            if 'groups' in data and isinstance(data['groups'], list):
+                student.groups.clear()
+                for group_id in data['groups']:
+                    try:
+                        group = Group.objects.get(id=group_id)
+                        student.groups.add(group)
+                    except Exception as e:
+                        print(f"Error adding group {group_id}: {str(e)}")
+            
+            if 'user_permissions' in data and isinstance(data['user_permissions'], list):
+                student.user_permissions.clear()
+                for permission_id in data['user_permissions']:
+                    try:
+                        permission = Permission.objects.get(id=permission_id)
+                        student.user_permissions.add(permission)
+                    except Exception as e:
+                        print(f"Error adding permission {permission_id}: {str(e)}")
+            
+            if 'president_of' in data:
+                if data['president_of'] is not None:
+                    try:
+                        society = Society.objects.get(id=data['president_of'])
+                        student.president_of = society
+                    except Exception as e:
+                        print(f"Error setting president_of {data['president_of']}: {str(e)}")
+                else:
+                    student.president_of = None
+            
+            student.save()
+            
+            log_entry.delete()
+            
+            return Response({"message": "Student update undone successfully!"}, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                "error": f"Failed to undo Student update: {str(e)}",
+                "original_data_content": original_data
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
     def _restore_student(self, original_data, log_entry):
         """Handle student restoration"""
         try:
