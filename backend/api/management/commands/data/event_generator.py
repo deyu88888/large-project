@@ -117,7 +117,7 @@ class RandomEventDataGenerator():
             "to learn, network, or simply have a good time, you're in the right place!",
         ]
 
-    def generate(self, society_name) -> dict:
+    def generate(self, society_name, past=False) -> dict:
         """Generates artificial data for a event and returns in a dict"""
         return_dict = {}
 
@@ -125,7 +125,7 @@ class RandomEventDataGenerator():
         return_dict["name"] = self.generate_name(society_prename)
         return_dict["description"] = self.generate_description()
         return_dict["location"] = self.get_random_location()
-        return_dict["event_date"] = self.generate_random_date()
+        return_dict["event_date"] = self.generate_random_date(past)
         return_dict["event_time"] = self.generate_reasonable_time(
             return_dict["event_date"]
         )
@@ -164,18 +164,20 @@ class RandomEventDataGenerator():
         duration_choices = [timedelta(hours=i) for i in range(1, 4)]
         return choice(duration_choices)
 
-    def generate_random_date(self):
+    def generate_random_date(self, past):
         """Generate a future event date within the next 30 days."""
         today = date.today()
         now_time = datetime.now().time()
         latest_allowed_time = time(20, 45)  # 8:45 PM
 
         # If it's already too late today, start from tomorrow
+        # random_days = randint(int(now_time > latest_allowed_time) , 30)
         if now_time > latest_allowed_time:
             random_days = randint(1, 30)
         else:
             random_days = randint(0, 30)
-        return today + timedelta(days=random_days)
+        mult = 1 - 2 * int(past) # Ensures date lies in the past if past is true
+        return today + timedelta(days=random_days) * mult
 
     def generate_reasonable_time(self, event_date):
         """
@@ -187,9 +189,9 @@ class RandomEventDataGenerator():
         valid_hours = list(range(9, 21))  # 9 AM to 8:45 PM
         valid_minutes = [0, 15, 30, 45]
 
-        if event_date > now.date():
+        if event_date != now.date():
             return time(hour=choice(valid_hours), minute=choice(valid_minutes))
-        elif event_date == now.date():
+        else:
             possible_times = [
                 time(hour=h, minute=m)
                 for h in valid_hours
