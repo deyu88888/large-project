@@ -578,7 +578,6 @@ class ManageStudentDetailsAdminView(APIView):
             target_name=student.full_name,
             target_email=student.email,
             performed_by=user,
-            reason=data.get('reason', 'Admin update of student details'),
             timestamp=timezone.now(),
             expiration_date=timezone.now() + timedelta(days=30),
             original_data=original_data_json
@@ -3590,13 +3589,13 @@ class ActivityLogView(APIView):
         activity_log = ActivityLog.objects.filter(id=log_id).first()
         if not activity_log:
             return Response({"error": "Activity log not found."}, status=status.HTTP_404_NOT_FOUND)
-        is_admin_log = activity_log.performed_by.role == "admin" if hasattr(activity_log.performed_by, 'role') else False
-        if is_admin_log and not user.is_super_admin:
-            return Response({"error": "Only superadmins can delete admin activity logs."}, 
-                            status=status.HTTP_403_FORBIDDEN)
+        is_admin_target = activity_log.target_type == "Admin"
+        if is_admin_target and not user.is_super_admin:
+            return Response({"error": "Only superadmins can delete admin-related activity logs."}, 
+                        status=status.HTTP_403_FORBIDDEN)
         elif not (user.role == "admin" or user.is_super_admin):
             return Response({"error": "Only admins can delete activity logs."}, 
-                            status=status.HTTP_403_FORBIDDEN)
+                        status=status.HTTP_403_FORBIDDEN)
         activity_log.delete()
         return Response({"message": "Activity log deleted successfully."}, 
-                        status=status.HTTP_200_OK)
+                    status=status.HTTP_200_OK)
