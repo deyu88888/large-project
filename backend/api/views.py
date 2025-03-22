@@ -25,8 +25,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticate
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from api.models import AdminReportRequest, Event, Notification, Society, Student, User, Award, AwardStudent, \
-    UserRequest, DescriptionRequest, AdminReportRequest, Comment, ActivityLog, ReportReply, SocietyRequest
+from api.models import AdminReportRequest, BroadcastMessage, Event, Notification, Society, SocietyRequest, Student, User, Award, AwardStudent, \
+    UserRequest, DescriptionRequest, AdminReportRequest, Comment, ActivityLog, ReportReply, NewsPublicationRequest, SocietyNews
 from api.serializers import (
     AdminReportRequestSerializer,
     BroadcastSerializer,
@@ -52,6 +52,7 @@ from api.serializers import (
     CommentSerializer,
     ActivityLogSerializer,
     ReportReplySerializer,
+    NewsPublicationRequestSerializer,
 )
 from api.utils import *
 from django.db.models import Q
@@ -642,17 +643,9 @@ def has_society_management_permission(student, society, for_events_only=False):
     """
     Check if a student has management permissions for a society.
     This includes being either the president, vice president, or event manager (for event operations).
-    
-    Args:
-        student: The Student instance to check
-        society: The Society instance to check against
-        for_events_only: If True, includes event managers in the permission check
-        
-    Returns:
-        bool: True if the student has management permissions, False otherwise
     """
-    # Check if student is president (leader)
-    is_president = student.is_president and hasattr(society, 'leader') and society.leader and society.leader.id == student.id
+    # Check if student is president
+    is_president = student.is_president and hasattr(society, 'president') and society.president and society.president.id == student.id
     
     # Check if student is vice president
     is_vice_president = hasattr(society, 'vice_president') and society.vice_president and society.vice_president.id == student.id
@@ -3042,6 +3035,240 @@ class BroadcastListAPIView(APIView):
 
         serializer = BroadcastSerializer(broadcasts, many=True)
         return Response(serializer.data)
+
+class NewsPublicationRequestView(APIView):
+    """
+    API view for managing news publication requests.
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        """
+        Create a new publication request for a news post — no longer requires 'Draft' status.
+        If the post is already 'PendingApproval' (or any other), that's okay.
+        """
+        print("\n" + "="*80)
+        print("DEBUG - NewsPublicationRequestView POST called to create a publication request")
+
+        user = request.user
+        # 1) Ensure the user is a Student
+        if not hasattr(user, "student"):
+            print("DEBUG - User has no 'student' attribute. Returning 403.")
+            return Response(
+                {"error": "Only students can submit publication requests"}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # 2) Check 'news_post' param
+        news_post_id = request.data.get('news_post')
+        print(f"DEBUG - Incoming 'news_post' ID={news_post_id}")
+        if not news_post_id:
+            print("DEBUG - No news_post ID provided. Returning 400.")
+            return Response(
+                {"error": "News post ID is required"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # 3) Fetch the news post
+        try:
+            news_post = SocietyNews.objects.get(id=news_post_id)
+            print(f"DEBUG - Found news_post: ID={news_post.id}, Title='{news_post.title}', Status='{news_post.status}'")
+        except SocietyNews.DoesNotExist:
+            print("DEBUG - News post does not exist. Returning 404.")
+            return Response(
+                {"error": "News post not found"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # 4) Check user permission (author or management)
+        society = news_post.society
+        is_author = (news_post.author and news_post.author.id == user.student.id)
+        has_permission = is_author or has_society_management_permission(user.student, society)
+
+        if not has_permission:
+            print("DEBUG - User lacks permission. Returning 403.")
+            return Response(
+                {"error": "You do not have permission to publish this news post"}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # 5) REMOVE the old "must be Draft" check:
+        # if news_post.status != "Draft":
+        #     return Response({"error": "Only draft news posts can be submitted for publication"}, 
+        #                    status=status.HTTP_400_BAD_REQUEST)
+        #
+        # We've removed this block, so it's now OK to request publication
+        # even if the post is 'PendingApproval' or some other status.
+
+        # 6) Check if there's already a pending request
+        existing_request = NewsPublicationRequest.objects.filter(
+            news_post=news_post,
+            status="Pending"
+        ).exists()
+        if existing_request:
+            print("DEBUG - A pending request already exists for this post. Returning 400.")
+            return Response(
+                {"error": "A publication request for this news post is already pending"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # 7) Create the new publication request
+        print("DEBUG - Creating new NewsPublicationRequest with status='Pending' ...")
+        publication_request = NewsPublicationRequest.objects.create(
+            news_post=news_post,
+            requested_by=user.student,
+            status="Pending"
+        )
+        print(f"DEBUG - Successfully created request ID={publication_request.id} for news_post ID={news_post.id}")
+
+        # 8) OPTIONAL: Remove/relax code that forcibly sets the post to 'PendingApproval'
+        #    If you want the post's status to remain as the user set it (e.g. 'PendingApproval'),
+        #    comment out or remove this block.
+        # ----------------------------------------------------
+        # news_post.status = "PendingApproval"
+        # news_post.save()
+        # print("DEBUG - Overwrote news_post.status to 'PendingApproval'")
+        # ----------------------------------------------------
+
+        # 9) Return the newly created request
+        serializer = NewsPublicationRequestSerializer(publication_request)
+        print("DEBUG - Returning created NewsPublicationRequest")
+        print("="*80)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+    def get(self, request):
+        """List publication requests for the current user"""
+        user = request.user
+        
+        # Check if we should include all statuses (from query parameter)
+        all_statuses = request.query_params.get('all_statuses') == 'true'
+        
+        print(f"DEBUG - User: {user.username}, is_admin: {user.is_admin()}, all_statuses: {all_statuses}")
+        
+        if hasattr(user, "student"):
+            # For students, return their own requests
+            requests = NewsPublicationRequest.objects.filter(
+                requested_by=user.student
+            ).order_by('-requested_at')
+            print(f"DEBUG - Student view, found {requests.count()} requests")
+        elif user.is_admin():
+            if all_statuses:
+                # Return ALL requests regardless of status
+                requests = NewsPublicationRequest.objects.all().order_by('-requested_at')
+                print(f"DEBUG - Admin view with all_statuses=true, found {requests.count()} total requests")
+            else:
+                # Return only pending requests (original behavior)
+                requests = NewsPublicationRequest.objects.filter(
+                    status="Pending"
+                ).order_by('-requested_at')
+                print(f"DEBUG - Admin view with all_statuses=false, found {requests.count()} pending requests")
+                
+            # Check if any requests exist at all
+            all_requests = NewsPublicationRequest.objects.all()
+            print(f"DEBUG - Total requests in database: {all_requests.count()}")
+            for req in all_requests:
+                if req:  # Add null check
+                    print(f"DEBUG - Request ID: {req.id}, Status: {req.status}, News: {req.news_post.title}")
+        else:
+            return Response({"error": "Unauthorized"}, 
+                        status=status.HTTP_403_FORBIDDEN)
+            
+        # Make sure this line runs for all code paths above
+        serializer = NewsPublicationRequestSerializer(requests, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class AdminNewsApprovalView(APIView):
+    """
+    API view for admins to approve or reject news publication requests.
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        """Get all pending news publication requests (admins only)"""
+        print("DEBUG - AdminNewsApprovalView GET called")
+        print(f"DEBUG - User: {request.user.username}, ID: {request.user.id}, is_admin={request.user.is_admin() if hasattr(request.user, 'is_admin') else 'N/A'}")
+
+        if not request.user.is_admin():
+            print("DEBUG - Access denied: user is not admin. Returning 403.")
+            return Response({"error": "Only admins can view pending publication requests"}, 
+                            status=status.HTTP_403_FORBIDDEN)
+        
+        # Fetch requests with status='Pending'
+        requests_qs = NewsPublicationRequest.objects.filter(status="Pending").order_by('-requested_at')
+        print(f"DEBUG - Found {requests_qs.count()} 'Pending' publication requests.")
+
+        serializer = NewsPublicationRequestSerializer(requests_qs, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    def put(self, request, request_id):
+        """Approve or reject a news publication request"""
+        print("DEBUG - AdminNewsApprovalView PUT called")
+        print(f"DEBUG - User: {request.user.username}, ID: {request.user.id}, is_admin={request.user.is_admin() if hasattr(request.user, 'is_admin') else 'N/A'}")
+        print(f"DEBUG - Attempting to approve/reject request ID={request_id}")
+
+        if not request.user.is_admin():
+            print("DEBUG - Access denied: user is not admin. Returning 403.")
+            return Response({"error": "Only admins can approve or reject publication requests"}, 
+                            status=status.HTTP_403_FORBIDDEN)
+        
+        try:
+            publication_request = NewsPublicationRequest.objects.get(id=request_id)
+            print(f"DEBUG - Found publication request (ID={publication_request.id}), current status={publication_request.status}")
+        except NewsPublicationRequest.DoesNotExist:
+            print(f"DEBUG - Publication request not found with ID={request_id}")
+            return Response({"error": "Publication request not found"}, 
+                            status=status.HTTP_404_NOT_FOUND)
+        
+        action = request.data.get('status')
+        print(f"DEBUG - Requested action: {action}")
+
+        if action not in ['Approved', 'Rejected']:
+            print(f"DEBUG - Invalid action '{action}'. Must be 'Approved' or 'Rejected'. Returning 400.")
+            return Response({"error": "Invalid action. Must be 'Approved' or 'Rejected'"}, 
+                            status=status.HTTP_400_BAD_REQUEST)
+        
+        # Update the publication request
+        publication_request.status = action
+        publication_request.reviewed_by = request.user
+        publication_request.reviewed_at = timezone.now()
+        publication_request.admin_notes = request.data.get('admin_notes', '')
+
+        news_post = publication_request.news_post
+        print(f"DEBUG - Old news post status: {news_post.status}")
+
+        if action == "Approved":
+            news_post.status = "Published"
+            news_post.published_at = timezone.now()
+            print(f"DEBUG - News post status set to 'Published'")
+        else:  # Rejected
+            news_post.status = "Rejected"
+            print(f"DEBUG - News post status set to 'Rejected'")
+
+        # Save changes
+        news_post.save()
+        publication_request.save()
+
+        # Notify requester
+        notification_header = f"News Publication {action}"
+        notification_body = f"Your news publication request for '{news_post.title}' has been {action.lower()}."
+
+        if action == "Rejected" and publication_request.admin_notes:
+            notification_body += f" Admin notes: {publication_request.admin_notes}"
+
+        Notification.objects.create(
+            header=notification_header,
+            body=notification_body,
+            for_user=publication_request.requested_by,
+            is_important=True
+        )
+
+        print(f"DEBUG - Request {request_id} marked as {action}. Notification sent to user ID={publication_request.requested_by.id}")
+        
+        serializer = NewsPublicationRequestSerializer(publication_request)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
 class ActivityLogView(APIView):
     permission_classes = [IsAuthenticated]
 

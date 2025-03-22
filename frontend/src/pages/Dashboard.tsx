@@ -7,8 +7,9 @@ import PopularSocieties from "../components/PopularSocieties";
 import Sidebar from "../components/Sidebar";
 import { HiMenu } from "react-icons/hi";
 import { motion } from 'framer-motion';
-import { useFetchWebSocket } from "../hooks/useFetchWebSocket";
+import { useFetchWebSocket, fetchData } from "../hooks/useFetchWebSocket";
 import { getAllEvents, apiClient } from "../api";
+import { ACCESS_TOKEN } from "../constants";
 
 // -- Type Definitions --
 interface StatData {
@@ -46,13 +47,6 @@ interface RawEvent {
   start_time?: string; // Added for test compatibility
   duration?: string;
 }
-
-type WebSocketMessage =
-  | { type: "dashboard.update"; data: StatData }
-  | { type: "update_activities"; activities: Activity[] }
-  | { type: "update_notifications"; notifications: Notification[] }
-  | { type: "update_events"; events: CalendarEvent[] }
-  | { type: "update_introduction"; introduction: Introduction };
 
 // -- Reusable Components --
 const SectionCard: React.FC<{ title: string; children: React.ReactNode }> = ({
@@ -101,7 +95,7 @@ interface TabsProps {
   children: React.ReactNode;
 }
 
-// Define the Tabs component here, making sure it's fully defined before use
+// Define the Tabs component
 const Tabs: React.FC<TabsProps> = ({ activeTab, setActiveTab, children }) => {
   const tabLabels = React.Children.toArray(children)
     .filter((child) => React.isValidElement(child))
@@ -141,10 +135,107 @@ interface TabPanelProps {
   children: React.ReactNode;
 }
 
-// Define the TabPanel component here, making sure it's fully defined before use
+// Define the TabPanel component
 const TabPanel: React.FC<TabPanelProps> = ({ children, label }) => (
   <div data-testid={`panel-${label.toLowerCase().replace(/\s+/g, '-')}`}>{children}</div>
 );
+
+// -- API Functions to use with useFetchWebSocket --
+const fetchDashboardStats = async (): Promise<StatData> => {
+  try {
+    // Check if user is authenticated before making protected API call
+    const token = localStorage.getItem(ACCESS_TOKEN);
+    
+    if (!token) {
+      // Return default data for public access without making API call that would fail
+      console.log("Public access - using default dashboard stats");
+      return {
+        totalSocieties: 5,
+        totalEvents: 10,
+        pendingApprovals: 3,
+        activeMembers: 125
+      };
+    }
+    
+    // Only make API request if user is authenticated
+    const response = await apiClient.get("/api/dashboard/stats");
+    return response.data || {
+      totalSocieties: 5,
+      totalEvents: 10,
+      pendingApprovals: 3,
+      activeMembers: 125
+    };
+  } catch (error) {
+    console.error("Error fetching dashboard stats:", error);
+    return {
+      totalSocieties: 5,
+      totalEvents: 10,
+      pendingApprovals: 3,
+      activeMembers: 125
+    };
+  }
+};
+
+const fetchActivities = async (): Promise<Activity[]> => {
+  try {
+    // Check if user is authenticated before making protected API call
+    const token = localStorage.getItem(ACCESS_TOKEN);
+    
+    if (!token) {
+      // Return default data for public access without making API call that would fail
+      console.log("Public access - using default activities");
+      return [
+        { description: "Chess Society organized a tournament" },
+        { description: "New Debate Society was created" },
+        { description: "Music Club scheduled a concert for next month" }
+      ];
+    }
+    
+    // Only make API request if user is authenticated
+    const response = await apiClient.get("/api/dashboard/activities");
+    return response.data || [
+      { description: "Chess Society organized a tournament" },
+      { description: "New Debate Society was created" },
+      { description: "Music Club scheduled a concert for next month" }
+    ];
+  } catch (error) {
+    console.error("Error fetching activities:", error);
+    return [
+      { description: "Chess Society organized a tournament" },
+      { description: "New Debate Society was created" },
+      { description: "Music Club scheduled a concert for next month" }
+    ];
+  }
+};
+
+const fetchNotifications = async (): Promise<Notification[]> => {
+  try {
+    // Check if user is authenticated before making protected API call
+    const token = localStorage.getItem(ACCESS_TOKEN);
+    
+    if (!token) {
+      // Return default data for public access without making API call that would fail
+      console.log("Public access - using default notifications");
+      return [
+        { message: "New event proposal requires approval" },
+        { message: "Society budget reports due next week" }
+      ];
+    }
+    
+    // Only make API request if user is authenticated
+    const response = await apiClient.get("/api/dashboard/notifications");
+    return response.data || [
+      { message: "New event proposal requires approval" },
+      { message: "Society budget reports due next week" }
+    ];
+  } catch (error) {
+    console.error("Error fetching notifications:", error);
+    return [
+      { message: "New event proposal requires approval" },
+      { message: "Society budget reports due next week" }
+    ];
+  }
+};
 
 // -- Main Dashboard --
 const Dashboard: React.FC = () => {
@@ -159,14 +250,22 @@ const Dashboard: React.FC = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [eventCalendar, setEventCalendar] = useState<CalendarEvent[]>([]);
   const [upcomingEvents, setUpcomingEvents] = useState<CalendarEvent[]>([]);
-  const [introduction, setIntroduction] = useState<Introduction | null>(null);
+  const [introduction, setIntroduction] = useState<Introduction | null>({
+    title: "Welcome to Student Societies Dashboard",
+    content: [
+      "This dashboard provides an overview of all student societies and their activities.",
+      "Join a society, attend events, and make the most of your campus experience!"
+    ]
+  });
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("Recent Activities");
-  const [dataVersion, setDataVersion] = useState(0);
+  
+  // New state for WebSocket connectivity status
+  const [websocketAvailable, setWebsocketAvailable] = useState<boolean | null>(null);
 
-  // Sidebar control - Now manages width instead of open/closed state
+  // Sidebar control - Manages width instead of open/closed state
   const [sidebarWidth, setSidebarWidth] = useState<'collapsed' | 'expanded'>('collapsed');
 
   // -- Dark Mode --
@@ -185,6 +284,110 @@ const Dashboard: React.FC = () => {
       return false;
     }
   });
+
+  // -- WebSocket Configuration and Availability Check --
+  useEffect(() => {
+    // Check if we're accessing the dashboard without authentication
+    const isPublicDashboard = !localStorage.getItem(ACCESS_TOKEN);
+    
+    // Function to check WebSocket availability by attempting a connection
+    const checkWebSocketAvailability = () => {
+      try {
+        // Try to connect to a test WebSocket - use a path that's likely to exist
+        // or at least get a proper response from the server
+        const testWs = new WebSocket('ws://127.0.0.1:8000/ws/test-connection/');
+        
+        let connectionTimeout: number | null = window.setTimeout(() => {
+          console.log("WebSocket test connection timed out - switching to polling");
+          setWebsocketAvailable(false);
+          localStorage.setItem('useWebSockets', 'false');
+          if (testWs && testWs.readyState !== WebSocket.CLOSED) {
+            testWs.close();
+          }
+        }, 3000);
+        
+        testWs.onopen = () => {
+          console.log("WebSocket test connection successful");
+          setWebsocketAvailable(true);
+          if (connectionTimeout) {
+            clearTimeout(connectionTimeout);
+            connectionTimeout = null;
+          }
+          testWs.close();
+        };
+        
+        testWs.onerror = () => {
+          console.log("WebSocket test connection failed - switching to polling");
+          setWebsocketAvailable(false);
+          localStorage.setItem('useWebSockets', 'false');
+          if (connectionTimeout) {
+            clearTimeout(connectionTimeout);
+            connectionTimeout = null;
+          }
+        };
+        
+        testWs.onclose = (e) => {
+          // Code 1006 (Abnormal Closure) indicates the route doesn't exist
+          if (e.code === 1006) {
+            console.log("WebSocket route not found (code 1006) - switching to polling");
+            setWebsocketAvailable(false);
+            localStorage.setItem('useWebSockets', 'false');
+          }
+          if (connectionTimeout) {
+            clearTimeout(connectionTimeout);
+            connectionTimeout = null;
+          }
+        };
+      } catch (error) {
+        console.error("WebSocket test error:", error);
+        setWebsocketAvailable(false);
+        localStorage.setItem('useWebSockets', 'false');
+      }
+    };
+    
+    if (isPublicDashboard) {
+      // Disable WebSockets for public dashboard to prevent connection errors
+      localStorage.setItem('useWebSockets', 'false');
+      setWebsocketAvailable(false);
+      console.log("Public dashboard detected - WebSockets disabled for public access");
+    } else {
+      // Check WebSocket availability on component mount
+      checkWebSocketAvailability();
+    }
+    
+    // Clean up when component unmounts
+    return () => {
+      if (isPublicDashboard) {
+        localStorage.removeItem('useWebSockets');
+        console.log("Dashboard unmounted - WebSocket settings restored");
+      }
+    };
+  }, []);
+
+  // Add polling fallback for when WebSockets are unavailable
+  useEffect(() => {
+    // Only set up polling if WebSockets are not available and we've determined their status
+    if (websocketAvailable === false) {
+      console.log("Setting up polling fallback for dashboard data");
+      
+      // Initial data fetches
+      fetchData(setStats, fetchDashboardStats);
+      fetchData(setRecentActivities, fetchActivities);
+      fetchData(setNotifications, fetchNotifications);
+      
+      // Set up polling intervals
+      const statsInterval = setInterval(() => fetchData(setStats, fetchDashboardStats), 10000);
+      const activitiesInterval = setInterval(() => fetchData(setRecentActivities, fetchActivities), 10000);
+      const notificationsInterval = setInterval(() => fetchData(setNotifications, fetchNotifications), 10000);
+      
+      return () => {
+        // Clean up intervals
+        clearInterval(statsInterval);
+        clearInterval(activitiesInterval);
+        clearInterval(notificationsInterval);
+      };
+    }
+  }, [websocketAvailable]);
 
   // Apply or remove .dark class on <html> or <body>
   useEffect(() => {
@@ -208,12 +411,14 @@ const Dashboard: React.FC = () => {
   const eventCalendarRef = useRef<HTMLDivElement>(null);
   const updatesRef = useRef<HTMLDivElement>(null);
 
-  // -- WebSocket --
-  const socketRef = useRef<WebSocket | null>(null);
-  const reconnectIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const reconnectAttemptsRef = useRef<number>(0);
-  const MAX_RECONNECT_ATTEMPTS = 5;
-  const RECONNECT_INTERVAL = 5000;
+  // -- Use WebSocket Hook for Dashboard Stats --
+  const dashboardStats = useFetchWebSocket<StatData>(fetchDashboardStats, "dashboard/stats");
+  
+  // -- Use WebSocket Hook for Activities --
+  const activities = useFetchWebSocket<Activity>(fetchActivities, "dashboard/activities");
+  
+  // -- Use WebSocket Hook for Notifications --
+  const notificationData = useFetchWebSocket<Notification>(fetchNotifications, "dashboard/notifications");
 
   // -- Toggle Sidebar -- (ONLY for the hamburger button)
   const handleToggleSidebar = useCallback(() => {
@@ -319,163 +524,24 @@ const Dashboard: React.FC = () => {
     }
   }, []);
 
-  // Real-time fetch of all dashboard data
-  const fetchAllDashboardData = useCallback(async () => {
-    try {
-      // Fetch dashboard stats
-      const statsResponse = await apiClient.get("/api/dashboard/stats");
-      if (statsResponse.data) {
-        setStats(statsResponse.data);
-      }
-      
-      // Fetch activities
-      const activitiesResponse = await apiClient.get("/api/dashboard/activities");
-      if (activitiesResponse.data) {
-        setRecentActivities(activitiesResponse.data);
-      }
-      
-      // Fetch notifications
-      const notificationsResponse = await apiClient.get("/api/dashboard/notifications");
-      if (notificationsResponse.data) {
-        setNotifications(notificationsResponse.data);
-      }
-      
-      setDataVersion(prev => prev + 1);
-    } catch (err) {
-      console.error("Failed to fetch dashboard data:", err);
-    }
-  }, []);
-
-  // Set up continuous data polling and WebSocket monitoring
+  // Update state when WebSocket data changes
   useEffect(() => {
-    fetchAllDashboardData();
-    
-    // Create a data refresh loop using requestAnimationFrame for smoother updates
-    let animationFrameId: number;
-    let lastRefreshTime = 0;
-    
-    const checkForUpdates = (timestamp: number) => {
-      // Check every second for updates (but don't block rendering)
-      if (timestamp - lastRefreshTime > 1000) {
-        fetchAllDashboardData();
-        lastRefreshTime = timestamp;
-      }
-      
-      animationFrameId = requestAnimationFrame(checkForUpdates);
-    };
-    
-    animationFrameId = requestAnimationFrame(checkForUpdates);
-    
-    return () => {
-      cancelAnimationFrame(animationFrameId);
-    };
-  }, [fetchAllDashboardData]);
-
-  // Process any WebSocket messages when they arrive
-  const messageHandler = useCallback((data: WebSocketMessage) => {
-    console.log("Received WebSocket message:", data);
-    
-    switch (data.type) {
-      case "dashboard.update":
-        setStats(data.data);
-        break;
-      case "update_activities":
-        setRecentActivities(data.activities);
-        break;
-      case "update_notifications":
-        setNotifications(data.notifications);
-        break;
-      case "update_events":
-        setEventCalendar(data.events);
-        setUpcomingEvents(data.events);
-        break;
-      case "update_introduction":
-        setIntroduction(data.introduction);
-        break;
-      default:
-        console.warn("Unknown WebSocket message type:", data);
+    if (dashboardStats && dashboardStats.length > 0) {
+      setStats(dashboardStats[0]);
     }
-    
-    // Increment the data version to trigger re-renders
-    setDataVersion(prev => prev + 1);
-  }, []);
-
-  // WebSocket connection
-  const connectWebSocket = useCallback(() => {
-    if (reconnectIntervalRef.current) {
-      clearTimeout(reconnectIntervalRef.current);
-      reconnectIntervalRef.current = null;
-    }
-    
-    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
-      console.warn("[Dashboard] WebSocket already open. Skipping.");
-      return;
-    }
-
-    console.log("[Dashboard] Connecting to WebSocket...");
-    const wsURL =
-      process.env.NODE_ENV === "production"
-        ? "wss://your-production-domain.com/ws/dashboard/"
-        : "ws://127.0.0.1:8000/ws/dashboard/";
-
-    const socket = new WebSocket(wsURL);
-    socketRef.current = socket;
-
-    socket.onopen = () => {
-      console.log("[Dashboard] WebSocket Connected!");
-      setError(null);
-      reconnectAttemptsRef.current = 0;
-      // Trigger immediate data refresh when WebSocket connects
-      fetchAllDashboardData();
-    };
-
-    socket.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        messageHandler(data);
-      } catch (parseErr) {
-        console.error("Error parsing WebSocket message:", parseErr, event.data);
-      }
-    };
-
-    socket.onerror = (err) => {
-      console.error("[Dashboard] WebSocket Error:", err);
-    };
-
-    socket.onclose = (evt) => {
-      socketRef.current = null;
-      console.warn(`[Dashboard] WebSocket Closed: code ${evt.code}`);
-      if (
-        evt.code !== 1000 &&
-        evt.code !== 1005 &&
-        reconnectAttemptsRef.current < MAX_RECONNECT_ATTEMPTS
-      ) {
-        reconnectAttemptsRef.current++;
-        reconnectIntervalRef.current = setTimeout(
-          connectWebSocket,
-          RECONNECT_INTERVAL
-        );
-      } else {
-        console.warn("[Dashboard] WebSocket closed permanently.");
-      }
-    };
-  }, [messageHandler, fetchAllDashboardData]);
+  }, [dashboardStats]);
 
   useEffect(() => {
-    console.log("[Dashboard] Initializing WebSocket...");
-    connectWebSocket();
+    if (activities && activities.length > 0) {
+      setRecentActivities(activities);
+    }
+  }, [activities]);
 
-    return () => {
-      if (socketRef.current) {
-        socketRef.current.close();
-        socketRef.current = null;
-      }
-      if (reconnectIntervalRef.current) {
-        clearTimeout(reconnectIntervalRef.current);
-        reconnectIntervalRef.current = null;
-      }
-    };
-  }, [connectWebSocket]);
+  useEffect(() => {
+    if (notificationData && notificationData.length > 0) {
+      setNotifications(notificationData);
+    }
+  }, [notificationData]);
 
   // ---- Fetch Events ----
   useEffect(() => {
@@ -505,16 +571,22 @@ const Dashboard: React.FC = () => {
       } catch (err) {
         console.error("❌ Error fetching events:", err);
         
-        // Use mock events as fallback
-        const mockEvents = [
-          { id: 1, title: "Welcome Party", date: "2025-03-10", startTime: "18:00:00", duration: "02:00:00" },
-          { id: 2, title: "Chess Tournament", date: "2025-03-15", startTime: "14:00:00", duration: "03:00:00" },
-          { id: 3, title: "Spring Concert", date: "2025-03-22", startTime: "19:30:00", duration: "01:30:00" }
-        ];
-        
+        // Update the error message to be more specific
         if (isMounted) {
+          if (err.message?.includes('WebSocket')) {
+            setError("Real-time updates unavailable. Using polling.");
+          } else {
+            setError("Using mock data - API connection failed.");
+          }
+          
+          // Use mock events as fallback
+          const mockEvents = [
+            { id: 1, title: "Welcome Party", date: "2025-03-10", startTime: "18:00:00", duration: "02:00:00" },
+            { id: 2, title: "Chess Tournament", date: "2025-03-15", startTime: "14:00:00", duration: "03:00:00" },
+            { id: 3, title: "Spring Concert", date: "2025-03-22", startTime: "19:30:00", duration: "01:30:00" }
+          ];
+          
           processEvents(mockEvents);
-          setError("Using mock data - API connection failed.");
           setLoading(false);
         }
       }
@@ -557,47 +629,23 @@ const Dashboard: React.FC = () => {
     fetchEvents();
     
     // Set up event polling with a small interval for real-time updates
-    const eventPolling = setInterval(fetchEvents, 2000);
+    const eventPolling = setInterval(fetchEvents, 3000);
   
     return () => {
       isMounted = false;
       clearInterval(eventPolling);
     };
-  }, [parseEventDateTime, calculateEventEnd, dataVersion]);
+  }, [parseEventDateTime, calculateEventEnd]);
 
-  // Initialize with some default stats if needed - with a short delay
+  // Loading state check
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (stats.totalSocieties === 0) {
-        setStats({
-          totalSocieties: 5,
-          totalEvents: 10,
-          pendingApprovals: 3,
-          activeMembers: 125
-        });
-      }
-      
-      if (recentActivities.length === 0) {
-        setRecentActivities([
-          { description: "Chess Society organized a tournament" },
-          { description: "New Debate Society was created" },
-          { description: "Music Club scheduled a concert for next month" }
-        ]);
-      }
-      
-      if (!introduction) {
-        setIntroduction({
-          title: "Welcome to Student Societies Dashboard",
-          content: [
-            "This dashboard provides an overview of all student societies and their activities.",
-            "Join a society, attend events, and make the most of your campus experience!"
-          ]
-        });
-      }
-    }, 1000); // Wait 1 second before using defaults
-    
-    return () => clearTimeout(timer);
-  }, [stats.totalSocieties, recentActivities.length, introduction]);
+    if (
+      (dashboardStats && activities && notificationData) || 
+      upcomingEvents.length > 0
+    ) {
+      setLoading(false);
+    }
+  }, [dashboardStats, activities, notificationData, upcomingEvents]);
 
   if (loading) {
     return <LoadingView />;
@@ -662,6 +710,26 @@ const Dashboard: React.FC = () => {
               <h1 className="text-xl font-extrabold tracking-wide text-gray-800 dark:text-gray-100">
                 Student Society Dashboard
               </h1>
+            </div>
+
+            {/* WebSocket Status Indicator */}
+            <div className="flex justify-center">
+              {websocketAvailable === null ? (
+                <span className="text-gray-500 text-sm flex items-center">
+                  <span className="inline-block w-2 h-2 bg-gray-500 rounded-full mr-1 animate-pulse"></span>
+                  Checking connection...
+                </span>
+              ) : websocketAvailable ? (
+                <span className="text-green-500 text-sm flex items-center">
+                  <span className="inline-block w-2 h-2 bg-green-500 rounded-full mr-1"></span>
+                  Real-time updates enabled
+                </span>
+              ) : (
+                <span className="text-yellow-500 text-sm flex items-center">
+                  <span className="inline-block w-2 h-2 bg-yellow-500 rounded-full mr-1"></span>
+                  Using polling (WebSockets unavailable)
+                </span>
+              )}
             </div>
 
             {/* Conditionally render Register/Login links */}
@@ -765,7 +833,7 @@ const Dashboard: React.FC = () => {
             <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4">
               Popular Societies
             </h2>
-            <PopularSocieties key={`societies-${dataVersion}`} />
+            <PopularSocieties />
           </motion.section>
 
           {/* Upcoming Events */}
