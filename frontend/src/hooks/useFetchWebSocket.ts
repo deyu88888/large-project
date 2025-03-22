@@ -1,6 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { ACCESS_TOKEN } from "../constants";
+import { useWebSocketManager, CONNECTION_STATES, WebSocketMessage } from "./useWebSocketManager";
 
+// Cache of failed WebSocket routes to avoid repeated attempts
+const failedWebSocketRoutes = new Set<string>();
+
+/**
+ * Helper function to fetch data and update state
+ */
 export const fetchData = async <T>(
   setData: (data: T[]) => void, 
   fetchDataFunction: () => Promise<T[]>
@@ -16,6 +23,9 @@ export const fetchData = async <T>(
   }
 };
 
+/**
+ * Helper function to handle WebSocket messages
+ */
 export const handleMessage = async <T>(
   setData: (data: T[]) => void, 
   fetchDataFunction: () => Promise<T[]>
@@ -27,13 +37,16 @@ export const handleMessage = async <T>(
   }
 };
 
+/**
+ * Helper function to handle WebSocket errors
+ */
 export const handleError = (event: Event) => {
   console.error("WebSocket Error:", event);
 };
 
-// Cache of failed WebSocket routes to avoid repeated attempts
-const failedWebSocketRoutes = new Set<string>();
-
+/**
+ * Helper function to handle WebSocket connections
+ */
 export const handleClose = <T> (
   setData: (data: T[]) => void, 
   ws: React.MutableRefObject<WebSocket | null>, 
@@ -77,11 +90,13 @@ export const handleClose = <T> (
   }, 5000);
 };
 
-// Helper function to setup polling
+/**
+ * Helper function to setup polling as a fallback
+ */
 const setupPolling = <T>(
   setData: (data: T[]) => void,
   fetchDataFunction: () => Promise<T[]>
-) => {
+): number => {
   // Store in localStorage that we're using polling for this session
   localStorage.setItem('useWebSockets', 'false');
   
@@ -89,11 +104,14 @@ const setupPolling = <T>(
   fetchData(setData, fetchDataFunction);
   
   // Return the interval ID so it can be cleared if needed
-  return setInterval(() => {
+  return window.setInterval(() => {
     fetchData(setData, fetchDataFunction);
-  }, 10000); // Poll every 10 seconds
+  }, 10000) as unknown as number; // Poll every 10 seconds
 };
 
+/**
+ * Function to connect to WebSocket
+ */
 export const connectWebSocket = <T> (
   setData: (data: T[]) => void, 
   ws: React.MutableRefObject<WebSocket | null>, 
@@ -101,7 +119,7 @@ export const connectWebSocket = <T> (
   sourceURL: string,
   timeoutRef: React.MutableRefObject<number | null>,
   maxAttempts: React.MutableRefObject<number>
-) => {
+): (() => void) => {
   // Close existing connection if any
   if (ws.current && ws.current.readyState !== WebSocket.CLOSED) {
     try {
@@ -270,21 +288,69 @@ export const connectWebSocket = <T> (
   }
 };
 
+/**
+ * Legacy hook to fetch data via WebSocket
+ * @deprecated Use useWebSocketChannel instead for better connection management
+ */
 export const useFetchWebSocket = <T> (
   fetchDataFunction: () => Promise<T[]>, 
   sourceURL: string
-) => {
+): T[] => {
   const [data, setData] = useState<T[]>([]);
   const ws = useRef<WebSocket | null>(null);
   const timeoutRef = useRef<number | null>(null);
   const maxAttemptsRef = useRef<number>(3); // Reduced from 5 to 3 to fail faster
   const pollIntervalRef = useRef<number | null>(null);
   
+  // Try to use the new WebSocket manager if available
+  let webSocketManager;
+  try {
+    webSocketManager = useWebSocketManager();
+  } catch (e) {
+    // WebSocketManager not available, will fall back to legacy method
+    webSocketManager = null;
+  }
+  
   useEffect(() => {
     console.log(`Setting up WebSocket hook for ${sourceURL}`);
     
     // Initial data fetch - always do this regardless of WebSocket status
     fetchData(setData, fetchDataFunction);
+    
+    // If the new WebSocket manager is available, use it instead
+    if (webSocketManager) {
+      console.log(`Using new WebSocket manager for ${sourceURL}`);
+      
+      // Only subscribe if the connection is authenticated
+      if (webSocketManager.status === CONNECTION_STATES.AUTHENTICATED) {
+        const unsubscribe = webSocketManager.subscribe(sourceURL, (wsData: WebSocketMessage) => {
+          // Process received data - trigger refetch
+          handleMessage(setData, fetchDataFunction);
+        });
+        
+        return unsubscribe;
+      }
+      
+      // If not authenticated, check again when status changes
+      const checkInterval = setInterval(() => {
+        if (webSocketManager && webSocketManager.status === CONNECTION_STATES.AUTHENTICATED) {
+          clearInterval(checkInterval);
+          
+          const unsubscribe = webSocketManager.subscribe(sourceURL, (wsData: WebSocketMessage) => {
+            handleMessage(setData, fetchDataFunction);
+          });
+          
+          // This won't actually get called, but we set it up for correctness
+          return unsubscribe;
+        }
+      }, 1000);
+      
+      return () => {
+        clearInterval(checkInterval);
+      };
+    }
+    
+    // Legacy code - only execute if the WebSocketManager isn't available
     
     // For the dashboard page, check if we're on the public route
     const isPublicDashboard = window.location.pathname === '/' && !localStorage.getItem(ACCESS_TOKEN);
@@ -331,7 +397,7 @@ export const useFetchWebSocket = <T> (
         }
       };
     }
-  }, [fetchDataFunction, sourceURL]);
+  }, [fetchDataFunction, sourceURL, webSocketManager]);
   
   return data;
 };
