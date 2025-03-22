@@ -1,37 +1,48 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from .views import (
-    AdminReportView, AwardStudentView, AwardView, BroadcastListAPIView, EventListView, EventRequestView, ManageEventDetailsView, NewsView, PendingMembersView, PendingRequestsView, RegisterView,
-    CurrentUserView, SocietyMembersListView,
-    StudentNotificationsView, StartSocietyRequestView, ManageSocietyDetailsView, StudentInboxView,
-    AdminView, StudentView, EventView,
-    SocietyRequestView, DashboardStatsView,
-    RecentActivitiesView, NotificationsView, EventCalendarView,
-    StudentSocietiesView, JoinSocietyView, RSVPEventView, EventHistoryView,
-    get_popular_societies, CreateEventRequestView, custom_media_view, get_sorted_events, StudentSocietyDataView,
-    AllEventsView, EventDetailView, EventCommentsView, DescriptionRequestView, ManageSocietyDetailsAdminView, 
-    like_comment, dislike_comment, EventCommentsView, toggle_follow, StudentProfileView, AdminRepliesListView,
+    AdminReportView, AwardStudentView, AwardView, BroadcastListAPIView, EventListView, EventRequestView,
+    ManageEventDetailsView, NewsView, PendingMembersView, PendingRequestsView, RegisterView,
+    CurrentUserView, SocietyMembersListView, StudentNotificationsView, StartSocietyRequestView,
+    ManageSocietyDetailsView, StudentInboxView, AdminView, StudentView, EventView, SocietyRequestView,
+    DashboardStatsView, RecentActivitiesView, NotificationsView, EventCalendarView,
+    StudentSocietiesView, JoinSocietyView, RSVPEventView, EventHistoryView, get_popular_societies,
+    CreateEventRequestView, custom_media_view, get_sorted_events, StudentSocietyDataView,
+    AllEventsView, EventDetailView, DescriptionRequestView, toggle_follow, StudentProfileView,
+    like_comment, dislike_comment, EventCommentsView, NewsPublicationRequestView,
+    AdminNewsApprovalView, ManageSocietyDetailsAdminView, AdminRepliesListView,
     ActivityLogView, ManageEventDetailsAdminView, DeleteView, ManageStudentDetailsAdminView, ReportReplyView, 
-    MyReportsView, MyReportsWithRepliesView, ReportThreadView, AdminReportsWithRepliesView, ReportReplyNotificationsView)
+    MyReportsView, MyReportsWithRepliesView, ReportThreadView, AdminReportsWithRepliesView, ReportReplyNotificationsView
+)
 from .utils import request_otp, verify_otp
 from .recommendation_views import RecommendedSocietiesView, SocietyRecommendationExplanationView
 from .recommendation_feedback_views import RecommendationFeedbackView, RecommendationFeedbackAnalyticsView
 
+# Import your updated news_views including the new 'NewsCommentDislikeView'
+from .news_views import (
+    SocietyNewsListView,
+    SocietyNewsDetailView,
+    NewsCommentView,
+    NewsCommentDetailView,
+    NewsCommentLikeView,
+    MemberNewsView,
+    # New import for the comment dislike endpoint:
+    NewsCommentDislikeView
+)
 
 urlpatterns = [
     # Authentication endpoints
     path("user/token/refresh", TokenRefreshView.as_view(), name="refresh"),
     path("user/register", RegisterView.as_view(), name="register"),
     path("user/login", TokenObtainPairView.as_view(), name="get_token"),
-    path("user/current", CurrentUserView.as_view(), name="current_user"),
+    path("user/current/", CurrentUserView.as_view(), name="current_user"),  # TODO: trailing backshlash needed
 
     # OTP verification
     path("request-otp", request_otp, name="request_otp"),
     path("verify-otp", verify_otp, name="verify_otp"),
 
     # Notification endpoints
-    # trailing backshlash needed in this case, because of the following line
-    path("notifications/", StudentNotificationsView.as_view(), name="student_notifications"), # trailing backshlash needed
+    path("notifications/", StudentNotificationsView.as_view(), name="student_notifications"), # trailing slash needed
     path("notifications/<int:pk>", StudentNotificationsView.as_view(), name="mark_notification_read"),
     path("inbox/", StudentInboxView.as_view(), name="student_inbox"),
 
@@ -48,24 +59,20 @@ urlpatterns = [
     path("user/admin", AdminView.as_view(), name="admin"),
     path("user/student", StudentView.as_view(), name="student"),
   
-  # Society membership endpoints
+    # Society membership endpoints
     path('join-society/<int:society_id>/', JoinSocietyView.as_view(), name='join_society'),
     path('join-society/', JoinSocietyView.as_view(), name='join_society'),
 
     # Event endpoints
-    path("events/rsvp/", RSVPEventView.as_view(), name="rsvp_event"), # TODO: trailing backshlash needed, do not remove
+    path("events/rsvp/", RSVPEventView.as_view(), name="rsvp_event"),
     path("events/history", EventHistoryView.as_view(), name="event_history"),
     path("events", get_sorted_events, name="sorted_events"),
 
     # Admin panel endpoints
-    # path("admin-panel/society", SocietyView.as_view(), name="admin"),
     path("society/event/<str:event_status>", EventView.as_view(), name="event"),
     path("society/event/request/<int:event_id>", EventRequestView.as_view(), name="request_event"),
-    # path("societyrejected-event", EventView.as_view(), name="event"), // not used, remove after
-    # path("admin-panel/rejected-society", RejectedSocietyRequestView.as_view(), name="rejected_society"),  # refactored
     path("society/request/<str:society_status>", SocietyRequestView.as_view(), name="request_society"),
     path("society/request/pending/<int:society_id>", SocietyRequestView.as_view(), name="request_society"),
-
     path("description/request/pending", DescriptionRequestView.as_view(), name="request_description"),
     path("admin-manage-society-details/<int:society_id>", ManageSocietyDetailsAdminView.as_view(), name="manage_society_details_admin"),
     path("admin-manage-student-details/<int:student_id>", ManageStudentDetailsAdminView.as_view(), name="manage_student_details_admin"),
@@ -80,8 +87,8 @@ urlpatterns = [
     path("student-societies/", StudentSocietiesView.as_view(), name="student_societies"),
     path("leave-society/<int:society_id>/", StudentSocietiesView.as_view(), name="leave_society"),
     path("society-view/<int:society_id>/", StudentSocietyDataView.as_view(), name="society_view"),
-    path('media/<path:path>', custom_media_view, name="media"),
-     path('api/pending-requests/', PendingRequestsView.as_view(), name='pending-requests'),
+    path("media/<path:path>", custom_media_view, name="media"),
+    path("api/pending-requests/", PendingRequestsView.as_view(), name='pending-requests'),
 
     # Dashboard API endpoints
     path("dashboard/stats/", DashboardStatsView.as_view(), name="dashboard_stats"),
@@ -116,8 +123,6 @@ urlpatterns = [
     path('report-reply-notifications', ReportReplyNotificationsView.as_view(), name='report-reply-notifications'),
     path('report-reply-notifications/<int:reply_id>', ReportReplyNotificationsView.as_view(), name='mark-report-reply-read'),
 
-
-
     # Events page
     path("all-events", AllEventsView.as_view(), name="all_events"),
     path("event/<int:event_id>", EventDetailView.as_view(), name="event_detail"),
@@ -144,4 +149,18 @@ urlpatterns = [
     path("news/", NewsView.as_view(), name="news"),
     path("news/<int:pk>", NewsView.as_view(), name="mark_news_read"),   # TODO: implement this later
     path("get-news/", BroadcastListAPIView.as_view(), name="get-news"),
+
+    path("society/<int:society_id>/news/", SocietyNewsListView.as_view(), name="society_news_list"),
+    path("news/<int:news_id>/", SocietyNewsDetailView.as_view(), name="society_news_detail"),
+    path("news/<int:news_id>/comments/", NewsCommentView.as_view(), name="news_comments"),
+    path("news/comments/<int:comment_id>/", NewsCommentDetailView.as_view(), name="news_comment_detail"),
+    path("news/comments/<int:comment_id>/like/", NewsCommentLikeView.as_view(), name="news_comment_like"),
+    # ADD THIS (similar to your like path):
+    path("news/comments/<int:comment_id>/dislike/", NewsCommentDislikeView.as_view(), name="news_comment_dislike"),
+
+    # This is the "feed" for the student's societies:
+    path("my-news-feed/", MemberNewsView.as_view(), name="member_news_feed"),
+
+    path('news/publication-request/', NewsPublicationRequestView.as_view(), name='news_publication_request'),
+    path('news/publication-request/<int:request_id>/', AdminNewsApprovalView.as_view(), name='admin_news_approval'),
 ]
