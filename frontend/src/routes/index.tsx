@@ -186,7 +186,7 @@ const routes = [
           },
           {
             path: "my-team",
-            element: <AdminListPage/>
+            element: <AdminListPage />
           }
         ],
       },
@@ -211,7 +211,7 @@ const routes = [
           { path: "join-society", element: <PageWithTitle title="Join a Society"><JoinSocietiesPage /></PageWithTitle> },
           { path: "view-society/:society_id", element: <PageWithTitle title="Society Details"><ViewSocietyPage /></PageWithTitle> },
           { path: "profile/:userId", element: <PageWithTitle title="User Profile"><ProfilePage /></PageWithTitle> },
-          { path: "report-thread/:reportId", element:  <PageWithTitle title="Report Thread"><ReportThread /></PageWithTitle>},
+          { path: "report-thread/:reportId", element: <PageWithTitle title="Report Thread"><ReportThread /></PageWithTitle> },
           { path: "report-to-admin", element: <PageWithTitle title="Report to Admin"><ReportToAdmin /></PageWithTitle> },
         ],
       },
@@ -292,7 +292,7 @@ const routes = [
       { index: true, element: <PageWithTitle title="Home"><DashboardPage /></PageWithTitle> },
       { path: "login", element: <PageWithTitle title="Login"><LoginPage /></PageWithTitle> },
       { path: "register", element: <PageWithTitle title="Register"><RegisterPage /></PageWithTitle> },
-      { path: "all-events", element: <PageWithTitle title="All Events"><AllEventsPage /></PageWithTitle>},
+      { path: "all-events", element: <PageWithTitle title="All Events"><AllEventsPage /></PageWithTitle> },
       { path: "event-list", element: <PageWithTitle title="All Events"><EventListPage /></PageWithTitle> },
     ],
   },

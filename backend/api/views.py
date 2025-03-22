@@ -100,6 +100,7 @@ class RegisterView(APIView):
 
         return Response({"message": "Student registered successfully"}, status=status.HTTP_201_CREATED)
 
+
 class CurrentUserView(APIView):
     """
     View for retrieving and updating the currently authenticated user.

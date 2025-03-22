@@ -24,10 +24,13 @@ export function PrivateGuard({ children, requiredRole }: PrivateGuardProps) {
 
   const authenticate = useCallback(async () => {
     try {
+      console.log(localStorage.getItem(ACCESS_TOKEN));
       const token = localStorage.getItem(ACCESS_TOKEN);
+      console.log("%token: ", token);
       if (!token) throw new Error("No access token available");
 
       const isTokenValid = await validateToken(token);
+      console.log(isTokenValid);
       if (!isTokenValid) await handleTokenRefresh();
 
       const userData = await fetchUserData();
@@ -68,7 +71,8 @@ export function PrivateGuard({ children, requiredRole }: PrivateGuardProps) {
   };
 
   const fetchUserData = async () => {
-    const response = await apiClient.get(apiPaths.USER.CURRENT);
+    console.log("apiPaths.USER.CURRENT", apiPaths.USER.CURRENT);
+    const response = await apiClient.get("/api/user/current");
     return response.data;
   };
 
