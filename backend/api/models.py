@@ -98,3 +98,21 @@ class ActivityLog(models.Model):
         expired_logs = cls.objects.filter(expiration_date__lt=expiration_threshold)
         deleted_count, _ = expired_logs.delete()
         return deleted_count
+
+class Activity(models.Model):
+    """
+    Represents a recent activity performed by a user.
+    """
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="activities"
+    )
+    description = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.username}: {self.description[:30]}..."

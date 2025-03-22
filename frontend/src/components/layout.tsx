@@ -45,6 +45,17 @@ const Layout: React.FC = () => {
   const drawerClosedWidth = 60;
   const currentDrawerWidth = drawer ? drawerOpenWidth : drawerClosedWidth;
 
+  const handleSearch = () => {
+    if (!searchTerm.trim()) return;
+
+    if (location.pathname.startsWith("/student")) {
+      navigate(`/student/student-search?q=${encodeURIComponent(searchTerm)}`);
+    } else if (location.pathname.startsWith("/admin")) {
+      setSearchTerm(searchTerm);
+    }
+  };
+
+
   return (
       <Box sx={{ display: "flex" }}>
         <CustomAppBar
@@ -83,12 +94,22 @@ const Layout: React.FC = () => {
                 placeholder="Search"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleSearch();
+                  }
+                }}
               />
-            
-              <IconButton type="button" sx={{ p: 1 }}>
+
+              <IconButton
+                type="button"
+                sx={{ p: 1 }}
+                onClick={handleSearch}
+              >
                 <SearchIcon />
               </IconButton>
             </Box>
+
             <Box display="flex" marginLeft={"auto"}>
               <IconButton
                 onClick={() => {

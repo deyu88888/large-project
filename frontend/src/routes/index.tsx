@@ -11,10 +11,12 @@ import PageWithTitle from "../components/PageWithTitle";
 import ViewSocietyEvents from "../pages/view-society-events";
 import ManageReports from "../pages/Admin/ManageReports";
 import ViewReports from "../pages/President/ViewReports";
+import {Search} from "@mui/icons-material";
 
 // Lazy-loaded pages
 const LoginPage = lazy(() => import("../pages/login"));
 const RegisterPage = lazy(() => import("../pages/register"));
+const SearchResultsPage = lazy(() => import("../pages/SearchResultsPage"))
 const ProfilePage = lazy(() => import("../pages/profile"));
 const StudentDashboard = lazy(() => import("../pages/Student/StudentDashboard"));
 const MySocieties = lazy(() => import("../pages/Student/MyJoinedSocieties"));
@@ -141,9 +143,11 @@ const routes = [
           { path: "start-society", element: <PageWithTitle title="Start a Society"><StartSociety /></PageWithTitle> },
           { path: "join-society", element: <PageWithTitle title="Join a Society"><JoinSocietiesPage /></PageWithTitle> },
           { path: "view-society/:society_id", element: <PageWithTitle title="Society Details"><ViewSocietyPage /></PageWithTitle> },
-          { path: "profile/:userId", element: <PageWithTitle title="User Profile"><ProfilePage /></PageWithTitle> },
+          { path: "event/:event_id", element: <PageWithTitle title="Event Details"><EventDetailPage /></PageWithTitle> },
+          { path: "profile/:student_id", element: <PageWithTitle title="User Profile"><ProfilePage /></PageWithTitle> },
           { path: "report-thread/:reportId", element: <PageWithTitle title="Report Thread"><ReportThread /></PageWithTitle> },
           { path: "report-to-admin", element: <PageWithTitle title="Report to Admin"><ReportToAdmin /></PageWithTitle> },
+          { path: "student-search", element: <PageWithTitle title="Student Search"><SearchResultsPage /></PageWithTitle> },
         ],
       },
       {
@@ -290,7 +294,6 @@ const routes = [
       { index: true, element: <PageWithTitle title="Home"><DashboardPage /></PageWithTitle> },
       { path: "login", element: <PageWithTitle title="Login"><LoginPage /></PageWithTitle> },
       { path: "register", element: <PageWithTitle title="Register"><RegisterPage /></PageWithTitle> },
-      { path: "all-events", element: <PageWithTitle title="All Events"><AllEventsPage /></PageWithTitle> },
       { path: "event-list", element: <PageWithTitle title="All Events"><EventListPage /></PageWithTitle> },
     ],
   },
@@ -303,7 +306,10 @@ const routes = [
     ),
     children: [
       { path: "all-events", element: <PageWithTitle title="All Events"><AllEventsPage /></PageWithTitle> },
-      { path: "event/:eventId", element: <PageWithTitle title="Event Details"><EventDetailPage /></PageWithTitle> },
+      { path: "event/:event_id", element: <PageWithTitle title="Event Details"><EventDetailPage /></PageWithTitle> },
+      { path: "view-society/:society_id", element: <PageWithTitle title="Society Details"><ViewSocietyPage /></PageWithTitle> },
+      { path: "profile/:student_id", element: <PageWithTitle title="Student Progile"><ProfilePage /></PageWithTitle> },
+      { path: "search", element: <PageWithTitle title="Search"><SearchResultsPage /></PageWithTitle> },
     ],
   },
   {

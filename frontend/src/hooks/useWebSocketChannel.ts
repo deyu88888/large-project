@@ -43,21 +43,35 @@ export function useWebSocketChannel<T>(
   // Get WebSocket manager context
   const { status, subscribe } = useWebSocketManager();
   
-  // Track if initial fetch has been completed
+  // Refs to track state without triggering re-renders
   const initialFetchComplete = useRef(false);
-  
-  // Track component mount status
   const isMounted = useRef(true);
+  const isSubscribed = useRef(false);
+  const lastSubscriptionTime = useRef(0);
+  const currentChannel = useRef(channel);
+  
+  // Store the functions and options in refs to avoid dependency changes
+  const fetchFunctionRef = useRef(fetchFunction);
+  const processDataRef = useRef(processData);
+  const skipInitialFetchRef = useRef(skipInitialFetch);
+  
+  // Update refs when props change
+  useEffect(() => {
+    fetchFunctionRef.current = fetchFunction;
+    processDataRef.current = processData;
+    skipInitialFetchRef.current = skipInitialFetch;
+    currentChannel.current = channel;
+  }, [channel, fetchFunction, processData, skipInitialFetch]);
 
   // Handle initial data fetching
   const fetchInitialData = useCallback(async () => {
-    if (skipInitialFetch || initialFetchComplete.current) return;
+    if (skipInitialFetchRef.current || initialFetchComplete.current) return;
     
     try {
       setLoading(true);
       setError(null);
       
-      const result = await fetchFunction();
+      const result = await fetchFunctionRef.current();
       
       if (isMounted.current) {
         if (result !== null && result !== undefined) {
@@ -66,7 +80,7 @@ export function useWebSocketChannel<T>(
         initialFetchComplete.current = true;
       }
     } catch (err) {
-      console.error(`Error fetching initial data for ${channel}:`, err);
+      console.error(`Error fetching initial data for ${currentChannel.current}:`, err);
       if (isMounted.current) {
         setError(`Failed to load initial data`);
       }
@@ -75,49 +89,62 @@ export function useWebSocketChannel<T>(
         setLoading(false);
       }
     }
-  }, [channel, fetchFunction, skipInitialFetch]);
+  }, []); // Empty dependency array since we're using refs
 
   // Handle WebSocket message processing
   const handleWebSocketData = useCallback((wsData: WebSocketMessage) => {
     try {
       // Process the incoming data using the provided function
-      const processedData = processData(wsData);
+      const processedData = processDataRef.current(wsData);
       
       if (processedData !== null && processedData !== undefined) {
         setData(processedData);
       }
     } catch (error) {
-      console.error(`Error processing WebSocket data for ${channel}:`, error);
+      console.error(`Error processing WebSocket data for ${currentChannel.current}:`, error);
     }
-  }, [channel, processData]);
+  }, []); // Empty dependency array since we're using refs
 
   // Subscribe to channel and fetch initial data when status changes
   useEffect(() => {
     isMounted.current = true;
     
     // Always try to fetch initial data, regardless of WebSocket status
-    if (!skipInitialFetch && !initialFetchComplete.current) {
+    if (!skipInitialFetchRef.current && !initialFetchComplete.current) {
       fetchInitialData();
     }
     
-    // Only subscribe if we're authenticated
+    // Prevent rapid subscribe/unsubscribe cycles with a debounce mechanism
+    const now = Date.now();
+    if (now - lastSubscriptionTime.current < 1000) {
+      console.log(`Skipping rapid channel subscription to ${currentChannel.current}`);
+      return;
+    }
+    
+    // Only subscribe if we're authenticated and not already subscribed
     let unsubscribe = () => {};
-    if (status === CONNECTION_STATES.AUTHENTICATED) {
-      unsubscribe = subscribe(channel, handleWebSocketData);
+    if (status === CONNECTION_STATES.AUTHENTICATED && !isSubscribed.current) {
+      lastSubscriptionTime.current = now;
+      isSubscribed.current = true;
+      console.log(`Subscribing to channel: ${currentChannel.current}`);
+      unsubscribe = subscribe(currentChannel.current, handleWebSocketData);
     }
     
     return () => {
-      isMounted.current = false;
-      unsubscribe();
+      if (isSubscribed.current) {
+        console.log(`Unsubscribing from channel: ${currentChannel.current}`);
+        isSubscribed.current = false;
+        unsubscribe();
+      }
     };
-  }, [
-    channel, 
-    status, 
-    subscribe, 
-    fetchInitialData, 
-    handleWebSocketData, 
-    skipInitialFetch
-  ]);
+  }, [status, subscribe, fetchInitialData, handleWebSocketData]);
+
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   // Manually refresh data
   const refresh = useCallback(async () => {
@@ -125,13 +152,13 @@ export function useWebSocketChannel<T>(
       setLoading(true);
       setError(null);
       
-      const result = await fetchFunction();
+      const result = await fetchFunctionRef.current();
       
       if (isMounted.current && result !== null && result !== undefined) {
         setData(result);
       }
     } catch (err) {
-      console.error(`Error refreshing data for ${channel}:`, err);
+      console.error(`Error refreshing data for ${currentChannel.current}:`, err);
       if (isMounted.current) {
         setError('Failed to refresh data');
       }
@@ -140,7 +167,7 @@ export function useWebSocketChannel<T>(
         setLoading(false);
       }
     }
-  }, [channel, fetchFunction]);
+  }, []); // Empty dependency array since we're using refs
 
   // Return the data, loading state, error state, and refresh function
   return { 

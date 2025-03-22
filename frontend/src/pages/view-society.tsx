@@ -95,7 +95,7 @@ const ViewSociety: React.FC = () => {
         >
           {society.icon && (
             <img
-            src={"http://localhost:8000/api" + society.icon}
+            src={society.icon || undefined}
             alt={`${society.name} icon`}
             style={{
               width: "50px",
@@ -210,7 +210,7 @@ const ViewSociety: React.FC = () => {
               {society.showreel_images.map((showreel: any, index: number) => (
                 <div key={index} style={{ textAlign: "center" }}>
                   <img
-                    src={"http://localhost:8000/api" + showreel.photo}
+                    src={showreel.photo}
                     alt={"Showreel " + (index + 1)}
                     style={{ width: "150px", height: "150px", objectFit: "cover", borderRadius: "10px" }}
                   />
