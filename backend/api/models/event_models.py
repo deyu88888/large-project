@@ -74,3 +74,12 @@ class Comment(models.Model):
 
     def __str__(self):
             return f"{self.user.username}: {self.content[:30]}"
+
+def get_date():
+    """Returns today's date"""
+    return timezone.now().date()
+
+
+def get_time():
+    """Returns the current time"""
+    return timezone.now().time()
