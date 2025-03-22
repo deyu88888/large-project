@@ -173,7 +173,7 @@ class NewsPublicationRequest(models.Model):
     ]
 
     news_post = models.ForeignKey(
-        communication_models.SocietyNews,
+        "communication_models.SocietyNews",
         on_delete=models.CASCADE,
         related_name="publication_requests"
     )
