@@ -1,0 +1,376 @@
+// failing
+import React from 'react';
+import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
+import { vi } from 'vitest';
+import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+import AllEventsPage from '../allEventsPage';
+import { apiClient } from '../../api';
+import * as authStoreModule from '../../stores/auth-store';
+
+const theme = createTheme({
+  palette: {
+    mode: 'light',
+  }
+});
+
+const darkTheme = createTheme({
+  palette: {
+    mode: 'dark',
+  }
+});
+
+// Mock the date-fns format function
+vi.mock('date-fns', () => ({
+  format: vi.fn(() => '01/01/2025'),
+}));
+
+// Mock the API client
+vi.mock('../../api', () => ({
+  apiClient: {
+    get: vi.fn(),
+  },
+}));
+
+// Create a proper mock for the auth store
+const mockSetUser = vi.fn();
+let mockUser = null;
+
+// Mock the useAuthStore hook
+vi.spyOn(authStoreModule, 'useAuthStore').mockImplementation(() => ({
+  user: mockUser,
+  setUser: mockSetUser
+}));
+
+const mockNavigate = vi.fn();
+
+// Mock react-router-dom
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
+
+describe('AllEventsPage Component', () => {
+  const mockEvents = [
+    {
+      id: 1,
+      title: 'Tech Conference',
+      date: '2025-03-15T10:00:00.000Z',
+      location: 'Conference Center',
+      current_attendees: [
+        { id: 101, first_name: 'Alice', icon: null },
+        { id: 102, first_name: 'Bob', icon: 'bob-icon.jpg' },
+        { id: 103, first_name: 'Charlie', icon: null }
+      ]
+    },
+    {
+      id: 2,
+      title: 'Networking Mixer',
+      date: '2025-04-20T18:00:00.000Z',
+      location: 'Downtown Hub',
+      current_attendees: [
+        { id: 104, first_name: 'David', icon: 'david-icon.jpg' },
+        { id: 101, first_name: 'Alice', icon: null }
+      ]
+    }
+  ];
+
+  const defaultUser = {
+    id: 1,
+    first_name: 'Test',
+    last_name: 'User',
+    username: 'testuser',
+    email: 'test@example.com',
+    role: 'student',
+    is_active: true,
+    following: [101, 103]
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    
+    // Reset mockUser to null before each test
+    mockUser = null;
+    
+    // Reset the mock implementation for apiClient.get
+    (apiClient.get).mockImplementation((url) => {
+      if (url === '/api/all-events') {
+        return Promise.resolve({ data: mockEvents });
+      } else if (url === '/api/user/current') {
+        return Promise.resolve({ data: defaultUser });
+      }
+      return Promise.reject(new Error('Unexpected URL'));
+    });
+  });
+
+  const setup = async (options = {}) => {
+    const { 
+      useDarkTheme = false, 
+      withUser = false,
+      customUser = null
+    } = options;
+    
+    // Set the mockUser value based on test needs
+    if (withUser) {
+      mockUser = customUser || defaultUser;
+    } else {
+      mockUser = null;
+    }
+    
+    let renderResult;
+    
+    await act(async () => {
+      renderResult = render(
+        <ThemeProvider theme={useDarkTheme ? darkTheme : theme}>
+          <MemoryRouter initialEntries={['/all-events']}>
+            <Routes>
+              <Route path="/all-events" element={<AllEventsPage />} />
+              <Route path="/event/:id" element={<div>Event Detail</div>} />
+            </Routes>
+          </MemoryRouter>
+        </ThemeProvider>
+      );
+      
+      await new Promise(resolve => setTimeout(resolve, 0));
+    });
+    
+    return renderResult;
+  };
+
+  it('renders loading state initially', async () => {
+    const originalGet = apiClient.get;
+    (apiClient.get).mockImplementation((url) => {
+      if (url === '/api/all-events') {
+        return new Promise(resolve => {
+          setTimeout(() => resolve({ data: mockEvents }), 1000);
+        });
+      } else if (url === '/api/user/current') {
+        return Promise.resolve({ data: defaultUser });
+      }
+      return Promise.reject(new Error('Unexpected URL'));
+    });
+    
+    await act(async () => {
+      render(
+        <ThemeProvider theme={theme}>
+          <MemoryRouter initialEntries={['/all-events']}>
+            <Routes>
+              <Route path="/all-events" element={<AllEventsPage />} />
+            </Routes>
+          </MemoryRouter>
+        </ThemeProvider>
+      );
+    });
+    
+    expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    
+    (apiClient.get).mockImplementation(originalGet);
+  });
+
+  it('fetches and displays events correctly', async () => {
+    await setup();
+    
+    await waitFor(() => {
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    });
+    
+    expect(screen.getByText('All Events')).toBeInTheDocument();
+    expect(screen.getByText('Tech Conference')).toBeInTheDocument();
+    expect(screen.getByText('Networking Mixer')).toBeInTheDocument();
+    
+    expect(screen.getAllByText('Date: 01/01/2025').length).toBe(2);
+    expect(screen.getByText('Location: Conference Center')).toBeInTheDocument();
+    expect(screen.getByText('Location: Downtown Hub')).toBeInTheDocument();
+    
+    expect(apiClient.get).toHaveBeenCalledWith('/api/all-events');
+    expect(apiClient.get).toHaveBeenCalledWith('/api/user/current');
+  });
+
+  it('renders correctly in dark theme', async () => {
+    await setup({ useDarkTheme: true });
+
+    await waitFor(() => {
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    });
+
+    expect(screen.getByText('All Events')).toBeInTheDocument();
+  });
+
+  it('displays message when no events are available', async () => {
+    (apiClient.get).mockImplementation((url) => {
+      if (url === '/api/all-events') {
+        return Promise.resolve({ data: [] });
+      } else if (url === '/api/user/current') {
+        return Promise.resolve({ data: defaultUser });
+      }
+      return Promise.reject(new Error('Unexpected URL'));
+    });
+
+    await setup();
+    
+    await waitFor(() => {
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    });
+    
+    expect(screen.getByText('No events available at the moment.')).toBeInTheDocument();
+  });
+
+  it('navigates to event details when card is clicked', async () => {
+    await setup();
+    
+    await waitFor(() => {
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    });
+    
+    const techConferenceCard = screen.getByText('Tech Conference').closest('.MuiCard-root');
+    
+    await act(async () => {
+      fireEvent.click(techConferenceCard);
+    });
+    
+    expect(mockNavigate).toHaveBeenCalledWith('/event/1');
+  });
+
+  it('handles API error when fetching events', async () => {
+    (apiClient.get).mockImplementation((url) => {
+      if (url === '/api/all-events') {
+        return Promise.reject(new Error('Failed to load events'));
+      } else if (url === '/api/user/current') {
+        return Promise.resolve({ data: defaultUser });
+      }
+      return Promise.reject(new Error('Unexpected URL'));
+    });
+    
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    await setup();
+    
+    await waitFor(() => {
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    });
+    
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      'Error fetching events:',
+      expect.any(Error)
+    );
+    
+    consoleErrorSpy.mockRestore();
+  });
+
+  it('handles API error when fetching current user', async () => {
+    (apiClient.get).mockImplementation((url) => {
+      if (url === '/api/all-events') {
+        return Promise.resolve({ data: mockEvents });
+      } else if (url === '/api/user/current') {
+        return Promise.reject(new Error('Failed to load user'));
+      }
+      return Promise.reject(new Error('Unexpected URL'));
+    });
+    
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    await setup();
+    
+    await waitFor(() => {
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    });
+    
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      'Error fetching current user:',
+      expect.any(Error)
+    );
+    
+    consoleErrorSpy.mockRestore();
+  });
+
+  it('handles 401 unauthorized when fetching current user', async () => {
+    (apiClient.get).mockImplementation((url) => {
+      if (url === '/api/all-events') {
+        return Promise.resolve({ data: mockEvents });
+      } else if (url === '/api/user/current') {
+        const error = new Error('Unauthorized');
+        error.response = { status: 401 };
+        return Promise.reject(error);
+      }
+      return Promise.reject(new Error('Unexpected URL'));
+    });
+    
+    const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+    await setup();
+    
+    await waitFor(() => {
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    });
+    
+    expect(consoleLogSpy).toHaveBeenCalledWith('User not logged in, that\'s okay.');
+    
+    consoleLogSpy.mockRestore();
+  });
+
+  it('uses existing user from store if available', async () => {
+    await setup({ withUser: true });
+    
+    await waitFor(() => {
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    });
+    
+    expect(apiClient.get).not.toHaveBeenCalledWith('/api/user/current');
+    expect(apiClient.get).toHaveBeenCalledWith('/api/all-events');
+  });
+
+  it('displays following information correctly when user has following', async () => {
+    await setup({ withUser: true });
+    
+    await waitFor(() => {
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    });
+    
+    expect(screen.getByText('Alice and 1 more following also attended this event')).toBeInTheDocument();
+  });
+
+  it('handles events with more than 3 following attendees correctly', async () => {
+    const eventsWithManyFollowing = [
+      {
+        id: 3,
+        title: 'Big Conference',
+        date: '2025-05-20T18:00:00.000Z',
+        location: 'Convention Center',
+        current_attendees: [
+          { id: 101, first_name: 'Alice', icon: null },
+          { id: 103, first_name: 'Charlie', icon: null },
+          { id: 105, first_name: 'Eve', icon: null },
+          { id: 107, first_name: 'Grace', icon: null },
+          { id: 109, first_name: 'Ivy', icon: null }
+        ]
+      }
+    ];
+    
+    const userWithManyFollowing = {
+      ...defaultUser,
+      following: [101, 103, 105, 107, 109]
+    };
+    
+    (apiClient.get).mockImplementation((url) => {
+      if (url === '/api/all-events') {
+        return Promise.resolve({ data: eventsWithManyFollowing });
+      }
+      return Promise.reject(new Error('Unexpected URL'));
+    });
+    
+    await setup({ 
+      withUser: true,
+      customUser: userWithManyFollowing
+    });
+    
+    await waitFor(() => {
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    });
+    
+    expect(screen.getByText('Alice and 4 more following also attended this event')).toBeInTheDocument();
+    expect(screen.getByText('+2')).toBeInTheDocument();
+  });
+});

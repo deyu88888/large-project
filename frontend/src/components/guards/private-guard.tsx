@@ -26,6 +26,7 @@ export function PrivateGuard({ children, requiredRole }: PrivateGuardProps) {
     console.log("[PrivateGuard] Starting authentication for path:", location.pathname);
     
     try {
+      console.log(localStorage.getItem(ACCESS_TOKEN));
       const token = localStorage.getItem(ACCESS_TOKEN);
       console.log("[PrivateGuard] Token exists:", !!token);
       
@@ -126,7 +127,7 @@ export function PrivateGuard({ children, requiredRole }: PrivateGuardProps) {
     return () => {
       clearTimeout(timeoutId);
     };
-  }, [authenticate]);
+  }, [authenticate, authState.loading]);
   
   const validateToken = async (token: string): Promise<boolean> => {
     try {

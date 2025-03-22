@@ -5,11 +5,9 @@ import {
   Box, Typography, TextField, Button, CircularProgress, useTheme, InputAdornment, IconButton
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
+import { ACCESS_TOKEN, REFRESH_TOKEN } from "../constants";
 import { apiClient, apiPaths } from "../api";
 import { tokens } from "../theme/theme";
-
-export const ACCESS_TOKEN = "ACCESS_TOKEN";
-export const REFRESH_TOKEN = "REFRESH_TOKEN";
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
