@@ -1,9 +1,8 @@
 import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 import { ThemeProvider, createTheme } from "@mui/material";
 import { vi } from "vitest";
-import LoginPage, { ACCESS_TOKEN, REFRESH_TOKEN } from "../login";
+import LoginPage from "../Login";
 import { apiClient } from "../../api";
-import * as router from "react-router-dom";
 
 vi.mock("../../api", () => ({
   apiClient: {

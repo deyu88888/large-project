@@ -1,5 +1,4 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAuthStore } from "../../stores/auth-store";
 import {
   Avatar,
@@ -13,19 +12,22 @@ import {
   ListItemText,
   Typography,
 } from "@mui/material";
-import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
-import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
-import PeopleOutlinedIcon from "@mui/icons-material/PeopleOutlined";
-import EventOutlinedIcon from "@mui/icons-material/EventOutlined";
-import PersonAddAltIcon from "@mui/icons-material/PersonAddAlt";
-import InboxIcon from "@mui/icons-material/MoveToInbox";
-import LogoutIcon from "@mui/icons-material/Logout";
-import SportsFootballIcon from '@mui/icons-material/SportsFootball';
+import {
+  ChevronLeft as ChevronLeftIcon,
+  HomeOutlined as HomeOutlinedIcon,
+  PeopleOutlined as PeopleOutlinedIcon,
+  PersonAddAlt as PersonAddAltIcon,
+  MoveToInbox as InboxIcon,
+  Logout as LogoutIcon,
+  SportsFootball as SportsFootballIcon,
+  Groups as GroupsIcon,
+  ManageHistory as ManageHistoryIcon,
+  CalendarMonth as CalendarMonthIcon,
+  Event as EventIcon,
+} from "@mui/icons-material";
 import { CustomDrawer, CustomDrawerHeader } from "./drawer/CustomDrawer";
-import GroupsIcon from '@mui/icons-material/Groups';
-import ManageHistoryIcon from '@mui/icons-material/ManageHistory';
-import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
-import EventIcon from '@mui/icons-material/Event';
+import { useAuthContext } from "../auth/AuthContext";
+import { memo, useMemo, useState } from "react";
 
 interface AdminDrawerProps {
   drawer: boolean;
@@ -33,77 +35,59 @@ interface AdminDrawerProps {
   location: { pathname: string };
 }
 
-const AdminDrawer: React.FC<AdminDrawerProps> = ({
-  drawer,
-  toggleDrawer,
-  location,
-}) => {
-  const [selected, setSelected] = useState("Dashboard");
+const AdminDrawer: React.FC<AdminDrawerProps> = ({ drawer, toggleDrawer }) => {
   const { user } = useAuthStore();
-  const navigate = useNavigate();
-  const menuItems = [
-    
-    { title: "Dashboard", icon: <HomeOutlinedIcon />, to: "/admin" },
-    {
-      title: "Manage Students",
-      icon: <PeopleOutlinedIcon />,
-      to: "/admin/student-list",
-    },
-    {
-      title: "Manage Societies",
-      icon: <SportsFootballIcon />,
-      to: "/admin/society",
-    },
-    {
-      title: "Manage Events",
-      icon: <EventIcon />,
-      to: "/admin/event",
-    },
-    {
-      title: "Calendar",
-      to: "/admin/calendar",
-      icon: <CalendarMonthIcon />,
-    },
-    { title: "Reports", icon: <InboxIcon />, to: "/admin/reports" },
+  const { logoutMutation } = useAuthContext();
 
-  ];
+  const [selected, setSelected] = useState("Dashboard");
 
-  const additionalItems = [
-    {
-      title: "My Team",
-      icon: <GroupsIcon />,
-      to: "/admin/my-team",
-    },
-    {
-      title: "Activity Log",
-      icon: <ManageHistoryIcon />,
-      to: "/admin/activity-log",
-    },
-  ];
-  
-  // Check if user is super admin before adding the menu item
-  if (user?.is_super_admin) {
-    additionalItems.push({
-      title: "Create Admin",
-      icon: <PersonAddAltIcon />,
-      to: "/admin/create-admin",
-    });
-  }
+  const menuItems = useMemo(
+    () => [
+      { title: "Dashboard", icon: <HomeOutlinedIcon />, to: "/admin" },
+      {
+        title: "Manage Students",
+        icon: <PeopleOutlinedIcon />,
+        to: "/admin/student-list",
+      },
+      {
+        title: "Manage Societies",
+        icon: <SportsFootballIcon />,
+        to: "/admin/society",
+      },
+      { title: "Manage Events", icon: <EventIcon />, to: "/admin/event" },
+      { title: "Calendar", icon: <CalendarMonthIcon />, to: "/admin/calendar" },
+      { title: "Reports", icon: <InboxIcon />, to: "/admin/reports" },
+    ],
+    []
+  );
 
-  const logout = () => {
-    localStorage.removeItem("access");
-    localStorage.removeItem("refresh");
-    navigate("/login");
-  };
+  const additionalItems = useMemo(() => {
+    const items = [
+      { title: "My Team", icon: <GroupsIcon />, to: "/admin/my-team" },
+      {
+        title: "Activity Log",
+        icon: <ManageHistoryIcon />,
+        to: "/admin/activity-log",
+      },
+    ];
+    if (user?.is_super_admin) {
+      items.push({
+        title: "Create Admin",
+        icon: <PersonAddAltIcon />,
+        to: "/admin/create-admin",
+      });
+    }
+    return items;
+  }, [user]);
 
   return (
     <CustomDrawer variant="permanent" open={drawer}>
-        <CustomDrawerHeader>
-          <IconButton onClick={() => toggleDrawer()}>
-            {drawer && <ChevronLeftIcon />}
-          </IconButton>
-        </CustomDrawerHeader>
-        <Divider />
+      <CustomDrawerHeader>
+        <IconButton onClick={() => toggleDrawer()}>
+          {drawer && <ChevronLeftIcon />}
+        </IconButton>
+      </CustomDrawerHeader>
+      <Divider />
 
       {/* User Info Section */}
       <Box
@@ -199,7 +183,7 @@ const AdminDrawer: React.FC<AdminDrawerProps> = ({
               justifyContent: drawer ? "initial" : "center",
               color: "red",
             }}
-            onClick={logout}
+            onClick={() => logoutMutation.mutate()}
           >
             <ListItemIcon
               sx={{
@@ -218,4 +202,4 @@ const AdminDrawer: React.FC<AdminDrawerProps> = ({
   );
 };
 
-export default AdminDrawer;
+export default memo(AdminDrawer);

@@ -2,41 +2,64 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useFormik } from "formik";
 import {
-  Box, Typography, TextField, Button, CircularProgress, useTheme, InputAdornment, IconButton
+  Box,
+  Typography,
+  TextField,
+  Button,
+  CircularProgress,
+  useTheme,
+  InputAdornment,
+  IconButton,
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { apiClient, apiPaths } from "../api";
 import { tokens } from "../theme/theme";
+import { useAuthStore } from "../stores/auth-store";
+import { useMutation } from "react-query";
 
-export const ACCESS_TOKEN = "ACCESS_TOKEN";
-export const REFRESH_TOKEN = "REFRESH_TOKEN";
+type LoginPayload = {
+  username: string;
+  password: string;
+};
 
 export default function LoginPage() {
-  const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+  const { setToken, setRefreshToken } = useAuthStore();
+
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
 
-  const loginFormik = useFormik({
+  const [showPassword, setShowPassword] = useState(false);
+
+  // ------------------------ FORMIK ------------------------
+
+  const loginFormik = useFormik<LoginPayload>({
     initialValues: {
       username: "",
       password: "",
     },
     onSubmit: async (data) => {
-      setLoading(true);
-      try {
-        const res = await apiClient.post(apiPaths.USER.LOGIN, data);
-        localStorage.setItem(ACCESS_TOKEN, res.data.access);
-        localStorage.setItem(REFRESH_TOKEN, res.data.refresh);
-        navigate("/");
-      } catch (error) {
-        alert(error);
-      } finally {
-        setLoading(false);
-      }
+      loginMutation.mutate(data);
     },
   });
+
+  // ------------------------ MUTATION ------------------------
+
+  const loginMutation = useMutation({
+    mutationFn: async (payload: LoginPayload) => {
+      return await apiClient.post(apiPaths.USER.LOGIN, payload);
+    },
+    onSuccess: (res) => {
+      setToken(res.data.access);
+      setRefreshToken(res.data.refresh);
+      navigate("/");
+    },
+    onError: (error) => {
+      alert(error);
+    },
+  });
+
+  // ------------------------ RENDER ------------------------
 
   return (
     <Box
@@ -55,7 +78,8 @@ export default function LoginPage() {
         sx={{
           width: "100%",
           maxWidth: 400,
-          backgroundColor: theme.palette.mode === "light" ? "#fff" : colors.primary[500],
+          backgroundColor:
+            theme.palette.mode === "light" ? "#fff" : colors.primary[500],
           padding: 4,
           borderRadius: 2,
           boxShadow: 3,
@@ -67,7 +91,7 @@ export default function LoginPage() {
             textAlign: "center",
             fontWeight: "bold",
             color: colors.grey[100],
-            marginBottom: 2
+            marginBottom: 2,
           }}
           data-testid="login-heading"
         >
@@ -102,7 +126,10 @@ export default function LoginPage() {
             style: { color: colors.grey[100] },
             endAdornment: (
               <InputAdornment position="end">
-                <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
+                <IconButton
+                  onClick={() => setShowPassword(!showPassword)}
+                  edge="end"
+                >
                   {showPassword ? <VisibilityOff /> : <Visibility />}
                 </IconButton>
               </InputAdornment>
@@ -110,8 +137,13 @@ export default function LoginPage() {
           }}
         />
 
-        {loading && (
-          <Box display="flex" justifyContent="center" mb={2} data-testid="loading-indicator">
+        {loginMutation.isLoading && (
+          <Box
+            display="flex"
+            justifyContent="center"
+            mb={2}
+            data-testid="loading-indicator"
+          >
             <CircularProgress role="progressbar" aria-label="Loading" />
           </Box>
         )}
@@ -130,9 +162,17 @@ export default function LoginPage() {
           Login
         </Button>
 
-        <Typography sx={{ marginTop: 2, textAlign: "center", color: colors.grey[100] }}>
+        <Typography
+          sx={{ marginTop: 2, textAlign: "center", color: colors.grey[100] }}
+        >
           Need to sign up?{" "}
-          <a href="/register" style={{ color: colors.blueAccent[300], textDecoration: "underline" }}>
+          <a
+            href="/register"
+            style={{
+              color: colors.blueAccent[300],
+              textDecoration: "underline",
+            }}
+          >
             Please register.
           </a>
         </Typography>

@@ -12,13 +12,13 @@ import ManageReports from "../pages/Admin/ManageReports";
 import PublicLayout from "../components/dashboard/PublicLayout";
 
 // Lazy-loaded pages
-const LoginPage = lazy(() => import("../pages/login"));
+const LoginPage = lazy(() => import("../pages/Login"));
 const RegisterPage = lazy(() => import("../pages/register"));
 const ProfilePage = lazy(() => import("../pages/profile"));
-const StudentDashboard = lazy(
-  () => import("../pages/Student/StudentDashboard")
-);
+const StudentDashboard = lazy(() => import("../pages/Student/StudentDashboard"));
+const AllSocietiesPage = lazy(() => import("../pages/AllSocieties"))
 const MySocieties = lazy(() => import("../pages/Student/MyJoinedSocieties"));
+const PublicCalendarPage = lazy(() => import("../pages/Calendar"));
 const ViewEvents = lazy(() => import("../pages/ViewEvents"));
 const ViewNews = lazy(() => import("../pages/Student/ViewNews"));
 const ViewNotifications = lazy(
@@ -111,14 +111,6 @@ const routes = [
       </PrivateGuard>
     ),
     children: [
-      {
-        index: true,
-        element: (
-          <PageWithTitle title="Dashboard">
-            <DashboardPage />
-          </PageWithTitle>
-        ),
-      },
       {
         path: "admin",
         element: (
@@ -533,6 +525,46 @@ const routes = [
         element: (
           <PageWithTitle title="All Events">
             <EventListPage />
+          </PageWithTitle>
+        ),
+      },
+      {
+        path: "all-societies",
+        element: (
+          <PageWithTitle title="All Societies">
+            <AllSocietiesPage />
+          </PageWithTitle>
+        ),
+      },
+      {
+        path: "all-societies/:society_id",
+        element: (
+          <PageWithTitle title="Society Details">
+            <ViewSocietyPage />
+          </PageWithTitle>
+        ),
+      },
+      {
+        path: "view-news",
+        element: (
+          <PageWithTitle title="News">
+            <ViewNews />
+          </PageWithTitle>
+        ),
+      },
+      {
+        path: "report-to-admin",
+        element: (
+          <PageWithTitle title="Report to Admin">
+            <ReportToAdmin />
+          </PageWithTitle>
+        ),
+      },
+      {
+        path: "calendar",
+        element: (
+          <PageWithTitle title="Calendar">
+            <PublicCalendarPage />
           </PageWithTitle>
         ),
       },

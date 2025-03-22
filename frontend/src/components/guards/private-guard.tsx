@@ -1,90 +1,91 @@
-import { Navigate, useLocation } from "react-router-dom";
-import { useState, useEffect, useCallback } from "react";
-import { ACCESS_TOKEN, REFRESH_TOKEN } from "../../constants";
-import { apiClient, apiPaths } from "../../api";
 import { useAuthStore } from "../../stores/auth-store";
-import { jwtDecode } from "jwt-decode";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 import { LoadingView } from "../loading/loading-view";
+import { jwtDecode } from "jwt-decode";
+import { useMutation } from "react-query";
+import { apiClient, apiPaths } from "../../api";
+import { useAuthContext } from "../auth/AuthContext";
 
-type UserRole = "admin" | "student";
+const validateToken = (token: string): boolean => {
+  try {
+    const { exp: tokenExpiration } = jwtDecode<{ exp: number }>(token);
+    return tokenExpiration > Date.now() / 1000;
+  } catch {
+    return false;
+  }
+};
 
 interface PrivateGuardProps {
   children: React.ReactNode;
-  requiredRole?: UserRole;
+  requiredRole?: "admin" | "student";
 }
 
 export function PrivateGuard({ children, requiredRole }: PrivateGuardProps) {
-  const [authState, setAuthState] = useState({
-    isAuthorized: false,
-    loading: true,
-  });
-
-  const { user, setUser } = useAuthStore();
+  const navigate = useNavigate();
   const location = useLocation();
 
-  const authenticate = useCallback(async () => {
-    try {
-      const token = localStorage.getItem(ACCESS_TOKEN);
-      if (!token) throw new Error("No access token available");
+  const { loading, token, setToken, refreshToken, user, setLoading } =
+    useAuthStore();
+  const { currentSessionQuery } = useAuthContext();
 
-      const isTokenValid = await validateToken(token);
-      if (!isTokenValid) await handleTokenRefresh();
-
-      const userData = await fetchUserData();
-      console.log("%c[PrivateGuard] User data fetched:", "color: green;", userData);
-
-      setUser(userData);
-
-      setAuthState({ isAuthorized: true, loading: false });
-    } catch (error) {
-      console.error("[PrivateGuard] Authentication failed:", error);
-      setAuthState({ isAuthorized: false, loading: false });
-    }
-  }, [setUser]);
+  const refreshTokenMutation = useMutation({
+    mutationFn: async () => {
+      if (!refreshToken) throw new Error("No refresh token available");
+      setLoading(true);
+      return await apiClient.post(apiPaths.USER.REFRESH, {
+        refresh: refreshToken,
+      });
+    },
+    onSettled: () => setLoading(false),
+    onSuccess: (response) => {
+      setToken(response.data.access);
+    },
+    onError: () => {
+      console.error("[PrivateGuard] Token refresh failed");
+      navigate("/login", { replace: true });
+    },
+  });
 
   useEffect(() => {
-    authenticate();
-  }, [authenticate]);
+    const checkAuth = () => {
+      if (!token && !refreshToken) {
+        navigate("/login", { replace: true });
+        return;
+      }
 
-  const validateToken = async (token: string): Promise<boolean> => {
-    try {
-      const { exp: tokenExpiration } = jwtDecode<{ exp: number }>(token);
-      return tokenExpiration > Date.now() / 1000;
-    } catch {
-      return false;
+      if (!token || !validateToken(token)) {
+        if (!refreshTokenMutation.isLoading) {
+          refreshTokenMutation.mutate();
+        }
+      }
+    };
+
+    if (!loading) {
+      checkAuth();
     }
-  };
+  }, [token, loading, refreshToken, refreshTokenMutation.isLoading, navigate]);
 
-  const handleTokenRefresh = async () => {
-    const refreshToken = localStorage.getItem(REFRESH_TOKEN);
-    if (!refreshToken) throw new Error("No refresh token available");
-
-    const response = await apiClient.post(apiPaths.USER.REFRESH, { refresh: refreshToken });
-    if (response.status === 200 && response.data?.access) {
-      localStorage.setItem(ACCESS_TOKEN, response.data.access);
-    } else {
-      throw new Error("Failed to refresh token");
-    }
-  };
-
-  const fetchUserData = async () => {
-    const response = await apiClient.get(apiPaths.USER.CURRENT);
-    return response.data;
-  };
-
-  if (authState.loading) return <LoadingView />;
-  
-  if (requiredRole && user?.role !== requiredRole) {
-    return <Navigate to={`/${user?.role}`} replace />;
+  // Show a loading state while checking authentication
+  if (
+    loading ||
+    refreshTokenMutation.isLoading ||
+    currentSessionQuery.isFetching
+  ) {
+    return <LoadingView />;
   }
 
-  if (!authState.isAuthorized) {
-    if (location.pathname === "/") {
-      return children;
-    }
-    return <Navigate to="/login" state={{ from: location }} replace />;
+  // Show loading if we have a valid token but no user data yet
+  if (!user && token) {
+    return <LoadingView />;
   }
-  
+
+  // Role-based access check with a correct template literal
+  if (requiredRole && user && requiredRole !== user.role) {
+    return <Navigate to={user.role ? `/${user.role}` : "/login"} replace />;
+  }
+
+  // Redirect root path based on user role
   if (location.pathname === "/" && user?.role) {
     const roleRedirect = user.role === "admin" ? "/admin" : "/student";
     return <Navigate to={roleRedirect} replace />;

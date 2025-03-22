@@ -1,6 +1,7 @@
 import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
 
-interface User {
+export interface User {
   id: number;
   username: string;
   first_name: string;
@@ -14,22 +15,59 @@ interface User {
   is_event_manager?: boolean;
   event_manager_of_society?: number;
   is_super_admin: boolean;
+  icon?: string;
+  major?: string;
+  societies?: string[];
+  president_of?: number;
+  president_of_society_name?: string;
 }
 
 interface AuthStore {
+  token: string | null;
+  setToken: (token: string) => void;
+
+  refreshToken: string | null;
+  setRefreshToken: (token: string) => void;
+
   user: User | null;
-  loading: boolean; // Indicates if the user is being fetched
   setUser: (user: User | null) => void;
+
+  loading: boolean;
   setLoading: (isLoading: boolean) => void;
-  clearUser: () => void;
+
+  reset: () => void;
+
+  resetAccessToken: () => void;
 }
 
-export const useAuthStore = create<AuthStore>((set) => ({
-  user: null,
-  loading: true, // Default to true until user data is fetched
-  setUser: (user: User | null) => {
-    set({ user });
-  },
-  setLoading: (isLoading) => set({ loading: isLoading }),
-  clearUser: () => set({ user: null }),
-}));
+export const useAuthStore = create<AuthStore>()(
+  persist(
+    (set) => ({
+      token: null,
+      setToken: (token: string | null) => {
+        set({ token });
+      },
+      //
+      refreshToken: null,
+      setRefreshToken: (refreshToken: string | null) => {
+        set({ refreshToken });
+      },
+      //
+      user: null,
+      setUser: (user: User | null) => {
+        set({ user });
+      },
+      //
+      loading: false,
+      setLoading: (loading) => set({ loading: loading }),
+      //
+      reset: () => set({ user: null, token: null, refreshToken: null }),
+      //
+      resetAccessToken: () => set({ token: null }),
+    }),
+    {
+      name: "app-auth",
+      storage: createJSONStorage(() => localStorage),
+    }
+  )
+);

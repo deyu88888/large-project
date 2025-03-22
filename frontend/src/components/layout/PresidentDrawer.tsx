@@ -1,8 +1,6 @@
-import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { apiClient } from "../../api";
+import React, { useState, useMemo, memo } from "react";
+import { Link } from "react-router-dom";
 import {
-  Avatar,
   Box,
   Divider,
   IconButton,
@@ -12,24 +10,27 @@ import {
   ListItemIcon,
   ListItemText,
   Typography,
-
 } from "@mui/material";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
-import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
-import PeopleOutlineIcon from "@mui/icons-material/PeopleOutline";
-import EventAvailableIcon from "@mui/icons-material/EventAvailable";
-import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";
-import NotificationImportantOutlinedIcon from '@mui/icons-material/NotificationImportantOutlined';
-import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import LogoutIcon from "@mui/icons-material/Logout";
 import ManageAccountsOutlinedIcon from "@mui/icons-material/ManageAccountsOutlined";
-import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
-import EventNoteOutlinedIcon from "@mui/icons-material/EventNoteOutlined";
-import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
-import ReportProblemOutlinedIcon from "@mui/icons-material/ReportProblemOutlined";
 import GroupAddOutlinedIcon from "@mui/icons-material/GroupAddOutlined";
+import {
+  HomeOutlined,
+  PeopleOutline,
+  EventAvailable,
+  NotificationsNoneOutlined,
+  NotificationImportantOutlined,
+  AddCircleOutline,
+  ReportProblemOutlined,
+  DescriptionOutlined,
+  EventNoteOutlined,
+  GroupOutlined,
+} from "@mui/icons-material";
 
 import { CustomDrawer, CustomDrawerHeader } from "./drawer/CustomDrawer";
+import { useAuthStore } from "../../stores/auth-store";
+import { useAuthContext } from "../auth/AuthContext";
 
 interface PresidentDrawerProps {
   drawer: boolean;
@@ -40,49 +41,73 @@ interface PresidentDrawerProps {
 const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
   drawer,
   toggleDrawer,
-  location,
 }) => {
+  const { user } = useAuthStore();
+  const { logoutMutation } = useAuthContext();
   const [selected, setSelected] = useState("Dashboard");
-  const [student, setStudent] = useState<any[]>([]);
-  const navigate = useNavigate();
 
-  useEffect(() => {
-      const fetchStudentData = async () => {
-        try {
-          const response = await apiClient.get("/api/user/current");
-          setStudent(response.data);
-          console.log(student);
-        } catch (error) {
-          console.error("Error retrieving student:", error);
-          alert("Failed to retrieve student. Please contact an administrator.");
-        }
-      };  
-    fetchStudentData();
-    }, []);
+  const menuItems = useMemo(
+    () => [
+      { title: "Dashboard", icon: <HomeOutlined />, to: "/student" },
+      {
+        title: "My Societies",
+        icon: <PeopleOutline />,
+        to: "/student/my-societies",
+      },
+      {
+        title: "Start Society",
+        icon: <AddCircleOutline />,
+        to: "/student/start-society",
+      },
+      {
+        title: "View Events",
+        icon: <EventAvailable />,
+        to: "/student/view-events",
+      },
+      {
+        title: "Notifications",
+        icon: <NotificationsNoneOutlined />,
+        to: "/student/view-notifications",
+      },
+      {
+        title: "Inbox",
+        icon: <NotificationImportantOutlined />,
+        to: "/student/view-inbox",
+      },
+      {
+        title: "Report to Admin",
+        icon: <ReportProblemOutlined />,
+        to: "/student/report-to-admin",
+      },
+    ],
+    []
+  );
 
-  const menuItems = [
-    { title: "Dashboard", icon: <HomeOutlinedIcon />, to: "/student" },
-    { title: "My Societies", icon: <PeopleOutlineIcon />, to: "/student/my-societies" },
-    { title: "Start Society", icon: <AddCircleOutlineIcon />, to: "/student/start-society" },
-    { title: "View Events", icon: <EventAvailableIcon />, to: "/student/view-events" },
-    { title: "Notifications", icon: <NotificationsNoneOutlinedIcon />, to: "/student/view-notifications" },
-    { title: "Inbox", icon: <NotificationImportantOutlinedIcon />, to: "/student/view-inbox" },
-    { title: "Report to Admin", icon: <ReportProblemOutlinedIcon />, to: "/student/report-to-admin" },
-  ];
-
-  const manageMySocietiesItems = [
-    { title: "Society Details", icon: <DescriptionOutlinedIcon />, to: "/president-page/1/manage-society-details" },
-    { title: "Society Events", icon: <EventNoteOutlinedIcon />, to: "/president-page/1/manage-society-events" },
-    { title: "Pending Members", icon: <PeopleOutlineIcon />, to: "/president-page/1/pending-members" },
-    { title: "All Members", icon: <GroupOutlinedIcon />, to: "/president-page/1/view-society-members" },
-    // { title: "Report to Admin", icon: <ReportProblemOutlinedIcon />, to: "/president-page/1/report-to-admin" },
-  ];
-
-  const logout = () => {
-    localStorage.removeItem("access");
-    localStorage.removeItem("refresh");
-    navigate("/login");
-  };
+  const manageMySocietiesItems = useMemo(
+    () => [
+      {
+        title: "Society Details",
+        icon: <DescriptionOutlined />,
+        to: "/president-page/1/manage-society-details",
+      },
+      {
+        title: "Society Events",
+        icon: <EventNoteOutlined />,
+        to: "/president-page/1/manage-society-events",
+      },
+      {
+        title: "Pending Members",
+        icon: <PeopleOutline />,
+        to: "/president-page/1/pending-members",
+      },
+      {
+        title: "All Members",
+        icon: <GroupOutlined />,
+        to: "/president-page/1/view-society-members",
+      },
+    ],
+    []
+  );
 
   return (
     <CustomDrawer variant="permanent" open={drawer}>
@@ -94,21 +119,26 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
       <Divider />
 
       {/* User Info Section */}
-      <Box padding={2} display="flex" justifyContent="center" alignItems="center">
+      <Box
+        padding={2}
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+      >
         {drawer ? (
           <Box sx={{ textAlign: "center" }}>
             <img
-            src={"http://localhost:8000/api" + student?.icon}
-            alt={`${student?.username} icon`}
-            style={{
-              width: "72px",
-              height: "72px",
-              borderRadius: "50%",
-              margin: "0 auto"
-            }}
+              src={"http://localhost:8000/api" + user?.icon}
+              alt={`${user?.username} icon`}
+              style={{
+                width: "72px",
+                height: "72px",
+                borderRadius: "50%",
+                margin: "0 auto",
+              }}
             />
             <Typography variant="h6" fontWeight="bold" sx={{ mt: "10px" }}>
-              {student?.first_name} {student?.last_name}
+              {user?.first_name} {user?.last_name}
             </Typography>
             <Typography variant="body2" color="textSecondary">
               President Dashboard
@@ -116,8 +146,8 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
           </Box>
         ) : (
           <img
-            src={"http://localhost:8000/api" + student?.icon}
-            alt={`${student?.username} icon`}
+            src={"http://localhost:8000/api" + user?.icon}
+            alt={`${user?.username} icon`}
             style={{
               width: "25px",
               height: "25px",
@@ -186,9 +216,9 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
               to={item.to}
               selected={selected === item.title}
               onClick={() => setSelected(item.title)}
-              sx={{ 
-                justifyContent: drawer ? "initial" : "center", 
-                px: 2.5
+              sx={{
+                justifyContent: drawer ? "initial" : "center",
+                px: 2.5,
               }}
             >
               <ListItemIcon
@@ -247,7 +277,7 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
               justifyContent: drawer ? "initial" : "center",
               color: "red",
             }}
-            onClick={logout}
+            onClick={() => logoutMutation.mutate()}
           >
             <ListItemIcon
               sx={{
@@ -266,4 +296,4 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
   );
 };
 
-export default PresidentDrawer;
+export default memo(PresidentDrawer);

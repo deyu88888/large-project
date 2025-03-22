@@ -1,10 +1,11 @@
-import { BrowserRouter } from "react-router-dom";
-import { ThemeProvider, CssBaseline, createTheme } from "@mui/material";
-import { Routes } from "./routes";
 import axios from "axios";
-import { useSettingsStore } from "./stores/settings-store";
+import { Routes } from "./routes";
 import { themeSettings } from "./theme/theme";
+import { useSettingsStore } from "./stores/settings-store";
+import { AuthProvider } from "./components/auth/AuthProvider";
+import { QueryClient, QueryClientProvider } from "react-query";
 import { SearchProvider } from "./components/layout/SearchContext";
+import { ThemeProvider, CssBaseline, createTheme } from "@mui/material";
 
 export const apiClient = axios.create({
   baseURL: "http://localhost:8000",
@@ -13,17 +14,28 @@ export const apiClient = axios.create({
   },
 });
 
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
 export function App() {
   const { themeMode } = useSettingsStore();
 
   return (
-    <ThemeProvider theme={createTheme(themeSettings(themeMode))}>
-      <CssBaseline />
-      <SearchProvider>
-        <BrowserRouter>
-          <Routes />
-        </BrowserRouter>
-      </SearchProvider>
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <ThemeProvider theme={createTheme(themeSettings(themeMode))}>
+          <CssBaseline />
+          <SearchProvider>
+            <Routes />
+          </SearchProvider>
+        </ThemeProvider>
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }
