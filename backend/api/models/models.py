@@ -801,6 +801,7 @@ class BroadcastMessage(models.Model):
         # ADDED: A convenient string representation
         return f"Broadcast from {self.sender.username} at {self.created_at:%Y-%m-%d %H:%M}"
 
+
 class SocietyNews(models.Model):
     """
     News posts for societies.
@@ -1025,7 +1026,7 @@ class ActivityLog(models.Model):
     performed_by = models.ForeignKey(User, on_delete=models.CASCADE)
     timestamp = models.DateTimeField(auto_now_add=True)
     expiration_date = models.DateTimeField(null=True, blank=True)
-    original_data = models.TextField(null=True, blank=True) 
+    original_data = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.action_type} - {self.target_name} on {self.timestamp}"
