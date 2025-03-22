@@ -11,9 +11,12 @@ import InstagramIcon from '@mui/icons-material/Instagram';
 import XIcon from '@mui/icons-material/X';
 import { tokens } from "../theme/theme";
 import { NewsCardAnimation } from "../components/NewsCardAnimation";
+import { useAuthStore } from "../stores/auth-store";
 
 const ViewSociety: React.FC = () => {
   const theme = useTheme();
+  const { user } = useAuthStore();
+  const isAuthenticated = !!user;
   const colours = tokens(theme.palette.mode);
   const isLight = theme.palette.mode === "light";
 
@@ -24,22 +27,36 @@ const ViewSociety: React.FC = () => {
   const { society_id } = useParams<{ society_id: string }>();
 
   useEffect(() => {
-    const fetchSocietyData = async (societyId : number) => {
+    const fetchSocietyData = async (societyId: number) => {
       try {
         setLoading(true);
-        const response = await apiClient.get("/api/society-view/" + societyId);
+        
+        // Use different endpoints based on authentication status
+        const endpoint = isAuthenticated 
+          ? `/api/society-view/${societyId}` 
+          : `/api/all-societies/${societyId}`;
+        
+        const response = await apiClient.get(endpoint);
         setSociety(response.data);
-        setJoined(response.data.is_member)
-        /*console.log("Society data: ", response);*/
+        
+        // Only set joined status if authenticated
+        if (isAuthenticated) {
+          setJoined(response.data.is_member);
+        } else {
+          // For public users, they're not joined
+          setJoined(0);
+        }
+        
       } catch (error) {
         console.error("Error retrieving society:", error);
         alert("Failed to load society. Please try again.");
       } finally {
         setLoading(false);
       }
-    };  
-  fetchSocietyData(Number(society_id));
-  }, [society_id]);
+    };
+    
+    fetchSocietyData(Number(society_id));
+  }, [society_id, isAuthenticated]);
 
   const handleJoinSociety = async (societyId: number) => {
     try {
@@ -173,6 +190,8 @@ const ViewSociety: React.FC = () => {
               Treasurer: {society.treasurer.first_name} {society.treasurer.last_name}
             </p>
           )}
+          {isAuthenticated ? (
+          <>
           {joined === 0 && (<button
             onClick={() => handleJoinSociety(society.id)}
             style={{
@@ -203,7 +222,29 @@ const ViewSociety: React.FC = () => {
           >
             Request Pending
           </button>)}
-        </div>
+        
+         </>
+              ) : (
+                <button
+          onClick={() => {
+            // Redirect to login page
+            window.location.href = "/login?redirect=" + window.location.pathname;
+          }}
+          style={{
+            backgroundColor: isLight ? colours.blueAccent[400] : colours.blueAccent[500],
+            color: isLight ? "#ffffff" : colours.grey[100],
+            padding: "0.5rem 1.5rem",
+            borderRadius: "0.5rem",
+            transition: "all 0.2s ease",
+            border: "none",
+            cursor: "pointer",
+            marginTop: "2.5rem",
+          }}
+        >
+          Login to Join
+        </button>
+      )}
+      </div>
         <div style={{flex: 1.5}}>
           {society.showreel_images && society.showreel_images.length > 0 && (
             <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem", marginTop: "2rem" }}>

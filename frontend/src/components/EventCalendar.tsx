@@ -58,7 +58,7 @@ const EventCalendar: React.FC<EventCalendarProps> = ({ events }) => {
   maxTime.setHours(23, 0, 0);
 
   return (
-    <div className="relative p-1 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-400 rounded-3xl shadow-2xl transition-transform duration-500 hover:scale-105 hover:shadow-3xl">
+    <div className="relative p-1 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-400 rounded-3xl shadow-2xl hover:shadow-3xl">
       <div className="bg-white/90 backdrop-blur-sm rounded-3xl p-6">
         <Calendar
           localizer={localizer}
