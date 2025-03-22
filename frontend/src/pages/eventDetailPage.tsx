@@ -1,10 +1,10 @@
 import React, { useEffect, useState, useRef } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { apiClient } from "../api";
 import { CircularProgress, Typography, Card, CardContent } from "@mui/material";
 import { format } from "date-fns";
-import { Link } from "react-router-dom";
 import { CommentSection } from "../components/CommentSection";
+import useAuthCheck from "../hooks/useAuthCheck";
 
 const CommentsSectionWrapper: React.FC<{ isAuthenticated: boolean; children: React.ReactNode }> = ({
   isAuthenticated,
@@ -13,11 +13,11 @@ const CommentsSectionWrapper: React.FC<{ isAuthenticated: boolean; children: Rea
   if (!isAuthenticated) {
     return (
       <Typography
-          variant="body2"
-          color="text.primary"
-          align="center"
-          marginTop="20px"
-          fontSize="14px"
+        variant="body2"
+        color="text.primary"
+        align="center"
+        marginTop="20px"
+        fontSize="14px"
       >
         Please{" "}
         <Link to="/login" style={{ textDecoration: "underline", color: "blue" }}>
@@ -35,11 +35,12 @@ const CommentsSectionWrapper: React.FC<{ isAuthenticated: boolean; children: Rea
 };
 
 const EventDetailPage: React.FC = () => {
-  const { eventId } = useParams();
-  const numericEventId = eventId ? parseInt(eventId, 10) : undefined;
+  const { event_id } = useParams();
+  const numericEventId = event_id ? parseInt(event_id, 10) : undefined;
   const [event, setEvent] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { isAuthenticated, } = useAuthCheck();
+  // const isAuthenticated = Boolean(localStorage.getItem("token"));
   const [, setComments] = useState<any[]>([]);
   const wsRef = useRef<WebSocket | null>(null);
 
@@ -59,21 +60,6 @@ const EventDetailPage: React.FC = () => {
 
     fetchEvent();
   }, [numericEventId]);
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const authRes = await apiClient.get("/api/user/current");
-        if (authRes.status === 200) {
-          setIsAuthenticated(true);
-        }
-      } catch {
-        setIsAuthenticated(false); // 401 Unauthorized
-      }
-    };
-
-    checkAuth();
-  }, []);
 
   useEffect(() => {
     const fetchComments = async () => {
@@ -155,7 +141,7 @@ const EventDetailPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      <CommentsSectionWrapper isAuthenticated={isAuthenticated}>
+      <CommentsSectionWrapper isAuthenticated={!!isAuthenticated}>
         <CommentSection eventId={numericEventId as number} />
       </CommentsSectionWrapper>
     </div>

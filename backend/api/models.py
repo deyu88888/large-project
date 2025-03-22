@@ -56,6 +56,13 @@ class User(AbstractUser):
         blank=True,
     )
 
+    follower = models.ManyToManyField(
+        "self",
+        symmetrical=False,
+        related_name="followings",
+        blank=True,
+    )
+
     # This flag differentiates super-admins from normal admins
     is_super_admin = models.BooleanField(default=False)
 
@@ -71,7 +78,7 @@ class User(AbstractUser):
 
     def is_admin(self):
         return self.role == "admin" or self.is_super_admin
-    
+
     @classmethod
     def get_admins(cls):
         """Return all admin users (including super-admins)."""
@@ -81,7 +88,7 @@ class User(AbstractUser):
         """
         Assign users to the correct groups based on role.
         """
-        # super().save(*args, **kwargs) 
+        # super().save(*args, **kwargs)
 
         if self.is_super_admin:
             self.is_superuser = True
@@ -168,8 +175,8 @@ class Student(User):
 
     def save(self, *args, **kwargs):
         self.role = "student"
-        
-    
+
+
     # Check for conflicting leadership roles
         leadership_roles = []
         if self.is_president:
@@ -178,7 +185,7 @@ class Student(User):
             leadership_roles.append("vice president")
         if self.is_event_manager:
             leadership_roles.append("event manager")
-        
+
         if len(leadership_roles) > 1:
             raise ValidationError(f"A student can only hold one leadership role. This student is assigned as: {', '.join(leadership_roles)}")
 
@@ -212,17 +219,17 @@ def validate_social_media_links(value):
     # Check that value is a dictionary
     if not isinstance(value, dict):
         raise ValidationError("Social media links must be provided as a dictionary.")
-    
+
     # Check that all keys are valid platforms
     for key in value.keys():
         if key not in allowed_platforms:
             raise ValidationError(f"'{key}' is not a valid social media platform. Allowed platforms are: {', '.join(allowed_platforms)}")
-    
+
     # Check that all values are strings (links)
     for platform, link in value.items():
         if not isinstance(link, str):
             raise ValidationError(f"The value for '{platform}' must be a string URL.")
-        
+
         # Optional: Add URL validation if needed
         # This is a simple check, you might want to use more sophisticated URL validation
         if link and not (link.startswith('http://') or link.startswith('https://') or link.startswith('mailto:')):
@@ -770,7 +777,6 @@ class AwardStudent(models.Model):
     def __str__(self):
         return f"{self.student}, ({self.award})"
 
-
 class Comment(models.Model):
     event = models.ForeignKey("Event", on_delete=models.CASCADE, related_name="comments")
     user = models.ForeignKey("User", on_delete=models.CASCADE)
@@ -1069,7 +1075,7 @@ class ActivityLog(models.Model):
         expired_logs = cls.objects.filter(expiration_date__lt=expiration_threshold)
         deleted_count, _ = expired_logs.delete()
         return deleted_count
-    
+
 class Activity(models.Model):
     """
     Represents a recent activity performed by a user.

@@ -23,8 +23,9 @@ from .views import (
     AllEventsView, EventDetailView, DescriptionRequestView, toggle_follow, StudentProfileView,
     like_comment, dislike_comment, EventCommentsView, NewsPublicationRequestView,
     AdminNewsApprovalView, ManageSocietyDetailsAdminView, AdminRepliesListView,
-    ActivityLogView, ManageEventDetailsAdminView, DeleteView, ManageStudentDetailsAdminView, ReportReplyView, 
-    MyReportsView, MyReportsWithRepliesView, ReportThreadView, AdminReportsWithRepliesView, ReportReplyNotificationsView
+    ActivityLogView, ManageEventDetailsAdminView, DeleteView, ManageStudentDetailsAdminView, ReportReplyView,
+    MyReportsView, MyReportsWithRepliesView, ReportThreadView, AdminReportsWithRepliesView, ReportReplyNotificationsView,
+    SearchView
 )
 from .utils import request_otp, verify_otp
 from .recommendation_views import RecommendedSocietiesView, SocietyRecommendationExplanationView
@@ -166,6 +167,9 @@ urlpatterns = [
     path("news/", NewsView.as_view(), name="news"),
     path("news/<int:pk>", NewsView.as_view(), name="mark_news_read"),   # TODO: implement this later
     path("get-news/", BroadcastListAPIView.as_view(), name="get-news"),
+
+    # search engine
+    path("search/", SearchView.as_view(), name="search"),
 
     path("society/<int:society_id>/news/", SocietyNewsListView.as_view(), name="society_news_list"),
     path("news/<int:news_id>/", SocietyNewsDetailView.as_view(), name="society_news_detail"),
