@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useFormik } from "formik";
 import {
   Box, Typography, TextField, Button, CircularProgress, useTheme, InputAdornment, IconButton
@@ -8,11 +8,13 @@ import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { ACCESS_TOKEN, REFRESH_TOKEN } from "../constants";
 import { apiClient, apiPaths } from "../api";
 import { tokens } from "../theme/theme";
+import { jwtDecode } from "jwt-decode";
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
 
@@ -25,11 +27,22 @@ export default function LoginPage() {
       setLoading(true);
       try {
         const res = await apiClient.post(apiPaths.USER.LOGIN, data);
+
+        // Save tokens
         localStorage.setItem(ACCESS_TOKEN, res.data.access);
         localStorage.setItem(REFRESH_TOKEN, res.data.refresh);
-        navigate("/");
+
+        // Decode token to get user role
+        const decoded = jwtDecode<{ user_id: number; role: "admin" | "student" }>(res.data.access);
+        const userRole = decoded.role || "student";
+
+        // Check if user was trying to visit a protected page before login
+        const from = location.state?.from?.pathname || `/${userRole}`;
+        navigate(from, { replace: true });
+
       } catch (error) {
-        alert(error);
+        alert("Login failed. Please check your username and password.");
+        console.error(error);
       } finally {
         setLoading(false);
       }
