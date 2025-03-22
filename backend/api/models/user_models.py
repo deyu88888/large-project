@@ -74,8 +74,7 @@ class User(AbstractUser):
         """
         Assign users to the correct groups based on role.
         """
-        # super().save(*args, **kwargs) 
-
+        
         if self.is_super_admin:
             self.is_superuser = True
             self.is_staff = True
