@@ -452,7 +452,8 @@ class StudentNotificationsView(APIView):
 
         return Response({"message": "Notification marked as read.", "id": pk}, status=status.HTTP_200_OK)
 
-class ManageStudentDetailsAdminView(APIView):
+
+class AdminManageStudentDetailsAdminView(APIView):
     """
     API View for admins to manage any student's details.
     """
@@ -553,7 +554,7 @@ class StartSocietyRequestView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class SocietyRequestView(APIView):
+class AdminSocietyRequestView(APIView):
     permission_classes = [IsAdminUser]
     """
     GET request to get all the society requests that are pending in status for admins.
@@ -565,7 +566,7 @@ class SocietyRequestView(APIView):
                 {"error": "Only admins can view society requests."},
                 status=status.HTTP_403_FORBIDDEN
             )
-       
+
         # Fetch the society requests
         # TODO: add sort by time, by adding a new field in the model
         society_status = society_status.capitalize()
@@ -600,7 +601,6 @@ class SocietyRequestView(APIView):
 
             # # Notify WebSocket clients about the update
             channel_layer = get_channel_layer()
-
 
             # If society was approved, notify the society view WebSocket clients
             society_status = serializer.validated_data.get("status")
@@ -638,6 +638,7 @@ class SocietyRequestView(APIView):
                 status=status.HTTP_200_OK
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 def has_society_management_permission(student, society, for_events_only=False):
     """
@@ -730,7 +731,8 @@ class ManageSocietyDetailsView(APIView):
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class ManageSocietyDetailsAdminView(APIView):
+
+class AdminManageSocietyDetailsAdminView(APIView):
     """
     API View for admins to manage any society's details.
     """
@@ -827,7 +829,8 @@ class ManageSocietyDetailsAdminView(APIView):
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class ManageEventDetailsAdminView(APIView):
+
+class AdminManageEventDetailsAdminView(APIView):
     """
     API View for admins to manage any event's details.
     """
@@ -941,7 +944,8 @@ class ManageEventDetailsAdminView(APIView):
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class DeleteView(APIView):
+
+class AdminDeleteView(APIView):
     """
     View for admins to delete students, societies, and events
     """
@@ -1024,7 +1028,6 @@ class DeleteView(APIView):
 
         return Response({"message": f"Deleted {target_type.lower()} moved to Activity Log."}, status=status.HTTP_200_OK)
 
-    
     def post(self, request, log_id):
         """
         Handle undo requests for various actions (Delete, Approve, Reject, Update)
@@ -2121,7 +2124,7 @@ class PendingMembersView(APIView):
         return Response({"error": "Invalid action."}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class EventView(APIView):
+class AdminEventView(APIView):
     """
     Event view to show upcoming approved events.
     """
@@ -2137,7 +2140,7 @@ class EventView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
     
 
-class EventRequestView(APIView):
+class AdminEventRequestView(APIView):
     """
     Event view to show upcoming approved events.
     """
@@ -2861,7 +2864,7 @@ def dislike_comment(request, comment_id):
         return Response({"status": "disliked"}, status=status.HTTP_200_OK)
 
 
-class DescriptionRequestView(APIView):
+class AdminDescriptionRequestView(APIView):
     """
     Description request view for admins to approve/reject descriptions
     """
@@ -3035,6 +3038,7 @@ class BroadcastListAPIView(APIView):
 
         serializer = BroadcastSerializer(broadcasts, many=True)
         return Response(serializer.data)
+    
 
 class NewsPublicationRequestView(APIView):
     """
@@ -3268,8 +3272,7 @@ class AdminNewsApprovalView(APIView):
         serializer = NewsPublicationRequestSerializer(publication_request)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-
-class ActivityLogView(APIView):
+class AdminActivityLogView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, log_id=None):

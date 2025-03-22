@@ -7,7 +7,7 @@ import { useSettingsStore } from "../../stores/settings-store";
 import { useFetchWebSocket } from "../../hooks/useFetchWebSocket";
 import { updateRequestStatus } from "../../api/requestApi";
 import { apiPaths } from "../../api";
-import { fetchPendingRequests } from "./fetchPendingRequests";
+import { fetchPendingRequests } from "./utils";
 
 const PendingSocietyRequest = () => {
   const theme = useTheme();
