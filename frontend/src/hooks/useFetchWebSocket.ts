@@ -31,6 +31,9 @@ export const handleError = (event: Event) => {
   console.error("WebSocket Error:", event);
 };
 
+// Cache of failed WebSocket routes to avoid repeated attempts
+const failedWebSocketRoutes = new Set<string>();
+
 export const handleClose = <T> (
   setData: (data: T[]) => void, 
   ws: React.MutableRefObject<WebSocket | null>, 
@@ -44,9 +47,25 @@ export const handleClose = <T> (
     window.clearTimeout(timeoutRef.current);
   }
   
+  // If connection closed with code 1006, this could indicate a missing route
+  // 1006 is "Abnormal Closure" which happens with the "No route found" error
+  if (ws.current && 'code' in ws.current && ws.current.code === 1006) {
+    console.log(`WebSocket route ${sourceURL} appears to be missing on the server. Switching to polling.`);
+    failedWebSocketRoutes.add(sourceURL);
+    // Setup polling as fallback
+    setupPolling(setData, fetchDataFunction);
+    return;
+  }
+  
   // Limit reconnection attempts
   if (maxAttempts.current <= 0) {
     console.log(`Maximum reconnection attempts reached for ${sourceURL}. Stopping reconnection.`);
+    
+    // Add to failed routes to avoid future attempts
+    failedWebSocketRoutes.add(sourceURL);
+    
+    // Setup polling as fallback
+    setupPolling(setData, fetchDataFunction);
     return;
   }
   
@@ -56,6 +75,23 @@ export const handleClose = <T> (
   timeoutRef.current = window.setTimeout(() => {
     connectWebSocket(setData, ws, fetchDataFunction, sourceURL, timeoutRef, maxAttempts);
   }, 5000);
+};
+
+// Helper function to setup polling
+const setupPolling = <T>(
+  setData: (data: T[]) => void,
+  fetchDataFunction: () => Promise<T[]>
+) => {
+  // Store in localStorage that we're using polling for this session
+  localStorage.setItem('useWebSockets', 'false');
+  
+  // Immediately fetch data
+  fetchData(setData, fetchDataFunction);
+  
+  // Return the interval ID so it can be cleared if needed
+  return setInterval(() => {
+    fetchData(setData, fetchDataFunction);
+  }, 10000); // Poll every 10 seconds
 };
 
 export const connectWebSocket = <T> (
@@ -80,6 +116,12 @@ export const connectWebSocket = <T> (
   // Check if we should use WebSockets at all
   if (localStorage.getItem('useWebSockets') === 'false') {
     console.log("WebSockets are disabled by user preference.");
+    return () => {};
+  }
+  
+  // Skip if this route has previously failed
+  if (failedWebSocketRoutes.has(sourceURL)) {
+    console.log(`Skipping WebSocket connection to ${sourceURL} (previously failed)`);
     return () => {};
   }
   
@@ -145,7 +187,14 @@ export const connectWebSocket = <T> (
       }
     };
     
-    ws.current.onerror = handleError;
+    ws.current.onerror = (error) => {
+      handleError(error);
+      
+      // Mark this route as failed after an error to avoid further attempts
+      if (maxAttempts.current <= 1) {
+        failedWebSocketRoutes.add(sourceURL);
+      }
+    };
     
     ws.current.onclose = (event) => {
       console.log(`WebSocket closed: ${socketUrl}, code: ${event.code}, reason: ${event.reason}`);
@@ -153,6 +202,16 @@ export const connectWebSocket = <T> (
       // Don't try to reconnect on normal closure or if dashboard is public
       if (event.code === 1000) {
         console.log("WebSocket closed normally, not reconnecting.");
+        return;
+      }
+      
+      // If we get code 1006 (abnormal closure), this might be a missing route
+      if (event.code === 1006) {
+        console.log(`WebSocket route ${sourceURL} appears to be missing (code 1006). Switching to polling.`);
+        failedWebSocketRoutes.add(sourceURL);
+        
+        // Setup polling immediately
+        setupPolling(setData, fetchDataFunction);
         return;
       }
       
@@ -184,6 +243,13 @@ export const connectWebSocket = <T> (
     // Only attempt to reconnect if we haven't exceeded our max attempts
     if (maxAttempts.current <= 0) {
       console.log(`Maximum reconnection attempts reached for ${sourceURL}. Stopping reconnection.`);
+      
+      // Add to failed routes to avoid future attempts
+      failedWebSocketRoutes.add(sourceURL);
+      
+      // Setup polling as fallback
+      setupPolling(setData, fetchDataFunction);
+      
       return () => {};
     }
     
@@ -211,7 +277,8 @@ export const useFetchWebSocket = <T> (
   const [data, setData] = useState<T[]>([]);
   const ws = useRef<WebSocket | null>(null);
   const timeoutRef = useRef<number | null>(null);
-  const maxAttemptsRef = useRef<number>(5); // Limit reconnection attempts
+  const maxAttemptsRef = useRef<number>(3); // Reduced from 5 to 3 to fail faster
+  const pollIntervalRef = useRef<number | null>(null);
   
   useEffect(() => {
     console.log(`Setting up WebSocket hook for ${sourceURL}`);
@@ -229,7 +296,9 @@ export const useFetchWebSocket = <T> (
     
     const shouldUseWebSockets = 
       // Don't use WebSockets for unauthenticated public dashboard in development
-      !(isPublicDashboard && isLocalDevelopment && localStorage.getItem('useWebSockets') !== 'true');
+      !(isPublicDashboard && isLocalDevelopment && localStorage.getItem('useWebSockets') !== 'true') &&
+      // Skip if this route previously failed
+      !failedWebSocketRoutes.has(sourceURL);
     
     // Only attempt WebSocket connection if sourceURL is provided and WebSockets should be used
     if (sourceURL && shouldUseWebSockets) {
@@ -245,24 +314,24 @@ export const useFetchWebSocket = <T> (
       
       // Return cleanup function
       return typeof cleanup === 'function' ? cleanup : undefined;
-    }
-    
-    return undefined;
-  }, [fetchDataFunction, sourceURL]);
-  
-  // Poll for updates if WebSockets are disabled
-  useEffect(() => {
-    const isWebSocketsDisabled = localStorage.getItem('useWebSockets') === 'false';
-    
-    if (isWebSocketsDisabled) {
-      console.log("WebSockets disabled - using polling fallback");
-      const pollInterval = setInterval(() => {
-        fetchData(setData, fetchDataFunction);
-      }, 10000); // Poll every 10 seconds
+    } else {
+      // If WebSockets are disabled or route previously failed, use polling
+      console.log(`Using polling for ${sourceURL} (WebSockets ${shouldUseWebSockets ? 'enabled' : 'disabled'})`);
       
-      return () => clearInterval(pollInterval);
+      // Setup polling
+      pollIntervalRef.current = window.setInterval(() => {
+        fetchData(setData, fetchDataFunction);
+      }, 10000) as unknown as number;
+      
+      // Return cleanup function
+      return () => {
+        if (pollIntervalRef.current !== null) {
+          window.clearInterval(pollIntervalRef.current);
+          pollIntervalRef.current = null;
+        }
+      };
     }
-  }, [fetchDataFunction]);
+  }, [fetchDataFunction, sourceURL]);
   
   return data;
 };

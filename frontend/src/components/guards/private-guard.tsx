@@ -18,12 +18,16 @@ export function PrivateGuard({ children, requiredRole }: PrivateGuardProps) {
     isAuthorized: false,
     loading: true,
   });
+  
   const { user, setUser } = useAuthStore();
   const location = useLocation();
-
+  
   const authenticate = useCallback(async () => {
+    console.log("[PrivateGuard] Starting authentication for path:", location.pathname);
+    
     try {
       const token = localStorage.getItem(ACCESS_TOKEN);
+      console.log("[PrivateGuard] Token exists:", !!token);
       
       // For the home page (dashboard), allow access even without a token
       if (location.pathname === "/" && !token) {
@@ -32,15 +36,69 @@ export function PrivateGuard({ children, requiredRole }: PrivateGuardProps) {
         return;
       }
       
-      if (!token) throw new Error("No access token available");
+      if (!token) {
+        console.log("[PrivateGuard] No token available, will redirect");
+        throw new Error("No access token available");
+      }
       
+      // Validate token
       const isTokenValid = await validateToken(token);
-      if (!isTokenValid) await handleTokenRefresh();
+      console.log("[PrivateGuard] Token valid:", isTokenValid);
       
-      const userData = await fetchUserData();
-      console.log("%c[PrivateGuard] User data fetched:", "color: green;", userData);
-      setUser(userData);
-      setAuthState({ isAuthorized: true, loading: false });
+      if (!isTokenValid) {
+        try {
+          await handleTokenRefresh();
+        } catch (error) {
+          console.error("[PrivateGuard] Failed to refresh token:", error);
+          // For dashboard, continue even with invalid token
+          if (location.pathname === "/") {
+            setAuthState({ isAuthorized: false, loading: false });
+            return;
+          }
+          throw error;
+        }
+      }
+      
+      // For dashboard, we can skip user data since the endpoint is missing
+      if (location.pathname === "/") {
+        console.log("[PrivateGuard] Skip user data fetch for dashboard");
+        setAuthState({ isAuthorized: true, loading: false });
+        return;
+      }
+      
+      // For other routes, attempt to get user data, but handle 404 gracefully
+      try {
+        const userData = await fetchUserData();
+        console.log("[PrivateGuard] User data fetched:", userData);
+        setUser(userData);
+        setAuthState({ isAuthorized: true, loading: false });
+      } catch (error) {
+        console.error("[PrivateGuard] Error fetching user data:", error);
+        
+        // If we get a 404, create a basic user object from the token
+        if (error.response && error.response.status === 404) {
+          try {
+            // Extract user ID from token
+            const { user_id } = jwtDecode<{ user_id: number }>(token);
+            console.log("[PrivateGuard] Creating minimal user data from token, user_id:", user_id);
+            
+            // Create minimal user object
+            const minimalUser = {
+              id: user_id,
+              // Default to student role if we can't determine
+              role: "student"
+            };
+            
+            setUser(minimalUser);
+            setAuthState({ isAuthorized: true, loading: false });
+            return;
+          } catch (tokenError) {
+            console.error("[PrivateGuard] Failed to create user from token:", tokenError);
+          }
+        }
+        
+        throw error;
+      }
     } catch (error) {
       console.error("[PrivateGuard] Authentication failed:", error);
       
@@ -53,11 +111,23 @@ export function PrivateGuard({ children, requiredRole }: PrivateGuardProps) {
       }
     }
   }, [setUser, location.pathname]);
-
+  
   useEffect(() => {
+    // Add timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      if (authState.loading) {
+        console.log("[PrivateGuard] Authentication timed out, allowing access to dashboard");
+        setAuthState({ isAuthorized: false, loading: false });
+      }
+    }, 5000);
+    
     authenticate();
+    
+    return () => {
+      clearTimeout(timeoutId);
+    };
   }, [authenticate]);
-
+  
   const validateToken = async (token: string): Promise<boolean> => {
     try {
       const { exp: tokenExpiration } = jwtDecode<{ exp: number }>(token);
@@ -66,31 +136,48 @@ export function PrivateGuard({ children, requiredRole }: PrivateGuardProps) {
       return false;
     }
   };
-
+  
   const handleTokenRefresh = async () => {
     const refreshToken = localStorage.getItem(REFRESH_TOKEN);
     if (!refreshToken) throw new Error("No refresh token available");
     
     const response = await apiClient.post(apiPaths.USER.REFRESH, { refresh: refreshToken });
+    
     if (response.status === 200 && response.data?.access) {
       localStorage.setItem(ACCESS_TOKEN, response.data.access);
     } else {
       throw new Error("Failed to refresh token");
     }
   };
-
+  
   const fetchUserData = async () => {
-    const response = await apiClient.get(apiPaths.USER.CURRENT);
-    return response.data;
+    try {
+      const response = await apiClient.get(apiPaths.USER.CURRENT);
+      return response.data;
+    } catch (error) {
+      if (error.response && error.response.status === 404) {
+        // Fallback to trailing slash if somehow needed
+        try {
+          const response = await apiClient.get(`${apiPaths.USER.CURRENT}/`);
+          return response.data;
+        } catch (innerError) {
+          console.error("[PrivateGuard] Both endpoints failed:", innerError);
+          throw error;
+        }
+      }
+      throw error;
+    }
   };
-
-  if (authState.loading) return <LoadingView />;
-
+  
+  if (authState.loading) {
+    return <LoadingView />;
+  }
+  
   // Always allow access to main dashboard even without auth
   if (location.pathname === "/" && !authState.isAuthorized) {
     return <>{children}</>;
   }
-
+  
   // For other private routes that require a role, redirect to login if not authenticated
   if (!authState.isAuthorized) {
     // Don't redirect from dashboard
@@ -99,17 +186,17 @@ export function PrivateGuard({ children, requiredRole }: PrivateGuardProps) {
     }
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
-
+  
   // If a specific role is required, check if the user has the role
   if (requiredRole && user?.role !== requiredRole) {
     return <Navigate to={`/${user?.role}`} replace />;
   }
-
+  
   // Redirect from home page to role-specific dashboard if authenticated
   if (location.pathname === "/" && user?.role) {
     const roleRedirect = user.role === "admin" ? "/admin" : "/student";
     return <Navigate to={roleRedirect} replace />;
   }
-
+  
   return <>{children}</>;
 }

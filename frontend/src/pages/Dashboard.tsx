@@ -7,7 +7,7 @@ import PopularSocieties from "../components/PopularSocieties";
 import Sidebar from "../components/Sidebar";
 import { HiMenu } from "react-icons/hi";
 import { motion } from 'framer-motion';
-import { useFetchWebSocket } from "../hooks/useFetchWebSocket";
+import { useFetchWebSocket, fetchData } from "../hooks/useFetchWebSocket";
 import { getAllEvents, apiClient } from "../api";
 import { ACCESS_TOKEN } from "../constants";
 
@@ -261,6 +261,9 @@ const Dashboard: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("Recent Activities");
+  
+  // New state for WebSocket connectivity status
+  const [websocketAvailable, setWebsocketAvailable] = useState<boolean | null>(null);
 
   // Sidebar control - Manages width instead of open/closed state
   const [sidebarWidth, setSidebarWidth] = useState<'collapsed' | 'expanded'>('collapsed');
@@ -282,15 +285,74 @@ const Dashboard: React.FC = () => {
     }
   });
 
-  // -- WebSocket Configuration for Public Dashboard --
+  // -- WebSocket Configuration and Availability Check --
   useEffect(() => {
     // Check if we're accessing the dashboard without authentication
     const isPublicDashboard = !localStorage.getItem(ACCESS_TOKEN);
     
+    // Function to check WebSocket availability by attempting a connection
+    const checkWebSocketAvailability = () => {
+      try {
+        // Try to connect to a test WebSocket - use a path that's likely to exist
+        // or at least get a proper response from the server
+        const testWs = new WebSocket('ws://127.0.0.1:8000/ws/test-connection/');
+        
+        let connectionTimeout: number | null = window.setTimeout(() => {
+          console.log("WebSocket test connection timed out - switching to polling");
+          setWebsocketAvailable(false);
+          localStorage.setItem('useWebSockets', 'false');
+          if (testWs && testWs.readyState !== WebSocket.CLOSED) {
+            testWs.close();
+          }
+        }, 3000);
+        
+        testWs.onopen = () => {
+          console.log("WebSocket test connection successful");
+          setWebsocketAvailable(true);
+          if (connectionTimeout) {
+            clearTimeout(connectionTimeout);
+            connectionTimeout = null;
+          }
+          testWs.close();
+        };
+        
+        testWs.onerror = () => {
+          console.log("WebSocket test connection failed - switching to polling");
+          setWebsocketAvailable(false);
+          localStorage.setItem('useWebSockets', 'false');
+          if (connectionTimeout) {
+            clearTimeout(connectionTimeout);
+            connectionTimeout = null;
+          }
+        };
+        
+        testWs.onclose = (e) => {
+          // Code 1006 (Abnormal Closure) indicates the route doesn't exist
+          if (e.code === 1006) {
+            console.log("WebSocket route not found (code 1006) - switching to polling");
+            setWebsocketAvailable(false);
+            localStorage.setItem('useWebSockets', 'false');
+          }
+          if (connectionTimeout) {
+            clearTimeout(connectionTimeout);
+            connectionTimeout = null;
+          }
+        };
+      } catch (error) {
+        console.error("WebSocket test error:", error);
+        setWebsocketAvailable(false);
+        localStorage.setItem('useWebSockets', 'false');
+      }
+    };
+    
     if (isPublicDashboard) {
       // Disable WebSockets for public dashboard to prevent connection errors
       localStorage.setItem('useWebSockets', 'false');
+      setWebsocketAvailable(false);
       console.log("Public dashboard detected - WebSockets disabled for public access");
+    } else {
+      // Check WebSocket availability on component mount
+      checkWebSocketAvailability();
     }
     
     // Clean up when component unmounts
@@ -301,6 +363,31 @@ const Dashboard: React.FC = () => {
       }
     };
   }, []);
+
+  // Add polling fallback for when WebSockets are unavailable
+  useEffect(() => {
+    // Only set up polling if WebSockets are not available and we've determined their status
+    if (websocketAvailable === false) {
+      console.log("Setting up polling fallback for dashboard data");
+      
+      // Initial data fetches
+      fetchData(setStats, fetchDashboardStats);
+      fetchData(setRecentActivities, fetchActivities);
+      fetchData(setNotifications, fetchNotifications);
+      
+      // Set up polling intervals
+      const statsInterval = setInterval(() => fetchData(setStats, fetchDashboardStats), 10000);
+      const activitiesInterval = setInterval(() => fetchData(setRecentActivities, fetchActivities), 10000);
+      const notificationsInterval = setInterval(() => fetchData(setNotifications, fetchNotifications), 10000);
+      
+      return () => {
+        // Clean up intervals
+        clearInterval(statsInterval);
+        clearInterval(activitiesInterval);
+        clearInterval(notificationsInterval);
+      };
+    }
+  }, [websocketAvailable]);
 
   // Apply or remove .dark class on <html> or <body>
   useEffect(() => {
@@ -484,16 +571,22 @@ const Dashboard: React.FC = () => {
       } catch (err) {
         console.error("❌ Error fetching events:", err);
         
-        // Use mock events as fallback
-        const mockEvents = [
-          { id: 1, title: "Welcome Party", date: "2025-03-10", startTime: "18:00:00", duration: "02:00:00" },
-          { id: 2, title: "Chess Tournament", date: "2025-03-15", startTime: "14:00:00", duration: "03:00:00" },
-          { id: 3, title: "Spring Concert", date: "2025-03-22", startTime: "19:30:00", duration: "01:30:00" }
-        ];
-        
+        // Update the error message to be more specific
         if (isMounted) {
+          if (err.message?.includes('WebSocket')) {
+            setError("Real-time updates unavailable. Using polling.");
+          } else {
+            setError("Using mock data - API connection failed.");
+          }
+          
+          // Use mock events as fallback
+          const mockEvents = [
+            { id: 1, title: "Welcome Party", date: "2025-03-10", startTime: "18:00:00", duration: "02:00:00" },
+            { id: 2, title: "Chess Tournament", date: "2025-03-15", startTime: "14:00:00", duration: "03:00:00" },
+            { id: 3, title: "Spring Concert", date: "2025-03-22", startTime: "19:30:00", duration: "01:30:00" }
+          ];
+          
           processEvents(mockEvents);
-          setError("Using mock data - API connection failed.");
           setLoading(false);
         }
       }
@@ -617,6 +710,26 @@ const Dashboard: React.FC = () => {
               <h1 className="text-xl font-extrabold tracking-wide text-gray-800 dark:text-gray-100">
                 Student Society Dashboard
               </h1>
+            </div>
+
+            {/* WebSocket Status Indicator */}
+            <div className="flex justify-center">
+              {websocketAvailable === null ? (
+                <span className="text-gray-500 text-sm flex items-center">
+                  <span className="inline-block w-2 h-2 bg-gray-500 rounded-full mr-1 animate-pulse"></span>
+                  Checking connection...
+                </span>
+              ) : websocketAvailable ? (
+                <span className="text-green-500 text-sm flex items-center">
+                  <span className="inline-block w-2 h-2 bg-green-500 rounded-full mr-1"></span>
+                  Real-time updates enabled
+                </span>
+              ) : (
+                <span className="text-yellow-500 text-sm flex items-center">
+                  <span className="inline-block w-2 h-2 bg-yellow-500 rounded-full mr-1"></span>
+                  Using polling (WebSockets unavailable)
+                </span>
+              )}
             </div>
 
             {/* Conditionally render Register/Login links */}
