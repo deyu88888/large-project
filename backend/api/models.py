@@ -10,6 +10,7 @@ from api.models_files.society_models import Society, SocietyShowreel
 from api.models_files.request_models import Request, SocietyRequest, DescriptionRequest, SocietyShowreelRequest, UserRequest, \
     EventRequest, AdminReportRequest, NewsPublicationRequest
 from api.models_files.recommendation_feedback_model import RecommendationFeedback
+from django.conf import settings
 
 
 class SiteSettings(models.Model):
