@@ -1,5 +1,6 @@
 import datetime
 from api.models import Event, Comment
+from api.serializers import StudentSerializer
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
 
@@ -45,6 +46,7 @@ class CommentSerializer(serializers.ModelSerializer):
     disliked_by_user = serializers.SerializerMethodField()
 
     class Meta:
+        """Metadata for CommentSerializer"""
         model = Comment
         fields = [
             "id", "content", "create_at", "user_data", "parent_comment", "replies",
@@ -61,6 +63,7 @@ class CommentSerializer(serializers.ModelSerializer):
         return serializer.data
 
     def get_user_data(self, obj):
+        """Gets a users id, username, and icon"""
         request = self.context.get("request", None)
         icon_url = None
         if hasattr(obj.user, 'student') and obj.user.student.icon:
@@ -72,9 +75,11 @@ class CommentSerializer(serializers.ModelSerializer):
         }
 
     def get_likes(self, obj):
+        """Gets the number of likes on a comment"""
         return obj.total_likes()
 
     def get_dislikes(self, obj):
+        """Gets the number of dislikes on a comment"""
         return obj.total_dislikes()
 
     def get_liked_by_user(self, obj):
@@ -93,7 +98,10 @@ class CommentSerializer(serializers.ModelSerializer):
 
 
 class RSVPEventSerializer(serializers.ModelSerializer):
+    """Serializer used to RSVP an event"""
+
     class Meta:
+        """Metdata for RSVPEventSerializer"""
         model = Event
         fields = ['id', 'title', 'date', 'start_time', 'duration', 'location']
 
@@ -138,9 +146,9 @@ class RSVPEventSerializer(serializers.ModelSerializer):
         event = self.instance
 
         if self.context.get('action') == 'RSVP':
-            event.current_attendees.add(student)  
+            event.current_attendees.add(student)
         elif self.context.get('action') == 'CANCEL':
-            event.current_attendees.remove(student)  
+            event.current_attendees.remove(student)
 
         return event
 

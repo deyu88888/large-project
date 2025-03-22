@@ -1,13 +1,14 @@
 from api.models import Award, AwardStudent, Student
+from api.serializers import StudentSerializer
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
-from user_serializers import StudentSerializer
 
 class AwardSerializer(serializers.ModelSerializer):
     """
     Serializer for the Award model
     """
     class Meta:
+        """Metadata for AwardSerializer"""
         model = Award
         fields = '__all__'
 
@@ -30,5 +31,6 @@ class AwardStudentSerializer(serializers.ModelSerializer):
     )
 
     class Meta:
+        """Metadata for AwardStudentSerializer"""
         model = AwardStudent
         fields = ['id', 'award', 'student', 'student_id', 'award_id', 'awarded_at']

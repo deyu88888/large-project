@@ -7,6 +7,7 @@ class ActivityLogSerializer(serializers.ModelSerializer):
     """A serializer for the ActivityLog"""
     timestamp = serializers.DateTimeField(format='%d-%m-%Y %H:%M:%S')
     class Meta:
+        """Metadata for ActivityLogSerializer"""
         model = ActivityLog
         fields = '__all__'
 

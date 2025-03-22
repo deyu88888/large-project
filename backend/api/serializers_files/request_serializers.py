@@ -1,9 +1,16 @@
 from api.models import AdminReportRequest, Society, Request, SocietyRequest, SocietyShowreelRequest, \
     EventRequest, UserRequest, DescriptionRequest, ReportReply, NewsPublicationRequest
+from api.serializers_files.serializers_utility import is_user_student, get_report_reply_chain
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
 
-    
+
+def is_request_provided(context):
+    """Validates that request is provided"""
+    request = context.get("request")
+    if not request:
+        raise serializers.ValidationError("Request is required in serializer context.")
+
 class RequestSerializer(serializers.ModelSerializer):
     """
     Abstract serializer for the Request model
@@ -60,24 +67,23 @@ class SocietyRequestSerializer(RequestSerializer):
         photos_data = validated_data.pop('showreel_images_request', [])
 
         # Retrieve the request from context
-        request_obj = self.context.get("request")
-        if not request_obj:
-            raise serializers.ValidationError("Request is required in serializer context.")
-        user = request_obj.user
-        if not hasattr(user, "student"):
-            raise serializers.ValidationError("Only students can request society updates.")
-        
+        is_request_provided(self.context)
+        user = is_user_student(
+            self.context,
+            "Only students can request society updates."
+        )
+
         # Set the required from_student field from the current user's student instance.
         validated_data["from_student"] = user.student
-        
+
         validated_data.setdefault("intent", "UpdateSoc")
         validated_data.setdefault("approved", False)
-        
+
         society_request = SocietyRequest.objects.create(**validated_data)
-        
+
         for photo_data in photos_data:
             SocietyShowreelRequest.objects.create(society=society_request, **photo_data)
-        
+
         return society_request
 
     def update(self, instance, validated_data):
@@ -116,7 +122,7 @@ class EventRequestSerializer(serializers.ModelSerializer):
     allow_blank=False,
     error_messages={'blank': 'Title cannot be blank.'}
     )
-    
+
     hosted_by = serializers.PrimaryKeyRelatedField(
         queryset=Society.objects.all(),
         required=False
@@ -145,18 +151,16 @@ class EventRequestSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
-        
         hosted_by = validated_data.get("hosted_by") or self.context.get("hosted_by")
         if hosted_by is None:
             raise serializers.ValidationError({"hosted_by": "This field is required."})
 
-        request = self.context.get("request")
-        if not request:
-            raise serializers.ValidationError("Request is required in serializer context.")
-        user = request.user
+        is_request_provided(self.context)
 
-        if not hasattr(user, "student"):
-            raise serializers.ValidationError("Only students can request event creation.")
+        user = is_user_student(
+            self.context,
+            "Only students can request event creation."
+        )
 
         student = user.student
         if student.president_of != hosted_by:
@@ -196,8 +200,9 @@ class ReportReplySerializer(serializers.ModelSerializer):
     """
     replied_by_username = serializers.CharField(source='replied_by.username', read_only=True)
     child_replies = serializers.SerializerMethodField()
-    
+
     class Meta:
+        """Metadata for ReportReplySerializer"""
         model = ReportReply
         fields = ['id', 'report', 'parent_reply', 'content', 'created_at', 
                   'replied_by', 'replied_by_username', 'is_admin_reply', 'child_replies']
@@ -205,9 +210,10 @@ class ReportReplySerializer(serializers.ModelSerializer):
             'replied_by': {'read_only': True},
             'is_admin_reply': {'read_only': True}
         }
-    
+
     def get_child_replies(self, obj):
-        children = obj.child_replies.all().order_by('created_at')
+        """Gets the chain of replies to a report"""
+        children = get_report_reply_chain(obj)
         return ReportReplySerializer(children, many=True).data
     
 class AdminReportRequestSerializer(serializers.ModelSerializer):
@@ -224,6 +230,7 @@ class AdminReportRequestSerializer(serializers.ModelSerializer):
         extra_kwargs = {"from_student": {"read_only": True}}  # Auto-assign the user
 
     def get_top_level_replies(self, obj):
+        """Get the 'roots' of the comment section"""
         replies = ReportReply.objects.filter(report=obj, parent_reply=None).order_by('created_at')
         return ReportReplySerializer(replies, many=True).data
 
@@ -258,15 +265,19 @@ class NewsPublicationRequestSerializer(serializers.ModelSerializer):
         ]
 
     def get_news_post_title(self, obj):
+        """Gets the title of the news post"""
         return obj.news_post.title if obj.news_post else "Unknown"
 
     def get_society_name(self, obj):
+        """Gets the name of the society making the news post"""
         return obj.news_post.society.name if obj.news_post and obj.news_post.society else "Unknown"
 
     def get_requester_name(self, obj):
+        """Gets the fullname of the person wishing to publish this news"""
         return obj.requested_by.full_name if obj.requested_by else "Unknown"
 
     def get_reviewer_name(self, obj):
+        """Get the fullname of the admin who reviewed the news"""
         return obj.reviewed_by.full_name if obj.reviewed_by else None
 
     def get_author_data(self, obj):
@@ -290,8 +301,12 @@ class NewsPublicationRequestSerializer(serializers.ModelSerializer):
         return data
     
 class DescriptionRequestSerializer(serializers.ModelSerializer):
-    
+    """
+    Serializer for society description change requests
+    """
+
     class Meta:
+        """Serializer metadata for DescriptionRequestSerializer"""
         model = DescriptionRequest
         fields = ['id', 'society', 'new_description', 'status', 'reviewed_by', 'created_at', 'updated_at']
 
