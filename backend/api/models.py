@@ -205,7 +205,7 @@ def validate_social_media_links(value):
     Ensures it has proper structure with valid keys and URL values.
     """
     # Define allowed social media platforms
-    allowed_platforms = ['WhatsApp', 'Facebook', 'Instagram', 'X', 'Email' 'Other']
+    allowed_platforms = ['WhatsApp', 'Facebook', 'Instagram', 'X', 'Email', 'Other']
     
     # Check that value is a dictionary
     if not isinstance(value, dict):
