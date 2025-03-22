@@ -4,11 +4,12 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from api.models_files.user_models import Student, User
 from api.models_files.award_models import Award, AwardStudent
-from api.models_files.communication_models import Notification, ReportReply, NewsNotification, BroadcastMessage, SocietyNews, NewsComment
+from api.models_files.communication_models import Notification, ReportReply, NewsNotification, BroadcastMessage, SocietyNews, \
+    NewsComment, NewsPublicationRequest
 from api.models_files.event_models import Event, Comment
 from api.models_files.society_models import Society, SocietyShowreel
 from api.models_files.request_models import Request, SocietyRequest, DescriptionRequest, SocietyShowreelRequest, UserRequest, \
-    EventRequest, AdminReportRequest, NewsPublicationRequest
+    EventRequest, AdminReportRequest
 from api.models_files.recommendation_feedback_model import RecommendationFeedback
 from django.conf import settings
 
