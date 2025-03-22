@@ -1,17 +1,17 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from .views import (
-    AdminReportView, AwardStudentView, AwardView, BroadcastListAPIView, EventListView, AdminEventRequestView, ManageEventDetailsView, NewsView, PendingMembersView, PendingRequestsView, RegisterView,
+    ReportToAdminView, AwardStudentView, AwardView, BroadcastListAPIView, ManageEventListView, AdminEventRequestView, ManageEventDetailsView, NewsView, PendingMembersView, PendingJoinRequestsView, RegisterView,
     CurrentUserView, SocietyMembersListView,
     StudentNotificationsView, StartSocietyRequestView, ManageSocietyDetailsView, StudentInboxView,
-    AdminView, StudentView, AdminEventView,
+    AdminListView, StudentListView, AdminEventView,
     AdminSocietyRequestView, DashboardStatsView,
     RecentActivitiesView, NotificationsView, EventCalendarView,
-    StudentSocietiesView, JoinSocietyView, RSVPEventView, EventHistoryView,
+    JoinedSocietiesView, RequestJoinSocietyView, RSVPEventView, EventHistoryView,
     get_popular_societies, CreateEventRequestView, custom_media_view, get_sorted_events, StudentSocietyDataView,
-    AllEventsView, EventDetailView, EventCommentsView, AdminDescriptionRequestView, AdminManageSocietyDetailsAdminView, 
-    like_comment, dislike_comment, EventCommentsView, toggle_follow, StudentProfileView, AdminRepliesListView,
-    AdminActivityLogView, AdminManageEventDetailsAdminView, AdminDeleteView, AdminManageStudentDetailsAdminView, ReportReplyView, 
+    AllEventsView, EventDetailsView, EventCommentsView, SocietyDescriptionRequestAdminView, AdminManageSocietyDetailsView, 
+    like_comment, dislike_comment, EventCommentsView, toggle_follow, MyProfileView, AdminRepliesListView,
+    AdminActivityLogView, AdminManageEventDetailsView, AdminDeleteView, AdminManageStudentDetailsView, ReportReplyView, 
     MyReportsView, MyReportsWithRepliesView, ReportThreadView, AdminReportsWithRepliesView, ReportReplyNotificationsView,
     NewsPublicationRequestView, AdminNewsApprovalView, SearchView
 )
@@ -36,14 +36,14 @@ urlpatterns = [
     path("user/token/refresh", TokenRefreshView.as_view(), name="refresh"),
     path("user/register", RegisterView.as_view(), name="register"),
     path("user/login", TokenObtainPairView.as_view(), name="get_token"),
-    path("user/current/", CurrentUserView.as_view(), name="current_user"),  # TODO: trailing backshlash needed
+    path("user/current/", CurrentUserView.as_view(), name="current_user"),
 
     # OTP verification
     path("request-otp", request_otp, name="request_otp"),
     path("verify-otp", verify_otp, name="verify_otp"),
 
     # Notification endpoints
-    path("notifications/", StudentNotificationsView.as_view(), name="student_notifications"), # trailing slash needed
+    path("notifications/", StudentNotificationsView.as_view(), name="student_notifications"),
     path("notifications/<int:pk>", StudentNotificationsView.as_view(), name="mark_notification_read"),
     path("inbox/", StudentInboxView.as_view(), name="student_inbox"),
 
@@ -54,15 +54,15 @@ urlpatterns = [
     path("start-society", StartSocietyRequestView.as_view(), name="start_society"),
     path("manage-society-details/<int:society_id>/", ManageSocietyDetailsView.as_view(), name="manage_society_details"),
     path("event-requests/<int:society_id>/", CreateEventRequestView.as_view(), name="create-event-request"),
-    path("events/", EventListView.as_view(), name="event-list"),
+    path("events/", ManageEventListView.as_view(), name="event-list"),
 
     # User role endpoints
-    path("user/admin", AdminView.as_view(), name="admin"),
-    path("user/student", StudentView.as_view(), name="student"),
+    path("user/admin", AdminListView.as_view(), name="admin"),
+    path("user/student", StudentListView.as_view(), name="student"),
   
     # Society membership endpoints
-    path('join-society/<int:society_id>/', JoinSocietyView.as_view(), name='join_society'),
-    path('join-society/', JoinSocietyView.as_view(), name='join_society'),
+    path('join-society/<int:society_id>/', RequestJoinSocietyView.as_view(), name='join_society'),
+    path('join-society/', RequestJoinSocietyView.as_view(), name='join_society'),
 
     # Event endpoints
     path("events/rsvp/", RSVPEventView.as_view(), name="rsvp_event"),
@@ -70,19 +70,15 @@ urlpatterns = [
     path("events", get_sorted_events, name="sorted_events"),
 
     # Admin panel endpoints
-    # path("admin-panel/society", SocietyView.as_view(), name="admin"),
-    # path("society/event/<str:event_status>", EventView.as_view(), name="event"),
     path("society/event/<str:event_status>", AdminEventView.as_view(), name="event"),
     path("society/event/request/<int:event_id>", AdminEventRequestView.as_view(), name="request_event"),
-    # path("societyrejected-event", EventView.as_view(), name="event"), // not used, remove after
-    # path("admin-panel/rejected-society", RejectedSocietyRequestView.as_view(), name="rejected_society"),  # refactored
     path("society/request/<str:society_status>", AdminSocietyRequestView.as_view(), name="request_society"),
     path("society/request/pending/<int:society_id>", AdminSocietyRequestView.as_view(), name="request_society"),
 
-    path("description/request/pending", AdminDescriptionRequestView.as_view(), name="request_description"),
-    path("admin-manage-society-details/<int:society_id>", AdminManageSocietyDetailsAdminView.as_view(), name="manage_society_details_admin"),
-    path("admin-manage-student-details/<int:student_id>", AdminManageStudentDetailsAdminView.as_view(), name="manage_student_details_admin"),
-    path("admin-manage-event-details/<int:event_id>", AdminManageEventDetailsAdminView.as_view(), name="manage_event_details_admin"),
+    path("description/request/pending", SocietyDescriptionRequestAdminView.as_view(), name="request_description"),
+    path("admin-manage-society-details/<int:society_id>", AdminManageSocietyDetailsView.as_view(), name="manage_society_details_admin"),
+    path("admin-manage-student-details/<int:student_id>", AdminManageStudentDetailsView.as_view(), name="manage_student_details_admin"),
+    path("admin-manage-event-details/<int:event_id>", AdminManageEventDetailsView.as_view(), name="manage_event_details_admin"),
     path("activity-log", AdminActivityLogView.as_view(), name="activity_log"),
     path("delete-activity-log/<int:log_id>", AdminActivityLogView.as_view(), name="delete_activity_log"),
 
@@ -90,11 +86,11 @@ urlpatterns = [
     path('undo-delete/<int:log_id>', AdminDeleteView.as_view(), name='undo-delete'),
 
     # Student societies endpoints
-    path("student-societies/", StudentSocietiesView.as_view(), name="student_societies"),
-    path("leave-society/<int:society_id>/", StudentSocietiesView.as_view(), name="leave_society"),
+    path("student-societies/", JoinedSocietiesView.as_view(), name="student_societies"),
+    path("leave-society/<int:society_id>/", JoinedSocietiesView.as_view(), name="leave_society"),
     path("society-view/<int:society_id>/", StudentSocietyDataView.as_view(), name="society_view"),
     path('media/<path:path>', custom_media_view, name="media"),
-    path('api/pending-requests/', PendingRequestsView.as_view(), name='pending-requests'),
+    path('api/pending-requests/', PendingJoinRequestsView.as_view(), name='pending-requests'),
 
     # Dashboard API endpoints
     path("dashboard/stats/", DashboardStatsView.as_view(), name="dashboard_stats"),
@@ -117,8 +113,8 @@ urlpatterns = [
     path("society/<int:society_id>/members/", SocietyMembersListView.as_view(), name="society-members"),
 
     # Report to admin
-    path("report-to-admin", AdminReportView.as_view(), name="report-to-admin"),
-    path("report-to-admin/<int:report_id>", AdminReportView.as_view(), name="report-to-admin-detail"),
+    path("report-to-admin", ReportToAdminView.as_view(), name="report-to-admin"),
+    path("report-to-admin/<int:report_id>", ReportToAdminView.as_view(), name="report-to-admin-detail"),
     path("my-reports", MyReportsView.as_view(), name='my_reports'),
     path('my-reports-with-replies', MyReportsWithRepliesView.as_view(), name='my_reports_with_replies'),
     path("report-replies", ReportReplyView.as_view(), name="report-replies"),
@@ -131,7 +127,7 @@ urlpatterns = [
 
     # Events page
     path("all-events", AllEventsView.as_view(), name="all_events"),
-    path("event/<int:event_id>", EventDetailView.as_view(), name="event_detail"),
+    path("event/<int:event_id>", EventDetailsView.as_view(), name="event_detail"),
     path("event/<int:event_id>/comments", EventCommentsView.as_view(), name="event_comments"),
     path("event/<int:event_id>/manage/", ManageEventDetailsView.as_view(), name="manage_event_detail"),
     path("comments/", EventCommentsView.as_view(), name="comment_list_create"),
@@ -140,7 +136,7 @@ urlpatterns = [
 
     # Follow
     path("users/<int:user_id>/follow", toggle_follow, name="toggle_follow"),
-    path("users/<int:user_id>", StudentProfileView.as_view(), name="user_profile"),
+    path("users/<int:user_id>", MyProfileView.as_view(), name="user_profile"),
 
     # Society recommendation endpoints
     path("recommended-societies/", RecommendedSocietiesView.as_view(), name="recommended_societies"),

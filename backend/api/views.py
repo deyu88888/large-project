@@ -173,7 +173,7 @@ class CurrentUserView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-class StudentSocietiesView(APIView):
+class JoinedSocietiesView(APIView):
     """
     API View for managing societies that a student has joined.
 
@@ -253,7 +253,7 @@ class StudentSocietiesView(APIView):
         return Response({"message": f"Successfully left society '{society.name}'."}, status=status.HTTP_200_OK)
 
 
-class JoinSocietyView(APIView):
+class RequestJoinSocietyView(APIView):
     """
     API View for managing the joining of new societies by a student.
     - **GET**: Retrieves a list of societies the currently logged-in student has NOT joined.
@@ -332,14 +332,14 @@ class JoinSocietyView(APIView):
             "request_id": society_request.id
         }, status=status.HTTP_201_CREATED)
         
-class PendingRequestsView(APIView):
+class PendingJoinRequestsView(APIView):
     """API View to retrieve all pending requests for the current user."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         user = request.user
         if not hasattr(user, "student"):
-            return Response({"error": "Only students can view their requests."}, 
+            return Response({"error": "Only students can view their requests."},
                             status=status.HTTP_403_FORBIDDEN)
         
         # Get all pending requests for this student
@@ -454,7 +454,7 @@ class StudentNotificationsView(APIView):
         return Response({"message": "Notification marked as read.", "id": pk}, status=status.HTTP_200_OK)
 
 
-class AdminManageStudentDetailsAdminView(APIView):
+class AdminManageStudentDetailsView(APIView):
     """
     API View for admins to manage any student's details.
     """
@@ -733,7 +733,7 @@ class ManageSocietyDetailsView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class AdminManageSocietyDetailsAdminView(APIView):
+class AdminManageSocietyDetailsView(APIView):
     """
     API View for admins to manage any society's details.
     """
@@ -831,7 +831,7 @@ class AdminManageSocietyDetailsAdminView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class AdminManageEventDetailsAdminView(APIView):
+class AdminManageEventDetailsView(APIView):
     """
     API View for admins to manage any event's details.
     """
@@ -1889,7 +1889,7 @@ class AllEventsView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class EventDetailView(APIView):
+class EventDetailsView(APIView):
     """API View to get details of an event"""
     permission_classes = [AllowAny]
 
@@ -1902,7 +1902,7 @@ class EventDetailView(APIView):
 logger = logging.getLogger(__name__)
 
 
-class EventListView(APIView):
+class ManageEventListView(APIView):
     """
     Lists events for the society the currently logged-in president/vice-president/event manager is managing.
     Optionally applies a filter (upcoming, previous, pending).
@@ -2182,7 +2182,7 @@ class AdminEventRequestView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class AdminView(APIView):
+class AdminListView(APIView):
     """
     admin view for admins to view all admins
     """
@@ -2217,7 +2217,7 @@ class AdminView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class StudentView(APIView):
+class StudentListAdminView(APIView):
     """
     Student view for admins to view all students.
     """
@@ -2442,7 +2442,7 @@ class AwardStudentView(APIView):
         return Response({"message": "Award assignment deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
 
 
-class AdminReportView(APIView):
+class ReportToAdminView(APIView):
     """
     API view for students and society presidents to submit reports to admins and admins receive reports.
     """
@@ -2860,7 +2860,7 @@ def dislike_comment(request, comment_id):
         return Response({"status": "disliked"}, status=status.HTTP_200_OK)
 
 
-class AdminDescriptionRequestView(APIView):
+class SocietyDescriptionRequestAdminView(APIView):
     """
     Description request view for admins to approve/reject descriptions
     """
