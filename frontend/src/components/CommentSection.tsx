@@ -123,16 +123,15 @@ export function CommentSection({ eventId }: { eventId: number }) {
             </div>
 
             {comments.length === 0 ? (
-                <p>There is no comment now</p>
+              <p>There is no comment now</p>
             ) : (
-                comments.map((comment) => (
-                <CommentItem
-                    key={comment.id}
-                    comment={comment}
-                    onReply={handleReply}
-                />
-            ))
-        )}
+              comments.map((comment, index) => (
+                <div key={comment.id}>
+                  <CommentItem comment={comment} onReply={handleReply} />
+                  {index !== comments.length - 1 && <hr style={{ margin: "10px 0" }} />}
+                </div>
+              ))
+            )}
     </div>
     );
 }

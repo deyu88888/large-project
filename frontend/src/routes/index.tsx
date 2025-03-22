@@ -375,6 +375,10 @@ const routes = [
       {
         path: "event/:eventId",
         element: <EventDetailPage />
+      },
+      {
+        path: "profile/:student_id",
+        element: <ProfilePage />,
       }
     ]
   },

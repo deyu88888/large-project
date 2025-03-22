@@ -18,13 +18,15 @@ class UserSerializer(serializers.ModelSerializer):
     Serializer for the base User model.
     """
     is_following = serializers.SerializerMethodField()
+    following_count = serializers.SerializerMethodField()
+    followers_count = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = [
             'id', 'username', 'password', 'first_name',
             'last_name', 'email', 'is_active', 'role', 'following',
-            'is_following'
+            'is_following', 'following_count', 'followers_count'
         ]
         extra_kwargs = {
             'password': {'write_only': True, 'min_length': 8},
@@ -38,6 +40,12 @@ class UserSerializer(serializers.ModelSerializer):
         if request and request.user.is_authenticated:
             return request.user.following.filter(id=obj.id).exists()
         return False
+
+    def get_followers_count(self, obj):
+        return obj.followers.count()
+
+    def get_following_count(self, obj):
+        return obj.following.count()
 
     def create(self, validated_data):
         user = User.objects.create_user(**validated_data)
@@ -63,12 +71,21 @@ class StudentSerializer(UserSerializer):
     president_of = serializers.PrimaryKeyRelatedField(queryset=Society.objects.all(), allow_null=True, required=False)
     major = serializers.CharField(required=True)
     is_president = serializers.BooleanField(read_only=True)
+    icon = serializers.SerializerMethodField()
     #awards = AwardStudentSerializer(source='award_students', many=True, read_only=True) this will work when files are seperated
 
     class Meta(UserSerializer.Meta):
         model = Student
-        fields = UserSerializer.Meta.fields + ['major', 'societies', 'president_of', 'is_president', 'award_students']
+        fields = UserSerializer.Meta.fields + ['major', 'societies', 'president_of', 'is_president', 'award_students', 'icon']
         read_only_fields = ["is_president", "award_students"]
+
+    def get_icon(self, obj):
+        """Return full URL for the icon image"""
+        if obj.icon:
+            request = self.context.get("request")
+            return request.build_absolute_uri(obj.icon.url) if request else obj.icon.url
+        return None
+
 
     def validate_email(self, value):
         """
@@ -794,9 +811,14 @@ class CommentSerializer(serializers.ModelSerializer):
         return serializer.data
 
     def get_user_data(self, obj):
+        request = self.context.get("request", None)
+        icon_url = None
+        if hasattr(obj.user, 'student') and obj.user.student.icon:
+            icon_url = request.build_absolute_uri(obj.user.student.icon.url) if request else obj.user.student.icon.url
         return {
             "id": obj.user.id,
             "username": obj.user.username,
+            "icon": icon_url,
         }
 
     def get_likes(self, obj):
