@@ -131,7 +131,7 @@ const ManageSocietyDetails: React.FC = () => {
         formDataToSend.append("icon", formData.icon);
       }
 
-      await apiClient.patch(`/api/manage-society-details/${societyId}/`, formDataToSend, {
+      await apiClient.patch(apiPaths.SOCIETY.MANAGE_DETAILS(societyId), formDataToSend, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 

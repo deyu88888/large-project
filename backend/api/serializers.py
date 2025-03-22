@@ -1,6 +1,7 @@
 import datetime
 from api.models import AdminReportRequest, Award, AwardStudent, BroadcastMessage, SiteSettings, User, Student, Society, Event, \
-    Notification, Request, SocietyRequest, SocietyShowreel, SocietyShowreelRequest, EventRequest, UserRequest, Comment, DescriptionRequest, SocietyNews, NewsComment, NewsPublicationRequest
+    Notification, Request, SocietyRequest, SocietyShowreel, SocietyShowreelRequest, EventRequest, UserRequest, \
+    Comment, DescriptionRequest, ActivityLog, ReportReply, SocietyNews, NewsComment, NewsPublicationRequest
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 from django.utils.translation import gettext_lazy as _
@@ -78,7 +79,7 @@ class StudentSerializer(UserSerializer):
         model = Student
         fields = UserSerializer.Meta.fields + ['major', 'societies', 'president_of', 'is_president',
                                                'award_students', 'vice_president_of_society', 'is_vice_president',
-                                               'event_manager_of_society', 'is_event_manager']
+                                               'event_manager_of_society', 'is_event_manager', 'icon']
         read_only_fields = ["is_president", "is_vice_president", "is_event_manager", "award_students"]
 
     
@@ -89,7 +90,6 @@ class StudentSerializer(UserSerializer):
             if hasattr(obj.event_manager_of_society, 'all'):
                 society = obj.event_manager_of_society.first()
                 if society:
-                    print(f"DEBUG - Found society for event manager: {society.id}")
                     return society.id
             
             # If it's not a RelatedManager but a direct reference
@@ -100,25 +100,6 @@ class StudentSerializer(UserSerializer):
             print(f"DEBUG - Error in get_event_manager_of_society: {str(e)}")
         
         return None
-    def get_is_vice_president(self, obj):
-        """Get whether the student is a vice president"""
-        # For debugging
-        print(f"DEBUG - Checking is_vice_president for {obj.username}")
-        
-        # First check the direct field
-        if hasattr(obj, 'is_vice_president'):
-            print(f"DEBUG - Direct is_vice_president attribute: {obj.is_vice_president}")
-            
-        # Try the query method
-        try:
-            is_vp = Society.objects.filter(vice_president=obj).exists()
-            print(f"DEBUG - Query result for is_vice_president: {is_vp}")
-            return is_vp
-        except Exception as e:
-            print(f"DEBUG - Error querying vice president status: {str(e)}")
-            
-        # Fallback to the attribute
-        return getattr(obj, 'is_vice_president', False)
     
     def get_vice_president_of_society(self, obj):
         """Get the ID of the society where the student is vice president"""
@@ -127,7 +108,6 @@ class StudentSerializer(UserSerializer):
             if hasattr(obj.vice_president_of_society, 'all'):
                 society = obj.vice_president_of_society.first()
                 if society:
-                    print(f"DEBUG - Found society for VP: {society.id}")
                     return society.id
             
             # If it's not a RelatedManager but a direct reference
@@ -213,11 +193,11 @@ class SocietySerializer(serializers.ModelSerializer):
         """SocietySerializer meta data"""
         model = Society
         fields = [
-            'id', 'name', 'description', 'society_members', 'president', 'approved_by',
+            'id', 'name', 'description', 'society_members', 'approved_by',
             'status', 'category', 'social_media_links', 'showreel_images',
-            'membership_requirements', 'upcoming_projects_or_plans', 'icon','tags',
-            'vice_president', 'event_manager', 'president_id',
-            'vice_president_id', 'event_manager_id', 
+            'membership_requirements', 'upcoming_projects_or_plans', 'icon','tags','president_id',
+            'vice_president', 'event_manager','event_manager_id', 'vice_president_id',
+            'president',
         ]
         extra_kwargs = {
             'society_members': {'required': False},  # Allows empty or missing data
@@ -299,9 +279,11 @@ class EventSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         """ Update 'instance' object according to provided json data """
+        current_attendees_data = validated_data.pop('current_attendees', None)
         for key, value in validated_data.items():
             setattr(instance, key, value)
-
+        if current_attendees_data is not None:
+            instance.current_attendees.set(current_attendees_data)
         instance.save()
         return instance
 
@@ -435,7 +417,7 @@ class RSVPEventSerializer(serializers.ModelSerializer):
             if event.hosted_by not in student.societies.all():
                 raise serializers.ValidationError("You must be a member of the hosting society to RSVP for this event.")
 
-            # Ensure the student has not already RSVP’d
+            # Ensure the student has not already RSVP'd
             if student in event.current_attendees.all():
                 raise serializers.ValidationError("You have already RSVP'd for this event.")
 
@@ -448,7 +430,7 @@ class RSVPEventSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError("This event is full and cannot accept more RSVPs.")
 
         elif self.context.get('action') == 'CANCEL':
-            # Ensure the student is currently RSVP’d for the event
+            # Ensure the student is currently RSVP'd for the event
             if student not in event.current_attendees.all():
                 raise serializers.ValidationError("You have not RSVP'd for this event.")
 
@@ -567,7 +549,7 @@ class SocietyRequestSerializer(RequestSerializer):
         if not hasattr(user, "student"):
             raise serializers.ValidationError("Only students can request society updates.")
         
-        # Set the required from_student field from the current user’s student instance.
+        # Set the required from_student field from the current user's student instance.
         validated_data["from_student"] = user.student
         
         # Optionally, set default intent and approved flag if not provided.
@@ -665,7 +647,7 @@ class EventRequestSerializer(serializers.ModelSerializer):
         if student.president_of != hosted_by:
             raise serializers.ValidationError("You can only create events for your own society.")
 
-        # Remove keys that are supplied via extra kwargs so they aren’t duplicated.
+        # Remove keys that are supplied via extra kwargs so they aren't duplicated.
         validated_data.pop("hosted_by", None)
         validated_data.pop("from_student", None)
         validated_data.pop("intent", None)
@@ -812,11 +794,39 @@ class AdminReportRequestSerializer(serializers.ModelSerializer):
     """
     Serializer for the AdminReportRequest model
     """
+    from_student_username = serializers.CharField(source='from_student.username', read_only=True)
+    top_level_replies = serializers.SerializerMethodField()
+
     class Meta:
         """AdminReportRequest meta data"""
         model = AdminReportRequest
-        fields = ["id", "report_type", "subject", "details", "requested_at", "from_student"]
+        fields = ["id", "report_type", "subject", "details", "requested_at", "from_student", "from_student_username", "top_level_replies"]
         extra_kwargs = {"from_student": {"read_only": True}}  # Auto-assign the user
+
+    def get_top_level_replies(self, obj):
+        replies = ReportReply.objects.filter(report=obj, parent_reply=None).order_by('created_at')
+        return ReportReplySerializer(replies, many=True).data
+
+
+class ReportReplySerializer(serializers.ModelSerializer):
+    """
+    Serializer for the ReportReply model
+    """
+    replied_by_username = serializers.CharField(source='replied_by.username', read_only=True)
+    child_replies = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = ReportReply
+        fields = ['id', 'report', 'parent_reply', 'content', 'created_at', 
+                  'replied_by', 'replied_by_username', 'is_admin_reply', 'child_replies']
+        extra_kwargs = {
+            'replied_by': {'read_only': True},
+            'is_admin_reply': {'read_only': True}
+        }
+    
+    def get_child_replies(self, obj):
+        children = obj.child_replies.all().order_by('created_at')
+        return ReportReplySerializer(children, many=True).data
 
 class CommentSerializer(serializers.ModelSerializer):
     """
@@ -883,6 +893,12 @@ class BroadcastSerializer(serializers.ModelSerializer):
         model = BroadcastMessage
         fields = ['id', 'sender', 'societies', 'events', 'recipients', 'message', 'created_at']
         read_only_fields = ['id', 'created_at', 'sender']
+
+class ActivityLogSerializer(serializers.ModelSerializer):
+    timestamp = serializers.DateTimeField(format='%d-%m-%Y %H:%M:%S')
+    class Meta:
+        model = ActivityLog
+        fields = '__all__'
 
 class NewsCommentSerializer(serializers.ModelSerializer):
     replies = serializers.SerializerMethodField()
@@ -1318,4 +1334,4 @@ class NewsPublicationRequestSerializer(serializers.ModelSerializer):
         if 'status' in data and data['status'] not in ['Pending', 'Approved', 'Rejected']:
             raise serializers.ValidationError({"status": "Status must be Pending, Approved, or Rejected"})
             
-        return data    
+        return data

@@ -1,3 +1,4 @@
+from django.contrib.postgres.fields import JSONField
 from datetime import timedelta
 from random import randint
 from io import BytesIO
@@ -143,7 +144,7 @@ class Student(User):
 
     president_of = models.OneToOneField(
         "Society",
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
         null=True,
         blank=True,
         related_name="society_president",
@@ -167,6 +168,19 @@ class Student(User):
 
     def save(self, *args, **kwargs):
         self.role = "student"
+        
+    
+    # Check for conflicting leadership roles
+        leadership_roles = []
+        if self.is_president:
+            leadership_roles.append("president")
+        if self.is_vice_president:
+            leadership_roles.append("vice president")
+        if self.is_event_manager:
+            leadership_roles.append("event manager")
+        
+        if len(leadership_roles) > 1:
+            raise ValidationError(f"A student can only hold one leadership role. This student is assigned as: {', '.join(leadership_roles)}")
 
         super().save(*args, **kwargs)
 
@@ -177,6 +191,9 @@ class Student(User):
 
     def __str__(self):
         return self.full_name
+
+    def get_societies(self, obj):
+        return [society.name for society in obj.societies.all()]
 
 # Signal to update `is_president` when `president_of` changes
 @receiver(pre_save, sender=Student)
@@ -230,7 +247,7 @@ class Society(models.Model):
 
     vice_president = models.ForeignKey(
         "Student",
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
         null=True,
         blank=True,
         related_name="vice_president_of_society",
@@ -238,7 +255,7 @@ class Society(models.Model):
     )
     event_manager = models.ForeignKey(
         "Student",
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
         null=True,
         blank=True,
         related_name="event_manager_of_society",
@@ -247,7 +264,7 @@ class Society(models.Model):
     president = models.ForeignKey(
         "Student",
         on_delete=models.DO_NOTHING,
-        related_name="society",
+        related_name="society", #TODO: change name to president_of_society?
         null=True,
     )
 
@@ -505,7 +522,7 @@ class SocietyRequest(Request):
     """
     society = models.ForeignKey(
         "Society",
-        on_delete=models.DO_NOTHING,
+        on_delete=models.CASCADE,
         related_name="society_request",
         blank=True,
         null=True,
@@ -590,7 +607,7 @@ class EventRequest(Request):
     )
     hosted_by = models.ForeignKey(
         "Society",
-        on_delete=models.DO_NOTHING,
+        on_delete=models.CASCADE,
         related_name="event_request_society",
         blank=False,
         null=False,
@@ -624,6 +641,25 @@ class AdminReportRequest(Request):
 
     def __str__(self):
         return f"{self.get_report_type_display()} - {self.subject} (From {self.from_student.username})"
+
+
+class ReportReply(models.Model):
+    """
+    Replies to AdminReportRequest or other replies.
+    Used by both admins and presidents.
+    """
+    report = models.ForeignKey(AdminReportRequest, on_delete=models.CASCADE, related_name='replies')
+    parent_reply = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='child_replies')
+    content = models.TextField(blank=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    replied_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='report_replies')
+    is_admin_reply = models.BooleanField(default=False)  # To distinguish between admin and president replies
+    read_by_students = models.ManyToManyField(User, related_name='read_report_replies', blank=True)
+    hidden_for_students = models.ManyToManyField(User, related_name='hidden_replies', blank=True)
+    
+    def __str__(self):
+        reply_type = "Admin" if self.is_admin_reply else "President"
+        return f"{reply_type} Reply to {self.report.subject} ({self.created_at.strftime('%Y-%m-%d')})"
 
 
 class SiteSettings(models.Model):
@@ -994,3 +1030,42 @@ class NewsPublicationRequest(models.Model):
                     self.news_post.save()
         
         super().save(*args, **kwargs)
+
+class ActivityLog(models.Model):
+    ACTION_CHOICES = [
+        ("Delete", "Delete"),
+        ("Approve", "Approve"),
+        ("Reject", "Reject"),
+        ("Update", "Update"),
+        ("Create", "Create"),
+        ("Reply", "Reply"),
+    ]
+
+    TARGET_CHOICES = [
+        ("Society", "Society"),
+        ("Student", "Student"),
+        ("Event", "Event"),
+        ("Request", "Request"),
+    ]
+    
+    action_type = models.CharField(max_length=20, choices=ACTION_CHOICES)
+    target_type = models.CharField(max_length=20, choices=TARGET_CHOICES)
+    target_id = models.IntegerField()
+    target_name = models.CharField(max_length=255)
+    target_email = models.CharField(max_length=255, null=True, blank=True)
+    reason = models.TextField(null=True, blank=True)
+    performed_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    expiration_date = models.DateTimeField(null=True, blank=True)
+    original_data = models.TextField(null=True, blank=True) 
+
+    def __str__(self):
+        return f"{self.action_type} - {self.target_name} on {self.timestamp}"
+    
+    @classmethod
+    def delete_expired_logs(cls):
+        """Delete activity logs older than 30 days."""
+        expiration_threshold = timezone.now() - timedelta(days=30)
+        expired_logs = cls.objects.filter(expiration_date__lt=expiration_threshold)
+        deleted_count, _ = expired_logs.delete()
+        return deleted_count

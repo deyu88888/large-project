@@ -136,7 +136,7 @@ const StudentDashboard: React.FC = () => {
       await fetchData();
     };
     callFetchData();
-  }, []);
+  }, [user?.id]);
 
   async function fetchData() {
     setLoading(true);
@@ -172,7 +172,7 @@ const StudentDashboard: React.FC = () => {
       const awardsResponse = await apiClient.get(`/api/award-students/${user?.id}`);
       setAwards([awardsResponse.data]);
     } catch (error) {
-      console.error("Error fetching dashboard data:", error);
+      console.error("Error fetching award assignments:", error);
     }
     
     setLoading(false);
@@ -583,45 +583,51 @@ const StudentDashboard: React.FC = () => {
             )}
           </Box>
         </Paper>
-        <Box
-          display="grid"
-          gridTemplateColumns={{ xs: "1fr", md: "repeat(1, 1fr)" }}
-          gap={3}
-          mt={4}
-        >
-          <Paper
-            elevation={3}
-            sx={{
-              backgroundColor: colours.primary[400],
-              border: `1px solid ${colours.grey[800]}`,
-              p: 2,
-            }}
+        {/* Start a Society Section */}
+        {/* Only show this section if the user is not a president, vice president, or event manager */}
+        {!(student?.is_president === true || 
+          student?.is_vice_president === true || 
+          student?.is_event_manager === true) && (
+          <Box
+            display="grid"
+            gridTemplateColumns={{ xs: "1fr", md: "repeat(1, 1fr)" }}
+            gap={3}
+            mt={4}
           >
-            <Box display="flex" alignItems="center" mb={2}>
-              <FaUserPlus
-                size={24}
-                style={{ marginRight: 8, color: colours.blueAccent[500] }}
-              />
-              <Typography variant="h6" sx={{ color: colours.grey[100] }}>
-                Start a Society
-              </Typography>
-            </Box>
-            <Typography variant="body2" sx={{ color: colours.grey[300], mb: 2 }}>
-              Have an idea for a new society? Share your passion and bring others together!
-            </Typography>
-            <Button
-              variant="contained"
-              fullWidth
-              onClick={() => navigate("/student/start-society")}
+            <Paper
+              elevation={3}
               sx={{
-                backgroundColor: colours.blueAccent[500],
-                color: colours.grey[100],
+                backgroundColor: colours.primary[400],
+                border: `1px solid ${colours.grey[800]}`,
+                p: 2,
               }}
             >
-              Create New Society
-            </Button>
-          </Paper>
-        </Box>
+              <Box display="flex" alignItems="center" mb={2}>
+                <FaUserPlus
+                  size={24}
+                  style={{ marginRight: 8, color: colours.blueAccent[500] }}
+                />
+                <Typography variant="h6" sx={{ color: colours.grey[100] }}>
+                  Start a Society
+                </Typography>
+              </Box>
+              <Typography variant="body2" sx={{ color: colours.grey[300], mb: 2 }}>
+                Have an idea for a new society? Share your passion and bring others together!
+              </Typography>
+              <Button
+                variant="contained"
+                fullWidth
+                onClick={() => navigate("/student/start-society")}
+                sx={{
+                  backgroundColor: colours.blueAccent[500],
+                  color: colours.grey[100],
+                }}
+              >
+                Create New Society
+              </Button>
+            </Paper>
+          </Box>
+        )}
         <Box mt={4}>
           <Paper
             elevation={3}

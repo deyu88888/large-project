@@ -17,13 +17,15 @@ import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import PeopleOutlinedIcon from "@mui/icons-material/PeopleOutlined";
 import EventOutlinedIcon from "@mui/icons-material/EventOutlined";
-import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";
-import GroupAddOutlinedIcon from "@mui/icons-material/GroupAddOutlined";
-import CalendarTodayOutlinedIcon from "@mui/icons-material/CalendarTodayOutlined";
 import PersonAddAltIcon from "@mui/icons-material/PersonAddAlt";
 import InboxIcon from "@mui/icons-material/MoveToInbox";
 import LogoutIcon from "@mui/icons-material/Logout";
+import SportsFootballIcon from '@mui/icons-material/SportsFootball';
 import { CustomDrawer, CustomDrawerHeader } from "./drawer/CustomDrawer";
+import GroupsIcon from '@mui/icons-material/Groups';
+import ManageHistoryIcon from '@mui/icons-material/ManageHistory';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import EventIcon from '@mui/icons-material/Event';
 
 interface AdminDrawerProps {
   drawer: boolean;
@@ -49,60 +51,44 @@ const AdminDrawer: React.FC<AdminDrawerProps> = ({
     },
     {
       title: "Manage Societies",
-      icon: <EventOutlinedIcon />,
+      icon: <SportsFootballIcon />,
       to: "/admin/society",
     },
     {
       title: "Manage Events",
-      icon: <EventOutlinedIcon />,
+      icon: <EventIcon />,
       to: "/admin/event",
     },
     {
-      title: "Pending Societies",
-      icon: <GroupAddOutlinedIcon />,
-      to: "/admin/request-society",
+      title: "Calendar",
+      to: "/admin/calendar",
+      icon: <CalendarMonthIcon />,
     },
-    {
-      title: "Pending Events",
-      icon: <GroupAddOutlinedIcon />,
-      to: "/admin/request-event",
-    },
-    {
-      title: "Pending Descriptions",
-      icon: <GroupAddOutlinedIcon />,
-      to: "/admin/request-description",
-    },
-    // {(student?.is_president === true || student?.is_vice_president === true) && (
-    // below should only be added if admnin is a 'super admin'
-    // console.log({user?.is_super_admin});
-    // {
-    //   title: "Create Admin",
-    //   icon: <PersonAddAltIcon />,
-    //   to: "/admin/create-admin",
-    // },
+    { title: "Reports", icon: <InboxIcon />, to: "/admin/reports" },
+
   ];
 
-    // Check if user is super admin before adding the menu item
+  const additionalItems = [
+    {
+      title: "My Team",
+      icon: <GroupsIcon />,
+      to: "/admin/my-team",
+    },
+    {
+      title: "Activity Log",
+      icon: <ManageHistoryIcon />,
+      to: "/admin/activity-log",
+    },
+  ];
+  
+  // Check if user is super admin before adding the menu item
   if (user?.is_super_admin) {
-    menuItems.push({
+    additionalItems.push({
       title: "Create Admin",
       icon: <PersonAddAltIcon />,
       to: "/admin/create-admin",
     });
   }
-  const additionalItems = [
-    { title: "Reports", icon: <InboxIcon />, to: "/admin/report-list" },
-    {
-      title: "Calendar",
-      icon: <CalendarTodayOutlinedIcon />,
-      to: "/admin/calendar",
-    },
-    {
-      title: "Activity Log",
-      icon: <CalendarTodayOutlinedIcon />,
-      to: "/admin/admin-dashboard",
-    },
-  ];
 
   const logout = () => {
     localStorage.removeItem("access");

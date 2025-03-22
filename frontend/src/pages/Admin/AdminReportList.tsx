@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { Box, Typography, useTheme } from "@mui/material";
+import { Box, Button, Typography, useTheme } from "@mui/material";
 import { DataGrid, GridToolbar } from "@mui/x-data-grid";
 import { tokens } from "../../theme/theme";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { useSettingsStore } from "../../stores/settings-store";
 import { fetchReports } from './fetchReports';
 import { Report } from '../../types'
+import { useNavigate } from 'react-router-dom';
 
 
 const AdminReportList: React.FC = () => {
@@ -15,6 +16,7 @@ const AdminReportList: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const { searchTerm } = useContext(SearchContext);
   const { drawer } = useSettingsStore(); 
+  const navigate = useNavigate(); // Use the navigate hook for routing
 
   useEffect(() => {
     const loadReports = async () => {
@@ -52,6 +54,24 @@ const AdminReportList: React.FC = () => {
       flex: 1.5,
       renderCell: (params: any) => new Date(params.row.created_at).toLocaleString(),
     },
+    {
+      field: "action", // Action column for the reply button
+      headerName: "Actions",
+      flex: 1,
+      renderCell: (params: any) => {
+        const reportId = params.row.id;
+        return (
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => navigate(`/admin/report-list/${reportId}/reply`)} // Navigate to the reply page
+          >
+            Reply
+          </Button>
+        );
+      },
+    }
+
   ];
 
   return (
@@ -61,20 +81,6 @@ const AdminReportList: React.FC = () => {
         maxWidth: drawer ? `calc(100% - 3px)`: "100%",
       }}
     >
-      <Typography
-        variant="h1"
-        sx={{
-          color:
-            theme.palette.mode === "light"
-              ? colors.grey[100]
-              : colors.grey[100],
-          fontSize: "2.25rem",
-          fontWeight: 800,
-          marginBottom: "1rem",
-        }}
-      >
-        Reports
-      </Typography>
 
       <Box
         sx={{
@@ -109,14 +115,8 @@ const AdminReportList: React.FC = () => {
           columns={columns}
           slots={{ toolbar: GridToolbar }}
           getRowId={(row) => row.id}
-          initialState={{
-            pagination: {
-              paginationModel: { pageSize: 25, page: 0 },
-            },
-          }}
-          pageSizeOptions={[5, 10, 25]}
-          checkboxSelection
           resizeThrottleMs={0}
+          autoHeight
         />
       </Box>
     </Box>

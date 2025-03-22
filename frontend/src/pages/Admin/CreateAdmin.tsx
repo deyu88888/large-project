@@ -1,7 +1,4 @@
-// TODO: not giving the 'correct' error message to the user, make it dynamic, 
-// should tell the user what type of error they're facing. i.e. missing special character in password
-
-import { Box, Button, TextField } from "@mui/material";
+import { Box, Button, colors, IconButton, InputAdornment, TextField, useTheme } from "@mui/material";
 import { Formik } from "formik";
 import * as yup from "yup";
 import useMediaQuery from "@mui/material/useMediaQuery";
@@ -11,15 +8,20 @@ import CircularLoader from "../../components/loading/circular-loader";
 import { apiClient, apiPaths } from "../../api";
 import { useSettingsStore } from "../../stores/settings-store";
 import { useAuthStore } from "../../stores/auth-store";
-
+import {Admin} from "../../types"
+import { Visibility, VisibilityOff } from "@mui/icons-material";
+import { tokens } from "../../theme/theme";
 
 const Form = () => {
+  const theme = useTheme();
+  const colors = tokens(theme.palette.mode);
+  const { user } = useAuthStore();
   const isNonMobile = useMediaQuery("(min-width:600px)");
   const [loading, setLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [createdAdmin, setCreatedAdmin] = useState<Admin | null>(null);
   const { drawer } = useSettingsStore();
-  const { user } = useAuthStore();
-  console.log("yyy", { user });
+  const [showPassword, setShowPassword] = useState(false);
 
   if (user?.is_super_admin) {
     const handleFormSubmit = async (values: any) => {
@@ -27,7 +29,11 @@ const Form = () => {
       try {
         console.log(values);
         const res = await apiClient.post(apiPaths.USER.ADMIN, values);
-        const { password, ...adminWithoutPassword } = res.data;
+        console.log("API response:", res.data);
+        
+        // Store the admin object from the response
+        const adminData = res.data.admin;
+        setCreatedAdmin(adminData);
         setIsSuccess(true);
       } catch (error) {
         alert(error);
@@ -39,8 +45,27 @@ const Form = () => {
     if (isSuccess) {
       return (
         <Box m="20px" display={"flex"} justifyContent={"center"} flexDirection={"column"} alignItems={"center"}>
-          <Header title="CREATE ADMIN" subtitle="New Admin Created Successfully!" />
-
+          <Header title="Create Admin" subtitle="New Admin Created Successfully!" />
+          
+          {createdAdmin && (
+            <Box sx={{ width: "100%", maxWidth: "500px", p: 3, mb: 5, borderRadius: 1,           
+              backgroundColor: theme.palette.mode === "dark" ? colors.primary[400] : "#fff",
+            }}>
+              <Box sx={{ display: "flex", mb: 1 }}>
+                <strong>First Name: {createdAdmin.firsName}</strong>
+              </Box>
+              <Box sx={{ display: "flex", mb: 1 }}>
+                <strong>Last Name: {createdAdmin.lastName}</strong> 
+              </Box>
+              <Box sx={{ display: "flex", mb: 1 }}>
+                <strong>Username: {createdAdmin.username}</strong> 
+              </Box>
+              <Box sx={{ display: "flex"}}>
+                <strong>Email: {createdAdmin.email}</strong> 
+              </Box>
+            </Box>
+          )}
+    
           <Button
             variant="contained"
             color="secondary"
@@ -53,13 +78,13 @@ const Form = () => {
     }
 
     return (
-      <Box m="20px" justifyContent={"center"}
+      <Box
         sx={{
           height: "calc(100vh - 64px)",
-          maxWidth: drawer ? `calc(100% - 3px)` : "100%",
-        }}>
-        <Header title="CREATE ADMIN" subtitle="Create a New Admin Profile" />
-
+          maxWidth: drawer ? `calc(100% - 3px)`: "100%",
+        }}
+      >
+        <Header title="Create Admin" subtitle="Create a New Admin Profile" />
         <Formik
           onSubmit={handleFormSubmit}
           initialValues={initialValues}
@@ -137,7 +162,7 @@ const Form = () => {
                 <TextField
                   fullWidth
                   variant="filled"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   label="Password"
                   onBlur={handleBlur}
                   onChange={handleChange}
@@ -146,6 +171,37 @@ const Form = () => {
                   error={!!touched.password && !!errors.password}
                   helperText={touched.password && errors.password}
                   sx={{ gridColumn: "span 4" }}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+                <TextField
+                  fullWidth
+                  variant="filled"
+                  type={showPassword ? "text" : "password"}
+                  label="Confirm Password"
+                  onBlur={handleBlur}
+                  onChange={handleChange}
+                  value={values.confirmPassword}
+                  name="confirmPassword"
+                  error={!!touched.confirmPassword && !!errors.confirmPassword}
+                  helperText={touched.confirmPassword && errors.confirmPassword}
+                  sx={{ gridColumn: "span 4" }}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
                 />
               </Box>
               {loading && (
@@ -172,12 +228,36 @@ const Form = () => {
   }
 }
 
+// Enhanced validation schema based on the RegisterPage
 const checkoutSchema = yup.object().shape({
-  username: yup.string().required("required"),
-  firstName: yup.string().required("required"),
-  lastName: yup.string().required("required"),
-  email: yup.string().email("invalid email").required("required"),
-  password: yup.string().required("required"),
+  firstName: yup.string()
+    .max(50, "First name must be at most 50 characters")
+    .required("First name is required"),
+  lastName: yup.string()
+    .max(50, "Last name must be at most 50 characters")
+    .required("Last name is required"),
+  username: yup.string()
+    .min(6, "Username must be at least 6 characters")
+    .max(30, "Username must be at most 30 characters")
+    .matches(
+      /^[a-zA-Z0-9_.-]+$/,
+      "Username must only contain letters, numbers, underscores, hyphens, and dots"
+    )
+    .required("Username is required"),
+    email: yup.string()
+      .email("Invalid email address")
+      .test(
+        'is-kcl-email', 
+        'Must be a KCL email', 
+        (value) => value ? value.endsWith('@kcl.ac.uk') : false
+      )
+      .required("Email is required"),
+  password: yup.string()
+    .min(8, "Password must be at least 8 characters")
+    .required("Password is required"),
+  confirmPassword: yup.string()
+    .oneOf([yup.ref("password")], "Passwords do not match")
+    .required("Please confirm the password"),
 });
 
 const initialValues = {
@@ -186,6 +266,7 @@ const initialValues = {
   lastName: "",
   email: "",
   password: "",
+  confirmPassword: "",
 };
 
 export default Form;

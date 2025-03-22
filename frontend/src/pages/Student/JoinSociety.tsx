@@ -1,28 +1,16 @@
-// src/pages/Student/JoinSocieties.tsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiClient, getRecommendedSocieties, SocietyRecommendation } from "../../api";
 import RecommendationFeedback from "../../components/RecommendationFeedback";
-
-// Material UI theme
 import { useTheme } from "@mui/material/styles";
 import { tokens } from "../../theme/theme";
 
-/**
- * Enhanced JoinSocieties component that showcases our advanced NLP-powered recommendations.
- * This component now:
- * - Groups recommendations by category
- * - Highlights category information
- * - Supports all explanation types from our enhanced recommendation system
- * - Provides a more informative and engaging recommendation display
- */
 const JoinSocieties: React.FC = () => {
   const navigate = useNavigate();
   const theme = useTheme();
   const colours = tokens(theme.palette.mode);
   const isLight = theme.palette.mode === "light";
 
-  // Add purpleAccent and orangeAccent if they don't exist in your theme
   const purpleAccent = {
     100: "#f4e7ff",
     200: "#d9beff",
@@ -47,7 +35,6 @@ const JoinSocieties: React.FC = () => {
     900: "#331c10"
   };
 
-  // State:
   const [recommendations, setRecommendations] = useState<SocietyRecommendation[]>([]);
   const [loading, setLoading] = useState(true);
   const [pendingRequests, setPendingRequests] = useState<{[key: number]: boolean}>({});
@@ -59,14 +46,12 @@ const JoinSocieties: React.FC = () => {
   const [joinSuccess, setJoinSuccess] = useState<boolean>(false);
   const [viewByCategory, setViewByCategory] = useState<boolean>(true);
 
-  // Fetch recommended societies on mount
   useEffect(() => {
     const fetchRecommendedSocieties = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        // Primary: get recommended societies - now fetching 10 instead of 5
         const data = await getRecommendedSocieties(10);
         console.log("Fetched recommendations:", data);
         setRecommendations(data);
@@ -74,7 +59,6 @@ const JoinSocieties: React.FC = () => {
         console.error("Error fetching society recommendations:", err);
         setError("Failed to load recommendations. Using available societies instead.");
 
-        // Fallback: get from original endpoint
         try {
           const response = await apiClient.get("/api/join-society");
           const fallbackData = response.data.map((society: any) => ({
@@ -98,25 +82,20 @@ const JoinSocieties: React.FC = () => {
 
   const handleJoinSociety = async (societyId: number) => {
     try {
-      // Set this society as having a pending request
       setPendingRequests(prev => ({...prev, [societyId]: true}));
       
-      // Make API call to join society
       const response = await apiClient.post(`/api/join-society/${societyId}/`);
       
-      // Handle successful request
       setJoinMessages(prev => ({
         ...prev, 
         [societyId]: response.data.message || "Request submitted for approval."
       }));
       
-      // Update the pending society IDs list
       setPendingSocietyIds(prev => [...new Set([...prev, societyId])]);
       
     } catch (error: any) {
       console.error("Error joining society:", error);
       
-      // Check if error response exists
       const errorMessage = error.response?.data?.message || 
         error.response?.data?.error || 
         "Failed to submit join request. Please try again.";
@@ -135,7 +114,6 @@ const JoinSocieties: React.FC = () => {
     navigate(`/student/view-society/${societyId}`);
   };
   
-  // Group recommendations by category
   const groupRecommendationsByCategory = () => {
     const groups: { [key: string]: SocietyRecommendation[] } = {};
     
@@ -150,7 +128,6 @@ const JoinSocieties: React.FC = () => {
     return groups;
   };
 
-  // Badge color for explanation
   const getExplanationBadgeColor = (type: string) => {
     switch (type) {
       case "popular":
@@ -168,7 +145,6 @@ const JoinSocieties: React.FC = () => {
     }
   };
 
-  // Determine heading based on recommendation type
   const getSectionTitle = () => {
     if (recommendations.length === 0) return "Join a Society";
 
@@ -178,13 +154,11 @@ const JoinSocieties: React.FC = () => {
     return allPopular ? "Most Popular Societies" : "Recommended Societies For You";
   };
 
-  // Get count of unique categories
   const getCategoryCount = () => {
     const categories = new Set(recommendations.map(rec => rec.society.category || "Uncategorized"));
     return categories.size;
   };
 
-  // Render society card
   const renderSocietyCard = (recommendation: SocietyRecommendation) => {
     return (
       <div
@@ -212,9 +186,8 @@ const JoinSocieties: React.FC = () => {
           willChange: "transform, opacity, box-shadow",
           position: "relative",
           overflow: "hidden",
-          height: "100%", // Ensure equal height cards
+          height: "100%",
         }}
-        // Enhanced hover effect with shadow and subtle lift
         onMouseEnter={e => {
           if (joining !== recommendation.society.id) {
             e.currentTarget.style.transform = "translateY(-8px) translateZ(10px)";
@@ -232,7 +205,6 @@ const JoinSocieties: React.FC = () => {
           }
         }}
       >
-        {/* Success indicator (appears briefly when successfully joining) */}
         {joining === recommendation.society.id && joinSuccess && (
           <div 
             style={{
@@ -253,7 +225,6 @@ const JoinSocieties: React.FC = () => {
           </div>
         )}
 
-        {/* Society Title */}
         <h3
           style={{
             color: colours.grey[100],
@@ -265,13 +236,12 @@ const JoinSocieties: React.FC = () => {
             WebkitBoxOrient: "vertical",
             overflow: "hidden",
             textOverflow: "ellipsis",
-            minHeight: "3rem", // Keep consistent space for title
+            minHeight: "3rem",
           }}
         >
           {recommendation.society.name}
         </h3>
 
-        {/* Category Badge */}
         <div style={{
           display: "flex",
           alignItems: "center",
@@ -291,7 +261,6 @@ const JoinSocieties: React.FC = () => {
           </span>
         </div>
 
-        {/* Explanation Badge */}
         <div
           style={{
             backgroundColor: getExplanationBadgeColor(
@@ -310,7 +279,6 @@ const JoinSocieties: React.FC = () => {
           {recommendation.explanation.message}
         </div>
 
-        {/* Society Description */}
         <p
           style={{
             color: colours.grey[200],
@@ -322,14 +290,13 @@ const JoinSocieties: React.FC = () => {
             WebkitBoxOrient: "vertical",
             overflow: "hidden",
             textOverflow: "ellipsis",
-            minHeight: "4rem", // Keep consistent height for description
+            minHeight: "4rem",
           }}
         >
           {recommendation.society.description ||
             "No description available."}
         </p>
 
-        {/* Tags */}
         {recommendation.society.tags &&
           recommendation.society.tags.length > 0 && (
             <div
@@ -338,7 +305,7 @@ const JoinSocieties: React.FC = () => {
                 flexWrap: "wrap",
                 gap: "0.5rem",
                 marginBottom: "1rem",
-                minHeight: "2rem", // Consistent space for tags
+                minHeight: "2rem",
               }}
             >
               {recommendation.society.tags.slice(0, 3).map((tag, idx) => (
@@ -359,7 +326,6 @@ const JoinSocieties: React.FC = () => {
             </div>
           )}
 
-        {/* Action Buttons */}
         <div style={{ display: "flex", gap: "0.5rem", marginTop: "auto" }}>
           <button
             onClick={() => handleViewSociety(recommendation.society.id)}
@@ -384,7 +350,6 @@ const JoinSocieties: React.FC = () => {
           </button>
         </div>
 
-        {/* Feedback Component */}
         <div style={{ marginTop: "1rem" }}>
           <RecommendationFeedback
             societyId={recommendation.society.id}
@@ -406,13 +371,12 @@ const JoinSocieties: React.FC = () => {
       style={{
         minHeight: "100vh",
         padding: "2rem",
-        backgroundColor: isLight ? colours.primary[1000] : colours.primary[600],
+        backgroundColor: isLight ? "#fcfcfc" : "#141b2d",
         transition: "all 0.3s ease-in-out",
-        overflow: "hidden", // Prevent layout shifts during animations
+        overflow: "hidden",
       }}
     >
       <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
-        {/* Page Header */}
         <header style={{ textAlign: "center", marginBottom: "2.5rem" }}>
           <h1
             style={{
@@ -439,7 +403,6 @@ const JoinSocieties: React.FC = () => {
           </p>
         </header>
 
-        {/* View Toggle - Only show if we have multiple categories */}
         {!loading && recommendations.length > 0 && getCategoryCount() > 1 && (
           <div style={{ 
             display: "flex", 
@@ -490,7 +453,6 @@ const JoinSocieties: React.FC = () => {
           </div>
         )}
 
-        {/* Error Message */}
         {error && (
           <div
             style={{
@@ -515,7 +477,6 @@ const JoinSocieties: React.FC = () => {
           </div>
         )}
 
-        {/* Loading State */}
         {loading && (
           <div style={{
             display: "flex",
@@ -532,7 +493,6 @@ const JoinSocieties: React.FC = () => {
           </div>
         )}
 
-        {/* Societies Grid - Regular View (not grouped) */}
         {!loading && recommendations.length > 0 && (!viewByCategory || getCategoryCount() <= 1) && (
           <div
             style={{
@@ -547,7 +507,6 @@ const JoinSocieties: React.FC = () => {
           </div>
         )}
 
-        {/* Societies Grid - Grouped by Category View */}
         {!loading && recommendations.length > 0 && viewByCategory && getCategoryCount() > 1 && (
           <div>
             {Object.entries(groupRecommendationsByCategory()).map(([category, recs]) => (
@@ -573,7 +532,6 @@ const JoinSocieties: React.FC = () => {
           </div>
         )}
 
-        {/* No Societies */}
         {!loading && recommendations.length === 0 && (
           <div
             style={{

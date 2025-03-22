@@ -1,0 +1,312 @@
+import React from 'react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { vi } from 'vitest';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { CommentItem } from '../../components/CommentItem';
+import { apiClient } from '../../api';
+
+// Mock the API client
+vi.mock('../../api', () => ({
+  apiClient: {
+    post: vi.fn().mockResolvedValue({ data: { status: 'liked' } }),
+  }
+}));
+
+// Mock date-fns to ensure consistent date formatting in tests
+vi.mock('date-fns', () => ({
+  format: vi.fn().mockReturnValue('2023-01-01 10:00')
+}));
+
+describe('CommentItem Component', () => {
+  // Sample comment data for testing
+  const mockComment = {
+    id: 1,
+    content: 'This is a test comment',
+    create_at: '2023-01-01T10:00:00Z',
+    user_data: {
+      id: 101,
+      username: 'testuser'
+    },
+    parent_comment: null,
+    replies: [
+      {
+        id: 2,
+        content: 'This is a reply to the test comment',
+        create_at: '2023-01-01T11:00:00Z',
+        user_data: {
+          id: 102,
+          username: 'replyuser'
+        },
+        parent_comment: 1,
+        replies: [],
+        likes: 5,
+        dislikes: 1,
+        liked_by_user: false,
+        disliked_by_user: false
+      }
+    ],
+    likes: 10,
+    dislikes: 2,
+    liked_by_user: false,
+    disliked_by_user: false
+  };
+
+  // Create a light theme for testing
+  const theme = createTheme({
+    palette: {
+      mode: 'light',
+    }
+  });
+
+  // Mock callback function
+  const mockOnReply = vi.fn();
+
+  beforeEach(() => {
+    // Clear all mocks before each test
+    vi.clearAllMocks();
+    
+    // Reset the default API response for like action
+    (apiClient.post as vi.Mock).mockResolvedValue({
+      data: { status: 'liked' }
+    });
+  });
+
+  const setup = () => {
+    return render(
+      <ThemeProvider theme={theme}>
+        <CommentItem comment={mockComment} onReply={mockOnReply} />
+      </ThemeProvider>
+    );
+  };
+
+  it('renders the comment content and username correctly', () => {
+    setup();
+    
+    expect(screen.getByText('testuser:')).toBeInTheDocument();
+    expect(screen.getByText('This is a test comment')).toBeInTheDocument();
+  });
+
+  it('renders the reply content correctly', () => {
+    setup();
+    
+    expect(screen.getByText('replyuser:')).toBeInTheDocument();
+    expect(screen.getByText('This is a reply to the test comment')).toBeInTheDocument();
+  });
+
+  it('renders the correct number of likes', () => {
+    setup();
+    
+    expect(screen.getByText('10')).toBeInTheDocument();
+  });
+
+  it('shows the reply box when clicking the reply button', async () => {
+    setup();
+    
+    // Find the reply button (ChatBubbleOutline icon) and click it
+    const replyButtons = screen.getAllByRole('button');
+    let replyButton;
+    
+    // Find the ChatBubbleOutline icon button
+    for (const button of replyButtons) {
+      if (button.querySelector('svg[data-testid="ChatBubbleOutlineIcon"]')) {
+        replyButton = button;
+        break;
+      }
+    }
+    
+    if (replyButton) {
+      fireEvent.click(replyButton);
+    }
+    
+    // Check if the textarea is now visible
+    expect(screen.getByRole('textbox')).toBeInTheDocument();
+    expect(screen.getByText('Submit reply')).toBeInTheDocument();
+  });
+
+  it('handles submitting a reply correctly', async () => {
+    setup();
+    
+    // Find the reply button and click it
+    const replyButtons = screen.getAllByRole('button');
+    let replyButton;
+    
+    for (const button of replyButtons) {
+      if (button.querySelector('svg[data-testid="ChatBubbleOutlineIcon"]')) {
+        replyButton = button;
+        break;
+      }
+    }
+    
+    if (replyButton) {
+      fireEvent.click(replyButton);
+    }
+    
+    // Enter text in the textarea
+    const textarea = screen.getByRole('textbox');
+    fireEvent.change(textarea, { target: { value: 'This is a test reply' } });
+    
+    // Click the submit button
+    const submitButton = screen.getByText('Submit reply');
+    fireEvent.click(submitButton);
+    
+    // Check if the onReply callback was called with the correct arguments
+    expect(mockOnReply).toHaveBeenCalledWith(1, 'This is a test reply');
+  });
+
+  it('does not submit empty replies', async () => {
+    setup();
+    
+    // Find and click the reply button
+    const replyButtons = screen.getAllByRole('button');
+    let replyButton;
+    
+    for (const button of replyButtons) {
+      if (button.querySelector('svg[data-testid="ChatBubbleOutlineIcon"]')) {
+        replyButton = button;
+        break;
+      }
+    }
+    
+    if (replyButton) {
+      fireEvent.click(replyButton);
+    }
+    
+    // Leave the textarea empty and click submit
+    const submitButton = screen.getByText('Submit reply');
+    fireEvent.click(submitButton);
+    
+    // Check that onReply was not called
+    expect(mockOnReply).not.toHaveBeenCalled();
+  });
+
+  it('handles liking a comment correctly', async () => {
+    setup();
+    
+    // Find the like button (ThumbUp icon) and click it
+    const buttons = screen.getAllByRole('button');
+    let likeButton;
+    
+    for (const button of buttons) {
+      if (button.querySelector('svg[data-testid="ThumbUpIcon"]')) {
+        likeButton = button;
+        break;
+      }
+    }
+    
+    if (likeButton) {
+      await act(async () => {
+        fireEvent.click(likeButton);
+      });
+    }
+    
+    await waitFor(() => {
+      // Check if the API was called with the correct endpoint
+      expect(apiClient.post).toHaveBeenCalledWith('/api/comments/1/like');
+    });
+  });
+
+  it('handles disliking a comment correctly', async () => {
+    // Mock the dislike API response
+    (apiClient.post as vi.Mock).mockResolvedValueOnce({
+      data: { status: 'disliked' }
+    });
+    
+    setup();
+    
+    // Find the dislike button (ThumbDown icon) and click it
+    const buttons = screen.getAllByRole('button');
+    let dislikeButton;
+    
+    for (const button of buttons) {
+      if (button.querySelector('svg[data-testid="ThumbDownIcon"]')) {
+        dislikeButton = button;
+        break;
+      }
+    }
+    
+    if (dislikeButton) {
+      await act(async () => {
+        fireEvent.click(dislikeButton);
+      });
+    }
+    
+    await waitFor(() => {
+      // Check if the API was called with the correct endpoint
+      expect(apiClient.post).toHaveBeenCalledWith('/api/comments/1/dislike');
+    });
+  });
+
+  it('handles API error when liking', async () => {
+    // Mock a rejected promise to simulate an API error
+    (apiClient.post as vi.Mock).mockRejectedValueOnce(new Error('API error'));
+    
+    // Spy on console.error
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    
+    setup();
+    
+    // Find and click the like button
+    const buttons = screen.getAllByRole('button');
+    let likeButton;
+    
+    for (const button of buttons) {
+      if (button.querySelector('svg[data-testid="ThumbUpIcon"]')) {
+        likeButton = button;
+        break;
+      }
+    }
+    
+    if (likeButton) {
+      await act(async () => {
+        fireEvent.click(likeButton);
+      });
+    }
+    
+    // Check if console.error was called
+    await waitFor(() => {
+      expect(consoleErrorSpy).toHaveBeenCalled();
+    });
+    
+    consoleErrorSpy.mockRestore();
+  });
+
+  it('handles toggling like status correctly', async () => {
+    // First response: like is added
+    (apiClient.post as vi.Mock).mockResolvedValueOnce({
+      data: { status: 'liked' }
+    });
+    
+    // Second response: like is removed
+    (apiClient.post as vi.Mock).mockResolvedValueOnce({
+      data: { status: 'removed' }
+    });
+    
+    setup();
+    
+    // Find the like button
+    const buttons = screen.getAllByRole('button');
+    let likeButton;
+    
+    for (const button of buttons) {
+      if (button.querySelector('svg[data-testid="ThumbUpIcon"]')) {
+        likeButton = button;
+        break;
+      }
+    }
+    
+    if (likeButton) {
+      // First click: like
+      await act(async () => {
+        fireEvent.click(likeButton);
+      });
+      
+      // Second click: unlike
+      await act(async () => {
+        fireEvent.click(likeButton);
+      });
+    }
+    
+    // Check if the API was called twice
+    expect(apiClient.post).toHaveBeenCalledTimes(2);
+  });
+});

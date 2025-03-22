@@ -16,9 +16,9 @@ const CustomTabPanel = ({
 }) => (value === index ? <Box role="tabpanel">{children}</Box> : null);
 
 const tabs = [
-  { label: "Approved", component: <EventList /> },
-  { label: "Rejected", component: <EventListRejected /> },
-  { label: "Pending", component: <PendingEventRequest /> },
+  { label: "Approved events", component: <EventList /> },
+  { label: "Pending events", component: <PendingEventRequest /> },
+  { label: "Rejected events", component: <EventListRejected /> },
 ];
 
 const ManageEvents = () => {
@@ -46,7 +46,7 @@ const ManageEvents = () => {
         variant="h1"
         sx={[
           { color: colors.grey[100] },
-          { fontSize: "1.75rem", fontWeight: 800, mb: 2 },
+          { fontSize: "1.75rem", fontWeight: 800, mb: 1 },
         ]}
       >
         Manage Events

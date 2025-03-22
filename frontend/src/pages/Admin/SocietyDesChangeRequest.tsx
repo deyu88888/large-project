@@ -118,18 +118,6 @@ const PendingDescriptionRequest: React.FC = () => {
         maxWidth: drawer ? `calc(100% - 3px)` : "100%",
       }}
     >
-      <Typography
-        variant="h1"
-        sx={{
-          color: theme.palette.mode === "light" ? colors.grey[100] : colors.grey[100],
-          fontSize: "2.25rem",
-          fontWeight: 800,
-          marginBottom: "1rem",
-        }}
-      >
-        Pending Description Requests
-      </Typography>
-
       <Box
         sx={{
           height: "78vh",
@@ -162,13 +150,7 @@ const PendingDescriptionRequest: React.FC = () => {
           rows={filteredDescriptions}
           columns={columns}
           slots={{ toolbar: GridToolbar }}
-          initialState={{
-            pagination: {
-              paginationModel: { pageSize: 25, page: 0 },
-            },
-          }}
-          pageSizeOptions={[5, 10, 25]}
-          checkboxSelection
+          autoHeight
           resizeThrottleMs={0}
           disableRowSelectionOnClick  // Disable row selection on row click to temporarily fix accept/reject button issue
         />

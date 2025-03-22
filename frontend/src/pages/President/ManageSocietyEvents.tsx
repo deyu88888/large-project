@@ -72,7 +72,7 @@ const ManageSocietyEvents: React.FC = () => {
     if (!society_id) return;
     
     if (filter !== filterParam) {
-      navigate(`/president-page/${societyId}/manage-society-events/${filter}`, { replace: true });
+      navigate(`/president/${society_id}/manage-society-events/${filter}`, { replace: true });
     }
   }, [filter, filterParam, society_id, navigate]);
 
@@ -148,8 +148,9 @@ const ManageSocietyEvents: React.FC = () => {
     }
   };
 
-  const handleEdit = (eventId: number): void => {
-    navigate(`/president-page/${society_id}/edit-event-details/${eventId}`);
+  // Handler for editing an event
+  const handleEdit = (eventId: number) => {
+    navigate(`/president/${society_id}/edit-event-details/${eventId}`);
   };
 
   const backgroundColor = theme.palette.mode === "dark" ? "#141b2d" : "#fcfcfc";
@@ -187,7 +188,7 @@ const ManageSocietyEvents: React.FC = () => {
 
       <Box display="flex" justifyContent="center" mb={3}>
         <Button
-          onClick={() => navigate(`/president-page/${society_id}/create-society-event/`)}
+          onClick={() => navigate(`/president/${society_id}/create-society-event/`)}
           sx={{
             backgroundColor: colors.blueAccent[500],
             color: theme.palette.mode === "dark" ? "#141b2d" : "#ffffff",

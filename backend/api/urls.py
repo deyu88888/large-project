@@ -10,7 +10,9 @@ from .views import (
     CreateEventRequestView, custom_media_view, get_sorted_events, StudentSocietyDataView,
     AllEventsView, EventDetailView, DescriptionRequestView, toggle_follow, StudentProfileView,
     like_comment, dislike_comment, EventCommentsView, NewsPublicationRequestView,
-    AdminNewsApprovalView,
+    AdminNewsApprovalView, ManageSocietyDetailsAdminView, AdminRepliesListView,
+    ActivityLogView, ManageEventDetailsAdminView, DeleteView, ManageStudentDetailsAdminView, ReportReplyView, 
+    MyReportsView, MyReportsWithRepliesView, ReportThreadView, AdminReportsWithRepliesView, ReportReplyNotificationsView
 )
 from .utils import request_otp, verify_otp
 from .recommendation_views import RecommendedSocietiesView, SocietyRecommendationExplanationView
@@ -33,7 +35,7 @@ urlpatterns = [
     path("user/token/refresh", TokenRefreshView.as_view(), name="refresh"),
     path("user/register", RegisterView.as_view(), name="register"),
     path("user/login", TokenObtainPairView.as_view(), name="get_token"),
-    path("user/current/", CurrentUserView.as_view(), name="current_user"),
+    path("user/current", CurrentUserView.as_view(), name="current_user"),
 
     # OTP verification
     path("request-otp", request_otp, name="request_otp"),
@@ -44,6 +46,9 @@ urlpatterns = [
     path("notifications/<int:pk>", StudentNotificationsView.as_view(), name="mark_notification_read"),
     path("inbox/", StudentInboxView.as_view(), name="student_inbox"),
 
+    path('inbox/<int:notification_id>', StudentInboxView.as_view(), name='student-inbox-delete'),
+    path('report-reply-notifications/<int:reply_id>', ReportReplyNotificationsView.as_view(), name='report-reply-notifications-detail'),
+
     # Society creation/management endpoints
     path("start-society", StartSocietyRequestView.as_view(), name="start_society"),
     path("manage-society-details/<int:society_id>/", ManageSocietyDetailsView.as_view(), name="manage_society_details"),
@@ -51,7 +56,7 @@ urlpatterns = [
     path("events/", EventListView.as_view(), name="event-list"),
 
     # User role endpoints
-    path("user/admin-panel/", AdminView.as_view(), name="admin"),
+    path("user/admin", AdminView.as_view(), name="admin"),
     path("user/student", StudentView.as_view(), name="student"),
   
     # Society membership endpoints
@@ -69,6 +74,14 @@ urlpatterns = [
     path("society/request/<str:society_status>", SocietyRequestView.as_view(), name="request_society"),
     path("society/request/pending/<int:society_id>", SocietyRequestView.as_view(), name="request_society"),
     path("description/request/pending", DescriptionRequestView.as_view(), name="request_description"),
+    path("admin-manage-society-details/<int:society_id>", ManageSocietyDetailsAdminView.as_view(), name="manage_society_details_admin"),
+    path("admin-manage-student-details/<int:student_id>", ManageStudentDetailsAdminView.as_view(), name="manage_student_details_admin"),
+    path("admin-manage-event-details/<int:event_id>", ManageEventDetailsAdminView.as_view(), name="manage_event_details_admin"),
+    path("activity-log", ActivityLogView.as_view(), name="activity_log"),
+    path("delete-activity-log/<int:log_id>", ActivityLogView.as_view(), name="delete_activity_log"),
+
+    path('delete/<str:target_type>/<int:target_id>', DeleteView.as_view(), name='delete'),
+    path('undo-delete/<int:log_id>', DeleteView.as_view(), name='undo-delete'),
 
     # Student societies endpoints
     path("student-societies/", StudentSocietiesView.as_view(), name="student_societies"),
@@ -99,6 +112,16 @@ urlpatterns = [
 
     # Report to admin
     path("report-to-admin", AdminReportView.as_view(), name="report-to-admin"),
+    path("report-to-admin/<int:report_id>", AdminReportView.as_view(), name="report-to-admin-detail"),
+    path("my-reports", MyReportsView.as_view(), name='my_reports'),
+    path('my-reports-with-replies', MyReportsWithRepliesView.as_view(), name='my_reports_with_replies'),
+    path("report-replies", ReportReplyView.as_view(), name="report-replies"),
+    path("report-replies/<int:report_id>", ReportReplyView.as_view(), name="report-replies-by-report"),
+    path('report-thread/<int:report_id>', ReportThreadView.as_view(), name='report_thread'),
+    path("reports-replied", AdminReportsWithRepliesView.as_view(), name="report_replied"),
+    path("reports-with-replies", AdminRepliesListView.as_view(), name="reports_with_replies"),
+    path('report-reply-notifications', ReportReplyNotificationsView.as_view(), name='report-reply-notifications'),
+    path('report-reply-notifications/<int:reply_id>', ReportReplyNotificationsView.as_view(), name='mark-report-reply-read'),
 
     # Events page
     path("all-events", AllEventsView.as_view(), name="all_events"),

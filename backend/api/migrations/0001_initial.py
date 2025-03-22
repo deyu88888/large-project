@@ -2,12 +2,12 @@
 
 import api.models
 import datetime
+from django.conf import settings
 import django.contrib.auth.models
 import django.core.validators
+from django.db import migrations, models
 import django.db.models.deletion
 import django.utils.timezone
-from django.conf import settings
-from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
@@ -128,6 +128,85 @@ class Migration(migrations.Migration):
                 ("objects", django.contrib.auth.models.UserManager()),
             ],
         ),
+        migrations.AddField(
+            model_name="adminreportrequest",
+            name="from_student",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="%(class)ss",
+                to="api.student",
+            ),
+        ),
+        migrations.CreateModel(
+            name="RecommendationFeedback",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "rating",
+                    models.IntegerField(
+                        help_text="Rating from 1-5 stars",
+                        validators=[
+                            django.core.validators.MinValueValidator(1),
+                            django.core.validators.MaxValueValidator(5),
+                        ],
+                    ),
+                ),
+                (
+                    "relevance",
+                    models.IntegerField(
+                        choices=[
+                            (1, "Not relevant at all"),
+                            (2, "Slightly relevant"),
+                            (3, "Somewhat relevant"),
+                            (4, "Very relevant"),
+                            (5, "Extremely relevant"),
+                        ],
+                        default=3,
+                        help_text="How relevant was this recommendation",
+                    ),
+                ),
+                ("comment", models.TextField(blank=True, null=True)),
+                (
+                    "is_joined",
+                    models.BooleanField(
+                        default=False,
+                        help_text="Whether the student joined the society after the recommendation",
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "society",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="recommendation_feedback",
+                        to="api.society",
+                    ),
+                ),
+                (
+                    "student",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="recommendation_feedback",
+                        to="api.student",
+                    ),
+                ),
+            ],
+            options={
+                "verbose_name": "Recommendation Feedback",
+                "verbose_name_plural": "Recommendation Feedback",
+                "unique_together": {("student", "society")},
+            },
+        ),
+    ]
         migrations.CreateModel(
             name="Award",
             fields=[
@@ -279,6 +358,77 @@ class Migration(migrations.Migration):
             ],
         ),
         migrations.CreateModel(
+            name="AdminReportRequest",
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('intent', models.CharField(choices=[('CreateSoc', 'Create Society'), ('UpdateSoc', 'Update Society'), ('CreateEve', 'Create Event'), ('UpdateEve', 'Update Event'), ('CreateUse', 'Create User'), ('UpdateUse', 'Update User'), ('JoinSoc', 'Join Society')], max_length=10)),
+                ('approved', models.BooleanField(blank=True, default=None, null=True)),
+                ('report_type', models.CharField(choices=[('Misconduct', 'Misconduct'), ('System Issue', 'System Issue'), ('Society Issue', 'Society Issue'), ('Event Issue', 'Event Issue'), ('Other', 'Other')], max_length=20)),
+                ('subject', models.CharField(max_length=100)),
+                ('details', models.TextField()),
+                ('requested_at', models.DateTimeField(auto_now_add=True)),
+                ('is_from_society_officer', models.BooleanField(default=False)),
+            ],
+            options={
+                'abstract': False,
+            },
+        ),
+        migrations.CreateModel(
+            name="Society",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(default="default", max_length=30)),
+                ("description", models.CharField(default="default", max_length=500)),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("Pending", "Pending Approval"),
+                            ("Approved", "Approved"),
+                            ("Rejected", "Rejected"),
+                        ],
+                        default="Pending",
+                        max_length=20,
+                    ),
+                ),
+                ("category", models.CharField(default="General", max_length=50)),
+                (
+                    "social_media_links",
+                    models.JSONField(
+                        blank=True,
+                        default=dict,
+                        help_text="Dictionary with keys: WhatsApp, Facebook, Instagram, X, Email, Other - each with a URL value",
+                    ),
+                ),
+                ("membership_requirements", models.TextField(blank=True, null=True)),
+                ("upcoming_projects_or_plans", models.TextField(blank=True, null=True)),
+                ("tags", models.JSONField(blank=True, default=list)),
+                (
+                    "icon",
+                    models.ImageField(
+                        blank=True, null=True, upload_to="society_icons/"
+                    ),
+                ),
+                (
+                    "approved_by",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="approved_societies",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+            ],
+        ),
+        migrations.CreateModel(
             name="Comment",
             fields=[
                 (
@@ -364,7 +514,7 @@ class Migration(migrations.Migration):
             ],
         ),
         migrations.CreateModel(
-            name="Society",
+            name="SocietyRequest",
             fields=[
                 (
                     "id",
@@ -375,8 +525,76 @@ class Migration(migrations.Migration):
                         verbose_name="ID",
                     ),
                 ),
-                ("name", models.CharField(default="default", max_length=30)),
-                ("description", models.CharField(default="default", max_length=500)),
+                (
+                    "intent",
+                    models.CharField(
+                        choices=[
+                            ("CreateSoc", "Create Society"),
+                            ("UpdateSoc", "Update Society"),
+                            ("CreateEve", "Create Event"),
+                            ("UpdateEve", "Update Event"),
+                            ("CreateUse", "Create User"),
+                            ("UpdateUse", "Update User"),
+                            ("JoinSoc", "Join Society"),
+                        ],
+                        max_length=10,
+                    ),
+                ),
+                ("requested_at", models.DateTimeField(auto_now_add=True)),
+                ("approved", models.BooleanField(blank=True, default=None, null=True)),
+                ("name", models.CharField(blank=True, default="", max_length=30)),
+                (
+                    "description",
+                    models.CharField(blank=True, default="", max_length=500),
+                ),
+                ("roles", models.JSONField(blank=True, default=dict)),
+                ("category", models.CharField(blank=True, default="", max_length=50)),
+                (
+                    "social_media_links",
+                    models.JSONField(blank=True, default=dict, null=True),
+                ),
+                ("membership_requirements", models.TextField(blank=True, default="")),
+                (
+                    "upcoming_projects_or_plans",
+                    models.TextField(blank=True, default=""),
+                ),
+                (
+                    "icon",
+                    models.ImageField(blank=True, null=True, upload_to="icon_request/"),
+                ),
+                (
+                    "society",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="society_request",
+                        to="api.society",
+                    ),
+                ),
+            ],
+            options={
+                "abstract": False,
+            },
+        ),
+        migrations.AddField(
+            model_name="event",
+            name="current_attendees",
+            field=models.ManyToManyField(blank=True, to="api.student"),
+        ),
+        migrations.CreateModel(
+            name="DescriptionRequest",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("new_description", models.TextField()),
                 (
                     "status",
                     models.CharField(
@@ -389,34 +607,65 @@ class Migration(migrations.Migration):
                         max_length=20,
                     ),
                 ),
-                ("category", models.CharField(default="General", max_length=50)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
                 (
-                    "social_media_links",
-                    models.JSONField(
-                        blank=True,
-                        default=dict,
-                        help_text="Dictionary with keys: WhatsApp, Facebook, Instagram, X, Email, Other - each with a URL value",
-                    ),
-                ),
-                ("membership_requirements", models.TextField(blank=True, null=True)),
-                ("upcoming_projects_or_plans", models.TextField(blank=True, null=True)),
-                ("tags", models.JSONField(blank=True, default=list)),
-                (
-                    "icon",
-                    models.ImageField(
-                        blank=True, null=True, upload_to="society_icons/"
-                    ),
-                ),
-                (
-                    "approved_by",
+                    "reviewed_by",
                     models.ForeignKey(
+                        blank=True,
                         null=True,
                         on_delete=django.db.models.deletion.SET_NULL,
-                        related_name="approved_societies",
                         to=settings.AUTH_USER_MODEL,
                     ),
                 ),
+                (
+                    "society",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="description_requests",
+                        to="api.society",
+                    ),
+                ),
+                (
+                    "requested_by",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="description_requests",
+                        to="api.student",
+                    ),
+                ),
             ],
+        ),
+        migrations.CreateModel(
+            name="AwardStudent",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("awarded_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "award",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="student_awards",
+                        to="api.award",
+                    ),
+                ),
+                (
+                    "student",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="award_students",
+                        to="api.student",
+                    ),
+                ),
+            ],
+        ),
         ),
         migrations.CreateModel(
             name="NewsNotification",
@@ -597,6 +846,20 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
+            name="ReportReply",
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('content', models.TextField()),
+                ('created_at', models.DateTimeField(auto_now_add=True)),
+                ('is_admin_reply', models.BooleanField(default=False)),
+                ('hidden_for_students', models.ManyToManyField(blank=True, related_name='hidden_replies', to=settings.AUTH_USER_MODEL)),
+                ('parent_reply', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='child_replies', to='api.reportreply')),
+                ('read_by_students', models.ManyToManyField(blank=True, related_name='read_report_replies', to=settings.AUTH_USER_MODEL)),
+                ('replied_by', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='report_replies', to=settings.AUTH_USER_MODEL)),
+                ('report', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='replies', to='api.adminreportrequest')),
+            ],
+        ),
+        migrations.CreateModel(
             name="NewsComment",
             fields=[
                 (
@@ -658,70 +921,6 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
-            name="SocietyRequest",
-            fields=[
-                (
-                    "id",
-                    models.BigAutoField(
-                        auto_created=True,
-                        primary_key=True,
-                        serialize=False,
-                        verbose_name="ID",
-                    ),
-                ),
-                (
-                    "intent",
-                    models.CharField(
-                        choices=[
-                            ("CreateSoc", "Create Society"),
-                            ("UpdateSoc", "Update Society"),
-                            ("CreateEve", "Create Event"),
-                            ("UpdateEve", "Update Event"),
-                            ("CreateUse", "Create User"),
-                            ("UpdateUse", "Update User"),
-                            ("JoinSoc", "Join Society"),
-                        ],
-                        max_length=10,
-                    ),
-                ),
-                ("requested_at", models.DateTimeField(auto_now_add=True)),
-                ("approved", models.BooleanField(blank=True, default=None, null=True)),
-                ("name", models.CharField(blank=True, default="", max_length=30)),
-                (
-                    "description",
-                    models.CharField(blank=True, default="", max_length=500),
-                ),
-                ("roles", models.JSONField(blank=True, default=dict)),
-                ("category", models.CharField(blank=True, default="", max_length=50)),
-                (
-                    "social_media_links",
-                    models.JSONField(blank=True, default=dict, null=True),
-                ),
-                ("membership_requirements", models.TextField(blank=True, default="")),
-                (
-                    "upcoming_projects_or_plans",
-                    models.TextField(blank=True, default=""),
-                ),
-                (
-                    "icon",
-                    models.ImageField(blank=True, null=True, upload_to="icon_request/"),
-                ),
-                (
-                    "society",
-                    models.ForeignKey(
-                        blank=True,
-                        null=True,
-                        on_delete=django.db.models.deletion.DO_NOTHING,
-                        related_name="society_request",
-                        to="api.society",
-                    ),
-                ),
-            ],
-            options={
-                "abstract": False,
-            },
-        ),
-        migrations.CreateModel(
             name="SocietyShowreel",
             fields=[
                 (
@@ -767,6 +966,22 @@ class Migration(migrations.Migration):
                         to="api.societyrequest",
                     ),
                 ),
+            ],
+        ),
+        migrations.CreateModel(
+            name="ActivityLog",
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('action_type', models.CharField(choices=[('Delete', 'Delete'), ('Approve', 'Approve'), ('Reject', 'Reject'), ('Update', 'Update'), ('Create', 'Create'), ('Reply', 'Reply')], max_length=20)),
+                ('target_type', models.CharField(choices=[('Society', 'Society'), ('Student', 'Student'), ('Event', 'Event'), ('Request', 'Request')], max_length=20)),
+                ('target_id', models.IntegerField()),
+                ('target_name', models.CharField(max_length=255)),
+                ('target_email', models.CharField(blank=True, max_length=255, null=True)),
+                ('reason', models.TextField(blank=True, null=True)),
+                ('timestamp', models.DateTimeField(auto_now_add=True)),
+                ('expiration_date', models.DateTimeField(blank=True, null=True)),
+                ('original_data', models.TextField(blank=True, null=True)),
+                ('performed_by', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
             ],
         ),
         migrations.CreateModel(
@@ -829,7 +1044,7 @@ class Migration(migrations.Migration):
             field=models.OneToOneField(
                 blank=True,
                 null=True,
-                on_delete=django.db.models.deletion.SET_NULL,
+                on_delete=django.db.models.deletion.CASCADE,
                 related_name="society_president",
                 to="api.society",
             ),
@@ -878,7 +1093,7 @@ class Migration(migrations.Migration):
                 blank=True,
                 help_text="Assigned event manager of the society",
                 null=True,
-                on_delete=django.db.models.deletion.SET_NULL,
+                on_delete=django.db.models.deletion.CASCADE,
                 related_name="event_manager_of_society",
                 to="api.student",
             ),
@@ -907,7 +1122,7 @@ class Migration(migrations.Migration):
                 blank=True,
                 help_text="Assigned vice-president of the society",
                 null=True,
-                on_delete=django.db.models.deletion.SET_NULL,
+                on_delete=django.db.models.deletion.CASCADE,
                 related_name="vice_president_of_society",
                 to="api.student",
             ),
@@ -955,7 +1170,7 @@ class Migration(migrations.Migration):
                     models.ForeignKey(
                         blank=True,
                         null=True,
-                        on_delete=django.db.models.deletion.DO_NOTHING,
+                        on_delete=django.db.models.deletion.CASCADE,
                         related_name="event_request",
                         to="api.event",
                     ),
@@ -963,7 +1178,7 @@ class Migration(migrations.Migration):
                 (
                     "hosted_by",
                     models.ForeignKey(
-                        on_delete=django.db.models.deletion.DO_NOTHING,
+                        on_delete=django.db.models.deletion.CASCADE,
                         related_name="event_request_society",
                         to="api.society",
                     ),
@@ -980,221 +1195,3 @@ class Migration(migrations.Migration):
             options={
                 "abstract": False,
             },
-        ),
-        migrations.AddField(
-            model_name="event",
-            name="current_attendees",
-            field=models.ManyToManyField(blank=True, to="api.student"),
-        ),
-        migrations.CreateModel(
-            name="DescriptionRequest",
-            fields=[
-                (
-                    "id",
-                    models.BigAutoField(
-                        auto_created=True,
-                        primary_key=True,
-                        serialize=False,
-                        verbose_name="ID",
-                    ),
-                ),
-                ("new_description", models.TextField()),
-                (
-                    "status",
-                    models.CharField(
-                        choices=[
-                            ("Pending", "Pending Approval"),
-                            ("Approved", "Approved"),
-                            ("Rejected", "Rejected"),
-                        ],
-                        default="Pending",
-                        max_length=20,
-                    ),
-                ),
-                ("created_at", models.DateTimeField(auto_now_add=True)),
-                (
-                    "reviewed_by",
-                    models.ForeignKey(
-                        blank=True,
-                        null=True,
-                        on_delete=django.db.models.deletion.SET_NULL,
-                        to=settings.AUTH_USER_MODEL,
-                    ),
-                ),
-                (
-                    "society",
-                    models.ForeignKey(
-                        on_delete=django.db.models.deletion.CASCADE,
-                        related_name="description_requests",
-                        to="api.society",
-                    ),
-                ),
-                (
-                    "requested_by",
-                    models.ForeignKey(
-                        on_delete=django.db.models.deletion.CASCADE,
-                        related_name="description_requests",
-                        to="api.student",
-                    ),
-                ),
-            ],
-        ),
-        migrations.CreateModel(
-            name="AwardStudent",
-            fields=[
-                (
-                    "id",
-                    models.BigAutoField(
-                        auto_created=True,
-                        primary_key=True,
-                        serialize=False,
-                        verbose_name="ID",
-                    ),
-                ),
-                ("awarded_at", models.DateTimeField(auto_now_add=True)),
-                (
-                    "award",
-                    models.ForeignKey(
-                        on_delete=django.db.models.deletion.CASCADE,
-                        related_name="student_awards",
-                        to="api.award",
-                    ),
-                ),
-                (
-                    "student",
-                    models.ForeignKey(
-                        on_delete=django.db.models.deletion.CASCADE,
-                        related_name="award_students",
-                        to="api.student",
-                    ),
-                ),
-            ],
-        ),
-        migrations.CreateModel(
-            name="AdminReportRequest",
-            fields=[
-                (
-                    "id",
-                    models.BigAutoField(
-                        auto_created=True,
-                        primary_key=True,
-                        serialize=False,
-                        verbose_name="ID",
-                    ),
-                ),
-                (
-                    "intent",
-                    models.CharField(
-                        choices=[
-                            ("CreateSoc", "Create Society"),
-                            ("UpdateSoc", "Update Society"),
-                            ("CreateEve", "Create Event"),
-                            ("UpdateEve", "Update Event"),
-                            ("CreateUse", "Create User"),
-                            ("UpdateUse", "Update User"),
-                            ("JoinSoc", "Join Society"),
-                        ],
-                        max_length=10,
-                    ),
-                ),
-                ("approved", models.BooleanField(blank=True, default=None, null=True)),
-                (
-                    "report_type",
-                    models.CharField(
-                        choices=[
-                            ("Misconduct", "Misconduct"),
-                            ("System Issue", "System Issue"),
-                            ("Society Issue", "Society Issue"),
-                            ("Event Issue", "Event Issue"),
-                            ("Other", "Other"),
-                        ],
-                        max_length=20,
-                    ),
-                ),
-                ("subject", models.CharField(max_length=100)),
-                ("details", models.TextField()),
-                ("requested_at", models.DateTimeField(auto_now_add=True)),
-                ("is_from_society_officer", models.BooleanField(default=False)),
-                (
-                    "from_student",
-                    models.ForeignKey(
-                        on_delete=django.db.models.deletion.CASCADE,
-                        related_name="%(class)ss",
-                        to="api.student",
-                    ),
-                ),
-            ],
-            options={
-                "abstract": False,
-            },
-        ),
-        migrations.CreateModel(
-            name="RecommendationFeedback",
-            fields=[
-                (
-                    "id",
-                    models.BigAutoField(
-                        auto_created=True,
-                        primary_key=True,
-                        serialize=False,
-                        verbose_name="ID",
-                    ),
-                ),
-                (
-                    "rating",
-                    models.IntegerField(
-                        help_text="Rating from 1-5 stars",
-                        validators=[
-                            django.core.validators.MinValueValidator(1),
-                            django.core.validators.MaxValueValidator(5),
-                        ],
-                    ),
-                ),
-                (
-                    "relevance",
-                    models.IntegerField(
-                        choices=[
-                            (1, "Not relevant at all"),
-                            (2, "Slightly relevant"),
-                            (3, "Somewhat relevant"),
-                            (4, "Very relevant"),
-                            (5, "Extremely relevant"),
-                        ],
-                        default=3,
-                        help_text="How relevant was this recommendation",
-                    ),
-                ),
-                ("comment", models.TextField(blank=True, null=True)),
-                (
-                    "is_joined",
-                    models.BooleanField(
-                        default=False,
-                        help_text="Whether the student joined the society after the recommendation",
-                    ),
-                ),
-                ("created_at", models.DateTimeField(auto_now_add=True)),
-                ("updated_at", models.DateTimeField(auto_now=True)),
-                (
-                    "society",
-                    models.ForeignKey(
-                        on_delete=django.db.models.deletion.CASCADE,
-                        related_name="recommendation_feedback",
-                        to="api.society",
-                    ),
-                ),
-                (
-                    "student",
-                    models.ForeignKey(
-                        on_delete=django.db.models.deletion.CASCADE,
-                        related_name="recommendation_feedback",
-                        to="api.student",
-                    ),
-                ),
-            ],
-            options={
-                "verbose_name": "Recommendation Feedback",
-                "verbose_name_plural": "Recommendation Feedback",
-                "unique_together": {("student", "society")},
-            },
-        ),
-    ]
