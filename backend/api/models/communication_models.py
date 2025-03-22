@@ -76,6 +76,10 @@ class NewsNotification(models.Model):
 
 
 class BroadcastMessage(models.Model):
+    """
+    Model representing a broadcast message from a sender to multiple recipients, 
+    societies, and events.
+    """
     sender = models.ForeignKey(user_models.User, on_delete=models.CASCADE, related_name="sent_broadcasts")
     societies = models.ManyToManyField("Society", related_name="broadcasts", blank=True)
     events = models.ManyToManyField("Event", related_name="broadcasts", blank=True)
