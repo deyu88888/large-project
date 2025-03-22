@@ -1,19 +1,7 @@
-from django.contrib.postgres.fields import JSONField
 from datetime import timedelta
-from random import randint
-from django.core.files.base import ContentFile
-from django.core.exceptions import ValidationError
-from django.core.validators import MinLengthValidator, MaxLengthValidator, RegexValidator
 from django.db import models
-from django.contrib.auth.models import AbstractUser
-from django.dispatch import receiver
 from django.utils import timezone
-from django.db.models.signals import pre_save
 from django.utils.translation import gettext_lazy as _
-from django.db.models import F
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-
 
 
 class SiteSettings(models.Model):
@@ -40,9 +28,8 @@ class SiteSettings(models.Model):
         verbose_name=_("Introduction Content"),
         help_text=_("The main content of the website introduction. Use newlines to separate paragraphs."),
     )
+from django.db.models.signals import post_save
 
-    class Meta:
-        verbose_name = _("Site Settings")
         verbose_name_plural = _("Site Settings")
 
     def __str__(self):
@@ -66,71 +53,6 @@ class SiteSettings(models.Model):
         obj, created = cls.objects.get_or_create(pk=cls.singleton_instance_id)
         return obj
 
-
-
-
-    
-class NewsPublicationRequest(models.Model):
-    """
-    Tracks requests from society presidents to publish news posts.
-    """
-    STATUS_CHOICES = [
-        ("Pending", "Pending"),
-        ("Approved", "Approved"),
-        ("Rejected", "Rejected"),
-    ]
-    
-    news_post = models.ForeignKey(
-        SocietyNews,
-        on_delete=models.CASCADE,
-        related_name="publication_requests"
-    )
-    
-    requested_by = models.ForeignKey(
-        "Student",
-        on_delete=models.CASCADE,
-        related_name="news_publication_requests"
-    )
-    
-    reviewed_by = models.ForeignKey(
-        "User",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="reviewed_news_publications"
-    )
-    
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="Pending")
-    requested_at = models.DateTimeField(auto_now_add=True)
-    reviewed_at = models.DateTimeField(null=True, blank=True)
-    admin_notes = models.TextField(blank=True, null=True, help_text="Feedback or notes from the admin, especially for rejections")
-    
-    class Meta:
-        ordering = ["-requested_at"]
-        verbose_name = "News Publication Request"
-        verbose_name_plural = "News Publication Requests"
-    
-    def __str__(self):
-        return f"Publication request for '{self.news_post.title}' - {self.status}"
-    
-    def save(self, *args, **kwargs):
-        # If status is being changed to Approved or Rejected, set the reviewed_at timestamp
-        if self.pk:
-            orig = NewsPublicationRequest.objects.get(pk=self.pk)
-            if orig.status == "Pending" and self.status in ["Approved", "Rejected"]:
-                self.reviewed_at = timezone.now()
-                
-                # Update the news post status based on the decision
-                if self.status == "Approved":
-                    self.news_post.status = "Published"
-                    self.news_post.published_at = timezone.now()
-                    self.news_post.save()
-                elif self.status == "Rejected":
-                    self.news_post.status = "Rejected"
-                    self.news_post.save()
-        
-        super().save(*args, **kwargs)
-
 class ActivityLog(models.Model):
     ACTION_CHOICES = [
         ("Delete", "Delete"),
@@ -147,7 +69,7 @@ class ActivityLog(models.Model):
         ("Event", "Event"),
         ("Request", "Request"),
     ]
-    
+
     action_type = models.CharField(max_length=20, choices=ACTION_CHOICES)
     target_type = models.CharField(max_length=20, choices=TARGET_CHOICES)
     target_id = models.IntegerField()
@@ -161,7 +83,7 @@ class ActivityLog(models.Model):
 
     def __str__(self):
         return f"{self.action_type} - {self.target_name} on {self.timestamp}"
-    
+
     @classmethod
     def delete_expired_logs(cls):
         """Delete activity logs older than 30 days."""
