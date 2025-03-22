@@ -26,7 +26,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from api.models import AdminReportRequest, Event, Notification, Society, Student, User, Award, AwardStudent, \
-    UserRequest, DescriptionRequest, AdminReportRequest, Comment, ActivityLog, ReportReply, SocietyRequest
+    UserRequest, DescriptionRequest, AdminReportRequest, Comment, ActivityLog, ReportReply, SocietyRequest, \
+    NewsPublicationRequest, BroadcastMessage, SocietyNews
 from api.serializers import (
     AdminReportRequestSerializer,
     BroadcastSerializer,
