@@ -619,13 +619,6 @@ const SocietyNewsFeed: React.FC<SocietyNewsFeedProps> = ({ societyId }) => {
 
           <CardActions sx={{ justifyContent: 'flex-end', px: 2, pb: 2 }}>
             <Box display="flex" alignItems="center">
-              <BookmarkButton 
-                postId={post.id}
-                bookmarked={bookmarked}
-                onToggleBookmark={toggleBookmark}
-                size="small"
-              />
-              
               <IconButton
                 size="small"
                 onClick={(e) => {
@@ -634,7 +627,6 @@ const SocietyNewsFeed: React.FC<SocietyNewsFeedProps> = ({ societyId }) => {
                 }}
                 aria-label="Hide post"
                 sx={{ 
-                  ml: 1,
                   color: colors.grey[300],
                   transition: 'all 0.2s ease',
                   '&:hover': {
@@ -651,7 +643,7 @@ const SocietyNewsFeed: React.FC<SocietyNewsFeedProps> = ({ societyId }) => {
         </Card>
       </motion.div>
     );
-  }, [colors, handlePostClick, bookmarked, toggleBookmark, handleHidePost]);
+  }, [colors, handlePostClick, handleHidePost]);
 
   const NewsFeed = useCallback(() => {
     if (loading) {
