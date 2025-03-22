@@ -225,3 +225,64 @@ class NewsComment(models.Model):
     
     def disliked_by(self, user):
         return self.dislikes.filter(id=user.id).exists()
+
+class NewsPublicationRequest(models.Model):
+    """
+    Tracks requests from society presidents to publish news posts.
+    """
+    STATUS_CHOICES = [
+        ("Pending", "Pending"),
+        ("Approved", "Approved"),
+        ("Rejected", "Rejected"),
+    ]
+
+    news_post = models.ForeignKey(
+        SocietyNews,
+        on_delete=models.CASCADE,
+        related_name="publication_requests"
+    )
+
+    requested_by = models.ForeignKey(
+        user_models.Student,
+        on_delete=models.CASCADE,
+        related_name="news_publication_requests"
+    )
+
+    reviewed_by = models.ForeignKey(
+        user_models.User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="reviewed_news_publications"
+    )
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="Pending")
+    requested_at = models.DateTimeField(auto_now_add=True)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    admin_notes = models.TextField(blank=True, null=True, help_text="Feedback or notes from the admin, especially for rejections")
+
+    class Meta:
+        ordering = ["-requested_at"]
+        verbose_name = "News Publication Request"
+        verbose_name_plural = "News Publication Requests"
+
+    def __str__(self):
+        return f"Publication request for '{self.news_post.title}' - {self.status}"
+
+    def save(self, *args, **kwargs):
+        # If status is being changed to Approved or Rejected, set the reviewed_at timestamp
+        if self.pk:
+            orig = NewsPublicationRequest.objects.get(pk=self.pk)
+            if orig.status == "Pending" and self.status in ["Approved", "Rejected"]:
+                self.reviewed_at = timezone.now()
+
+                # Update the news post status based on the decision
+                if self.status == "Approved":
+                    self.news_post.status = "Published"
+                    self.news_post.published_at = timezone.now()
+                    self.news_post.save()
+                elif self.status == "Rejected":
+                    self.news_post.status = "Rejected"
+                    self.news_post.save()
+
+        super().save(*args, **kwargs)
