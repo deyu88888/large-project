@@ -1,4 +1,4 @@
-from api.models import User, Student
+from api.models import User, Student, Society
 from rest_framework.validators import UniqueValidator
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
@@ -160,7 +160,7 @@ class StudentSerializer(UserSerializer):
         if societies:
             student.societies.set(societies)
 
-        if president_of:  # Check if president_of is provided before assigning
+        if president_of:
             student.president_of_id = president_of.id
             student.save()
 
