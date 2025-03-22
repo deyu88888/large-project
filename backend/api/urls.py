@@ -13,7 +13,7 @@ from .views import (
     like_comment, dislike_comment, EventCommentsView, toggle_follow, StudentProfileView, AdminRepliesListView,
     AdminActivityLogView, AdminManageEventDetailsAdminView, AdminDeleteView, AdminManageStudentDetailsAdminView, ReportReplyView, 
     MyReportsView, MyReportsWithRepliesView, ReportThreadView, AdminReportsWithRepliesView, ReportReplyNotificationsView,
-    NewsPublicationRequestView, AdminNewsApprovalView
+    NewsPublicationRequestView, AdminNewsApprovalView, SearchView
 )
 from .utils import request_otp, verify_otp
 from .recommendation_views import RecommendedSocietiesView, SocietyRecommendationExplanationView
