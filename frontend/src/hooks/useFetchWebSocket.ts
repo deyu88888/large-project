@@ -18,9 +18,9 @@ export const handleError = (event: Event) => {
     console.error("WebSocket Error:", event);
 };
 
-export const handleClose =  <T> (setData: (data: T[]) => void, ws: React.MutableRefObject<WebSocket | null>,  fetchDataFunction: () => Promise<T[]>):void => {
+export const handleClose =  <T> (setData: (data: T[]) => void, ws: React.MutableRefObject<WebSocket | null>,  fetchDataFunction: () => Promise<T[]>, sourceURL: string):void => {
     setTimeout(() => {  
-        connectWebSocket(setData, ws, fetchDataFunction);
+        connectWebSocket(setData, ws, fetchDataFunction, sourceURL);
     }, 5000);
 };
 
@@ -31,7 +31,7 @@ export const connectWebSocket =  <T> (setData: (data: T[]) => void, ws: React.Mu
     // ws.current.onopen = handleOpen;
     ws.current.onmessage = () => handleMessage(setData, fetchDataFunction);
     ws.current.onerror = handleError;
-    ws.current.onclose = () => handleClose(setData, ws, fetchDataFunction);
+    ws.current.onclose = () => handleClose(setData, ws, fetchDataFunction, sourceURL);
 
     const currentWs = ws.current;
     return () => {

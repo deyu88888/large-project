@@ -36,6 +36,7 @@ export const apiPaths = {
     VERIFY_OTP: "/api/verify-otp",
     REFRESH: "/api/user/token/refresh", // TODO: DONT ADD BACKSLASH
     CURRENT: "/api/user/current", // TODO: DONT ADD BACKSLASH
+    USERSTATS: "/api/admin/user-stats/", // TODO: DONT REMOVE BACKSLASH
     SOCIETY: "/api/society/request/approved",  // TODO: DONT ADD BACKSLASH
     REJECTEDSOCIETY: "/api/society/request/rejected", // TODO: DONT ADD BACKSLASH
     STUDENTS: "/api/user/student",  // TODO: DONT ADD BACKSLASH

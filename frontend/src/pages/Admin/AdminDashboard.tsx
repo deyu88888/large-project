@@ -3,9 +3,10 @@ import { Box, Typography, useTheme } from "@mui/material";
 import { FaUsers, FaCalendarAlt, FaEnvelope } from "react-icons/fa";
 import Header from "../../components/Header";
 import { tokens } from "../../theme/theme";
-import { apiClient } from "../../api";
+import { apiClient, apiPaths } from "../../api";
 import { useSettingsStore } from "../../stores/settings-store";
 import { useAuthStore } from "../../stores/auth-store";
+import { fetchPendingRequests } from "./utils";
 
 const AdminDashboard = () => {
   const theme = useTheme();
@@ -23,14 +24,15 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     fetchData();
-    fetchSocieties();
+    fetchSocieties(); // TODO: implement this?
     fetchCurrentUser();
   }, []);
 
   const fetchCurrentUser = async () => {
     try {
-      const response = await apiClient.get("/api/admin/user-stats/"); // Adjust the endpoint
+      const response = await apiClient.get(apiPaths.USER.USERSTATS); // Adjust the endpoint
       setUser(response.data);
+      // setUser(await fetchPendingRequests(apiPaths.USER.USERSTATS)); // TODO: use when the endpoint is ready
     } catch (error) {
       console.error("Error fetching current user:", error);
     }
@@ -39,7 +41,7 @@ const AdminDashboard = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const statsResponse = await apiClient.get("/api/admin/user-stats/");
+      const statsResponse = await apiClient.get(apiPaths.USER.USERSTATS);
       setUserStats(statsResponse.data || {});
       const eventsResponse = await apiClient.get("/api/admin/events/");
       setEvents(eventsResponse.data || []);
