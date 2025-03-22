@@ -176,21 +176,6 @@ class CurrentUserView(APIView):
 class StudentSocietiesView(APIView):
     """
     API View for managing societies that a student has joined.
-
-    - **GET**: Retrieves a list of societies the currently logged-in student has joined.
-        - Permissions: Requires the user to be authenticated and a student.
-        - Response:
-            - 200: A list of societies with details such as name and president.
-            - 403: If the user is not a student.
-
-    - **POST**: Allows the student to leave a society they are part of.
-        - Permissions: Requires the user to be authenticated and a student.
-        - Request Body:
-            - `society_id` (int): ID of the society to leave.
-        - Response:
-            - 200: Confirmation message indicating the student has successfully left the society.
-            - 400: Validation errors, such as invalid society ID.
-            - 403: If the user is not a student.
     """
     permission_classes = [IsAuthenticated]
 
@@ -209,7 +194,6 @@ class StudentSocietiesView(APIView):
         """
         user = request.user
 
-        # Ensure the user is a student
         if not hasattr(user, "student"):
             return Response({"error": "Only students can leave societies."}, status=status.HTTP_403_FORBIDDEN)
 
@@ -223,9 +207,7 @@ class StudentSocietiesView(APIView):
         if not user.student.societies_belongs_to.filter(id=society_id).exists():
             return Response({"error": "You are not a member of this society."}, status=status.HTTP_400_BAD_REQUEST)
         
-        # Check if the user is in a leadership position (president, vice president, or event manager)
         student = user.student
-        
         # Check for president role
         if society.president == student:
             return Response(
@@ -246,8 +228,6 @@ class StudentSocietiesView(APIView):
                 {"error": "As the event manager, you cannot leave the society. Please resign from your position first."},
                 status=status.HTTP_403_FORBIDDEN
             )
-
-        # Remove the student from the society
         user.student.societies_belongs_to.remove(society)
 
         return Response({"message": f"Successfully left society '{society.name}'."}, status=status.HTTP_200_OK)
@@ -256,20 +236,6 @@ class StudentSocietiesView(APIView):
 class JoinSocietyView(APIView):
     """
     API View for managing the joining of new societies by a student.
-    - **GET**: Retrieves a list of societies the currently logged-in student has NOT joined.
-        - Permissions: Requires the user to be authenticated and a student.
-        - Response:
-            - 200: A list of available societies with details such as name and president.
-            - 403: If the user is not a student.
-
-    - **POST**: Creates a request for president approval to join a society.
-        - Permissions: Requires the user to be authenticated and a student.
-        - Request Body:
-            - `society_id` (int): ID of the society to join.
-        - Response:
-            - 201: Confirmation message indicating the join request has been submitted.
-            - 400: Validation errors, such as invalid society ID.
-            - 403: If the user is not a student.
     """
     permission_classes = [IsAuthenticated]
     
@@ -284,16 +250,11 @@ class JoinSocietyView(APIView):
     
     def post(self, request, society_id=None):
         user = request.user
-        # Debugging prints:
-        print("DEBUG: User:", user, "User ID:", user.id)
-        print("DEBUG: society_id:", society_id)
 
         if not hasattr(user, "student"):
-            print("DEBUG: User is not a student.")
             return Response({"error": "Only students can join societies."}, status=status.HTTP_403_FORBIDDEN)
 
         if not society_id:
-            print("DEBUG: No society_id provided in URL.")
             return Response({"error": "Society ID is required."}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
@@ -335,13 +296,11 @@ class JoinSocietyView(APIView):
 class PendingRequestsView(APIView):
     """API View to retrieve all pending requests for the current user."""
     permission_classes = [IsAuthenticated]
-
     def get(self, request):
         user = request.user
         if not hasattr(user, "student"):
             return Response({"error": "Only students can view their requests."}, 
                             status=status.HTTP_403_FORBIDDEN)
-        
         # Get all pending requests for this student
         pending_requests = SocietyRequest.objects.filter(
             from_student=user.student,
@@ -353,7 +312,6 @@ class PendingRequestsView(APIView):
 
 class RSVPEventView(APIView):
     """ API View for RSVPing to events. """
-
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -517,7 +475,6 @@ class StartSocietyRequestView(APIView):
     def post(self, request):
         user = request.user
 
-        # Ensure the user is a student
         if not hasattr(user, "student"):
             return Response({"error": "Only students can request a new society."}, status=status.HTTP_403_FORBIDDEN)
         
@@ -544,7 +501,6 @@ class StartSocietyRequestView(APIView):
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        # Validate and save the data
         serializer = StartSocietyRequestSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(requested_by=user.student)
@@ -646,19 +602,13 @@ def has_society_management_permission(student, society, for_events_only=False):
     Check if a student has management permissions for a society.
     This includes being either the president, vice president, or event manager (for event operations).
     """
-    # Check if student is president
     is_president = student.is_president and hasattr(society, 'president') and society.president and society.president.id == student.id
-    
-    # Check if student is vice president
     is_vice_president = hasattr(society, 'vice_president') and society.vice_president and society.vice_president.id == student.id
-    
-    # If this is specifically for event operations, also check if student is the event manager
     is_event_manager = False
     if for_events_only:
         is_event_manager = (hasattr(society, 'event_manager') and 
                            society.event_manager and 
                            society.event_manager.id == student.id)
-    
     return is_president or is_vice_president or is_event_manager
 
 class ManageSocietyDetailsView(APIView):
@@ -680,7 +630,6 @@ class ManageSocietyDetailsView(APIView):
         print("Logged-in student id:", student.id)
         print("Requested society id:", society_id)
         
-        # Fetch the society
         society = Society.objects.filter(id=society_id).first()
         if not society:
             return Response({"error": "Society not found."}, status=status.HTTP_404_NOT_FOUND)
@@ -721,7 +670,6 @@ class ManageSocietyDetailsView(APIView):
         # Pass the request context so the serializer can access the current user.
         serializer = SocietyRequestSerializer(data=request.data, context={"request": request}, partial=True)
         if serializer.is_valid():
-            # Pass the society instance explicitly to the serializer's save() method.
             society_request = serializer.save(society=society)
             return Response(
                 {
@@ -764,7 +712,6 @@ class SocietyRoleManagementView(APIView):
                         status=status.HTTP_400_BAD_REQUEST
                     )
                 
-                # Get the student
                 try:
                     new_vp = Student.objects.get(id=new_vp_id)
                     society.vice_president = new_vp
@@ -801,9 +748,7 @@ class SocietyRoleManagementView(APIView):
                 except Student.DoesNotExist:
                     return Response({"error": "Student not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        # Save the society with updated roles
         society.save()
-        
         return Response(SocietySerializer(society).data)
     
 class AdminManageSocietyDetailsAdminView(APIView):
