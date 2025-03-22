@@ -2,10 +2,7 @@ from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.db.models import F
-import api.models_files.user_models as user_models
-import api.models_files.society_models as society_models
-import api.models_files.event_models as event_models
-import api.models_files.request_models as request_models
+from api.models import User, Student
 
 
 class Notification(models.Model):
@@ -15,7 +12,7 @@ class Notification(models.Model):
     header = models.CharField(max_length=30, default="")
     body = models.CharField(max_length=200, default="")
     for_user = models.ForeignKey(
-        user_models.User,
+        User,
         on_delete=models.CASCADE,
         related_name="notifications",
         blank=False,
@@ -39,14 +36,14 @@ class ReportReply(models.Model):
     Replies to AdminReportRequest or other replies.
     Used by both admins and presidents.
     """
-    report = models.ForeignKey(request_models.AdminReportRequest, on_delete=models.CASCADE, related_name='replies')
+    report = models.ForeignKey("api.AdminReportRequest", on_delete=models.CASCADE, related_name='replies')
     parent_reply = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='child_replies')
     content = models.TextField(blank=False)
     created_at = models.DateTimeField(auto_now_add=True)
-    replied_by = models.ForeignKey(user_models.User, on_delete=models.CASCADE, related_name='report_replies')
+    replied_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='report_replies')
     is_admin_reply = models.BooleanField(default=False)  # To distinguish between admin and president replies
-    read_by_students = models.ManyToManyField(user_models.User, related_name='read_report_replies', blank=True)
-    hidden_for_students = models.ManyToManyField(user_models.User, related_name='hidden_replies', blank=True)
+    read_by_students = models.ManyToManyField(User, related_name='read_report_replies', blank=True)
+    hidden_for_students = models.ManyToManyField(User, related_name='hidden_replies', blank=True)
     
     def __str__(self):
         reply_type = "Admin" if self.is_admin_reply else "President"
@@ -64,13 +61,13 @@ class NewsNotification(models.Model):
         ("student_dashboard", "Student Dashboard"),
     ]
 
-    sender = models.ForeignKey(user_models.User, on_delete=models.CASCADE, related_name="sent_notifications")
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sent_notifications")
     title = models.CharField(max_length=100)
     content = models.TextField()
     target_type = models.CharField(max_length=50, choices=TARGET_CHOICES)
-    target_society = models.ForeignKey(society_models.Society, on_delete=models.CASCADE, null=True, blank=True, related_name="news_notifications")
-    target_event = models.ForeignKey(event_models.Event, on_delete=models.CASCADE, null=True, blank=True, related_name="event_notifications")
-    target_multiple_societies = models.ManyToManyField(society_models.Society, blank=True, related_name="multi_society_news")
+    target_society = models.ForeignKey("api.Society", on_delete=models.CASCADE, null=True, blank=True, related_name="news_notifications")
+    target_event = models.ForeignKey("api.Event", on_delete=models.CASCADE, null=True, blank=True, related_name="event_notifications")
+    target_multiple_societies = models.ManyToManyField("api.Society", blank=True, related_name="multi_society_news")
     created_at = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
@@ -82,10 +79,10 @@ class BroadcastMessage(models.Model):
     Model representing a broadcast message from a sender to multiple recipients, 
     societies, and events.
     """
-    sender = models.ForeignKey(user_models.User, on_delete=models.CASCADE, related_name="sent_broadcasts")
-    societies = models.ManyToManyField(society_models.Society, related_name="broadcasts", blank=True)
-    events = models.ManyToManyField(event_models.Event, related_name="broadcasts", blank=True)
-    recipients = models.ManyToManyField(user_models.User, related_name="received_broadcasts", blank=True)
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sent_broadcasts")
+    societies = models.ManyToManyField("api.Society", related_name="broadcasts", blank=True)
+    events = models.ManyToManyField("api.Event", related_name="broadcasts", blank=True)
+    recipients = models.ManyToManyField(User, related_name="received_broadcasts", blank=True)
     message = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -106,7 +103,7 @@ class SocietyNews(models.Model):
     ]
 
     society = models.ForeignKey(
-        society_models.Society,
+        "api.Society",
         on_delete=models.CASCADE,
         related_name="news_posts",
         blank=False,
@@ -120,7 +117,7 @@ class SocietyNews(models.Model):
     attachment = models.FileField(upload_to="society_news/attachments/", blank=True, null=True)
 
     author = models.ForeignKey(
-        user_models.Student,
+        Student,
         on_delete=models.SET_NULL,
         related_name="authored_news",
         null=True,
@@ -177,7 +174,7 @@ class NewsComment(models.Model):
         related_name="comments"
     )
     user = models.ForeignKey(
-        user_models.User,
+        User,
         on_delete=models.CASCADE,
         related_name="news_comments"
     )
@@ -193,12 +190,12 @@ class NewsComment(models.Model):
 
     # Reaction tracking
     likes = models.ManyToManyField(
-        user_models.User,
+        User,
         related_name="liked_news_comments",
         blank=True
     )
     dislikes = models.ManyToManyField(
-        user_models.User,
+        User,
         related_name="disliked_news_comments",
         blank=True
     )
@@ -243,13 +240,13 @@ class NewsPublicationRequest(models.Model):
     )
 
     requested_by = models.ForeignKey(
-        user_models.Student,
+        Student,
         on_delete=models.CASCADE,
         related_name="news_publication_requests"
     )
 
     reviewed_by = models.ForeignKey(
-        user_models.User,
+        User,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,

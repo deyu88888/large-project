@@ -6,8 +6,7 @@ from django.contrib.auth.models import AbstractUser
 from django.dispatch import receiver
 from django.db.models.signals import pre_save
 from django.utils.translation import gettext_lazy as _
-from django.dispatch import receiver
-import api.models_files.models_utility
+from api.models_files.models_utility import generate_icon
 
 
 class User(AbstractUser):
@@ -154,7 +153,7 @@ class Student(User):
         super().save(*args, **kwargs)
 
         if not self.icon.name or not self.icon:
-            buffer = models_utility.generate_icon(self.first_name[0], self.last_name[0])
+            buffer = generate_icon(self.first_name[0], self.last_name[0])
             filename = f"default_student_icon_{self.pk}.jpeg"
             self.icon.save(filename, ContentFile(buffer.getvalue()), save=True)
 

@@ -61,6 +61,7 @@ class SiteSettings(models.Model):
         return obj
 
 class ActivityLog(models.Model):
+    """A model to keep track of admin activity"""
     ACTION_CHOICES = [
         ("Delete", "Delete"),
         ("Approve", "Approve"),
