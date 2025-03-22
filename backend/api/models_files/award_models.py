@@ -1,6 +1,6 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-import user_models
+import api.models_files.user_models as user_models
 
 
 class Award(models.Model):

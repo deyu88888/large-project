@@ -2,6 +2,14 @@ from datetime import timedelta
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from api.models_files.user_models import Student, User
+from api.models_files.award_models import Award, AwardStudent
+from api.models_files.communication_models import Notification, ReportReply, NewsNotification, BroadcastMessage, SocietyNews, NewsComment
+from api.models_files.event_models import Event, Comment
+from api.models_files.society_models import Society, SocietyShowreel
+from api.models_files.request_models import Request, SocietyRequest, DescriptionRequest, SocietyShowreelRequest, UserRequest, \
+    EventRequest, AdminReportRequest, NewsPublicationRequest
+import api.models_files.recommendation_feedback_model
 
 
 class SiteSettings(models.Model):
@@ -28,9 +36,8 @@ class SiteSettings(models.Model):
         verbose_name=_("Introduction Content"),
         help_text=_("The main content of the website introduction. Use newlines to separate paragraphs."),
     )
-from django.db.models.signals import post_save
 
-        verbose_name_plural = _("Site Settings")
+    verbose_name_plural = _("Site Settings")
 
     def __str__(self):
         return "Site Settings"

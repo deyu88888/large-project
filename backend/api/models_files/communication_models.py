@@ -2,8 +2,10 @@ from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.db.models import F
-import user_models
-import request_models
+import api.models_files.user_models as user_models
+import api.models_files.society_models as society_models
+import api.models_files.event_models as event_models
+import api.models_files.request_models as request_models
 
 
 class Notification(models.Model):
@@ -13,7 +15,7 @@ class Notification(models.Model):
     header = models.CharField(max_length=30, default="")
     body = models.CharField(max_length=200, default="")
     for_user = models.ForeignKey(
-        "User",
+        user_models.User,
         on_delete=models.CASCADE,
         related_name="notifications",
         blank=False,
@@ -66,9 +68,9 @@ class NewsNotification(models.Model):
     title = models.CharField(max_length=100)
     content = models.TextField()
     target_type = models.CharField(max_length=50, choices=TARGET_CHOICES)
-    target_society = models.ForeignKey("Society", on_delete=models.CASCADE, null=True, blank=True, related_name="news_notifications")
-    target_event = models.ForeignKey("Event", on_delete=models.CASCADE, null=True, blank=True, related_name="event_notifications")
-    target_multiple_societies = models.ManyToManyField("Society", blank=True, related_name="multi_society_news")
+    target_society = models.ForeignKey(society_models.Society, on_delete=models.CASCADE, null=True, blank=True, related_name="news_notifications")
+    target_event = models.ForeignKey(event_models.Event, on_delete=models.CASCADE, null=True, blank=True, related_name="event_notifications")
+    target_multiple_societies = models.ManyToManyField(society_models.Society, blank=True, related_name="multi_society_news")
     created_at = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
@@ -81,8 +83,8 @@ class BroadcastMessage(models.Model):
     societies, and events.
     """
     sender = models.ForeignKey(user_models.User, on_delete=models.CASCADE, related_name="sent_broadcasts")
-    societies = models.ManyToManyField("Society", related_name="broadcasts", blank=True)
-    events = models.ManyToManyField("Event", related_name="broadcasts", blank=True)
+    societies = models.ManyToManyField(society_models.Society, related_name="broadcasts", blank=True)
+    events = models.ManyToManyField(event_models.Event, related_name="broadcasts", blank=True)
     recipients = models.ManyToManyField(user_models.User, related_name="received_broadcasts", blank=True)
     message = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
@@ -104,7 +106,7 @@ class SocietyNews(models.Model):
     ]
 
     society = models.ForeignKey(
-        "Society",
+        society_models.Society,
         on_delete=models.CASCADE,
         related_name="news_posts",
         blank=False,
@@ -118,7 +120,7 @@ class SocietyNews(models.Model):
     attachment = models.FileField(upload_to="society_news/attachments/", blank=True, null=True)
 
     author = models.ForeignKey(
-        "Student",
+        user_models.Student,
         on_delete=models.SET_NULL,
         related_name="authored_news",
         null=True,
@@ -188,7 +190,7 @@ class NewsComment(models.Model):
         on_delete=models.CASCADE,
         related_name="replies"
     )
-    
+
     # Reaction tracking
     likes = models.ManyToManyField(
         user_models.User,

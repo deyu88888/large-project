@@ -1,15 +1,14 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-import user_models
-import society_models
-import event_models
-import communication_models
+import api.models_files.user_models as user_models
+import api.models_files.society_models as society_models
+import api.models_files.event_models as event_models
+import api.models_files.communication_models as communication_models
 
 class Request(models.Model):
     """
     Blueprint for Requests made by students requiring admin approval
     """
-
     INTENT = [
         ("CreateSoc", "Create Society"),
         ("UpdateSoc", "Update Society"),
@@ -81,7 +80,7 @@ class DescriptionRequest(models.Model):
     new_description = models.TextField(blank=False)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="Pending")
     created_at = models.DateTimeField(auto_now_add=True)
-    reviewed_by = models.ForeignKey("User", on_delete=models.SET_NULL, null=True, blank=True)
+    reviewed_by = models.ForeignKey(user_models.User, on_delete=models.SET_NULL, null=True, blank=True)
 
     def __str__(self):
         return f"Description update request for {self.society.name} - {self.status}"

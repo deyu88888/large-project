@@ -2,8 +2,7 @@ from django.core.files.base import ContentFile
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-import models_utility
-
+import api.models_files.models_utility as models_utility
 
 
 def validate_social_media_links(value):

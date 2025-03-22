@@ -7,7 +7,8 @@ from django.dispatch import receiver
 from django.db.models.signals import pre_save
 from django.utils.translation import gettext_lazy as _
 from django.dispatch import receiver
-import models_utility
+import api.models_files.models_utility
+
 
 class User(AbstractUser):
     """

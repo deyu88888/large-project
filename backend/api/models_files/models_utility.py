@@ -2,6 +2,7 @@ from io import BytesIO
 from random import randint
 from PIL import Image, ImageDraw, ImageFont
 
+
 def generate_icon(initial1: str, initial2: str) -> BytesIO:
     """Generates an basic default icon"""
     # Generates a random RGB value

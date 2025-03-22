@@ -2,6 +2,20 @@ from datetime import timedelta
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+import api.models_files.user_models as user_models
+import api.models_files.society_models as society_models
+import api.models_files.event_models as event_models
+
+
+def get_date():
+    """Returns today's date"""
+    return timezone.now().date()
+
+
+def get_time():
+    """Returns the current time"""
+    return timezone.now().time()
+
 
 class Event(models.Model):
     """
@@ -15,12 +29,12 @@ class Event(models.Model):
         blank=False, null=False, default=timedelta(hours=1)
     )
     hosted_by = models.ForeignKey(
-        "Society", on_delete=models.CASCADE, related_name="events", null=True
+        society_models.Society, on_delete=models.CASCADE, related_name="events", null=True
     )
     location = models.CharField(max_length=300, default="")
 
     max_capacity = models.PositiveIntegerField(default=0)  # 0 = No limit
-    current_attendees = models.ManyToManyField('Student', blank=True)
+    current_attendees = models.ManyToManyField(user_models.Student, blank=True)
 
     STATUS_CHOICES = [
         ("Pending", "Pending Approval"),
@@ -50,8 +64,8 @@ class Comment(models.Model):
     """
     A comment for an event
     """
-    event = models.ForeignKey("Event", on_delete=models.CASCADE, related_name="comments")
-    user = models.ForeignKey("User", on_delete=models.CASCADE)
+    event = models.ForeignKey(event_models.Event, on_delete=models.CASCADE, related_name="comments")
+    user = models.ForeignKey(user_models.User, on_delete=models.CASCADE)
     content = models.TextField()
     create_at = models.DateTimeField(auto_now_add=True)
     parent_comment = models.ForeignKey(
@@ -61,8 +75,8 @@ class Comment(models.Model):
         on_delete=models.CASCADE,
         related_name="replies"
     )
-    likes = models.ManyToManyField(User, related_name="liked_comments", blank=True)
-    dislikes = models.ManyToManyField(User, related_name="disliked_comments", blank=True)
+    likes = models.ManyToManyField(user_models.User, related_name="liked_comments", blank=True)
+    dislikes = models.ManyToManyField(user_models.User, related_name="disliked_comments", blank=True)
 
     def total_likes(self):
         """Returns the number of likes of a comment"""
@@ -74,12 +88,3 @@ class Comment(models.Model):
 
     def __str__(self):
             return f"{self.user.username}: {self.content[:30]}"
-
-def get_date():
-    """Returns today's date"""
-    return timezone.now().date()
-
-
-def get_time():
-    """Returns the current time"""
-    return timezone.now().time()
