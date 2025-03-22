@@ -5,7 +5,7 @@ from .views import (
     AdminActivityLogView, AdminManageEventDetailsAdminView, AdminDeleteView, AdminManageStudentDetailsAdminView,
     AdminReportView, AwardStudentView, AwardView, BroadcastListAPIView, EventListView,
     ManageEventDetailsView, NewsView, PendingMembersView, PendingRequestsView, RegisterView, CurrentUserView,
-    SocietyMembersListView, StudentNotificationsView, StartSocietyRequestView, ManageSocietyDetailsView,
+    SocietyMembersListView, SocietyRoleManagementView, StudentNotificationsView, StartSocietyRequestView, ManageSocietyDetailsView,
     StudentInboxView, AdminView, StudentView, DashboardStatsView, RecentActivitiesView, NotificationsView,
     EventCalendarView, StudentSocietiesView, JoinSocietyView, RSVPEventView, EventHistoryView, get_popular_societies,
     CreateEventRequestView, custom_media_view, get_sorted_events, StudentSocietyDataView, AllEventsView,
@@ -107,13 +107,14 @@ urlpatterns = [
     path("awards/<int:pk>/", AwardView.as_view(), name="award_detail"),  # Retrieve, Update, Delete Award
 
     # Award-Student Endpoints
-    path("award-students", AwardStudentView.as_view(), name="award_students"),  # List & Assign Awards to Students
-    path("award-students/<int:pk>", AwardStudentView.as_view(), name="award_student_detail"),  # Retrieve, Update, Delete Assignment
+    path("award-students/", AwardStudentView.as_view(), name="award_students"),  # List & Assign Awards to Students
+    path("award-students/<int:pk>/", AwardStudentView.as_view(), name="award_student_detail"),  # Retrieve, Update, Delete Assignment
 
     # President page
     path("society/<int:society_id>/pending-members/", PendingMembersView.as_view(), name="pending-members"),
     path("society/<int:society_id>/pending-members/<int:request_id>/", PendingMembersView.as_view(), name="process-pending-member"),
     path("society/<int:society_id>/members/", SocietyMembersListView.as_view(), name="society-members"),
+    path("society-roles/<int:society_id>/", SocietyRoleManagementView.as_view(), name="society-members"),
 
     # Report to admin
     path("report-to-admin", AdminReportView.as_view(), name="report-to-admin"),

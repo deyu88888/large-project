@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { apiClient } from "../../api";
 import {
@@ -25,31 +25,49 @@ interface RouteParams {
 const ROLE_OPTIONS: RoleOption[] = [
   { key: "vice_president", label: "Vice President" },
   { key: "event_manager", label: "Event Manager" },
-  { key: "treasurer", label: "Treasurer" },
 ];
 
 const AssignSocietyRole: React.FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
-  const { society_id, student_id } = useParams<RouteParams>();
+  const { memberId } = useParams<{ memberId: string }>();
+  const { societyId } = useParams<{ societyId: string }>();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (!societyId) {
+      setError("Society ID is missing. Please go back and try again.");
+    }
+  }, [societyId]);
+
   const handleAssignRole = async (roleKey: string): Promise<void> => {
+    if (!societyId) {
+      setError("Cannot assign role: Society ID is missing");
+      return;
+    }
+  
     try {
       setLoading(true);
       
       const payload: Record<string, number> = {
-        [roleKey]: Number(student_id)
+        [roleKey]: Number(memberId)
       };
       
-      await apiClient.patch(`/api/manage-society-details/${society_id}`, payload);
-      alert(`Assigned ${roleKey.replace("_", " ")} role to student ${student_id}`);
+      // Use the new dedicated endpoint for role assignment
+      await apiClient.patch(`/api/society-roles/${societyId}/`, payload);
+      alert(`Assigned ${roleKey.replace("_", " ")} role to student ${memberId}`);
       navigate(-1);
     } catch (err: any) {
       console.error("Error assigning role", err.response?.data || err);
-      setError("Failed to assign role. Please try again.");
+      
+      // Show the specific error message from the backend if available
+      if (err.response?.data?.error) {
+        setError(err.response.data.error);
+      } else {
+        setError("Failed to assign role. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -81,7 +99,7 @@ const AssignSocietyRole: React.FC = () => {
           variant="body1"
           sx={{ color: subtitleColor }}
         >
-          Choose a role to assign to student with ID: {student_id}
+          Choose a role to assign to student with ID: {memberId}
         </Typography>
       </Box>
 

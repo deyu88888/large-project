@@ -167,12 +167,11 @@ const routes = [
           { path: "view-society-members", element: <PageWithTitle title="Society Members"><ViewSocietyMembers /></PageWithTitle> },
           { path: "create-event", element: <PageWithTitle title="Create Event"><CreateEventPage /></PageWithTitle> },
           { path: "edit-event/:eventId", element: <PageWithTitle title="Edit Event"><EditEventDetails /></PageWithTitle> },
-          { path: "give-award/:memberId", element: <PageWithTitle title="Give Award to Member"><GiveAwardPage /></PageWithTitle> },
+          { path: "give-award-page/:memberId", element: <PageWithTitle title="Give Award to Member"><GiveAwardPage /></PageWithTitle> },
           { path: "assign-role/:memberId", element: <PageWithTitle title="Assign Society Role"><AssignRolePage /></PageWithTitle> },
           { path: "manage-society-news", element: <PageWithTitle title="Manage Society News"><SocietyNewsManager /></PageWithTitle> },
         ],
       },
-      // Added society management routes
       {
         path: "president-page/:societyId",
         element: (
@@ -199,7 +198,6 @@ const routes = [
           { index: true, element: <PageWithTitle title="Manage Society Details"><ManageSocietyDetails /></PageWithTitle> },
         ],
       },
-      // New route for managing society news
       {
         path: "manage-society-news/:societyId",
         element: (
