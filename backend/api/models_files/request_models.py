@@ -3,7 +3,6 @@ from django.utils.translation import gettext_lazy as _
 import api.models_files.user_models as user_models
 import api.models_files.society_models as society_models
 import api.models_files.event_models as event_models
-import api.models_files.communication_models as communication_models
 
 class Request(models.Model):
     """

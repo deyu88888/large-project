@@ -1,6 +1,6 @@
 # recommendation_feedback_serializers.py
 from rest_framework import serializers
-from .recommendation_feedback_model import RecommendationFeedback
+from api.models import RecommendationFeedback
 
 class RecommendationFeedbackSerializer(serializers.ModelSerializer):
     """

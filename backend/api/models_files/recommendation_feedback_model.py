@@ -1,8 +1,6 @@
-# Add this to your models.py file or create a new file
-
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
-from .models import Student, Society
+from api.models import Student, Society
 
 class RecommendationFeedback(models.Model):
     """
@@ -16,7 +14,7 @@ class RecommendationFeedback(models.Model):
         (4, 'Very relevant'),
         (5, 'Extremely relevant')
     ]
-    
+
     student = models.ForeignKey(
         Student, 
         on_delete=models.CASCADE, 
@@ -43,11 +41,11 @@ class RecommendationFeedback(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         unique_together = ['student', 'society']
         verbose_name = 'Recommendation Feedback'
         verbose_name_plural = 'Recommendation Feedback'
-        
+
     def __str__(self):
         return f"{self.student.username} - {self.society.name} - {self.rating}★"

@@ -12,19 +12,8 @@ from .views import (
     AllEventsView, EventDetailView, EventCommentsView, AdminDescriptionRequestView, AdminManageSocietyDetailsAdminView, 
     like_comment, dislike_comment, EventCommentsView, toggle_follow, StudentProfileView, AdminRepliesListView,
     AdminActivityLogView, AdminManageEventDetailsAdminView, AdminDeleteView, AdminManageStudentDetailsAdminView, ReportReplyView, 
-    MyReportsView, MyReportsWithRepliesView, ReportThreadView, AdminReportsWithRepliesView, ReportReplyNotificationsView)
-    AdminReportView, AwardStudentView, AwardView, BroadcastListAPIView, EventListView, EventRequestView,
-    ManageEventDetailsView, NewsView, PendingMembersView, PendingRequestsView, RegisterView,
-    CurrentUserView, SocietyMembersListView, StudentNotificationsView, StartSocietyRequestView,
-    ManageSocietyDetailsView, StudentInboxView, AdminView, StudentView, EventView, SocietyRequestView,
-    DashboardStatsView, RecentActivitiesView, NotificationsView, EventCalendarView,
-    StudentSocietiesView, JoinSocietyView, RSVPEventView, EventHistoryView, get_popular_societies,
-    CreateEventRequestView, custom_media_view, get_sorted_events, StudentSocietyDataView,
-    AllEventsView, EventDetailView, DescriptionRequestView, toggle_follow, StudentProfileView,
-    like_comment, dislike_comment, EventCommentsView, NewsPublicationRequestView,
-    AdminNewsApprovalView, ManageSocietyDetailsAdminView, AdminRepliesListView,
-    ActivityLogView, ManageEventDetailsAdminView, DeleteView, ManageStudentDetailsAdminView, ReportReplyView, 
-    MyReportsView, MyReportsWithRepliesView, ReportThreadView, AdminReportsWithRepliesView, ReportReplyNotificationsView
+    MyReportsView, MyReportsWithRepliesView, ReportThreadView, AdminReportsWithRepliesView, ReportReplyNotificationsView,
+    NewsPublicationRequestView, AdminNewsApprovalView
 )
 from .utils import request_otp, verify_otp
 from .recommendation_views import RecommendedSocietiesView, SocietyRecommendationExplanationView

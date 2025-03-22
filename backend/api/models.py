@@ -9,7 +9,7 @@ from api.models_files.event_models import Event, Comment
 from api.models_files.society_models import Society, SocietyShowreel
 from api.models_files.request_models import Request, SocietyRequest, DescriptionRequest, SocietyShowreelRequest, UserRequest, \
     EventRequest, AdminReportRequest, NewsPublicationRequest
-import api.models_files.recommendation_feedback_model
+from api.models_files.recommendation_feedback_model import RecommendationFeedback
 
 
 class SiteSettings(models.Model):
