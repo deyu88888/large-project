@@ -133,7 +133,7 @@ const MySocieties: React.FC = () => {
                 >
                   <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                     <img
-                      src={"http://localhost:8000/api" + society.icon}
+                      src={society.icon}
                       alt={`${society.name} icon`}
                       style={{
                         width: "35px",

@@ -4,27 +4,7 @@ import { apiClient } from "../api";
 import { CircularProgress, Typography, Card, CardContent } from "@mui/material";
 import { format } from "date-fns";
 import { CommentSection } from "../components/CommentSection";
-
-function isUserAuthenticated(): boolean {
-  const token = localStorage.getItem("token");
-  if (!token) return false;
-  try {
-    const base64Url = token.split('.')[1];
-    if (!base64Url) return false;
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(
-      atob(base64)
-        .split('')
-        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-        .join('')
-    );
-    const payload = JSON.parse(jsonPayload);
-    return payload.exp * 1000 > Date.now();
-  } catch (error) {
-    console.error("Error decoding token:", error);
-    return false;
-  }
-}
+import useAuthCheck from "../hooks/useAuthCheck";
 
 const CommentsSectionWrapper: React.FC<{ isAuthenticated: boolean; children: React.ReactNode }> = ({
   isAuthenticated,
@@ -55,11 +35,11 @@ const CommentsSectionWrapper: React.FC<{ isAuthenticated: boolean; children: Rea
 };
 
 const EventDetailPage: React.FC = () => {
-  const { eventId } = useParams();
-  const numericEventId = eventId ? parseInt(eventId, 10) : undefined;
+  const { event_id } = useParams();
+  const numericEventId = event_id ? parseInt(event_id, 10) : undefined;
   const [event, setEvent] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [isAuthenticated] = useState<boolean>(isUserAuthenticated());
+  const { isAuthenticated, } = useAuthCheck();
   // const isAuthenticated = Boolean(localStorage.getItem("token"));
   const [, setComments] = useState<any[]>([]);
   const wsRef = useRef<WebSocket | null>(null);
@@ -161,7 +141,7 @@ const EventDetailPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      <CommentsSectionWrapper isAuthenticated={isAuthenticated}>
+      <CommentsSectionWrapper isAuthenticated={!!isAuthenticated}>
         <CommentSection eventId={numericEventId as number} />
       </CommentsSectionWrapper>
     </div>

@@ -3,27 +3,7 @@ import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import {Card, CardContent, Typography, CardActionArea, Avatar, Box} from '@mui/material';
 import {FaCalendarAlt, FaSearch} from 'react-icons/fa';
 import axios from 'axios';
-
-function isUserAuthenticated(): boolean {
-  const token = localStorage.getItem("token");
-  if (!token) return false;
-  try {
-    const base64Url = token.split('.')[1];
-    if (!base64Url) return false;
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(
-      atob(base64)
-        .split('')
-        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-        .join('')
-    );
-    const payload = JSON.parse(jsonPayload);
-    return payload.exp * 1000 > Date.now();
-  } catch (error) {
-    console.error("Error decoding token:", error);
-    return false;
-  }
-}
+import useAuthCheck from "../hooks/useAuthCheck";
 
 const SearchResultsPage = () => {
   const [searchParams] = useSearchParams();
@@ -33,7 +13,7 @@ const SearchResultsPage = () => {
   const [results, setResults] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('all');
   const [loading, setLoading] = useState(false);
-  const [isAuthenticated] = useState<boolean>(isUserAuthenticated());
+  const { isAuthenticated, } = useAuthCheck();
 
   useEffect(() => {
     if (!queryParam) return;
@@ -55,9 +35,14 @@ const SearchResultsPage = () => {
 
   const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && query.trim()) {
-      navigate(`/search?q=${encodeURIComponent(query.trim())}`);
+      const searchPath = location.pathname.startsWith('/student')
+        ? '/student/student-search'
+        : '/search';
+
+      navigate(`${searchPath}?q=${encodeURIComponent(query.trim())}`);
     }
   };
+
 
   const ResultSection = ({title, items, type
   }: {
@@ -72,12 +57,14 @@ const SearchResultsPage = () => {
         <Typography variant="h6" gutterBottom>{title}</Typography>
         <Box display="grid" gap={2}>
           {items.map((item, idx) => {
+            const prefix = location.pathname.startsWith('/student') ? '/student' : '';
+
             const link =
               type === 'society'
-                ? `/view-society/${item.id}`
+                ? `${prefix}/view-society/${item.id}`
                 : type === 'event'
-                ? `/event/${item.id}`
-                : `/profile/${item.id}`;
+                ? `${prefix}/event/${item.id}`
+                : `${prefix}/profile/${item.id}`;
 
             const primaryText =
               type === 'student'
@@ -124,16 +111,11 @@ const SearchResultsPage = () => {
     <p className="text-gray-500">No {label} Found.</p>
   );
 
-  const UserSection = ({users, isAuthenticated
-  }: {
-    users: any[];
-    isAuthenticated: boolean;
-  }) => {
+  const UserSection = ({users, isAuthenticated}: {users: any[]; isAuthenticated: boolean;}) => {
     if (!users.length) return null;
 
     return (
       <>
-        <Typography variant="h6" gutterBottom>Users</Typography>
         {!isAuthenticated ? (
           <Typography
             variant="body2"
@@ -159,6 +141,7 @@ const SearchResultsPage = () => {
     );
   };
 
+
   const renderTabContent = () => {
     if (!results) return null;
 
@@ -179,7 +162,7 @@ const SearchResultsPage = () => {
             )}
 
             {hasUsers && (
-              <UserSection users={results.students} isAuthenticated={isAuthenticated} />
+              <UserSection users={results.students} isAuthenticated={!!isAuthenticated} />
             )}
 
             {!hasUsers && !hasEvents && !hasSocieties && (
@@ -204,7 +187,7 @@ const SearchResultsPage = () => {
 
       case 'users':
         return hasUsers ? (
-          <UserSection users={results.students} isAuthenticated={isAuthenticated} />
+          <UserSection users={results.students} isAuthenticated={!!isAuthenticated} />
         ) : (
           <NoResult label="User" />
         );
@@ -226,22 +209,29 @@ const SearchResultsPage = () => {
           onKeyDown={handleSearch}
         />
         <button
-          onClick={() => query.trim() && navigate(`/search?q=${encodeURIComponent(query.trim())}`)}
+          onClick={() => {
+            if (query.trim()) {
+              const searchPath = location.pathname.startsWith('/student')
+                  ? '/student/student-search'
+                  : '/search';
+              navigate(`${searchPath}?q=${encodeURIComponent(query.trim())}`);
+            }
+          }}
           className="bg-blue-600 text-white px-4 py-2 rounded flex items-center justify-center"
         >
-          <FaSearch />
+          <FaSearch/>
         </button>
       </div>
 
       {/* Tabs */}
       <div className="flex gap-2 mb-6">
         {['all', 'societies', 'events', 'users'].map(tab => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 rounded ${activeTab === tab ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
-          >
-            {tab === 'all' ? 'All Results' : tab.charAt(0).toUpperCase() + tab.slice(1)}
+            <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-4 py-2 rounded ${activeTab === tab ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+            >
+              {tab === 'all' ? 'All Results' : tab.charAt(0).toUpperCase() + tab.slice(1)}
           </button>
         ))}
       </div>
