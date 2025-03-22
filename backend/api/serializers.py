@@ -210,25 +210,6 @@ class EventCalendarSerializer(serializers.ModelSerializer):
 
 
 
-class ReportReplySerializer(serializers.ModelSerializer):
-    """
-    Serializer for the ReportReply model
-    """
-    replied_by_username = serializers.CharField(source='replied_by.username', read_only=True)
-    child_replies = serializers.SerializerMethodField()
-    
-    class Meta:
-        model = ReportReply
-        fields = ['id', 'report', 'parent_reply', 'content', 'created_at', 
-                  'replied_by', 'replied_by_username', 'is_admin_reply', 'child_replies']
-        extra_kwargs = {
-            'replied_by': {'read_only': True},
-            'is_admin_reply': {'read_only': True}
-        }
-    
-    def get_child_replies(self, obj):
-        children = obj.child_replies.all().order_by('created_at')
-        return ReportReplySerializer(children, many=True).data
 
 class CommentSerializer(serializers.ModelSerializer):
     """
