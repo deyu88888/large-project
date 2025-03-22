@@ -49,6 +49,13 @@ class User(AbstractUser):
         related_name="followers",
         blank=True,
     )
+    
+    follower = models.ManyToManyField(
+         "self",
+         symmetrical=False,
+         related_name="followings",
+         blank=True,
+    )
 
     # This flag differentiates super-admins from normal admins
     is_super_admin = models.BooleanField(default=False)

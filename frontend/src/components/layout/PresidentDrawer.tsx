@@ -98,7 +98,7 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
         {drawer ? (
           <Box sx={{ textAlign: "center" }}>
             <img
-            src={"http://localhost:8000/api" + student?.icon}
+            src={student?.icon}
             alt={`${student?.username} icon`}
             style={{
               width: "72px",
@@ -116,7 +116,7 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
           </Box>
         ) : (
           <img
-            src={"http://localhost:8000/api" + student?.icon}
+            src={student?.icon}
             alt={`${student?.username} icon`}
             style={{
               width: "25px",

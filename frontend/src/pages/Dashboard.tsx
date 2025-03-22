@@ -322,32 +322,24 @@ const Dashboard: React.FC = () => {
   const [eventsLoading, setEventsLoading] = useState<boolean>(true);
   const [eventsError, setEventsError] = useState<string | null>(null);
 
-  // -- Ensure WebSocket connection is established --
+  
+  // Track previous status to only refresh when transitioning to AUTHENTICATED
+  const prevStatus = useRef(status);
+
   useEffect(() => {
-    // If disconnected, try to connect once
+    // On mount, if disconnected, connect once.
     if (status === CONNECTION_STATES.DISCONNECTED) {
       connect();
     }
-  }, [status, connect]);
-
-  // Listen for WebSocket status changes for debugging
-  useEffect(() => {
-    console.log(`WebSocket status changed: ${status}`);
-    
-    // If connected but not authenticated, this is potentially public access
-    // Try to initialize public access mode
-    if (status === CONNECTION_STATES.CONNECTED || status === CONNECTION_STATES.DISCONNECTED) {
-      // Try to connect with public access mode
-      connect();
-    }
-    
-    // If we're authenticated or connected, refresh the data
-    if (status === CONNECTION_STATES.AUTHENTICATED || status === CONNECTION_STATES.CONNECTED) {
+    // On the first transition to AUTHENTICATED, refresh data.
+    if (status === CONNECTION_STATES.AUTHENTICATED && prevStatus.current !== CONNECTION_STATES.AUTHENTICATED) {
       refreshStats();
       refreshActivities();
       refreshNotifications();
     }
-  }, [status, refreshStats, refreshActivities, refreshNotifications, connect]);
+    prevStatus.current = status;
+    // Only run this effect when 'status' changes.
+  }, [status]);
 
   useEffect(() => {
     let mounted = true;

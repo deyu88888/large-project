@@ -156,6 +156,9 @@ urlpatterns = [
     path("news/<int:pk>", NewsView.as_view(), name="mark_news_read"),   # TODO: implement this later
     path("get-news/", BroadcastListAPIView.as_view(), name="get-news"),
 
+    # search engine
+    path("search/", SearchView.as_view(), name="search"),
+
     path("society/<int:society_id>/news/", SocietyNewsListView.as_view(), name="society_news_list"),
     path("news/<int:news_id>/", SocietyNewsDetailView.as_view(), name="society_news_detail"),
     path("news/<int:news_id>/comments/", NewsCommentView.as_view(), name="news_comments"),
