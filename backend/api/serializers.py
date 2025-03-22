@@ -21,13 +21,16 @@ class UserSerializer(serializers.ModelSerializer):
     Serializer for the base User model.
     """
     is_following = serializers.SerializerMethodField()
+    following_count = serializers.SerializerMethodField()
+    followers_count = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = [
             'id', 'username', 'password', 'first_name',
             'last_name', 'email', 'is_active', 'role', 'following',
-            'is_following',  "is_super_admin", "is_staff", "is_superuser"
+            'is_following', 'following_count', 'followers_count',
+            'is_super_admin', 'is_staff', 'is_superuser'
         ]
         extra_kwargs = {
             'password': {'write_only': True, 'min_length': 8},
@@ -41,6 +44,12 @@ class UserSerializer(serializers.ModelSerializer):
         if request and request.user.is_authenticated:
             return request.user.following.filter(id=obj.id).exists()
         return False
+
+    def get_followers_count(self, obj):
+        return obj.followers.count()
+
+    def get_following_count(self, obj):
+        return obj.following.count()
 
     def create(self, validated_data):
         user = User.objects.create_user(**validated_data)
@@ -72,7 +81,7 @@ class StudentSerializer(UserSerializer):
     is_vice_president = serializers.BooleanField(read_only=True)
     is_event_manager = serializers.BooleanField(read_only=True)
     icon = serializers.SerializerMethodField()
-    
+
 
     class Meta(UserSerializer.Meta):
         model = Student
@@ -81,7 +90,7 @@ class StudentSerializer(UserSerializer):
                                                'event_manager_of_society', 'is_event_manager', 'icon']
         read_only_fields = ["is_president", "is_vice_president", "is_event_manager", "award_students"]
 
-    
+
     def get_event_manager_of_society(self, obj):
         """Get the ID of the society where the student is event manager"""
         try:
@@ -90,16 +99,16 @@ class StudentSerializer(UserSerializer):
                 society = obj.event_manager_of_society.first()
                 if society:
                     return society.id
-            
+
             # If it's not a RelatedManager but a direct reference
             elif hasattr(obj, 'event_manager_of_society') and obj.event_manager_of_society:
                 if hasattr(obj.event_manager_of_society, 'pk'):
                     return obj.event_manager_of_society.pk
         except Exception as e:
             print(f"DEBUG - Error in get_event_manager_of_society: {str(e)}")
-        
+
         return None
-    
+
     def get_vice_president_of_society(self, obj):
         """Get the ID of the society where the student is vice president"""
         try:
@@ -108,15 +117,23 @@ class StudentSerializer(UserSerializer):
                 society = obj.vice_president_of_society.first()
                 if society:
                     return society.id
-            
+
             # If it's not a RelatedManager but a direct reference
             elif hasattr(obj, 'vice_president_of_society') and obj.vice_president_of_society:
                 if hasattr(obj.vice_president_of_society, 'pk'):
                     return obj.vice_president_of_society.pk
         except Exception as e:
             print(f"DEBUG - Error in get_vice_president_of_society: {str(e)}")
-        
+
         return None
+
+    def get_icon(self, obj):
+        """Return full URL for the icon image"""
+        if obj.icon:
+            request = self.context.get("request")
+            return request.build_absolute_uri(obj.icon.url) if request else obj.icon.url
+        return None
+
 
     def validate_email(self, value):
         """
@@ -135,13 +152,6 @@ class StudentSerializer(UserSerializer):
         if User.objects.filter(username=value).exclude(id=instance.id if instance else None).exists():
             raise serializers.ValidationError("user with this username already exists.")
         return value
-
-    def get_icon(self, obj):
-        """Return full URL for the icon image"""
-        if obj.icon:
-            request = self.context.get("request")
-            return request.build_absolute_uri(obj.icon.url) if request else obj.icon.url
-        return None
 
     def create(self, validated_data):
         """
@@ -384,7 +394,7 @@ class JoinSocietySerializer(serializers.Serializer):
 
         if society.society_members.filter(id=request_user.id).exists():
             raise serializers.ValidationError("You are already a member of this society.")
-            
+
         # Check if there's already a pending request
         pending_request = SocietyRequest.objects.filter(
             from_student=request_user.student,
@@ -392,7 +402,7 @@ class JoinSocietySerializer(serializers.Serializer):
             intent="JoinSoc",
             approved=False
         ).exists()
-        
+
         if pending_request:
             raise serializers.ValidationError("You already have a pending request to join this society.")
 
@@ -547,7 +557,7 @@ class SocietyRequestSerializer(RequestSerializer):
 
     def create(self, validated_data):
         photos_data = validated_data.pop('showreel_images_request', [])
-        
+
         # Retrieve the request from context
         request_obj = self.context.get("request")
         if not request_obj:
@@ -555,19 +565,19 @@ class SocietyRequestSerializer(RequestSerializer):
         user = request_obj.user
         if not hasattr(user, "student"):
             raise serializers.ValidationError("Only students can request society updates.")
-        
+
         # Set the required from_student field from the current user’s student instance.
         validated_data["from_student"] = user.student
-        
+
         # Optionally, set default intent and approved flag if not provided.
         validated_data.setdefault("intent", "UpdateSoc")
         validated_data.setdefault("approved", False)
-        
+
         society_request = SocietyRequest.objects.create(**validated_data)
-        
+
         for photo_data in photos_data:
             SocietyShowreelRequest.objects.create(society=society_request, **photo_data)
-        
+
         return society_request
 
     def update(self, instance, validated_data):
@@ -821,16 +831,16 @@ class ReportReplySerializer(serializers.ModelSerializer):
     """
     replied_by_username = serializers.CharField(source='replied_by.username', read_only=True)
     child_replies = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = ReportReply
-        fields = ['id', 'report', 'parent_reply', 'content', 'created_at', 
+        fields = ['id', 'report', 'parent_reply', 'content', 'created_at',
                   'replied_by', 'replied_by_username', 'is_admin_reply', 'child_replies']
         extra_kwargs = {
             'replied_by': {'read_only': True},
             'is_admin_reply': {'read_only': True}
         }
-    
+
     def get_child_replies(self, obj):
         children = obj.child_replies.all().order_by('created_at')
         return ReportReplySerializer(children, many=True).data
@@ -863,9 +873,14 @@ class CommentSerializer(serializers.ModelSerializer):
         return serializer.data
 
     def get_user_data(self, obj):
+        request = self.context.get("request", None)
+        icon_url = None
+        if hasattr(obj.user, 'student') and obj.user.student.icon:
+            icon_url = request.build_absolute_uri(obj.user.student.icon.url) if request else obj.user.student.icon.url
         return {
             "id": obj.user.id,
             "username": obj.user.username,
+            "icon": icon_url,
         }
 
     def get_likes(self, obj):

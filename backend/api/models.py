@@ -54,6 +54,13 @@ class User(AbstractUser):
         blank=True,
     )
 
+    follower = models.ManyToManyField(
+        "self",
+        symmetrical=False,
+        related_name="followings",
+        blank=True,
+    )
+
     # This flag differentiates super-admins from normal admins
     is_super_admin = models.BooleanField(default=False)
 
@@ -69,7 +76,7 @@ class User(AbstractUser):
 
     def is_admin(self):
         return self.role == "admin" or self.is_super_admin
-    
+
     @classmethod
     def get_admins(cls):
         """Return all admin users (including super-admins)."""
@@ -79,7 +86,7 @@ class User(AbstractUser):
         """
         Assign users to the correct groups based on role.
         """
-        # super().save(*args, **kwargs) 
+        # super().save(*args, **kwargs)
 
         if self.is_super_admin:
             self.is_superuser = True
@@ -166,8 +173,8 @@ class Student(User):
 
     def save(self, *args, **kwargs):
         self.role = "student"
-        
-    
+
+
     # Check for conflicting leadership roles
         leadership_roles = []
         if self.is_president:
@@ -176,7 +183,7 @@ class Student(User):
             leadership_roles.append("vice president")
         if self.is_event_manager:
             leadership_roles.append("event manager")
-        
+
         if len(leadership_roles) > 1:
             raise ValidationError(f"A student can only hold one leadership role. This student is assigned as: {', '.join(leadership_roles)}")
 
@@ -206,21 +213,21 @@ def validate_social_media_links(value):
     """
     # Define allowed social media platforms
     allowed_platforms = ['WhatsApp', 'Facebook', 'Instagram', 'X', 'Email' 'Other']
-    
+
     # Check that value is a dictionary
     if not isinstance(value, dict):
         raise ValidationError("Social media links must be provided as a dictionary.")
-    
+
     # Check that all keys are valid platforms
     for key in value.keys():
         if key not in allowed_platforms:
             raise ValidationError(f"'{key}' is not a valid social media platform. Allowed platforms are: {', '.join(allowed_platforms)}")
-    
+
     # Check that all values are strings (links)
     for platform, link in value.items():
         if not isinstance(link, str):
             raise ValidationError(f"The value for '{platform}' must be a string URL.")
-        
+
         # Optional: Add URL validation if needed
         # This is a simple check, you might want to use more sophisticated URL validation
         if link and not (link.startswith('http://') or link.startswith('https://') or link.startswith('mailto:')):
@@ -281,11 +288,11 @@ class Society(models.Model):
     category = models.CharField(max_length=50, default="General")
     # Social media links as a JSON field with validation
     social_media_links = models.JSONField(
-        default=dict, 
+        default=dict,
         blank=True,
         help_text="Dictionary with keys: WhatsApp, Facebook, Instagram, X, Email, Other - each with a URL value"
     )
-    
+
     membership_requirements = models.TextField(blank=True, null=True)
     upcoming_projects_or_plans = models.TextField(blank=True, null=True)
     tags = models.JSONField(default=list, blank=True)  # Stores tags as a list
@@ -296,31 +303,31 @@ class Society(models.Model):
         Additional model-wide validation
         """
         super().clean()
-        
+
         # Validate social_media_links if it's not empty
         if self.social_media_links:
             # Check that value is a dictionary
             if not isinstance(self.social_media_links, dict):
                 raise ValidationError({"social_media_links": "Social media links must be provided as a dictionary."})
-            
+
             # Define allowed social media platforms
             allowed_platforms = ['WhatsApp', 'Facebook', 'Instagram', 'X', 'Email', 'Other']
-            
+
             # Check that all keys are valid platforms
             for key in self.social_media_links.keys():
                 if key not in allowed_platforms:
                     raise ValidationError({"social_media_links": f"'{key}' is not a valid social media platform. Allowed platforms are: {', '.join(allowed_platforms)}"})
-            
+
             # Process and validate values
             for platform, link in list(self.social_media_links.items()):
                 # Skip if empty
                 if not link:
                     continue
-                    
+
                 # Check that the value is a string
                 if not isinstance(link, str):
                     raise ValidationError({"social_media_links": f"The value for '{platform}' must be a string URL."})
-                
+
                 # Special handling for Email field - automatically add mailto: prefix
                 if platform == 'Email' and not (link.startswith('http://') or link.startswith('https://') or link.startswith('mailto:')):
                     self.social_media_links[platform] = f"mailto:{link}"
@@ -332,13 +339,13 @@ class Society(models.Model):
         """Ensure the president is always a member and validate JSON fields"""
         # Run full validation
         self.full_clean()
-        
+
         # Save the society
         super().save(*args, **kwargs)
-        
+
         # Ensure president is a member
         if self.president:
-            self.society_members.add(self.president) 
+            self.society_members.add(self.president)
 
         # Add default icon if needed
         if not self.icon.name or not self.icon:
@@ -348,7 +355,7 @@ class Society(models.Model):
 
         if self.pk:
             before_changes = Society.objects.get(pk=self.pk)
-            
+
             # Handle vice president changes
             before_vp = before_changes.vice_president
             if self.vice_president != before_vp:
@@ -358,7 +365,7 @@ class Society(models.Model):
                 if before_vp:
                     before_vp.is_vice_president = False
                     before_vp.save()
-            
+
             # Handle event manager changes
             before_em = before_changes.event_manager
             if self.event_manager != before_em:
@@ -520,7 +527,7 @@ class SocietyRequest(Request):
     """
     society = models.ForeignKey(
         "Society",
-        on_delete=models.CASCADE,
+        on_delete=models.DO_NOTHING,
         related_name="society_request",
         blank=True,
         null=True,
@@ -654,7 +661,7 @@ class ReportReply(models.Model):
     is_admin_reply = models.BooleanField(default=False)  # To distinguish between admin and president replies
     read_by_students = models.ManyToManyField(User, related_name='read_report_replies', blank=True)
     hidden_for_students = models.ManyToManyField(User, related_name='hidden_replies', blank=True)
-    
+
     def __str__(self):
         reply_type = "Admin" if self.is_admin_reply else "President"
         return f"{reply_type} Reply to {self.report.subject} ({self.created_at.strftime('%Y-%m-%d')})"
@@ -768,7 +775,6 @@ class AwardStudent(models.Model):
     def __str__(self):
         return f"{self.student}, ({self.award})"
 
-
 class Comment(models.Model):
     event = models.ForeignKey("Event", on_delete=models.CASCADE, related_name="comments")
     user = models.ForeignKey("User", on_delete=models.CASCADE)
@@ -843,7 +849,7 @@ class ActivityLog(models.Model):
         ("Event", "Event"),
         ("Request", "Request"),
     ]
-    
+
     action_type = models.CharField(max_length=20, choices=ACTION_CHOICES)
     target_type = models.CharField(max_length=20, choices=TARGET_CHOICES)
     target_id = models.IntegerField()
@@ -853,11 +859,11 @@ class ActivityLog(models.Model):
     performed_by = models.ForeignKey(User, on_delete=models.CASCADE)
     timestamp = models.DateTimeField(auto_now_add=True)
     expiration_date = models.DateTimeField(null=True, blank=True)
-    original_data = models.TextField(null=True, blank=True) 
+    original_data = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.action_type} - {self.target_name} on {self.timestamp}"
-    
+
     @classmethod
     def delete_expired_logs(cls):
         """Delete activity logs older than 30 days."""
