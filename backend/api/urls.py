@@ -1,6 +1,18 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from .views import (
+    AdminReportView, AwardStudentView, AwardView, BroadcastListAPIView, EventListView, AdminEventRequestView, ManageEventDetailsView, NewsView, PendingMembersView, PendingRequestsView, RegisterView,
+    CurrentUserView, SocietyMembersListView,
+    StudentNotificationsView, StartSocietyRequestView, ManageSocietyDetailsView, StudentInboxView,
+    AdminView, StudentView, AdminEventView,
+    AdminSocietyRequestView, DashboardStatsView,
+    RecentActivitiesView, NotificationsView, EventCalendarView,
+    StudentSocietiesView, JoinSocietyView, RSVPEventView, EventHistoryView,
+    get_popular_societies, CreateEventRequestView, custom_media_view, get_sorted_events, StudentSocietyDataView,
+    AllEventsView, EventDetailView, EventCommentsView, AdminDescriptionRequestView, AdminManageSocietyDetailsAdminView, 
+    like_comment, dislike_comment, EventCommentsView, toggle_follow, StudentProfileView, AdminRepliesListView,
+    AdminActivityLogView, AdminManageEventDetailsAdminView, AdminDeleteView, AdminManageStudentDetailsAdminView, ReportReplyView, 
+    MyReportsView, MyReportsWithRepliesView, ReportThreadView, AdminReportsWithRepliesView, ReportReplyNotificationsView)
     AdminReportView, AwardStudentView, AwardView, BroadcastListAPIView, EventListView, EventRequestView,
     ManageEventDetailsView, NewsView, PendingMembersView, PendingRequestsView, RegisterView,
     CurrentUserView, SocietyMembersListView, StudentNotificationsView, StartSocietyRequestView,
@@ -69,26 +81,31 @@ urlpatterns = [
     path("events", get_sorted_events, name="sorted_events"),
 
     # Admin panel endpoints
-    path("society/event/<str:event_status>", EventView.as_view(), name="event"),
-    path("society/event/request/<int:event_id>", EventRequestView.as_view(), name="request_event"),
-    path("society/request/<str:society_status>", SocietyRequestView.as_view(), name="request_society"),
-    path("society/request/pending/<int:society_id>", SocietyRequestView.as_view(), name="request_society"),
-    path("description/request/pending", DescriptionRequestView.as_view(), name="request_description"),
-    path("admin-manage-society-details/<int:society_id>", ManageSocietyDetailsAdminView.as_view(), name="manage_society_details_admin"),
-    path("admin-manage-student-details/<int:student_id>", ManageStudentDetailsAdminView.as_view(), name="manage_student_details_admin"),
-    path("admin-manage-event-details/<int:event_id>", ManageEventDetailsAdminView.as_view(), name="manage_event_details_admin"),
-    path("activity-log", ActivityLogView.as_view(), name="activity_log"),
-    path("delete-activity-log/<int:log_id>", ActivityLogView.as_view(), name="delete_activity_log"),
+    # path("admin-panel/society", SocietyView.as_view(), name="admin"),
+    # path("society/event/<str:event_status>", EventView.as_view(), name="event"),
+    path("society/event/<str:event_status>", AdminEventView.as_view(), name="event"),
+    path("society/event/request/<int:event_id>", AdminEventRequestView.as_view(), name="request_event"),
+    # path("societyrejected-event", EventView.as_view(), name="event"), // not used, remove after
+    # path("admin-panel/rejected-society", RejectedSocietyRequestView.as_view(), name="rejected_society"),  # refactored
+    path("society/request/<str:society_status>", AdminSocietyRequestView.as_view(), name="request_society"),
+    path("society/request/pending/<int:society_id>", AdminSocietyRequestView.as_view(), name="request_society"),
 
-    path('delete/<str:target_type>/<int:target_id>', DeleteView.as_view(), name='delete'),
-    path('undo-delete/<int:log_id>', DeleteView.as_view(), name='undo-delete'),
+    path("description/request/pending", AdminDescriptionRequestView.as_view(), name="request_description"),
+    path("admin-manage-society-details/<int:society_id>", AdminManageSocietyDetailsAdminView.as_view(), name="manage_society_details_admin"),
+    path("admin-manage-student-details/<int:student_id>", AdminManageStudentDetailsAdminView.as_view(), name="manage_student_details_admin"),
+    path("admin-manage-event-details/<int:event_id>", AdminManageEventDetailsAdminView.as_view(), name="manage_event_details_admin"),
+    path("activity-log", AdminActivityLogView.as_view(), name="activity_log"),
+    path("delete-activity-log/<int:log_id>", AdminActivityLogView.as_view(), name="delete_activity_log"),
+
+    path('delete/<str:target_type>/<int:target_id>', AdminDeleteView.as_view(), name='delete'),
+    path('undo-delete/<int:log_id>', AdminDeleteView.as_view(), name='undo-delete'),
 
     # Student societies endpoints
     path("student-societies/", StudentSocietiesView.as_view(), name="student_societies"),
     path("leave-society/<int:society_id>/", StudentSocietiesView.as_view(), name="leave_society"),
     path("society-view/<int:society_id>/", StudentSocietyDataView.as_view(), name="society_view"),
-    path("media/<path:path>", custom_media_view, name="media"),
-    path("api/pending-requests/", PendingRequestsView.as_view(), name='pending-requests'),
+    path('media/<path:path>', custom_media_view, name="media"),
+    path('api/pending-requests/', PendingRequestsView.as_view(), name='pending-requests'),
 
     # Dashboard API endpoints
     path("dashboard/stats/", DashboardStatsView.as_view(), name="dashboard_stats"),

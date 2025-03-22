@@ -5,7 +5,7 @@ import { tokens } from "../../theme/theme";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { useSettingsStore } from "../../stores/settings-store";
 import { useFetchWebSocket } from "../../hooks/useFetchWebSocket";
-import { fetchPendingRequests } from "./fetchPendingRequests"
+import { fetchPendingRequests } from "./utils"
 import { apiPaths } from "../../api";
 import { updateRequestStatus } from "../../api/requestApi";
 

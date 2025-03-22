@@ -6,7 +6,7 @@ import { ActivityLog } from "../../types.ts"
 import { tokens } from "../../theme/theme.ts";
 import { useSettingsStore } from "../../stores/settings-store.ts";
 import { SearchContext } from "../../components/layout/SearchContext";
-
+import { fetchPendingRequests } from "./utils.ts";
 
 const ActivityLogList: React.FC = () => {
   const [data, setData] = useState<ActivityLog[]>([]);
@@ -20,15 +20,15 @@ const ActivityLogList: React.FC = () => {
 
   
     const fetchData = async () => {
-      try {
-        const response = await apiClient.get(apiPaths.USER.ACTIVITYLOG);
-        setData(response.data);
-      } catch (error) {
-        console.error("Failed to fetch data", error);
-      } finally {
+    //   try {
+      setData(await fetchPendingRequests(apiPaths.USER.ACTIVITYLOG));
+    //   } catch (error) {
+    //     console.error("Failed to fetch data", error);
+    //   } finally {
         setLoading(false);
-      }
+    //   }
     };
+
 
 useEffect(() => {
     fetchData();
@@ -62,6 +62,7 @@ useEffect(() => {
                 <Button
                   variant="contained"
                   color="primary"
+                  // TODO: come back to refactor after this page is displaying data
                   onClick={() => handleUndo(params.row.id)}
                   sx={{ marginRight: "8px" }}
                 >

@@ -1,4 +1,4 @@
-import { fetchPendingRequests } from "../fetchPendingRequests";
+import { fetchPendingRequests } from "../utils";
 import { apiClient } from "../../../api";
 import { vi, describe, it, expect } from "vitest";
 
