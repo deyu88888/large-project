@@ -12,7 +12,7 @@ from .views import (
     AllEventsView, EventDetailView, EventCommentsView, DescriptionRequestView, ManageSocietyDetailsAdminView, 
     like_comment, dislike_comment, EventCommentsView, toggle_follow, StudentProfileView, AdminRepliesListView,
     ActivityLogView, ManageEventDetailsAdminView, DeleteView, ManageStudentDetailsAdminView, ManageAdminDetailsView, ReportReplyView, 
-    MyReportsView, MyReportsWithRepliesView, ReportThreadView, AdminReportsWithRepliesView, ReportReplyNotificationsView)
+    MyReportsView, MyReportsWithRepliesView, ReportThreadView, AdminReportsWithRepliesView, ReportReplyNotificationsView, PublicSocietiesView)
 from .utils import request_otp, verify_otp
 from .recommendation_views import RecommendedSocietiesView, SocietyRecommendationExplanationView
 from .recommendation_feedback_views import RecommendationFeedbackView, RecommendationFeedbackAnalyticsView
@@ -82,7 +82,7 @@ urlpatterns = [
     path("leave-society/<int:society_id>/", StudentSocietiesView.as_view(), name="leave_society"),
     path("society-view/<int:society_id>/", StudentSocietyDataView.as_view(), name="society_view"),
     path('media/<path:path>', custom_media_view, name="media"),
-     path('api/pending-requests/', PendingRequestsView.as_view(), name='pending-requests'),
+    path('api/pending-requests/', PendingRequestsView.as_view(), name='pending-requests'),
 
     # Dashboard API endpoints
     path("dashboard/stats/", DashboardStatsView.as_view(), name="dashboard_stats"),
@@ -90,6 +90,10 @@ urlpatterns = [
     path("dashboard/notifications", NotificationsView.as_view(), name="dashboard_notifications"),
     path("dashboard/events/", EventCalendarView.as_view(), name="dashboard_events"),
     path("popular-societies", get_popular_societies, name="popular_societies"),
+
+    path('all-societies', PublicSocietiesView.as_view(), name='all_societies'),
+    path('all-societies/<int:society_id>', PublicSocietiesView.as_view(), name='public_view_society'),
+
 
     # Awards Endpoints
     path("awards/", AwardView.as_view(), name="awards"),  # List & Create Awards

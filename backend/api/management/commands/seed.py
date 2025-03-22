@@ -392,7 +392,7 @@ class Command(BaseCommand):
                     self.handle_attendance(event)
 
         print(self.style.SUCCESS(
-            f"Seeding {"past" if past else ""} event {n}/{n}"
+            f"Seeding {'past' if past else ''} event {n}/{n}"
         ), flush=True)
 
     def handle_attendance(self, event):

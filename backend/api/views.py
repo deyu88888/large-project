@@ -3578,3 +3578,29 @@ class ActivityLogView(APIView):
         activity_log.delete()
         return Response({"message": "Activity log deleted successfully."}, 
                     status=status.HTTP_200_OK)
+
+class PublicSocietiesView(APIView):
+    """
+    API View for public users to view all societies.
+    - **GET**: Retrieves a list of all societies with their details.
+        - Permissions: No authentication required (public access).
+        - Response:
+            - 200: A list of all societies with details such as name, description, and other public information.
+    """
+    permission_classes = []
+    
+    def get(self, request, society_id=None):
+        if society_id is not None:
+            try:
+                society = Society.objects.get(id=society_id)
+                serializer = SocietySerializer(society)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            except Society.DoesNotExist:
+                return Response(
+                    {"error": "Society not found"},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+        else:
+            societies = Society.objects.all()
+            serializer = SocietySerializer(societies, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
