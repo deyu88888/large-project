@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+import user_models
 
 
 class Award(models.Model):
@@ -41,14 +42,14 @@ class AwardStudent(models.Model):
     The relation between Award and Student
     """
     award = models.ForeignKey(
-        "Award",
+        Award,
         on_delete=models.CASCADE,
         related_name="student_awards",
         blank=False,
         null=False,
     )
     student = models.ForeignKey(
-        "Student",
+        user_models.Student,
         on_delete=models.CASCADE,
         related_name="award_students",
         blank=False,

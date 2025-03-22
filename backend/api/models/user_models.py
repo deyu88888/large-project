@@ -130,7 +130,7 @@ class Student(User):
 
     def save(self, *args, **kwargs):
         self.role = "student"
-    
+
     # Check for conflicting leadership roles
         leadership_roles = []
         if self.is_president:
@@ -139,7 +139,7 @@ class Student(User):
             leadership_roles.append("vice president")
         if self.is_event_manager:
             leadership_roles.append("event manager")
-        
+
         if len(leadership_roles) > 1:
             raise ValidationError(f"A student can only hold one leadership role. This student is assigned as: {', '.join(leadership_roles)}")
 
