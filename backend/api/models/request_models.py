@@ -1,5 +1,9 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+import user_models
+import society_models
+import event_models
+import communication_models
 
 class Request(models.Model):
     """
@@ -22,7 +26,7 @@ class Request(models.Model):
 
     # Use "%(class)s" in related_name for uniqueness in inherited models
     from_student = models.ForeignKey(
-        "Student",
+        user_models.Student,
         on_delete=models.CASCADE,
         related_name="%(class)ss",
         blank=False,
@@ -38,7 +42,7 @@ class SocietyRequest(Request):
     Requests related to societies
     """
     society = models.ForeignKey(
-        "Society",
+        society_models.Society,
         on_delete=models.CASCADE,
         related_name="society_request",
         blank=True,
@@ -48,7 +52,7 @@ class SocietyRequest(Request):
     description = models.CharField(max_length=500, blank=True, default="")
     roles = models.JSONField(default=dict, blank=True)
     president = models.ForeignKey(
-        "Student",
+        user_models.Student,
         on_delete=models.CASCADE,
         related_name="society_request_president",
         blank=True,
@@ -72,8 +76,8 @@ class DescriptionRequest(models.Model):
         ("Rejected", "Rejected"),
     ]
 
-    society = models.ForeignKey(Society, on_delete=models.CASCADE, related_name="description_requests")
-    requested_by = models.ForeignKey("Student", on_delete=models.CASCADE, related_name="description_requests")
+    society = models.ForeignKey(society_models.Society, on_delete=models.CASCADE, related_name="description_requests")
+    requested_by = models.ForeignKey(user_models.Student, on_delete=models.CASCADE, related_name="description_requests")
     new_description = models.TextField(blank=False)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="Pending")
     created_at = models.DateTimeField(auto_now_add=True)
@@ -88,7 +92,7 @@ class SocietyShowreelRequest(models.Model):
     Requests related to societies showreel photos
     """
     society = models.ForeignKey(
-        "SocietyRequest",
+        SocietyRequest,
         on_delete=models.CASCADE,
         related_name="showreel_images_request",
         blank=False,
@@ -116,14 +120,14 @@ class EventRequest(Request):
     Requests related to events
     """
     event = models.ForeignKey(
-        "Event",
+        event_models.Event,
         on_delete=models.DO_NOTHING,
         related_name="event_request",
         blank=True,
         null=True,
     )
     hosted_by = models.ForeignKey(
-        "Society",
+        society_models.Society,
         on_delete=models.CASCADE,
         related_name="event_request_society",
         blank=False,
@@ -170,19 +174,19 @@ class NewsPublicationRequest(models.Model):
     ]
 
     news_post = models.ForeignKey(
-        SocietyNews,
+        communication_models.SocietyNews,
         on_delete=models.CASCADE,
         related_name="publication_requests"
     )
 
     requested_by = models.ForeignKey(
-        "Student",
+        user_models.Student,
         on_delete=models.CASCADE,
         related_name="news_publication_requests"
     )
 
     reviewed_by = models.ForeignKey(
-        "User",
+        user_models.User,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
