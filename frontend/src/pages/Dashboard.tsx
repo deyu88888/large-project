@@ -7,9 +7,10 @@ import PopularSocieties from "../components/PopularSocieties";
 import Sidebar from "../components/Sidebar";
 import { HiMenu } from "react-icons/hi";
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
-import { useFetchWebSocket } from "../hooks/useFetchWebSocket";
 import { getAllEvents, apiClient } from "../api";
+import { ACCESS_TOKEN } from "../constants";
+import { useWebSocketChannel } from "../hooks/useWebSocketChannel";
+import { useWebSocketManager, CONNECTION_STATES } from "../hooks/useWebSocketManager";
 
 // -- Type Definitions --
 interface StatData {
@@ -44,22 +45,90 @@ interface RawEvent {
   title: string;
   date: string;
   startTime: string;
-  start_time?: string; // Added for test compatibility
+  start_time?: string;
   duration?: string;
 }
 
-type WebSocketMessage =
-  | { type: "dashboard.update"; data: StatData }
-  | { type: "update_activities"; activities: Activity[] }
-  | { type: "update_notifications"; notifications: Notification[] }
-  | { type: "update_events"; events: CalendarEvent[] }
-  | { type: "update_introduction"; introduction: Introduction };
+interface TabsProps {
+  activeTab: string;
+  setActiveTab: (tab: string) => void;
+  children: React.ReactNode;
+}
+
+interface TabPanelProps {
+  label: string;
+  children: React.ReactNode;
+}
+
+interface SectionCardProps {
+  title: string;
+  children: React.ReactNode;
+}
+
+interface StatCardProps {
+  title: string;
+  value: number;
+  color: string;
+}
+
+interface NavigationItem {
+  label: string;
+  icon: React.ReactNode;
+  ref: React.RefObject<HTMLElement> | null;
+  scrollToSection: () => void;
+}
+
+// -- API Functions --
+const fetchDashboardStats = async (): Promise<StatData | null> => {
+  try {
+    const token = localStorage.getItem(ACCESS_TOKEN);
+    if (!token) {
+      console.log("No authentication token available");
+      return null;
+    }
+    
+    const response = await apiClient.get("/api/dashboard/stats");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching dashboard stats:", error);
+    return null;
+  }
+};
+
+const fetchActivities = async (): Promise<Activity[] | null> => {
+  try {
+    const token = localStorage.getItem(ACCESS_TOKEN);
+    if (!token) {
+      console.log("No authentication token available");
+      return null;
+    }
+    
+    const response = await apiClient.get("/api/dashboard/activities");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching activities:", error);
+    return null;
+  }
+};
+
+const fetchNotifications = async (): Promise<Notification[] | null> => {
+  try {
+    const token = localStorage.getItem(ACCESS_TOKEN);
+    if (!token) {
+      console.log("No authentication token available");
+      return null;
+    }
+    
+    const response = await apiClient.get("/api/dashboard/notifications");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching notifications:", error);
+    return null;
+  }
+};
 
 // -- Reusable Components --
-const SectionCard: React.FC<{ title: string; children: React.ReactNode }> = ({
-  title,
-  children,
-}) => (
+const SectionCard: React.FC<SectionCardProps> = ({ title, children }) => (
   <motion.section
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
@@ -77,11 +146,7 @@ const SectionCard: React.FC<{ title: string; children: React.ReactNode }> = ({
   </motion.section>
 );
 
-const StatCard: React.FC<{ title: string; value: number; color: string }> = ({
-  title,
-  value,
-  color,
-}) => (
+const StatCard: React.FC<StatCardProps> = ({ title, value, color }) => (
   <motion.div
     initial={{ opacity: 0, scale: 0.95 }}
     animate={{ opacity: 1, scale: 1 }}
@@ -95,14 +160,7 @@ const StatCard: React.FC<{ title: string; value: number; color: string }> = ({
   </motion.div>
 );
 
-// Tabs for "Updates" section
-interface TabsProps {
-  activeTab: string;
-  setActiveTab: (tab: string) => void;
-  children: React.ReactNode;
-}
-
-// Define the Tabs component here, making sure it's fully defined before use
+// -- Tabs Components --
 const Tabs: React.FC<TabsProps> = ({ activeTab, setActiveTab, children }) => {
   const tabLabels = React.Children.toArray(children)
     .filter((child) => React.isValidElement(child))
@@ -128,8 +186,8 @@ const Tabs: React.FC<TabsProps> = ({ activeTab, setActiveTab, children }) => {
       </div>
       <div className="py-4" data-testid="tab-content">
         {React.Children.toArray(children).find(
-          (child) =>
-            React.isValidElement(child) &&
+          (child) => 
+            React.isValidElement(child) && 
             (child as React.ReactElement).props.label === activeTab
         )}
       </div>
@@ -137,95 +195,235 @@ const Tabs: React.FC<TabsProps> = ({ activeTab, setActiveTab, children }) => {
   );
 };
 
-interface TabPanelProps {
-  label: string;
-  children: React.ReactNode;
-}
-
-// Define the TabPanel component here, making sure it's fully defined before use
 const TabPanel: React.FC<TabPanelProps> = ({ children, label }) => (
   <div data-testid={`panel-${label.toLowerCase().replace(/\s+/g, '-')}`}>{children}</div>
 );
 
+// Enhanced WebSocket connection status component with more detailed information
+const WebSocketStatus: React.FC = () => {
+  const { status, connect } = useWebSocketManager();
+  const [showDetails, setShowDetails] = useState(false);
+  
+  let statusText = "Real-time updates unavailable";
+  let statusClass = "text-yellow-500";
+  let dotClass = "bg-yellow-500";
+  
+  if (status === CONNECTION_STATES.CONNECTING) {
+    statusText = "Connecting...";
+    statusClass = "text-blue-500";
+    dotClass = "bg-blue-500 animate-pulse";
+  } else if (status === CONNECTION_STATES.AUTHENTICATED) {
+    statusText = "Real-time updates enabled";
+    statusClass = "text-green-500";
+    dotClass = "bg-green-500";
+  } else if (status === CONNECTION_STATES.CONNECTED) {
+    statusText = "Connected (authenticating)";
+    statusClass = "text-blue-500";
+    dotClass = "bg-blue-500";
+  } else if (status === CONNECTION_STATES.ERROR || status === CONNECTION_STATES.AUTH_FAILED) {
+    statusText = status === CONNECTION_STATES.AUTH_FAILED ? "Authentication failed" : "Connection error";
+    statusClass = "text-red-500";
+    dotClass = "bg-red-500";
+  }
+  
+  return (
+    <div className="relative">
+      <button 
+        onClick={() => setShowDetails(!showDetails)}
+        className={`text-sm flex items-center ${statusClass} hover:underline focus:outline-none`}
+      >
+        <span className={`inline-block w-2 h-2 rounded-full mr-1 ${dotClass}`}></span>
+        {statusText}
+      </button>
+      
+      {showDetails && (
+        <div className="absolute top-full left-0 mt-2 p-3 bg-white dark:bg-gray-800 rounded-md shadow-md z-20 w-64">
+          <h4 className="font-bold mb-2">WebSocket Status</h4>
+          <p className="text-sm mb-2">Current state: <span className={statusClass}>{status}</span></p>
+          
+          {(status === CONNECTION_STATES.ERROR || status === CONNECTION_STATES.AUTH_FAILED || status === CONNECTION_STATES.DISCONNECTED) && (
+            <button 
+              onClick={() => {
+                connect();
+                setShowDetails(false);
+              }}
+              className="text-sm bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600 transition"
+            >
+              Reconnect
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // -- Main Dashboard --
 const Dashboard: React.FC = () => {
   // ---- States ----
-  const [stats, setStats] = useState<StatData>({
-    totalSocieties: 0,
-    totalEvents: 0,
-    pendingApprovals: 0,
-    activeMembers: 0,
+  const [introduction] = useState<Introduction>({
+    title: "Welcome to Student Societies Dashboard",
+    content: [
+      "This dashboard provides an overview of all student societies and their activities.",
+      "Join a society, attend events, and make the most of your campus experience!"
+    ]
   });
-  const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [eventCalendar, setEventCalendar] = useState<CalendarEvent[]>([]);
-  const [upcomingEvents, setUpcomingEvents] = useState<CalendarEvent[]>([]);
-  const [introduction, setIntroduction] = useState<Introduction | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState("Recent Activities");
-  const [dataVersion, setDataVersion] = useState(0);
-  const navigate = useNavigate();
-
-  // Sidebar control - Now manages width instead of open/closed state
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [activeTab, setActiveTab] = useState<string>("Recent Activities");
   const [sidebarWidth, setSidebarWidth] = useState<'collapsed' | 'expanded'>('collapsed');
-
-  // -- Dark Mode --
-  const [darkMode, setDarkMode] = useState(() => {
+  const [darkMode, setDarkMode] = useState<boolean>(() => {
     try {
-      // Optional: read from localStorage or system preference
       const stored = localStorage.getItem("darkMode");
-      if (stored !== null) {
-        return JSON.parse(stored);
-      }
-      // Or default to system preference
-      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      return prefersDark;
-    } catch (e) {
-      // Fallback if localStorage or matchMedia fails
+      if (stored !== null) return JSON.parse(stored);
+      return window.matchMedia("(prefers-color-scheme: dark)").matches;
+    } catch {
       return false;
     }
   });
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSearchSubmit = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && searchQuery.trim()) {
-      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
-    }
-  };
+  // Get WebSocket manager to initialize connection
+  const { status, connect } = useWebSocketManager();
 
-  // Apply or remove .dark class on <html> or <body>
-  useEffect(() => {
-    try {
-      localStorage.setItem("darkMode", JSON.stringify(darkMode));
-    } catch (e) {
-      console.error("Failed to save darkMode to localStorage:", e);
-    }
-    
-    if (darkMode) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  }, [darkMode]);
+  // -- WebSocket data using the new hooks --
+  const { 
+    data: stats, 
+    loading: statsLoading,
+    error: statsError,
+    isConnected: statsConnected,
+    refresh: refreshStats
+  } = useWebSocketChannel<StatData>('dashboard/stats', fetchDashboardStats);
 
-  // -- Refs for Scrollable Sections --
+  const { 
+    data: activities, 
+    loading: activitiesLoading,
+    error: activitiesError,
+    isConnected: activitiesConnected,
+    refresh: refreshActivities
+  } = useWebSocketChannel<Activity[]>('dashboard/activities', fetchActivities);
+
+  const { 
+    data: notifications, 
+    loading: notificationsLoading,
+    error: notificationsError,
+    isConnected: notificationsConnected,
+    refresh: refreshNotifications
+  } = useWebSocketChannel<Notification[]>('dashboard/notifications', fetchNotifications);
+
+  // -- Refs --
   const statsRef = useRef<HTMLDivElement>(null);
   const popularSocietiesRef = useRef<HTMLDivElement>(null);
   const upcomingEventsRef = useRef<HTMLDivElement>(null);
   const eventCalendarRef = useRef<HTMLDivElement>(null);
   const updatesRef = useRef<HTMLDivElement>(null);
 
-  // -- WebSocket --
-  const socketRef = useRef<WebSocket | null>(null);
-  const reconnectIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const reconnectAttemptsRef = useRef<number>(0);
-  const MAX_RECONNECT_ATTEMPTS = 5;
-  const RECONNECT_INTERVAL = 5000;
+  // -- Events state and fetching --
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [eventsLoading, setEventsLoading] = useState<boolean>(true);
+  const [eventsError, setEventsError] = useState<string | null>(null);
 
-  // -- Toggle Sidebar -- (ONLY for the hamburger button)
+  // -- Ensure WebSocket connection is established --
+  useEffect(() => {
+    // If disconnected, try to connect once
+    if (status === CONNECTION_STATES.DISCONNECTED) {
+      connect();
+    }
+  }, [status, connect]);
+
+  // Listen for WebSocket status changes for debugging
+  useEffect(() => {
+    console.log(`WebSocket status changed: ${status}`);
+    
+    // If connected but not authenticated, this is potentially public access
+    // Try to initialize public access mode
+    if (status === CONNECTION_STATES.CONNECTED || status === CONNECTION_STATES.DISCONNECTED) {
+      // Try to connect with public access mode
+      connect();
+    }
+    
+    // If we're authenticated or connected, refresh the data
+    if (status === CONNECTION_STATES.AUTHENTICATED || status === CONNECTION_STATES.CONNECTED) {
+      refreshStats();
+      refreshActivities();
+      refreshNotifications();
+    }
+  }, [status, refreshStats, refreshActivities, refreshNotifications, connect]);
+
+  useEffect(() => {
+    let mounted = true;
+    
+    const fetchEvents = async () => {
+      try {
+        setEventsLoading(true);
+        const rawEvents = await getAllEvents();
+        
+        if (!mounted) return;
+        
+        if (rawEvents && rawEvents.length > 0) {
+          const processedEvents = processEvents(rawEvents);
+          setEvents(processedEvents);
+          setEventsError(null);
+        } else {
+          setEvents([]);
+          setEventsError("No events available");
+        }
+      } catch (err) {
+        console.error("Error fetching events:", err);
+        if (mounted) {
+          setEventsError("Failed to load events");
+        }
+      } finally {
+        if (mounted) {
+          setEventsLoading(false);
+        }
+      }
+    };
+    
+    fetchEvents();
+    
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // -- Process raw events into calendar events --
+  const processEvents = (rawEvents: RawEvent[]): CalendarEvent[] => {
+    return rawEvents
+      .map(event => {
+        try {
+          const timeField = event.startTime || event.start_time || "";
+          const dateStr = `${event.date}T${timeField}`;
+          const startDate = new Date(dateStr);
+          
+          if (isNaN(startDate.getTime())) return null;
+          
+          let endDate = new Date(startDate);
+          if (event.duration && event.duration.includes(":")) {
+            const [hours, minutes, seconds = 0] = event.duration.split(":").map(Number);
+            endDate = new Date(startDate.getTime() + (hours * 3600 + minutes * 60 + seconds) * 1000);
+          } else {
+            // Default duration if not provided (1 hour)
+            endDate = new Date(startDate.getTime() + 3600000);
+          }
+          
+          return {
+            id: event.id,
+            title: event.title,
+            start: startDate,
+            end: endDate,
+          };
+        } catch (e) {
+          console.warn("Invalid event:", event, e);
+          return null;
+        }
+      })
+      .filter((event): event is CalendarEvent => event !== null)
+      .sort((a, b) => a.start.getTime() - b.start.getTime());
+  };
+
+  // -- Handler Functions --
   const handleToggleSidebar = useCallback(() => {
-    setSidebarWidth((prev) => (prev === 'collapsed' ? 'expanded' : 'collapsed'));
+    setSidebarWidth(prev => prev === 'collapsed' ? 'expanded' : 'collapsed');
   }, []);
 
   const handleCloseSidebar = useCallback(() => {
@@ -233,383 +431,85 @@ const Dashboard: React.FC = () => {
   }, []);
 
   const handleNavItemClick = useCallback((ref: React.RefObject<HTMLElement> | null) => {
-    scrollToSection(ref);
-  }, []);
-
-  // -- Navigation Items Array --
-  const navigationItems = [
-    {
-      label: "Dashboard",
-      icon: <span className="text-xl">🏠</span>,
-      ref: null,
-      scrollToSection: handleNavItemClick,
-    },
-    {
-      label: "Statistics",
-      icon: <span className="text-xl">📊</span>,
-      ref: statsRef,
-      scrollToSection: handleNavItemClick,
-    },
-    {
-      label: "Popular Societies",
-      icon: <span className="text-xl">🏆</span>,
-      ref: popularSocietiesRef,
-      scrollToSection: handleNavItemClick,
-    },
-    {
-      label: "Upcoming Events",
-      icon: <span className="text-xl">📅</span>,
-      ref: upcomingEventsRef,
-      scrollToSection: handleNavItemClick,
-    },
-    {
-      label: "Event Calendar",
-      icon: <span className="text-xl">🗓️</span>,
-      ref: eventCalendarRef,
-      scrollToSection: handleNavItemClick,
-    },
-    {
-      label: "Updates",
-      icon: <span className="text-xl">🔔</span>,
-      ref: updatesRef,
-      scrollToSection: handleNavItemClick,
-    },
-  ];
-
-  // -- Smooth Scroll --
-  const scrollToSection = useCallback((ref: React.RefObject<HTMLElement> | null) => {
     if (ref === null) {
-      // Scroll to the top of the document
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth",
-      });
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } else if (ref && ref.current) {
-      // Existing scroll to section logic
       const headerHeight = document.querySelector('header')?.offsetHeight || 0;
       const elementPosition = ref.current.getBoundingClientRect().top + window.pageYOffset;
-      const offsetPosition = elementPosition - headerHeight;
-
       window.scrollTo({
-        top: offsetPosition,
+        top: elementPosition - headerHeight,
         behavior: "smooth",
       });
     }
   }, []);
 
-  // -- Helpers for parsing Dates & Durations --
-  const parseEventDateTime = useCallback((dateStr: string, timeStr: string): Date | null => {
-    try {
-      const dateTimeStr = `${dateStr}T${timeStr}`;
-      const date = new Date(dateTimeStr);
-      // Check if date is valid
-      if (isNaN(date.getTime())) {
-        return null;
-      }
-      return date;
-    } catch (e) {
-      console.error("Error parsing date/time:", e);
-      return null;
-    }
-  }, []);
-
-  const calculateEventEnd = useCallback((start: Date | null, durationStr?: string): Date | null => {
-    if (!start || !durationStr) return null;
-    if (!durationStr.includes(":")) return null;
+  // Manual refresh handler for all data
+  const handleRefreshAll = useCallback(() => {
+    refreshStats();
+    refreshActivities();
+    refreshNotifications();
     
-    try {
-      const [hours, minutes, seconds] = durationStr.split(":").map(Number);
-      const durationMs = (hours * 3600 + minutes * 60 + (seconds || 0)) * 1000;
-      return new Date(start.getTime() + durationMs);
-    } catch (e) {
-      console.error("Error calculating event end time:", e);
-      return null;
-    }
-  }, []);
-
-  // Real-time fetch of all dashboard data
-  const fetchAllDashboardData = useCallback(async () => {
-    try {
-      // Fetch dashboard stats
-      const statsResponse = await apiClient.get("/api/dashboard/stats");
-      if (statsResponse.data) {
-        setStats(statsResponse.data);
-      }
-      
-      // Fetch activities
-      const activitiesResponse = await apiClient.get("/api/dashboard/activities");
-      if (activitiesResponse.data) {
-        setRecentActivities(activitiesResponse.data);
-      }
-      
-      // Fetch notifications
-      const notificationsResponse = await apiClient.get("/api/dashboard/notifications");
-      if (notificationsResponse.data) {
-        setNotifications(notificationsResponse.data);
-      }
-      
-      setDataVersion(prev => prev + 1);
-    } catch (err) {
-      console.error("Failed to fetch dashboard data:", err);
-    }
-  }, []);
-
-  // Set up continuous data polling and WebSocket monitoring
-  useEffect(() => {
-    fetchAllDashboardData();
-    
-    // Create a data refresh loop using requestAnimationFrame for smoother updates
-    let animationFrameId: number;
-    let lastRefreshTime = 0;
-    
-    const checkForUpdates = (timestamp: number) => {
-      // Check every second for updates (but don't block rendering)
-      if (timestamp - lastRefreshTime > 1000) {
-        fetchAllDashboardData();
-        lastRefreshTime = timestamp;
-      }
-      
-      animationFrameId = requestAnimationFrame(checkForUpdates);
-    };
-    
-    animationFrameId = requestAnimationFrame(checkForUpdates);
-    
-    return () => {
-      cancelAnimationFrame(animationFrameId);
-    };
-  }, [fetchAllDashboardData]);
-
-  // Process any WebSocket messages when they arrive
-  const messageHandler = useCallback((data: WebSocketMessage) => {
-    console.log("Received WebSocket message:", data);
-    
-    switch (data.type) {
-      case "dashboard.update":
-        setStats(data.data);
-        break;
-      case "update_activities":
-        setRecentActivities(data.activities);
-        break;
-      case "update_notifications":
-        setNotifications(data.notifications);
-        break;
-      case "update_events":
-        setEventCalendar(data.events);
-        setUpcomingEvents(data.events);
-        break;
-      case "update_introduction":
-        setIntroduction(data.introduction);
-        break;
-      default:
-        console.warn("Unknown WebSocket message type:", data);
-    }
-    
-    // Increment the data version to trigger re-renders
-    setDataVersion(prev => prev + 1);
-  }, []);
-
-  // WebSocket connection
-  const connectWebSocket = useCallback(() => {
-    if (reconnectIntervalRef.current) {
-      clearTimeout(reconnectIntervalRef.current);
-      reconnectIntervalRef.current = null;
-    }
-    
-    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
-      console.warn("[Dashboard] WebSocket already open. Skipping.");
-      return;
-    }
-
-    console.log("[Dashboard] Connecting to WebSocket...");
-    const wsURL =
-      process.env.NODE_ENV === "production"
-        ? "wss://your-production-domain.com/ws/dashboard/"
-        : "ws://127.0.0.1:8000/ws/dashboard/";
-
-    const socket = new WebSocket(wsURL);
-    socketRef.current = socket;
-
-    socket.onopen = () => {
-      console.log("[Dashboard] WebSocket Connected!");
-      setError(null);
-      reconnectAttemptsRef.current = 0;
-      // Trigger immediate data refresh when WebSocket connects
-      fetchAllDashboardData();
-    };
-
-    socket.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        messageHandler(data);
-      } catch (parseErr) {
-        console.error("Error parsing WebSocket message:", parseErr, event.data);
-      }
-    };
-
-    socket.onerror = (err) => {
-      console.error("[Dashboard] WebSocket Error:", err);
-    };
-
-    socket.onclose = (evt) => {
-      socketRef.current = null;
-      console.warn(`[Dashboard] WebSocket Closed: code ${evt.code}`);
-      if (
-        evt.code !== 1000 &&
-        evt.code !== 1005 &&
-        reconnectAttemptsRef.current < MAX_RECONNECT_ATTEMPTS
-      ) {
-        reconnectAttemptsRef.current++;
-        reconnectIntervalRef.current = setTimeout(
-          connectWebSocket,
-          RECONNECT_INTERVAL
-        );
-      } else {
-        console.warn("[Dashboard] WebSocket closed permanently.");
-      }
-    };
-  }, [messageHandler, fetchAllDashboardData]);
-
-  useEffect(() => {
-    console.log("[Dashboard] Initializing WebSocket...");
-    connectWebSocket();
-
-    return () => {
-      if (socketRef.current) {
-        socketRef.current.close();
-        socketRef.current = null;
-      }
-      if (reconnectIntervalRef.current) {
-        clearTimeout(reconnectIntervalRef.current);
-        reconnectIntervalRef.current = null;
-      }
-    };
-  }, [connectWebSocket]);
-
-  // ---- Fetch Events ----
-  useEffect(() => {
-    let isMounted = true;
-  
-    async function fetchEvents() {
-      try {
-        // 1️⃣ Fetch raw events from the API
-        const rawEvents: RawEvent[] = await getAllEvents();
-        console.log("🎉 Raw Events from API:", rawEvents);
-  
-        if (!isMounted) return;
-  
-        // Use mock events if API call failed
-        if (!rawEvents || rawEvents.length === 0) {
-          const mockEvents = [
-            { id: 1, title: "Welcome Party", date: "2025-03-10", startTime: "18:00:00", duration: "02:00:00" },
-            { id: 2, title: "Chess Tournament", date: "2025-03-15", startTime: "14:00:00", duration: "03:00:00" },
-            { id: 3, title: "Spring Concert", date: "2025-03-22", startTime: "19:30:00", duration: "01:30:00" }
-          ];
-          processEvents(mockEvents);
+    // Also refresh events
+    setEventsLoading(true);
+    getAllEvents()
+      .then(rawEvents => {
+        if (rawEvents && rawEvents.length > 0) {
+          const processedEvents = processEvents(rawEvents);
+          setEvents(processedEvents);
+          setEventsError(null);
         } else {
-          processEvents(rawEvents);
+          setEvents([]);
+          setEventsError("No events available");
         }
-        
-        setLoading(false);
-      } catch (err) {
-        console.error("❌ Error fetching events:", err);
-        
-        // Use mock events as fallback
-        const mockEvents = [
-          { id: 1, title: "Welcome Party", date: "2025-03-10", startTime: "18:00:00", duration: "02:00:00" },
-          { id: 2, title: "Chess Tournament", date: "2025-03-15", startTime: "14:00:00", duration: "03:00:00" },
-          { id: 3, title: "Spring Concert", date: "2025-03-22", startTime: "19:30:00", duration: "01:30:00" }
-        ];
-        
-        if (isMounted) {
-          processEvents(mockEvents);
-          setError("Using mock data - API connection failed.");
-          setLoading(false);
-        }
-      }
-    }
-    
-    function processEvents(events: RawEvent[]) {
-      // 2️⃣ Convert raw events to formatted events
-      const formattedEvents = events
-        .map((event): CalendarEvent | null => {
-          // Use the API field names - handle both startTime and start_time for compatibility
-          const timeField = event.startTime || event.start_time || "";
-          const startDateTime = parseEventDateTime(event.date, timeField);
-          // Calculate the end time using the provided duration
-          const endDateTime = calculateEventEnd(startDateTime, event.duration);
+      })
+      .catch(err => {
+        console.error("Error refreshing events:", err);
+        setEventsError("Failed to refresh events");
+      })
+      .finally(() => {
+        setEventsLoading(false);
+      });
+  }, [refreshStats, refreshActivities, refreshNotifications]);
 
-          if (!startDateTime || !endDateTime) {
-            console.warn("⚠️ Skipping invalid event:", event);
-            return null;
-          }
-
-          return {
-            id: event.id,
-            title: event.title,
-            start: startDateTime,
-            end: endDateTime,
-          };
-        })
-        .filter((evt): evt is CalendarEvent => evt !== null);
-
-      // 3️⃣ Sort events by start time
-      formattedEvents.sort((a, b) => a.start.getTime() - b.start.getTime());
-      console.log("✅ Formatted Events:", formattedEvents);
-
-      if (isMounted) {
-        setUpcomingEvents(formattedEvents);
-        setEventCalendar(formattedEvents);
-      }
-    }
-  
-    fetchEvents();
-    
-    // Set up event polling with a small interval for real-time updates
-    const eventPolling = setInterval(fetchEvents, 2000);
-  
-    return () => {
-      isMounted = false;
-      clearInterval(eventPolling);
-    };
-  }, [parseEventDateTime, calculateEventEnd, dataVersion]);
-
-  // Initialize with some default stats if needed - with a short delay
+  // -- Dark Mode --
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (stats.totalSocieties === 0) {
-        setStats({
-          totalSocieties: 5,
-          totalEvents: 10,
-          pendingApprovals: 3,
-          activeMembers: 125
-        });
-      }
-      
-      if (recentActivities.length === 0) {
-        setRecentActivities([
-          { description: "Chess Society organized a tournament" },
-          { description: "New Debate Society was created" },
-          { description: "Music Club scheduled a concert for next month" }
-        ]);
-      }
-      
-      if (!introduction) {
-        setIntroduction({
-          title: "Welcome to Student Societies Dashboard",
-          content: [
-            "This dashboard provides an overview of all student societies and their activities.",
-            "Join a society, attend events, and make the most of your campus experience!"
-          ]
-        });
-      }
-    }, 1000); // Wait 1 second before using defaults
+    try {
+      localStorage.setItem("darkMode", JSON.stringify(darkMode));
+    } catch (e) {
+      console.error("Failed to save darkMode:", e);
+    }
     
-    return () => clearTimeout(timer);
-  }, [stats.totalSocieties, recentActivities.length, introduction]);
+    document.documentElement.classList.toggle("dark", darkMode);
+  }, [darkMode]);
 
-  if (loading) {
-    return <LoadingView />;
-  }
+  // -- Combine all errors --
+  useEffect(() => {
+    // Collect all errors
+    const allErrors = [statsError, activitiesError, notificationsError, eventsError]
+      .filter(Boolean)
+      .join("; ");
+    
+    if (allErrors) {
+      setError(allErrors);
+    } else {
+      setError(null);
+    }
+  }, [statsError, activitiesError, notificationsError, eventsError]);
+
+  // -- Navigation Items --
+  const navigationItems: NavigationItem[] = [
+    { label: "Dashboard", icon: <span className="text-xl">🏠</span>, ref: null, scrollToSection: () => handleNavItemClick(null) },
+    { label: "Statistics", icon: <span className="text-xl">📊</span>, ref: statsRef, scrollToSection: () => handleNavItemClick(statsRef) },
+    { label: "Popular Societies", icon: <span className="text-xl">🏆</span>, ref: popularSocietiesRef, scrollToSection: () => handleNavItemClick(popularSocietiesRef) },
+    { label: "Upcoming Events", icon: <span className="text-xl">📅</span>, ref: upcomingEventsRef, scrollToSection: () => handleNavItemClick(upcomingEventsRef) },
+    { label: "Event Calendar", icon: <span className="text-xl">🗓️</span>, ref: eventCalendarRef, scrollToSection: () => handleNavItemClick(eventCalendarRef) },
+    { label: "Updates", icon: <span className="text-xl">🔔</span>, ref: updatesRef, scrollToSection: () => handleNavItemClick(updatesRef) },
+  ];
+
+  // Overall loading state
+  const isLoading = statsLoading || activitiesLoading || notificationsLoading || eventsLoading;
+
+  if (isLoading) return <LoadingView />;
 
   return (
     <div
@@ -629,7 +529,7 @@ const Dashboard: React.FC = () => {
         navigationItems={navigationItems}
         scrollToSection={handleNavItemClick}
         darkMode={darkMode}
-        onToggleDarkMode={() => setDarkMode((prev) => !prev)}
+        onToggleDarkMode={() => setDarkMode(prev => !prev)}
         sidebarWidth={sidebarWidth}
       />
 
@@ -641,14 +541,10 @@ const Dashboard: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           className="bg-white dark:bg-gray-800 shadow-md fixed top-0 z-10 w-full"
-          style={{
-            gridTemplateColumns: sidebarWidth === 'collapsed' ? 'auto 1fr auto' : '288px 1fr',
-          }}
           data-testid="dashboard-header"
         >
           <div className="max-w-7xl mx-auto px-4 py-2 grid grid-cols-[auto_1fr_auto] gap-4 items-center">
             <div className="flex items-center gap-2">
-              {/* Toggle Button */}
               <button
                 className="text-gray-600 dark:text-gray-300 hover:text-gray-800
                           dark:hover:text-white focus:outline-none"
@@ -664,24 +560,36 @@ const Dashboard: React.FC = () => {
                   <HiMenu className="h-6 w-6" />
                 </motion.span>
               </button>
-              <span role="img" aria-label="sparkles" className="text-3xl">
-                ✨
-              </span>
+              <span role="img" aria-label="sparkles" className="text-3xl">✨</span>
               <h1 className="text-xl font-extrabold tracking-wide text-gray-800 dark:text-gray-100">
                 Student Society Dashboard
               </h1>
+              
+              {/* Refresh button */}
+              <button
+                onClick={handleRefreshAll}
+                className="ml-2 p-1 rounded text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none"
+                title="Refresh all data"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </button>
             </div>
 
-            {/* Conditionally render Register/Login links */}
+            {/* Real-time connection status using our enhanced component */}
+            <div className="flex justify-center">
+              <WebSocketStatus />
+            </div>
+
+            {/* Auth Links */}
             {sidebarWidth === 'collapsed' && (
               <div className="flex items-center justify-end gap-4">
-                {/* Search and Buttons */}
                 <input
                   type="search"
                   placeholder="Search..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={handleSearchSubmit}
                   className="px-4 py-2 rounded-full border border-gray-300
                               dark:border-gray-700 dark:bg-gray-700 dark:text-gray-100
                               focus:outline-none focus:ring-2 focus:ring-purple-500"
@@ -712,51 +620,55 @@ const Dashboard: React.FC = () => {
         {/* Main Content Section */}
         <div className="max-w-7xl mx-auto px-4 py-8 space-y-10" data-testid="content-container">
           {/* Introduction */}
-          <SectionCard title={introduction?.title || "Welcome!"}>
+          <SectionCard title={introduction.title}>
             <div>
-              {introduction?.content?.length ? (
-                introduction.content.map((paragraph, idx) => (
-                  <p
-                    key={idx}
-                    className="text-gray-700 dark:text-gray-200 text-base leading-relaxed"
-                  >
-                    {paragraph}
-                  </p>
-                ))
-              ) : (
-                <p className="text-gray-700 dark:text-gray-300 text-base">
-                  No introduction available.
+              {introduction.content.map((paragraph, idx) => (
+                <p
+                  key={idx}
+                  className="text-gray-700 dark:text-gray-200 text-base leading-relaxed"
+                >
+                  {paragraph}
                 </p>
-              )}
+              ))}
             </div>
           </SectionCard>
 
-          {/* Statistics */}
+          {/* Statistics - uses WebSocket data */}
           <div
             ref={statsRef}
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
             data-testid="statistics-section"
           >
-            <StatCard
-              title="Total Societies"
-              value={stats.totalSocieties}
-              color="from-purple-600 to-purple-400"
-            />
-            <StatCard
-              title="Total Events"
-              value={stats.totalEvents}
-              color="from-green-600 to-green-400"
-            />
-            <StatCard
-              title="Pending Approvals"
-              value={stats.pendingApprovals}
-              color="from-yellow-600 to-yellow-400"
-            />
-            <StatCard
-              title="Active Members"
-              value={stats.activeMembers}
-              color="from-blue-600 to-blue-400"
-            />
+            {stats ? (
+              <>
+                <StatCard
+                  title="Total Societies"
+                  value={stats.totalSocieties}
+                  color="from-purple-600 to-purple-400"
+                />
+                <StatCard
+                  title="Total Events"
+                  value={stats.totalEvents}
+                  color="from-green-600 to-green-400"
+                />
+                <StatCard
+                  title="Pending Approvals"
+                  value={stats.pendingApprovals}
+                  color="from-yellow-600 to-yellow-400"
+                />
+                <StatCard
+                  title="Active Members"
+                  value={stats.activeMembers}
+                  color="from-blue-600 to-blue-400"
+                />
+              </>
+            ) : (
+              <div className="col-span-4 text-center p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                <p className="text-gray-500 dark:text-gray-400">
+                  Statistics unavailable
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Popular Societies */}
@@ -774,17 +686,17 @@ const Dashboard: React.FC = () => {
             <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4">
               Popular Societies
             </h2>
-            <PopularSocieties key={`societies-${dataVersion}`} />
+            <PopularSocieties />
           </motion.section>
 
           {/* Upcoming Events */}
           <SectionCard title="Upcoming Events">
             <div ref={upcomingEventsRef} data-testid="upcoming-events-section">
-              {upcomingEvents.length > 0 ? (
-                <UpcomingEvents events={upcomingEvents} />
+              {events.length > 0 ? (
+                <UpcomingEvents events={events} />
               ) : (
-                <p className="text-gray-500 dark:text-gray-400 text-center animate-pulse">
-                  No upcoming events.
+                <p className="text-gray-500 dark:text-gray-400 text-center">
+                  No upcoming events available.
                 </p>
               )}
             </div>
@@ -793,24 +705,24 @@ const Dashboard: React.FC = () => {
           {/* Event Calendar */}
           <SectionCard title="Event Calendar">
             <div ref={eventCalendarRef} data-testid="event-calendar-section">
-              {eventCalendar.length > 0 ? (
-                <EventCalendar events={eventCalendar} />
+              {events.length > 0 ? (
+                <EventCalendar events={events} />
               ) : (
-                <p className="text-gray-500 dark:text-gray-400 text-center animate-pulse">
-                  No events scheduled yet.
+                <p className="text-gray-500 dark:text-gray-400 text-center">
+                  No events available for calendar.
                 </p>
               )}
             </div>
           </SectionCard>
 
-          {/* Updates */}
+          {/* Updates - uses WebSocket data */}
           <SectionCard title="Updates">
             <div ref={updatesRef} data-testid="updates-section">
               <Tabs activeTab={activeTab} setActiveTab={setActiveTab}>
                 <TabPanel label="Recent Activities">
-                  {recentActivities.length ? (
+                  {activities && activities.length > 0 ? (
                     <ul className="space-y-2 pl-4 list-disc">
-                      {recentActivities.map((activity, idx) => (
+                      {activities.map((activity, idx) => (
                         <li
                           key={idx}
                           className="text-gray-700 dark:text-gray-200 text-base"
@@ -822,12 +734,12 @@ const Dashboard: React.FC = () => {
                     </ul>
                   ) : (
                     <p className="text-gray-500 dark:text-gray-400 text-base">
-                      No recent activities.
+                      No recent activities available.
                     </p>
                   )}
                 </TabPanel>
                 <TabPanel label="Notifications">
-                  {notifications.length ? (
+                  {notifications && notifications.length > 0 ? (
                     <ul className="space-y-2 pl-4 list-disc">
                       {notifications.map((notification, idx) => (
                         <li
@@ -841,7 +753,7 @@ const Dashboard: React.FC = () => {
                     </ul>
                   ) : (
                     <p className="text-gray-500 dark:text-gray-400 text-base">
-                      No notifications.
+                      No notifications available.
                     </p>
                   )}
                 </TabPanel>

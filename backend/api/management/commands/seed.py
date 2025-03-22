@@ -199,6 +199,11 @@ class Command(BaseCommand):
 
     def create_robotics_society(self, president, student, vice_president, event_manager):
         """Seeds the example society, Robotics Society"""
+        if president.is_event_manager or president.is_vice_president:
+            president.is_event_manager = False
+            president.is_vice_president = False
+            president.save()
+
         self.create_society(name="Robotics Club", president_force=president)
 
         society = Society.objects.filter(name="Robotics Club").first()
