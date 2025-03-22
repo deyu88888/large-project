@@ -6,6 +6,22 @@ import { useSettingsStore } from "./stores/settings-store";
 import { themeSettings } from "./theme/theme";
 import { SearchProvider } from "./components/layout/SearchContext";
 import { WebSocketProvider } from "./hooks/useWebSocketManager";
+import { useRef } from "react";
+
+// Create a persistent WebSocket connection manager
+export const PersistentWebSocket = () => {
+  // Use useRef to maintain instance between renders
+  const initialized = useRef(false);
+
+  // Only render the WebSocketProvider once
+  if (!initialized.current) {
+    initialized.current = true;
+    return <WebSocketProvider />;
+  }
+  
+  // On subsequent renders, just render children
+  return null;
+};
 
 export const apiClient = axios.create({
   baseURL: "http://localhost:8000",
@@ -16,10 +32,11 @@ export const apiClient = axios.create({
 
 export function App() {
   const { themeMode } = useSettingsStore();
-  
+
   return (
     <ThemeProvider theme={createTheme(themeSettings(themeMode))}>
       <CssBaseline />
+      {/* Move WebSocketProvider outside BrowserRouter */}
       <WebSocketProvider>
         <SearchProvider>
           <BrowserRouter>

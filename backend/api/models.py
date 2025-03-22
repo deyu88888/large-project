@@ -15,7 +15,7 @@ from django.utils.translation import gettext_lazy as _
 from django.db.models import F
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-
+from django.conf import settings
 class User(AbstractUser):
     """
     A custom user model with role-based logic.
@@ -1069,3 +1069,21 @@ class ActivityLog(models.Model):
         expired_logs = cls.objects.filter(expiration_date__lt=expiration_threshold)
         deleted_count, _ = expired_logs.delete()
         return deleted_count
+    
+class Activity(models.Model):
+    """
+    Represents a recent activity performed by a user.
+    """
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="activities"
+    )
+    description = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.username}: {self.description[:30]}..."
