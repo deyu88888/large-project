@@ -13,7 +13,7 @@ from .views import (
     like_comment, dislike_comment, EventCommentsView, toggle_follow, MyProfileView, AdminRepliesListView,
     AdminActivityLogView, AdminManageEventDetailsView, AdminDeleteView, AdminManageStudentDetailsView, ReportReplyView, 
     MyReportsView, MyReportsWithRepliesView, ReportThreadView, AdminReportsWithRepliesView, ReportReplyNotificationsView,
-    NewsPublicationRequestView, AdminNewsApprovalView, SearchView
+    NewsPublicationRequestView, AdminNewsApprovalView, SearchView, AdminRestoreView
 )
 from .utils import request_otp, verify_otp
 from .recommendation_views import RecommendedSocietiesView, SocietyRecommendationExplanationView
@@ -83,7 +83,7 @@ urlpatterns = [
     path("delete-activity-log/<int:log_id>", AdminActivityLogView.as_view(), name="delete_activity_log"),
 
     path('delete/<str:target_type>/<int:target_id>', AdminDeleteView.as_view(), name='delete'),
-    path('undo-delete/<int:log_id>', AdminDeleteView.as_view(), name='undo-delete'),
+    path('restore/<int:log_id>', AdminRestoreView.as_view(), name='restore'),
 
     # Student societies endpoints
     path("student-societies/", JoinedSocietiesView.as_view(), name="student_societies"),
