@@ -73,6 +73,7 @@ const AdminViewSocietyPage = lazy(() => import("../pages/Admin/ViewSociety"));
 const RequestDescriptionPage = lazy(() => import("../pages/Admin/SocietyDesChangeRequest"));
 const AdminViewStudentPage = lazy(() => import("../pages/Admin/ViewStudent"));
 const AdminViewEventPage = lazy(() => import("../pages/Admin/ViewEvent"));
+const AdminViewAdminPage = lazy(() => import("../pages/Admin/ViewAdmin"));
 const ActivityLogPage = lazy(() => import("../pages/Admin/ActivityLog"));
 
 const routes = [
@@ -148,6 +149,7 @@ const routes = [
           { path: "start-society", element: <PageWithTitle title="Start a Society"><StartSociety /></PageWithTitle> },
           { path: "join-society", element: <PageWithTitle title="Join a Society"><JoinSocietiesPage /></PageWithTitle> },
           { path: "view-society/:society_id", element: <PageWithTitle title="Society Details"><ViewSocietyPage /></PageWithTitle> },
+          { path: "view-admin/:admin_id", element: <PageWithTitle title="Admin Details"><AdminViewAdminPage /></PageWithTitle> },
           { path: "event/:event_id", element: <PageWithTitle title="Event Details"><EventDetailPage /></PageWithTitle> },
           { path: "profile/:student_id", element: <PageWithTitle title="User Profile"><ProfilePage /></PageWithTitle> },
           { path: "report-thread/:reportId", element: <PageWithTitle title="Report Thread"><ReportThread /></PageWithTitle> },

@@ -74,6 +74,7 @@ export const apiPaths = {
     REJECTEDEVENT: "/api/admin-panel/rejected-event", // TODO: DONT ADD BACKSLASH
     PENDINGDESCRIPTIONREQUEST: "/api/description/request/pending",
     BASE: "/api/users",
+    ADMINVIEW: (adminId: number) => `/api/admin-manage-admin-details/${adminId}`,
     ADMINSTUDENTVIEW: (studentId: number) => `/api/admin-manage-student-details/${studentId}`,
     ADMINSOCIETYVIEW: (societyId: number) => `/api/admin-manage-society-details/${societyId}`, // admin society view
     ADMINEVENTVIEW: (eventId: number) => `/api/admin-manage-event-details/${eventId}`,
