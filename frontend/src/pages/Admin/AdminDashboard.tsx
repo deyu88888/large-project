@@ -22,68 +22,99 @@ const AdminDashboard = () => {
   const [societiesData, setSocietiesData] = useState<any[]>([]);
   const [pendingPublications, setPendingPublications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [apiCallsAttempted, setApiCallsAttempted] = useState(false);
 
   const { drawer } = useSettingsStore();
   const { user, setUser } = useAuthStore();
 
+  // Only attempt API calls once to prevent infinite loops
   useEffect(() => {
-    fetchData();
-    fetchSocieties(); // TODO: implement this?
-    fetchCurrentUser();
-    fetchPendingPublications();
-  }, []);
+    if (!apiCallsAttempted) {
+      console.log("AdminDashboard: Making initial API calls");
+      fetchCurrentUser();
+      fetchData();
+      fetchSocieties();
+      fetchPendingPublications();
+      setApiCallsAttempted(true);
+    }
+  }, [apiCallsAttempted]);
 
   const fetchCurrentUser = async () => {
     try {
-      const response = await apiClient.get(apiPaths.USER.USERSTATS); // Adjust the endpoint
+      console.log("AdminDashboard: Fetching current user");
+      const response = await apiClient.get(apiPaths.USER.CURRENT);
+      console.log("AdminDashboard: Current user fetch successful");
       setUser(response.data);
-      // setUser(await fetchPendingRequests(apiPaths.USER.USERSTATS)); // TODO: use when the endpoint is ready
     } catch (error) {
-      console.error("Error fetching current user:", error);
+      console.error("AdminDashboard: Error fetching current user:", error);
       // Initialize with a default value to prevent errors
-      setUser({ firstName: "User" });
+      setUser({ firstName: "User", first_name: "User" });
     }
   };
 
   const fetchData = async () => {
+    console.log("AdminDashboard: Fetching dashboard data");
+    
     try {
-      setLoading(true);
-      const statsResponse = await apiClient.get(apiPaths.USER.USERSTATS);
+      // Try to get dashboard stats
+      const statsResponse = await apiClient.get("/api/dashboard/stats/");
       setUserStats(statsResponse.data || {});
-      const eventsResponse = await apiClient.get("/api/admin/events/");
-      setEvents(eventsResponse.data || []);
+      console.log("AdminDashboard: Stats data fetched successfully");
     } catch (error) {
-      console.error("Error fetching data:", error);
-      setUserStats({});
+      console.error("AdminDashboard: Error fetching stats data:", error);
+      setUserStats({
+        totalUsers: 0,
+        activeUsers: 0,
+        totalSocieties: 0,
+        totalEvents: 0
+      });
+    }
+    
+    try {
+      // Try to get events
+      const eventsResponse = await apiClient.get(apiPaths.EVENTS.APPROVEDEVENTLIST);
+      setEvents(eventsResponse.data || []);
+      console.log("AdminDashboard: Events data fetched successfully");
+    } catch (error) {
+      console.error("AdminDashboard: Error fetching events:", error);
       setEvents([]);
     }
+    
     try {
-      const notificationsResponse = await apiClient.get("/api/notifications");
+      // Try to get notifications
+      const notificationsResponse = await apiClient.get("/api/notifications/");
       setNotifications(notificationsResponse.data || []);
+      console.log("AdminDashboard: Notifications fetched successfully");
     } catch (error) {
-      console.error("Error fetching notifications:", error);
+      console.error("AdminDashboard: Error fetching notifications:", error);
       setNotifications([]);
     }
+    
+    // Finish loading regardless of API success/failure
     setLoading(false);
   };
 
   const fetchSocieties = async () => {
     try {
-      const res = await apiClient.get("/api/admin/societies");
+      console.log("AdminDashboard: Fetching societies");
+      const res = await apiClient.get(apiPaths.USER.SOCIETY);
       setSocietiesData(res.data || []);
+      console.log("AdminDashboard: Societies fetched successfully");
     } catch (error) {
-      console.error("Error fetching societies:", error);
+      console.error("AdminDashboard: Error fetching societies:", error);
       setSocietiesData([]);
     }
   };
 
   const fetchPendingPublications = async () => {
     try {
+      console.log("AdminDashboard: Fetching pending publications");
       const response = await apiClient.get("/api/news/publication-request/");
       const pendingOnly = response.data.filter((req: any) => req.status === "Pending");
       setPendingPublications(pendingOnly || []);
+      console.log("AdminDashboard: Pending publications fetched successfully");
     } catch (error) {
-      console.error("Error fetching publication requests:", error);
+      console.error("AdminDashboard: Error fetching publication requests:", error);
       setPendingPublications([]);
     }
   };
@@ -131,6 +162,57 @@ const AdminDashboard = () => {
         }}
       >
         <Typography>{message}</Typography>
+      </Box>
+    );
+  };
+
+  // Simple fallback BarChart component in case the actual one isn't available
+  const BarChart = ({ data }: { data: any[] }) => {
+    if (!data || data.length === 0) {
+      return (
+        <Box 
+          display="flex" 
+          justifyContent="center" 
+          alignItems="center" 
+          height="100%" 
+          style={{ backgroundColor: "rgba(255, 255, 255, 0.05)" }}
+        >
+          <Typography color={greyColorAlt}>No society data available</Typography>
+        </Box>
+      );
+    }
+
+    return (
+      <Box 
+        display="flex" 
+        justifyContent="space-between" 
+        alignItems="flex-end" 
+        height="100%" 
+        padding="20px"
+        style={{ backgroundColor: "rgba(255, 255, 255, 0.05)" }}
+      >
+        {data.map((item, index) => (
+          <Box 
+            key={index} 
+            display="flex" 
+            flexDirection="column" 
+            alignItems="center"
+            width={`${100 / (data.length * 2)}%`}
+            marginX={1}
+          >
+            <Box 
+              width="100%" 
+              height={`${(item.members / Math.max(...data.map(d => d.members))) * 200}px`}
+              style={{ backgroundColor: blueAccentColor, borderRadius: "4px 4px 0 0" }} 
+            />
+            <Typography variant="body2" style={{ marginTop: "8px", textAlign: "center", fontSize: "10px" }}>
+              {item.country}
+            </Typography>
+            <Typography variant="body2" style={{ fontSize: "8px" }}>
+              {item.members}
+            </Typography>
+          </Box>
+        ))}
       </Box>
     );
   };
