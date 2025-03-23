@@ -81,13 +81,7 @@ interface NavigationItem {
 // -- API Functions --
 const fetchDashboardStats = async (): Promise<StatData | null> => {
   try {
-    const token = localStorage.getItem(ACCESS_TOKEN);
-    if (!token) {
-      console.log("No authentication token available");
-      return null;
-    }
-    
-    const response = await apiClient.get("/api/dashboard/stats");
+    const response = await apiClient.get("/api/dashboard/stats/");
     return response.data;
   } catch (error) {
     console.error("Error fetching dashboard stats:", error);
@@ -97,13 +91,7 @@ const fetchDashboardStats = async (): Promise<StatData | null> => {
 
 const fetchActivities = async (): Promise<Activity[] | null> => {
   try {
-    const token = localStorage.getItem(ACCESS_TOKEN);
-    if (!token) {
-      console.log("No authentication token available");
-      return null;
-    }
-    
-    const response = await apiClient.get("/api/dashboard/activities");
+    const response = await apiClient.get("/api/dashboard/activities/");
     return response.data;
   } catch (error) {
     console.error("Error fetching activities:", error);
@@ -113,12 +101,6 @@ const fetchActivities = async (): Promise<Activity[] | null> => {
 
 const fetchNotifications = async (): Promise<Notification[] | null> => {
   try {
-    const token = localStorage.getItem(ACCESS_TOKEN);
-    if (!token) {
-      console.log("No authentication token available");
-      return null;
-    }
-    
     const response = await apiClient.get("/api/dashboard/notifications");
     return response.data;
   } catch (error) {
@@ -591,7 +573,7 @@ const Dashboard: React.FC = () => {
                 <Link
                   to="/register"
                   className="px-4 py-2 bg-purple-600 text-white
-                              rounded-full shadow hover:bg-purple-700 transition whitespace-nowrap"
+                            rounded-full shadow hover:bg-purple-700 transition whitespace-nowrap"
                   data-testid="register-link"
                 >
                   Register
@@ -599,7 +581,7 @@ const Dashboard: React.FC = () => {
                 <Link
                   to="/login"
                   className="px-4 py-2 bg-purple-600 text-white
-                              rounded-full shadow hover:bg-purple-700 transition whitespace-nowrap"
+                            rounded-full shadow hover:bg-purple-700 transition whitespace-nowrap"
                   data-testid="login-link"
                 >
                   Login
