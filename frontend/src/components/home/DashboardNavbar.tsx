@@ -157,14 +157,14 @@ export const DashboardNavbar = () => {
                     bottom: 0,
                     left: 0,
                     backgroundColor: "secondary.dark",
-                    transition: "width 0.3s ease-in-out"
+                    transition: "width 0.3s ease-in-out",
                   },
                   "&:hover": {
                     color: "secondary.dark",
                   },
-                  "&:hover::after": { width: "100%"},
-                  "&.active": { color: "secondary.dark",},
-                  "&.active::after": { width: "100%"}
+                  "&:hover::after": { width: "100%" },
+                  "&.active": { color: "secondary.dark" },
+                  "&.active::after": { width: "100%" },
                 }}
                 className={location.pathname === page.path ? "active" : ""}
               >
@@ -252,6 +252,11 @@ export const DashboardNavbar = () => {
               inputProps={{ "aria-label": "search" }}
               value={searchTerm}
               onChange={handleSearchChange}
+              onKeyPress={(e: any) => {
+                if (e.key === "Enter") {
+                  navigate(`/search?q=${e.target.value}`);
+                }
+              }}
             />
           </Search>
 
