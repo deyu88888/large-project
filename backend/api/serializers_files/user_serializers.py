@@ -1,10 +1,9 @@
 from api.models import User, Student, Society
+from api.serializers import AwardStudentSerializer
 from rest_framework.validators import UniqueValidator
-from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
-from rest_framework.validators import UniqueValidator
 from django.utils.translation import gettext_lazy as _
-from award_serializers import AwardStudentSerializer
+
 
 class UserSerializer(serializers.ModelSerializer):
     """
@@ -36,9 +35,11 @@ class UserSerializer(serializers.ModelSerializer):
         return False
 
     def get_followers_count(self, obj):
+        """Get the number of a users followers"""
         return obj.followers.count()
 
     def get_following_count(self, obj):
+        """Get the number of users followed"""
         return obj.following.count()
 
     def create(self, validated_data):

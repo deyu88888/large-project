@@ -1,9 +1,12 @@
-from api.models import BroadcastMessage, Notification, ReportReply, NewsComment, NewsPublicationRequest, SocietyNews
+import traceback
+from json import loads
+from api.models import BroadcastMessage, Notification, ReportReply, NewsComment,\
+    NewsPublicationRequest, SocietyNews
+from api.serializers_files.serializers_utility import get_report_reply_chain
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
 from django.utils.dateformat import format as django_format
 from django.utils.timezone import localtime
-import traceback
 
 
 class SocietyNewsSerializer(serializers.ModelSerializer):
@@ -127,7 +130,7 @@ class SocietyNewsSerializer(serializers.ModelSerializer):
             count = NewsComment.objects.filter(news_post=obj).count()
             print(f"DEBUG - Comment count for post {getattr(obj, 'id', 'None')}: {count}")
             return count
-        except Exception as e:
+        except NewsComment.DoesNotExist as e:
             print(f"DEBUG - Error in get_comment_count: {str(e)}")
             return 0
 
@@ -235,9 +238,8 @@ class SocietyNewsSerializer(serializers.ModelSerializer):
             if tags and not isinstance(tags, list):
                 print("DEBUG - Tags is not a list, attempting conversion")
                 try:
-                    import json
                     if isinstance(tags, str):
-                        data['tags'] = json.loads(tags)
+                        data['tags'] = loads(tags)
                         print(f"DEBUG - Converted tags: {data['tags']}")
                 except Exception as e:
                     print(f"DEBUG - Error converting tags: {str(e)}")
@@ -296,7 +298,6 @@ class SocietyNewsSerializer(serializers.ModelSerializer):
             return instance
         except Exception as e:
             print(f"DEBUG - Error creating news post: {str(e)}")
-            import traceback
             traceback.print_exc()
             print("=" * 80)
             raise
@@ -413,11 +414,12 @@ class NotificationSerializer(serializers.ModelSerializer):
         return instance
 
 class BroadcastSerializer(serializers.ModelSerializer):
+    """Serializer for the BroadcastMessage model"""
     class Meta:
+        """Metadata for BroadcastSerializer"""
         model = BroadcastMessage
         fields = ['id', 'sender', 'societies', 'events', 'recipients', 'message', 'created_at']
         read_only_fields = ['id', 'created_at', 'sender']
-
 
 
 class ReportReplySerializer(serializers.ModelSerializer):
@@ -426,8 +428,9 @@ class ReportReplySerializer(serializers.ModelSerializer):
     """
     replied_by_username = serializers.CharField(source='replied_by.username', read_only=True)
     child_replies = serializers.SerializerMethodField()
-    
+
     class Meta:
+        """Metadata for ReportReplySerializer"""
         model = ReportReply
         fields = ['id', 'report', 'parent_reply', 'content', 'created_at', 
                   'replied_by', 'replied_by_username', 'is_admin_reply', 'child_replies']
@@ -435,7 +438,8 @@ class ReportReplySerializer(serializers.ModelSerializer):
             'replied_by': {'read_only': True},
             'is_admin_reply': {'read_only': True}
         }
-    
+
     def get_child_replies(self, obj):
-        children = obj.child_replies.all().order_by('created_at')
+        """Get reply chain the ReportReply"""
+        children = get_report_reply_chain(obj)
         return ReportReplySerializer(children, many=True).data

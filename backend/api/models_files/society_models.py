@@ -2,7 +2,7 @@ from django.core.files.base import ContentFile
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-import api.models_files.models_utility as models_utility
+from api.models_files.models_utility import generate_icon
 
 
 def validate_social_media_links(value):
@@ -130,7 +130,7 @@ class Society(models.Model):
             self.society_members.add(self.president) 
 
         if not self.icon.name or not self.icon:
-            buffer = models_utility.generate_icon(self.name[0], "S")
+            buffer = generate_icon(self.name[0], "S")
             filename = f"default_society_icon_{self.pk}.jpeg"
             self.icon.save(filename, ContentFile(buffer.getvalue()), save=True)
 

@@ -1,17 +1,15 @@
 from datetime import timedelta
+from django.conf import settings
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-from api.models_files.user_models import Student, User
-from api.models_files.award_models import Award, AwardStudent
-from api.models_files.communication_models import Notification, ReportReply, NewsNotification, BroadcastMessage, SocietyNews, \
-    NewsComment, NewsPublicationRequest
-from api.models_files.event_models import Event, Comment
-from api.models_files.society_models import Society, SocietyShowreel
-from api.models_files.request_models import Request, SocietyRequest, DescriptionRequest, SocietyShowreelRequest, UserRequest, \
-    EventRequest, AdminReportRequest
+from api.models_files.user_models import *
+from api.models_files.award_models import *
+from api.models_files.communication_models import *
+from api.models_files.event_models import *
+from api.models_files.society_models import *
+from api.models_files.request_models import *
 from api.models_files.recommendation_feedback_model import RecommendationFeedback
-from django.conf import settings
 
 
 class SiteSettings(models.Model):
@@ -63,6 +61,7 @@ class SiteSettings(models.Model):
         return obj
 
 class ActivityLog(models.Model):
+    """A model to keep track of admin activity"""
     ACTION_CHOICES = [
         ("Delete", "Delete"),
         ("Approve", "Approve"),

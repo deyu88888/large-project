@@ -1,13 +1,14 @@
 from api.models import Student, Society, SocietyRequest, SocietyShowreel, UserRequest
+from api.serializers import StudentSerializer
+from api.serializers_files.serializers_utility import get_society_if_exists, is_user_student
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
-import api.serializers_files.user_serializers as user_serializers
+
 
 class SocietyShowreelSerializer(serializers.ModelSerializer):
     """
     Serializer for the SocietyShowreel model
     """
-
     class Meta:
         """SocietyShowreelSerializer meta data"""
         model = SocietyShowreel
@@ -18,15 +19,15 @@ class SocietySerializer(serializers.ModelSerializer):
     Serializer for objects of the Society model 
     """
     showreel_images = SocietyShowreelSerializer(many=True, required=False)
-    president = user_serializers.StudentSerializer(read_only=True)
+    president = StudentSerializer(read_only=True)
     president_id = serializers.PrimaryKeyRelatedField(
         queryset=Student.objects.all(), write_only=True, source='president'
     )
-    vice_president = user_serializers.StudentSerializer(read_only=True)
+    vice_president = StudentSerializer(read_only=True)
     vice_president_id = serializers.PrimaryKeyRelatedField(
         queryset=Student.objects.all(), write_only=True, source='vice_president', required=False
     )
-    event_manager = user_serializers.StudentSerializer(read_only=True)
+    event_manager = StudentSerializer(read_only=True)
     event_manager_id = serializers.PrimaryKeyRelatedField(
         queryset=Student.objects.all(), write_only=True, source='event_manager', required=False
     )
@@ -116,19 +117,13 @@ class LeaveSocietySerializer(serializers.Serializer):
         """
         Validate if the user can leave the given society.
         """
-        request_user = self.context['request'].user
+        request_user = is_user_student(self.context, "Only students can join societies.")
 
-        if not hasattr(request_user, 'student'):
-            raise serializers.ValidationError({"error": "Only students can leave societies."})
-        
         society_id = self.society_id
         if society_id is None:
             raise serializers.ValidationError({"error": "society_id is required."})
 
-        try:
-            society = Society.objects.get(id=society_id)
-        except Society.DoesNotExist:
-            raise serializers.ValidationError({"error": "Society does not exist."})
+        society = get_society_if_exists(society_id)
 
         # Check if the user is actually a member of the society
         if not society.society_members.filter(id=request_user.id).exists():
@@ -155,14 +150,10 @@ class JoinSocietySerializer(serializers.Serializer):
     society_id = serializers.IntegerField()
 
     def validate_society_id(self, value):
-        request_user = self.context['request'].user
-        if not hasattr(request_user, 'student'):
-            raise serializers.ValidationError("Only students can join societies.")
+        """Validates the passed society id corresponds to a real society"""
+        request_user = is_user_student(self.context, "Only students can join societies.")
 
-        try:
-            society = Society.objects.get(id=value)
-        except Society.DoesNotExist:
-            raise serializers.ValidationError("Society does not exist.")
+        society = get_society_if_exists(value)
 
         if society.society_members.filter(id=request_user.id).exists():
             raise serializers.ValidationError("You are already a member of this society.")
