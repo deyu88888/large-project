@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Box, Typography, useTheme } from "@mui/material";
 import { FaUsers, FaCalendarAlt, FaEnvelope } from "react-icons/fa";
 import Header from "../../components/Header";
@@ -6,39 +6,81 @@ import { tokens } from "../../theme/theme";
 import { apiClient, apiPaths } from "../../api";
 import { useSettingsStore } from "../../stores/settings-store";
 import { useAuthStore } from "../../stores/auth-store";
-import { fetchPendingRequests } from "./utils";
+import { StatCardProps, NotificationCardProps } from '../../types/admin/dashboard';
 
-const AdminDashboard = () => {
+/**
+ * StatCard component to display dashboard stats
+ */
+const StatCard: React.FC<StatCardProps> = ({ icon, title, value }) => {
+  return (
+    <Box
+      className="p-6 rounded-xl shadow hover:shadow-lg transition-transform hover:-translate-y-1"
+      style={{
+        backgroundColor: "rgba(255, 255, 255, 0.1)",
+        border: "1px solid rgba(255, 255, 255, 0.2)",
+      }}
+    >
+      <Box display="flex" alignItems="center" mb="16px">
+        {icon}
+        <Typography variant="h6" style={{ marginLeft: "12px" }}>
+          {title}
+        </Typography>
+      </Box>
+      <Typography variant="h4" fontWeight="bold">
+        {value}
+      </Typography>
+    </Box>
+  );
+};
+
+/**
+ * NotificationCard component to display notifications
+ */
+const NotificationCard: React.FC<NotificationCardProps> = ({ message, isRead }) => {
+  return (
+    <Box
+      className="p-5 rounded-lg shadow-md transition-all"
+      style={{
+        backgroundColor: isRead ? "rgba(0, 128, 0, 0.1)" : "rgba(255, 0, 0, 0.1)",
+        border: "1px solid rgba(255, 255, 255, 0.2)",
+      }}
+    >
+      <Typography>{message}</Typography>
+    </Box>
+  );
+};
+
+/**
+ * AdminDashboard component displays the admin dashboard with statistics and notifications
+ */
+const AdminDashboard: React.FC = () => {
   const theme = useTheme();
   const colours = tokens(theme.palette.mode);
-
-  const [userStats, setUserStats] = useState<any>(null);
-  const [events, setEvents] = useState<any[]>([]);
-  const [notifications, setNotifications] = useState<any[]>([]);
-  const [societiesData, setSocietiesData] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
   const { drawer } = useSettingsStore();
   const { user, setUser } = useAuthStore();
 
+  // State management
+  const [userStats, setUserStats] = useState<any>(null);
+  const [events, setEvents] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchData();
-    fetchSocieties(); // TODO: implement this?
-    fetchCurrentUser();
-  }, []);
-
-  const fetchCurrentUser = async () => {
+  /**
+   * Fetch current user information
+   */
+  const fetchCurrentUser = useCallback(async () => {
     try {
-      const response = await apiClient.get(apiPaths.USER.USERSTATS); // Adjust the endpoint
+      const response = await apiClient.get(apiPaths.USER.USERSTATS);
       setUser(response.data);
-      // setUser(await fetchPendingRequests(apiPaths.USER.USERSTATS)); // TODO: use when the endpoint is ready
     } catch (error) {
       console.error("Error fetching current user:", error);
     }
-  };
+  }, [setUser]);
 
-  const fetchData = async () => {
+  /**
+   * Fetch dashboard data
+   */
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       const statsResponse = await apiClient.get(apiPaths.USER.USERSTATS);
@@ -55,68 +97,30 @@ const AdminDashboard = () => {
       console.error("Error fetching notifications:", error);
     }
     setLoading(false);
-  };
+  }, []);
 
-  const fetchSocieties = async () => {
+  /**
+   * Fetch societies data
+   */
+  const fetchSocieties = useCallback(async () => {
     try {
       const res = await apiClient.get("/api/admin/societies");
-      setSocietiesData(res.data);
+      // setSocietiesData(res.data);
+      console.log("Societies data:", res.data); // For now, just log the data
     } catch (error) {
       console.error("Error fetching societies:", error);
     }
-  };
+  }, []);
 
-  interface StatCardProps {
-    icon: React.ReactNode;
-    title: string;
-    value: number | string;
-  }
-
-  const StatCard = ({ icon, title, value }: StatCardProps) => {
-    return (
-      <Box
-        className="p-6 rounded-xl shadow hover:shadow-lg transition-transform hover:-translate-y-1"
-        style={{
-          backgroundColor: "rgba(255, 255, 255, 0.1)",
-          border: "1px solid rgba(255, 255, 255, 0.2)",
-        }}
-      >
-        <Box display="flex" alignItems="center" mb="16px">
-          {icon}
-          <Typography variant="h6" style={{ marginLeft: "12px" }}>
-            {title}
-          </Typography>
-        </Box>
-        <Typography variant="h4" fontWeight="bold">
-          {value}
-        </Typography>
-      </Box>
-    );
-  };
-
-  interface NotificationCardProps {
-    message: string;
-    isRead: boolean;
-  }
-
-  const NotificationCard = ({ message, isRead }: NotificationCardProps) => {
-    return (
-      <Box
-        className="p-5 rounded-lg shadow-md transition-all"
-        style={{
-          backgroundColor: isRead ? "rgba(0, 128, 0, 0.1)" : "rgba(255, 0, 0, 0.1)",
-          border: "1px solid rgba(255, 255, 255, 0.2)",
-        }}
-      >
-        <Typography>{message}</Typography>
-      </Box>
-    );
-  };
+  useEffect(() => {
+    fetchData();
+    // fetchSocieties(); // TODO: implement this?
+    fetchCurrentUser();
+  }, [fetchData, fetchSocieties, fetchCurrentUser]);
 
   return (
     <div
       style={{
-        // marginLeft: `${sidebarWidth}px`,
         marginTop: "64px",
         transition: "margin-left 0.3s ease-in-out",
         minHeight: "100vh",

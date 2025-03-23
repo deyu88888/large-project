@@ -4,35 +4,39 @@ import { useTheme, Box, Typography, Button, Paper, CircularProgress } from "@mui
 import { apiClient } from "../../api";
 import { useAuthStore } from "../../stores/auth-store";
 import { tokens } from "../../theme/theme";
+import { Society } from "../../types/president/society";
+import { Member } from "../../types/president/member";
+import { SocietyIdParams } from "../../types/president/role";
+import { NavigationItem } from "../../types/president/navigation";
 
-interface Society {
-  id: number;
-  name: string;
-  [key: string]: any;
-}
+// interface Society {
+//   id: number;
+//   name: string;
+//   [key: string]: any;
+// }
 
-interface Member {
-  id: number;
-  first_name: string;
-  last_name: string;
-  username: string;
-}
+// interface Member {
+//   id: number;
+//   first_name: string;
+//   last_name: string;
+//   username: string;
+// }
 
-interface RouteParams {
-  society_id: string;
-}
+// interface SocietyIdParams {
+//   society_id: string;
+// }
 
-interface NavigationItem {
-  text: string;
-  path: string;
-  color: string;
-}
+// interface NavigationItem {
+//   text: string;
+//   path: string;
+//   color: string;
+// }
 
 const PresidentPage: React.FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const navigate = useNavigate();
-  const { society_id } = useParams<RouteParams>();
+  const { society_id } = useParams<SocietyIdParams>();
   const [society, setSociety] = useState<Society | null>(null);
   const [pendingMembers, setPendingMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState<boolean>(true);

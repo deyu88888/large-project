@@ -24,6 +24,10 @@ import {
 import { apiClient } from "../../api";
 import { useAuthStore } from "../../stores/auth-store";
 import StudentCalendar from "./StudentCalendar";
+import { Society } from "../../types/student/society";
+import { EventData, TransformedEvent } from "../../types/student/event"
+import { Notification } from "../../types/student/notification"; 
+import { AwardAssignment } from "../../types/student/award";
 
 const CustomTabs = styled(Tabs)(({ theme, activecolor }) => ({
   "& .MuiTabs-indicator": {
@@ -31,57 +35,57 @@ const CustomTabs = styled(Tabs)(({ theme, activecolor }) => ({
   },
 }));
 
-interface Society {
-  id: number;
-  name: string;
-  is_president: boolean;
-  is_vice_president?: boolean;
-  is_event_manager?: boolean;
-}
+// interface Society {
+//   id: number;
+//   name: string;
+//   is_president: boolean;
+//   is_vice_president?: boolean;
+//   is_event_manager?: boolean;
+// }
 
-interface EventData {
-  id: number;
-  title: string;
-  description?: string;
-  date: string;
-  start_time: string;
-  duration: string;
-  location?: string;
-  hosted_by: number;
-  societyName?: string;
-  rsvp: boolean;
-  status: string;
-}
+// interface EventData {
+//   id: number;
+//   title: string;
+//   description?: string;
+//   date: string;
+//   start_time: string;
+//   duration: string;
+//   location?: string;
+//   hosted_by: number;
+//   societyName?: string;
+//   rsvp: boolean;
+//   status: string;
+// }
 
-interface TransformedEvent {
-  id: number;
-  title: string;
-  description: string;
-  date: string;
-  startTime: string;
-  duration: string;
-  location: string;
-  hostedBy: number;
-  societyName?: string;
-  rsvp: boolean;
-  status: string;
-}
+// interface TransformedEvent {
+//   id: number;
+//   title: string;
+//   description: string;
+//   date: string;
+//   startTime: string;
+//   duration: string;
+//   location: string;
+//   hostedBy: number;
+//   societyName?: string;
+//   rsvp: boolean;
+//   status: string;
+// }
 
-interface Notification {
-  id: number;
-  header: string;
-  body: string;
-  is_read: boolean;
-}
+// interface Notification {
+//   id: number;
+//   header: string;
+//   body: string;
+//   is_read: boolean;
+// }
 
-interface AwardAssignment {
-  id: number;
-  award: {
-    title: string;
-    description: string;
-    rank: string;
-  };
-}
+// interface AwardAssignment {
+//   id: number;
+//   award: {
+//     title: string;
+//     description: string;
+//     rank: string;
+//   };
+// }
 
 const StudentDashboard: React.FC = () => {
   const navigate = useNavigate();

@@ -11,16 +11,17 @@ import {
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { tokens } from "../../theme/theme";
+import{ RoleOption, RouteParams } from "../../types/president/role";
 
-interface RoleOption {
-  key: string;
-  label: string;
-}
+// interface RoleOption {
+//   key: string;
+//   label: string;
+// }
 
-interface RouteParams {
-  society_id: string;
-  student_id: string;
-}
+// interface RouteParams {
+//   society_id: string;
+//   student_id: string;
+// }
 
 const ROLE_OPTIONS: RoleOption[] = [
   { key: "vice_president", label: "Vice President" },

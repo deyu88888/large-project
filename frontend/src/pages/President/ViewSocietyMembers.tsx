@@ -15,19 +15,21 @@ import {
   ListItemSecondaryAction 
 } from "@mui/material";
 import { tokens } from "../../theme/theme";
+import { Society } from "../../types/president/society";
+import { Member } from "../../types/president/member";
 
-interface Society {
-  id: number;
-  name: string;
-  [key: string]: any;
-}
+// interface Society {
+//   id: number;
+//   name: string;
+//   [key: string]: any;
+// }
 
-interface Member {
-  id: number;
-  first_name: string;
-  last_name: string;
-  username: string;
-}
+// interface Member {
+//   id: number;
+//   first_name: string;
+//   last_name: string;
+//   username: string;
+// }
 
 const ViewSocietyMembers: React.FC = () => {
   const { societyId } = useParams<{ societyId: string }>();

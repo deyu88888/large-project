@@ -9,26 +9,32 @@ import {
   Box,
 } from "@mui/material";
 
-interface SocietyData {
-  name: string;
-  category: string;
-  social_media_links: Record<string, string>;
-  membership_requirements: string;
-  upcoming_projects_or_plans: string;
-  tags: string[];
-  icon?: string | File | null;
-}
+import { 
+  SocietyPreviewData, 
+  SocietyPreviewModalProps, 
+  PreviewSectionProps 
+} from "../../types/president/societyPreviewModal";
 
-interface SocietyPreviewModalProps {
-  open: boolean;
-  onClose: () => void;
-  formData: SocietyData;
-}
+// interface SocietyPreviewData {
+//   name: string;
+//   category: string;
+//   social_media_links: Record<string, string>;
+//   membership_requirements: string;
+//   upcoming_projects_or_plans: string;
+//   tags: string[];
+//   icon?: string | File | null;
+// }
 
-interface PreviewSectionProps {
-  title: string;
-  content: React.ReactNode;
-}
+// interface SocietyPreviewModalProps {
+//   open: boolean;
+//   onClose: () => void;
+//   formData: SocietyPreviewData;
+// }
+
+// interface PreviewSectionProps {
+//   title: string;
+//   content: React.ReactNode;
+// }
 
 const PreviewSection: React.FC<PreviewSectionProps> = ({ title, content }) => (
   <Box mb={2}>
