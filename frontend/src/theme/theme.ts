@@ -3,60 +3,49 @@ type ThemeMode = "light" | "dark";
 type ColorTokens = {
   grey: Record<number, string>;
   primary: Record<number, string>;
-  accent1: Record<number, string>;
-  accent2: Record<number, string>;
-  accent3: Record<number, string>;
+  greenAccent: Record<number, string>;
+  redAccent: Record<number, string>;
+  blueAccent: Record<number, string>;
 };
 
-// color design tokens with new palette
+// color design tokens
 export const tokens = (mode: ThemeMode): ColorTokens => ({
   ...(mode === "dark"
     ? {
         grey: {
-          100: "#F2E8CF", // Parchment
-          200: "#F4EDD9",
-          300: "#F7F1E2",
-          400: "#FAF6EC",
-          500: "#FCFAF5",
-          600: "#C5BBB5",
-          700: "#8F8880",
-          800: "#59554B",
-          900: "#2C2A25",
+          100: "#e0e0e0",
+          200: "#c2c2c2",
+          300: "#a3a3a3",
+          400: "#858585",
+          500: "#666666",
+          600: "#525252",
+          700: "#3d3d3d",
+          800: "#292929",
+          900: "#141414",
         },
         primary: {
-          100: "#DACFE7", // English Violet lighter shades
-          200: "#B59FCE",
-          300: "#906FB6",
-          400: "#6C4A93",
-          500: "#483162", // English Violet DEFAULT
-          600: "#3A284F",
-          700: "#2B1E3B",
-          800: "#1D1427",
-          900: "#0E0A14",
+          100: "#d0d1d5",
+          200: "#a1a4ab",
+          300: "#727681",
+          400: "#1F2A40",
+          500: "#141b2d",
+          600: "#101624",
+          700: "#0c101b",
+          800: "#080b12",
+          900: "#040509",
         },
-        accent1: {
-          100: "#F5F3FF", // Periwinkle lighter shades
-          200: "#EBE7FF",
-          300: "#E2DAFF",
-          400: "#D8CEFF",
-          500: "#D0C4FF", // Periwinkle DEFAULT
-          600: "#A092FF", // Tropical Indigo DEFAULT
-          700: "#8668FF",
-          800: "#3E0EFF",
-          900: "#2400B4",
+        greenAccent: {
+          100: "#dbf5ee",
+          200: "#b7ebde",
+          300: "#94e2cd",
+          400: "#70d8bd",
+          500: "#4cceac",
+          600: "#3da58a",
+          700: "#2e7c67",
+          800: "#1e5245",
+          900: "#0f2922",
         },
-        accent2: {
-          100: "#D7E9D3", // Fern Green lighter shades
-          200: "#B0D3A6",
-          300: "#88BD7A",
-          400: "#63A451",
-          500: "#47763A", // Fern Green DEFAULT
-          600: "#A7C957", // Yellow Green DEFAULT
-          700: "#8AAD38",
-          800: "#67812A",
-          900: "#45561C",
-        },
-        accent3: { // Keeping a variation of your redAccent for alerts/warnings
+        redAccent: {
           100: "#f8dcdb",
           200: "#f1b9b7",
           300: "#e99592",
@@ -67,53 +56,53 @@ export const tokens = (mode: ThemeMode): ColorTokens => ({
           800: "#58201e",
           900: "#2c100f",
         },
+        blueAccent: {
+          100: "#e1e2fe",
+          200: "#c3c6fd",
+          300: "#a4a9fc",
+          400: "#868dfb",
+          500: "#6870fa",
+          600: "#535ac8",
+          700: "#3e4396",
+          800: "#2a2d64",
+          900: "#151632",
+        },
       }
     : {
         grey: {
-          100: "#2C2A25", // Inverted for light mode
-          200: "#59554B",
-          300: "#8F8880",
-          400: "#C5BBB5",
-          500: "#FCFAF5",
-          600: "#FAF6EC",
-          700: "#F7F1E2",
-          800: "#F4EDD9", 
-          900: "#F2E8CF", // Parchment
+          100: "#141414",
+          200: "#292929",
+          300: "#3d3d3d",
+          400: "#525252",
+          500: "#666666",
+          600: "#858585",
+          700: "#a3a3a3",
+          800: "#c2c2c2",
+          900: "#e0e0e0",
         },
         primary: {
-          100: "#0E0A14", // Inverted for light mode
-          200: "#1D1427",
-          300: "#2B1E3B",
-          400: "#F7F4EA", // Light background
-          500: "#FCFCFC", // White background
-          600: "#483162", // English Violet DEFAULT
-          700: "#6C4A93",
-          800: "#906FB6",
-          900: "#B59FCE",
+          100: "#040509",
+          200: "#080b12",
+          300: "#0c101b",
+          400: "#f2f0f0",
+          500: "#fcfcfc",
+          600: "#1F2A40",
+          700: "#727681",
+          800: "#a1a4ab",
+          900: "#d0d1d5",
         },
-        accent1: {
-          100: "#2400B4", // Inverted for light mode
-          200: "#3E0EFF",
-          300: "#8668FF",
-          400: "#A092FF", // Tropical Indigo DEFAULT
-          500: "#B5A9FF",
-          600: "#C7BFFF",
-          700: "#D0C4FF", // Periwinkle DEFAULT
-          800: "#E2DAFF",
-          900: "#F5F3FF",
+        greenAccent: {
+          100: "#0f2922",
+          200: "#1e5245",
+          300: "#2e7c67",
+          400: "#3da58a",
+          500: "#4cceac",
+          600: "#70d8bd",
+          700: "#94e2cd",
+          800: "#b7ebde",
+          900: "#dbf5ee",
         },
-        accent2: {
-          100: "#45561C", // Inverted for light mode
-          200: "#67812A",
-          300: "#8AAD38",
-          400: "#A7C957", // Yellow Green DEFAULT
-          500: "#47763A", // Fern Green DEFAULT
-          600: "#63A451",
-          700: "#88BD7A",
-          800: "#B0D3A6",
-          900: "#D7E9D3",
-        },
-        accent3: { // Keeping variations of your redAccent
+        redAccent: {
           100: "#2c100f",
           200: "#58201e",
           300: "#832f2c",
@@ -124,24 +113,31 @@ export const tokens = (mode: ThemeMode): ColorTokens => ({
           800: "#f1b9b7",
           900: "#f8dcdb",
         },
+        blueAccent: {
+          100: "#151632",
+          200: "#2a2d64",
+          300: "#3e4396",
+          400: "#535ac8",
+          500: "#6870fa",
+          600: "#868dfb",
+          700: "#a4a9fc",
+          800: "#c3c6fd",
+          900: "#e1e2fe",
+        },
       }),
 });
 
-// mui theme settings with new palette
+// mui theme settings
 export const themeSettings = (mode: ThemeMode) => {
   const colors = tokens(mode);
   return {
     palette: {
       mode: mode,
       primary: {
-        dark: colors.primary[700], // Tropical Indigo
-        main: colors.accent1[400], // Periwinkle
-        light: colors.accent1[600],
+        main: colors.primary[500],
       },
       secondary: {
-        dark: colors.accent2[400], // Fern Green
-        main: colors.accent2[500], // Yellow Green
-        light: colors.accent2[600],
+        main: colors.blueAccent[500],
       },
       neutral: {
         dark: colors.grey[700],
@@ -150,10 +146,6 @@ export const themeSettings = (mode: ThemeMode) => {
       },
       background: {
         default: mode === "dark" ? colors.primary[500] : "#fcfcfc",
-        paper: mode === "dark" ? colors.primary[600] : colors.grey[900], // Parchment in light mode
-      },
-      error: {
-        main: colors.accent3[500]
       },
     },
     typography: {

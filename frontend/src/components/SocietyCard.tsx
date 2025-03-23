@@ -8,7 +8,7 @@ interface SocietyCardProps {
   colors: {
     primary: Record<number, string>;
     grey: Record<number, string>;
-    accent1: Record<number, string>;
+    blueAccent: Record<number, string>;
   };
   onViewSociety: (id: number) => void;
 }
@@ -146,8 +146,8 @@ const SocietyCard: React.FC<SocietyCardProps> = ({
           onClick={() => onViewSociety(society.id)}
           style={{
             backgroundColor: isLight
-              ? colors.accent1[400]
-              : colors.accent1[500],
+              ? colors.blueAccent[400]
+              : colors.blueAccent[500],
             color: "#ffffff",
             padding: "0.5rem 1rem",
             borderRadius: "0.5rem",

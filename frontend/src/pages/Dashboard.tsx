@@ -61,7 +61,7 @@ export default function Dashboard() {
           PrevIcon={<div>{"<"}</div>}
           navButtonsProps={{
             style: {
-              backgroundColor: isLight ? colors.accent1[400] : colors.accent1[500],
+              backgroundColor: isLight ? colors.blueAccent[400] : colors.blueAccent[500],
               color: "#ffffff",
               boxShadow: "0 2px 5px rgba(0,0,0,0.15)",
             },
@@ -76,7 +76,7 @@ export default function Dashboard() {
           }}
           activeIndicatorIconButtonProps={{
             style: {
-              color: isLight ? colors.accent2[400] : colors.accent2[400],
+              color: isLight ? colors.greenAccent[400] : colors.greenAccent[400],
             },
           }}
           animation="slide"
@@ -356,7 +356,7 @@ export default function Dashboard() {
                 >
                   <span
                     style={{
-                      backgroundColor: isLight ? colors.accent1[400] : colors.accent1[700],
+                      backgroundColor: isLight ? colors.blueAccent[400] : colors.blueAccent[700],
                       color: "white",
                       padding: "0.2rem 0.5rem",
                       borderRadius: "0.25rem",
