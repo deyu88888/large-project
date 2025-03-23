@@ -10,13 +10,11 @@ import {
   Grid,
   Snackbar,
   Alert,
-  IconButton,
   Tooltip,
 } from "@mui/material";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useTheme } from "@mui/material/styles";
 import { apiClient, apiPaths } from "../../api";
-import { useAuthStore } from "../../stores/auth-store";
 import { tokens } from "../../theme/theme";
 import { Society } from "../../types";
 
@@ -47,7 +45,6 @@ const ViewSociety: React.FC = () => {
   // Hooks
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
-  const { user } = useAuthStore();
   const navigate = useNavigate();
   const { society_id } = useParams<{ society_id: string }>();
   const societyId = Number(society_id);
@@ -64,6 +61,12 @@ const ViewSociety: React.FC = () => {
     severity: "info",
   });
 
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success" as "success" | "error"
+  });
+
   /**
    * Show notification message
    */
@@ -77,7 +80,7 @@ const ViewSociety: React.FC = () => {
     },
     []
   );
-
+  
   /**
    * Fetch society details from API
    */
@@ -90,6 +93,11 @@ const ViewSociety: React.FC = () => {
         ...response.data,
         social_media_links: response.data.social_media_links || {},
         tags: response.data.tags || [],
+      });
+      setSnackbar({
+        open: true,
+        message: "Society updated successfully!",
+        severity: "success"
       });
     } catch (error) {
       console.error("Error fetching society details:", error);

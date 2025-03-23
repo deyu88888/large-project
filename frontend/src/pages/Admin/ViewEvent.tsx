@@ -13,7 +13,6 @@ import {
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { apiClient, apiPaths } from "../../api";
-import { useAuthStore } from "../../stores/auth-store";
 import { tokens } from "../../theme/theme";
 import { Event } from "../../types";
 
@@ -45,7 +44,6 @@ interface Notification {
 const ViewEvent: React.FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
-  const { user } = useAuthStore();
   const navigate = useNavigate();
   const { event_id } = useParams<{ event_id: string }>();
   const eventId = Number(event_id);
@@ -62,6 +60,12 @@ const ViewEvent: React.FC = () => {
     severity: "info",
   });
 
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success" as "success" | "error"
+  });
+
   /**
    * Fetch event details from API
    */
@@ -71,6 +75,11 @@ const ViewEvent: React.FC = () => {
       const response = await apiClient.get(apiPaths.USER.ADMINEVENTVIEW(eventId));
       setEvent(response.data);
       setFormData(response.data);
+      setSnackbar({
+        open: true,
+        message: "Event updated successfully!",
+        severity: "success"
+      });
     } catch (error) {
       console.error("Error fetching event details", error);
       showNotification("Failed to load event details", "error");
@@ -132,7 +141,7 @@ const ViewEvent: React.FC = () => {
       isValid = false;
     }
 
-    if (!formData?.hostedBy?.trim()) {
+    if (!formData?.hostedBy?.toString().trim()) {
       newErrors.hostedBy = "Host information is required";
       isValid = false;
     }
