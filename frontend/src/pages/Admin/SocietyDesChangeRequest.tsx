@@ -1,3 +1,6 @@
+// TODO: to refactor
+// TODO: refactor once the seed data is updated and ready
+
 import React, { useEffect, useState, useContext } from "react";
 import { Box, Typography, useTheme, Button } from "@mui/material";
 import { DataGrid, GridRenderCellParams, GridToolbar } from "@mui/x-data-grid";

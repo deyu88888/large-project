@@ -1,77 +1,129 @@
-import React, { ReactNode, useState } from "react";
+// TODO: make sure this page workds once seed is ready
+
+import React, { ReactNode, useState, useCallback } from "react";
 import { Box, Tabs, Tab, useTheme, Typography } from "@mui/material";
 import { tokens } from "../../theme/theme";
-import { AdUnits } from "@mui/icons-material";
 import AdminReportList from "./AdminReportList";
 import ReportRepliedList from "./ReportRepliedList";
 import ReportRepliesList from "./ReportRepliesList";
 
-const CustomTabPanel = ({ children, value, index }: { children: ReactNode, value: number, index: number }) => (
-  value === index ? (
-    <Box role="tabpanel">
+interface TabPanelProps {
+  children: ReactNode;
+  value: number;
+  index: number;
+}
+
+/**
+ * Custom TabPanel component to manage tab content visibility
+ */
+const CustomTabPanel: React.FC<TabPanelProps> = ({ children, value, index }) => {
+  return value === index ? (
+    <Box 
+      role="tabpanel"
+      id={`reports-tabpanel-${index}`}
+      aria-labelledby={`reports-tab-${index}`}
+    >
       {children}
     </Box>
-  ) : null
-);
+  ) : null;
+};
 
-const tabs = [
-  { label: "New reports", component: <AdminReportList /> },
-  { label: "New replies", component: <ReportRepliesList /> },
-  { label: "Replied", component: <ReportRepliedList /> },
+/**
+ * Tab configuration containing label and component for each tab
+ */
+interface TabConfig {
+  label: string;
+  component: ReactNode;
+  ariaLabel?: string;
+}
+
+const STORAGE_KEY = "reportsActiveTab";
+
+const tabs: TabConfig[] = [
+  { label: "New reports", component: <AdminReportList />, ariaLabel: "New reports tab" },
+  { label: "New replies", component: <ReportRepliesList />, ariaLabel: "New replies tab" },
+  { label: "Replied", component: <ReportRepliedList />, ariaLabel: "Replied reports tab" },
 ];
 
-const ManageReports = () => {
+/**
+ * ManageReports component for handling report administration
+ */
+const ManageReports: React.FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
 
-  const [value, setValue] = useState<number>(() => {
-    const savedTab = localStorage.getItem("activeTab");
-    return savedTab ? parseInt(savedTab, 10) : 0;
+  // Initialize active tab from local storage or default to first tab
+  const [activeTabIndex, setActiveTabIndex] = useState<number>(() => {
+    try {
+      const savedTab = localStorage.getItem(STORAGE_KEY);
+      return savedTab !== null ? parseInt(savedTab, 10) : 0;
+    } catch (error) {
+      console.error("Error reading from localStorage:", error);
+      return 0;
+    }
   });
 
-  const handleChange = (_: React.SyntheticEvent, newValue: number) => {
-    setValue(newValue);
-    localStorage.setItem("activeTab", newValue.toString());
-  };
+  // Handle tab change with memoized callback
+  const handleTabChange = useCallback((_: React.SyntheticEvent, newValue: number) => {
+    setActiveTabIndex(newValue);
+    try {
+      localStorage.setItem(STORAGE_KEY, newValue.toString());
+    } catch (error) {
+      console.error("Error writing to localStorage:", error);
+    }
+  }, []);
 
   return (
     <Box
       sx={{
         height: "calc(100vh - 64px)",
-        backgroundColor: "primary", 
+        backgroundColor: theme.palette.background.default,
+        p: 2,
       }}
     >
       <Typography
         variant="h1"
-        sx={[
-          { color: colors.grey[100] },
-          { fontSize: "1.75rem", fontWeight: 800, mb: 1 },
-        ]}
+        sx={{
+          color: colors.grey[100],
+          fontSize: "1.75rem", 
+          fontWeight: 800, 
+          mb: 2,
+        }}
       >
         Manage Reports
       </Typography>
+      
       <Box
         sx={{
           borderBottom: 1,
           borderColor: "divider",
-          color: "colors.grey[200]",
         }}
       >
         <Tabs
-          value={value}
-          onChange={handleChange}
-          aria-label="society tabs"
+          value={activeTabIndex}
+          onChange={handleTabChange}
+          aria-label="Report management tabs"
           textColor="secondary"
           indicatorColor="secondary"
         >
           {tabs.map((tab, index) => (
-            <Tab key={index} label={tab.label} />
+            <Tab 
+              key={`tab-${index}`} 
+              label={tab.label} 
+              id={`reports-tab-${index}`}
+              aria-controls={`reports-tabpanel-${index}`}
+              aria-label={tab.ariaLabel}
+            />
           ))}
         </Tabs>
       </Box>
 
       {tabs.map((tab, index) => (
-        <CustomTabPanel key={index} value={value} index={index}>
+        <CustomTabPanel 
+          key={`panel-${index}`} 
+          value={activeTabIndex} 
+          index={index}
+        >
           {tab.component}
         </CustomTabPanel>
       ))}

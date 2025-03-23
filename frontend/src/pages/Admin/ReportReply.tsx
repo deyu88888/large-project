@@ -1,4 +1,5 @@
-// src/pages/admin/ReportReply.tsx
+// TODO: to refactor
+// TODO: refactor once the presidents' dashboard is functional, and can make a request
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Box, Typography, Button, TextField, CircularProgress } from "@mui/material";

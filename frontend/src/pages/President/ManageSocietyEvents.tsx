@@ -12,33 +12,36 @@ import {
 import { useTheme } from "@mui/material/styles";
 import { apiClient } from "../../api";
 import { tokens } from "../../theme/theme";
+import { Event } from "../../types/president/event";
+import { ManageSocietyEventsParams } from "../../types/president/role";
+import { FilterType, FilterOption } from "../../types/president/society";
 
-interface Event {
-  id: number;
-  title: string;
-  date: string;
-  start_time: string;
-  status: string;
-  hosted_by: number;
-  description: string;
-  location: string;
-  duration: string;
-  max_capacity: number;
-  current_attendees: number[];
-}
+// interface Event {
+//   id: number;
+//   title: string;
+//   date: string;
+//   start_time: string;
+//   status: string;
+//   hosted_by: number;
+//   description: string;
+//   location: string;
+//   duration: string;
+//   max_capacity: number;
+//   current_attendees: number[];
+// }
 
-interface RouteParams {
-  society_id: string;
-  filter?: "upcoming" | "previous" | "pending";
-}
+// interface ManageSocietyEventsParams {
+//   society_id: string;
+//   filter?: "upcoming" | "previous" | "pending";
+// }
 
-type FilterType = "upcoming" | "previous" | "pending";
+// type FilterType = "upcoming" | "previous" | "pending";
 
-interface FilterOption {
-  label: string;
-  value: FilterType;
-  color: string;
-}
+// interface FilterOption {
+//   label: string;
+//   value: FilterType;
+//   color: string;
+// }
 
 const formatDate = (dateString: string): string => {
   const options: Intl.DateTimeFormatOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };

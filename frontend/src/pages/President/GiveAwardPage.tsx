@@ -13,23 +13,24 @@ import {
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { tokens } from "../../theme/theme";
+import { Award } from "../../types/president/award";
 
-interface Award {
-  id: number;
-  rank: string;
-  title: string;
-  description: string;
-  is_custom: boolean;
-}
+// interface Award {
+//   id: number;
+//   rank: string;
+//   title: string;
+//   description: string;
+//   is_custom: boolean;
+// }
 
-interface RouteParams {
-  student_id: string;
-}
+// interface StudentIdParam {
+//   student_id: string;
+// }
 
 const GiveAwardPage: React.FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
-  const { student_id } = useParams<RouteParams>();
+  const { student_id } = useParams<StudentIdParam>();
   const navigate = useNavigate();
   const [awards, setAwards] = useState<Award[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
