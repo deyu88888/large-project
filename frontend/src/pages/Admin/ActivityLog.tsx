@@ -53,6 +53,8 @@ const ActivityLogList: React.FC = () => {
   const colors = tokens(theme.palette.mode);
   const { drawer } = useSettingsStore();
   const { searchTerm } = useContext(SearchContext);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
 
   /**
    * Shows a notification message
