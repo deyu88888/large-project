@@ -36,11 +36,7 @@ const AdminList: React.FC = () => {
   const getData = async () => {
     try {
       const res = await apiClient.get(apiPaths.USER.ADMIN);
-      console.log(res.data);
-
-      // Ensure we only store users with "admin" role
       const adminUsers = res.data.filter((user: any) => user.role === "admin");
-
       setAdmins(adminUsers);
     } catch (error) {
       console.error("Error fetching admins:", error);
