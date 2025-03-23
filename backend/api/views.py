@@ -35,6 +35,7 @@ from api.views_files.recommendation_feedback_views import *
 from api.views_files.recommendation_views import *
 
 
+
 @csrf_exempt
 def get_popular_societies(request):
     """
