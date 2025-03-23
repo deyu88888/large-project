@@ -95,7 +95,6 @@ class RegisterView(APIView):
         serializer = StudentSerializer(data=request.data)
 
         if not serializer.is_valid():
-            print(serializer.errors)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         serializer.save()
@@ -284,16 +283,10 @@ class RequestJoinSocietyView(APIView):
     
     def post(self, request, society_id=None):
         user = request.user
-        # Debugging prints:
-        print("DEBUG: User:", user, "User ID:", user.id)
-        print("DEBUG: society_id:", society_id)
-
         if not hasattr(user, "student"):
-            print("DEBUG: User is not a student.")
             return Response({"error": "Only students can join societies."}, status=status.HTTP_403_FORBIDDEN)
 
         if not society_id:
-            print("DEBUG: No society_id provided in URL.")
             return Response({"error": "Society ID is required."}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
@@ -588,7 +581,6 @@ class AdminSocietyRequestView(APIView):
 
         # Fetch the society request using manual lookup
         society = Society.objects.filter(id=society_id).first()
-        print("society xxx ", society)
         if not society:
             return Response(
                 {"error": "Society request not found."},
@@ -677,9 +669,6 @@ class ManageSocietyDetailsView(APIView):
             return Response({"error": "Only society presidents and vice presidents can manage their societies."}, 
                            status=status.HTTP_403_FORBIDDEN)
         
-        print("Logged-in student id:", student.id)
-        print("Requested society id:", society_id)
-        
         # Fetch the society
         society = Society.objects.filter(id=society_id).first()
         if not society:
@@ -692,7 +681,6 @@ class ManageSocietyDetailsView(APIView):
 
         # Serialize the society details
         serializer = SocietySerializer(society)
-        print("Sending response data:", serializer.data)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def patch(self, request, society_id):
@@ -2135,7 +2123,6 @@ class AdminEventView(APIView):
         Returns a list of upcoming approved events sorted by date and time.
         """
         event_status = event_status.capitalize()
-        print("event_status: ", event_status)
         events = Event.objects.filter(status=event_status).order_by("date", "start_time")
         serializer = EventSerializer(events, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -2155,18 +2142,15 @@ class AdminEventRequestView(APIView):
             return Response({"error": "Only admins can approve or reject event requests."}, status=status.HTTP_403_FORBIDDEN)
 
         event = Event.objects.filter(id=event_id).first()
-        print("event xxx: ", event)
         if not event:
             return Response({"error": "Event request not found."}, status=status.HTTP_404_NOT_FOUND)
 
         serializer = EventSerializer(event, data=request.data, partial=True)
-        print("serializer sss: ", serializer)
         if serializer.is_valid():
             serializer.save()
 
         channel_layer = get_channel_layer()
 
-        print("serializer.validated_data.get('status'): ", serializer.validated_data.get("status")) # working
         if serializer.validated_data.get("status"):
             async_to_sync(channel_layer.group_send)(
                 "events_updates",
@@ -2968,26 +2952,18 @@ class NewsView(APIView):
         message = data.get("message", "")
         recipients = set()
 
-        # Debugging prints
-        print(f"Received societies: {societies}")  
-        print(f"Received events: {events}")  
-        print(f"Total Student Users: {User.objects.filter(student__isnull=False).count()}")  
 
         if not message:
             return Response({"error": "Message content is required."}, status=status.HTTP_400_BAD_REQUEST)
 
         if 'all' in data.get('target', []):
-            print("Sending to all users")
             recipients.update(User.objects.all())
         else:
-            print("Filtering recipients based on societies and events")
-
             if societies:
                 society_members = User.objects.filter(
                     student__isnull=False,  # Ensure the user has a student profile
                     student__societies__in=Society.objects.filter(id__in=societies)
                 ).distinct()
-                print(f"Society Members: {list(society_members.values('id', 'username'))}")
                 recipients.update(society_members)
 
             if events:
@@ -2995,7 +2971,6 @@ class NewsView(APIView):
                     student__isnull=False,  # Ensure the user has a student profile
                     student__attended_events__in=Event.objects.filter(id__in=events)
                 ).distinct()
-                print(f"Event Attendees: {list(event_attendees.values('id', 'username'))}")
                 recipients.update(event_attendees)
 
         # Create the Broadcast Message
@@ -3047,125 +3022,81 @@ class NewsPublicationRequestView(APIView):
         Create a new publication request for a news post — no longer requires 'Draft' status.
         If the post is already 'PendingApproval' (or any other), that's okay.
         """
-        print("\n" + "="*80)
-        print("DEBUG - NewsPublicationRequestView POST called to create a publication request")
-
         user = request.user
-        # 1) Ensure the user is a Student
         if not hasattr(user, "student"):
-            print("DEBUG - User has no 'student' attribute. Returning 403.")
             return Response(
                 {"error": "Only students can submit publication requests"},
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        # 2) Check 'news_post' param
+        # Check 'news_post' param
         news_post_id = request.data.get('news_post')
-        print(f"DEBUG - Incoming 'news_post' ID={news_post_id}")
         if not news_post_id:
-            print("DEBUG - No news_post ID provided. Returning 400.")
             return Response(
                 {"error": "News post ID is required"},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # 3) Fetch the news post
+        # Fetch the news post
         try:
             news_post = SocietyNews.objects.get(id=news_post_id)
-            print(f"DEBUG - Found news_post: ID={news_post.id}, Title='{news_post.title}', Status='{news_post.status}'")
         except SocietyNews.DoesNotExist:
-            print("DEBUG - News post does not exist. Returning 404.")
             return Response(
                 {"error": "News post not found"},
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        # 4) Check user permission (author or management)
         society = news_post.society
         is_author = (news_post.author and news_post.author.id == user.student.id)
         has_permission = is_author or has_society_management_permission(user.student, society)
 
         if not has_permission:
-            print("DEBUG - User lacks permission. Returning 403.")
             return Response(
                 {"error": "You do not have permission to publish this news post"},
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        # 5) REMOVE the old "must be Draft" check:
-        # if news_post.status != "Draft":
-        #     return Response({"error": "Only draft news posts can be submitted for publication"},
-        #                    status=status.HTTP_400_BAD_REQUEST)
-        #
-        # We've removed this block, so it's now OK to request publication
-        # even if the post is 'PendingApproval' or some other status.
-
-        # 6) Check if there's already a pending request
+        # Check if there's already a pending request
         existing_request = NewsPublicationRequest.objects.filter(
             news_post=news_post,
             status="Pending"
         ).exists()
         if existing_request:
-            print("DEBUG - A pending request already exists for this post. Returning 400.")
             return Response(
                 {"error": "A publication request for this news post is already pending"},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # 7) Create the new publication request
-        print("DEBUG - Creating new NewsPublicationRequest with status='Pending' ...")
+        # Create the new publication request
         publication_request = NewsPublicationRequest.objects.create(
             news_post=news_post,
             requested_by=user.student,
             status="Pending"
         )
-        print(f"DEBUG - Successfully created request ID={publication_request.id} for news_post ID={news_post.id}")
 
-        # 8) OPTIONAL: Remove/relax code that forcibly sets the post to 'PendingApproval'
-        #    If you want the post's status to remain as the user set it (e.g. 'PendingApproval'),
-        #    comment out or remove this block.
-        # ----------------------------------------------------
-        # news_post.status = "PendingApproval"
-        # news_post.save()
-        # print("DEBUG - Overwrote news_post.status to 'PendingApproval'")
-        # ----------------------------------------------------
-
-        # 9) Return the newly created request
         serializer = NewsPublicationRequestSerializer(publication_request)
-        print("DEBUG - Returning created NewsPublicationRequest")
-        print("="*80)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def get(self, request):
         """List publication requests for the current user"""
         user = request.user
-
-        # Check if we should include all statuses (from query parameter)
         all_statuses = request.query_params.get('all_statuses') == 'true'
-
-        print(f"DEBUG - User: {user.username}, is_admin: {user.is_admin()}, all_statuses: {all_statuses}")
 
         if hasattr(user, "student"):
             # For students, return their own requests
             requests = NewsPublicationRequest.objects.filter(
                 requested_by=user.student
             ).order_by('-requested_at')
-            print(f"DEBUG - Student view, found {requests.count()} requests")
         elif user.is_admin():
             if all_statuses:
-                # Return ALL requests regardless of status
                 requests = NewsPublicationRequest.objects.all().order_by('-requested_at')
-                print(f"DEBUG - Admin view with all_statuses=true, found {requests.count()} total requests")
             else:
-                # Return only pending requests (original behavior)
                 requests = NewsPublicationRequest.objects.filter(
                     status="Pending"
                 ).order_by('-requested_at')
-                print(f"DEBUG - Admin view with all_statuses=false, found {requests.count()} pending requests")
 
             # Check if any requests exist at all
             all_requests = NewsPublicationRequest.objects.all()
-            print(f"DEBUG - Total requests in database: {all_requests.count()}")
             for req in all_requests:
                 if req:  # Add null check
                     print(f"DEBUG - Request ID: {req.id}, Status: {req.status}, News: {req.news_post.title}")
@@ -3173,7 +3104,6 @@ class NewsPublicationRequestView(APIView):
             return Response({"error": "Unauthorized"},
                         status=status.HTTP_403_FORBIDDEN)
 
-        # Make sure this line runs for all code paths above
         serializer = NewsPublicationRequestSerializer(requests, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -3186,45 +3116,28 @@ class AdminNewsApprovalView(APIView):
 
     def get(self, request):
         """Get all pending news publication requests (admins only)"""
-        print("DEBUG - AdminNewsApprovalView GET called")
-        print(f"DEBUG - User: {request.user.username}, ID: {request.user.id}, is_admin={request.user.is_admin() if hasattr(request.user, 'is_admin') else 'N/A'}")
-
         if not request.user.is_admin():
-            print("DEBUG - Access denied: user is not admin. Returning 403.")
             return Response({"error": "Only admins can view pending publication requests"},
                             status=status.HTTP_403_FORBIDDEN)
 
-        # Fetch requests with status='Pending'
         requests_qs = NewsPublicationRequest.objects.filter(status="Pending").order_by('-requested_at')
-        print(f"DEBUG - Found {requests_qs.count()} 'Pending' publication requests.")
-
         serializer = NewsPublicationRequestSerializer(requests_qs, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, request_id):
         """Approve or reject a news publication request"""
-        print("DEBUG - AdminNewsApprovalView PUT called")
-        print(f"DEBUG - User: {request.user.username}, ID: {request.user.id}, is_admin={request.user.is_admin() if hasattr(request.user, 'is_admin') else 'N/A'}")
-        print(f"DEBUG - Attempting to approve/reject request ID={request_id}")
-
         if not request.user.is_admin():
-            print("DEBUG - Access denied: user is not admin. Returning 403.")
             return Response({"error": "Only admins can approve or reject publication requests"},
                             status=status.HTTP_403_FORBIDDEN)
 
         try:
             publication_request = NewsPublicationRequest.objects.get(id=request_id)
-            print(f"DEBUG - Found publication request (ID={publication_request.id}), current status={publication_request.status}")
         except NewsPublicationRequest.DoesNotExist:
-            print(f"DEBUG - Publication request not found with ID={request_id}")
             return Response({"error": "Publication request not found"},
                             status=status.HTTP_404_NOT_FOUND)
 
         action = request.data.get('status')
-        print(f"DEBUG - Requested action: {action}")
-
         if action not in ['Approved', 'Rejected']:
-            print(f"DEBUG - Invalid action '{action}'. Must be 'Approved' or 'Rejected'. Returning 400.")
             return Response({"error": "Invalid action. Must be 'Approved' or 'Rejected'"},
                             status=status.HTTP_400_BAD_REQUEST)
 
@@ -3235,17 +3148,13 @@ class AdminNewsApprovalView(APIView):
         publication_request.admin_notes = request.data.get('admin_notes', '')
 
         news_post = publication_request.news_post
-        print(f"DEBUG - Old news post status: {news_post.status}")
 
         if action == "Approved":
             news_post.status = "Published"
             news_post.published_at = timezone.now()
-            print(f"DEBUG - News post status set to 'Published'")
-        else:  # Rejected
+        else: 
             news_post.status = "Rejected"
-            print(f"DEBUG - News post status set to 'Rejected'")
 
-        # Save changes
         news_post.save()
         publication_request.save()
 
@@ -3262,8 +3171,6 @@ class AdminNewsApprovalView(APIView):
             for_user=publication_request.requested_by,
             is_important=True
         )
-
-        print(f"DEBUG - Request {request_id} marked as {action}. Notification sent to user ID={publication_request.requested_by.id}")
 
         serializer = NewsPublicationRequestSerializer(publication_request)
         return Response(serializer.data, status=status.HTTP_200_OK)
