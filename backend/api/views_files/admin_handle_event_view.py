@@ -1,10 +1,12 @@
-from .restore_handler import RestoreHandler
-from django.utils import timezone
 from datetime import datetime, timedelta
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.response import Response
 from api.models import Event, Society, Student, ActivityLog, User
-from api.utils import process_date_field, process_time_field, process_timedelta_field, set_many_to_many_relationship
+from api.views_files.view_utility import process_date_field, \
+    process_time_field, process_timedelta_field, set_many_to_many_relationship, RestoreHandler
+
+
 class EventRestoreHandler(RestoreHandler):
     """Handler for restoring deleted events."""
     def handle(self, original_data, log_entry):

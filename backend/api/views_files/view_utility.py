@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 import time
-from .models import Event, Society
+from api.models import Event, Society
 from rest_framework import status
 from rest_framework.response import Response
 
@@ -124,3 +124,11 @@ def set_many_to_many_relationship(obj, field_name, id_list, model_class):
                 print(f"Error adding {field_name} {item_id}: {str(e)}")
     except Exception as e:
         print(f"Error setting {field_name}: {str(e)}")
+
+
+# Handler implementations using Strategy Pattern
+class RestoreHandler:
+    """Base class for all restore handlers."""
+    def handle(self, original_data, log_entry):
+        """Handle restoration logic."""
+        raise NotImplementedError("Subclasses must implement this method")

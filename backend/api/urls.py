@@ -4,7 +4,7 @@ from .views import (
     ReportToAdminView, AwardStudentView, AwardView, BroadcastListAPIView, ManageEventListView, AdminEventRequestView, ManageEventDetailsView, NewsView, PendingMembersView, PendingJoinRequestsView, RegisterView,
     CurrentUserView, SocietyMembersListView,
     StudentNotificationsView, StartSocietyRequestView, ManageSocietyDetailsView, StudentInboxView,
-    AdminListView, StudentListView, AdminEventView,
+    AdminListView, AdminStudentListView, AdminEventView,
     AdminSocietyRequestView, DashboardStatsView,
     RecentActivitiesView, NotificationsView, EventCalendarView,
     JoinedSocietiesView, RequestJoinSocietyView, RSVPEventView, EventHistoryView,
@@ -16,8 +16,8 @@ from .views import (
     NewsPublicationRequestView, AdminNewsApprovalView, SearchView, AdminRestoreView
 )
 from .utils import request_otp, verify_otp
-from .recommendation_views import RecommendedSocietiesView, SocietyRecommendationExplanationView
-from .recommendation_feedback_views import RecommendationFeedbackView, RecommendationFeedbackAnalyticsView
+from api.views_files.recommendation_views import RecommendedSocietiesView, SocietyRecommendationExplanationView
+from api.views_files.recommendation_feedback_views import RecommendationFeedbackView, RecommendationFeedbackAnalyticsView
 
 # Import your updated news_views including the new 'NewsCommentDislikeView'
 from .news_views import (
@@ -58,7 +58,7 @@ urlpatterns = [
 
     # User role endpoints
     path("user/admin", AdminListView.as_view(), name="admin"),
-    path("user/student", StudentListView.as_view(), name="student"),
+    path("user/student", AdminStudentListView.as_view(), name="student"),
   
     # Society membership endpoints
     path('join-society/<int:society_id>/', RequestJoinSocietyView.as_view(), name='join_society'),

@@ -6,8 +6,8 @@ from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 
 from api.models import RecommendationFeedback
-from .recommendation_feedback_serializers import RecommendationFeedbackSerializer, RecommendationFeedbackCreateSerializer
-from .models import Society, Student
+from api.serializers import RecommendationFeedbackSerializer, RecommendationFeedbackCreateSerializer
+from api.models import Society, Student
 
 class RecommendationFeedbackView(APIView):
     """

@@ -1,5 +1,4 @@
 from api.models import User, Student, Society
-from api.serializers import AwardStudentSerializer
 from rest_framework.validators import UniqueValidator
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
@@ -63,12 +62,14 @@ class StudentSerializer(UserSerializer):
     Serializer for the Student model.
     """
     societies = serializers.PrimaryKeyRelatedField(many=True, queryset=Society.objects.all())
-    president_of = serializers.PrimaryKeyRelatedField(queryset=Society.objects.all(), allow_null=True, required=False)
+    president_of = serializers.PrimaryKeyRelatedField(
+        queryset=Society.objects.all(),
+        allow_null=True, required=False
+    )
     vice_president_of_society = serializers.SerializerMethodField()
     event_manager_of_society = serializers.SerializerMethodField()
     major = serializers.CharField(required=True)
     is_president = serializers.BooleanField(read_only=True)
-    awards = AwardStudentSerializer(source='award_students', many=True, read_only=True)
     is_vice_president = serializers.BooleanField(read_only=True)
     is_event_manager = serializers.BooleanField(read_only=True)
     icon = serializers.SerializerMethodField()
@@ -77,9 +78,9 @@ class StudentSerializer(UserSerializer):
     class Meta(UserSerializer.Meta):
         model = Student
         fields = UserSerializer.Meta.fields + ['major', 'societies', 'president_of', 'is_president',
-                                               'award_students', 'vice_president_of_society', 'is_vice_president',
+                                               'vice_president_of_society', 'is_vice_president',
                                                'event_manager_of_society', 'is_event_manager', 'icon']
-        read_only_fields = ["is_president", "is_vice_president", "is_event_manager", "award_students"]
+        read_only_fields = ["is_president", "is_vice_president", "is_event_manager"]
 
 
     def get_event_manager_of_society(self, obj):

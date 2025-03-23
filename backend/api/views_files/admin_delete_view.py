@@ -12,7 +12,7 @@ import time as time_module
 from api.utils import *
 from .admin_handle_event_view import EventRestoreHandler, EventUpdateUndoHandler, EventStatusChangeUndoHandler
 from .admin_handle_society_view import SocietyRestoreHandler, SocietyUpdateUndoHandler, SocietyStatusChangeUndoHandler
-from api.utils import get_admin_if_user_is_admin
+from api.views_files.view_utility import get_admin_if_user_is_admin, RestoreHandler
 
 class AdminBaseView(APIView):
     """Base class for admin operations with common utilities."""
@@ -170,14 +170,6 @@ class AdminRestoreView(AdminBaseView):
             return Response({"error": "Log entry not found."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-# Handler implementations using Strategy Pattern
-class RestoreHandler:
-    """Base class for all restore handlers."""
-    def handle(self, original_data, log_entry):
-        """Handle restoration logic."""
-        raise NotImplementedError("Subclasses must implement this method")
 
 
 class RestoreHandlerFactory:

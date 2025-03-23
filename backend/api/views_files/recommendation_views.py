@@ -5,10 +5,10 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from .models import Student, Society
-from .serializers import SocietySerializer
-from .recommendation_service import SocietyRecommender
-from .feedback_processor import feedback_processor
+from api.models import Student, Society
+from api.serializers import SocietySerializer
+from api.recommendation_service import SocietyRecommender
+from api.feedback_processor import feedback_processor
 
 class RecommendedSocietiesView(APIView):
     """

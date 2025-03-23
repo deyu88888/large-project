@@ -8,6 +8,3 @@ class ApiConfig(AppConfig):
 
     def ready(self):
         import api.signals
-        import api.views.admin_handle_event_view
-        import api.views.admin_handle_society_view
-        import api.views.admin_handle_student_view

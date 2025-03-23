@@ -63,7 +63,7 @@ class AwardView(APIView):
             )
 
         serializer = AwardSerializer(award, data=request.data)
-        serializer_is_valid_and_save(serializer):
+        if serializer_is_valid_and_save(serializer):
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

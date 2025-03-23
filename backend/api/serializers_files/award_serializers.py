@@ -34,3 +34,16 @@ class AwardStudentSerializer(serializers.ModelSerializer):
         """Metadata for AwardStudentSerializer"""
         model = AwardStudent
         fields = ['id', 'award', 'student', 'student_id', 'award_id', 'awarded_at']
+
+
+class StudentAwardSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the Student model.
+    """
+    awards = AwardStudentSerializer(source='award_students', many=True, read_only=True)
+
+    class Meta:
+        """Metadata for StudentAwardSerializer"""
+        model = Student
+        fields = ["award_students"]
+        read_only_fields = ["award_students"]

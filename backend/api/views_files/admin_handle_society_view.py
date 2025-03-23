@@ -1,4 +1,3 @@
-from .restore_handler import RestoreHandler
 from django.utils import timezone
 from datetime import timedelta
 from rest_framework import status
@@ -6,7 +5,7 @@ from rest_framework.response import Response
 from api.models import Event, Society, Student, ActivityLog, User, SocietyShowreel
 from api.utils import *
 from django.db.models import Q
-from api.utils import set_many_to_many_relationship
+from api.views_files.view_utility import set_many_to_many_relationship, RestoreHandler
 
 class SocietyRestoreHandler(RestoreHandler):
     """Handler for restoring deleted societies."""

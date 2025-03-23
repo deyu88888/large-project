@@ -16,24 +16,23 @@ from api.serializers import (
     EventSerializer,
 )
 from api.utils import *
-from api.views_files.award_view import *
+from api.views_files.view_utility import *
+from api.views_files.award_views import *
 from api.views_files.admin_delete_view import *
 from api.views_files.admin_handle_event_view import *
 from api.views_files.admin_handle_society_view import *
-from api.views_files.communication_view import *
-from api.views_files.dashboard_view import *
-from api.views_files.event_view import *
-from api.views_files.news_view import *
-from api.views_files.president_view import *
-from api.views_files.report_view import *
-from api.views_files.request_view import *
-from api.views_files.society_view import *
-from api.views_files.user_view import *
-from api.views_files.view_utility import *
+from api.views_files.admin_views import *
+from api.views_files.communication_views import *
+from api.views_files.dashboard_views import *
+from api.views_files.event_views import *
+from api.views_files.news_views import *
+from api.views_files.president_views import *
+from api.views_files.report_views import *
+from api.views_files.request_views import *
+from api.views_files.society_views import *
+from api.views_files.user_views import *
 from api.views_files.recommendation_feedback_views import *
 from api.views_files.recommendation_views import *
-
-
 
 
 @csrf_exempt
