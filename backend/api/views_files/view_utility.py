@@ -54,8 +54,8 @@ def has_society_management_permission(student, society, for_events_only=False):
     is_vice_president = hasattr(society, 'vice_president') and society.vice_president and society.vice_president.id == student.id
     is_event_manager = False
     if for_events_only:
-        is_event_manager = (hasattr(society, 'event_manager') and 
-                           society.event_manager and 
+        is_event_manager = (hasattr(society, 'event_manager') and
+                           society.event_manager and
                            society.event_manager.id == student.id)
 
     return is_president or is_vice_president or is_event_manager

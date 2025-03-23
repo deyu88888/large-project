@@ -84,21 +84,23 @@ class AdminManageStudentDetailsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, student_id):
+        """Gets the details of a student via student_id"""
         _, error = get_admin_if_user_is_admin(request.user, "access this endpoint")
         if error:
             return error
-        
+
         student = Student.objects.filter(id=student_id).first()
         if not student:
             return Response({"error": "Student not found."}, status=status.HTTP_404_NOT_FOUND)
-        
+
         serializer = StudentSerializer(student)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def patch(self, request, student_id):
-        user = request.user
-        if not (user.role == "admin" or user.is_super_admin):
-            return Response({"error": "Only admins can update student details."}, status=status.HTTP_403_FORBIDDEN)
+        """Allows admin to alter student details"""
+        _, error = get_admin_if_user_is_admin(request.user, "update student details")
+        if error:
+            return error
 
         student = Student.objects.filter(id=student_id).first()
         if not student:
@@ -107,7 +109,10 @@ class AdminManageStudentDetailsView(APIView):
         serializer = StudentSerializer(student, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            return Response({"message": "Student details updated successfully.", "data": serializer.data}, status=status.HTTP_200_OK)
+            return Response(
+                {"message": "Student details updated successfully.",
+                "data": serializer.data}, status=status.HTTP_200_OK
+            )
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -119,9 +124,10 @@ class AdminManageSocietyDetailsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, society_id):
-        user = request.user
-        if not (user.role == "admin" or user.is_super_admin):
-            return Response({"error": "Only admins can access this endpoint."}, status=status.HTTP_403_FORBIDDEN)
+        """Admin gets the details of a society"""
+        _, error = get_admin_if_user_is_admin(request.user, "access this endpoint")
+        if error:
+            return error
         society = Society.objects.filter(id=society_id).first()
         if not society:
             return Response({"error": "Society not found."}, status=status.HTTP_404_NOT_FOUND)
@@ -129,64 +135,53 @@ class AdminManageSocietyDetailsView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def patch(self, request, society_id):
-        user = request.user
-        if not (user.role == "admin" or user.is_super_admin):
-            return Response({"error": "Only admins can update society details."}, status=status.HTTP_403_FORBIDDEN)
+        """Admin submits an adjustment to society details"""
+        user, error = get_admin_if_user_is_admin(request.user, "update society details")
+        if error:
+            return error
 
         society = Society.objects.filter(id=society_id).first()
         if not society:
             return Response({"error": "Society not found."}, status=status.HTTP_404_NOT_FOUND)
-        
-        # IMPORTANT: Store the original data BEFORE making any changes
+
         original_data = {}
-        
-        # Handle regular fields first
+
         for field in society._meta.fields:
             field_name = field.name
             if field_name not in ['id', 'user_ptr']:  # Skip certain fields
                 value = getattr(society, field_name)
-                
-                # Handle date/time objects
+
                 if isinstance(value, (date, datetime)):
                     original_data[field_name] = value.isoformat()
-                # Handle foreign keys - store the ID instead of the object
                 elif hasattr(value, 'id') and not isinstance(value, (list, dict)):
                     original_data[field_name] = value.id
-                # Handle ImageField and FileField objects
                 elif hasattr(value, 'url') and hasattr(value, 'name'):
-                    # Store the filename or URL path instead of the file object
                     original_data[field_name] = value.name if value.name else None
                 else:
                     original_data[field_name] = value
-        
-        # Handle many-to-many fields separately
+
         for field in society._meta.many_to_many:
             field_name = field.name
-            # Get IDs of related objects instead of objects themselves
             related_ids = [item.id for item in getattr(society, field_name).all()]
             original_data[field_name] = related_ids
-        
-        # Store the original data as JSON
+
         try:
             original_data_json = json.dumps(original_data)
         except TypeError as e:
-            # Debug info if serialization fails
             problematic_fields = {}
             for key, value in original_data.items():
                 try:
                     json.dumps({key: value})
                 except TypeError:
                     problematic_fields[key] = str(type(value))
-            
+
             return Response({
                 "error": f"JSON serialization error: {str(e)}",
                 "problematic_fields": problematic_fields
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
-        # Process the update
+
         serializer = SocietySerializer(society, data=request.data, partial=True)
         if serializer.is_valid():
-            # Create log entry with original data
             log_entry = ActivityLog.objects.create(
                 action_type="Update",
                 target_type="Society",
@@ -195,18 +190,17 @@ class AdminManageSocietyDetailsView(APIView):
                 performed_by=user,
                 timestamp=timezone.now(),
                 expiration_date=timezone.now() + timedelta(days=30),
-                original_data=original_data_json  # Store original data here
+                original_data=original_data_json
             )
-            
-            # Now save the changes
+
             serializer.save()
             ActivityLog.delete_expired_logs()
-            
+
             return Response({
                 "message": "Society details updated successfully.",
                 "data": serializer.data
             }, status=status.HTTP_200_OK)
-        
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -217,9 +211,10 @@ class AdminManageEventDetailsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, event_id):
-        user = request.user
-        if not (user.role == "admin" or user.is_super_admin):
-            return Response({"error": "Only admins can access this endpoint."}, status=status.HTTP_403_FORBIDDEN)
+        """Gets the details of an event_id"""
+        _, error = get_admin_if_user_is_admin(request.user, "access this endpoint")
+        if error:
+            return error
         event = Event.objects.filter(id=event_id).first()
         if not event:
             return Response({"error": "Event not found."}, status=status.HTTP_404_NOT_FOUND)
@@ -227,76 +222,62 @@ class AdminManageEventDetailsView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def patch(self, request, event_id):
-        user = request.user
-        if not (user.role == "admin" or user.is_super_admin):
-            return Response({"error": "Only admins can update event details."}, status=status.HTTP_403_FORBIDDEN)
-        
+        """Edits the details of an event via event_id"""
+        user, error = get_admin_if_user_is_admin(request.user, "update event details")
+        if error:
+            return error
+
         event = Event.objects.filter(id=event_id).first()
         if not event:
             return Response({"error": "Event not found."}, status=status.HTTP_404_NOT_FOUND)
-        
-        # IMPORTANT: Store the original data BEFORE making any changes
+
         original_data = {}
-        
-        # Handle regular fields first
+
         for field in event._meta.fields:
             field_name = field.name
             if field_name not in ['id', 'user_ptr']:  # Skip certain fields
                 value = getattr(event, field_name)
-                
-                # Handle datetime objects
+
                 if isinstance(value, datetime):
                     original_data[field_name] = value.isoformat()
-                # Handle date objects
                 elif isinstance(value, date) and not isinstance(value, datetime):
                     original_data[field_name] = value.isoformat()
-                # Handle time objects
                 elif isinstance(value, time):
                     original_data[field_name] = value.strftime('%H:%M:%S')
-                # Handle timedelta objects
                 elif isinstance(value, timedelta):
                     original_data[field_name] = value.total_seconds()
-                # Handle foreign keys - store the ID instead of the object
                 elif hasattr(value, 'id') and not isinstance(value, (list, dict)):
                     original_data[field_name] = value.id
-                # Handle ImageField and FileField objects
                 elif hasattr(value, 'url') and hasattr(value, 'name'):
-                    # Store the filename or URL path instead of the file object
                     original_data[field_name] = value.name if value.name else None
                 else:
                     original_data[field_name] = value
-        
-        # Handle many-to-many fields separately
+
         for field in event._meta.many_to_many:
             field_name = field.name
-            # Get IDs of related objects instead of objects themselves
             related_ids = [item.id for item in getattr(event, field_name).all()]
             original_data[field_name] = related_ids
-        
-        # Store the original data as JSON
+
         try:
             original_data_json = json.dumps(original_data)
         except TypeError as e:
-            # Debug info if serialization fails
             problematic_fields = {}
             for key, value in original_data.items():
                 try:
                     json.dumps({key: value})
                 except TypeError:
                     problematic_fields[key] = str(type(value))
-            
+
             return Response({
                 "error": f"JSON serialization error: {str(e)}",
                 "problematic_fields": problematic_fields
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
-        # Process the update
+
         data = request.data.copy()
         current_attendees_data = data.pop("current_attendees", None)
         serializer = EventSerializer(event, data=data, partial=True)
-        
+
         if serializer.is_valid():
-            # Create log entry with original data
             log_entry = ActivityLog.objects.create(
                 action_type="Update",
                 target_type="Event",
@@ -307,21 +288,19 @@ class AdminManageEventDetailsView(APIView):
                 expiration_date=timezone.now() + timedelta(days=30),
                 original_data=original_data_json  # Store original data here
             )
-            
-            # Now save the changes
+
             serializer.save()
-            
-            # Handle current_attendees separately if provided
+
             if current_attendees_data is not None:
                 event.current_attendees.set(current_attendees_data)
-            
+
             ActivityLog.delete_expired_logs()
-            
+
             return Response({
                 "message": "Event details updated successfully.",
                 "data": serializer.data
             }, status=status.HTTP_200_OK)
-        
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -330,23 +309,23 @@ class AdminRepliesListView(APIView):
     API view for admins to view reports where students have replied but admin hasn't responded yet.
     """
     permission_classes = [IsAuthenticated]
-    
+
     def get(self, request):
         user = request.user
         if not (user.role == "admin" or user.is_super_admin):
             return Response({"error": "Only admins can access this endpoint."}, 
                             status=status.HTTP_403_FORBIDDEN)
-        
+
         all_reports = AdminReportRequest.objects.all().order_by("-requested_at")
-        
+
         reports_needing_attention = []
-        
+
         for report in all_reports:
             replies = ReportReply.objects.filter(report=report).order_by('created_at')
-            
+
             if replies.exists():
                 latest_reply = replies.order_by('-created_at').first()
-                
+
                 if not latest_reply.is_admin_reply:
                     report_data = AdminReportRequestSerializer(report).data
                     if report.from_student:
@@ -360,7 +339,7 @@ class AdminRepliesListView(APIView):
                         'replied_by': latest_reply.replied_by.get_full_name() if latest_reply.replied_by else "Unknown"
                     }
                     reports_needing_attention.append(report_data)
-        
+
         return Response(reports_needing_attention, status=status.HTTP_200_OK)
 
 
@@ -372,12 +351,12 @@ class SocietyDescriptionRequestAdminView(APIView):
 
     def get(self, request):
         """Get all pending description requests (Admins only)."""
-        user = request.user
-        if not (user.role == "admin" or user.is_super_admin):
-            return Response(
-                {"error": "Only admins can view pending description requests."},
-                status=status.HTTP_403_FORBIDDEN
-            )
+        _, error = get_admin_if_user_is_admin(
+            request.user,
+            "view pending description requests"
+        )
+        if error:
+            return error
 
         pending_requests = DescriptionRequest.objects.filter(status="Pending")
         serializer = DescriptionRequestSerializer(pending_requests, many=True)
@@ -385,12 +364,11 @@ class SocietyDescriptionRequestAdminView(APIView):
 
     def put(self, request, request_id):
         """Approve or reject a pending description request."""
-        user = request.user
-        if not (user.role == "admin" or user.is_super_admin):
-            return Response(
-                {"error": "Only admins can approve or reject description requests."},
-                status=status.HTTP_403_FORBIDDEN
-            )
+        user, error = get_admin_if_user_is_admin(
+            request.user,
+            "approve or reject description requests")
+        if error:
+            return error
 
         description_request = get_object_or_404(DescriptionRequest, id=request_id)
 
@@ -412,7 +390,8 @@ class SocietyDescriptionRequestAdminView(APIView):
             "society_updates",
             {
                 "type": "society_list_update",
-                "message": f"Description request for {description_request.society.name} has been {status_update.lower()}.",
+                "message": "Description request for "
+                    f"{description_request.society.name} has been {status_update.lower()}.",
                 "data": DescriptionRequestSerializer(description_request).data,
                 "status": status_update
             }
@@ -425,19 +404,29 @@ class SocietyDescriptionRequestAdminView(APIView):
 
 
 class AdminActivityLogView(APIView):
+    """View for admins to access recent activity"""
     permission_classes = [IsAuthenticated]
 
     def get(self, request, log_id=None):
+        """Gets all items in the ActivityLog"""
         logs = ActivityLog.objects.all().order_by('-timestamp')
         serializer = ActivityLogSerializer(logs, many=True)
         return Response(serializer.data)
-    
+
     def delete(self, request, log_id):
-        user = request.user
-        if not (user.role == "admin" or user.is_super_admin):
-            return Response({"error": "Only admins can delete activity logs."}, status=status.HTTP_403_FORBIDDEN)
+        """Deletes entries in the ActivityLog"""
+        _, error = get_admin_if_user_is_admin(request.user, "delete activity logs")
+        if error:
+            return error
+
         activity_log = ActivityLog.objects.filter(id=log_id).first()
         if not activity_log:
-            return Response({"error": "Activity log not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"error": "Activity log not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
         activity_log.delete()
-        return Response({"message": "Activity log deleted successfully."}, status=status.HTTP_200_OK)
+        return Response(
+            {"message": "Activity log deleted successfully."},
+            status=status.HTTP_200_OK
+        )
