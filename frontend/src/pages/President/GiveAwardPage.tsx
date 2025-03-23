@@ -38,7 +38,7 @@ const GiveAwardPage: React.FC = () => {
   useEffect(() => {
     const fetchAwards = async (): Promise<void> => {
       try {
-        const response = await apiClient.get("/api/awards");
+        const response = await apiClient.get("/api/awards/");
         setAwards(response.data);
       } catch (err) {
         console.error("Error fetching awards", err);
@@ -54,7 +54,7 @@ const GiveAwardPage: React.FC = () => {
   const handleGiveAward = async (awardId: number): Promise<void> => {
     try {
       const studentIdNumber = Number(student_id);
-      await apiClient.post("/api/award-students", {
+      await apiClient.post("/api/award-students/", {
         student_id: studentIdNumber,
         award_id: awardId,
       });
