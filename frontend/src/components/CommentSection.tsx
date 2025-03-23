@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { CommentItem } from "./CommentItem";
 import { apiClient } from "../api";
-import { Button, Typography } from "@mui/material";
+import { Box, Button, Pagination, Typography } from "@mui/material";
+import { TextToggle } from "./TextToggle";
 
 // Define comment type interface
 interface CommentType {
@@ -25,6 +26,10 @@ export function CommentSection({ eventId }: { eventId: number }) {
   const [comments, setComments] = useState<CommentType[]>([]);
   const [loading, setLoading] = useState(true);
   const [newComment, setNewComment] = useState("");
+  const [sortOption, setSortOption] = useState<"time" | "popularity">("time");
+
+  const [page, setPage] = useState(1);
+  const [commentsPerPage, setCommentsPerPage] = useState(10);
 
   const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
 
@@ -93,6 +98,20 @@ export function CommentSection({ eventId }: { eventId: number }) {
     });
   }
 
+  const sortedComments = [...comments];
+  if (sortOption === "popularity") {
+    sortedComments.sort(
+      (a, b) => (b.likes - b.dislikes) - (a.likes - a.dislikes)
+    );
+  }
+
+  const totalComments = sortedComments.length;
+  const totalPages = Math.ceil(totalComments / commentsPerPage);
+  const displayedComments = sortedComments.slice(
+    (page - 1) * commentsPerPage,
+    page * commentsPerPage
+  );
+
   // Display loading state
   if (loading) {
     return <p>Loading comments...</p>;
@@ -100,9 +119,8 @@ export function CommentSection({ eventId }: { eventId: number }) {
 
   return (
     <div>
-      {/* Comments Section Header */}
       <Typography
-        variant="h2"
+        variant="h4"
         align="center"
         marginTop="20px"
         marginBottom="20px"
@@ -110,7 +128,6 @@ export function CommentSection({ eventId }: { eventId: number }) {
         Comments
       </Typography>
 
-      {/* New Comment Input */}
       <div style={{ marginBottom: "20px" }}>
         <textarea
           ref={textAreaRef}
@@ -118,7 +135,6 @@ export function CommentSection({ eventId }: { eventId: number }) {
           value={newComment}
           onChange={(e) => {
             setNewComment(e.target.value);
-            // Auto-resize textarea height
             e.target.style.height = "auto";
             e.target.style.height = e.target.scrollHeight + "px";
           }}
@@ -145,17 +161,37 @@ export function CommentSection({ eventId }: { eventId: number }) {
         </Button>
       </div>
 
-      {comments.length === 0 ? (
+      <TextToggle
+        sortOption={sortOption}
+        setSortOption={setSortOption}
+        commentsPerPage={commentsPerPage}
+        setCommentsPerPage={setCommentsPerPage}
+        setPage={setPage}
+      />
+
+      {displayedComments.length === 0 ? (
         <p>There is no comment now</p>
       ) : (
-        comments.map((comment, index) => (
+        displayedComments.map((comment, index) => (
           <div key={comment.id}>
             <CommentItem comment={comment} onReply={handleReply} />
-            {index !== comments.length - 1 && (
+            {index !== displayedComments.length - 1 && (
               <hr style={{ margin: "10px 0" }} />
             )}
           </div>
         ))
+      )}
+
+      {/* paginator */}
+      {totalPages > 1 && (
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+          <Pagination
+            count={totalPages}
+            page={page}
+            onChange={(_, value) => setPage(value)}
+            color="primary"
+          />
+        </Box>
       )}
     </div>
   );
