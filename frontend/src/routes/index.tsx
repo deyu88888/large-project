@@ -12,6 +12,7 @@ import ViewSocietyEvents from "../pages/view-society-events";
 import ManageReports from "../pages/Admin/ManageReports";
 import ViewReports from "../pages/President/ViewReports";
 import {Search} from "@mui/icons-material";
+import PublicLayout from "../components/home/PublicLayout";
 
 // Lazy-loaded pages
 const LoginPage = lazy(() => import("../pages/login"));
@@ -44,6 +45,9 @@ const ReportThread = lazy(() => import("../pages/ReportThread"));
 // Public event pages
 const AllEventsPage = lazy(() => import("../pages/allEventsPage"));
 const EventDetailPage = lazy(() => import("../pages/eventDetailPage"));
+const AllSocietiesPage = lazy(() => import("../pages/AllSocieties"));
+const PublicCalendarPage = lazy(() => import("../pages/Calendar"));
+
 
 // Admin pages
 const EventListPage = lazy(() => import("../pages/Admin/AdminEventList"));
@@ -54,6 +58,7 @@ const AdminDashboardPage = lazy(() => import("../pages/Admin/AdminDashboard"));
 const CalendarPage = lazy(() => import("../pages/Admin/AdminCalendar"));
 const StudentListPage = lazy(() => import("../pages/Admin/StudentList"));
 const DashboardPage = lazy(() => import("../pages/Dashboard"));
+const OldDashboardPage = lazy(() => import("../pages/OldDashboard"));
 const CreateAdminPage = lazy(() => import("../pages/Admin/CreateAdmin"));
 const AdminListPage = lazy(() => import("../pages/Admin/AdminList"));
 const RequestSocietyPage = lazy(() => import("../pages/Admin/SocietyCreationRequests"));
@@ -81,10 +86,10 @@ const routes = [
       </PrivateGuard>
     ),
     children: [
-      {
-        index: true,
-        element: <PageWithTitle title="Dashboard"><DashboardPage /></PageWithTitle>,
-      },
+      // {
+      //   index: true,
+      //   element: <PageWithTitle title="Dashboard"><DashboardPage /></PageWithTitle>,
+      // },
       {
         path: "admin",
         element: (
@@ -284,7 +289,9 @@ const routes = [
     element: (
       <PublicGuard>
         <Suspense fallback={<LoadingView />}>
-          <Outlet />
+          <PublicLayout>
+            <Outlet />
+          </PublicLayout>
         </Suspense>
       </PublicGuard>
     ),
@@ -292,22 +299,15 @@ const routes = [
       { index: true, element: <PageWithTitle title="Home"><DashboardPage /></PageWithTitle> },
       { path: "login", element: <PageWithTitle title="Login"><LoginPage /></PageWithTitle> },
       { path: "register", element: <PageWithTitle title="Register"><RegisterPage /></PageWithTitle> },
-      { path: "event-list", element: <PageWithTitle title="All Events"><EventListPage /></PageWithTitle> },
-    ],
-  },
-  {
-    path: "/",
-    element: (
-      <Suspense fallback={<LoadingView />}>
-        <Outlet />
-      </Suspense>
-    ),
-    children: [
+      { path: "event-list", element: <PageWithTitle title="All Events"><EventListPage /></PageWithTitle> }, // check use of this
       { path: "all-events", element: <PageWithTitle title="All Events"><AllEventsPage /></PageWithTitle> },
+      { path: "all-societies", element: <PageWithTitle title="All Societies"><AllSocietiesPage /></PageWithTitle> },
       { path: "event/:event_id", element: <PageWithTitle title="Event Details"><EventDetailPage /></PageWithTitle> },
       { path: "view-society/:society_id", element: <PageWithTitle title="Society Details"><ViewSocietyPage /></PageWithTitle> },
       { path: "profile/:student_id", element: <PageWithTitle title="Student Progile"><ProfilePage /></PageWithTitle> },
       { path: "search", element: <PageWithTitle title="Search"><SearchResultsPage /></PageWithTitle> },
+      { path: "calendar", element: <PageWithTitle title="Calendar"><PublicCalendarPage /></PageWithTitle> },
+      { path: "support", element: <PageWithTitle title="Support"><ReportToAdmin /></PageWithTitle> },
     ],
   },
   {

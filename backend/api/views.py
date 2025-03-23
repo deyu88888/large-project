@@ -59,7 +59,24 @@ def get_popular_societies(request):
             )
         )
         .order_by("-popularity_score")[:5]
-        .values("id", "name", "total_members", "total_events", "total_event_attendance", "popularity_score")
+        .values(
+            "id",
+            "name",
+            "description",
+            "category",
+            "social_media_links",
+            "membership_requirements",
+            "upcoming_projects_or_plans",
+            "tags",
+            "icon",
+            "president",
+            "status",
+            "approved_by",
+            "total_members",
+            "total_events",
+            "total_event_attendance",
+            "popularity_score"
+        )
     )
 
     return JsonResponse(list(popular_societies), safe=False)

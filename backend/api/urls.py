@@ -16,7 +16,7 @@ from .views import (
     ManageSocietyDetailsView, StudentSocietyDataView, SocietyMembersListView,
     PendingMembersView, SocietyRoleManagementView, get_popular_societies,
     RecommendedSocietiesView, SocietyRecommendationExplanationView,
-    RecommendationFeedbackView, RecommendationFeedbackAnalyticsView,
+    RecommendationFeedbackView, RecommendationFeedbackAnalyticsView, PublicSocietiesView,
     
     # Events
     ManageEventListView, CreateEventRequestView, RSVPEventView, EventHistoryView,
@@ -80,6 +80,46 @@ admin_patterns = [
     path("delete-activity-log/<int:log_id>", AdminActivityLogView.as_view(), name="delete_activity_log"),
     path('delete/<str:target_type>/<int:target_id>', AdminDeleteView.as_view(), name='delete'),
     path('restore/<int:log_id>', AdminRestoreView.as_view(), name='restore'),
+    path('undo-delete/<int:log_id>', AdminDeleteView.as_view(), name='undo-delete'),
+
+    # Student societies endpoints
+    path("student-societies/", StudentSocietiesView.as_view(), name="student_societies"),
+    path("leave-society/<int:society_id>/", StudentSocietiesView.as_view(), name="leave_society"),
+    path("society-view/<int:society_id>/", StudentSocietyDataView.as_view(), name="society_view"),
+    path('media/<path:path>', custom_media_view, name="media"),
+    path('api/pending-requests/', PendingRequestsView.as_view(), name='pending-requests'),
+
+    # Dashboard API endpoints
+    path("dashboard/stats/", DashboardStatsView.as_view(), name="dashboard_stats"),
+    path("dashboard/activities/", RecentActivitiesView.as_view(), name="recent_activities"),
+    path("dashboard/notifications", NotificationsView.as_view(), name="dashboard_notifications"),
+    path("dashboard/events/", EventCalendarView.as_view(), name="dashboard_events"),
+    path("popular-societies/", get_popular_societies, name="popular_societies"),
+
+    path('all-societies', PublicSocietiesView.as_view(), name='all_societies'),
+
+    # Awards Endpoints
+    path("awards/", AwardView.as_view(), name="awards"),  # List & Create Awards
+    path("awards/<int:pk>/", AwardView.as_view(), name="award_detail"),  # Retrieve, Update, Delete Award
+
+    # Award-Student Endpoints
+    path("award-students/", AwardStudentView.as_view(), name="award_students"),  # List & Assign Awards to Students
+    path("award-students/<int:pk>/", AwardStudentView.as_view(), name="award_student_detail"),  # Retrieve, Update, Delete Assignment
+
+    # President page
+    path("society/<int:society_id>/pending-members/", PendingMembersView.as_view(), name="pending-members"),
+    path("society/<int:society_id>/pending-members/<int:request_id>/", PendingMembersView.as_view(), name="process-pending-member"),
+    path("society/<int:society_id>/members/", SocietyMembersListView.as_view(), name="society-members"),
+    path("society-roles/<int:society_id>/", SocietyRoleManagementView.as_view(), name="society-members"),
+
+    # Report to admin
+    path("report-to-admin", AdminReportView.as_view(), name="report-to-admin"),
+    path("report-to-admin/<int:report_id>", AdminReportView.as_view(), name="report-to-admin-detail"),
+    path("my-reports", MyReportsView.as_view(), name='my_reports'),
+    path('my-reports-with-replies', MyReportsWithRepliesView.as_view(), name='my_reports_with_replies'),
+    path("report-replies", ReportReplyView.as_view(), name="report-replies"),
+    path("report-replies/<int:report_id>", ReportReplyView.as_view(), name="report-replies-by-report"),
+    path('report-thread/<int:report_id>', ReportThreadView.as_view(), name='report_thread'),
     path("reports-replied", AdminReportsWithRepliesView.as_view(), name="report_replied"),
     path("reports-with-replies", AdminRepliesListView.as_view(), name="reports_with_replies"),
     path('news/publication-request/<int:request_id>/', AdminNewsApprovalView.as_view(), name='admin_news_approval'),
