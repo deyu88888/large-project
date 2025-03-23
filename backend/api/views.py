@@ -62,18 +62,6 @@ from django.db.models import Q
 class CreateUserView(generics.CreateAPIView):
     """
     View for creating a new user. This view allows only POST requests for creating a user instance.
-
-    - **POST**: Creates a new user from the provided data. Expects the following fields in the request body:
-        - first_name
-        - last_name
-        - email
-        - username
-        - password
-
-    Permissions:
-        - Open to all users (AllowAny).
-
-    This view uses the `UserSerializer` to validate the input data and save the new user to the database.
     """
     queryset = User.objects.all()
     serializer_class = UserSerializer
@@ -105,12 +93,6 @@ class RegisterView(APIView):
 class CurrentUserView(APIView):
     """
     View for retrieving and updating the currently authenticated user.
-    
-    - **GET**: Retrieves the details of the currently authenticated user.
-    - **PUT**: Updates the details of the currently authenticated user.
-    
-    Permissions:
-        - Requires a valid JWT token to access.
     """
 
     def get(self, request):
@@ -175,21 +157,6 @@ class CurrentUserView(APIView):
 class JoinedSocietiesView(APIView):
     """
     API View for managing societies that a student has joined.
-
-    - **GET**: Retrieves a list of societies the currently logged-in student has joined.
-        - Permissions: Requires the user to be authenticated and a student.
-        - Response:
-            - 200: A list of societies with details such as name and president.
-            - 403: If the user is not a student.
-
-    - **POST**: Allows the student to leave a society they are part of.
-        - Permissions: Requires the user to be authenticated and a student.
-        - Request Body:
-            - `society_id` (int): ID of the society to leave.
-        - Response:
-            - 200: Confirmation message indicating the student has successfully left the society.
-            - 400: Validation errors, such as invalid society ID.
-            - 403: If the user is not a student.
     """
     permission_classes = [IsAuthenticated]
 
@@ -255,20 +222,6 @@ class JoinedSocietiesView(APIView):
 class RequestJoinSocietyView(APIView):
     """
     API View for managing the joining of new societies by a student.
-    - **GET**: Retrieves a list of societies the currently logged-in student has NOT joined.
-        - Permissions: Requires the user to be authenticated and a student.
-        - Response:
-            - 200: A list of available societies with details such as name and president.
-            - 403: If the user is not a student.
-
-    - **POST**: Creates a request for president approval to join a society.
-        - Permissions: Requires the user to be authenticated and a student.
-        - Request Body:
-            - `society_id` (int): ID of the society to join.
-        - Response:
-            - 201: Confirmation message indicating the join request has been submitted.
-            - 400: Validation errors, such as invalid society ID.
-            - 403: If the user is not a student.
     """
     permission_classes = [IsAuthenticated]
     
@@ -638,13 +591,8 @@ def has_society_management_permission(student, society, for_events_only=False):
     Check if a student has management permissions for a society.
     This includes being either the president, vice president, or event manager (for event operations).
     """
-    # Check if student is president
     is_president = student.is_president and hasattr(society, 'president') and society.president and society.president.id == student.id
-    
-    # Check if student is vice president
     is_vice_president = hasattr(society, 'vice_president') and society.vice_president and society.vice_president.id == student.id
-    
-    # If this is specifically for event operations, also check if student is the event manager
     is_event_manager = False
     if for_events_only:
         is_event_manager = (hasattr(society, 'event_manager') and 
@@ -661,25 +609,17 @@ class ManageSocietyDetailsView(APIView):
 
     def get(self, request, society_id):
         user = request.user
-
-        # Ensure the user is a student
         try:
             student = Student.objects.get(pk=user.pk)
         except Student.DoesNotExist:
             return Response({"error": "Only society presidents and vice presidents can manage their societies."}, 
                            status=status.HTTP_403_FORBIDDEN)
-        
-        # Fetch the society
         society = Society.objects.filter(id=society_id).first()
         if not society:
             return Response({"error": "Society not found."}, status=status.HTTP_404_NOT_FOUND)
-            
-        # Check for management permissions using utility function
         if not has_society_management_permission(student, society):
             return Response({"error": "Only the society president or vice president can manage this society."}, 
                            status=status.HTTP_403_FORBIDDEN)
-
-        # Serialize the society details
         serializer = SocietySerializer(society)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -699,17 +639,14 @@ class ManageSocietyDetailsView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
             
-        # Check for management permissions using utility function
         if not has_society_management_permission(user.student, society):
             return Response(
                 {"error": "Only the society president or vice president can manage this society."},
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        # Pass the request context so the serializer can access the current user.
         serializer = SocietyRequestSerializer(data=request.data, context={"request": request}, partial=True)
         if serializer.is_valid():
-            # Pass the society instance explicitly to the serializer's save() method.
             society_request = serializer.save(society=society)
             return Response(
                 {
@@ -1887,37 +1824,28 @@ class EventDetailsView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-logger = logging.getLogger(__name__)
-
-
 class ManageEventListView(APIView):
     """
     Lists events for the society the currently logged-in president/vice-president/event manager is managing.
-    Optionally applies a filter (upcoming, previous, pending).
+    And applies a filter (upcoming, previous, pending).
     """
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         filter_type = request.query_params.get("filter", "upcoming")
 
-        # Ensure the user is a student
         if not hasattr(request.user, "student"):
-            logger.warning("User is not a student.")
             return Response({"error": "Only students can retrieve society events."}, status=403)
 
-        # Gather all society IDs the student is in
         societies = request.user.student.societies_belongs_to.all()
         society_ids = [s.id for s in societies]
 
-        # If the user belongs to no societies, return an empty list
         if not society_ids:
-            logger.info("User is not part of any society. Returning empty list.")
             return Response([], status=200)
 
         # Fetch events for these societies only
         events = Event.objects.filter(hosted_by__in=society_ids)
 
-        # If you want to do time-based filtering:
         today = now().date()
         current_time = now().time()
 
@@ -1933,7 +1861,6 @@ class ManageEventListView(APIView):
             )
         elif filter_type == "pending":
             events = events.filter(status="Pending")
-        # else: no filter → returns all events from these societies
 
         serializer = EventSerializer(events, many=True)
         return Response(serializer.data, status=200)
@@ -1960,7 +1887,6 @@ class ManageEventDetailsView(APIView):
         if event.status == "Pending":
             return True
 
-        # Combine the event's date and start_time.
         event_datetime = datetime.combine(event.date, event.start_time)
         if current_datetime.tzinfo:
             event_datetime = make_aware(event_datetime)
@@ -1973,7 +1899,6 @@ class ManageEventDetailsView(APIView):
     
     def patch(self, request, event_id):
         user = request.user
-        # Ensure the user is a valid student
         try:
             student = Student.objects.get(pk=user.pk)
         except Student.DoesNotExist:
@@ -1988,7 +1913,6 @@ class ManageEventDetailsView(APIView):
             return Response({"error": "Only society presidents, vice presidents, and event managers can modify events."}, 
                             status=status.HTTP_403_FORBIDDEN)
 
-        # Prepare data for the update request.
         data = request.data.copy()
         data.setdefault("title", event.title)
         data.setdefault("description", event.description)
@@ -1997,7 +1921,6 @@ class ManageEventDetailsView(APIView):
         data.setdefault("start_time", event.start_time)
         data.setdefault("duration", event.duration)
 
-        # Instantiate the serializer.
         serializer = EventRequestSerializer(
             data=data,
             context={
@@ -2019,7 +1942,6 @@ class ManageEventDetailsView(APIView):
 
     def delete(self, request, event_id):
         user = request.user
-        # Ensure the user is a valid student
         try:
             student = Student.objects.get(pk=user.pk)
         except Student.DoesNotExist:
@@ -2095,7 +2017,7 @@ class PendingMembersView(APIView):
         if not pending_request:
             return Response({"error": "Request not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        action = request.data.get("action")  # "approve" or "reject"
+        action = request.data.get("action")
 
         if action == "approve":
             # Add student to society
@@ -2926,7 +2848,7 @@ def toggle_follow(request, user_id):
         return Response({"message": "Followed successfully."}, status=status.HTTP_200_OK)
 
 
-class StudentProfileView(APIView):
+class MyProfileView(APIView):
     """API view to show Student's Profile"""
     permission_classes = [AllowAny]
 
