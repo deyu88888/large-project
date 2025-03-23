@@ -2254,15 +2254,13 @@ class DashboardStatsView(APIView):
     """
     View to provide aggregated statistics for the dashboard.
     """
-    permission_classes = [IsAuthenticated]
-
+    permission_classes = []
+    
     def get(self, request):
-        # Aggregated statistics from the database
         total_societies = Society.objects.count()
         total_events = Event.objects.count()
         pending_approvals = Society.objects.filter(status="Pending").count()
         active_members = Student.objects.aggregate(active_members=Count("id"))["active_members"]
-
         stats = {
             "total_societies": total_societies,
             "total_events": total_events,
@@ -2277,29 +2275,31 @@ class RecentActivitiesView(APIView):
     """
     View to provide a list of recent activities for the dashboard.
     """
-    permission_classes = [IsAuthenticated]
-
+    permission_classes = []
+    
     def get(self, request):
         activities = [
             {"description": "John Doe joined the Chess Society", "timestamp": now()},
             {"description": "A new event was created: 'AI Workshop'", "timestamp": now()},
         ]
-
         serializer = RecentActivitySerializer(activities, many=True)
         return Response(serializer.data, status=200)
 
 
 class NotificationsView(APIView):
     """
-    View to provide notifications for the logged-in user.
+    View to provide notifications for users.
     """
-    permission_classes = [IsAuthenticated]
-
+    permission_classes = []
+    
     def get(self, request):
-        if request.user.role != "student":
-            return Response({"error": "Only students can view notifications."}, status=403)
-
-        notifications = Notification.objects.filter(for_user=request.user).order_by("-id")
+        # For unauthenticated users or non-students, return public notifications
+        if not request.user.is_authenticated or request.user.role != "student":
+            notifications = Notification.objects.all().order_by("-id")[:5]
+        else:
+            # For authenticated students, return their specific notifications
+            notifications = Notification.objects.filter(for_user=request.user).order_by("-id")
+            
         notifications = [n for n in notifications if n.is_sent()]
         serializer = DashboardNotificationSerializer(notifications, many=True)
         return Response(serializer.data, status=200)
@@ -2309,8 +2309,8 @@ class EventCalendarView(APIView):
     """
     View to provide events for the dashboard calendar.
     """
-    permission_classes = [IsAuthenticated]
-
+    permission_classes = []
+    
     def get(self, request):
         events = Event.objects.all()
         serializer = EventCalendarSerializer(events, many=True)

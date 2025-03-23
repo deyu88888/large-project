@@ -699,10 +699,10 @@ class DashboardStatisticSerializer(serializers.Serializer):
     """
     Serializer for dashboard statistics.
     """
-    total_societies = serializers.IntegerField()
-    total_events = serializers.IntegerField()
-    pending_approvals = serializers.IntegerField()
-    active_members = serializers.IntegerField()
+    totalSocieties = serializers.IntegerField(source='total_societies')
+    totalEvents = serializers.IntegerField(source='total_events')
+    pendingApprovals = serializers.IntegerField(source='pending_approvals')
+    activeMembers = serializers.IntegerField(source='active_members')
 
 
 class RecentActivitySerializer(serializers.Serializer):
