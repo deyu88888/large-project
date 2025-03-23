@@ -110,7 +110,7 @@ const AllSocieties: React.FC = () => {
                 borderRadius: "0.5rem",
                 border: "none",
                 backgroundColor: viewByCategory 
-                  ? isLight ? colours.accent2[400] : colours.accent2[600]
+                  ? isLight ? colours.greenAccent[400] : colours.greenAccent[600]
                   : isLight ? colours.grey[300] : colours.grey[700],
                 color: viewByCategory 
                   ? "#ffffff" 
@@ -130,7 +130,7 @@ const AllSocieties: React.FC = () => {
                 borderRadius: "0.5rem",
                 border: "none",
                 backgroundColor: !viewByCategory 
-                  ? isLight ? colours.accent2[400] : colours.accent2[600]
+                  ? isLight ? colours.greenAccent[400] : colours.greenAccent[600]
                   : isLight ? colours.grey[300] : colours.grey[700],
                 color: !viewByCategory 
                   ? "#ffffff" 
@@ -149,7 +149,7 @@ const AllSocieties: React.FC = () => {
         {error && (
           <div
             style={{
-              color: isLight ? colours.accent3[400] : colours.accent3[300],
+              color: isLight ? colours.redAccent[400] : colours.redAccent[300],
               textAlign: "center",
               fontSize: "1rem",
               marginBottom: "1.5rem",
