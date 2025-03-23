@@ -166,7 +166,7 @@ const ViewAdmin: React.FC = () => {
                 value={formData.username}
                 onChange={handleChange}
                 disabled={!canEdit}
-                InputProps={{
+                inputProps={{
                   readOnly: !canEdit
                 }}
               />
@@ -180,7 +180,7 @@ const ViewAdmin: React.FC = () => {
                 value={formData.first_name}
                 onChange={handleChange}
                 disabled={!canEdit}
-                InputProps={{
+                inputProps={{
                   readOnly: !canEdit
                 }}
               />
@@ -194,7 +194,7 @@ const ViewAdmin: React.FC = () => {
                 value={formData.last_name}
                 onChange={handleChange}
                 disabled={!canEdit}
-                InputProps={{
+                inputProps={{
                   readOnly: !canEdit
                 }}
               />
@@ -208,7 +208,7 @@ const ViewAdmin: React.FC = () => {
                 value={formData.email}
                 onChange={handleChange}
                 disabled={!canEdit}
-                InputProps={{
+                inputProps={{
                   readOnly: !canEdit
                 }}
               />
@@ -222,7 +222,7 @@ const ViewAdmin: React.FC = () => {
                 value={formData.role}
                 onChange={handleChange}
                 disabled={true}
-                InputProps={{
+                inputProps={{
                   readOnly: true
                 }}
               />
@@ -233,7 +233,7 @@ const ViewAdmin: React.FC = () => {
                 control={
                   <Switch
                     checked={formData.is_active}
-                    onChange={(e) => {
+                    onChange={(e: any) => {
                       if (!canEdit) return;
                       setFormData((prev) => 
                         prev ? { ...prev, is_active: e.target.checked } : null
@@ -252,7 +252,7 @@ const ViewAdmin: React.FC = () => {
                 control={
                   <Switch
                     checked={formData.is_super_admin}
-                    onChange={(e) => {
+                    onChange={(e: any) => {
                       if (!canEdit) return;
                       setFormData((prev) => 
                         prev ? { ...prev, is_super_admin: e.target.checked } : null
