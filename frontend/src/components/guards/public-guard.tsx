@@ -1,46 +1,35 @@
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { ACCESS_TOKEN } from "../../constants";
 import { useEffect, useState } from "react";
 import { LoadingView } from "../loading/loading-view";
 import { useAuthStore } from "../../stores/auth-store";
+import { jwtDecode } from "jwt-decode";
 
-// Decode helper that works with both CJS and ESM formats
-const decodeToken = async (
-  token: string
-): Promise<{ exp: number; user_id: number; role?: string }> => {
-  const mod = await import("jwt-decode");
-  const jwtDecode = mod.default || mod.jwtDecode || mod;
-  if (typeof jwtDecode !== "function") {
-    throw new Error("jwtDecode is not a function");
-  }
-  return jwtDecode(token);
-};
+interface DecodedToken {
+  exp: number;
+  user_id: number;
+  role?: string;
+}
 
 export function PublicGuard({ children }: { children: React.ReactNode }) {
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
   const { user, setUser } = useAuthStore();
+  const location = useLocation();
+
+  // Helper to decode the token
+  const decodeToken = async (token: string): Promise<DecodedToken> => {
+    return jwtDecode<DecodedToken>(token);
+  };
 
   useEffect(() => {
     const checkAuth = async () => {
-      console.log(
-        "%c[PublicGuard] Starting authentication check...",
-        "color: blue; font-weight: bold;"
-      );
       const token = localStorage.getItem(ACCESS_TOKEN);
       if (token) {
         try {
-          console.log("%c[PublicGuard] Found access token:", "color: green;", token);
           const decoded = await decodeToken(token);
-          const tokenExpiration = decoded.exp;
           const now = Date.now() / 1000;
-
-          console.log("%c[PublicGuard] Token expiration time:", "color: blue;", tokenExpiration);
-          console.log("%c[PublicGuard] Current time:", "color: blue;", now);
-
-          if (tokenExpiration > now) {
-            console.log("%c[PublicGuard] Token is valid. User is authorized.", "color: green;");
-
-            // Set minimal user if not already set
+          if (decoded.exp > now) {
+            // Set minimal user details if not already set
             if (!user) {
               setUser({
                 id: decoded.user_id,
@@ -55,35 +44,27 @@ export function PublicGuard({ children }: { children: React.ReactNode }) {
                 is_super_admin: false,
               });
             }
-
             setIsAuthorized(true);
             return;
           } else {
-            console.warn("%c[PublicGuard] Token expired. Removing it.", "color: orange;");
             localStorage.removeItem(ACCESS_TOKEN);
           }
         } catch (error) {
-          console.error("%c[PublicGuard] Failed to decode token:", "color: red;", error);
+          console.error("PublicGuard: Failed to decode token:", error);
         }
-      } else {
-        console.log("%c[PublicGuard] No token found.", "color: orange;");
       }
-
-      console.log("%c[PublicGuard] User is unauthorized.", "color: red;");
       setIsAuthorized(false);
     };
 
     checkAuth();
   }, [setUser, user]);
 
-  useEffect(() => {
-    console.log("%c[PublicGuard] Authorization state updated:", "color: purple;", isAuthorized);
-  }, [isAuthorized]);
-
+  // While checking auth state, show a loading indicator.
   if (isAuthorized === null) {
     return <LoadingView />;
   }
 
+  // If authenticated, always redirect to dashboard
   if (isAuthorized) {
     if (!user) return <LoadingView />;
     if (user.role === "admin") return <Navigate to="/admin" replace />;
@@ -91,5 +72,6 @@ export function PublicGuard({ children }: { children: React.ReactNode }) {
     return <Navigate to="/" replace />;
   }
 
+  // If not authenticated, render the public pages (home, login, register, etc.)
   return <>{children}</>;
 }

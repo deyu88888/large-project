@@ -12,13 +12,21 @@ import {
   List, 
   ListItem, 
   ListItemText, 
-  ListItemSecondaryAction 
+  ListItemSecondaryAction,
+  Chip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions
 } from "@mui/material";
 import { tokens } from "../../theme/theme";
 
 interface Society {
   id: number;
   name: string;
+  president?: any;
+  vice_president?: any;
+  event_manager?: any;
   [key: string]: any;
 }
 
@@ -39,25 +47,36 @@ const ViewSocietyMembers: React.FC = () => {
   const [society, setSociety] = useState<Society | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [confirmDialog, setConfirmDialog] = useState<{open: boolean, role: string, memberId: number | null}>({
+    open: false,
+    role: '',
+    memberId: null
+  });
+  const [roleActionLoading, setRoleActionLoading] = useState(false);
+
+  const fetchData = async () => {
+    try {
+      const id = societyId || user?.president_of;
+      if (!id) {
+        throw new Error("No society id available");
+      }
+
+      // Fetch society data to know roles
+      const societyResponse = await apiClient.get(`/api/manage-society-details/${id}/`);
+      setSociety(societyResponse.data);
+
+      // Fetch members
+      const membersResponse = await apiClient.get(`/api/society/${id}/members/`);
+      setMembers(membersResponse.data || []);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchMembers = async (): Promise<void> => {
-      try {
-        const id = societyId || user?.president_of;
-        if (!id) {
-          throw new Error("No society id available");
-        }
-
-        const membersResponse = await apiClient.get(`/api/society/${id}/members/`);
-        setMembers(membersResponse.data || []);
-      } catch (error) {
-        console.error("Error fetching society members:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchMembers();
+    fetchData();
   }, [societyId, user]);
 
   const handleViewProfile = (memberId: number): void => {
@@ -65,11 +84,54 @@ const ViewSocietyMembers: React.FC = () => {
   };
 
   const handleGiveAward = (memberId: number): void => {
-    navigate(`../give-award-page/${memberId}`);
+    navigate(`/president-page/${societyId}/give-award-page/${memberId}`);
   };
 
   const handleAssignRole = (memberId: number): void => {
-    navigate(`../assign-society-role/${memberId}`);
+    navigate(`/president-page/${societyId}/assign-role/${memberId}`);
+  };
+
+  const handleRemoveRole = (role: string, memberId: number): void => {
+    setConfirmDialog({
+      open: true,
+      role,
+      memberId
+    });
+  };
+
+  const handleConfirmRemoveRole = async () => {
+    if (!confirmDialog.role || !confirmDialog.memberId) return;
+    
+    setRoleActionLoading(true);
+    try {
+      // Send null to remove the role
+      const payload: Record<string, null> = {
+        [confirmDialog.role]: null
+      };
+      
+      await apiClient.patch(`/api/society-roles/${societyId}/`, payload);
+      
+      // Refresh data
+      await fetchData();
+      
+    } catch (error) {
+      console.error("Error removing role:", error);
+    } finally {
+      setRoleActionLoading(false);
+      setConfirmDialog({ open: false, role: '', memberId: null });
+    }
+  };
+
+  const isPresident = (memberId: number): boolean => {
+    return society?.president?.id === memberId;
+  };
+
+  const isVicePresident = (memberId: number): boolean => {
+    return society?.vice_president?.id === memberId;
+  };
+
+  const isEventManager = (memberId: number): boolean => {
+    return society?.event_manager?.id === memberId;
   };
 
   if (loading) {
@@ -143,12 +205,56 @@ const ViewSocietyMembers: React.FC = () => {
                 }}
               >
                 <ListItemText
-                  primary={`${member.first_name} ${member.last_name}`}
+                  primary={
+                    <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+                      <Typography color="textPrimary" fontWeight="medium">
+                        {`${member.first_name} ${member.last_name}`}
+                      </Typography>
+                      
+                      {isPresident(member.id) && (
+                        <Chip 
+                          label="President" 
+                          size="small"
+                          sx={{ 
+                            bgcolor: 'green', // Replace with direct color
+                            color: 'white',
+                            fontWeight: 'bold'
+                          }}
+                        />
+                      )}
+
+                      {isVicePresident(member.id) && (
+                        <Chip 
+                          label="Vice President" 
+                          size="small"
+                          sx={{ 
+                            bgcolor: 'blue', // Replace with direct color
+                            color: 'white',
+                            fontWeight: 'bold',
+                            cursor: 'pointer'
+                          }}
+                          onClick={() => handleRemoveRole('vice_president', member.id)}
+                          onDelete={() => handleRemoveRole('vice_president', member.id)}
+                        />
+                      )}
+
+                      {isEventManager(member.id) && (
+                        <Chip 
+                          label="Event Manager" 
+                          size="small"
+                          sx={{ 
+                            bgcolor: 'orange', // Replace with direct color
+                            color: 'white',
+                            fontWeight: 'bold',
+                            cursor: 'pointer'
+                          }}
+                          onClick={() => handleRemoveRole('event_manager', member.id)}
+                          onDelete={() => handleRemoveRole('event_manager', member.id)}
+                        />
+                      )}
+                    </Box>
+                  }
                   secondary={member.username}
-                  primaryTypographyProps={{ 
-                    color: 'textPrimary',
-                    fontWeight: 'medium' 
-                  }}
                   secondaryTypographyProps={{ 
                     color: 'textSecondary' 
                   }}
@@ -180,6 +286,7 @@ const ViewSocietyMembers: React.FC = () => {
                     color="info"
                     size="small"
                     onClick={() => handleAssignRole(member.id)}
+                    disabled={isPresident(member.id) || isVicePresident(member.id) || isEventManager(member.id)}
                   >
                     Assign Role
                   </Button>
@@ -205,6 +312,35 @@ const ViewSocietyMembers: React.FC = () => {
           </Button>
         </Box>
       </Paper>
+
+      {/* Confirmation Dialog */}
+      <Dialog
+        open={confirmDialog.open}
+        onClose={() => setConfirmDialog({...confirmDialog, open: false})}
+      >
+        <DialogTitle>Remove Role</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to remove the {confirmDialog.role?.replace('_', ' ')} role from this member?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={() => setConfirmDialog({...confirmDialog, open: false})}
+            disabled={roleActionLoading}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleConfirmRemoveRole}
+            color="error"
+            disabled={roleActionLoading}
+            variant="contained"
+          >
+            {roleActionLoading ? <CircularProgress size={24} /> : 'Remove'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

@@ -7,6 +7,15 @@
 
 import axios from "axios";
 import { ACCESS_TOKEN } from "./constants";
+function isTokenValid(token: string): boolean {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.exp * 1000 > Date.now();
+  } catch (err) {
+    console.warn("Invalid token format", err);
+    return false;
+  }
+}
 
 // ---------------------------------------------------------------------------
 // 1) BASE API CONFIGURATION
@@ -31,8 +40,10 @@ apiClient.interceptors.request.use(
     console.log("Full URL:", apiUrl + config.url);
     console.log("Authorization Token:", token);
 
-    if (token) {
+    if (token && isTokenValid(token)) {
       config.headers.Authorization = `Bearer ${token}`;
+    } else {
+      delete config.headers.Authorization;
     }
     console.log("config:", config);
     return config;
