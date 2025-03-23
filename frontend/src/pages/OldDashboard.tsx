@@ -8,86 +8,15 @@ import Sidebar from "../components/Sidebar";
 import { HiMenu } from "react-icons/hi";
 import { motion } from 'framer-motion';
 import { getAllEvents, apiClient } from "../api";
-import { ACCESS_TOKEN } from "../constants";
 import { useWebSocketChannel } from "../hooks/useWebSocketChannel";
 import { useWebSocketManager, CONNECTION_STATES } from "../hooks/useWebSocketManager";
+import { StatData, Activity, Notification, CalendarEvent, Introduction, RawEvent, TabsProps, TabPanelProps, SectionCardProps, StatCardProps, NavigationItem } from '../types'
 
-// -- Type Definitions --
-interface StatData {
-  totalSocieties: number;
-  totalEvents: number;
-  pendingApprovals: number;
-  activeMembers: number;
-}
-
-interface Activity {
-  description: string;
-}
-
-interface Notification {
-  message: string;
-}
-
-interface CalendarEvent {
-  id: number;
-  title: string;
-  start: Date;
-  end: Date;
-}
-
-interface Introduction {
-  title: string;
-  content: string[];
-}
-
-interface RawEvent {
-  id: number;
-  title: string;
-  date: string;
-  startTime: string;
-  start_time?: string;
-  duration?: string;
-}
-
-interface TabsProps {
-  activeTab: string;
-  setActiveTab: (tab: string) => void;
-  children: React.ReactNode;
-}
-
-interface TabPanelProps {
-  label: string;
-  children: React.ReactNode;
-}
-
-interface SectionCardProps {
-  title: string;
-  children: React.ReactNode;
-}
-
-interface StatCardProps {
-  title: string;
-  value: number;
-  color: string;
-}
-
-interface NavigationItem {
-  label: string;
-  icon: React.ReactNode;
-  ref: React.RefObject<HTMLElement> | null;
-  scrollToSection: () => void;
-}
 
 // -- API Functions --
 const fetchDashboardStats = async (): Promise<StatData | null> => {
   try {
-    const token = localStorage.getItem(ACCESS_TOKEN);
-    if (!token) {
-      console.log("No authentication token available");
-      return null;
-    }
-    
-    const response = await apiClient.get("/api/dashboard/stats");
+    const response = await apiClient.get("/api/dashboard/stats/");
     return response.data;
   } catch (error) {
     console.error("Error fetching dashboard stats:", error);
@@ -97,13 +26,7 @@ const fetchDashboardStats = async (): Promise<StatData | null> => {
 
 const fetchActivities = async (): Promise<Activity[] | null> => {
   try {
-    const token = localStorage.getItem(ACCESS_TOKEN);
-    if (!token) {
-      console.log("No authentication token available");
-      return null;
-    }
-    
-    const response = await apiClient.get("/api/dashboard/activities");
+    const response = await apiClient.get("/api/dashboard/activities/");
     return response.data;
   } catch (error) {
     console.error("Error fetching activities:", error);
@@ -113,12 +36,6 @@ const fetchActivities = async (): Promise<Activity[] | null> => {
 
 const fetchNotifications = async (): Promise<Notification[] | null> => {
   try {
-    const token = localStorage.getItem(ACCESS_TOKEN);
-    if (!token) {
-      console.log("No authentication token available");
-      return null;
-    }
-    
     const response = await apiClient.get("/api/dashboard/notifications");
     return response.data;
   } catch (error) {
@@ -591,7 +508,7 @@ const Dashboard: React.FC = () => {
                 <Link
                   to="/register"
                   className="px-4 py-2 bg-purple-600 text-white
-                              rounded-full shadow hover:bg-purple-700 transition whitespace-nowrap"
+                            rounded-full shadow hover:bg-purple-700 transition whitespace-nowrap"
                   data-testid="register-link"
                 >
                   Register
@@ -599,7 +516,7 @@ const Dashboard: React.FC = () => {
                 <Link
                   to="/login"
                   className="px-4 py-2 bg-purple-600 text-white
-                              rounded-full shadow hover:bg-purple-700 transition whitespace-nowrap"
+                            rounded-full shadow hover:bg-purple-700 transition whitespace-nowrap"
                   data-testid="login-link"
                 >
                   Login
@@ -642,6 +559,11 @@ const Dashboard: React.FC = () => {
                   title="Total Events"
                   value={stats.totalEvents}
                   color="from-green-600 to-green-400"
+                />
+                <StatCard
+                  title="Pending Approvals"
+                  value={stats.pendingApprovals}
+                  color="from-yellow-600 to-yellow-400"
                 />
                 <StatCard
                   title="Active Members"

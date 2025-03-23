@@ -106,3 +106,68 @@ export type Admin = {
   following?: number[];
   followers?: number[];
 };
+
+export type StatData = {
+  totalSocieties: number;
+  totalEvents: number;
+  pendingApprovals: number;
+  activeMembers: number;
+}
+
+export type Activity = {
+  description: string;
+}
+
+export type Notification = {
+  message: string;
+}
+
+export type CalendarEvent = {
+  id: number;
+  title: string;
+  start: Date;
+  end: Date;
+}
+
+export type Introduction = {
+  title: string;
+  content: string[];
+}
+
+export type RawEvent = {
+  id: number;
+  title: string;
+  date: string;
+  startTime: string;
+  start_time?: string;
+  duration?: string;
+}
+
+export type TabsProps = {
+  activeTab: string;
+  setActiveTab: (tab: string) => void;
+  children: React.ReactNode;
+}
+
+export type TabPanelProps = {
+  label: string;
+  children: React.ReactNode;
+}
+
+export type SectionCardProps = {
+  title: string;
+  children: React.ReactNode;
+}
+
+export type StatCardProps ={
+  title: string;
+  value: number;
+  color: string;
+}
+
+export type NavigationItem = {
+  label: string;
+  icon: React.ReactNode;
+  ref: React.RefObject<HTMLElement> | null;
+  scrollToSection: () => void;
+}

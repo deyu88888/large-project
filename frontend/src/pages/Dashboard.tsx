@@ -15,21 +15,12 @@ export default function Dashboard() {
   const colors = tokens(theme.palette.mode);
   const isLight = theme.palette.mode === "light";
 
-  // WebSocket channel for popular societies
   const {
     data: popularSocieties,
     loading: societiesLoading,
     error: societiesError,
     refresh: refreshSocieties,
   } = useWebSocketChannel("dashboard/popular-societies", getPopularSocieties);
-
-  // WebSocket channel for upcoming events
-//   const {
-//     data: upcomingEvents,
-//     loading: eventsLoading,
-//     error: eventsError,
-//     refresh: refreshUpcomingEvents,
-//   } = useWebSocketChannel("dashboard/upcoming-events", getUpcomingEvents);
 
   const isLoading = societiesLoading ;
 
@@ -99,7 +90,6 @@ export default function Dashboard() {
     <Container maxWidth="xl">
       <Box padding={2}>
         {i === 0 ? (
-          // Welcome message in the first slide
           <>
             <Typography color={colors.grey[100]} variant="h1" align="center" sx={{ fontWeight: 700 }}>
               Welcome to Infinite Loop Innovators
@@ -144,108 +134,7 @@ export default function Dashboard() {
           gap: 6,
           paddingBottom: 6,
         }}
-      >        
-
-        {/* Upcoming Events Section
-        <Box sx={{ mb: 4 }}>
-          <Typography
-            variant="h2"
-            sx={{
-              color: colors.grey[100],
-              fontSize: "1.75rem",
-              fontWeight: 600,
-              mb: 3,
-              paddingBottom: "0.5rem",
-              borderBottom: `1px solid ${isLight ? colors.grey[300] : colors.grey[700]}`,
-            }}
-          >
-            Upcoming Events
-          </Typography>
-          {isLoading ? (
-            <Typography color={colors.grey[100]}>Loading events...</Typography>
-          ) : eventsError ? (
-            <Typography color="error">{eventsError}</Typography>
-          ) : upcomingEvents && upcomingEvents.length > 0 ? (
-            <Box
-              sx={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
-                gap: 3,
-              }}
-            >
-              {upcomingEvents.map((event: any) => (
-                <Box
-                  key={event.id}
-                  sx={{
-                    backgroundColor: isLight ? colors.primary[400] : colors.primary[700],
-                    borderRadius: "0.75rem",
-                    padding: "1.25rem",
-                    border: `1px solid ${isLight ? colors.grey[300] : colors.grey[800]}`,
-                    boxShadow: isLight
-                      ? "0 4px 12px rgba(0, 0, 0, 0.05)"
-                      : "0 4px 12px rgba(0, 0, 0, 0.2)",
-                    transition: "all 0.5s cubic-bezier(0.165, 0.84, 0.44, 1)",
-                    display: "flex",
-                    flexDirection: "column",
-                    height: "100%",
-                    "&:hover": {
-                      transform: "translateY(-8px)",
-                      boxShadow: isLight
-                        ? "0 12px 24px rgba(0, 0, 0, 0.1)"
-                        : "0 12px 24px rgba(0, 0, 0, 0.3)",
-                    },
-                  }}
-                >
-                  <Typography
-                    variant="h5"
-                    sx={{
-                      color: colors.grey[100],
-                      fontSize: "1.25rem",
-                      fontWeight: 600,
-                      mb: 1.5,
-                      minHeight: "3rem",
-                    }}
-                  >
-                    {event.title}
-                  </Typography>
-                  <Box
-                    sx={{
-                      height: "120px",
-                      backgroundColor: isLight ? colors.grey[300] : colors.grey[700],
-                      mb: 2,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      borderRadius: "0.5rem",
-                    }}
-                  >
-                    <Typography sx={{ color: isLight ? colors.grey[800] : colors.grey[100] }}>
-                      Event Image
-                    </Typography>
-                  </Box>
-                  <Typography
-                    sx={{
-                      color: colors.grey[200],
-                      fontSize: "0.875rem",
-                      lineHeight: 1.5,
-                      mb: 2,
-                      flexGrow: 1,
-                    }}
-                  >
-                    {event.description || "Join us for an exciting event."}
-                  </Typography>
-                  <Box sx={{ display: "flex", justifyContent: "flex-end", mt: "auto" }}>
-                    <StyledButton onClick={() => {/* view event handler */}
-                      {/* View
-                    </StyledButton>
-                  </Box>
-                </Box>
-              ))}
-            </Box>
-          ) : (
-            <Typography color={colors.grey[100]}>No upcoming events available.</Typography>
-          )}
-        </Box> */}
+      >
 
         {/* Popular Societies Section */}
         <Container maxWidth="xl" style={{ padding: "2rem" }}>
