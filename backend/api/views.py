@@ -2205,10 +2205,6 @@ class EventCalendarView(APIView):
         return Response(serializer.data, status=200)
 
 
-class MySocietiesView(APIView):
-    pass
-
-
 @csrf_exempt
 def get_popular_societies(request):
     """
