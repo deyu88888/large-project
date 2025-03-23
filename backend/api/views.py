@@ -2217,7 +2217,7 @@ class AdminListView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class StudentListAdminView(APIView):
+class AdminStudentListView(APIView):
     """
     Student view for admins to view all students.
     """
