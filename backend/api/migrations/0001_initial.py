@@ -133,6 +133,43 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
+            name='Society',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('name', models.CharField(default='default', max_length=30)),
+                ('description', models.CharField(default='default', max_length=500)),
+                ('status', models.CharField(choices=[('Pending', 'Pending Approval'), ('Approved', 'Approved'), ('Rejected', 'Rejected')], default='Pending', max_length=20)),
+                ('category', models.CharField(default='General', max_length=50)),
+                ('social_media_links', models.JSONField(blank=True, default=dict, help_text='Dictionary with keys: WhatsApp, Facebook, Instagram, X, Email, Other - each with a URL value')),
+                ('membership_requirements', models.TextField(blank=True, null=True)),
+                ('upcoming_projects_or_plans', models.TextField(blank=True, null=True)),
+                ('tags', models.JSONField(blank=True, default=list)),
+                ('icon', models.ImageField(blank=True, null=True, upload_to='society_icons/')),
+                ('approved_by', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='approved_societies', to=settings.AUTH_USER_MODEL)),
+            ],
+        ),
+        migrations.CreateModel(
+            name='SocietyRequest',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('intent', models.CharField(choices=[('CreateSoc', 'Create Society'), ('UpdateSoc', 'Update Society'), ('CreateEve', 'Create Event'), ('UpdateEve', 'Update Event'), ('CreateUse', 'Create User'), ('UpdateUse', 'Update User'), ('JoinSoc', 'Join Society')], max_length=10)),
+                ('requested_at', models.DateTimeField(auto_now_add=True)),
+                ('approved', models.BooleanField(blank=True, default=None, null=True)),
+                ('name', models.CharField(blank=True, default='', max_length=30)),
+                ('description', models.CharField(blank=True, default='', max_length=500)),
+                ('roles', models.JSONField(blank=True, default=dict)),
+                ('category', models.CharField(blank=True, default='', max_length=50)),
+                ('social_media_links', models.JSONField(blank=True, default=dict, null=True)),
+                ('membership_requirements', models.TextField(blank=True, default='')),
+                ('upcoming_projects_or_plans', models.TextField(blank=True, default='')),
+                ('icon', models.ImageField(blank=True, null=True, upload_to='icon_request/')),
+                ('society', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='society_request', to='api.society')),
+            ],
+            options={
+                'abstract': False,
+            },
+        ),
+        migrations.CreateModel(
             name='Student',
             fields=[
                 ('user_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to=settings.AUTH_USER_MODEL)),
