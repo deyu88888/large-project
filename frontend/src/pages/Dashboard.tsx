@@ -573,7 +573,7 @@ const Dashboard: React.FC = () => {
                 <Link
                   to="/register"
                   className="px-4 py-2 bg-purple-600 text-white
-                              rounded-full shadow hover:bg-purple-700 transition whitespace-nowrap"
+                            rounded-full shadow hover:bg-purple-700 transition whitespace-nowrap"
                   data-testid="register-link"
                 >
                   Register
@@ -581,7 +581,7 @@ const Dashboard: React.FC = () => {
                 <Link
                   to="/login"
                   className="px-4 py-2 bg-purple-600 text-white
-                              rounded-full shadow hover:bg-purple-700 transition whitespace-nowrap"
+                            rounded-full shadow hover:bg-purple-700 transition whitespace-nowrap"
                   data-testid="login-link"
                 >
                   Login
