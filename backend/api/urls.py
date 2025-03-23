@@ -5,14 +5,16 @@ from .views import (
     AdminActivityLogView, AdminManageEventDetailsAdminView, AdminDeleteView, AdminManageStudentDetailsAdminView,
     AdminReportView, AwardStudentView, AwardView, BroadcastListAPIView, EventListView,
     ManageEventDetailsView, NewsView, PendingMembersView, PendingRequestsView, RegisterView, CurrentUserView,
-    SocietyMembersListView, SocietyRoleManagementView, StudentNotificationsView, StartSocietyRequestView, ManageSocietyDetailsView,
+    SocietyMembersListView, SocietyRoleManagementView, StudentNotificationsView, StartSocietyRequestView,
+    ManageSocietyDetailsView,
     StudentInboxView, AdminView, StudentView, DashboardStatsView, RecentActivitiesView, NotificationsView,
     EventCalendarView, StudentSocietiesView, JoinSocietyView, RSVPEventView, EventHistoryView, get_popular_societies,
     CreateEventRequestView, custom_media_view, get_sorted_events, StudentSocietyDataView, AllEventsView,
     EventDetailView, toggle_follow, StudentProfileView, like_comment, dislike_comment, EventCommentsView,
     NewsPublicationRequestView, AdminNewsApprovalView, AdminRepliesListView, ReportReplyView, SearchView,
     MyReportsView, MyReportsWithRepliesView, ReportThreadView, AdminReportsWithRepliesView,
-    ReportReplyNotificationsView, AdminEventRequestView,
+    ReportReplyNotificationsView, AdminEventRequestView, SocietyEventsListView, SocietyEventRequestsListView,
+    EventRequestModulesView,
 )
 from .utils import request_otp, verify_otp
 from .recommendation_views import RecommendedSocietiesView, SocietyRecommendationExplanationView
@@ -52,7 +54,7 @@ urlpatterns = [
     # Society creation/management endpoints
     path("start-society", StartSocietyRequestView.as_view(), name="start_society"),
     path("manage-society-details/<int:society_id>/", ManageSocietyDetailsView.as_view(), name="manage_society_details"),
-    path("event-requests/<int:society_id>/", CreateEventRequestView.as_view(), name="create-event-request"),
+    path("society/<int:society_id>/create-society-event/", CreateEventRequestView.as_view(), name="create-event-request"),
     path("events/", EventListView.as_view(), name="event-list"),
 
     # User role endpoints
@@ -172,4 +174,10 @@ urlpatterns = [
 
     path('news/publication-request/', NewsPublicationRequestView.as_view(), name='news_publication_request'),
     path('news/publication-request/<int:request_id>/', AdminNewsApprovalView.as_view(), name='admin_news_approval'),
+
+
+    # test path
+    path("society/<int:society_id>/events/", SocietyEventsListView.as_view(), name="society-events-list"),
+    path("society/<int:society_id>/event-requests/", SocietyEventRequestsListView.as_view(), name="society-event-requests-list"),
+    path('event-request/<int:event_request_id>/modules/', EventRequestModulesView.as_view(), name='event-request-modules'),
 ]

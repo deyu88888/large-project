@@ -414,7 +414,7 @@ class Command(BaseCommand):
             data = self.event_generator.generate(society.name)
         event, created = Event.objects.get_or_create(
             title=data["name"],
-            description=data["description"],
+            main_description=data["description"],
             date=data["event_date"],
             start_time=data["event_time"],
             duration=data["duration"],
@@ -456,7 +456,7 @@ class Command(BaseCommand):
         # Always create an initial request
         event_request, _ = EventRequest.objects.get_or_create(
             title=data["name"],
-            description=data["description"],
+            main_description=data["description"],
             date=data["event_date"],
             start_time=data["event_time"],
             duration=data["duration"],

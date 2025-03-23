@@ -19,6 +19,7 @@ from rest_framework import generics, status
 import traceback
 import sys
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser, BasePermission
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
@@ -27,7 +28,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from api.models import AdminReportRequest, Event, Notification, Society, Student, User, Award, AwardStudent, \
     UserRequest, DescriptionRequest, AdminReportRequest, Comment, ActivityLog, ReportReply, SocietyRequest, \
-    NewsPublicationRequest, BroadcastMessage, SocietyNews
+    NewsPublicationRequest, BroadcastMessage, SocietyNews, EventRequest
 from api.serializers import (
     AdminReportRequestSerializer,
     BroadcastSerializer,
@@ -49,11 +50,11 @@ from api.serializers import (
     AwardSerializer,
     AwardStudentSerializer,
     PendingMemberSerializer,
-    DescriptionRequestSerializer, 
+    DescriptionRequestSerializer,
     CommentSerializer,
     ActivityLogSerializer,
     ReportReplySerializer,
-    NewsPublicationRequestSerializer,
+    NewsPublicationRequestSerializer, EventModuleSerializer,
 )
 from api.utils import *
 from django.db.models import Q
@@ -1853,14 +1854,13 @@ class AdminDeleteView(APIView):
 
 class CreateEventRequestView(APIView):
     """
-    API View for society presidents and vice presidents to create events that require admin approval.
+    API View for society presidents and vice presidents to create events that
+    require admin approval.
     """
     permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
 
     def post(self, request, society_id):
-        """
-        Create a new event request (Pending approval)
-        """
         user = request.user
 
         if not user.is_student():
@@ -1877,23 +1877,33 @@ class CreateEventRequestView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        # Check for management permissions using utility function
+        # Check management permissions (对于 event 的创建权限可以限制为 president 或 event manager)
         if not has_society_management_permission(user.student, society, for_events_only=True):
             return Response(
                 {"error": "Only the society president, vice president, or event manager can create events for this society."},
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        # Validate and save the event request instead of creating an event directly
-        serializer = EventRequestSerializer(data=request.data, context={"request": request})
-
+        # 创建 serializer 时将 request 和 hosted_by 放入 context 中，便于 serializer 中的验证和数据创建
+        serializer = EventRequestSerializer(
+            data=request.data,
+            context={"request": request, "hosted_by": society}
+        )
         if serializer.is_valid():
-            serializer.save(hosted_by=society, from_student=user.student, intent="CreateEve", approved=False)  # Default: Pending
+            # 调用 serializer.save() 时传入需要额外设置的字段
+            event_request = serializer.save(
+                hosted_by=society,
+                from_student=user.student,
+                intent="CreateEve",
+                approved=False
+            )
             return Response(
-                {"message": "Event request submitted successfully. Awaiting admin approval.", "data": serializer.data},
+                {
+                    "message": "Event request submitted successfully. Awaiting admin approval.",
+                    "data": EventRequestSerializer(event_request, context={"request": request}).data
+                },
                 status=status.HTTP_201_CREATED
             )
-
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -1925,12 +1935,12 @@ class EventListView(APIView):
     Lists events for the society the currently logged-in president/vice-president/event manager is managing.
     Optionally applies a filter (upcoming, previous, pending).
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def get(self, request):
         filter_type = request.query_params.get("filter", "upcoming")
 
-        # Ensure the user is a student
+               # Ensure the user is a student
         if not hasattr(request.user, "student"):
             logger.warning("User is not a student.")
             return Response({"error": "Only students can retrieve society events."}, status=403)
@@ -3330,3 +3340,43 @@ class SearchView(APIView):
             "events": event_serializer.data,
             "societies": society_serializer.data
         })
+
+class SocietyEventsListView(generics.ListAPIView):
+    """
+    返回指定社团 (society_id) 下所有事件的列表
+    """
+    permission_classes = [AllowAny]  # 或根据需要修改权限
+    serializer_class = EventSerializer
+
+    def get_queryset(self):
+        society_id = self.kwargs['society_id']
+        # 假设 Event 有一个外键 'hosted_by' 指向 Society
+        return Event.objects.filter(hosted_by_id=society_id)
+
+
+class SocietyEventRequestsListView(generics.ListAPIView):
+    """
+    返回指定社团 (society_id) 下所有事件请求的列表
+    """
+    # 根据需求设置权限，这里示例允许所有人访问
+    permission_classes = [AllowAny]
+    serializer_class = EventRequestSerializer
+
+    def get_queryset(self):
+        society_id = self.kwargs['society_id']
+        # 假设 EventRequest 中的 hosted_by 指向 Society
+        return EventRequest.objects.filter(hosted_by_id=society_id)
+
+class EventRequestModulesView(APIView):
+    """
+    API view to retrieve all EventModule objects related to a specific EventRequest.
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request, event_request_id):
+        # 根据传入的 event_request_id 获取对应的 EventRequest
+        event_request = get_object_or_404(EventRequest, id=event_request_id)
+        # 查询所有关联的 EventModule（包括公开模块和参与者专享模块）
+        modules = event_request.modules.all()
+        serializer = EventModuleSerializer(modules, many=True, context={'request': request})
+        return Response(serializer.data)

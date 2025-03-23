@@ -1,7 +1,10 @@
 import datetime
-from api.models import AdminReportRequest, Award, AwardStudent, BroadcastMessage, SiteSettings, User, Student, Society, Event, \
+import json
+
+from api.models import AdminReportRequest, Award, AwardStudent, BroadcastMessage, SiteSettings, User, Student, Society, \
+    Event, \
     Notification, Request, SocietyRequest, SocietyShowreel, SocietyShowreelRequest, EventRequest, UserRequest, \
-    Comment, DescriptionRequest, ActivityLog, ReportReply, SocietyNews, NewsComment, NewsPublicationRequest
+    Comment, DescriptionRequest, ActivityLog, ReportReply, SocietyNews, NewsComment, NewsPublicationRequest, EventModule
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 from django.utils.translation import gettext_lazy as _
@@ -277,27 +280,29 @@ class SocietySerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
+class EventModuleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EventModule
+        fields = ['id', 'type', 'text_value', 'file_value', 'is_participant_only']
 
 class EventSerializer(serializers.ModelSerializer):
-    """ Serializer for objects of the Event model """
     current_attendees = StudentSerializer(many=True, read_only=True)
 
     class Meta:
-        """ EventSerializer meta data """
         model = Event
         fields = [
-            'id', 'title', 'description', 'date',
+            'id', 'title', 'main_description', 'cover_image', 'date',
             'start_time', 'duration', 'hosted_by', 'location',
-            'max_capacity', 'current_attendees', 'status'
+            'max_capacity', 'current_attendees', 'status',
+            'extra_modules', 'participant_modules'
         ]
         extra_kwargs = {'hosted_by': {'required': True}}
 
     def create(self, validated_data):
-        """ Creates a new entry in the Event table according to json data """
+        # validated_data 中 extra_modules 和 participant_modules 已经是 Python 列表（或空列表）
         return Event.objects.create(**validated_data)
 
     def update(self, instance, validated_data):
-        """ Update 'instance' object according to provided json data """
         current_attendees_data = validated_data.pop('current_attendees', None)
         for key, value in validated_data.items():
             setattr(instance, key, value)
@@ -614,65 +619,80 @@ class EventRequestSerializer(serializers.ModelSerializer):
     Serializer for EventRequest model
     """
     title = serializers.CharField(
-    required=True,
-    allow_blank=False,
-    error_messages={'blank': 'Title cannot be blank.'}
-    )   
+        required=True,
+        allow_blank=False,
+        error_messages={'blank': 'Title cannot be blank.'}
+    )
     hosted_by = serializers.PrimaryKeyRelatedField(
         queryset=Society.objects.all(),
         required=False
     )
-    # Use SerializerMethodField to always include 'event' in the output.
+    # 用嵌套的序列化器替代原来的 ListField
+    extra_modules = EventModuleSerializer(many=True, required=False)
+    participant_modules = EventModuleSerializer(many=True, required=False)
+    # 用 SerializerMethodField 输出 event id（审批后可能关联了真正的 Event）
     event = serializers.SerializerMethodField()
-    # Make 'approved' writable
+    # 允许管理员在审批时修改 approved 状态
     approved = serializers.BooleanField(required=False)
 
     class Meta:
-        """EventRequestSerializer meta data"""
         model = EventRequest
         fields = [
-            "id", "event", "title", "description", "location", "date",
-            "start_time", "duration", "hosted_by", "from_student",
-            "intent", "approved", "requested_at",
+            "id", "event", "title", "main_description", "cover_image", "location", "date",
+            "start_time", "duration", "hosted_by", "from_student", "intent",
+            "approved", "requested_at", "extra_modules", "participant_modules"
         ]
-        # These fields are set automatically and should not be provided in input.
         read_only_fields = ["from_student", "intent", "hosted_by", "event", "requested_at"]
 
     def get_event(self, obj):
-        """Returns the id of the event the request is made for"""
+        """返回请求关联的 Event 的 id"""
         return obj.event.id if obj.event else None
 
     def validate_title(self, value):
-        """Validates that there is more than whitespace in a title"""
         if not value.strip():
             raise serializers.ValidationError("Title cannot be blank.")
         return value
 
     def create(self, validated_data):
-        # Ensure that 'hosted_by' is provided via extra kwargs (e.g. from the view)
+        # 提取出额外模块数据
+        request_obj = self.context.get("request")
+        extra_modules_data = request_obj.data.get("extra_modules", "[]")
+        participant_modules_data = request_obj.data.get("participant_modules", "[]")
+
+        try:
+            extra_modules_data = json.loads(extra_modules_data)
+        except json.JSONDecodeError:
+            raise serializers.ValidationError({"extra_modules": "Invalid JSON format."})
+
+        try:
+            participant_modules_data = json.loads(participant_modules_data)
+        except json.JSONDecodeError:
+            raise serializers.ValidationError({"participant_modules": "Invalid JSON format."})
+
+        # 处理 hosted_by，必须通过 context 或 validated_data 提供
         hosted_by = validated_data.get("hosted_by") or self.context.get("hosted_by")
         if hosted_by is None:
             raise serializers.ValidationError({"hosted_by": "This field is required."})
 
-        request = self.context.get("request")
-        if not request:
+        request_obj = self.context.get("request")
+        if not request_obj:
             raise serializers.ValidationError("Request is required in serializer context.")
-        user = request.user
+        user = request_obj.user
 
         if not hasattr(user, "student"):
             raise serializers.ValidationError("Only students can request event creation.")
-
         student = user.student
+
+        # 检查当前学生是否为该社团的会长
         if student.president_of != hosted_by:
             raise serializers.ValidationError("You can only create events for your own society.")
 
-        # Remove keys that are supplied via extra kwargs so they aren't duplicated.
+        # 移除不需要的字段，保证创建时不会重复赋值
         validated_data.pop("hosted_by", None)
         validated_data.pop("from_student", None)
         validated_data.pop("intent", None)
         validated_data.pop("approved", None)
 
-        # Create the event request with default values.
         event_request = EventRequest.objects.create(
             hosted_by=hosted_by,
             from_student=student,
@@ -680,18 +700,71 @@ class EventRequestSerializer(serializers.ModelSerializer):
             approved=False,
             **validated_data
         )
+
+        for index, module_data in enumerate(extra_modules_data):
+            module_data['text_value'] = module_data.pop('textValue', '')
+
+            file_key = f"extra_module_file_{index}"
+            if file_key in request_obj.FILES:
+                module_data["file_value"] = request_obj.FILES[file_key]
+
+            EventModule.objects.create(
+                event_request=event_request,
+                is_participant_only=False,
+                **module_data
+            )
+
+        for index, module_data in enumerate(participant_modules_data):
+            module_data['text_value'] = module_data.pop('textValue', '')
+
+            file_key = f"participant_module_file_{index}"
+            if file_key in request_obj.FILES:
+                module_data["file_value"] = request_obj.FILES[file_key]
+
+            EventModule.objects.create(
+                event_request=event_request,
+                is_participant_only=True,
+                **module_data
+            )
+
         return event_request
 
     def update(self, instance, validated_data):
-        # Allow updating the 'approved' field (and others) as provided.
+        # 提取出可能更新的模块数据
+        extra_modules_data = validated_data.pop("extra_modules", None)
+        participant_modules_data = validated_data.pop("participant_modules", None)
+
+        # 更新其他字段
         instance.approved = validated_data.get("approved", instance.approved)
         instance.title = validated_data.get("title", instance.title)
-        instance.description = validated_data.get("description", instance.description)
+        instance.main_description = validated_data.get("main_description", instance.main_description)
         instance.location = validated_data.get("location", instance.location)
         instance.date = validated_data.get("date", instance.date)
         instance.start_time = validated_data.get("start_time", instance.start_time)
         instance.duration = validated_data.get("duration", instance.duration)
         instance.save()
+
+        # 如果前端提交了新的模块数据，则需要重新处理（例如删除原模块，再创建新的）
+        if extra_modules_data is not None:
+            # 清除原来的公开模块
+            instance.modules.filter(is_participant_only=False).delete()
+            for module_data in extra_modules_data:
+                EventModule.objects.create(
+                    event_request=instance,
+                    is_participant_only=False,
+                    **module_data
+                )
+
+        if participant_modules_data is not None:
+            # 清除原来的参与者专享模块
+            instance.modules.filter(is_participant_only=True).delete()
+            for module_data in participant_modules_data:
+                EventModule.objects.create(
+                    event_request=instance,
+                    is_participant_only=True,
+                    **module_data
+                )
+
         return instance
 
 

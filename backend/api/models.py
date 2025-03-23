@@ -426,7 +426,8 @@ class Event(models.Model):
     An event organized by a society.
     """
     title = models.CharField(max_length=20, default="")
-    description = models.CharField(max_length=300, default="")
+    main_description = models.CharField(max_length=300, default="")
+    cover_image = models.ImageField(upload_to="event_covers/")
     date = models.DateField(blank=False, null=False, default=get_date)
     start_time = models.TimeField(blank=False, null=False, default=get_time)
     duration = models.DurationField(
@@ -439,6 +440,11 @@ class Event(models.Model):
 
     max_capacity = models.PositiveIntegerField(default=0)  # 0 = No limit
     current_attendees = models.ManyToManyField('Student', blank=True)
+
+    extra_modules = models.JSONField(default=list, blank=True,
+                                     help_text="List of extra module objects (for public view)")
+    participant_modules = models.JSONField(default=list, blank=True,
+                                           help_text="List of modules visible only to participants")
 
     STATUS_CHOICES = [
         ("Pending", "Pending Approval"),
@@ -572,6 +578,29 @@ class DescriptionRequest(models.Model):
     def __str__(self):
         return f"Description update request for {self.society.name} - {self.status}"
 
+class EventModule(models.Model):
+    MODULE_CHOICES = [
+        ('subtitle', 'Subtitle'),
+        ('description', 'Description'),
+        ('image', 'Image'),
+        ('file', 'File'),
+    ]
+    event = models.ForeignKey(
+        'Event', related_name='modules', on_delete=models.CASCADE, null=True, blank=True
+    )
+    event_request = models.ForeignKey(
+        'EventRequest', on_delete=models.CASCADE,
+        related_name='modules', null=True, blank=True
+    )
+    type = models.CharField(max_length=20, choices=MODULE_CHOICES)
+    text_value = models.TextField(blank=True, null=True)
+    file_value = models.FileField(upload_to='event_modules_files/', blank=True, null=True)
+    is_participant_only = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.type} - {self.text_value or self.file_value.name}"
+
+
 
 class SocietyShowreelRequest(models.Model):
     """
@@ -620,12 +649,12 @@ class EventRequest(Request):
         null=False,
     )
     title = models.CharField(max_length=20, blank=True, default="")
-    description = models.CharField(max_length=300, blank=True, default="")
+    main_description = models.CharField(max_length=300, blank=True, default="")
+    cover_image = models.ImageField(upload_to="event_request_covers/", blank=True, null=True)
     location = models.CharField(max_length=300, blank=True, default="")
     date = models.DateField(blank=True, null=True)
     start_time = models.TimeField(blank=True, null=True)
     duration = models.DurationField(blank=True, null=True)
-
 
 class AdminReportRequest(Request):
     """

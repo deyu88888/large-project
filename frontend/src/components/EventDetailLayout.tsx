@@ -1,0 +1,214 @@
+// EventDetailLayout.tsx
+import { Box, Typography, Card, CardContent } from "@mui/material";
+import { ExtraModule } from "./SortableItem"; // or your path
+
+export interface EventData {
+  title: string;
+  mainDescription: string;
+  date: string;
+  startTime: string;
+  duration: string;
+  location: string;
+  maxCapacity: number;
+  coverImageFile?: File | null;
+  extraModules: ExtraModule[];
+  participantModules: ExtraModule[];
+}
+
+export function EventDetailLayout({ eventData }: { eventData: EventData }) {
+  const {
+    title,
+    mainDescription,
+    date,
+    startTime,
+    duration,
+    location,
+    maxCapacity,
+    coverImageFile,
+    extraModules,
+    participantModules
+  } = eventData;
+
+  return (
+    <Box sx={{ p: 0 }}>
+      {/* 大标题 */}
+      <Box sx={{ textAlign: "center", py: 4 }}>
+        <Typography variant="h1" gutterBottom sx={{ fontWeight: "bold" }}>
+          {title || "Event Title"}
+        </Typography>
+      </Box>
+
+      {/* 封面图 */}
+      {coverImageFile && (
+        <Box sx={{ textAlign: "center", my: 2 }}>
+          <Box
+            component="img"
+            src={URL.createObjectURL(coverImageFile)}
+            alt="Cover"
+            sx={{
+              display: "inline-block",
+              maxWidth: "80%",
+              width: "100%",
+              height: "auto",
+              objectFit: "cover",
+              borderRadius: 2
+            }}
+          />
+        </Box>
+      )}
+
+      {/* 左右分栏 */}
+      <Box
+        sx={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 2,
+          px: { xs: 2, md: 6 },
+          py: 4
+        }}
+      >
+        {/* 左侧：正文 */}
+        <Box flex="1 1 60%" pr={2}>
+          {/* Overview */}
+          <Typography variant="h3" sx={{ mb: 2, fontWeight: "bold" }}>
+            Overview
+          </Typography>
+          <Typography variant="body1" sx={{ whiteSpace: "pre-wrap", mb: 3 }}>
+            {mainDescription || "No description provided."}
+          </Typography>
+
+          {/* ExtraModules */}
+          {extraModules.map((mod) => {
+            if (mod.type === "subtitle") {
+              return (
+                <Box key={mod.id} sx={{ my: 3 }}>
+                  <Typography variant="h3" sx={{ fontWeight: "bold" }}>
+                    {mod.textValue || "Subtitle"}
+                  </Typography>
+                </Box>
+              );
+            } else if (mod.type === "description") {
+              return (
+                <Box key={mod.id} sx={{ mb: 3 }}>
+                  <Typography variant="body1" sx={{ whiteSpace: "pre-wrap" }}>
+                    {mod.textValue}
+                  </Typography>
+                </Box>
+              );
+            } else if (mod.type === "image" && mod.fileValue) {
+              return (
+                <Box key={mod.id} sx={{ mb: 3 }}>
+                  <Box
+                    component="img"
+                    src={URL.createObjectURL(mod.fileValue)}
+                    alt="preview"
+                    sx={{
+                      width: "100%",
+                      maxHeight: 400,
+                      objectFit: "cover",
+                      borderRadius: 2
+                    }}
+                  />
+                </Box>
+              );
+            } else if (mod.type === "file" && mod.fileValue) {
+              return (
+                <Box key={mod.id} sx={{ mb: 3 }}>
+                  <Typography variant="body2">
+                    File: {mod.fileValue.name}
+                  </Typography>
+                </Box>
+              );
+            } else {
+              return null;
+            }
+          })}
+
+          {/* Participants Only */}
+          <Typography variant="h3" sx={{ mb: 2, fontWeight: "bold" }}>
+            Participants Only Content
+          </Typography>
+          {participantModules.map((mod) => {
+            // 类似上面
+            if (mod.type === "subtitle") {
+              return (
+                <Box key={mod.id} sx={{ my: 3 }}>
+                  <Typography variant="h3" sx={{ fontWeight: "bold" }}>
+                    {mod.textValue || "Subtitle"}
+                  </Typography>
+                </Box>
+              );
+            } else if (mod.type === "description") {
+              return (
+                <Box key={mod.id} sx={{ mb: 3 }}>
+                  <Typography variant="body1" sx={{ whiteSpace: "pre-wrap" }}>
+                    {mod.textValue}
+                  </Typography>
+                </Box>
+              );
+            } else if (mod.type === "image" && mod.fileValue) {
+              return (
+                <Box key={mod.id} sx={{ mb: 3 }}>
+                  <Box
+                    component="img"
+                    src={URL.createObjectURL(mod.fileValue)}
+                    alt="preview"
+                    sx={{
+                      width: "100%",
+                      maxHeight: 400,
+                      objectFit: "cover",
+                      borderRadius: 2
+                    }}
+                  />
+                </Box>
+              );
+            } else if (mod.type === "file" && mod.fileValue) {
+              return (
+                <Box key={mod.id} sx={{ mb: 3 }}>
+                  <Typography variant="body2">
+                    File: {mod.fileValue.name}
+                  </Typography>
+                </Box>
+              );
+            } else {
+              return null;
+            }
+          })}
+        </Box>
+
+        {/* 右侧：信息卡片 */}
+        <Box flex="1 1 20%" minWidth={250}>
+          <Card
+            sx={{
+              borderRadius: 2,
+              boxShadow: 4,
+              overflow: "hidden",
+              backgroundColor: "#fafafa"
+            }}
+          >
+            <CardContent>
+              <Typography variant="h6" sx={{ mb: 2 }}>
+                Event Details
+              </Typography>
+              <Typography variant="body1" sx={{ mb: 1 }}>
+                <strong>Date:</strong> {date}
+              </Typography>
+              <Typography variant="body1" sx={{ mb: 1 }}>
+                <strong>Time:</strong> {startTime}
+              </Typography>
+              <Typography variant="body1" sx={{ mb: 1 }}>
+                <strong>Duration:</strong> {duration}
+              </Typography>
+              <Typography variant="body1" sx={{ mb: 1 }}>
+                <strong>Location:</strong> {location}
+              </Typography>
+              <Typography variant="body1" sx={{ mb: 1 }}>
+                <strong>Max Capacity:</strong> {maxCapacity}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Box>
+      </Box>
+    </Box>
+  );
+}
