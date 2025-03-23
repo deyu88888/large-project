@@ -52,7 +52,7 @@ export default function Dashboard() {
           overflow: "hidden",
           position: "relative",
           backgroundColor: "transparent",
-          height: 600,
+          height: 500,
           marginBottom: 4,
         }}
       >
@@ -79,38 +79,60 @@ export default function Dashboard() {
               color: isLight ? colors.accent2[400] : colors.accent2[400],
             },
           }}
+          animation="slide"
+          duration={600}
         >
           {[0, 1, 2, 3].map((i) => (
-            <Box
-              key={i}
-              width={1}
-              height={580}
-              sx={{
-                backgroundColor: isLight
-                  ? theme.palette.primary.main
-                  : theme.palette.primary.dark,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
+  <Box
+    key={i}
+    width={1}
+    height={500}
+    sx={{
+      backgroundColor: isLight
+        ? theme.palette.primary.main
+        : theme.palette.primary.dark,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+    }}
+  >
+    <Container maxWidth="xl">
+      <Box padding={2}>
+        {i === 0 ? (
+          // Welcome message in the first slide
+          <>
+            <Typography color={colors.grey[100]} variant="h1" align="center" sx={{ fontWeight: 700 }}>
+              Welcome to Infinite Loop Innovators
+            </Typography>
+            <Typography
+              color={colors.grey[200]}
+              variant="h5"
+              align="center"
+              sx={{ mt: 2 }}
             >
-              <Container maxWidth="xl">
-                <Box padding={2}>
-                  <Typography color={colors.grey[100]} variant="h2" align="center">
-                    Featured Content {i + 1}
-                  </Typography>
-                  <Typography
-                    color={colors.grey[200]}
-                    variant="h5"
-                    align="center"
-                    sx={{ mt: 2 }}
-                  >
-                    Explore our selection of highlighted events and societies
-                  </Typography>
-                </Box>
-              </Container>
-            </Box>
-          ))}
+              Discover societies, events, and latest news all in one place
+            </Typography>
+          </>
+        ) : (
+          // Original content for other slides
+          <>
+            <Typography color={colors.grey[100]} variant="h2" align="center">
+              Featured Content {i}
+            </Typography>
+            <Typography
+              color={colors.grey[200]}
+              variant="h5"
+              align="center"
+              sx={{ mt: 2 }}
+            >
+              Explore our selection of highlighted events and societies
+            </Typography>
+          </>
+        )}
+      </Box>
+    </Container>
+  </Box>
+))}
         </Carousel>
       </Box>
 
@@ -122,32 +144,7 @@ export default function Dashboard() {
           gap: 6,
           paddingBottom: 6,
         }}
-      >
-        {/* Header */}
-        <header style={{ textAlign: "center", marginBottom: "1rem" }}>
-          <Typography
-            variant="h1"
-            sx={{
-              color: colors.grey[100],
-              fontSize: "2.5rem",
-              fontWeight: 700,
-              marginBottom: "0.75rem",
-              transition: "color 0.3s",
-            }}
-          >
-            Welcome to Infinite Loop Innovators
-          </Typography>
-          <Typography
-            sx={{
-              color: colors.grey[100],
-              fontSize: "1.125rem",
-              margin: 0,
-              transition: "color 0.3s",
-            }}
-          >
-            Discover societies, events, and latest news all in one place
-          </Typography>
-        </header>
+      >        
 
         {/* Upcoming Events Section
         <Box sx={{ mb: 4 }}>
@@ -265,7 +262,7 @@ export default function Dashboard() {
                 }}
             >
                 {popularSocieties &&
-                popularSocieties.map((society) => (
+                popularSocieties.slice(0,4).map((society: Society) => (
                     <SocietyCard
                     key={society.id}
                     society={society}
