@@ -87,7 +87,7 @@ def get_upcoming_events(request):
     Returns upcoming events sorted by date.
     """
     current_datetime = timezone.now()
-
+    
     all_upcoming_events = (
         Event.objects.filter(date__gte=current_datetime)
         .order_by('date')

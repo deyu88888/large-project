@@ -60,7 +60,7 @@ const JoinSocieties: React.FC = () => {
         setError("Failed to load recommendations. Using available societies instead.");
 
         try {
-          const response = await apiClient.get("/api/join-society");
+          const response = await apiClient.get("/api/society/join");
           const fallbackData = response.data.map((society: any) => ({
             society,
             explanation: {
@@ -78,36 +78,6 @@ const JoinSocieties: React.FC = () => {
     };
     fetchRecommendedSocieties();
   }, []);
-
-
-  const handleJoinSociety = async (societyId: number) => {
-    try {
-      setPendingRequests(prev => ({...prev, [societyId]: true}));
-      
-      const response = await apiClient.post(`/api/join-society/${societyId}/`);
-      
-      setJoinMessages(prev => ({
-        ...prev, 
-        [societyId]: response.data.message || "Request submitted for approval."
-      }));
-      
-      setPendingSocietyIds(prev => [...new Set([...prev, societyId])]);
-      
-    } catch (error: any) {
-      console.error("Error joining society:", error);
-      
-      const errorMessage = error.response?.data?.message || 
-        error.response?.data?.error || 
-        "Failed to submit join request. Please try again.";
-      
-      setJoinMessages(prev => ({
-        ...prev, 
-        [societyId]: errorMessage
-      }));
-    } finally {
-      setPendingRequests(prev => ({...prev, [societyId]: false}));
-    }
-  };
 
   const handleViewSociety = (societyId: number) => {
     console.log("Viewing society:", societyId);

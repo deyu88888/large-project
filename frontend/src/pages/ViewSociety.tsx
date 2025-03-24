@@ -27,7 +27,7 @@ const ViewSociety: React.FC = () => {
     const fetchSocietyData = async (societyId : number) => {
       try {
         setLoading(true);
-        const response = await apiClient.get("/api/society-view/" + societyId);
+        const response = await apiClient.get("/api/society/view/" + societyId);
         setSociety(response.data);
         setJoined(response.data.is_member)
         /*console.log("Society data: ", response);*/

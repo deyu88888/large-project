@@ -65,11 +65,11 @@ def get_object_by_id_or_name(model_class, object_id, name_field='name', name_val
     Get an object by ID, or fall back to searching by a name field.
     """
     obj = model_class.objects.filter(id=object_id).first()
-    
+
     if not obj:
         lookup_value = name_value if name_value is not None else object_id
         obj = model_class.objects.filter(**{name_field: lookup_value}).first()
-    
+
     return obj
 
 def process_date_field(obj, field_name, date_str):

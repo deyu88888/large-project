@@ -117,7 +117,7 @@ class Command(BaseCommand):
         self.create_event(5, True)
 
         self.pre_define_awards()
-        self.randomly_assign_awards(50)
+        self.randomly_assign_awards(200)
 
         self.broadcast_updates()
 

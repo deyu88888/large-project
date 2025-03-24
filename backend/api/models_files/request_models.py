@@ -25,8 +25,8 @@ class Request(models.Model):
         Student,
         on_delete=models.CASCADE,
         related_name="%(class)ss",
-        blank=False,
-        null=False,
+        blank=True,
+        null=True,
     )
 
     class Meta:
@@ -154,6 +154,7 @@ class AdminReportRequest(Request):
     details = models.TextField(blank=False)
     requested_at = models.DateTimeField(auto_now_add=True)
     is_from_society_officer = models.BooleanField(default=False) # President or vice-president
+    email = models.EmailField(max_length=255, null=True, blank=True)
 
     def __str__(self):
         return f"{self.get_report_type_display()} - {self.subject} (From {self.from_student.username})"
