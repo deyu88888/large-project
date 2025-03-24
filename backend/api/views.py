@@ -81,6 +81,45 @@ def get_popular_societies(request):
 
     return JsonResponse(list(popular_societies), safe=False)
 
+@csrf_exempt
+def get_upcoming_events(request):
+    """
+    Returns upcoming events sorted by date.
+    """
+    current_datetime = timezone.now()
+    
+    all_upcoming_events = (
+        Event.objects.filter(date__gte=current_datetime)
+        .order_by('date')
+        .values(
+            'id',
+            'title',
+            'description',
+            'date',
+            'location',
+            'start_time',
+            'duration',
+            'hosted_by',
+            'hosted_by_id',
+            'current_attendees',
+            'status',
+            'broadcasts',
+            'comments',
+            'max_capacity',
+        )
+    )
+    seen_ids = set()
+    unique_events = []
+    
+    for event in all_upcoming_events:
+        if event['id'] not in seen_ids:
+            seen_ids.add(event['id'])
+            unique_events.append(event)
+            if len(unique_events) >= 4:
+                break
+    
+    return JsonResponse(unique_events, safe=False)
+
 @api_view(["GET"])
 @permission_classes([])
 def get_sorted_events(request):

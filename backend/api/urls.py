@@ -95,8 +95,10 @@ admin_patterns = [
     path("dashboard/notifications", NotificationsView.as_view(), name="dashboard_notifications"),
     path("dashboard/events/", EventCalendarView.as_view(), name="dashboard_events"),
     path("popular-societies/", get_popular_societies, name="popular_societies"),
+    path('events/upcoming/', get_upcoming_events, name='upcoming_events'),
 
     path('all-societies', PublicSocietiesView.as_view(), name='all_societies'),
+    path("public-report", PublicReportView.as_view(), name="public-report"),
 
     # Awards Endpoints
     path("awards/", AwardView.as_view(), name="awards"),  # List & Create Awards
