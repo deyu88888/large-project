@@ -1,5 +1,5 @@
-import React from "react";
-import { IconButton, TextField, Typography } from "@mui/material";
+import React, { useRef } from "react";
+import { IconButton, TextField, Typography, Button } from "@mui/material";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { FaTimes } from "react-icons/fa";
@@ -40,8 +40,23 @@ export function SortableItem({
     position: "relative"
   };
 
-  const previewUrl =
-    mod.type === "image" && mod.fileValue ? URL.createObjectURL(mod.fileValue) : null;
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const imageSrc =
+    mod.type === "image"
+      ? mod.fileValue
+        ? URL.createObjectURL(mod.fileValue)
+        : mod.textValue
+      : null;
+
+  let fileName: string | null = null;
+  if (mod.type === "file") {
+    if (mod.fileValue) {
+      fileName = mod.fileValue.name;
+    } else if (mod.textValue) {
+      fileName = mod.textValue.split("/").pop() || "Existing File";
+    }
+  }
 
   return (
     <div ref={setNodeRef} style={style} {...attributes}>
@@ -67,9 +82,19 @@ export function SortableItem({
           <TextField
             fullWidth
             variant="outlined"
+            minRows={5}
+            multiline
             value={mod.textValue || ""}
             onChange={(e) => onChangeText(mod.id, e.target.value)}
             placeholder="Enter additional description"
+            InputProps={{
+              sx: {
+                "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "black",
+                  borderWidth: "1px"
+                }
+              }
+            }}
           />
         </>
       )}
@@ -94,9 +119,12 @@ export function SortableItem({
           <Typography variant="subtitle1" gutterBottom>
             Image Upload
           </Typography>
+
           <input
+            ref={fileInputRef}
             type="file"
             accept="image/*"
+            style={{ display: "none" }}
             onChange={(e) => {
               const file = e.target.files?.[0];
               if (file) {
@@ -104,12 +132,20 @@ export function SortableItem({
               }
             }}
           />
-          {previewUrl && (
+          <Button
+            variant="outlined"
+            onClick={() => fileInputRef.current?.click()}
+            sx={{ color: "black", border: "2px solid #ccc" }}
+          >
+            Choose an image
+          </Button>
+
+          {imageSrc && (
             <div style={{ marginTop: 8 }}>
               <img
-                src={previewUrl}
+                src={imageSrc}
                 alt="preview"
-                style={{ maxWidth: "100%", maxHeight: 200 }}
+                style={{ width: "100%", height: "auto" }}
               />
             </div>
           )}
@@ -121,8 +157,11 @@ export function SortableItem({
           <Typography variant="subtitle1" gutterBottom>
             File Upload
           </Typography>
+
           <input
+            ref={fileInputRef}
             type="file"
+            style={{ display: "none" }}
             onChange={(e) => {
               const file = e.target.files?.[0];
               if (file) {
@@ -130,10 +169,18 @@ export function SortableItem({
               }
             }}
           />
-          {mod.fileValue && (
+          <Button
+            variant="outlined"
+            onClick={() => fileInputRef.current?.click()}
+            sx={{ color: "black", border: "2px solid #ccc" }}
+          >
+            Choose a file
+          </Button>
+
+          {fileName && (
             <div style={{ marginTop: 8 }}>
               <Typography variant="body2">
-                {mod.fileValue.name}
+                {fileName}
               </Typography>
             </div>
           )}

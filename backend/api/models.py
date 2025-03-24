@@ -1,5 +1,6 @@
 from django.contrib.postgres.fields import JSONField
-from datetime import timedelta
+from datetime import timedelta, datetime
+from datetime import timezone as dt_timezone
 from random import randint
 from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
@@ -441,11 +442,6 @@ class Event(models.Model):
     max_capacity = models.PositiveIntegerField(default=0)  # 0 = No limit
     current_attendees = models.ManyToManyField('Student', blank=True)
 
-    extra_modules = models.JSONField(default=list, blank=True,
-                                     help_text="List of extra module objects (for public view)")
-    participant_modules = models.JSONField(default=list, blank=True,
-                                           help_text="List of modules visible only to participants")
-
     STATUS_CHOICES = [
         ("Pending", "Pending Approval"),
         ("Approved", "Approved"),
@@ -467,8 +463,15 @@ class Event(models.Model):
     def has_started(self):
         """Returns a boolean representing whether an event has began"""
         now = timezone.now()
-        event_datetime = timezone.datetime.combine(self.date, self.start_time, tzinfo=timezone.utc)
+        event_datetime = timezone.datetime.combine(self.date, self.start_time, tzinfo=dt_timezone.utc)
         return now >= event_datetime
+
+    def save(self, *args, **kwargs):
+        now = timezone.now()
+        event_start = datetime.combine(self.date, self.start_time, tzinfo=dt_timezone.utc)
+        if self.status == "Pending" and now >= event_start:
+            self.status = "Rejected"
+        super().save(*args, **kwargs)
 
 
 class Notification(models.Model):
@@ -588,10 +591,6 @@ class EventModule(models.Model):
     event = models.ForeignKey(
         'Event', related_name='modules', on_delete=models.CASCADE, null=True, blank=True
     )
-    event_request = models.ForeignKey(
-        'EventRequest', on_delete=models.CASCADE,
-        related_name='modules', null=True, blank=True
-    )
     type = models.CharField(max_length=20, choices=MODULE_CHOICES)
     text_value = models.TextField(blank=True, null=True)
     file_value = models.FileField(upload_to='event_modules_files/', blank=True, null=True)
@@ -632,29 +631,28 @@ class UserRequest(Request):
 
 class EventRequest(Request):
     """
-    Requests related to events
+    Tracks approval of event creation/update requests.
     """
     event = models.ForeignKey(
         "Event",
-        on_delete=models.DO_NOTHING,
-        related_name="event_request",
-        blank=True,
-        null=True,
+        on_delete=models.CASCADE,
+        related_name="event_requests",
+        blank=False,
+        null=False,
     )
     hosted_by = models.ForeignKey(
         "Society",
         on_delete=models.CASCADE,
-        related_name="event_request_society",
+        related_name="event_requests",
         blank=False,
         null=False,
     )
-    title = models.CharField(max_length=20, blank=True, default="")
-    main_description = models.CharField(max_length=300, blank=True, default="")
-    cover_image = models.ImageField(upload_to="event_request_covers/", blank=True, null=True)
-    location = models.CharField(max_length=300, blank=True, default="")
-    date = models.DateField(blank=True, null=True)
-    start_time = models.TimeField(blank=True, null=True)
-    duration = models.DurationField(blank=True, null=True)
+
+    admin_reason = models.TextField(blank=True, default="")
+
+    def __str__(self):
+        return f"Request by {self.from_student} for Event {self.event.id}"
+
 
 class AdminReportRequest(Request):
     """

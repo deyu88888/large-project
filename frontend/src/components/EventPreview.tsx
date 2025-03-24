@@ -1,4 +1,3 @@
-// EventPreview.tsx
 import {
   Dialog,
   DialogContent,
@@ -8,7 +7,7 @@ import {
   Typography
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
-import { EventDetailLayout, EventData } from "../../components/EventDetailLayout";
+import { EventDetailLayout, EventData } from "./EventDetailLayout";
 
 interface Props {
   open: boolean;
@@ -16,7 +15,7 @@ interface Props {
   eventData: EventData;
 }
 
-export function EventPreviewFullScreen({ open, onClose, eventData }: Props) {
+export function EventPreview({ open, onClose, eventData }: Props) {
   return (
     <Dialog
       open={open}
