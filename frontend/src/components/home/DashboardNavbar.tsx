@@ -31,7 +31,6 @@ const pages = [
   { name: "Discover", path: "/search" },
   { name: "Societies", path: "/all-societies" },
   { name: "Events", path: "/all-events" },
-  { name: "Discover", path: "/search" },
   { name: "Calendar", path: "/calendar" },
   { name: "Support", path: "/support" },
 ];
@@ -121,7 +120,7 @@ export const DashboardNavbar = () => {
         bgcolor: (theme: any) =>
           theme.palette.mode === "dark"
             ? theme.palette.primary.dark
-            : theme.palette.primary.main,
+            : theme.palette.primary.light,
       }}
     >
       <Container maxWidth="xl">
@@ -156,14 +155,14 @@ export const DashboardNavbar = () => {
                     height: "2px",
                     bottom: 0,
                     left: 0,
-                    backgroundColor: "secondary.dark",
+                    backgroundColor: "black",
                     transition: "width 0.3s ease-in-out",
                   },
                   "&:hover": {
-                    color: "secondary.dark",
+                    color: "black",
                   },
                   "&:hover::after": { width: "100%" },
-                  "&.active": { color: "secondary.dark" },
+                  "&.active": { color: "black" },
                   "&.active::after": { width: "100%" },
                 }}
                 className={location.pathname === page.path ? "active" : ""}

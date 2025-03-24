@@ -2,6 +2,8 @@ import { Box, Container, Grid2 as Grid, Typography, Link, IconButton, useTheme, 
 import EmailIcon from "@mui/icons-material/Email";
 import LinkedInIcon from "@mui/icons-material/LinkedIn";
 import GitHubIcon from "@mui/icons-material/GitHub";
+import LocationOnIcon from "@mui/icons-material/LocationOn";
+import PhoneIcon from "@mui/icons-material/Phone";
 
 export const DashboardFooter = () => {
   const currentYear = new Date().getFullYear();
@@ -13,7 +15,7 @@ export const DashboardFooter = () => {
       sx={{
         backgroundColor: "secondary.main",
         color: "white",
-        pt: 6,
+        pt: 8,
         pb: 4,
         position: "relative",
         overflow: "hidden",
@@ -29,9 +31,9 @@ export const DashboardFooter = () => {
       }}
     >
       <Container maxWidth="xl">
-        <Grid container spacing={4}>
+        <Grid container spacing={15}>
           {/* Brand Section */}
-          <Grid xs={12} md={4}>
+          <Grid xs={12} md={3} ml={6}>
             <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
               {/* Infinity Logo */}
               <Box 
@@ -74,6 +76,9 @@ export const DashboardFooter = () => {
               <IconButton 
                 color="inherit" 
                 aria-label="Email"
+                onClick={() => {
+                  window.location.href = "mailto:infiniteloop@gmail.com";
+                }}
                 sx={{ 
                   "&:hover": { 
                     backgroundColor: alpha(theme.palette.primary.main, 0.15),
@@ -87,6 +92,9 @@ export const DashboardFooter = () => {
               <IconButton 
                 color="inherit" 
                 aria-label="LinkedIn"
+                onClick={() =>
+                  window.open("https://uk.linkedin.com", "_blank", "noopener,noreferrer")
+                }
                 sx={{ 
                   "&:hover": { 
                     backgroundColor: alpha(theme.palette.primary.main, 0.15),
@@ -100,6 +108,9 @@ export const DashboardFooter = () => {
               <IconButton 
                 color="inherit" 
                 aria-label="GitHub"
+                onClick={() =>
+                  window.open("https://github.com/deyu88888/large-project", "_blank", "noopener,noreferrer")
+                }
                 sx={{ 
                   "&:hover": { 
                     backgroundColor: alpha(theme.palette.primary.main, 0.15),
@@ -114,7 +125,7 @@ export const DashboardFooter = () => {
           </Grid>
           
           {/* Links Section */}
-          <Grid xs={12} md={4}>
+          <Grid xs={12} md={3}>
             <Typography variant="h6" sx={{ mb: 2, fontWeight: 500, position: "relative", display: "inline-block" }}>
               Quick Links
               <Box 
@@ -129,7 +140,45 @@ export const DashboardFooter = () => {
               />
             </Typography>
             <Box sx={{ display: "flex", flexDirection: "column" }}>
-              {["Home", "Projects", "About Us", "Contact"].map((item) => (
+              {["Home","Discover", "Societies", "Events", "Contact"].map((item) => (
+                <Link 
+                  key={item} 
+                  href="#" 
+                  color="inherit" 
+                  underline="none" 
+                  sx={{ 
+                    mb: 1.5, 
+                    opacity: 0.9,
+                    transition: "all 0.2s ease-in-out",
+                    "&:hover": { 
+                      opacity: 1, 
+                      pl: 0.5,
+                      color: theme.palette.primary.light 
+                    }
+                  }}
+                >
+                  {item}
+                </Link>
+              ))}
+            </Box>
+          </Grid>
+          
+          <Grid xs={12} md={3}>
+            <Typography variant="h6" sx={{ mb: 2, fontWeight: 500, position: "relative", display: "inline-block" }}>
+              Resources
+              <Box 
+                sx={{ 
+                  position: "absolute", 
+                  bottom: -4, 
+                  left: 0, 
+                  width: 40, 
+                  height: 2, 
+                  backgroundColor: theme.palette.primary.main 
+                }} 
+              />
+            </Typography>
+            <Box sx={{ display: "flex", flexDirection: "column" }}>
+              {["FAQ", "Support", "Privacy Policy", "Terms of Service"].map((item) => (
                 <Link 
                   key={item} 
                   href="#" 
@@ -153,7 +202,7 @@ export const DashboardFooter = () => {
           </Grid>
           
           {/* Contact Section */}
-          <Grid xs={12} md={4}>
+          <Grid xs={12} md={3}>
             <Typography variant="h6" sx={{ mb: 2, fontWeight: 500, position: "relative", display: "inline-block" }}>
               Contact Us
               <Box 
@@ -175,12 +224,17 @@ export const DashboardFooter = () => {
                 backdropFilter: "blur(8px)",
               }}
             >
-              <Typography variant="body2" sx={{ mb: 1.5, display: "flex", alignItems: "center" }}>
-                <Box component="span" sx={{ mr: 1, opacity: 0.7 }}>📍</Box>
-                King's College London
+              <Typography variant="body2" sx={{ mb: 1.5, display: "flex", alignItems: "flex-start" }}>
+                <LocationOnIcon sx={{ mr: 1, opacity: 0.7, fontSize: "1.2rem", mt: 0.2 }} />
+                <span>
+                  King's College London<br />
+                  Strand Campus<br />
+                  Strand, London WC2R 2LS<br />
+                  United Kingdom
+                </span>
               </Typography>
               <Typography variant="body2" sx={{ mb: 1.5, display: "flex", alignItems: "center" }}>
-                <Box component="span" sx={{ mr: 1, opacity: 0.7 }}>✉️</Box>
+                <EmailIcon sx={{ mr: 1, opacity: 0.7, fontSize: "1.2rem" }} />
                 <Link 
                   href="mailto:infiniteloop@gmail.com" 
                   color="inherit" 
@@ -191,6 +245,20 @@ export const DashboardFooter = () => {
                   }}
                 >
                   infiniteloop@gmail.com
+                </Link>
+              </Typography>
+              <Typography variant="body2" sx={{ display: "flex", alignItems: "center" }}>
+                <PhoneIcon sx={{ mr: 1, opacity: 0.7, fontSize: "1.2rem" }} />
+                <Link 
+                  href="tel:+44-20-7836-5454" 
+                  color="inherit" 
+                  underline="hover"
+                  sx={{ 
+                    transition: "color 0.2s ease",
+                    "&:hover": { color: theme.palette.primary.light }
+                  }}
+                >
+                  +44 746 667 1117
                 </Link>
               </Typography>
             </Box>
