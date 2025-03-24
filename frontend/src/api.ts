@@ -71,6 +71,7 @@ export const apiPaths = {
     REJECTEDEVENT: "/api/admin-panel/rejected-event", // TODO: DONT ADD BACKSLASH
     PENDINGDESCRIPTIONREQUEST: "/api/description/request/pending",
     BASE: "/api/users",
+    ADMINVIEW: (adminId: number) => `/api/admin-manage-admin-details/${adminId}`,
     ADMINSTUDENTVIEW: (studentId: number) => `/api/admin-manage-student-details/${studentId}`,
     ADMINSOCIETYVIEW: (societyId: number) => `/api/admin-manage-society-details/${societyId}`, // admin society view
     ADMINEVENTVIEW: (eventId: number) => `/api/admin-manage-event-details/${eventId}`,
@@ -80,6 +81,7 @@ export const apiPaths = {
     DELETEACTIVITYLOG: (logId: number) => `/api/delete-activity-log/${logId}`,
   },
   SOCIETY: {
+    All: "/api/all-societies",
     POPULAR_SOCIETIES: "/api/popular-societies",  // TODO: DONT ADD BACKSLASH
     RECOMMENDED_SOCIETIES: "/api/recommended-societies", // New endpoint for recommendations
     RECOMMENDATION_EXPLANATION: (id: number) =>
@@ -324,6 +326,16 @@ export const getAllEvents = async () => {
     return response.data;
   } catch (error: any) {
     console.error("Error fetching events:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const getUpcomingEvents = async () => {
+  try {
+    const response = await apiClient.get("/api/events/upcoming");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching upcoming events:", error);
     throw error;
   }
 };

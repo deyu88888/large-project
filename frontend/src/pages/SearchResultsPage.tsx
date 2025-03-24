@@ -16,6 +16,10 @@ const SearchResultsPage = () => {
   const { isAuthenticated, } = useAuthCheck();
 
   useEffect(() => {
+    setQuery(queryParam);
+  }, [queryParam]);
+
+  useEffect(() => {
     if (!queryParam) return;
 
     const fetchResults = async () => {

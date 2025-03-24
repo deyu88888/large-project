@@ -12,6 +12,7 @@ import ViewSocietyEvents from "../pages/view-society-events";
 import ManageReports from "../pages/Admin/ManageReports";
 import ViewReports from "../pages/President/ViewReports";
 import {Search} from "@mui/icons-material";
+import PublicLayout from "../components/home/PublicLayout";
 
 // Lazy-loaded pages
 const LoginPage = lazy(() => import("../pages/login"));
@@ -44,6 +45,9 @@ const ReportThread = lazy(() => import("../pages/ReportThread"));
 // Public event pages
 const AllEventsPage = lazy(() => import("../pages/allEventsPage"));
 const EventDetailPage = lazy(() => import("../pages/eventDetailPage"));
+const AllSocietiesPage = lazy(() => import("../pages/AllSocieties"));
+const PublicCalendarPage = lazy(() => import("../pages/Calendar"));
+const SupportPage = lazy(() => import("../pages/Support"));
 
 // Admin pages
 const EventListPage = lazy(() => import("../pages/Admin/AdminEventList"));
@@ -54,6 +58,7 @@ const AdminDashboardPage = lazy(() => import("../pages/Admin/AdminDashboard"));
 const CalendarPage = lazy(() => import("../pages/Admin/AdminCalendar"));
 const StudentListPage = lazy(() => import("../pages/Admin/StudentList"));
 const DashboardPage = lazy(() => import("../pages/Dashboard"));
+const OldDashboardPage = lazy(() => import("../pages/OldDashboard"));
 const CreateAdminPage = lazy(() => import("../pages/Admin/CreateAdmin"));
 const AdminListPage = lazy(() => import("../pages/Admin/AdminList"));
 const RequestSocietyPage = lazy(() => import("../pages/Admin/SocietyCreationRequests"));
@@ -68,6 +73,7 @@ const AdminViewSocietyPage = lazy(() => import("../pages/Admin/ViewSociety"));
 const RequestDescriptionPage = lazy(() => import("../pages/Admin/SocietyDesChangeRequest"));
 const AdminViewStudentPage = lazy(() => import("../pages/Admin/ViewStudent"));
 const AdminViewEventPage = lazy(() => import("../pages/Admin/ViewEvent"));
+const AdminViewAdminPage = lazy(() => import("../pages/Admin/ViewAdmin"));
 const ActivityLogPage = lazy(() => import("../pages/Admin/ActivityLog"));
 
 const routes = [
@@ -81,10 +87,10 @@ const routes = [
       </PrivateGuard>
     ),
     children: [
-      {
-        index: true,
-        element: <PageWithTitle title="Dashboard"><DashboardPage /></PageWithTitle>,
-      },
+      // {
+      //   index: true,
+      //   element: <PageWithTitle title="Dashboard"><DashboardPage /></PageWithTitle>,
+      // },
       {
         path: "admin",
         element: (
@@ -114,11 +120,12 @@ const routes = [
           { path: "report-list", element: <PageWithTitle title="Admin Reports"><AdminReportList /></PageWithTitle> },
           { path: "report-list/:reportId/reply", element: <PageWithTitle title="Reply to Report"><ReportReply /></PageWithTitle> },
           { path: "report-replied", element: <PageWithTitle title="Replied Reports"><ReportRepliedList /></PageWithTitle> },
-          { path: "/admin/report-thread/:reportId", element: <PageWithTitle title="Report Thread"><ReportThread /></PageWithTitle> },
+          { path: "report-thread/:reportId", element: <PageWithTitle title="Report Thread"><ReportThread /></PageWithTitle> },
           { path: "news-approval", element: <PageWithTitle title="News Publication Approval"><NewsApprovalDashboard /></PageWithTitle> },
           { path: "view-student/:student_id", element: <PageWithTitle title="View Student"><AdminViewStudentPage /></PageWithTitle> },
           { path: "view-society/:society_id", element: <PageWithTitle title="View Society"><AdminViewSocietyPage /></PageWithTitle> },
           { path: "view-event/:event_id", element: <PageWithTitle title="View Event"><AdminViewEventPage /></PageWithTitle> },
+          { path: "view-admin/:admin_id", element: <PageWithTitle title="Admin Details"><AdminViewAdminPage /></PageWithTitle> },
           { path: "activity-log", element: <PageWithTitle title="Activity Log"><ActivityLogPage /></PageWithTitle> },
           { path: "my-team", element: <PageWithTitle title="My Team"><AdminListPage /></PageWithTitle> },
         ],
@@ -139,7 +146,7 @@ const routes = [
           { path: "view-events", element: <PageWithTitle title="Upcoming Events"><ViewEvents /></PageWithTitle> },
           { path: "view-news", element: <PageWithTitle title="News"><ViewNews /></PageWithTitle> },
           { path: "view-notifications", element: <PageWithTitle title="Notifications"><ViewNotifications /></PageWithTitle> },
-          { path: "view-inbox", element: <ViewInbox /> },
+          { path: "view-inbox", element: <PageWithTitle title="Inbox"><ViewInbox /></PageWithTitle> },
           { path: "start-society", element: <PageWithTitle title="Start a Society"><StartSociety /></PageWithTitle> },
           { path: "join-society", element: <PageWithTitle title="Join a Society"><JoinSocietiesPage /></PageWithTitle> },
           { path: "view-society/:society_id", element: <PageWithTitle title="Society Details"><ViewSocietyPage /></PageWithTitle> },
@@ -284,7 +291,9 @@ const routes = [
     element: (
       <PublicGuard>
         <Suspense fallback={<LoadingView />}>
-          <Outlet />
+          <PublicLayout>
+            <Outlet />
+          </PublicLayout>
         </Suspense>
       </PublicGuard>
     ),
@@ -292,22 +301,15 @@ const routes = [
       { index: true, element: <PageWithTitle title="Home"><DashboardPage /></PageWithTitle> },
       { path: "login", element: <PageWithTitle title="Login"><LoginPage /></PageWithTitle> },
       { path: "register", element: <PageWithTitle title="Register"><RegisterPage /></PageWithTitle> },
-      { path: "event-list", element: <PageWithTitle title="All Events"><EventListPage /></PageWithTitle> },
-    ],
-  },
-  {
-    path: "/",
-    element: (
-      <Suspense fallback={<LoadingView />}>
-        <Outlet />
-      </Suspense>
-    ),
-    children: [
+      { path: "event-list", element: <PageWithTitle title="All Events"><EventListPage /></PageWithTitle> }, // check use of this
       { path: "all-events", element: <PageWithTitle title="All Events"><AllEventsPage /></PageWithTitle> },
+      { path: "all-societies", element: <PageWithTitle title="All Societies"><AllSocietiesPage /></PageWithTitle> },
       { path: "event/:event_id", element: <PageWithTitle title="Event Details"><EventDetailPage /></PageWithTitle> },
       { path: "view-society/:society_id", element: <PageWithTitle title="Society Details"><ViewSocietyPage /></PageWithTitle> },
       { path: "profile/:student_id", element: <PageWithTitle title="Student Progile"><ProfilePage /></PageWithTitle> },
       { path: "search", element: <PageWithTitle title="Search"><SearchResultsPage /></PageWithTitle> },
+      { path: "calendar", element: <PageWithTitle title="Calendar"><PublicCalendarPage /></PageWithTitle> },
+      { path: "support", element: <PageWithTitle title="Support"><SupportPage /></PageWithTitle> },
     ],
   },
   {

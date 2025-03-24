@@ -1,3 +1,6 @@
+// TODO: refactor once this page loads
+// TODO: page does not load
+
 import React, { useState, useEffect, ChangeEvent, FormEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
@@ -15,7 +18,7 @@ import { useTheme } from "@mui/material/styles";
 import { apiClient, apiPaths } from "../../api.ts";
 import { useAuthStore } from "../../stores/auth-store.ts";
 import { tokens } from "../../theme/theme.ts";
-import { Student } from "../../types.ts";  // Import Student type
+import { Student } from "../../types.ts";
 
 const ViewStudent: React.FC = () => {
   const theme = useTheme();
@@ -24,11 +27,16 @@ const ViewStudent: React.FC = () => {
   const navigate = useNavigate();
   const { student_id } = useParams<{ student_id: string }>();
   const studentId = Number(student_id);
-
   const [student, setStudent] = useState<Student | null>(null);
   const [formData, setFormData] = useState<Student | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
+
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success" as "success" | "error"
+  });
 
   useEffect(() => {
     fetchStudent();
@@ -41,6 +49,11 @@ const ViewStudent: React.FC = () => {
       setStudent(response.data);
       setFormData({
         ...response.data,
+      });
+      setSnackbar({
+        open: true,
+        message: "Student updated successfully!",
+        severity: "success"
       });
     } catch (error) {
       console.error("Error fetching student details", error);

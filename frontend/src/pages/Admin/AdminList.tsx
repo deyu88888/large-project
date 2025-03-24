@@ -1,5 +1,16 @@
+// not refactored since 'view admin' and 'delete admin' are not working
+
 import React, { useState, useEffect, useContext } from "react";
-import { Box, Typography, useTheme, Button, DialogContent, DialogTitle, Dialog, DialogContentText, DialogActions, TextField } from "@mui/material";
+import { Box, 
+  Typography, 
+  useTheme, 
+  Button, 
+  DialogContent, 
+  DialogTitle, 
+  Dialog, 
+  DialogContentText, 
+  DialogActions, 
+  TextField } from "@mui/material";
 import { DataGrid, GridToolbar } from "@mui/x-data-grid";
 import { apiClient, apiPaths } from "../../api";
 import { tokens } from "../../theme/theme";
@@ -25,11 +36,7 @@ const AdminList: React.FC = () => {
   const getData = async () => {
     try {
       const res = await apiClient.get(apiPaths.USER.ADMIN);
-      console.log(res.data);
-
-      // Ensure we only store users with "admin" role
       const adminUsers = res.data.filter((user: any) => user.role === "admin");
-
       setAdmins(adminUsers);
     } catch (error) {
       console.error("Error fetching admins:", error);

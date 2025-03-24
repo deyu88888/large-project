@@ -11,6 +11,8 @@ import {
   Tab,
   CircularProgress,
   styled,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import { tokens } from "../../theme/theme";
 import {
@@ -20,12 +22,16 @@ import {
   FaUserPlus,
   FaCogs,
   FaRegClock,
-  FaNewspaper, // For news tab
+  FaNewspaper,
 } from "react-icons/fa";
 import { apiClient } from "../../api";
 import { useAuthStore } from "../../stores/auth-store";
 import StudentCalendar from "./StudentCalendar";
 import SocietyNewsFeed from './SocietyNewsFeed'; // Import the news feed component
+import { Society } from "../../types/student/society";
+import { EventData, TransformedEvent } from "../../types/student/event"
+import { Notification } from "../../types/student/notification"; 
+import { AwardAssignment } from "../../types/student/award";
 
 const CustomTabs = styled(Tabs)(({ theme, activecolor }) => ({
   "& .MuiTabs-indicator": {
@@ -33,57 +39,57 @@ const CustomTabs = styled(Tabs)(({ theme, activecolor }) => ({
   },
 }));
 
-interface Society {
-  id: number;
-  name: string;
-  is_president: boolean;
-  is_vice_president?: boolean;
-  is_event_manager?: boolean;
-}
+// interface Society {
+//   id: number;
+//   name: string;
+//   is_president: boolean;
+//   is_vice_president?: boolean;
+//   is_event_manager?: boolean;
+// }
 
-interface EventData {
-  id: number;
-  title: string;
-  description?: string;
-  date: string;
-  start_time: string;
-  duration: string;
-  location?: string;
-  hosted_by: number;
-  societyName?: string;
-  rsvp: boolean;
-  status: string;
-}
+// interface EventData {
+//   id: number;
+//   title: string;
+//   description?: string;
+//   date: string;
+//   start_time: string;
+//   duration: string;
+//   location?: string;
+//   hosted_by: number;
+//   societyName?: string;
+//   rsvp: boolean;
+//   status: string;
+// }
 
-interface TransformedEvent {
-  id: number;
-  title: string;
-  description: string;
-  date: string;
-  startTime: string;
-  duration: string;
-  location: string;
-  hostedBy: number;
-  societyName?: string;
-  rsvp: boolean;
-  status: string;
-}
+// interface TransformedEvent {
+//   id: number;
+//   title: string;
+//   description: string;
+//   date: string;
+//   startTime: string;
+//   duration: string;
+//   location: string;
+//   hostedBy: number;
+//   societyName?: string;
+//   rsvp: boolean;
+//   status: string;
+// }
 
-interface Notification {
-  id: number;
-  header: string;
-  body: string;
-  is_read: boolean;
-}
+// interface Notification {
+//   id: number;
+//   header: string;
+//   body: string;
+//   is_read: boolean;
+// }
 
-interface AwardAssignment {
-  id: number;
-  award: {
-    title: string;
-    description: string;
-    rank: string;
-  };
-}
+// interface AwardAssignment {
+//   id: number;
+//   award: {
+//     title: string;
+//     description: string;
+//     rank: string;
+//   };
+// }
 
 const StudentDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -98,6 +104,10 @@ const StudentDashboard: React.FC = () => {
   const [showCalendar, setShowCalendar] = useState<boolean>(false);
   const { user } = useAuthStore();
   const [student, setStudent] = useState<any>(null);
+  
+  const [snackbarOpen, setSnackbarOpen] = useState<boolean>(false);
+  const [snackbarMessage, setSnackbarMessage] = useState<string>("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState<"error" | "warning" | "info" | "success">("error");
 
   const allSocieties = useMemo(() => {
     const allSocs = [...societies];
@@ -123,12 +133,11 @@ const StudentDashboard: React.FC = () => {
     return allSocs;
   }, [societies, student]);
 
-  // Updated to include orange accent for the news tab + fallback color
   const tabColors = [
     colours.greenAccent?.[500] || '#4CAF50',
     colours.blueAccent?.[500] || '#2196F3',
     colours.redAccent?.[500] || '#F44336',
-    colours.orangeAccent?.[500] || '#FF9800', // fallback if orangeAccent is undefined
+    colours.orangeAccent?.[500] || '#FF9800',
   ];
 
   useEffect(() => {
@@ -137,6 +146,11 @@ const StudentDashboard: React.FC = () => {
     };
     callFetchData();
   }, [user?.id]);
+
+  // Handle snackbar close
+  const handleSnackbarClose = () => {
+    setSnackbarOpen(false);
+  };
 
   async function fetchData() {
     setLoading(true);
@@ -171,41 +185,69 @@ const StudentDashboard: React.FC = () => {
       
       const awardsResponse = await apiClient.get(`/api/award-students/${user?.id}`);
       setAwards([awardsResponse.data]);
-    } catch (error) {
-      console.error("Error fetching award assignments:", error);
+    } catch (error: any) {
+      console.error("Error fetching data:", error);
+      const errorMessage = error.response?.data?.error || "An error occurred while fetching data.";
+      setSnackbarMessage(errorMessage);
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
+    } finally {
+      setLoading(false);
     }
-    
-    setLoading(false);
   };
 
   const joinSociety = async (societyId: number) => {
     try {
       await apiClient.post(`/api/join-society/${societyId}`);
+      setSnackbarMessage("Successfully joined the society");
+      setSnackbarSeverity("success");
+      setSnackbarOpen(true);
       fetchData();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error joining society:", error);
+      const errorMessage = error.response?.data?.error || "An error occurred while trying to join the society.";
+      setSnackbarMessage(errorMessage);
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
     }
   };
 
   const handleLeaveSociety = async (societyId: number) => {
     try {
       await apiClient.delete(`/api/leave-society/${societyId}/`);
+      setSnackbarMessage("Successfully left the society");
+      setSnackbarSeverity("success");
+      setSnackbarOpen(true);
       fetchData();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error leaving society:", error);
+      // Extract the error message from the response
+      const errorMessage = error.response?.data?.error || "An error occurred while trying to leave the society.";
+      
+      setSnackbarMessage(errorMessage);
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
     }
-  }
+  };
 
   async function handleRSVP(eventId: number, isAttending: boolean) {
     try {
       if (isAttending) {
         await apiClient.post("/api/events/rsvp", { event_id: eventId });
+        setSnackbarMessage("Successfully RSVP'd to the event");
       } else {
         await apiClient.delete("/api/events/rsvp", { data: { event_id: eventId } });
+        setSnackbarMessage("Successfully cancelled your RSVP");
       }
+      setSnackbarSeverity("success");
+      setSnackbarOpen(true);
       fetchData();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating RSVP:", error);
+      const errorMessage = error.response?.data?.error || "An error occurred while updating your RSVP.";
+      setSnackbarMessage(errorMessage);
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
     }
   }
 
@@ -216,11 +258,20 @@ const StudentDashboard: React.FC = () => {
         setNotifications(prev =>
           prev.map(n => (n.id === id ? { ...n, is_read: true } : n))
         );
+        setSnackbarMessage("Notification marked as read");
+        setSnackbarSeverity("success");
+        setSnackbarOpen(true);
       } else {
-        console.error("Failed to mark notification as read");
+        setSnackbarMessage("Failed to mark notification as read");
+        setSnackbarSeverity("error");
+        setSnackbarOpen(true);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error marking notification as read:", error);
+      const errorMessage = error.response?.data?.error || "An error occurred while marking the notification as read.";
+      setSnackbarMessage(errorMessage);
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
     }
   }
 
@@ -250,6 +301,7 @@ const StudentDashboard: React.FC = () => {
       </Box>
     );
   }
+
 
   return (
     <Box minHeight="100vh" bgcolor={colours.primary[500]} py={8}>
@@ -700,6 +752,20 @@ const StudentDashboard: React.FC = () => {
           </Paper>
         </Box>
       </Box>
+      <Snackbar 
+        open={snackbarOpen} 
+        autoHideDuration={6000} 
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={handleSnackbarClose} 
+          severity={snackbarSeverity}
+          sx={{ width: '100%' }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

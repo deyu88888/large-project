@@ -1,3 +1,5 @@
+// TODO: to refactor once this is working
+
 import { useState, useEffect } from "react";
 import { Calendar, momentLocalizer, Event as BigCalendarEvent } from "react-big-calendar";
 import moment from "moment";
@@ -8,20 +10,12 @@ import { tokens } from "../../theme/theme";
 import { getAllEvents } from "../../api";
 import { Event as EventType } from "../../types";
 import "react-big-calendar/lib/css/react-big-calendar.css";
+import { CalendarEvent } from '../../types/admin/calendar';
+
 
 // Initialize the localizer
 const localizer = momentLocalizer(moment);
 
-// Custom event type that extends BigCalendarEvent
-interface CalendarEvent extends BigCalendarEvent {
-  id: string | number;
-  title: string;
-  start: Date;
-  end: Date;
-  description?: string;
-  location?: string;
-  hostedBy?: number;
-}
 
 const AdminCalendar = () => {
   const theme = useTheme();
