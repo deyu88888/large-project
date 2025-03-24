@@ -18,7 +18,7 @@ export default function Dashboard() {
     loading: societiesLoading,
     error: societiesError,
     refresh: refreshSocieties,
-  } = useWebSocketChannel("dashboard/popular-societies", getPopularSocieties);
+  } = useWebSocketChannel("dashboard/admin/popular-societies/", getPopularSocieties);
 
   const {
     data: upcomingEvents,
