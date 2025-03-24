@@ -23,7 +23,16 @@ interface User {
   role: string;
   is_active: boolean;
   is_following?: boolean;
-  icon?: string; // 头像 URL
+  icon?: string;
+}
+
+interface AwardAssignment {
+  id: number;
+  award: {
+    title: string;
+    description: string;
+    rank: string;
+  };
 }
 
 const validationSchema = Yup.object().shape({
@@ -51,18 +60,21 @@ export default function ProfilePage() {
   const isDark = theme.palette.mode === "dark";
 
   const [profile, setProfile] = useState<User | null>(null);
+  const [awards, setAwards] = useState<AwardAssignment[]>([]);
   const [isFollowing, setIsFollowing] = useState<boolean>(false);
   const isSelf = user && (!student_id || String(user.id) === student_id);
 
   useEffect(() => {
     if (isSelf) {
       setProfile(user);
+      fetchAwards()
     } else {
       apiClient
         .get(`${apiPaths.USER.BASE}/${student_id}`)
         .then((res) => {
           setProfile(res.data);
           setIsFollowing(res.data.is_following || false);
+          fetchAwards(profile?.id)
         })
         .catch((err) => {
           console.error(err);
@@ -70,6 +82,24 @@ export default function ProfilePage() {
         });
     }
   }, [student_id, user, isSelf]);
+
+  async function fetchAwards(student_id: number = -1) {
+    let awardsResponse;
+    try {
+      if (student_id === -1) {
+        awardsResponse = await apiClient.get("/api/awards/students/");
+      }
+      else {
+        awardsResponse = await apiClient.get("/api/awards/students/"+student_id);
+      }
+      setAwards(awardsResponse.data);
+    }
+    catch (error) {
+      console.error(error)
+    }
+
+    //console.log("awards fetched: "+awardsResponse.data[0].award.title); // Debug
+  }
 
   const handleGoBack = () => {
     navigate(-1);

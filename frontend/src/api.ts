@@ -325,7 +325,7 @@ export const getRecommendationFeedbackAnalytics = async () => {
 // ---------------------------------------------------------------------------
 export const getAllEvents = async () => {
   try {
-    const response = await apiClient.get(apiPaths.EVENTS.ALL);
+    const response = await apiClient.get("/api/events/all");
     return response.data;
   } catch (error: any) {
     console.error("Error fetching events:", error.response?.data || error.message);

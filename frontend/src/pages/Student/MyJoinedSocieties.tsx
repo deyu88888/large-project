@@ -16,7 +16,7 @@ const MySocieties: React.FC = () => {
     const fetchSocieties = async () => {
       try {
         setLoading(true);
-        const response = await apiClient.get("/api/student-societies");
+        const response = await apiClient.get("/api/society/joined");
         setSocieties(response.data || []);
       } catch (error) {
         console.error("Error fetching societies:", error);
@@ -26,18 +26,6 @@ const MySocieties: React.FC = () => {
     };
     fetchSocieties();
   }, []);
-
-  const fetchSocieties = async () => {
-    try {
-      setLoading(true);
-      const response = await apiClient.get("/api/student-societies");
-      setSocieties(response.data || []);
-    } catch (error) {
-      console.error("Error fetching societies:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleViewSociety = async (societyId: number) => {
     try {

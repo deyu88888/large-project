@@ -82,14 +82,14 @@ const CustomTabs = styled(Tabs)(({ theme, activecolor }) => ({
 //   is_read: boolean;
 // }
 
-// interface AwardAssignment {
-//   id: number;
-//   award: {
-//     title: string;
-//     description: string;
-//     rank: string;
-//   };
-// }
+interface AwardAssignment {
+  id: number;
+  award: {
+    title: string;
+    description: string;
+    rank: string;
+  };
+}
 
 const StudentDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -159,7 +159,7 @@ const StudentDashboard: React.FC = () => {
       setStudent(studentResponse.data);
       console.log("Student data:", studentResponse.data);
       
-      const societiesResponse = await apiClient.get("/api/student-societies");
+      const societiesResponse = await apiClient.get("/api/society/joined");
       setSocieties(societiesResponse.data || []);
       
       const allEvents: EventData[] = await getAllEvents();
@@ -182,9 +182,9 @@ const StudentDashboard: React.FC = () => {
       
       const notificationsResponse = await apiClient.get("/api/notifications/");
       setNotifications(notificationsResponse.data || []);
-      
-      const awardsResponse = await apiClient.get(`/api/award-students/${user?.id}`);
-      setAwards([awardsResponse.data]);
+
+      const awardsResponse = await apiClient.get("/api/awards/students/");
+      setAwards(awardsResponse.data);
     } catch (error: any) {
       console.error("Error fetching data:", error);
       const errorMessage = error.response?.data?.error || "An error occurred while fetching data.";
