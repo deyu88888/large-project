@@ -97,22 +97,24 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
       <Box padding={2} display="flex" justifyContent="center" alignItems="center">
         {drawer ? (
           <Box sx={{ textAlign: "center" }}>
-            <img
-            src={student?.icon}
-            alt={`${student?.username} icon`}
-            style={{
-              width: "72px",
-              height: "72px",
-              borderRadius: "50%",
-              margin: "0 auto"
-            }}
-            />
-            <Typography variant="h6" fontWeight="bold" sx={{ mt: "10px" }}>
-              {student?.first_name} {student?.last_name}
-            </Typography>
-            <Typography variant="body2" color="textSecondary">
-              President Dashboard
-            </Typography>
+            <Link to="/student/profile" style={{ textDecoration: "none", color: "inherit" }}>
+              <img
+              src={student?.icon}
+              alt={`${student?.username} icon`}
+              style={{
+                width: "72px",
+                height: "72px",
+                borderRadius: "50%",
+                margin: "0 auto"
+              }}
+              />
+              <Typography variant="h6" fontWeight="bold" sx={{ mt: "10px" }}>
+                {student?.first_name} {student?.last_name}
+              </Typography>
+              <Typography variant="body2" color="textSecondary">
+                President
+              </Typography>
+            </Link>
           </Box>
         ) : (
           <img

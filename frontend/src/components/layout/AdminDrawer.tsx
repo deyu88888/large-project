@@ -16,7 +16,6 @@ import {
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import PeopleOutlinedIcon from "@mui/icons-material/PeopleOutlined";
-import EventOutlinedIcon from "@mui/icons-material/EventOutlined";
 import PersonAddAltIcon from "@mui/icons-material/PersonAddAlt";
 import InboxIcon from "@mui/icons-material/MoveToInbox";
 import LogoutIcon from "@mui/icons-material/Logout";
@@ -114,13 +113,15 @@ const AdminDrawer: React.FC<AdminDrawerProps> = ({
       >
         {drawer ? (
           <Box textAlign="center">
-            <Avatar sx={{ width: 72, height: 72, margin: "0 auto" }} />
-            <Typography variant="h6" fontWeight="bold" sx={{ mt: "10px" }}>
-              {user?.first_name} {user?.last_name}
-            </Typography>
-            <Typography variant="body2" color="textSecondary">
-              {user?.is_super_admin ? "Super Admin" : "Admin"}
-            </Typography>
+            <Link to="/admin/profile" style={{ textDecoration: "none", color: "inherit" }}>
+              <Avatar sx={{ width: 72, height: 72, margin: "0 auto" }} />
+              <Typography variant="h6" fontWeight="bold" sx={{ mt: "10px" }}>
+                {user?.first_name} {user?.last_name}
+              </Typography>
+              <Typography variant="body2" color="textSecondary">
+                {user?.is_super_admin ? "Super Admin" : "Admin"}
+              </Typography>
+            </Link>
           </Box>
         ) : (
           <Avatar sx={{ width: 25, height: 25 }} />
