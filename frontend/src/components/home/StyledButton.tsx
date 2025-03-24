@@ -9,8 +9,9 @@ export const StyledButton = styled(Button)(({ theme }: { theme: any }) => ({
   backgroundColor: "transparent",
   borderRadius: 0,
   zIndex: 2,
+  color: theme.palette.mode === "light" ? "black" : "white",
 
-  "& .MuiButton-label": {
+  "& .MuiButton-startIcon, & .MuiButton-endIcon, & span": {
     position: "relative",
     zIndex: 3,
   },
@@ -41,6 +42,14 @@ export const StyledButton = styled(Button)(({ theme }: { theme: any }) => ({
     zIndex: 1,
     borderRadius: 0,
     overflow: "hidden",
+  },
+
+  "&:hover": {
+    transform: "translate(0px, 0px)",
+    
+    "& .MuiButton-startIcon, & .MuiButton-endIcon, & span": {
+      transform: "translate(4px, 4px)",
+    },
   },
 
   "&:hover::after": {

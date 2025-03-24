@@ -333,6 +333,16 @@ export const getAllEvents = async () => {
   }
 };
 
+export const getUpcomingEvents = async () => {
+  try {
+    const response = await apiClient.get("/api/events/upcoming");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching upcoming events:", error);
+    throw error;
+  }
+};
+
 // ---------------------------------------------------------------------------
 // 6) NEWS / COMMENTS API CALLS
 // ---------------------------------------------------------------------------

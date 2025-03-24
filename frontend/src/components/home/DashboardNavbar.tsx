@@ -28,11 +28,11 @@ import React from "react";
 
 const pages = [
   { name: "Home", path: "/" },
+  { name: "Discover", path: "/search" },
   { name: "Societies", path: "/all-societies" },
   { name: "Events", path: "/all-events" },
   { name: "Discover", path: "/search" },
   { name: "Calendar", path: "/calendar" },
-  { name: "News", path: "/view-news" },
   { name: "Support", path: "/support" },
 ];
 const settings = ["Register", "Login", "Light/Dark"];
