@@ -4,9 +4,10 @@ import Carousel from "react-material-ui-carousel";
 import { StyledButton } from "../components/home/StyledButton";
 import { tokens } from "../theme/theme";
 import { useWebSocketChannel } from "../hooks/useWebSocketChannel";
-import { getPopularSocieties } from "../api";
+import { getPopularSocieties, getUpcomingEvents } from "../api";
 import  SocietyCard  from "../components/SocietyCard";
-import {Society} from "../types";
+import  EventCard  from "../components/EventCard";
+import { Society, Event } from "../types";
 import { useNavigate } from "react-router-dom";
 
 export default function Dashboard() {
@@ -22,10 +23,21 @@ export default function Dashboard() {
     refresh: refreshSocieties,
   } = useWebSocketChannel("dashboard/popular-societies", getPopularSocieties);
 
+  const {
+    data: upcomingEvents,
+    loading: eventsLoading,
+    error: eventsError,
+    refresh: refreshEvents,
+  } = useWebSocketChannel("dashboard/upcoming-events", getUpcomingEvents);
+
   const isLoading = societiesLoading ;
 
   const handleViewSociety = (id: number) => {
     navigate(`/view-society/${id}`);
+  };
+
+  const handleViewEvent = (id: number) => {
+    navigate(`/event/${id}`);
   };
   
   return (
@@ -136,6 +148,49 @@ export default function Dashboard() {
         }}
       >
 
+<Container maxWidth="xl" style={{ padding: "2rem" }}>
+          <Typography 
+            variant="h2" 
+            sx={{
+              color: colors.grey[100],
+              fontSize: "1.75rem",
+              fontWeight: 600,
+              mb: 3,
+              paddingBottom: "0.5rem",
+              borderBottom: `1px solid ${isLight ? colors.grey[300] : colors.grey[700]}`,
+            }}
+          >
+            Upcoming Events
+          </Typography>
+          {eventsLoading && <p>Loading upcoming events...</p>}
+          {eventsError && <p>Error: {eventsError}</p>}
+          <Box
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
+              gap: "1rem",
+            }}
+          >
+            {upcomingEvents && upcomingEvents.length > 0 ? (
+              upcomingEvents.slice(0, 4).map((event: Event) => (
+                <EventCard 
+                  key={event.id}
+                  event={event}
+                  isLight={isLight}
+                  colors={colors}
+                  onViewEvent={handleViewEvent} followingsAttending={[]}                />
+              ))
+            ) : (
+              <Box sx={{ gridColumn: "1 / -1", textAlign: "center", p: 3 }}>
+                <Typography color={colors.grey[300]}>
+                  No upcoming events available
+                </Typography>
+              </Box>
+            )}
+            </Box>
+        </Container>
+
+
         {/* Popular Societies Section */}
         <Container maxWidth="xl" style={{ padding: "2rem" }}>
             <Typography variant="h2" style={{ marginBottom: "1rem" }}>
@@ -162,121 +217,6 @@ export default function Dashboard() {
                 ))}
             </Box>
             </Container>
-
-        {/* Latest News Section (remains unchanged) */}
-        <Box>
-          <Typography
-            variant="h2"
-            sx={{
-              color: colors.grey[100],
-              fontSize: "1.75rem",
-              fontWeight: 600,
-              mb: 3,
-              paddingBottom: "0.5rem",
-              borderBottom: `1px solid ${isLight ? colors.grey[300] : colors.grey[700]}`,
-            }}
-          >
-            Latest News
-          </Typography>
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
-              gap: 3,
-            }}
-          >
-            {[0, 1, 2, 3].map((i) => (
-              <Box
-                key={i}
-                sx={{
-                  backgroundColor: isLight ? colors.primary[400] : colors.primary[700],
-                  borderRadius: "0.75rem",
-                  padding: "1.25rem",
-                  border: `1px solid ${isLight ? colors.grey[300] : colors.grey[800]}`,
-                  boxShadow: isLight
-                    ? "0 4px 12px rgba(0, 0, 0, 0.05)"
-                    : "0 4px 12px rgba(0, 0, 0, 0.2)",
-                  transition: "all 0.5s cubic-bezier(0.165, 0.84, 0.44, 1)",
-                  display: "flex",
-                  flexDirection: "column",
-                  height: "100%",
-                  "&:hover": {
-                    transform: "translateY(-8px)",
-                    boxShadow: isLight
-                      ? "0 12px 24px rgba(0, 0, 0, 0.1)"
-                      : "0 12px 24px rgba(0, 0, 0, 0.3)",
-                  },
-                }}
-              >
-                <Typography
-                  variant="h5"
-                  sx={{
-                    color: colors.grey[100],
-                    fontSize: "1.25rem",
-                    fontWeight: 600,
-                    mb: 1.5,
-                    minHeight: "3rem",
-                  }}
-                >
-                  News Article {i + 1}
-                </Typography>
-                <Box
-                  sx={{
-                    height: "120px",
-                    backgroundColor: isLight ? colors.grey[300] : colors.grey[700],
-                    mb: 2,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    borderRadius: "0.5rem",
-                  }}
-                >
-                  <Typography sx={{ color: isLight ? colors.grey[800] : colors.grey[100] }}>
-                    News Image
-                  </Typography>
-                </Box>
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    mb: 1.5,
-                    gap: "0.5rem",
-                  }}
-                >
-                  <span
-                    style={{
-                      backgroundColor: isLight ? colors.blueAccent[400] : colors.blueAccent[700],
-                      color: "white",
-                      padding: "0.2rem 0.5rem",
-                      borderRadius: "0.25rem",
-                      fontSize: "0.7rem",
-                      fontWeight: 600,
-                      display: "inline-block",
-                    }}
-                  >
-                    {new Date().toLocaleDateString()}
-                  </span>
-                </Box>
-                <Box sx={{ mb: 2 }}>
-                  <Typography
-                    sx={{
-                      color: colors.grey[200],
-                      fontSize: "0.875rem",
-                      lineHeight: 1.5,
-                      mb: 2,
-                    }}
-                  >
-                    Stay updated with the latest campus news and developments.
-                    Important announcements and updates for all students.
-                  </Typography>
-                </Box>
-                <Box sx={{ display: "flex", justifyContent: "flex-end", mt: "auto" }}>
-                  <StyledButton>View</StyledButton>
-                </Box>
-              </Box>
-            ))}
-          </Box>
-        </Box>
       </Container>
     </div>
   );

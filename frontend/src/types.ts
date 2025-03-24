@@ -38,6 +38,7 @@ export type SocietyEvent = {        // avoid naming conflicts with JavaScript's 
     duration: string;
     hostedBy: number;
     location: string;
+    status?: "upcoming" | "ongoing" | "completed" | "cancelled";
   };
 
 export type Student = {
@@ -56,7 +57,8 @@ export type Student = {
   
 export type Report = {
     id: number;
-    from_student: string;
+    from_student: string | null;
+    email?: string | null;
     report_type: string;
     subject: string;
     details: string;
