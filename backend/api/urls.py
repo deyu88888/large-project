@@ -16,7 +16,7 @@ from api.views import (
     ManageSocietyDetailsView, StudentSocietyDataView, SocietyMembersListView,
     PendingMembersView, SocietyRoleManagementView, get_popular_societies, get_upcoming_events,
     RecommendedSocietiesView, SocietyRecommendationExplanationView,
-    RecommendationFeedbackView, RecommendationFeedbackAnalyticsView,
+    RecommendationFeedbackView, RecommendationFeedbackAnalyticsView, PublicSocietiesView,
 
     # Events
     ManageEventListView, CreateEventRequestView, RSVPEventView, EventHistoryView,

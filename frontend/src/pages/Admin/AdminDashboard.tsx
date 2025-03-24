@@ -41,7 +41,7 @@ const AdminDashboard = () => {
       setLoading(true);
       const statsResponse = await apiClient.get("/api/admin/user-stats/");  // TODO: Adjust the endpoint
       setUserStats(statsResponse.data || {});
-      const eventsResponse = await apiClient.get("/api/admin/events/");
+      const eventsResponse = await apiClient.get("/api/dashboard/events/");
       setEvents(eventsResponse.data || []);
     } catch (error) {
       console.error("Error fetching data:", error);
