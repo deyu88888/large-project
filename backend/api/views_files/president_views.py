@@ -289,26 +289,6 @@ class ManageEventDetailsView(APIView):
         return Response({"message": "Event deleted successfully."}, status=status.HTTP_200_OK)
 
 
-class PendingJoinRequestsView(APIView):
-    """API View to retrieve all pending requests for the current user."""
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        """Returns a list of pending society requests from a user."""
-        user = request.user
-        if not hasattr(user, "student"):
-            return Response({"error": "Only students can view their requests."},
-                            status=status.HTTP_403_FORBIDDEN)
-
-        # Get all pending requests for this student
-        pending_requests = SocietyRequest.objects.filter(
-            from_student=user.student,
-            approved=False
-        )
-
-        serializer = SocietyRequestSerializer(pending_requests, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
 class SocietyRoleManagementView(APIView):
      """API View for managing society roles."""
      permission_classes = [IsAuthenticated]

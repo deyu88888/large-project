@@ -18,9 +18,9 @@ from api.serializers import (
 from api.utils import *
 from api.views_files.view_utility import *
 from api.views_files.award_views import *
-from api.views_files.admin_delete_view import *
-from api.views_files.admin_handle_event_view import *
-from api.views_files.admin_handle_society_view import *
+from api.views_files.admin_delete_views import *
+from api.views_files.admin_handle_event_views import *
+from api.views_files.admin_handle_society_views import *
 from api.views_files.admin_views import *
 from api.views_files.communication_views import *
 from api.views_files.dashboard_views import *

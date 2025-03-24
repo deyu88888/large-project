@@ -2,7 +2,7 @@ from rest_framework.test import APITestCase
 from api.models import Student, Society, User
 from rest_framework_simplejwt.tokens import AccessToken
 
-class SocietyRequestViewTest(APITestCase):
+class StartSocietyRequestViewTest(APITestCase):
     def setUp(self):
         # Create a regular (non-president) student user using create_user
         self.regular_student = Student.objects.create_user(

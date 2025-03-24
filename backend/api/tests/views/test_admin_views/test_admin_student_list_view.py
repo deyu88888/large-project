@@ -8,7 +8,7 @@ from rest_framework_simplejwt.tokens import AccessToken
 
 User = get_user_model()
 
-class StudentViewTests(APITestCase):
+class TestStudentListViewTests(APITestCase):
     
     def setUp(self):
         """Set up test students and authentication token."""

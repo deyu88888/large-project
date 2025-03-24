@@ -6,7 +6,7 @@ from api.tests.file_deletion import delete_file
 from rest_framework_simplejwt.tokens import RefreshToken
 
 
-class StudentSocietiesViewTestCase(TestCase):
+class StudentSocietiesDataViewTestCase(TestCase):
     """Unit tests for the StudentSocietiesView."""
 
     def setUp(self):

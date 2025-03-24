@@ -3,8 +3,8 @@ from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from api.models import Society
-from api.serializers import StudentSerializer, SocietySerializer
+from api.models import Society, SocietyRequest
+from api.serializers import StudentSerializer, SocietySerializer, SocietyRequestSerializer
 from api.views_files.view_utility import student_has_no_role, get_student_if_user_is_student
 
 
@@ -96,3 +96,25 @@ class StudentSocietyDataView(APIView):
                 serializer_data["is_member"] = 1 if request_exists else 0
 
         return Response(serializer_data, status=status.HTTP_200_OK)
+
+
+
+class PendingJoinRequestsView(APIView):
+    """API View to retrieve all pending requests for the current user."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """Returns a list of pending society requests from a user."""
+        user = request.user
+        if not hasattr(user, "student"):
+            return Response({"error": "Only students can view their requests."},
+                            status=status.HTTP_403_FORBIDDEN)
+
+        # Get all pending requests for this student
+        pending_requests = SocietyRequest.objects.filter(
+            from_student=user.student,
+            approved=False
+        )
+
+        serializer = SocietyRequestSerializer(pending_requests, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

@@ -5,7 +5,7 @@ from api.models import User, Student
 from rest_framework.test import APIClient
 
 
-class StudentProfileViewTestCase(TestCase):
+class MyProfileViewTestCase(TestCase):
     """Unit tests for the Student Profile View."""
 
     def setUp(self):

@@ -4,7 +4,7 @@ from rest_framework import status
 from api.models import Event
 
 
-class EventDetailViewTestCase(TestCase):
+class EventDetailsViewTestCase(TestCase):
     """Unit tests for the Event Detail View."""
 
     def setUp(self):

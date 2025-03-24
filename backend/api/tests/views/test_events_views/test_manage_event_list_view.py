@@ -10,7 +10,7 @@ from rest_framework_simplejwt.tokens import AccessToken
 
 User = get_user_model()
 
-class EventListViewTest(APITestCase):
+class ManageEventListViewTest(APITestCase):
     def setUp(self):
         # Create a test user (for authentication)
         self.user = User.objects.create_user(
