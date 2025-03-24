@@ -118,3 +118,18 @@ class PendingJoinRequestsView(APIView):
 
         serializer = SocietyRequestSerializer(pending_requests, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+class PublicSocietiesView(APIView):
+    """
+    API View for public users to view all societies.
+    - **GET**: Retrieves a list of all societies with their details.
+    """
+    permission_classes = []
+    
+    def get(self, request):
+        """
+        Retrieves a list of all societies with their details.
+        """
+        societies = Society.objects.all()
+        serializer = SocietySerializer(societies, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

@@ -3,7 +3,7 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from api.models import AdminReportRequest, ReportReply
-from api.serializers import AdminReportRequestSerializer, ReportReplySerializer
+from api.serializers import AdminReportRequestSerializer, ReportReplySerializer, PublicReportSerializer
 from api.views_files.view_utility import get_admin_if_user_is_admin
 
 
@@ -226,3 +226,18 @@ class ReportThreadView(APIView):
         report_data['replies'] = [get_nested_replies(reply) for reply in top_replies]
 
         return Response(report_data, status=status.HTTP_200_OK)
+
+class PublicReportView(APIView):
+    """
+    Public users can submit reports to admins without requiring login.
+    """
+    permission_classes = []
+    
+    def post(self, request):
+        """Posts a report from a public user"""
+        serializer = PublicReportSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(anonymous_submission=True)
+            return Response({"message": "Report submitted successfully. Thank you for your feedback."}, 
+                           status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
