@@ -113,28 +113,27 @@ class UserRequest(Request):
 
 class EventRequest(Request):
     """
-    Requests related to events
+    Tracks approval of event creation/update requests.
     """
     event = models.ForeignKey(
-        Event,
-        on_delete=models.DO_NOTHING,
-        related_name="event_request",
-        blank=True,
-        null=True,
-    )
-    hosted_by = models.ForeignKey(
-        Society,
+        "Event",
         on_delete=models.CASCADE,
-        related_name="event_request_society",
+        related_name="event_requests",
         blank=False,
         null=False,
     )
-    title = models.CharField(max_length=20, blank=True, default="")
-    description = models.CharField(max_length=300, blank=True, default="")
-    location = models.CharField(max_length=300, blank=True, default="")
-    date = models.DateField(blank=True, null=True)
-    start_time = models.TimeField(blank=True, null=True)
-    duration = models.DurationField(blank=True, null=True)
+    hosted_by = models.ForeignKey(
+        "Society",
+        on_delete=models.CASCADE,
+        related_name="event_requests",
+        blank=False,
+        null=False,
+    )
+
+    admin_reason = models.TextField(blank=True, default="")
+
+    def __str__(self):
+        return f"Request by {self.from_student} for Event {self.event.id}"
 
 
 class AdminReportRequest(Request):

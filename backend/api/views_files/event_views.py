@@ -1,6 +1,7 @@
 from django.utils.timezone import now
 from django.shortcuts import get_object_or_404
 from rest_framework import status
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -46,18 +47,16 @@ class RSVPEventView(APIView):
         RSVP for an event.
         """
         event_id = request.data.get('event_id')
-        event, error = get_event_if_exists(event_id)
-        if error:
-            return error
+        try:
+            event = Event.objects.get(id=event_id)
+        except Event.DoesNotExist:
+            return Response({"error": "Event not found."}, status=status.HTTP_404_NOT_FOUND)
 
         serializer = RSVPEventSerializer(instance=event, data={}, context={
                                          'request': request, 'action': 'RSVP'})
         if serializer.is_valid():
             serializer.save()
-            return Response(
-                {"message": f"RSVP'd for event '{event.title}'."},
-                status=status.HTTP_200_OK
-            )
+            return Response({"message": f"RSVP'd for event '{event.title}'."}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request):
@@ -65,18 +64,16 @@ class RSVPEventView(APIView):
         Cancel RSVP for an event.
         """
         event_id = request.data.get('event_id')
-        event, error = get_event_if_exists(event_id)
-        if error:
-            return error
+        try:
+            event = Event.objects.get(id=event_id)
+        except Event.DoesNotExist:
+            return Response({"error": "Event not found."}, status=status.HTTP_404_NOT_FOUND)
 
         serializer = RSVPEventSerializer(instance=event, data={}, context={
                                          'request': request, 'action': 'CANCEL'})
         if serializer.is_valid():
             serializer.save()
-            return Response(
-                {"message": f"Successfully canceled RSVP for event '{event.title}'."},
-                status=status.HTTP_200_OK
-            )
+            return Response({"message": f"Successfully canceled RSVP for event '{event.title}'."}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -98,9 +95,11 @@ class EventHistoryView(APIView):
 
 class CreateEventRequestView(APIView):
     """
-    View for society presidents and vice presidents to create events requests.
+    API View for society presidents and vice presidents to create events that
+    require admin approval.
     """
     permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
 
     def post(self, request, society_id):
         """
@@ -110,42 +109,36 @@ class CreateEventRequestView(APIView):
 
         if not user.is_student():
             return Response(
-                {"error": "Only society presidents and vice presidents "
-                "can create events."},
+                {"error": "Only society presidents and vice presidents can create events."},
                 status=status.HTTP_403_FORBIDDEN
             )
 
         society = Society.objects.filter(id=society_id).first()
         if not society:
-            return Response(
-                {"error": "Society not found."},
-                status=status.HTTP_404_NOT_FOUND
-            )
+            return Response({"error": "Society not found."}, status=status.HTTP_404_NOT_FOUND)
 
         if not has_society_management_permission(user.student, society, for_events_only=True):
             return Response(
-                {"error": "Only the society president, vice president, or "
-                "event manager can create events for this society."},
+                {"error": "Only the society president, vice president, or event manager can create events for this society."},
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        serializer = EventRequestSerializer(data=request.data, context={"request": request})
-
+        serializer = EventRequestSerializer(
+            data=request.data,
+            context={"request": request, "hosted_by": society}
+        )
         if serializer.is_valid():
-            serializer.save(hosted_by=society,
-                from_student=user.student,
-                intent="CreateEve",
-                approved=False
-            )  # Default: Pending
+            event_request = serializer.save()
             return Response(
                 {
                     "message": "Event request submitted successfully. Awaiting admin approval.",
-                    "data": serializer.data
+                    "data": EventRequestSerializer(event_request, context={"request": request}).data
                 },
                 status=status.HTTP_201_CREATED
             )
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 class ManageEventListView(APIView):
@@ -221,7 +214,7 @@ class EventDetailsView(APIView):
     def get(self, request, event_id):
         """Gets an events details via event_id"""
         event = get_object_or_404(Event, id=event_id, status="Approved")
-        serializer = EventSerializer(event)
+        serializer = EventSerializer(event, context={"request": request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 

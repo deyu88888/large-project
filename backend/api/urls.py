@@ -16,7 +16,7 @@ from .views import (
     ManageSocietyDetailsView, StudentSocietyDataView, SocietyMembersListView,
     PendingMembersView, SocietyRoleManagementView, get_popular_societies,
     RecommendedSocietiesView, SocietyRecommendationExplanationView,
-    RecommendationFeedbackView, RecommendationFeedbackAnalyticsView, PublicSocietiesView,
+    RecommendationFeedbackView, RecommendationFeedbackAnalyticsView,
 
     # Events
     ManageEventListView, CreateEventRequestView, RSVPEventView, EventHistoryView,
@@ -40,7 +40,7 @@ from .views import (
     AwardView, AwardStudentView,
 
     # Utilities
-    custom_media_view, SearchView, PendingJoinRequestsView
+    custom_media_view, SearchView, PendingJoinRequestsView, get_upcoming_events
 )
 from .utils import request_otp, verify_otp
 

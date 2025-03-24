@@ -1,8 +1,12 @@
-from api.models import AdminReportRequest, Society, Request, SocietyRequest, SocietyShowreelRequest, \
+import datetime
+import json
+
+from api.models import AdminReportRequest, Society, Event, EventModule, Request, SocietyRequest, SocietyShowreelRequest, \
     EventRequest, UserRequest, DescriptionRequest, ReportReply, NewsPublicationRequest
 from api.serializers_files.serializers_utility import is_user_student, get_report_reply_chain
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
+from api.serializers import EventModuleSerializer
 
 
 def is_request_provided(context):
@@ -114,19 +118,8 @@ class UserRequestSerializer(RequestSerializer):
 
 
 class EventRequestSerializer(serializers.ModelSerializer):
-    """
-    Serializer for EventRequest model
-    """
-    title = serializers.CharField(
-    required=True,
-    allow_blank=False,
-    error_messages={'blank': 'Title cannot be blank.'}
-    )
-
-    hosted_by = serializers.PrimaryKeyRelatedField(
-        queryset=Society.objects.all(),
-        required=False
-    )
+    extra_modules = EventModuleSerializer(many=True, required=False)
+    participant_modules = EventModuleSerializer(many=True, required=False)
     event = serializers.SerializerMethodField()
     approved = serializers.BooleanField(required=False)
 
@@ -134,9 +127,8 @@ class EventRequestSerializer(serializers.ModelSerializer):
         """EventRequestSerializer meta data"""
         model = EventRequest
         fields = [
-            "id", "event", "title", "description", "location", "date",
-            "start_time", "duration", "hosted_by", "from_student",
-            "intent", "approved", "requested_at",
+            "id", "event", "hosted_by", "from_student", "intent",
+            "approved", "requested_at", "extra_modules", "participant_modules"
         ]
         read_only_fields = ["from_student", "intent", "hosted_by", "event", "requested_at"]
 
@@ -144,55 +136,104 @@ class EventRequestSerializer(serializers.ModelSerializer):
         """Returns the id of the event the request is made for"""
         return obj.event.id if obj.event else None
 
-    def validate_title(self, value):
-        """Validates that there is more than whitespace in a title"""
-        if not value.strip():
-            raise serializers.ValidationError("Title cannot be blank.")
-        return value
+    def _parse_json_field(self, field_name, default="[]"):
+        raw_data = self.context["request"].data.get(field_name, default)
+        try:
+            return json.loads(raw_data)
+        except json.JSONDecodeError:
+            raise serializers.ValidationError({field_name: "Invalid JSON format."})
+
+    def _create_modules(self, event, modules_data, is_participant_only, file_prefix):
+        request_obj = self.context["request"]
+        for index, module_data in enumerate(modules_data):
+            module_data["text_value"] = module_data.pop("textValue", "")
+            file_key = f"{file_prefix}_{index}"
+            if file_key in request_obj.FILES:
+                module_data["file_value"] = request_obj.FILES[file_key]
+            EventModule.objects.create(
+                event=event,
+                is_participant_only=is_participant_only,
+                **module_data
+            )
 
     def create(self, validated_data):
-        hosted_by = validated_data.get("hosted_by") or self.context.get("hosted_by")
-        if hosted_by is None:
+        request_obj = self.context["request"]
+        hosted_by = self.context.get("hosted_by")
+        if not hosted_by:
             raise serializers.ValidationError({"hosted_by": "This field is required."})
 
-        is_request_provided(self.context)
-
-        user = is_user_student(
-            self.context,
-            "Only students can request event creation."
-        )
-
+        user = request_obj.user
+        if not hasattr(user, "student"):
+            raise serializers.ValidationError("Only students can request event creation.")
         student = user.student
-        if student.president_of != hosted_by:
-            raise serializers.ValidationError("You can only create events for your own society.")
 
-        # Remove keys that are supplied via extra kwargs so they aren't duplicated.
-        validated_data.pop("hosted_by", None)
-        validated_data.pop("from_student", None)
-        validated_data.pop("intent", None)
-        validated_data.pop("approved", None)
+        event_data = {
+            "title": request_obj.data.get("title", ""),
+            "main_description": request_obj.data.get("main_description", ""),
+            "cover_image": request_obj.FILES.get("cover_image"),
+            "location": request_obj.data.get("location", ""),
+            "date": request_obj.data.get("date"),
+            "start_time": request_obj.data.get("start_time"),
+            "duration": request_obj.data.get("duration"),
+            "hosted_by": hosted_by,
+            "status": "Pending"
+        }
+        duration_str = event_data.get("duration")
+        if duration_str and isinstance(duration_str, str):
+            try:
+                h, m, s = map(int, duration_str.split(":"))
+                event_data["duration"] = datetime.timedelta(hours=h, minutes=m, seconds=s)
+            except ValueError:
+                raise serializers.ValidationError({"duration": "Invalid duration format. Expected HH:MM:SS."})
 
-        # Create the event request with default values.
+        event = Event.objects.create(**event_data)
+
+        extra_modules_data = self._parse_json_field("extra_modules")
+        participant_modules_data = self._parse_json_field("participant_modules")
+        self._create_modules(event, extra_modules_data, is_participant_only=False, file_prefix="extra_module_file")
+        self._create_modules(event, participant_modules_data, is_participant_only=True, file_prefix="participant_module_file")
+
         event_request = EventRequest.objects.create(
             hosted_by=hosted_by,
             from_student=student,
             intent="CreateEve",
             approved=False,
-            **validated_data
+            event=event
         )
         return event_request
 
     def update(self, instance, validated_data):
-        """Allow updating the 'approved' field (and others) as provided."""
-        instance.approved = validated_data.get("approved", instance.approved)
-        instance.title = validated_data.get("title", instance.title)
-        instance.description = validated_data.get("description", instance.description)
-        instance.location = validated_data.get("location", instance.location)
-        instance.date = validated_data.get("date", instance.date)
-        instance.start_time = validated_data.get("start_time", instance.start_time)
-        instance.duration = validated_data.get("duration", instance.duration)
+        request_obj = self.context["request"]
+        event = instance.event
+
+        event.title = request_obj.data.get("title", event.title)
+        event.main_description = request_obj.data.get("main_description", event.main_description)
+        event.cover_image = request_obj.FILES.get("cover_image", event.cover_image)
+        event.location = request_obj.data.get("location", event.location)
+        event.date = request_obj.data.get("date", event.date)
+        event.start_time = request_obj.data.get("start_time", event.start_time)
+
+        duration_str = request_obj.data.get("duration")
+        if duration_str:
+            try:
+                hours, minutes, seconds = map(int, duration_str.split(":"))
+                event.duration = datetime.timedelta(hours=hours, minutes=minutes, seconds=seconds)
+            except Exception:
+                raise serializers.ValidationError({"duration": "Invalid format. Use HH:MM:SS."})
+
+        event.status = "Pending"
+        event.save()
+
+        event.modules.all().delete()
+        extra_modules_data = self._parse_json_field("extra_modules")
+        participant_modules_data = self._parse_json_field("participant_modules")
+        self._create_modules(event, extra_modules_data, is_participant_only=False, file_prefix="extra_module_file")
+        self._create_modules(event, participant_modules_data, is_participant_only=True,
+                             file_prefix="participant_module_file")
+
+        instance.approved = None
         instance.save()
-        return instance 
+        return instance
 
 class ReportReplySerializer(serializers.ModelSerializer):
     """
