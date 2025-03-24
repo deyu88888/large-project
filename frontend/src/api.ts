@@ -84,7 +84,7 @@ export const apiPaths = {
     DELETEACTIVITYLOG: (logId: number) => `/api/delete-activity-log/${logId}`,
   },
   SOCIETY: {
-    All: "/api/all-societies",
+    All: "/api/dashboard/all-societies",
     POPULAR_SOCIETIES: "/api/admin/popular-societies/",  // TODO: DONT ADD BACKSLASH
     RECOMMENDED_SOCIETIES: "/api/recommended-societies", // New endpoint for recommendations
     RECOMMENDATION_EXPLANATION: (id: number) =>

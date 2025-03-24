@@ -237,7 +237,7 @@ class PublicReportView(APIView):
         """Posts a report from a public user"""
         serializer = PublicReportSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(anonymous_submission=True)
+            serializer.save()
             return Response({"message": "Report submitted successfully. Thank you for your feedback."}, 
                            status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

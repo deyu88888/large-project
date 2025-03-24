@@ -94,11 +94,6 @@ admin_patterns = [
     path("dashboard/activities/", RecentActivitiesView.as_view(), name="recent_activities"),
     path("dashboard/notifications", NotificationsView.as_view(), name="dashboard_notifications"),
     path("dashboard/events/", EventCalendarView.as_view(), name="dashboard_events"),
-    path("popular-societies/", get_popular_societies, name="popular_societies"),
-    path('events/upcoming/', get_sorted_events, name='upcoming_events'),
-
-    #path('all-societies', PublicSocietiesView.as_view(), name='all_societies'),
-    #path("public-report", PublicReportView.as_view(), name="public-report"),
 
     # Awards Endpoints
     path("awards/", AwardView.as_view(), name="awards"),  # List & Create Awards
@@ -218,6 +213,10 @@ dashboard_patterns = [
     path("activities/", RecentActivitiesView.as_view(), name="recent_activities"),
     path("notifications/", NotificationsView.as_view(), name="dashboard_notifications"),
     path("events/", EventCalendarView.as_view(), name="dashboard_events"),
+    path('all-societies', PublicSocietiesView.as_view(), name='all_societies'),
+    path("public-report", PublicReportView.as_view(), name="public-report"),
+    path("popular-societies/", get_popular_societies, name="popular_societies"),
+    path('events/upcoming/', get_upcoming_events, name='upcoming_events'),
 ]
 
 # Award patterns
