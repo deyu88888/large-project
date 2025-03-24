@@ -31,14 +31,12 @@ export function EventDetailLayout({ eventData }: { eventData: EventData }) {
 
   return (
     <Box sx={{ p: 0 }}>
-      {/* 大标题 */}
       <Box sx={{ textAlign: "center", py: 4 }}>
         <Typography variant="h1" gutterBottom sx={{ fontWeight: "bold" }}>
           {title || "Event Title"}
         </Typography>
       </Box>
 
-      {/* 封面图 */}
       {coverImageFile && (
         <Box sx={{ textAlign: "center", my: 2 }}>
           <Box
@@ -57,7 +55,6 @@ export function EventDetailLayout({ eventData }: { eventData: EventData }) {
         </Box>
       )}
 
-      {/* 左右分栏 */}
       <Box
         sx={{
           display: "flex",
@@ -67,9 +64,7 @@ export function EventDetailLayout({ eventData }: { eventData: EventData }) {
           py: 4
         }}
       >
-        {/* 左侧：正文 */}
         <Box flex="1 1 60%" pr={2}>
-          {/* Overview */}
           <Typography variant="h3" sx={{ mb: 2, fontWeight: "bold" }}>
             Overview
           </Typography>
@@ -77,7 +72,6 @@ export function EventDetailLayout({ eventData }: { eventData: EventData }) {
             {mainDescription || "No description provided."}
           </Typography>
 
-          {/* ExtraModules */}
           {extraModules.map((mod) => {
             if (mod.type === "subtitle") {
               return (
@@ -124,12 +118,10 @@ export function EventDetailLayout({ eventData }: { eventData: EventData }) {
             }
           })}
 
-          {/* Participants Only */}
           <Typography variant="h3" sx={{ mb: 2, fontWeight: "bold" }}>
             Participants Only Content
           </Typography>
           {participantModules.map((mod) => {
-            // 类似上面
             if (mod.type === "subtitle") {
               return (
                 <Box key={mod.id} sx={{ my: 3 }}>
@@ -176,7 +168,6 @@ export function EventDetailLayout({ eventData }: { eventData: EventData }) {
           })}
         </Box>
 
-        {/* 右侧：信息卡片 */}
         <Box flex="1 1 20%" minWidth={250}>
           <Card
             sx={{

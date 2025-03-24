@@ -9,14 +9,12 @@ import {
   Typography
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
-
 import { DndContext, DragEndEvent, closestCenter } from "@dnd-kit/core";
 import {
   SortableContext,
   verticalListSortingStrategy,
   arrayMove
 } from "@dnd-kit/sortable";
-
 import { SortableItem, ExtraModule, ExtraModuleType } from "../../components/SortableItem";
 import { EventPreviewFullScreen } from "./EventPreview";
 import { apiClient } from "../../api";
@@ -25,7 +23,6 @@ export default function CreateEvent() {
   const { societyId } = useParams<{ societyId: string }>();
   const navigate = useNavigate();
 
-  // 固定必填字段
   const [title, setTitle] = useState("");
   const [mainDescription, setMainDescription] = useState("");
   const [date, setDate] = useState("");
@@ -35,15 +32,11 @@ export default function CreateEvent() {
   const [maxCapacity, setMaxCapacity] = useState(0);
   const [adminReason, setAdminReason] = useState("");
 
-  // 封面图片
   const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
 
-  // 公共额外模块区域（包含可选的副标题）
   const [extraModules, setExtraModules] = useState<ExtraModule[]>([]);
-  // 参与者专享模块区域
   const [participantModules, setParticipantModules] = useState<ExtraModule[]>([]);
 
-  // 控制添加模块菜单（公共区域）
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const openMenu = Boolean(anchorEl);
   const handleAddModuleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -58,7 +51,6 @@ export default function CreateEvent() {
     handleMenuClose();
   };
 
-  // 公共区域模块修改
   const handleChangeText = (id: string, newValue: string) => {
     setExtraModules((prev) =>
       prev.map((mod) => (mod.id === id ? { ...mod, textValue: newValue } : mod))
@@ -82,7 +74,6 @@ export default function CreateEvent() {
     });
   };
 
-  // 参与者专享区域（与公共区域类似）
   const [participantAnchorEl, setParticipantAnchorEl] = useState<null | HTMLElement>(null);
   const openParticipantMenu = Boolean(participantAnchorEl);
   const handleAddParticipantModuleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -119,7 +110,6 @@ export default function CreateEvent() {
     });
   };
 
-  // 预览弹窗控制
   const [previewOpen, setPreviewOpen] = useState(false);
   const handlePreview = () => {
     if (!coverImageFile) {
@@ -132,7 +122,6 @@ export default function CreateEvent() {
     setPreviewOpen(false);
   };
 
-  // 提交事件
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -152,21 +141,18 @@ export default function CreateEvent() {
     formData.append("admin_reason", adminReason);
     formData.append("cover_image", coverImageFile);
 
-    // 处理 extra_modules 的文字数据
     const extraModulesData = extraModules.map((mod) => ({
       type: mod.type,
       textValue: mod.textValue || "",
     }));
     formData.append("extra_modules", JSON.stringify(extraModulesData));
 
-    // 附加 extra_modules 的文件数据（如果存在）
     extraModules.forEach((mod, index) => {
       if ((mod.type === "image" || mod.type === "file") && mod.fileValue) {
         formData.append(`extra_module_file_${index}`, mod.fileValue);
       }
     });
 
-    // 同理，处理 participant_modules
     const participantModulesData = participantModules.map((mod) => ({
       type: mod.type,
       textValue: mod.textValue || "",
@@ -200,7 +186,6 @@ export default function CreateEvent() {
       </Typography>
 
       <form onSubmit={handleSubmit}>
-        {/* 封面图片必填 */}
         <Box sx={{ mb: 3 }}>
           <Typography variant="subtitle1" gutterBottom>
             Cover Image (Required)
@@ -233,7 +218,6 @@ export default function CreateEvent() {
           )}
         </Box>
 
-        {/* 固定字段 */}
         <Box sx={{ mb: 3 }}>
           <TextField
             label="Event Title"
@@ -300,7 +284,6 @@ export default function CreateEvent() {
           />
         </Box>
 
-        {/* 公共额外模块区域 */}
         <Typography variant="h6" gutterBottom>
           Extra Content (Optional)
         </Typography>
@@ -336,7 +319,6 @@ export default function CreateEvent() {
           <MenuItem onClick={() => handleSelectModule("subtitle")}>Subtitle</MenuItem>
         </Menu>
 
-        {/* 参与者专享区域 */}
         <Box sx={{ my: 4, p: 2, border: "1px dashed #aaa", borderRadius: 2 }}>
           <Typography variant="h6" gutterBottom>
             Participants Only Content (Optional)
@@ -378,7 +360,6 @@ export default function CreateEvent() {
           </Menu>
         </Box>
 
-        {/* Admin 理由 */}
         <Box sx={{ mb: 3, borderTop: "1px solid #ccc", pt: 2 }}>
           <Typography variant="subtitle1" gutterBottom>
             For Admin View Only
@@ -394,14 +375,12 @@ export default function CreateEvent() {
           />
         </Box>
 
-        {/* 预览按钮 */}
         <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
           <Button variant="outlined" onClick={handlePreview}>
             Preview Event
           </Button>
         </Box>
 
-        {/* Submit 按钮 */}
         <Box sx={{ mt: 4, textAlign: "center" }}>
           <Button type="submit" variant="contained" color="primary">
             Submit Event
@@ -409,7 +388,6 @@ export default function CreateEvent() {
         </Box>
       </form>
 
-      {/* 全屏预览弹窗 */}
       <EventPreviewFullScreen
         open={previewOpen}
         onClose={handleClosePreview}

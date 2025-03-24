@@ -40,13 +40,11 @@ export function SortableItem({
     position: "relative"
   };
 
-  // 对于 image 类型生成预览 URL
   const previewUrl =
     mod.type === "image" && mod.fileValue ? URL.createObjectURL(mod.fileValue) : null;
 
   return (
     <div ref={setNodeRef} style={style} {...attributes}>
-      {/* 拖拽把手 */}
       <div
         style={{
           cursor: "grab",

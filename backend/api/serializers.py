@@ -299,7 +299,6 @@ class EventSerializer(serializers.ModelSerializer):
         extra_kwargs = {'hosted_by': {'required': True}}
 
     def create(self, validated_data):
-        # validated_data 中 extra_modules 和 participant_modules 已经是 Python 列表（或空列表）
         return Event.objects.create(**validated_data)
 
     def update(self, instance, validated_data):
@@ -627,12 +626,9 @@ class EventRequestSerializer(serializers.ModelSerializer):
         queryset=Society.objects.all(),
         required=False
     )
-    # 用嵌套的序列化器替代原来的 ListField
     extra_modules = EventModuleSerializer(many=True, required=False)
     participant_modules = EventModuleSerializer(many=True, required=False)
-    # 用 SerializerMethodField 输出 event id（审批后可能关联了真正的 Event）
     event = serializers.SerializerMethodField()
-    # 允许管理员在审批时修改 approved 状态
     approved = serializers.BooleanField(required=False)
 
     class Meta:
@@ -645,7 +641,6 @@ class EventRequestSerializer(serializers.ModelSerializer):
         read_only_fields = ["from_student", "intent", "hosted_by", "event", "requested_at"]
 
     def get_event(self, obj):
-        """返回请求关联的 Event 的 id"""
         return obj.event.id if obj.event else None
 
     def validate_title(self, value):
@@ -654,7 +649,6 @@ class EventRequestSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
-        # 提取出额外模块数据
         request_obj = self.context.get("request")
         extra_modules_data = request_obj.data.get("extra_modules", "[]")
         participant_modules_data = request_obj.data.get("participant_modules", "[]")
@@ -669,7 +663,6 @@ class EventRequestSerializer(serializers.ModelSerializer):
         except json.JSONDecodeError:
             raise serializers.ValidationError({"participant_modules": "Invalid JSON format."})
 
-        # 处理 hosted_by，必须通过 context 或 validated_data 提供
         hosted_by = validated_data.get("hosted_by") or self.context.get("hosted_by")
         if hosted_by is None:
             raise serializers.ValidationError({"hosted_by": "This field is required."})
@@ -683,11 +676,9 @@ class EventRequestSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Only students can request event creation.")
         student = user.student
 
-        # 检查当前学生是否为该社团的会长
         if student.president_of != hosted_by:
             raise serializers.ValidationError("You can only create events for your own society.")
 
-        # 移除不需要的字段，保证创建时不会重复赋值
         validated_data.pop("hosted_by", None)
         validated_data.pop("from_student", None)
         validated_data.pop("intent", None)
@@ -730,11 +721,9 @@ class EventRequestSerializer(serializers.ModelSerializer):
         return event_request
 
     def update(self, instance, validated_data):
-        # 提取出可能更新的模块数据
         extra_modules_data = validated_data.pop("extra_modules", None)
         participant_modules_data = validated_data.pop("participant_modules", None)
 
-        # 更新其他字段
         instance.approved = validated_data.get("approved", instance.approved)
         instance.title = validated_data.get("title", instance.title)
         instance.main_description = validated_data.get("main_description", instance.main_description)
@@ -744,9 +733,7 @@ class EventRequestSerializer(serializers.ModelSerializer):
         instance.duration = validated_data.get("duration", instance.duration)
         instance.save()
 
-        # 如果前端提交了新的模块数据，则需要重新处理（例如删除原模块，再创建新的）
         if extra_modules_data is not None:
-            # 清除原来的公开模块
             instance.modules.filter(is_participant_only=False).delete()
             for module_data in extra_modules_data:
                 EventModule.objects.create(
@@ -756,7 +743,6 @@ class EventRequestSerializer(serializers.ModelSerializer):
                 )
 
         if participant_modules_data is not None:
-            # 清除原来的参与者专享模块
             instance.modules.filter(is_participant_only=True).delete()
             for module_data in participant_modules_data:
                 EventModule.objects.create(

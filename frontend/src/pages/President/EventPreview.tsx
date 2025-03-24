@@ -25,9 +25,8 @@ export function EventPreviewFullScreen({ open, onClose, eventData }: Props) {
       maxWidth="lg"
       PaperProps={{
         sx: {
-          // 让对话框高度可控
-          height: "90vh",        // 占屏幕80%高度
-          borderRadius: 2        // 边角圆润
+          height: "90vh",
+          borderRadius: 2
         }
       }}
     >

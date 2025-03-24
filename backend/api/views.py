@@ -1877,20 +1877,17 @@ class CreateEventRequestView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        # Check management permissions (对于 event 的创建权限可以限制为 president 或 event manager)
         if not has_society_management_permission(user.student, society, for_events_only=True):
             return Response(
                 {"error": "Only the society president, vice president, or event manager can create events for this society."},
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        # 创建 serializer 时将 request 和 hosted_by 放入 context 中，便于 serializer 中的验证和数据创建
         serializer = EventRequestSerializer(
             data=request.data,
             context={"request": request, "hosted_by": society}
         )
         if serializer.is_valid():
-            # 调用 serializer.save() 时传入需要额外设置的字段
             event_request = serializer.save(
                 hosted_by=society,
                 from_student=user.student,
@@ -3342,29 +3339,20 @@ class SearchView(APIView):
         })
 
 class SocietyEventsListView(generics.ListAPIView):
-    """
-    返回指定社团 (society_id) 下所有事件的列表
-    """
-    permission_classes = [AllowAny]  # 或根据需要修改权限
+    permission_classes = [AllowAny]
     serializer_class = EventSerializer
 
     def get_queryset(self):
         society_id = self.kwargs['society_id']
-        # 假设 Event 有一个外键 'hosted_by' 指向 Society
         return Event.objects.filter(hosted_by_id=society_id)
 
 
 class SocietyEventRequestsListView(generics.ListAPIView):
-    """
-    返回指定社团 (society_id) 下所有事件请求的列表
-    """
-    # 根据需求设置权限，这里示例允许所有人访问
     permission_classes = [AllowAny]
     serializer_class = EventRequestSerializer
 
     def get_queryset(self):
         society_id = self.kwargs['society_id']
-        # 假设 EventRequest 中的 hosted_by 指向 Society
         return EventRequest.objects.filter(hosted_by_id=society_id)
 
 class EventRequestModulesView(APIView):
@@ -3374,9 +3362,7 @@ class EventRequestModulesView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request, event_request_id):
-        # 根据传入的 event_request_id 获取对应的 EventRequest
         event_request = get_object_or_404(EventRequest, id=event_request_id)
-        # 查询所有关联的 EventModule（包括公开模块和参与者专享模块）
         modules = event_request.modules.all()
         serializer = EventModuleSerializer(modules, many=True, context={'request': request})
         return Response(serializer.data)
