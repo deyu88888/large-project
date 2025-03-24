@@ -10,8 +10,8 @@ from rest_framework.views import APIView
 from api.models import Event, Society, Student, User, ActivityLog
 import time as time_module
 from api.utils import *
-from .admin_handle_event_view import EventRestoreHandler, EventUpdateUndoHandler, EventStatusChangeUndoHandler
-from .admin_handle_society_view import SocietyRestoreHandler, SocietyUpdateUndoHandler, SocietyStatusChangeUndoHandler
+from .admin_handle_event_views import EventRestoreHandler, EventUpdateUndoHandler, EventStatusChangeUndoHandler
+from .admin_handle_society_views import SocietyRestoreHandler, SocietyUpdateUndoHandler, SocietyStatusChangeUndoHandler
 from api.views_files.view_utility import get_admin_if_user_is_admin, RestoreHandler, set_foreign_key_relationship, set_many_to_many_relationship
 
 class AdminBaseView(APIView):
