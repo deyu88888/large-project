@@ -1,7 +1,7 @@
 import traceback
 from json import loads
 from api.models import BroadcastMessage, Notification, ReportReply, NewsComment,\
-    NewsPublicationRequest, SocietyNews
+    NewsPublicationRequest, SocietyNews, AdminReportRequest
 from api.serializers_files.serializers_utility import get_report_reply_chain
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
@@ -443,3 +443,14 @@ class ReportReplySerializer(serializers.ModelSerializer):
         """Get reply chain the ReportReply"""
         children = get_report_reply_chain(obj)
         return ReportReplySerializer(children, many=True).data
+
+class PublicReportSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the PublicReport model
+    """
+    class Meta:
+        model = AdminReportRequest
+        fields = ['subject', 'details', 'email']
+        
+    def save(self, **kwargs):
+        return super().save(**kwargs)
