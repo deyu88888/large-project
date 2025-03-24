@@ -47,7 +47,7 @@ const AllEventsPage = lazy(() => import("../pages/allEventsPage"));
 const EventDetailPage = lazy(() => import("../pages/eventDetailPage"));
 const AllSocietiesPage = lazy(() => import("../pages/AllSocieties"));
 const PublicCalendarPage = lazy(() => import("../pages/Calendar"));
-
+const SupportPage = lazy(() => import("../pages/Support"));
 
 // Admin pages
 const EventListPage = lazy(() => import("../pages/Admin/AdminEventList"));
@@ -309,7 +309,7 @@ const routes = [
       { path: "profile/:student_id", element: <PageWithTitle title="Student Progile"><ProfilePage /></PageWithTitle> },
       { path: "search", element: <PageWithTitle title="Search"><SearchResultsPage /></PageWithTitle> },
       { path: "calendar", element: <PageWithTitle title="Calendar"><PublicCalendarPage /></PageWithTitle> },
-      { path: "support", element: <PageWithTitle title="Support"><ReportToAdmin /></PageWithTitle> },
+      { path: "support", element: <PageWithTitle title="Support"><SupportPage /></PageWithTitle> },
     ],
   },
   {
