@@ -13,7 +13,6 @@ from api.serializers import AdminReportRequestSerializer, EventSerializer, \
     ActivityLogSerializer, ReportReplySerializer
 from api.views_files.view_utility import get_admin_if_user_is_admin
 
-
 class AdminEventView(APIView):
     """
     Event view to show upcoming approved events.

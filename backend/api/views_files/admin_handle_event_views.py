@@ -3,8 +3,8 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.response import Response
 from api.models import Event, Society, Student, ActivityLog, User
-from api.views_files.view_utility import process_date_field, \
-    process_time_field, process_timedelta_field, set_many_to_many_relationship, RestoreHandler
+from api.views_files.view_utility import get_object_by_id_or_name, process_date_field, \
+    process_time_field, process_timedelta_field, set_foreign_key_relationship, set_many_to_many_relationship, RestoreHandler
 
 
 class EventRestoreHandler(RestoreHandler):
@@ -12,7 +12,6 @@ class EventRestoreHandler(RestoreHandler):
     def handle(self, original_data, log_entry):
         """Restore a deleted event."""
         try:
-            # Extract basic fields for Event - excluding relationship fields
             event_data = {k: v for k, v in original_data.items() if k not in [
                 'id', 'hosted_by', 'current_attendees', 'duration'
             ]}
@@ -55,14 +54,8 @@ class EventRestoreHandler(RestoreHandler):
                     event.duration = timedelta(hours=1)
                     event.save()
             
-            hosted_by_id = original_data.get('hosted_by')
-            if hosted_by_id:
-                try:
-                    society = Society.objects.get(id=int(hosted_by_id))
-                    event.hosted_by = society
-                    event.save()
-                except (Society.DoesNotExist, ValueError, TypeError):
-                    pass
+            set_foreign_key_relationship(event, 'hosted_by', original_data.get('hosted_by'), Society)
+            event.save()
             
             attendee_ids = original_data.get('current_attendees', [])
             if attendee_ids:
@@ -81,19 +74,9 @@ class EventStatusChangeUndoHandler(RestoreHandler):
     def handle(self, original_data, log_entry):
         """Undo an event status change (approve/reject)."""
         try:
-            # Find the event by ID
-            event_id = log_entry.target_id
-            event = Event.objects.filter(id=event_id).first()
-            
-            if not event:
-                # Try to find by name if the ID doesn't work
-                event_name = log_entry.target_name
-                event = Event.objects.filter(title=event_name).first()
-                
+            event = get_object_by_id_or_name(Event, log_entry.target_id, name_field='title', name_value=log_entry.target_name)
             if not event:
                 return Response({"error": "Event not found."}, status=status.HTTP_404_NOT_FOUND)
-            
-            # Simply set the status back to Pending regardless of original data
             event.status = "Pending"
             
             # If there was an approved_by field and we're undoing an approval, clear it
@@ -107,13 +90,12 @@ class EventStatusChangeUndoHandler(RestoreHandler):
                 action_type="Update",
                 target_type="Event",
                 target_id=event.id,
-                target_name=event.title,  # Use title instead of name for events
+                target_name=event.title,
                 performed_by=log_entry.performed_by,
                 timestamp=timezone.now(),
                 expiration_date=timezone.now() + timedelta(days=30),
             )
             
-            # Delete the original log entry
             log_entry.delete()
             
             return Response({
@@ -130,18 +112,10 @@ class EventUpdateUndoHandler(RestoreHandler):
     def handle(self, original_data, log_entry):
         """Undo an event update."""
         try:
-            # Find the event
-            event_id = log_entry.target_id
-            event = Event.objects.filter(id=event_id).first()
-            
-            if not event:
-                event_name = log_entry.target_name
-                event = Event.objects.filter(title=event_name).first()
-                
+            event = get_object_by_id_or_name(Event, log_entry.target_id, name_field='title', name_value=log_entry.target_name)
             if not event:
                 return Response({"error": "Event not found."}, status=status.HTTP_404_NOT_FOUND)
             
-            # Define all special fields that need specialized treatment
             many_to_many_fields = ['attendees', 'tags', 'images', 'current_attendees']
             foreign_key_fields = ['society', 'organizer', 'approved_by', 'hosted_by']
             complex_json_fields = ['location_details']
@@ -149,25 +123,20 @@ class EventUpdateUndoHandler(RestoreHandler):
             time_fields = ['start_time']
             timedelta_fields = ['duration']
             
-            # Create a working copy of the original data
             data = original_data.copy()
             
-            # Process date fields
             for field_name in date_fields:
                 if field_name in data and data[field_name]:
                     process_date_field(event, field_name, data[field_name])
             
-            # Process time fields
             for field_name in time_fields:
                 if field_name in data and data[field_name]:
                     process_time_field(event, field_name, data[field_name])
             
-            # Process timedelta fields
             for field_name in timedelta_fields:
                 if field_name in data and data[field_name]:
                     process_timedelta_field(event, field_name, data[field_name])
             
-            # Apply simple fields that don't involve relationships
             for key, value in data.items():
                 if (key not in many_to_many_fields and 
                     key not in foreign_key_fields and 
@@ -178,62 +147,33 @@ class EventUpdateUndoHandler(RestoreHandler):
                     if hasattr(event, key) and value is not None:
                         setattr(event, key, value)
             
-            # Handle complex JSON fields
             if 'location_details' in data and isinstance(data['location_details'], dict):
                 event.location_details = data['location_details']
             
-            # Save basic field changes
             event.save()
             
-            # Handle the approved_by field specifically
-            if 'approved_by' in data and data['approved_by']:
-                admin_id = data['approved_by']
-                try:
-                    admin_obj = User.objects.get(id=admin_id)
-                    event.approved_by = admin_obj
-                    event.save()
-                except Exception as e:
-                    print(f"Error setting approved_by: {str(e)}")
-            
-            # Handle society foreign key
+            set_foreign_key_relationship(event, 'approved_by', data.get('approved_by'), User)
+
             if 'society' in data and data['society']:
-                try:
-                    society_id = data['society'] if isinstance(data['society'], int) else data['society'].get('id')
-                    if society_id:
-                        event.society_id = society_id
-                except Exception as e:
-                    print(f"Error setting society: {str(e)}")
-            
-            # Handle organizer foreign key
+                society_id = data['society'] if isinstance(data['society'], int) else data['society'].get('id')
+                set_foreign_key_relationship(event, 'society', society_id, Society)
+
             if 'organizer' in data and data['organizer']:
-                try:
-                    organizer_id = data['organizer'] if isinstance(data['organizer'], int) else data['organizer'].get('id')
-                    if organizer_id:
-                        event.organizer_id = organizer_id
-                except Exception as e:
-                    print(f"Error setting organizer: {str(e)}")
-                    
-            # Handle hosted_by foreign key
+                organizer_id = data['organizer'] if isinstance(data['organizer'], int) else data['organizer'].get('id')
+                set_foreign_key_relationship(event, 'organizer', organizer_id, Student)
+
             if 'hosted_by' in data and data['hosted_by']:
-                try:
-                    society_id = data['hosted_by'] if isinstance(data['hosted_by'], int) else data['hosted_by'].get('id')
-                    if society_id:
-                        event.hosted_by_id = society_id
-                except Exception as e:
-                    print(f"Error setting hosted_by: {str(e)}")
-            
-            # Save after setting foreign keys
+                society_id = data['hosted_by'] if isinstance(data['hosted_by'], int) else data['hosted_by'].get('id')
+                set_foreign_key_relationship(event, 'hosted_by', society_id, Society)
+
             event.save()
             
-            # Handle attendees (many-to-many)
             if 'attendees' in data and isinstance(data['attendees'], list):
                 set_many_to_many_relationship(event, 'attendees', data['attendees'], Student)
             
-            # Handle current_attendees (many-to-many)
             if 'current_attendees' in data and isinstance(data['current_attendees'], list):
                 set_many_to_many_relationship(event, 'current_attendees', data['current_attendees'], Student)
             
-            # Handle tags (many-to-many)
             if 'tags' in data and isinstance(data['tags'], list):
                 event.tags = data['tags']
             
@@ -247,10 +187,8 @@ class EventUpdateUndoHandler(RestoreHandler):
                 except Exception as e:
                     print(f"Error handling images: {str(e)}")
             
-            # Final save after all relationships are set
             event.save()
             
-            # Delete the log entry
             log_entry.delete()
             
             return Response({"message": "Event update undone successfully!"}, status=status.HTTP_200_OK)

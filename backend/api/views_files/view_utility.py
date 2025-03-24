@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 import time
-from api.models import Event, Society
+from api.models import Event, Society, Student
 from rest_framework import status
 from rest_framework.response import Response
 
@@ -60,21 +60,17 @@ def has_society_management_permission(student, society, for_events_only=False):
 
     return is_president or is_vice_president or is_event_manager
 
-def get_event_by_id_or_name(event_id, name_field='title'):
-    """Get an event by ID, or fall back to searching by name field."""
-    event = Event.objects.filter(id=event_id).first()
-    if not event:
-        # Try to find by name field
-        event = Event.objects.filter(**{name_field: event_id}).first()
-    return event
-
-def get_society_by_id_or_name(society_id):
-    """Get a society by ID, or fall back to searching by name."""
-    society = Society.objects.filter(id=society_id).first()
-    if not society:
-        # Try to find by name
-        society = Society.objects.filter(name=society_id).first()
-    return society
+def get_object_by_id_or_name(model_class, object_id, name_field='name', name_value=None):
+    """
+    Get an object by ID, or fall back to searching by a name field.
+    """
+    obj = model_class.objects.filter(id=object_id).first()
+    
+    if not obj:
+        lookup_value = name_value if name_value is not None else object_id
+        obj = model_class.objects.filter(**{name_field: lookup_value}).first()
+    
+    return obj
 
 def process_date_field(obj, field_name, date_str):
     """Convert string date to date object and set on object."""
@@ -125,6 +121,17 @@ def set_many_to_many_relationship(obj, field_name, id_list, model_class):
     except Exception as e:
         print(f"Error setting {field_name}: {str(e)}")
 
+def set_foreign_key_relationship(obj, field_name, id_value, model_class):
+    """Set a foreign key relationship from an ID value."""
+    if not id_value:
+        return
+        
+    try:
+        # Convert to int to handle both string and integer IDs
+        item = model_class.objects.get(id=int(id_value))
+        setattr(obj, field_name, item)
+    except (model_class.DoesNotExist, ValueError, TypeError) as e:
+        print(f"Error setting {field_name} with ID {id_value}: {str(e)}")
 
 # Handler implementations using Strategy Pattern
 class RestoreHandler:

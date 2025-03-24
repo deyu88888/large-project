@@ -4,17 +4,28 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from api.models import Award, AwardStudent
 from api.serializers import AwardSerializer, AwardStudentSerializer
+from api.views_files.view_utility import get_object_by_id_or_name
 
+
+def get_award_if_exists(pk):
+    """Gets an award object by pk if defined, else returns an error msg"""
+    award = get_object_by_id_or_name(Award, pk)
+    if not award:
+        return None, Response(
+            {"error": "Award not found"},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    return award, None
 
 def get_award_student_if_exists(pk):
     """Gets an award_student object by pk if defined, else returns an error msg"""
-    try:
-        return AwardStudent.objects.get(pk=pk), None
-    except AwardStudent.DoesNotExist:
+    award_student = get_object_by_id_or_name(AwardStudent, pk)
+    if not award_student:
         return None, Response(
             {"error": "Award assignment not found"},
             status=status.HTTP_404_NOT_FOUND
         )
+    return award_student, None
 
 def serializer_is_valid_and_save(serializer):
     """Saves the serializer if it is valid, and returns is_valid"""
@@ -30,15 +41,11 @@ class AwardView(APIView):
     def get(self, request, pk=None) -> Response:
         """List all awards or retrieve a specific award if ID is provided"""
         if pk:
-            try:
-                award = Award.objects.get(pk=pk)
-                serializer = AwardSerializer(award)
-                return Response(serializer.data, status=status.HTTP_200_OK)
-            except Award.DoesNotExist:
-                return Response(
-                    {"error": "Award not found"},
-                    status=status.HTTP_404_NOT_FOUND
-                )
+            award, error = get_award_if_exists(pk)
+            if error:
+                return error
+            serializer = AwardSerializer(award)
+            return Response(serializer.data, status=status.HTTP_200_OK)
 
         # List all awards if no ID is provided
         awards = Award.objects.all()
@@ -54,14 +61,9 @@ class AwardView(APIView):
 
     def put(self, request, pk: int) -> Response:
         """Update an award by ID"""
-        try:
-            award = Award.objects.get(pk=pk)
-        except Award.DoesNotExist:
-            return Response(
-                {"error": "Award not found"},
-                status=status.HTTP_404_NOT_FOUND
-            )
-
+        award, error = get_award_if_exists(pk)
+        if error:
+            return error
         serializer = AwardSerializer(award, data=request.data)
         if serializer_is_valid_and_save(serializer):
             return Response(serializer.data, status=status.HTTP_200_OK)
@@ -69,13 +71,9 @@ class AwardView(APIView):
 
     def delete(self, request, pk: int) -> Response:
         """Delete an award by ID"""
-        try:
-            award = Award.objects.get(pk=pk)
-        except Award.DoesNotExist:
-            return Response(
-                {"error": "Award not found"},
-                status=status.HTTP_404_NOT_FOUND
-            )
+        award, error = get_award_if_exists(pk)
+        if error:
+            return error
 
         award.delete()
         return Response(
@@ -123,13 +121,9 @@ class AwardStudentView(APIView):
 
     def delete(self, request, pk: int) -> Response:
         """Delete a specific award assignment"""
-        try:
-            award_student = AwardStudent.objects.get(pk=pk)
-        except AwardStudent.DoesNotExist:
-            return Response(
-                {"error": "Award assignment not found"},
-                status=status.HTTP_404_NOT_FOUND
-            )
+        award_student, error = get_award_student_if_exists(pk)
+        if error:
+            return error
 
         award_student.delete()
         return Response(

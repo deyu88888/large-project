@@ -12,7 +12,7 @@ import time as time_module
 from api.utils import *
 from .admin_handle_event_view import EventRestoreHandler, EventUpdateUndoHandler, EventStatusChangeUndoHandler
 from .admin_handle_society_view import SocietyRestoreHandler, SocietyUpdateUndoHandler, SocietyStatusChangeUndoHandler
-from api.views_files.view_utility import get_admin_if_user_is_admin, RestoreHandler
+from api.views_files.view_utility import get_admin_if_user_is_admin, RestoreHandler, set_foreign_key_relationship, set_many_to_many_relationship
 
 class AdminBaseView(APIView):
     """Base class for admin operations with common utilities."""
@@ -201,7 +201,6 @@ class StudentRestoreHandler(RestoreHandler):
     def handle(self, original_data, log_entry):
         """Restore a deleted student."""
         try:
-            # Extract basic fields for the User model - INCLUDE ROLE HERE
             user_data = {
                 'username': original_data.get('username'),
                 'email': original_data.get('email'),
@@ -211,7 +210,6 @@ class StudentRestoreHandler(RestoreHandler):
                 'role': original_data.get('role', 'student'),
             }
             
-            # Try to find existing user
             user_id = original_data.get('id')
             email = user_data.get('email')
             username = user_data.get('username')
@@ -229,9 +227,7 @@ class StudentRestoreHandler(RestoreHandler):
             if not user and username:
                 user = User.objects.filter(username=username).first()
             
-            # If user doesn't exist, create a new one
             if not user:
-                # Make email unique if needed
                 if email:
                     while User.objects.filter(email=email).exists():
                         timestamp = int(time_module.time())
@@ -242,20 +238,15 @@ class StudentRestoreHandler(RestoreHandler):
                             email = f"restored_{timestamp}@example.com"
                     user_data['email'] = email
                 
-                # Make username unique if needed
                 if username:
                     while User.objects.filter(username=username).exists():
                         timestamp = int(time_module.time())
                         username = f"{username}_{timestamp}"
                     user_data['username'] = username
                     
-                # Create new user
                 user = User.objects.create(**user_data)
-            
-            # Check if student already exists for this user
+
             student = Student.objects.filter(user_ptr=user).first()
-            
-            # Prepare student-specific data - EXCLUDE ROLE
             student_data = {k: v for k, v in original_data.items() if k not in [
                 'id', 'username', 'email', 'first_name', 'last_name', 'is_active',
                 'password', 'last_login', 'is_superuser', 'is_staff', 'date_joined',
@@ -264,96 +255,42 @@ class StudentRestoreHandler(RestoreHandler):
             ]}
             
             if not student:
-                # Create new student using the proper inheritance approach
-                from django.contrib.contenttypes.models import ContentType
                 
-                # Create student with proper User inheritance
                 student = Student(user_ptr_id=user.id)
                 student.__dict__.update(user.__dict__)
                 
-                # Apply student-specific fields
                 for key, value in student_data.items():
-                    if value is not None:  # Only set non-None values
+                    if value is not None:
                         setattr(student, key, value)
                 
                 # Save with raw=True to avoid problems with inheritance
                 student.save_base(raw=True)
             else:
-                # Update existing student with student-specific fields
                 for key, value in student_data.items():
-                    if value is not None:  # Only set non-None values
+                    if value is not None:
                         setattr(student, key, value)
                 student.save()
             
-            # Handle M2M relationships using .set() method
             society_ids = original_data.get('societies', [])
             if society_ids:
-                try:
-                    societies = []
-                    for society_id in society_ids:
-                        try:
-                            society = Society.objects.get(id=int(society_id))
-                            societies.append(society)
-                        except (Society.DoesNotExist, ValueError, TypeError):
-                            pass
-                    student.societies.set(societies)
-                except Exception:
-                    pass
-            
+                set_many_to_many_relationship(student, 'societies', society_ids, Society)
+
             event_ids = original_data.get('attended_events', [])
             if event_ids:
-                try:
-                    events = []
-                    for event_id in event_ids:
-                        try:
-                            event = Event.objects.get(id=int(event_id))
-                            events.append(event)
-                        except (Event.DoesNotExist, ValueError, TypeError):
-                            pass
-                    student.attended_events.set(events)
-                except Exception:
-                    pass
-            
+                set_many_to_many_relationship(student, 'attended_events', event_ids, Event)
+
             follower_ids = original_data.get('followers', [])
             if follower_ids:
-                try:
-                    followers = []
-                    for follower_id in follower_ids:
-                        try:
-                            follower = User.objects.get(id=int(follower_id))
-                            followers.append(follower)
-                        except (User.DoesNotExist, ValueError, TypeError):
-                            pass
-                    student.followers.set(followers)
-                except Exception:
-                    pass
-            
-            # Add handling for following relationship
+                set_many_to_many_relationship(student, 'followers', follower_ids, User)
+
             following_ids = original_data.get('following', [])
             if following_ids:
-                try:
-                    following = []
-                    for following_id in following_ids:
-                        try:
-                            follow_user = User.objects.get(id=int(following_id))
-                            following.append(follow_user)
-                        except (User.DoesNotExist, ValueError, TypeError):
-                            pass
-                    student.following.set(following)
-                except Exception:
-                    pass
+                set_many_to_many_relationship(student, 'following', following_ids, User)
             
-            # Handle president_of relationship
-            president_of_id = original_data.get('president_of')
-            if president_of_id:
-                try:
-                    society = Society.objects.get(id=int(president_of_id))
-                    student.president_of = society
-                    student.save()
-                except (Society.DoesNotExist, ValueError, TypeError):
-                    pass
+            set_foreign_key_relationship(student, 'president_of', original_data.get('president_of'), Society)
+            student.save()
             
-            log_entry.delete()  # Remove log after restoration
+            log_entry.delete()
             return Response({"message": "Student restored successfully!"}, status=status.HTTP_200_OK)
             
         except Exception as e:
