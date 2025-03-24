@@ -24,12 +24,15 @@ export default function EditEventDetails() {
         const response = await apiClient.get(`/api/event/${eventId}/manage/`);
         const data = response.data;
 
-        const mapModule = (mod: any): ExtraModule => ({
-          id: mod.id.toString(),
-          type: mod.type,
-          textValue: mod.text_value || mod.file_value,
-          fileValue: undefined,
-        });
+        const mapModule = (mod: any): ExtraModule => {
+          const fileUrl = mod.file_value || mod.text_value || "";
+          return {
+            id: mod.id.toString(),
+            type: mod.type,
+            textValue: mod.text_value || mod.file_value,
+            fileValue: mod.type === "file" && fileUrl ? fileUrl : undefined,  // 自动修复 fileValue
+          };
+        };
 
         setInitialData({
           title: data.title,

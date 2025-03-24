@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import { apiClient } from "../api";
-import { CircularProgress, Typography, Card, CardContent } from "@mui/material";
-import { format } from "date-fns";
+import { CircularProgress, Typography } from "@mui/material";
 import { CommentSection } from "../components/CommentSection";
 import useAuthCheck from "../hooks/useAuthCheck";
+import { EventDetailLayout } from "../components/EventDetailLayout";
+import { ExtraModule } from "../components/SortableItem";
 
 const CommentsSectionWrapper: React.FC<{ isAuthenticated: boolean; children: React.ReactNode }> = ({
   isAuthenticated,
@@ -23,7 +24,7 @@ const CommentsSectionWrapper: React.FC<{ isAuthenticated: boolean; children: Rea
         <Link to="/login" style={{ textDecoration: "underline", color: "blue" }}>
           login
         </Link>{" "}
-        to view the comments (don't have an account? click{" "}
+        to view the comments (don’t have an account? click{" "}
         <Link to="/register" style={{ textDecoration: "underline", color: "blue" }}>
           here
         </Link>
@@ -39,10 +40,24 @@ const EventDetailPage: React.FC = () => {
   const numericEventId = event_id ? parseInt(event_id, 10) : undefined;
   const [event, setEvent] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const { isAuthenticated, } = useAuthCheck();
-  // const isAuthenticated = Boolean(localStorage.getItem("token"));
+  const { isAuthenticated } = useAuthCheck();
   const [, setComments] = useState<any[]>([]);
   const wsRef = useRef<WebSocket | null>(null);
+  const [userId, setUserId] = useState<number | null>(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await apiClient.get("/api/user/current/");
+        setUserId(res.data.id);
+      } catch (err) {
+        console.error("Failed to fetch user info:", err);
+      }
+    };
+    if (isAuthenticated) {
+      fetchUser();
+    }
+  }, [isAuthenticated]);
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -61,6 +76,7 @@ const EventDetailPage: React.FC = () => {
     fetchEvent();
   }, [numericEventId]);
 
+  // 获取评论
   useEffect(() => {
     const fetchComments = async () => {
       if (!numericEventId || !isAuthenticated) return;
@@ -75,6 +91,7 @@ const EventDetailPage: React.FC = () => {
     fetchComments();
   }, [numericEventId, isAuthenticated]);
 
+  // WebSocket 评论
   useEffect(() => {
     if (!numericEventId || !isAuthenticated) return;
 
@@ -119,28 +136,45 @@ const EventDetailPage: React.FC = () => {
     );
   }
 
-  return (
-    <div style={{ padding: "40px", maxWidth: "800px", margin: "0 auto" }}>
-      <Typography variant="h4" align="center" gutterBottom>
-        {event.title}
-      </Typography>
-      <Card>
-        <CardContent>
-          <Typography variant="body1">
-            <strong>Description:</strong> {event.description}
-          </Typography>
-          <Typography variant="body1">
-            <strong>Date:</strong> {format(new Date(event.date), "yyyy-MM-dd")}
-          </Typography>
-          <Typography variant="body1">
-            <strong>Time:</strong> {event.start_time}
-          </Typography>
-          <Typography variant="body1">
-            <strong>Location:</strong> {event.location || "TBA"}
-          </Typography>
-        </CardContent>
-      </Card>
+  const mapModule = (mod: any): ExtraModule => ({
+    id: mod.id,
+    type: mod.type,
+    textValue: mod.text_value,
+    fileValue: mod.file_value,
+  });
 
+  const isParticipant =
+    userId !== null &&
+    event.current_attendees &&
+    event.current_attendees.some((attendee: any) => attendee.id === userId);
+
+  const isMember = event.is_member;
+
+  const eventData = {
+    title: event.title,
+    mainDescription: event.main_description,
+    date: event.date,
+    startTime: event.start_time,
+    duration: event.duration,
+    location: event.location || "TBA",
+    maxCapacity: event.max_capacity,
+    coverImageUrl: event.cover_image,
+    coverImageFile: null,
+    extraModules: (event.extra_modules || []).map(mapModule),
+    participantModules: (event.participant_modules || []).map(mapModule),
+    isParticipant,
+    isMember,
+    eventId: event.id,
+    hostedBy: event.hosted_by,
+  };
+
+  console.log("userId:", userId);
+  console.log("event.current_attendees:", event.current_attendees);
+  console.log("isParticipant:", isParticipant);
+
+  return (
+    <div style={{ padding: "40px", maxWidth: "1000px", margin: "0 auto" }}>
+      <EventDetailLayout eventData={eventData} />
       <CommentsSectionWrapper isAuthenticated={!!isAuthenticated}>
         <CommentSection eventId={numericEventId as number} />
       </CommentsSectionWrapper>

@@ -55,6 +55,7 @@ export const EventForm: React.FC<EventFormProps> = ({
   const [extraModules, setExtraModules] = useState<ExtraModule[]>(initialData?.extraModules || []);
   const [participantModules, setParticipantModules] = useState<ExtraModule[]>(initialData?.participantModules || []);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewData, setPreviewData] = useState<EventFormProps["initialData"] | null>(null);
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [participantAnchorEl, setParticipantAnchorEl] = useState<null | HTMLElement>(null);
@@ -129,8 +130,40 @@ export const EventForm: React.FC<EventFormProps> = ({
       alert("Please upload a cover image first!");
       return;
     }
+
+    const fixedExtraModules = extraModules.map((mod) => {
+      if (mod.type === "file" && !mod.fileValue && mod.textValue) {
+        return { ...mod, fileValue: mod.textValue };  // 直接用 URL 字符串
+      }
+      return mod;
+    });
+
+    const fixedParticipantModules = participantModules.map((mod) => {
+      if (mod.type === "file" && !mod.fileValue && mod.textValue) {
+        return { ...mod, fileValue: mod.textValue };
+      }
+      return mod;
+    });
+
+    setPreviewData({
+      title,
+      mainDescription,
+      date,
+      startTime,
+      duration,
+      location,
+      maxCapacity,
+      coverImageFile,
+      coverImageUrl: initialData?.coverImageUrl,
+      extraModules: fixedExtraModules,
+      participantModules: fixedParticipantModules,
+      adminReason,
+    });
+
     setPreviewOpen(true);
   };
+
+
   const handleClosePreview = () => setPreviewOpen(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -476,23 +509,19 @@ export const EventForm: React.FC<EventFormProps> = ({
         </Box>
       </form>
 
-      <EventPreview
-        open={previewOpen}
-        onClose={handleClosePreview}
-        eventData={{
-          title,
-          mainDescription,
-          date,
-          startTime,
-          duration,
-          location,
-          maxCapacity,
-          coverImageFile,
-          coverImageUrl: initialData?.coverImageUrl,
-          extraModules,
-          participantModules
-        }}
-      />
+      {previewData && (
+        <EventPreview
+          open={previewOpen}
+          onClose={handleClosePreview}
+          eventData={{
+            ...previewData,
+            isParticipant: true,
+            isMember: true,
+            eventId: 0,
+            hostedBy: 0,
+          }}
+        />
+      )}
 
       <Snackbar
         open={snackbarOpen}

@@ -1,10 +1,10 @@
-import { useContext } from "react";
-import { Box, Typography, useTheme, Button } from "@mui/material";
+import {useContext, useEffect, useState} from "react";
+import { Box, useTheme, Button } from "@mui/material";
 import { DataGrid, GridColDef, GridToolbar } from "@mui/x-data-grid";
 import { tokens } from "../../theme/theme";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { useSettingsStore } from "../../stores/settings-store";
-import { useFetchWebSocket } from "../../hooks/useFetchWebSocket";
+// import { useFetchWebSocket } from "../../hooks/useFetchWebSocket";
 import { fetchPendingRequests } from "./utils"
 import { apiPaths } from "../../api";
 import { updateRequestStatus } from "../../api/requestApi";
@@ -14,7 +14,20 @@ const PendingEventRequest = () => {
   const colors = tokens(theme.palette.mode);
   const { searchTerm } = useContext(SearchContext);
   const { drawer } = useSettingsStore(); 
-  const events = useFetchWebSocket(() => fetchPendingRequests(apiPaths.EVENTS.PENDINGEVENTREQUEST), 'event');
+  // const events = useFetchWebSocket(() => fetchPendingRequests(apiPaths.EVENTS.PENDINGEVENTREQUEST), 'event');
+  const [events, setEvents] = useState([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const data = await fetchPendingRequests(apiPaths.EVENTS.PENDINGEVENTREQUEST);
+        setEvents(data);
+      } catch (error) {
+        console.error("Error fetching pending events:", error);
+      }
+    };
+    fetchData();
+  }, []);
 
 
   const filteredEvents = events.filter((event) =>

@@ -14,7 +14,7 @@ from .views import (
     NewsPublicationRequestView, AdminNewsApprovalView, AdminRepliesListView, ReportReplyView, SearchView,
     MyReportsView, MyReportsWithRepliesView, ReportThreadView, AdminReportsWithRepliesView,
     ReportReplyNotificationsView, AdminEventRequestView, SocietyEventsListView, SocietyEventRequestsListView,
-    EventModulesView, ApproveEventRequestView
+    EventModulesView, StudentSocietyListView, SocietyMemberListView
 )
 from .utils import request_otp, verify_otp
 from .recommendation_views import RecommendedSocietiesView, SocietyRecommendationExplanationView
@@ -175,12 +175,10 @@ urlpatterns = [
     path('news/publication-request/', NewsPublicationRequestView.as_view(), name='news_publication_request'),
     path('news/publication-request/<int:request_id>/', AdminNewsApprovalView.as_view(), name='admin_news_approval'),
 
-    # unofficial admin path
-    path('event-request/<int:request_id>/approve/', ApproveEventRequestView.as_view(), name='approve-event-request'),
-
-
     # test path
     path("society/<int:society_id>/events/", SocietyEventsListView.as_view(), name="society-events-list"),
     path("society/<int:society_id>/event-requests/", SocietyEventRequestsListView.as_view(), name="society-event-requests-list"),
     path('event/<int:event_id>/modules/', EventModulesView.as_view(), name='event-modules'),
+    path("student/<int:student_id>/society/", StudentSocietyListView.as_view()),
+    path("society/<int:society_id>/member/", SocietyMemberListView.as_view()),
 ]

@@ -1913,7 +1913,7 @@ class EventDetailView(APIView):
 
     def get(self, request, event_id):
         event = get_object_or_404(Event, id=event_id, status="Approved")
-        serializer = EventSerializer(event)
+        serializer = EventSerializer(event, context={"request": request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -3335,56 +3335,6 @@ class SearchView(APIView):
             "societies": society_serializer.data
         })
 
-class ApproveEventRequestView(APIView):
-    """
-    Admin审批EventRequest并生成正式Event
-    """
-    permission_classes = [IsAuthenticated]
-
-    def patch(self, request, request_id):
-        user = request.user
-        if not (user.role == "admin" or user.is_super_admin):
-            return Response({"error": "Only admins can approve events."}, status=status.HTTP_403_FORBIDDEN)
-
-        event_request = EventRequest.objects.filter(id=request_id).first()
-        if not event_request:
-            return Response({"error": "EventRequest not found."}, status=status.HTTP_404_NOT_FOUND)
-
-        if event_request.approved:
-            return Response({"message": "This request has already been approved."}, status=status.HTTP_400_BAD_REQUEST)
-
-        event = Event.objects.create(
-            title=event_request.title,
-            main_description=event_request.main_description,
-            cover_image=event_request.cover_image,
-            location=event_request.location,
-            date=event_request.date,
-            start_time=event_request.start_time,
-            duration=event_request.duration,
-            hosted_by=event_request.hosted_by,
-            max_capacity=event_request.max_capacity,
-            status="Upcoming"
-        )
-
-        modules = EventModule.objects.filter(event_request=event_request)
-        for module in modules:
-            EventModule.objects.create(
-                event=event,
-                type=module.type,
-                text_value=module.text_value,
-                file_value=module.file_value,
-                is_participant_only=module.is_participant_only
-            )
-
-        event_request.approved = True
-        event_request.event = event
-        event_request.save()
-
-        return Response({
-            "message": "EventRequest approved and Event created successfully.",
-            "event_id": event.id
-        }, status=status.HTTP_201_CREATED)
-
 class SocietyEventsListView(generics.ListAPIView):
     permission_classes = [AllowAny]
     serializer_class = EventSerializer
@@ -3414,3 +3364,20 @@ class EventModulesView(APIView):
         serializer = EventModuleSerializer(modules, many=True, context={'request': request})
         return Response(serializer.data)
 
+class StudentSocietyListView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, student_id):
+        student = get_object_or_404(Student, id=student_id)
+        societies = Society.objects.filter(society_members=student)
+        serializer = SocietySerializer(societies, many=True, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class SocietyMemberListView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, society_id):
+        society = get_object_or_404(Society, id=society_id)
+        members = society.society_members.all()
+        serializer = StudentSerializer(members, many=True, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)

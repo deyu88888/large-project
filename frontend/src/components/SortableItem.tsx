@@ -10,7 +10,7 @@ export interface ExtraModule {
   id: string;
   type: ExtraModuleType;
   textValue?: string;
-  fileValue?: File;
+  fileValue?: File | string;
 }
 
 interface SortableItemProps {
@@ -42,17 +42,22 @@ export function SortableItem({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const imageSrc =
+  const imageSrc: string | null | undefined =
     mod.type === "image"
-      ? mod.fileValue
+      ? mod.fileValue instanceof File
         ? URL.createObjectURL(mod.fileValue)
+        : typeof mod.fileValue === "string"
+        ? mod.fileValue
         : mod.textValue
       : null;
 
+
   let fileName: string | null = null;
   if (mod.type === "file") {
-    if (mod.fileValue) {
+    if (mod.fileValue instanceof File) {
       fileName = mod.fileValue.name;
+    } else if (typeof mod.fileValue === "string") {
+      fileName = mod.fileValue.split("/").pop() || "Existing File";
     } else if (mod.textValue) {
       fileName = mod.textValue.split("/").pop() || "Existing File";
     }

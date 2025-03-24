@@ -1,6 +1,8 @@
 import datetime
 import json
 
+from django.template.context_processors import request
+
 from api.models import AdminReportRequest, Award, AwardStudent, BroadcastMessage, SiteSettings, User, Student, Society, \
     Event, \
     Notification, Request, SocietyRequest, SocietyShowreel, SocietyShowreelRequest, EventRequest, UserRequest, \
@@ -289,6 +291,7 @@ class EventSerializer(serializers.ModelSerializer):
     current_attendees = StudentSerializer(many=True, read_only=True)
     extra_modules = serializers.SerializerMethodField()
     participant_modules = serializers.SerializerMethodField()
+    is_member = serializers.SerializerMethodField()
 
     class Meta:
         model = Event
@@ -296,7 +299,7 @@ class EventSerializer(serializers.ModelSerializer):
             'id', 'title', 'main_description', 'cover_image', 'date',
             'start_time', 'duration', 'hosted_by', 'location',
             'max_capacity', 'current_attendees', 'status',
-            'extra_modules', 'participant_modules'
+            'extra_modules', 'participant_modules', 'is_member'
         ]
         extra_kwargs = {'hosted_by': {'required': True}}
 
@@ -307,6 +310,15 @@ class EventSerializer(serializers.ModelSerializer):
     def get_participant_modules(self, obj):
         modules = obj.modules.filter(is_participant_only=True)
         return EventModuleSerializer(modules, many=True).data
+
+    def get_is_member(self, obj):
+        request = self.context.get("request")
+        if not request or not request.user.is_authenticated:
+            return False
+        student = getattr(request.user, "student", None)
+        if not student:
+            return False
+        return obj.hosted_by.society_members.filter(id=student.id).exists()
 
 
 class NotificationSerializer(serializers.ModelSerializer):
@@ -435,7 +447,7 @@ class RSVPEventSerializer(serializers.ModelSerializer):
 
         if self.context.get('action') == 'RSVP':
             # Ensure the student is a member of the hosting society
-            if event.hosted_by not in student.societies.all():
+            if not event.hosted_by.society_members.filter(id=student.id).exists():
                 raise serializers.ValidationError("You must be a member of the hosting society to RSVP for this event.")
 
             # Ensure the student has not already RSVP'd

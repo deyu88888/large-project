@@ -468,7 +468,12 @@ class Event(models.Model):
 
     def save(self, *args, **kwargs):
         now = timezone.now()
+        if isinstance(self.date, str):
+            self.date = datetime.strptime(self.date, "%Y-%m-%d").date()
+        if isinstance(self.start_time, str):
+            self.start_time = datetime.strptime(self.start_time, "%H:%M").time()
         event_start = datetime.combine(self.date, self.start_time, tzinfo=dt_timezone.utc)
+
         if self.status == "Pending" and now >= event_start:
             self.status = "Rejected"
         super().save(*args, **kwargs)
