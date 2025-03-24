@@ -85,7 +85,7 @@ export const apiPaths = {
   },
   SOCIETY: {
     All: "/api/dashboard/all-societies",
-    POPULAR_SOCIETIES: "/api/admin/popular-societies/",  // TODO: DONT ADD BACKSLASH
+    POPULAR_SOCIETIES: "/api/dashboard/popular-societies/",  // TODO: DONT ADD BACKSLASH
     RECOMMENDED_SOCIETIES: "/api/recommended-societies", // New endpoint for recommendations
     RECOMMENDATION_EXPLANATION: (id: number) =>
       `/api/society-recommendation/${id}/explanation/`,
@@ -335,7 +335,7 @@ export const getAllEvents = async () => {
 
 export const getUpcomingEvents = async () => {
   try {
-    const response = await apiClient.get("/api/admin/events/upcoming/");
+    const response = await apiClient.get("/api/dashboard/events/upcoming/");
     return response.data;
   } catch (error) {
     console.error("Error fetching upcoming events:", error);
