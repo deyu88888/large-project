@@ -110,20 +110,20 @@ def get_upcoming_events(request):
     )
     seen_ids = set()
     unique_events = []
-    
+
     for event in all_upcoming_events:
         if event['id'] not in seen_ids:
             seen_ids.add(event['id'])
             unique_events.append(event)
             if len(unique_events) >= 4:
                 break
-    
+
     return JsonResponse(unique_events, safe=False)
 
 @api_view(["GET"])
 @permission_classes([])
 def get_sorted_events(request):
-    # Get only upcoming events
+    """Get only upcoming events"""
     events = Event.objects.filter(status="Approved", date__gte=now()).order_by("date", "start_time")
     serializer = EventSerializer(events, many=True)
     return Response(serializer.data)

@@ -2,7 +2,7 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from api.models import Award, AwardStudent
+from api.models import Award, AwardStudent, Student
 from api.serializers import AwardSerializer, AwardStudentSerializer
 from api.views_files.view_utility import get_object_by_id_or_name
 
@@ -87,17 +87,19 @@ class AwardStudentView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, pk=None) -> Response:
-        """List all award assignments or retrieve a specific one if ID is provided"""
-        if pk:
-            award_student, error = get_award_student_if_exists(pk)
-            if error:
-                return error
-
-            serializer = AwardStudentSerializer(award_student)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+        """List all award assignments of current, or specified user"""
+        if not pk:
+            user = request.user
+            pk = user.pk
+        try:
+            student = Student.objects.get(pk=pk)
+        except Student.DoesNotExist:
+            return Response({"error": "Invalid student id."},
+                status=status.HTTP_403_FORBIDDEN
+            )
 
         # List all award assignments
-        awards_students = AwardStudent.objects.filter(student=request.user)
+        awards_students = AwardStudent.objects.filter(student=student)
         serializer = AwardStudentSerializer(awards_students, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
