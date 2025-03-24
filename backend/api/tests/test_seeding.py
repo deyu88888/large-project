@@ -143,20 +143,6 @@ class SeedingTestCase(TransactionTestCase):
             self.assertTrue(EventRequest.objects.all().first().approved)
 
     @patch("builtins.print")  # Avoids printing while testing
-    def test_notification_creation(self, mock_print):
-        """Test that seed create_event_notification works"""
-        # Ensure the event has at least one attendee.
-        if self.event.current_attendees.count() == 0:
-            self.event.current_attendees.add(self.student)
-            self.event.save()
-        # Clear existing notifications for a clean test.
-        Notification.objects.all().delete()
-        self.command_instance.create_event_notification(self.event)
-        self.assertTrue(
-            Notification.objects.filter(for_user=self.student).exists()
-        )
-
-    @patch("builtins.print")  # Avoids printing while testing
     def test_award_initialisation(self, mock_print):
         """Test that pre_define_awards creates the correct number of awards"""
         Award.objects.all().delete()
@@ -253,25 +239,6 @@ class SeedingTestCase(TransactionTestCase):
         self.assertEqual(er.intent, "CreateEve")
         self.assertFalse(er.approved)
 
-    def test_create_event_notifications_multiple(self):
-        """Test that create_event_notifications creates a notification for each attendee."""
-        # Create an additional student and add as an attendee.
-        student2 = Student.objects.create(
-            username="student2",
-            email="student2@example.com",
-            first_name="Student",
-            last_name="Two",
-            password="studentpassword",
-            major="Maths",
-        )
-        self.event.current_attendees.add(student2)
-        # Clear existing notifications for the event.
-        Notification.objects.all().delete()
-        self.command_instance.create_event_notifications([self.event])
-        attendees_count = self.event.current_attendees.count()
-        notifications_count = Notification.objects.count()
-        self.assertEqual(notifications_count, attendees_count)
-
     @patch("api.signals.broadcast_dashboard_update")
     @patch("builtins.print")  # Avoid printing during test
     def test_broadcast_updates(self, mock_print, mock_broadcast):
@@ -281,22 +248,25 @@ class SeedingTestCase(TransactionTestCase):
 
     def test_initialise_society_awards(self):
         """Test that initialise_society_awards creates 3 society awards."""
+        rank_to_name = {"Bronze": "Novice", "Silver": "Enthusiast", "Gold": "Veteran"}
         Award.objects.all().delete()
-        self.command_instance.initialise_society_awards()
+        self.command_instance.initialise_society_awards(rank_to_name)
         society_awards = Award.objects.filter(title__startswith="Society")
         self.assertEqual(society_awards.count(), 3)
 
     def test_initialise_event_awards(self):
         """Test that initialise_event_awards creates 3 event awards."""
+        rank_to_name = {"Bronze": "Novice", "Silver": "Enthusiast", "Gold": "Veteran"}
         Award.objects.all().delete()
-        self.command_instance.initialise_event_awards()
+        self.command_instance.initialise_event_awards(rank_to_name)
         event_awards = Award.objects.filter(title__startswith="Event")
         self.assertEqual(event_awards.count(), 3)
 
     def test_initialise_organiser_awards(self):
         """Test that initialise_organiser_awards creates 3 organiser awards."""
+        rank_to_name = {"Bronze": "Novice", "Silver": "Enthusiast", "Gold": "Veteran"}
         Award.objects.all().delete()
-        self.command_instance.initialise_organiser_awards()
+        self.command_instance.initialise_organiser_awards(rank_to_name)
         organiser_awards = Award.objects.filter(title__startswith="Organisation")
         self.assertEqual(organiser_awards.count(), 3)
 

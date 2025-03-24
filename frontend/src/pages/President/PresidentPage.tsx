@@ -4,35 +4,43 @@ import { useTheme, Box, Typography, Button, Paper, CircularProgress } from "@mui
 import { apiClient } from "../../api";
 import { useAuthStore } from "../../stores/auth-store";
 import { tokens } from "../../theme/theme";
+import { Society } from "../../types/president/society";
+import { Member } from "../../types/president/member";
+import { SocietyIdParams } from "../../types/president/role";
+import { NavigationItem } from "../../types/president/navigation";
 
-interface Society {
-  id: number;
-  name: string;
-  [key: string]: any;
-}
+// interface Society {
+//   id: number;
+//   name: string;
+//   [key: string]: any;
+// }
 
-interface Member {
-  id: number;
-  first_name: string;
-  last_name: string;
-  username: string;
-}
+// interface Member {
+//   id: number;
+//   first_name: string;
+//   last_name: string;
+//   username: string;
+// }
 
 interface RouteParams {
-  society_id: string;
+  societyId: string;
 }
+// interface SocietyIdParams {
+//   society_id: string;
+// }
 
-interface NavigationItem {
-  text: string;
-  path: string;
-  color: string;
-}
+// interface NavigationItem {
+//   text: string;
+//   path: string;
+//   color: string;
+// }
 
 const PresidentPage: React.FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const navigate = useNavigate();
-  const { society_id } = useParams<RouteParams>();
+  const { societyId } = useParams<RouteParams>();
+  const { society_id } = useParams<SocietyIdParams>();
   const [society, setSociety] = useState<Society | null>(null);
   const [pendingMembers, setPendingMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -41,7 +49,10 @@ const PresidentPage: React.FC = () => {
   useEffect(() => {
     const fetchData = async (): Promise<void> => {
       try {
-        const id = society_id || user?.president_of || user?.vice_president_of;
+        // Always prioritize the user's president_of society ID
+        const id = user?.president_of || societyId;
+        console.log(`Using society ID: ${id} for API requests`);
+        
         if (!id) throw new Error("No society ID available");
 
         const societyResponse = await apiClient.get(`/api/manage-society-details/${id}/`);
@@ -57,11 +68,12 @@ const PresidentPage: React.FC = () => {
     };
 
     fetchData();
-  }, [society_id, user]);
+  }, [societyId, user]);
 
   const navigationItems: NavigationItem[] = [
     { text: "Society Details", path: "manage-society-details", color: colors.greenAccent[500] },
     { text: "Society Events", path: "manage-society-events", color: colors.greenAccent[500] },
+    { text: "Manage News", path: "manage-society-news", color: colors.blueAccent[500] },
     { text: "Pending Members", path: "pending-members", color: colors.blueAccent[500] },
     { text: "Report to Admin", path: "report-to-admin", color: colors.redAccent[500] },
     { text: "All Members", path: "view-society-members", color: colors.blueAccent[500] },
@@ -84,6 +96,9 @@ const PresidentPage: React.FC = () => {
       </Box>
     );
   }
+
+  // Prioritize the user's president_of society ID for navigation
+  const currentSocietyId = user?.president_of || societyId || (society ? society.id : null);
 
   return (
     <Box
@@ -108,7 +123,7 @@ const PresidentPage: React.FC = () => {
         {navigationItems.map((item) => (
           <Button
             key={item.text}
-            onClick={() => navigate(item.path)}
+            onClick={() => currentSocietyId && navigate(`/${item.path}/${currentSocietyId}`)}
             sx={{
               backgroundColor: item.color,
               color: theme.palette.mode === "dark" ? colors.primary[900] : "#fff",
@@ -160,7 +175,7 @@ const PresidentPage: React.FC = () => {
 
         {pendingMembers.length > 3 && (
           <Button
-            onClick={() => navigate("pending-members")}
+            onClick={() => currentSocietyId && navigate(`/pending-members/${currentSocietyId}`)}
             sx={{ mt: 2, color: colors.blueAccent[500], textTransform: "none" }}
           >
             View All Pending Members

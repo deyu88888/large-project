@@ -17,10 +17,9 @@ import MenuIcon from "@mui/icons-material/Menu";
 import { useSettingsStore } from "../stores/settings-store";
 import { useAuthStore } from "../stores/auth-store";
 import { SearchContext } from "./layout/SearchContext";
-
 import AdminDrawer from "./layout/AdminDrawer";
 import StudentDrawer from "./layout/StudentDrawer";
-import PresidentDrawer from "./layout/PresidentDrawer"; // Import the president drawer
+import PresidentDrawer from "./layout/PresidentDrawer";
 import { CustomAppBar } from "./layout/drawer/CustomDrawer";
 
 const Layout: React.FC = () => {
@@ -29,9 +28,8 @@ const Layout: React.FC = () => {
   const { searchTerm, setSearchTerm } = useContext(SearchContext);
   const location = useLocation();
   const navigate = useNavigate();
-  const { user } = useAuthStore(); // Get the logged-in user
+  const { user } = useAuthStore();
 
-  // Choose the appropriate drawer:
   // If the user is a president, use the PresidentDrawer.
   // Otherwise, use the admin drawer if the route starts with "/admin", or student drawer for other routes.
   const DrawerComponent = user?.is_president
@@ -40,10 +38,15 @@ const Layout: React.FC = () => {
     ? AdminDrawer
     : StudentDrawer;
 
-  // Define drawer widths
-  const drawerOpenWidth = 240;
-  const drawerClosedWidth = 60;
-  const currentDrawerWidth = drawer ? drawerOpenWidth : drawerClosedWidth;
+  const handleSearch = () => {
+    if (!searchTerm.trim()) 
+      return;
+    if (location.pathname.startsWith("/student")) {
+      navigate(`/student/student-search?q=${encodeURIComponent(searchTerm)}`);
+    } else if (location.pathname.startsWith("/admin")) {
+      setSearchTerm(searchTerm);
+    }
+  };
 
   return (
       <Box sx={{ display: "flex" }}>
@@ -83,12 +86,22 @@ const Layout: React.FC = () => {
                 placeholder="Search"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleSearch();
+                  }
+                }}
               />
-            
-              <IconButton type="button" sx={{ p: 1 }}>
+
+              <IconButton
+                type="button"
+                sx={{ p: 1 }}
+                onClick={handleSearch}
+              >
                 <SearchIcon />
               </IconButton>
             </Box>
+
             <Box display="flex" marginLeft={"auto"}>
               <IconButton
                 onClick={() => {
@@ -125,10 +138,8 @@ const Layout: React.FC = () => {
           </Toolbar>
         </CustomAppBar>
 
-      {/* Drawer */}
       <DrawerComponent drawer={drawer} toggleDrawer={toggleDrawer} location={location} />
 
-      {/* Main content */}
       <Box component="main" sx={{ flexGrow: 1, p: 3, mt: "64px" }}>
         <Outlet />
       </Box>

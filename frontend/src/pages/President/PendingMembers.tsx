@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { apiClient } from "../../api";
+import { PendingMember } from "../../types/president/member";
 
-interface PendingMember {
-  id: number;
-  first_name: string;
-  last_name: string;
-  username: string;
-}
+// interface PendingMember {
+//   id: number;
+//   first_name: string;
+//   last_name: string;
+//   username: string;
+// }
 
 const PendingMembers: React.FC = () => {
   const { societyId } = useParams<{ societyId: string }>();

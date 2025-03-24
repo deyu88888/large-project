@@ -18,26 +18,46 @@ export function PrivateGuard({ children, requiredRole }: PrivateGuardProps) {
     isAuthorized: false,
     loading: true,
   });
-
   const { user, setUser } = useAuthStore();
   const location = useLocation();
 
+  // Public routes: Only unauthenticated users should be allowed here.
+  const publicRoutes = ["/", "/login", "/register"];
+  const isPublicRoute = publicRoutes.includes(location.pathname);
+
+  // Authenticate the user by validating token and fetching user data.
   const authenticate = useCallback(async () => {
     try {
       const token = localStorage.getItem(ACCESS_TOKEN);
-      if (!token) throw new Error("No access token available");
+      if (!token) {
+        setAuthState({ isAuthorized: false, loading: false });
+        return;
+      }
 
       const isTokenValid = await validateToken(token);
-      if (!isTokenValid) await handleTokenRefresh();
+      if (!isTokenValid) {
+        localStorage.removeItem(ACCESS_TOKEN);
+        const refreshToken = localStorage.getItem(REFRESH_TOKEN);
+        if (!refreshToken) {
+          setAuthState({ isAuthorized: false, loading: false });
+          return;
+        }
+        try {
+          await handleTokenRefresh();
+        } catch (error) {
+          setAuthState({ isAuthorized: false, loading: false });
+          return;
+        }
+      }
 
-      const userData = await fetchUserData();
-      console.log("%c[PrivateGuard] User data fetched:", "color: green;", userData);
-
-      setUser(userData);
-
-      setAuthState({ isAuthorized: true, loading: false });
+      try {
+        const userData = await fetchUserData();
+        setUser(userData);
+        setAuthState({ isAuthorized: true, loading: false });
+      } catch (error) {
+        setAuthState({ isAuthorized: false, loading: false });
+      }
     } catch (error) {
-      console.error("[PrivateGuard] Authentication failed:", error);
       setAuthState({ isAuthorized: false, loading: false });
     }
   }, [setUser]);
@@ -48,8 +68,8 @@ export function PrivateGuard({ children, requiredRole }: PrivateGuardProps) {
 
   const validateToken = async (token: string): Promise<boolean> => {
     try {
-      const { exp: tokenExpiration } = jwtDecode<{ exp: number }>(token);
-      return tokenExpiration > Date.now() / 1000;
+      const { exp } = jwtDecode<{ exp: number }>(token);
+      return exp > Date.now() / 1000;
     } catch {
       return false;
     }
@@ -58,7 +78,6 @@ export function PrivateGuard({ children, requiredRole }: PrivateGuardProps) {
   const handleTokenRefresh = async () => {
     const refreshToken = localStorage.getItem(REFRESH_TOKEN);
     if (!refreshToken) throw new Error("No refresh token available");
-
     const response = await apiClient.post(apiPaths.USER.REFRESH, { refresh: refreshToken });
     if (response.status === 200 && response.data?.access) {
       localStorage.setItem(ACCESS_TOKEN, response.data.access);
@@ -68,27 +87,35 @@ export function PrivateGuard({ children, requiredRole }: PrivateGuardProps) {
   };
 
   const fetchUserData = async () => {
-    const response = await apiClient.get(apiPaths.USER.CURRENT);
-    return response.data;
+    try {
+      const response = await apiClient.get(apiPaths.USER.CURRENT);
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 404) {
+        const fallback = await apiClient.get(`${apiPaths.USER.CURRENT}/`);
+        return fallback.data;
+      }
+      throw error;
+    }
   };
 
   if (authState.loading) return <LoadingView />;
-  
+
+  // If not authorized, only allow access to public routes.
+  if (!authState.isAuthorized) {
+    return isPublicRoute ? <>{children}</> : <Navigate to="/" replace />;
+  }
+
+  // If authorized, disallow access to public routes.
+  if (authState.isAuthorized && isPublicRoute) {
+    return <Navigate to={user?.role === "admin" ? "/admin" : "/student"} replace />;
+  }
+
+  // If a specific role is required and the user does not have it, redirect accordingly.
   if (requiredRole && user?.role !== requiredRole) {
     return <Navigate to={`/${user?.role}`} replace />;
   }
 
-  if (!authState.isAuthorized) {
-    if (location.pathname === "/") {
-      return children;
-    }
-    return <Navigate to="/login" state={{ from: location }} replace />;
-  }
-  
-  if (location.pathname === "/" && user?.role) {
-    const roleRedirect = user.role === "admin" ? "/admin" : "/student";
-    return <Navigate to={roleRedirect} replace />;
-  }
-
+  // Otherwise, render the protected component.
   return <>{children}</>;
 }

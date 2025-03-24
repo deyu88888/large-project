@@ -1,4 +1,4 @@
-import React, { ReactNode, useState } from "react";
+import React, { ReactNode, useEffect, useState, useCallback } from "react";
 import { Box, Tabs, Tab, useTheme, Typography } from "@mui/material";
 import { tokens } from "../../theme/theme";
 import SocietyList from "./SocietyList";
@@ -6,73 +6,152 @@ import SocietyListRejected from "./RejectedSocietiesList";
 import PendingSocietyRequest from "./SocietyCreationRequests";
 import PendingDescriptionRequest from "./SocietyDesChangeRequest";
 
-const CustomTabPanel = ({ children, value, index }: { children: ReactNode, value: number, index: number }) => (
+/**
+ * Props for TabPanel component
+ */
+interface TabPanelProps {
+  children: ReactNode;
+  value: number;
+  index: number;
+}
+
+/**
+ * CustomTabPanel component to conditionally render tab content
+ */
+const CustomTabPanel: React.FC<TabPanelProps> = ({ children, value, index }) => (
   value === index ? (
-    <Box role="tabpanel">
+    <Box 
+      role="tabpanel"
+      id={`society-tabpanel-${index}`}
+      aria-labelledby={`society-tab-${index}`}
+    >
       {children}
     </Box>
   ) : null
 );
 
-const tabs = [
+/**
+ * Props for tab accessibility
+ */
+const a11yProps = (index: number) => {
+  return {
+    id: `society-tab-${index}`,
+    'aria-controls': `society-tabpanel-${index}`,
+  };
+};
+
+/**
+ * LocalStorage key for active tab
+ */
+const ACTIVE_TAB_KEY = "activeTab";
+
+/**
+ * Tab configuration for society management
+ */
+const TABS = [
   { label: "Current societies", component: <SocietyList /> },
   { label: "Pending societies", component: <PendingSocietyRequest /> },
   { label: "Rejected societies", component: <SocietyListRejected /> },
   { label: "Description requests", component: <PendingDescriptionRequest /> },
 ];
 
-const ManageSocieties = () => {
+/**
+ * ManageSocieties component provides a tabbed interface for society management
+ */
+const ManageSocieties: React.FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
 
-  const [value, setValue] = useState<number>(() => {
-    const savedTab = localStorage.getItem("activeTab");
-    return savedTab ? parseInt(savedTab, 10) : 0;
+  /**
+   * Initialize tab state from localStorage
+   */
+  const [activeTab, setActiveTab] = useState<number>(() => {
+    try {
+      const savedTab = localStorage.getItem(ACTIVE_TAB_KEY);
+      return savedTab ? parseInt(savedTab, 10) : 0;
+    } catch (error) {
+      console.error("Error parsing saved tab value:", error);
+      return 0;
+    }
   });
 
-  const handleChange = (_: React.SyntheticEvent, newValue: number) => {
-    setValue(newValue);
-    localStorage.setItem("activeTab", newValue.toString());
-  };
+  /**
+   * Save tab preference to localStorage
+   */
+  const saveTabPreference = useCallback((tabIndex: number) => {
+    try {
+      localStorage.setItem(ACTIVE_TAB_KEY, tabIndex.toString());
+    } catch (error) {
+      console.error("Error saving tab preference:", error);
+    }
+  }, []);
+
+  /**
+   * Handle tab change
+   */
+  const handleTabChange = useCallback((_: React.SyntheticEvent, newValue: number) => {
+    setActiveTab(newValue);
+    saveTabPreference(newValue);
+  }, [saveTabPreference]);
+
+  /**
+   * Save tab preference on unmount
+   */
+  useEffect(() => {
+    return () => {
+      saveTabPreference(activeTab);
+    };
+  }, [activeTab, saveTabPreference]);
 
   return (
     <Box
       sx={{
         height: "calc(100vh - 64px)",
-        backgroundColor: "primary", 
+        backgroundColor: colors.primary[400],
+        padding: 2,
       }}
     >
       <Typography
         variant="h1"
-        sx={[
-          { color: colors.grey[100] },
-          { fontSize: "1.75rem", fontWeight: 800, mb: 1 },
-        ]}
+        sx={{
+          color: colors.grey[100],
+          fontSize: "1.75rem", 
+          fontWeight: 800, 
+          marginBottom: 2
+        }}
       >
         Manage Societies
       </Typography>
+      
       <Box
         sx={{
           borderBottom: 1,
           borderColor: "divider",
-          color: "colors.grey[200]",
         }}
       >
         <Tabs
-          value={value}
-          onChange={handleChange}
-          aria-label="society tabs"
+          value={activeTab}
+          onChange={handleTabChange}
+          aria-label="Society management tabs"
           textColor="secondary"
           indicatorColor="secondary"
         >
-          {tabs.map((tab, index) => (
-            <Tab key={index} label={tab.label} />
+          {TABS.map((tab, index) => (
+            <Tab 
+              key={`tab-${index}`} 
+              label={tab.label} 
+              {...a11yProps(index)}
+            />
           ))}
         </Tabs>
       </Box>
 
-      {tabs.map((tab, index) => (
-        <CustomTabPanel key={index} value={value} index={index}>
+      {TABS.map((tab, index) => (
+        <CustomTabPanel 
+          key={`panel-${index}`} 
+          value={activeTab} 
+          index={index}
+        >
           {tab.component}
         </CustomTabPanel>
       ))}

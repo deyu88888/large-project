@@ -1,4 +1,4 @@
-import React, { useState, useEffect, ChangeEvent, FormEvent } from "react";
+import React, { useState, useEffect, ChangeEvent, FormEvent, useCallback, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   Box,
@@ -8,32 +8,83 @@ import {
   CircularProgress,
   Paper,
   Grid,
+  Snackbar,
+  Alert,
+  Tooltip,
 } from "@mui/material";
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useTheme } from "@mui/material/styles";
-import { apiClient, apiPaths } from "../../api.ts";
-import { useAuthStore } from "../../stores/auth-store.ts";
-import { tokens } from "../../theme/theme.ts";
-import { Society } from "../../types.ts";
+import { apiClient, apiPaths } from "../../api";
+import { tokens } from "../../theme/theme";
+import { Society } from "../../types";
 
+/**
+ * Interface for form validation errors
+ */
+interface FormErrors {
+  name?: string;
+  description?: string;
+  category?: string;
+  tags?: string;
+  [key: string]: string | undefined;
+}
 
+/**
+ * Interface for notification state
+ */
+interface Notification {
+  open: boolean;
+  message: string;
+  severity: "success" | "error" | "info" | "warning";
+}
+
+/**
+ * ViewSociety component for viewing and editing society details
+ */
 const ViewSociety: React.FC = () => {
+  // Hooks
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
-  const { user } = useAuthStore();
   const navigate = useNavigate();
   const { society_id } = useParams<{ society_id: string }>();
   const societyId = Number(society_id);
 
+  // State management
   const [society, setSociety] = useState<Society | null>(null);
   const [formData, setFormData] = useState<Society | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [notification, setNotification] = useState<Notification>({
+    open: false,
+    message: "",
+    severity: "info",
+  });
 
-  useEffect(() => {
-    fetchSociety();
-  }, []);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success" as "success" | "error"
+  });
 
-  const fetchSociety = async () => {
+  /**
+   * Show notification message
+   */
+  const showNotification = useCallback(
+    (message: string, severity: "success" | "error" | "info" | "warning" = "info") => {
+      setNotification({
+        open: true,
+        message,
+        severity,
+      });
+    },
+    []
+  );
+  
+  /**
+   * Fetch society details from API
+   */
+  const fetchSociety = useCallback(async () => {
     try {
       setLoading(true);
       const response = await apiClient.get(apiPaths.USER.ADMINSOCIETYVIEW(societyId));
@@ -43,167 +94,445 @@ const ViewSociety: React.FC = () => {
         social_media_links: response.data.social_media_links || {},
         tags: response.data.tags || [],
       });
+      setSnackbar({
+        open: true,
+        message: "Society updated successfully!",
+        severity: "success"
+      });
     } catch (error) {
-      console.error("Error fetching society details", error);
+      console.error("Error fetching society details:", error);
+      showNotification("Failed to load society details", "error");
     } finally {
       setLoading(false);
     }
-  };
+  }, [societyId, showNotification]);
 
-  const handleChange = (
-    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prevFormData) =>
-      prevFormData ? { ...prevFormData, [name]: value } : null
-    );
-  };
+  // Load society data on component mount
+  useEffect(() => {
+    fetchSociety();
+  }, [fetchSociety]);
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!formData || !society) return;
-    try {
-      setSaving(true);
-
-      const formDataToSend = new FormData();
-      formDataToSend.append("name", formData.name);
-      formDataToSend.append("description", formData.description);
-      formDataToSend.append("category", formData.category);
-      formDataToSend.append("timetable", formData.timetable);
-      formDataToSend.append("membership_requirements", formData.membership_requirements);
-      formDataToSend.append("upcoming_projects_or_plans", formData.upcoming_projects_or_plans);
-      formDataToSend.append("tags", JSON.stringify(formData.tags));
-
-      Object.entries(formData.social_media_links).forEach(([platform, link]) => {
-        formDataToSend.append(`social_media_links[${platform}]`, link);
-      });
-
-      if (formData.icon && formData.icon instanceof File) {
-        formDataToSend.append("icon", formData.icon);
+  /**
+   * Handle form field changes
+   */
+  const handleChange = useCallback(
+    (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      const { name, value } = e.target;
+      setFormData((prevFormData) =>
+        prevFormData ? { ...prevFormData, [name]: value } : null
+      );
+      
+      // Clear error when field is edited
+      if (errors[name]) {
+        setErrors((prev) => ({ ...prev, [name]: undefined }));
       }
+    },
+    [errors]
+  );
 
-      await apiClient.patch(`/api/admin-manage-society-details/${societyId}`, formDataToSend, {
-        headers: { "Content-Type": "multipart/form-data" },
+  /**
+   * Handle tags field change with special processing
+   */
+  const handleTagsChange = useCallback(
+    (e: ChangeEvent<HTMLInputElement>) => {
+      if (!formData) return;
+      
+      const tagsValue = e.target.value;
+      const tagsArray = tagsValue
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter((tag) => tag.length > 0);
+      
+      setFormData((prevData) => {
+        if (!prevData) return null;
+        return {
+          ...prevData,
+          tags: tagsArray,
+        };
       });
+      
+      if (errors.tags) {
+        setErrors((prev) => ({ ...prev, tags: undefined }));
+      }
+    },
+    [formData, errors.tags]
+  );
 
-      alert("Society updated successfully!");
-    } catch (error) {
-      console.error("Error updating society", error);
-      alert("There was an error updating the society.");
-    } finally {
-      setSaving(false);
+  /**
+   * Validate form before submission
+   */
+  const validateForm = useCallback((): boolean => {
+    if (!formData) return false;
+    
+    const newErrors: FormErrors = {};
+    let isValid = true;
+
+    // Required fields validation
+    if (!formData.name?.trim()) {
+      newErrors.name = "Society name is required";
+      isValid = false;
     }
-  };
 
+    if (!formData.description?.trim()) {
+      newErrors.description = "Description is required";
+      isValid = false;
+    }
+
+    if (!formData.category?.trim()) {
+      newErrors.category = "Category is required";
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  }, [formData]);
+
+  /**
+   * Handle notification close
+   */
+  const handleNotificationClose = useCallback(() => {
+    setNotification((prev) => ({ ...prev, open: false }));
+  }, []);
+
+  /**
+   * Handle form submission
+   */
+  const handleSubmit = useCallback(
+    async (e: FormEvent) => {
+      e.preventDefault();
+      if (!formData || !society) return;
+      
+      if (!validateForm()) {
+        showNotification("Please correct the errors in the form", "error");
+        return;
+      }
+      
+      try {
+        setSaving(true);
+
+        const formDataToSend = new FormData();
+        formDataToSend.append("name", formData.name);
+        formDataToSend.append("description", formData.description);
+        formDataToSend.append("category", formData.category);
+        
+        if (formData.timetable) {
+          formDataToSend.append("timetable", formData.timetable);
+        }
+        
+        if (formData.membership_requirements) {
+          formDataToSend.append("membership_requirements", formData.membership_requirements);
+        }
+        
+        if (formData.upcoming_projects_or_plans) {
+          formDataToSend.append("upcoming_projects_or_plans", formData.upcoming_projects_or_plans);
+        }
+        
+        formDataToSend.append("tags", JSON.stringify(formData.tags));
+
+        // Add social media links if they exist
+        if (formData.social_media_links && typeof formData.social_media_links === 'object') {
+          Object.entries(formData.social_media_links).forEach(([platform, link]) => {
+            if (link) {
+              formDataToSend.append(`social_media_links[${platform}]`, link);
+            }
+          });
+        }
+
+        // Add icon if it's a File
+        if (formData.icon && formData.icon instanceof File) {
+          formDataToSend.append("icon", formData.icon);
+        }
+
+        await apiClient.patch(
+          `/api/admin-manage-society-details/${societyId}`, 
+          formDataToSend, 
+          {
+            headers: { "Content-Type": "multipart/form-data" },
+          }
+        );
+
+        showNotification("Society updated successfully!", "success");
+        await fetchSociety(); // Refresh data after successful update
+      } catch (error) {
+        console.error("Error updating society:", error);
+        showNotification("Failed to update society", "error");
+      } finally {
+        setSaving(false);
+      }
+    },
+    [formData, society, societyId, validateForm, showNotification, fetchSociety]
+  );
+
+  /**
+   * Reset form to original values
+   */
+  const handleReset = useCallback(() => {
+    if (society) {
+      setFormData({
+        ...society,
+        social_media_links: society.social_media_links || {},
+        tags: society.tags || [],
+      });
+      setErrors({});
+      showNotification("Form has been reset to original values", "info");
+    }
+  }, [society, showNotification]);
+
+  /**
+   * Navigate back to previous screen
+   */
+  const handleGoBack = useCallback(() => {
+    navigate(-1);
+  }, [navigate]);
+
+  // Memoized text field props for consistent styling
+  const commonTextFieldProps = useMemo(() => ({
+    variant: "outlined" as const,
+    fullWidth: true,
+  }), []);
+
+  // Loading state UI
   if (loading || !formData) {
     return (
-      <Box display="flex" alignItems="center" justifyContent="center" minHeight="100vh">
-        <CircularProgress color="secondary" />
+      <Box 
+        display="flex" 
+        alignItems="center" 
+        justifyContent="center" 
+        minHeight="100vh"
+        flexDirection="column"
+        gap={2}
+      >
+        <CircularProgress color="secondary" size={40} />
+        <Typography variant="h6" color="text.secondary">
+          Loading society details...
+        </Typography>
       </Box>
     );
   }
-  const handleGoBack = () => {
-    navigate(-1);
-  };
 
   return (
-    <Box minHeight="100vh" p={4}>
-        
-  <Button variant="contained" onClick={handleGoBack} sx={{ mb: 2 }}>
-        ← Back
-      </Button>
-      <Typography variant="h2" textAlign="center" mb={4}>
+    <Box 
+      minHeight="100vh" 
+      p={4}
+      sx={{
+        backgroundColor: colors.primary[500],
+        transition: "all 0.3s ease",
+      }}
+    >
+      <Tooltip title="Go back">
+        <Button 
+          variant="contained" 
+          onClick={handleGoBack} 
+          sx={{ 
+            mb: 2,
+            borderRadius: "8px",
+          }}
+          startIcon={<ArrowBackIcon />}
+        >
+          Back
+        </Button>
+      </Tooltip>
+      
+      <Typography 
+        variant="h2" 
+        textAlign="center" 
+        mb={4}
+        color={colors.grey[100]}
+        fontWeight="bold"
+      >
         View Society Details
       </Typography>
 
-      <Paper sx={{ maxWidth: "800px", mx: "auto", p: 4, borderRadius: "8px", boxShadow: 3 }}>
+      <Paper 
+        elevation={4}
+        sx={{ 
+          maxWidth: "800px", 
+          mx: "auto", 
+          p: { xs: 2, sm: 4 }, 
+          borderRadius: "12px", 
+          boxShadow: 3,
+          backgroundColor: colors.primary[400],
+          transition: "all 0.3s ease",
+        }}
+      >
         <form onSubmit={handleSubmit}>
-          <Grid container spacing={2}>
+          <Grid container spacing={3}>
             <Grid item xs={12}>
               <TextField
-                fullWidth
+                {...commonTextFieldProps}
                 label="Society Name"
                 name="name"
-                value={formData.name}
+                value={formData.name || ""}
                 onChange={handleChange}
+                error={Boolean(errors.name)}
+                helperText={errors.name}
+                required
+                inputProps={{ maxLength: 100 }}
               />
             </Grid>
 
             <Grid item xs={12}>
               <TextField
-                fullWidth
+                {...commonTextFieldProps}
                 label="Description"
                 name="description"
                 multiline
-                rows={3}
-                value={formData.description}
+                rows={4}
+                value={formData.description || ""}
                 onChange={handleChange}
+                error={Boolean(errors.description)}
+                helperText={errors.description}
+                required
+                inputProps={{ maxLength: 1000 }}
               />
             </Grid>
 
-            <Grid item xs={6}>
+            <Grid item xs={12} md={6}>
               <TextField
-                fullWidth
+                {...commonTextFieldProps}
                 label="Category"
                 name="category"
-                value={formData.category}
+                value={formData.category || ""}
                 onChange={handleChange}
+                error={Boolean(errors.category)}
+                helperText={errors.category}
+                required
+                inputProps={{ maxLength: 50 }}
               />
             </Grid>
 
-            <Grid item xs={6}>
+            <Grid item xs={12} md={6}>
               <TextField
-                fullWidth
+                {...commonTextFieldProps}
                 label="Leader"
                 name="leader"
-                value={formData.leader}
+                value={formData.leader || ""}
                 onChange={handleChange}
+                disabled
               />
             </Grid>
 
-            <Grid item xs={6}>
+            <Grid item xs={12} md={6}>
               <TextField
-                fullWidth
+                {...commonTextFieldProps}
                 label="Approved By"
                 name="approved_by"
-                value={formData.approved_by}
+                value={formData.approved_by || ""}
                 onChange={handleChange}
+                disabled
               />
             </Grid>
 
-            <Grid item xs={6}>
+            <Grid item xs={12} md={6}>
               <TextField
-                fullWidth
+                {...commonTextFieldProps}
                 label="Status"
                 name="status"
-                value={formData.status}
+                value={formData.status || ""}
                 onChange={handleChange}
+                disabled
               />
             </Grid>
 
             <Grid item xs={12}>
               <TextField
-                fullWidth
+                {...commonTextFieldProps}
+                label="Membership Requirements"
+                name="membership_requirements"
+                multiline
+                rows={2}
+                value={formData.membership_requirements || ""}
+                onChange={handleChange}
+                inputProps={{ maxLength: 500 }}
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <TextField
+                {...commonTextFieldProps}
+                label="Upcoming Projects or Plans"
+                name="upcoming_projects_or_plans"
+                multiline
+                rows={2}
+                value={formData.upcoming_projects_or_plans || ""}
+                onChange={handleChange}
+                inputProps={{ maxLength: 500 }}
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <TextField
+                {...commonTextFieldProps}
                 label="Tags (comma separated)"
                 name="tags"
-                value={formData.tags.join(", ")}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    tags: e.target.value.split(",").map((tag) => tag.trim()),
-                  })
-                }
+                value={Array.isArray(formData.tags) ? formData.tags.join(", ") : ""}
+                onChange={handleTagsChange}
+                error={Boolean(errors.tags)}
+                helperText={errors.tags || "Enter tags separated by commas"}
+                placeholder="e.g., academic, sports, cultural"
+                inputProps={{ maxLength: 200 }}
               />
             </Grid>
           </Grid>
 
-          <Box mt={3} textAlign="center">
-            <Button type="submit" variant="contained" disabled={saving}>
-              {saving ? "Saving..." : "Save Changes"}
+          <Box 
+            mt={4} 
+            display="flex" 
+            justifyContent="center" 
+            gap={2}
+            flexWrap="wrap"
+          >
+            <Button 
+              type="button" 
+              variant="outlined" 
+              onClick={handleReset}
+              disabled={saving}
+              sx={{ 
+                minWidth: 100,
+                borderRadius: "8px",
+              }}
+            >
+              Reset
+            </Button>
+            <Button 
+              type="submit" 
+              variant="contained" 
+              color="primary"
+              disabled={saving}
+              sx={{ 
+                minWidth: 150,
+                borderRadius: "8px",
+              }}
+            >
+              {saving ? (
+                <Box display="flex" alignItems="center" gap={1}>
+                  <CircularProgress size={20} color="inherit" />
+                  <span>Saving...</span>
+                </Box>
+              ) : (
+                "Save Changes"
+              )}
             </Button>
           </Box>
         </form>
       </Paper>
+
+      <Snackbar
+        open={notification.open}
+        autoHideDuration={6000}
+        onClose={handleNotificationClose}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert 
+          onClose={handleNotificationClose} 
+          severity={notification.severity}
+          variant="filled"
+          sx={{ width: "100%" }}
+          elevation={6}
+        >
+          {notification.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

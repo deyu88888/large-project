@@ -38,6 +38,7 @@ export type SocietyEvent = {        // avoid naming conflicts with JavaScript's 
     duration: string;
     hostedBy: number;
     location: string;
+    status?: "upcoming" | "ongoing" | "completed" | "cancelled";
   };
 
 export type Student = {
@@ -56,7 +57,8 @@ export type Student = {
   
 export type Report = {
     id: number;
-    from_student: string;
+    from_student: string | null;
+    email?: string | null;
     report_type: string;
     subject: string;
     details: string;
@@ -94,8 +96,80 @@ export type ReportReply = {
 }
 
 export type Admin = {
-  firstName: string;
-  lastName: string;
+  id: number;
+  first_name: string;
+  last_name: string;
   username: string;
   email: string;
+  is_active: boolean;
+  role: string;
+  is_super_admin: boolean;
+  full_name?: string;
+  following?: number[];
+  followers?: number[];
+};
+
+export type StatData = {
+  totalSocieties: number;
+  totalEvents: number;
+  pendingApprovals: number;
+  activeMembers: number;
+}
+
+export type Activity = {
+  description: string;
+}
+
+export type Notification = {
+  message: string;
+}
+
+export type CalendarEvent = {
+  id: number;
+  title: string;
+  start: Date;
+  end: Date;
+}
+
+export type Introduction = {
+  title: string;
+  content: string[];
+}
+
+export type RawEvent = {
+  id: number;
+  title: string;
+  date: string;
+  startTime: string;
+  start_time?: string;
+  duration?: string;
+}
+
+export type TabsProps = {
+  activeTab: string;
+  setActiveTab: (tab: string) => void;
+  children: React.ReactNode;
+}
+
+export type TabPanelProps = {
+  label: string;
+  children: React.ReactNode;
+}
+
+export type SectionCardProps = {
+  title: string;
+  children: React.ReactNode;
+}
+
+export type StatCardProps ={
+  title: string;
+  value: number;
+  color: string;
+}
+
+export type NavigationItem = {
+  label: string;
+  icon: React.ReactNode;
+  ref: React.RefObject<HTMLElement> | null;
+  scrollToSection: () => void;
 }

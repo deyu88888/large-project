@@ -1,6 +1,6 @@
-import React, { useEffect, useState, useContext } from 'react';
-import { Box, Button, Typography, useTheme, Alert, Chip } from "@mui/material";
-import { DataGrid, GridToolbar } from "@mui/x-data-grid";
+import React, { useEffect, useState, useContext, useCallback, useMemo } from 'react';
+import { Box, Button, Typography, useTheme, Alert, Chip, CircularProgress } from "@mui/material";
+import { DataGrid, GridToolbar, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 import { tokens } from "../../theme/theme";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { useSettingsStore } from "../../stores/settings-store";
@@ -8,56 +8,88 @@ import { fetchReportsWithReplies } from './fetchReports';
 import { ReportReply } from '../../types';
 import { useNavigate } from 'react-router-dom';
 
+/**
+ * ReportRepliesList Component
+ * Displays a list of reports that have been replied to and need further attention
+ */
 const ReportRepliesList: React.FC = () => {
     const theme = useTheme();
     const colors = tokens(theme.palette.mode);
-    const [reports, setReports] = useState([]);
-    const [error, setError] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const [reports, setReports] = useState<any[]>([]);
+    const [error, setError] = useState<string | null>(null);
+    const [loading, setLoading] = useState<boolean>(true);
     const { searchTerm } = useContext(SearchContext);
     const { drawer } = useSettingsStore();
     const navigate = useNavigate();
+    
+    const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes in milliseconds
   
+    /**
+     * Load reports from the API
+     */
+    const loadReports = useCallback(async () => {
+      try {
+        setLoading(true);
+        const data = await fetchReportsWithReplies();
+        setReports(data);
+        setError(null);
+      } catch (error) {
+        setError("Failed to fetch reports with replies.");
+        console.error("Error fetching reports:", error);
+      } finally {
+        setLoading(false);
+      }
+    }, []);
+  
+    // Load reports on component mount and set up refresh interval
     useEffect(() => {
-      const loadReports = async () => {
-        try {
-          setLoading(true);
-          const data = await fetchReportsWithReplies();
-          setReports(data);
-          setError(null);
-        } catch (error) {
-          setError("Failed to fetch reports with replies.");
-          console.error("Error fetching reports:", error);
-        } finally {
-          setLoading(false);
-        }
-      };
-  
       loadReports();
       
       // Refresh data every 5 minutes
-      const intervalId = setInterval(loadReports, 5 * 60 * 1000);
+      const intervalId = setInterval(loadReports, REFRESH_INTERVAL);
       
+      // Clean up interval on component unmount
       return () => clearInterval(intervalId);
+    }, [loadReports]);
+  
+    /**
+     * Navigate to report thread view
+     */
+    const handleViewThread = useCallback((reportId: number | string) => {
+      navigate(`/admin/report-thread/${reportId}`);
+    }, [navigate]);
+  
+    /**
+     * Navigate to reply form
+     */
+    const handleReply = useCallback((reportId: number | string) => {
+      navigate(`/admin/report-list/${reportId}/reply`);
+    }, [navigate]);
+  
+    /**
+     * Format date to locale string
+     */
+    const formatDate = useCallback((dateString: string) => {
+      try {
+        return new Date(dateString).toLocaleString();
+      } catch (error) {
+        return "Invalid date";
+      }
     }, []);
   
     // Filter reports based on search term
-    const filteredReports = reports.filter((report) =>
-      Object.values(report)
-        .join(" ")
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase())
+    const filteredReports = useMemo(() => 
+      reports.filter((report) =>
+        Object.values(report)
+          .join(" ")
+          .toLowerCase()
+          .includes((searchTerm || '').toLowerCase())
+      ),
+      [reports, searchTerm]
     );
   
-    const handleViewThread = (reportId) => {
-      navigate(`/admin/report-thread/${reportId}`);
-    };
-  
-    const handleReply = (reportId) => {
-      navigate(`/admin/report-list/${reportId}/reply`);
-    };
-  
-    const columns = [
+    // Column definitions
+    const columns: GridColDef[] = useMemo(() => [
       { field: "id", headerName: "ID", flex: 0.5 },
       { field: "subject", headerName: "Subject", flex: 1.5 },
       { field: "from_student_name", headerName: "From", flex: 1 },
@@ -65,18 +97,16 @@ const ReportRepliesList: React.FC = () => {
         field: "latest_reply_content", 
         headerName: "Latest Reply", 
         flex: 2,
-        renderCell: (params) => {
-          return (
-            <Box>
-              <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                {params.row.latest_reply.replied_by}:
-              </Typography>
-              <Typography variant="body2" noWrap>
-                {params.row.latest_reply.content}
-              </Typography>
-            </Box>
-          );
-        }
+        renderCell: (params: GridRenderCellParams) => (
+          <Box>
+            <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+              {params.row.latest_reply.replied_by}:
+            </Typography>
+            <Typography variant="body2" noWrap title={params.row.latest_reply.content}>
+              {params.row.latest_reply.content}
+            </Typography>
+          </Box>
+        )
       },
       { 
         field: "status", 
@@ -95,47 +125,57 @@ const ReportRepliesList: React.FC = () => {
         field: "latest_reply_date", 
         headerName: "Latest Reply Date", 
         flex: 1.2,
-        renderCell: (params) => {
-          return new Date(params.row.latest_reply.created_at).toLocaleString();
-        }
+        renderCell: (params: GridRenderCellParams) => (
+          <Typography variant="body2">
+            {formatDate(params.row.latest_reply.created_at)}
+          </Typography>
+        )
       },
       { 
         field: "requested_at", 
         headerName: "Report Date", 
         flex: 1.2,
-        renderCell: (params) => new Date(params.row.requested_at).toLocaleString() 
+        renderCell: (params: GridRenderCellParams) => (
+          <Typography variant="body2">
+            {formatDate(params.row.requested_at)}
+          </Typography>
+        )
       },
       {
         field: "actions",
         headerName: "Actions",
         flex: 1,
-        renderCell: (params) => {
-          return (
-            <Box sx={{ display: 'flex', gap: '8px' }}>
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={() => handleViewThread(params.row.id)}
-                size="small"
-              >
-                View Thread
-              </Button>
-              <Button
-                variant="contained"
-                color="error"
-                onClick={() => handleReply(params.row.id)}
-                size="small"
-              >
-                Reply
-              </Button>
-            </Box>
-          );
-        }
+        renderCell: (params: GridRenderCellParams) => (
+          <Box sx={{ display: 'flex', gap: '8px' }}>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => handleViewThread(params.row.id)}
+              size="small"
+            >
+              View Thread
+            </Button>
+            <Button
+              variant="contained"
+              color="error"
+              onClick={() => handleReply(params.row.id)}
+              size="small"
+            >
+              Reply
+            </Button>
+          </Box>
+        )
       }
-    ];
+    ], [handleViewThread, handleReply, formatDate]);
   
-    if (loading) {
-      return <Typography>Loading reports...</Typography>;
+    // Show loading state
+    if (loading && reports.length === 0) {
+      return (
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+          <CircularProgress />
+          <Typography sx={{ ml: 2 }}>Loading reports...</Typography>
+        </Box>
+      );
     }
   
     return (
@@ -143,8 +183,21 @@ const ReportRepliesList: React.FC = () => {
         sx={{
           height: "calc(100vh - 64px)",
           maxWidth: drawer ? `calc(100% - 3px)`: "100%",
+          p: 2,
         }}
       > 
+        <Typography
+          variant="h1"
+          sx={{
+            color: theme.palette.mode === "light" ? colors.grey[100] : colors.grey[100],
+            fontSize: "1.75rem",
+            fontWeight: 800,
+            marginBottom: "1rem",
+          }}
+        >
+          Reports Needing Reply
+        </Typography>
+        
         {error && (
           <Alert 
             severity="error" 
@@ -186,15 +239,32 @@ const ReportRepliesList: React.FC = () => {
           <DataGrid
             rows={filteredReports}
             columns={columns}
-            slots={{ toolbar: GridToolbar }}
+            slots={{ 
+              toolbar: GridToolbar,
+              noRowsOverlay: () => (
+                <Box display="flex" alignItems="center" justifyContent="center" height="100%">
+                  <Typography>No reports found</Typography>
+                </Box>
+              ),
+            }}
             getRowId={(row) => row.id}
             resizeThrottleMs={0}
             autoHeight
+            loading={loading}
+            initialState={{
+              pagination: {
+                paginationModel: { pageSize: 10, page: 0 },
+              },
+              sorting: {
+                sortModel: [{ field: 'latest_reply_date', sort: 'desc' }],
+              },
+            }}
+            pageSizeOptions={[5, 10, 25, 50]}
+            disableRowSelectionOnClick
           />
         </Box>
       </Box>
     );
   };
   
-
 export default ReportRepliesList;

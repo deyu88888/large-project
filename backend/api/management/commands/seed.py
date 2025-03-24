@@ -1,4 +1,5 @@
 from random import choice, randint, random
+from datetime import date
 from io import BytesIO
 from PIL import Image
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -26,6 +27,12 @@ class Command(BaseCommand):
     """Seeds the database with super admins, admins, students, societies, and events"""
     help = "Seed the database with super admins, normal admins, students, societies, and events"
 
+    def __init__(self):
+        self.event_generator = RandomEventDataGenerator()
+        self.student_generator = RandomStudentDataGenerator()
+        self.society_generator = RandomSocietyDataGenerator()
+        super().__init__()
+
     def handle(self, *args, **kwargs):
         """Handles database seeding"""
         def get_or_create_user(model, username, email, first_name, last_name, defaults):
@@ -43,10 +50,6 @@ class Command(BaseCommand):
             else:
                 self.stdout.write(f"{model.__name__} already exists: {user.username}")
             return user, created
-
-        self.event_generator = RandomEventDataGenerator()
-        self.student_generator = RandomStudentDataGenerator()
-        self.society_generator = RandomSocietyDataGenerator()
 
         # Create/Get Admin using create_admin, to avoid code duplication
         self.create_admin(5)
@@ -111,9 +114,10 @@ class Command(BaseCommand):
 
         self.create_society(35)
         self.create_event(35)
+        self.create_event(5, True)
 
         self.pre_define_awards()
-        self.randomly_assign_awards(50)
+        self.randomly_assign_awards(200)
 
         self.broadcast_updates()
 
@@ -128,7 +132,7 @@ class Command(BaseCommand):
             print(f"Seeding student {created_count}/{n}", end='\r', flush=True)
 
             data = self.student_generator.generate()
-            
+
             email = f"{data['username']}@kcl.ac.uk"
 
             student = Student.objects.create(
@@ -140,6 +144,7 @@ class Command(BaseCommand):
                 password=make_password("studentpassword"),
             )
             self.handle_user_status(student)
+            student.save()
 
         print(self.style.SUCCESS(f"Seeding student {created_count}/{n}"), flush=True)
         return created_count
@@ -154,6 +159,7 @@ class Command(BaseCommand):
                 from_student=user,
                 intent="UpdateUse",
             )
+        return update_request
 
     def create_admin(self, n):
         """Create n different admins"""
@@ -193,6 +199,11 @@ class Command(BaseCommand):
 
     def create_robotics_society(self, president, student, vice_president, event_manager):
         """Seeds the example society, Robotics Society"""
+        if president.is_event_manager or president.is_vice_president:
+            president.is_event_manager = False
+            president.is_vice_president = False
+            president.save()
+
         self.create_society(name="Robotics Club", president_force=president)
 
         society = Society.objects.filter(name="Robotics Club").first()
@@ -221,7 +232,7 @@ class Command(BaseCommand):
         for i in range(1, n+1):
             print(f"Seeding society {i}/{n}", end='\r', flush=True)
 
-            available_students = Student.objects.order_by("?")
+            available_students = Student.objects.order_by("?").filter(is_active=True)
             if not available_students.exists():
                 print(self.style.WARNING("No available students."))
                 break
@@ -237,10 +248,14 @@ class Command(BaseCommand):
             approved = True
             society = None
             president = president_force
+            viable_presidents = (
+                available_students
+                .filter(president_of=None)
+                .filter(is_vice_president=False)
+                .filter(is_event_manager=False)
+            )
             if not president_force:
-                for student in available_students.filter(president_of=None):
-                    president = available_students.first()
-                    break
+                president = viable_presidents.first()
             if not name:
                 approved = self.handle_society_status(
                     president,
@@ -288,16 +303,23 @@ class Command(BaseCommand):
         society.president.is_president = True
 
         # Ensure at least 5 members
-        all_students = list(Student.objects.exclude(id=society.president.id).order_by("?"))
+        all_students = list(Student.objects.exclude(id=society.president.id).order_by("?").filter(is_active=True))
         members_num = 5
-        while members_num < Student.objects.count()-1 and random() <= 0.912:
+        while members_num < Student.objects.filter(is_active=True).count()-1 and random() <= 0.912:
             members_num += 1
         selected_members = all_students[:members_num]
 
         # Ensure the president is always a member
         society.society_members.add(society.president)
         society.society_members.add(*selected_members)
+        society.save()
 
+        selected_members = list(
+            society.society_members
+            .filter(is_vice_president=False)
+            .filter(is_event_manager=False)
+            .filter(is_president=False)
+        )
         # Assign roles (ensure at least 2 for vp and event manager)
         if len(selected_members) >= 2:
             # Assign vice president and set flag
@@ -355,7 +377,7 @@ class Command(BaseCommand):
             )
         return False
 
-    def create_event(self, n):
+    def create_event(self, n, past=False):
         """Create n different events"""
         societies = list(Society.objects.all())
         if not societies:
@@ -366,13 +388,25 @@ class Command(BaseCommand):
             print(f"Seeding event {i}/{n}", end='\r')
             society = choice(societies)
 
-            data = self.event_generator.generate(society.name)
+            data = self.event_generator.generate(society.name, past)
 
             approved = self.handle_event_status(society, data)
             if approved:
-                self.generate_random_event(society, data)
+                event, _ = self.generate_random_event(society, data)
+                if past:
+                    self.handle_attendance(event)
 
-        print(self.style.SUCCESS(f"Seeding event {n}/{n}"), flush=True)
+        print(self.style.SUCCESS(
+            f"Seeding {'past' if past else ''} event {n}/{n}"
+        ), flush=True)
+
+    def handle_attendance(self, event):
+        """Records seeded attendance for event attendees"""
+        attendees = event.current_attendees.all()
+        for attendee in attendees:
+            attended = choice((True, False))
+            if attended:
+                attendee.attended_events.add(event)
 
     def generate_random_event(self, society, data=None):
         """Generate a random event and ensure attendees are added."""
@@ -407,9 +441,11 @@ class Command(BaseCommand):
         random_status = choice(["Pending", "Approved", "Rejected"])
         if not data:
             data = self.event_generator.generate(society.name)
+        if data["event_date"] < date.today():
+            random_status = "Approved" if random_status == "Pending" else random_status
 
         # If the society has no president, pick any random student to avoid NULL
-        default_student = society.president if society.president else Student.objects.first()
+        default_student = society.president if society.president else Student.objects.filter(is_active=True).first()
         if not default_student:
             print(
                 "No student available to assign from_student. "
@@ -516,7 +552,7 @@ class Command(BaseCommand):
 
     def randomly_assign_awards(self, n):
         """Give out n random awards to random students"""
-        students = list(Student.objects.all())
+        students = list(Student.objects.filter(is_active=True))
         awards = list(Award.objects.all())
         for i in range(1, n+1):
             print(f"Seeding awards {i}/{n}", end='\r')
