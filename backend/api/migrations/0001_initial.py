@@ -58,6 +58,7 @@ class Migration(migrations.Migration):
                 ('details', models.TextField()),
                 ('requested_at', models.DateTimeField(auto_now_add=True)),
                 ('is_from_society_officer', models.BooleanField(default=False)),
+                ('email', models.EmailField(blank=True, max_length=255, null=True)),
             ],
             options={
                 'abstract': False,
@@ -318,7 +319,7 @@ class Migration(migrations.Migration):
                 ('approved', models.BooleanField(blank=True, default=None, null=True)),
                 ('major', models.CharField(blank=True, default='', max_length=50)),
                 ('icon', models.ImageField(blank=True, null=True, upload_to='icon_request/')),
-                ('from_student', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='%(class)ss', to='api.student')),
+                ('from_student', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='%(class)ss', to='api.student')),
             ],
             options={
                 'abstract': False,
@@ -342,7 +343,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='societyrequest',
             name='from_student',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='%(class)ss', to='api.student'),
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='%(class)ss', to='api.student'),
         ),
         migrations.AddField(
             model_name='societyrequest',
@@ -407,7 +408,7 @@ class Migration(migrations.Migration):
                 ('duration', models.DurationField(blank=True, null=True)),
                 ('event', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='event_request', to='api.event')),
                 ('hosted_by', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='event_request_society', to='api.society')),
-                ('from_student', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='%(class)ss', to='api.student')),
+                ('from_student', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='%(class)ss', to='api.student')),
             ],
             options={
                 'abstract': False,
@@ -442,7 +443,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='adminreportrequest',
             name='from_student',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='%(class)ss', to='api.student'),
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='%(class)ss', to='api.student'),
         ),
         migrations.CreateModel(
             name='RecommendationFeedback',

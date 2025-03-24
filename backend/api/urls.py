@@ -14,7 +14,7 @@ from api.views import (
     # Society
     JoinedSocietiesView, RequestJoinSocietyView, StartSocietyRequestView,
     ManageSocietyDetailsView, StudentSocietyDataView, SocietyMembersListView,
-    PendingMembersView, SocietyRoleManagementView, get_popular_societies,
+    PendingMembersView, SocietyRoleManagementView, get_popular_societies, get_upcoming_events,
     RecommendedSocietiesView, SocietyRecommendationExplanationView,
     RecommendationFeedbackView, RecommendationFeedbackAnalyticsView,
 
@@ -31,8 +31,8 @@ from api.views import (
 
     # Reports
     ReportToAdminView, ReportReplyView, MyReportsView, MyReportsWithRepliesView,
-    ReportThreadView, ReportReplyNotificationsView,
-
+    ReportThreadView, ReportReplyNotificationsView, PublicReportView,
+    
     # Dashboard
     DashboardStatsView, RecentActivitiesView, EventCalendarView,
 
@@ -86,17 +86,14 @@ admin_patterns = [
     path("student-societies/", JoinedSocietiesView.as_view(), name="student_societies"),
     path("leave-society/<int:society_id>/", JoinedSocietiesView.as_view(), name="leave_society"),
     path("society-view/<int:society_id>/", StudentSocietyDataView.as_view(), name="society_view"),
+    path('media/<path:path>', custom_media_view, name="media"),
+    path('api/pending-requests/', PendingJoinRequestsView.as_view(), name='pending-requests'),
 
     # Dashboard API endpoints
     path("dashboard/stats/", DashboardStatsView.as_view(), name="dashboard_stats"),
     path("dashboard/activities/", RecentActivitiesView.as_view(), name="recent_activities"),
     path("dashboard/notifications", NotificationsView.as_view(), name="dashboard_notifications"),
     path("dashboard/events/", EventCalendarView.as_view(), name="dashboard_events"),
-    path("popular-societies/", get_popular_societies, name="popular_societies"),
-    path('events/upcoming/', get_sorted_events, name='upcoming_events'),
-
-    #path('all-societies', PublicSocietiesView.as_view(), name='all_societies'),
-    #path("public-report", PublicReportView.as_view(), name="public-report"),
 
     # Awards Endpoints
     path("awards/", AwardView.as_view(), name="awards"),  # List & Create Awards
@@ -113,8 +110,8 @@ admin_patterns = [
     path("society-roles/<int:society_id>/", SocietyRoleManagementView.as_view(), name="society-members"),
 
     # Report to admin
-    #path("report-to-admin", AdminReportView.as_view(), name="report-to-admin"),
-    #path("report-to-admin/<int:report_id>", AdminReportView.as_view(), name="report-to-admin-detail"),
+    path("report-to-admin", ReportToAdminView.as_view(), name="report-to-admin"),
+    path("report-to-admin/<int:report_id>", ReportToAdminView.as_view(), name="report-to-admin-detail"),
     path("my-reports", MyReportsView.as_view(), name='my_reports'),
     path('my-reports-with-replies', MyReportsWithRepliesView.as_view(), name='my_reports_with_replies'),
     path("report-replies", ReportReplyView.as_view(), name="report-replies"),
@@ -216,6 +213,10 @@ dashboard_patterns = [
     path("activities/", RecentActivitiesView.as_view(), name="recent_activities"),
     path("notifications/", NotificationsView.as_view(), name="dashboard_notifications"),
     path("events/", EventCalendarView.as_view(), name="dashboard_events"),
+    path('all-societies', PublicSocietiesView.as_view(), name='all_societies'),
+    path("public-report", PublicReportView.as_view(), name="public-report"),
+    path("popular-societies/", get_popular_societies, name="popular_societies"),
+    path('events/upcoming/', get_upcoming_events, name='upcoming_events'),
 ]
 
 # Award patterns

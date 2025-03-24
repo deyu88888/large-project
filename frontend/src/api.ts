@@ -84,8 +84,8 @@ export const apiPaths = {
     DELETEACTIVITYLOG: (logId: number) => `/api/delete-activity-log/${logId}`,
   },
   SOCIETY: {
-    All: "/api/all-societies",
-    POPULAR_SOCIETIES: "/api/popular-societies",  // TODO: DONT ADD BACKSLASH
+    All: "/api/dashboard/all-societies",
+    POPULAR_SOCIETIES: "/api/admin/popular-societies/",  // TODO: DONT ADD BACKSLASH
     RECOMMENDED_SOCIETIES: "/api/recommended-societies", // New endpoint for recommendations
     RECOMMENDATION_EXPLANATION: (id: number) =>
       `/api/society-recommendation/${id}/explanation/`,
@@ -335,7 +335,7 @@ export const getAllEvents = async () => {
 
 export const getUpcomingEvents = async () => {
   try {
-    const response = await apiClient.get("/api/events/upcoming");
+    const response = await apiClient.get("/api/admin/events/upcoming/");
     return response.data;
   } catch (error) {
     console.error("Error fetching upcoming events:", error);
