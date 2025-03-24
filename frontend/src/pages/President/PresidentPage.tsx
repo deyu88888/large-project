@@ -42,7 +42,7 @@ const PresidentPage: React.FC = () => {
     const fetchData = async (): Promise<void> => {
       try {
         // Always prioritize the user's president_of society ID
-        const id = user?.president_of || societyId;
+        const id = user?.president_of || user?.vice_president_of || societyId;
         console.log(`Using society ID: ${id} for API requests`);
         
         if (!id) throw new Error("No society ID available");
@@ -89,8 +89,12 @@ const PresidentPage: React.FC = () => {
     );
   }
 
-  // Prioritize the user's president_of society ID for navigation
-  const currentSocietyId = user?.president_of || societyId || (society ? society.id : null);
+  // Get the current society ID for navigation, prioritizing in order:
+  // 1. URL parameter societyId
+  // 2. User's president_of society
+  // 3. User's vice_president_of society
+  // 4. Society object's ID if available
+  const currentSocietyId = societyId || user?.president_of || user?.vice_president_of || (society ? society.id : null);
 
   return (
     <Box

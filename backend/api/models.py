@@ -839,11 +839,11 @@ class BroadcastMessage(models.Model):
         # ADDED: A convenient string representation
         return f"Broadcast from {self.sender.username} at {self.created_at:%Y-%m-%d %H:%M}"
 
+
 class SocietyNews(models.Model):
     """
     News posts for societies.
     """
-
     STATUS_CHOICES = [
         ("Draft", "Draft"),
         ("PendingApproval", "Pending Approval"),
@@ -851,7 +851,7 @@ class SocietyNews(models.Model):
         ("Published", "Published"),
         ("Archived", "Archived"),
     ]
-
+    
     society = models.ForeignKey(
         "Society",
         on_delete=models.CASCADE,
@@ -859,14 +859,14 @@ class SocietyNews(models.Model):
         blank=False,
         null=False,
     )
-
+    
     title = models.CharField(max_length=100, blank=False)
     content = models.TextField(blank=False)
-
+    
     # Rich media content (optional)
     image = models.ImageField(upload_to="society_news/images/", blank=True, null=True)
     attachment = models.FileField(upload_to="society_news/attachments/", blank=True, null=True)
-
+    
     # Metadata
     author = models.ForeignKey(
         "Student",
@@ -877,24 +877,24 @@ class SocietyNews(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     published_at = models.DateTimeField(blank=True, null=True)
-
+    
     # Status and categorization
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="Draft")
     is_featured = models.BooleanField(default=False)
     is_pinned = models.BooleanField(default=False)
     tags = models.JSONField(default=list, blank=True)
-
+    
     # Fields for tracking engagement
     view_count = models.PositiveIntegerField(default=0)
-
+    
     class Meta:
         verbose_name = "Society News"
         verbose_name_plural = "Society News"
         ordering = ["-is_pinned", "-created_at"]
-
+    
     def __str__(self):
         return f"{self.society.name}: {self.title}"
-
+    
     def save(self, *args, **kwargs):
         # If status changed to Published, set published_at date
         if self.pk:
@@ -906,7 +906,7 @@ class SocietyNews(models.Model):
                 pass
         elif self.status == "Published" and not self.published_at:
             self.published_at = timezone.now()
-
+            
         super().save(*args, **kwargs)
 
     def increment_view_count(self, amount: int = 1):
@@ -916,6 +916,7 @@ class SocietyNews(models.Model):
         """
         SocietyNews.objects.filter(pk=self.pk).update(view_count=F('view_count') + amount)
         self.refresh_from_db(fields=['view_count'])
+
 
 class NewsComment(models.Model):
     """
@@ -975,6 +976,7 @@ class NewsComment(models.Model):
     
     def disliked_by(self, user):
         return self.dislikes.filter(id=user.id).exists()
+    
     
 class NewsPublicationRequest(models.Model):
     """
@@ -1037,6 +1039,7 @@ class NewsPublicationRequest(models.Model):
         
         super().save(*args, **kwargs)
 
+
 class ActivityLog(models.Model):
     ACTION_CHOICES = [
         ("Delete", "Delete"),
@@ -1075,6 +1078,7 @@ class ActivityLog(models.Model):
         expired_logs = cls.objects.filter(expiration_date__lt=expiration_threshold)
         deleted_count, _ = expired_logs.delete()
         return deleted_count
+
 
 class Activity(models.Model):
     """

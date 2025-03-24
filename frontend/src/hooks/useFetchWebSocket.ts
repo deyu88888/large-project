@@ -33,7 +33,7 @@ export const handleMessage = async <T>(
   try {
     await fetchData(setData, fetchDataFunction);
   } catch (error) {
-    console.error("Error parsing WebSocket message:", error);
+    console.error("Error parsing WebSocket message:", error); // TODO: keep this, need to know the error
   }
 };
 

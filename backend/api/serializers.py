@@ -918,13 +918,18 @@ class BroadcastSerializer(serializers.ModelSerializer):
         fields = ['id', 'sender', 'societies', 'events', 'recipients', 'message', 'created_at']
         read_only_fields = ['id', 'created_at', 'sender']
 
+
 class ActivityLogSerializer(serializers.ModelSerializer):
     timestamp = serializers.DateTimeField(format='%d-%m-%Y %H:%M:%S')
     class Meta:
         model = ActivityLog
         fields = '__all__'
 
+
 class NewsCommentSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the NewsComment model
+    """
     replies = serializers.SerializerMethodField()
     user_data = serializers.SerializerMethodField()
     likes_count = serializers.SerializerMethodField()
@@ -1003,7 +1008,6 @@ class SocietyNewsSerializer(serializers.ModelSerializer):
     image_url = serializers.SerializerMethodField()
     attachment_name = serializers.SerializerMethodField()
     comments = serializers.SerializerMethodField(read_only=True)
-
     admin_notes = serializers.SerializerMethodField()
 
     class Meta:
@@ -1297,6 +1301,7 @@ class SocietyNewsSerializer(serializers.ModelSerializer):
             print(f"DEBUG - Formatted published_at: {formatted_time}")
             return formatted_time
         return None
+
 
 class NewsPublicationRequestSerializer(serializers.ModelSerializer):
     """

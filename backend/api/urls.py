@@ -17,6 +17,14 @@ from .views import (
 from .utils import request_otp, verify_otp
 from .recommendation_views import RecommendedSocietiesView, SocietyRecommendationExplanationView
 from .recommendation_feedback_views import RecommendationFeedbackView, RecommendationFeedbackAnalyticsView
+from .news_views import (
+    SocietyNewsListView, 
+    SocietyNewsDetailView, 
+    NewsCommentView, 
+    NewsCommentDetailView, 
+    NewsCommentLikeView,
+    MemberNewsView
+)
 
 # Import your updated news_views including the new 'NewsCommentDislikeView'
 from .news_views import (
@@ -164,7 +172,6 @@ urlpatterns = [
     path("news/<int:news_id>/comments/", NewsCommentView.as_view(), name="news_comments"),
     path("news/comments/<int:comment_id>/", NewsCommentDetailView.as_view(), name="news_comment_detail"),
     path("news/comments/<int:comment_id>/like/", NewsCommentLikeView.as_view(), name="news_comment_like"),
-    # ADD THIS (similar to your like path):
     path("news/comments/<int:comment_id>/dislike/", NewsCommentDislikeView.as_view(), name="news_comment_dislike"),
 
     # This is the "feed" for the student's societies:

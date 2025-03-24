@@ -173,19 +173,6 @@ const routes = [
         ],
       },
       {
-        path: "president-page/:societyId",
-        element: (
-          <PrivateGuard requiredRole="student">
-            <Suspense fallback={<LoadingView />}>
-              <Layout />
-            </Suspense>
-          </PrivateGuard>
-        ),
-        children: [
-          { index: true, element: <PageWithTitle title="Manage Society"><PresidentPage /></PageWithTitle> },
-        ],
-      },
-      {
         path: "manage-society-details/:societyId",
         element: (
           <PrivateGuard requiredRole="student">
@@ -198,6 +185,7 @@ const routes = [
           { index: true, element: <PageWithTitle title="Manage Society Details"><ManageSocietyDetails /></PageWithTitle> },
         ],
       },
+      // New route for managing society news
       {
         path: "manage-society-news/:societyId",
         element: (
