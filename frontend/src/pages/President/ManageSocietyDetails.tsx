@@ -14,21 +14,23 @@ import { apiClient, apiPaths } from "../../api";
 import { useAuthStore } from "../../stores/auth-store";
 import { tokens } from "../../theme/theme";
 import SocietyPreviewModal from "./SocietyPreviewModal";
+import { SocietyData } from "../../types/president/society";
+import { MnanageSocietyParams } from "../../types/president/routeParams";
 
-interface SocietyData {
-  id: number;
-  name: string;
-  category: string;
-  social_media_links: Record<string, string>;
-  membership_requirements: string;
-  upcoming_projects_or_plans: string;
-  tags: string[];
-  icon: string | File | null;
-}
+// interface SocietyData {
+//   id: number;
+//   name: string;
+//   category: string;
+//   social_media_links: Record<string, string>;
+//   membership_requirements: string;
+//   upcoming_projects_or_plans: string;
+//   tags: string[];
+//   icon: string | File | null;
+// }
 
-interface RouteParams {
-  society_id: string;
-}
+// interface ManageSocietyParams {
+//   society_id: string;
+// }
 
 const ManageSocietyDetails: React.FC = () => {
   const theme = useTheme();

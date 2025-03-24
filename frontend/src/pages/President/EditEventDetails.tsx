@@ -10,31 +10,34 @@ import {
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { apiClient } from "../../api";
+import { EventDetail } from "../../types/president/event";
+import { RouteParams } from "../../types/president/role";
+import { FormData } from "../../types/president/forms";
 
-interface EventDetail {
-  id: number;
-  title: string;
-  description: string;
-  location: string;
-  date: string;
-  start_time: string;
-  duration: string;
-  status: string;
-}
+// interface EventDetail {
+//   id: number;
+//   title: string;
+//   description: string;
+//   location: string;
+//   date: string;
+//   start_time: string;
+//   duration: string;
+//   status: string;
+// }
 
-interface RouteParams {
-  society_id: string;
-  event_id: string;
-}
+// interface RouteParams {
+//   society_id: string;
+//   event_id: string;
+// }
 
-interface FormData {
-  title: string;
-  description: string;
-  location: string;
-  date: string;
-  start_time: string;
-  duration: string;
-}
+// interface FormData {
+//   title: string;
+//   description: string;
+//   location: string;
+//   date: string;
+//   start_time: string;
+//   duration: string;
+// }
 
 const EditEventDetails: React.FC = () => {
   const theme = useTheme();
