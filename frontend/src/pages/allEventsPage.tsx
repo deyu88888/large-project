@@ -74,7 +74,7 @@ export default function AllEventsPage() {
         setEventsLoading(true);
         setError(null);
         apiClient
-            .get("/api/all-events")
+            .get("/api/events/all/")
             .then((res) => {
                 console.log("Fetched Events:", res.data);
                 setEvents(res.data || []);

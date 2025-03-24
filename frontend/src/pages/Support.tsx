@@ -60,7 +60,7 @@ const Support = () => {
         details: message, 
         email: email,
       };
-      await axios.post("/api/public-report", reportData);      
+      await axios.post("/api/dashboard/public-report", reportData);      
       setIssueType("");
       setEmail("");
       setMessage("");
