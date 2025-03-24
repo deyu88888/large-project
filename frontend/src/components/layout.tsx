@@ -115,12 +115,6 @@ const Layout: React.FC = () => {
                   <LightModeOutlinedIcon />
                 )}
               </IconButton>
-              <IconButton>
-                <NotificationsOutlinedIcon />
-              </IconButton>
-              <IconButton>
-                <SettingsOutlinedIcon />
-              </IconButton>
               <IconButton
                 onClick={() => {
                   if (location.pathname.startsWith("/admin")) {
