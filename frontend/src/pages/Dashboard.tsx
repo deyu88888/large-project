@@ -1,7 +1,5 @@
-import React from "react";
 import { Box, Container, Typography, useTheme } from "@mui/material";
 import Carousel from "react-material-ui-carousel";
-import { StyledButton } from "../components/home/StyledButton";
 import { tokens } from "../theme/theme";
 import { useWebSocketChannel } from "../hooks/useWebSocketChannel";
 import { getPopularSocieties, getUpcomingEvents } from "../api";
@@ -86,55 +84,54 @@ export default function Dashboard() {
           duration={600}
         >
           {[0, 1, 2, 3].map((i) => (
-  <Box
-    key={i}
-    width={1}
-    height={500}
-    sx={{
-      backgroundColor: isLight
-        ? theme.palette.primary.main
-        : theme.palette.primary.dark,
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-    }}
-  >
-    <Container maxWidth="xl">
-      <Box padding={2}>
-        {i === 0 ? (
-          <>
-            <Typography color={colors.grey[100]} variant="h1" align="center" sx={{ fontWeight: 700 }}>
-              Welcome to Infinite Loop Innovators
-            </Typography>
-            <Typography
-              color={colors.grey[200]}
-              variant="h5"
-              align="center"
-              sx={{ mt: 2 }}
+            <Box
+              key={i}
+              width={1}
+              height={500}
+              sx={{
+                backgroundColor: isLight
+                  ? theme.palette.primary.main
+                  : theme.palette.primary.dark,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
             >
-              Discover societies, events, and latest news all in one place
-            </Typography>
-          </>
-        ) : (
-          // Original content for other slides
-          <>
-            <Typography color={colors.grey[100]} variant="h2" align="center">
-              Featured Content {i}
-            </Typography>
-            <Typography
-              color={colors.grey[200]}
-              variant="h5"
-              align="center"
-              sx={{ mt: 2 }}
-            >
-              Explore our selection of highlighted events and societies
-            </Typography>
-          </>
-        )}
-      </Box>
-    </Container>
-  </Box>
-))}
+              <Container maxWidth="xl">
+                <Box padding={2}>
+                  {i === 0 ? (
+                    <>
+                      <Typography color={colors.grey[100]} variant="h1" align="center" sx={{ fontWeight: 700 }}>
+                        Welcome to Infinite Loop Innovators
+                      </Typography>
+                      <Typography
+                        color={colors.grey[200]}
+                        variant="h5"
+                        align="center"
+                        sx={{ mt: 2 }}
+                      >
+                        Discover societies, events, and latest news all in one place
+                      </Typography>
+                    </>
+                  ) : (
+                    <>
+                      <Typography color={colors.grey[100]} variant="h2" align="center">
+                        Featured Content {i}
+                      </Typography>
+                      <Typography
+                        color={colors.grey[200]}
+                        variant="h5"
+                        align="center"
+                        sx={{ mt: 2 }}
+                      >
+                        Explore our selection of highlighted events and societies
+                      </Typography>
+                    </>
+                  )}
+                </Box>
+              </Container>
+            </Box>
+          ))}
         </Carousel>
       </Box>
 
@@ -147,8 +144,7 @@ export default function Dashboard() {
           paddingBottom: 6,
         }}
       >
-
-<Container maxWidth="xl" style={{ padding: "2rem" }}>
+        <Container maxWidth="xl" style={{ padding: "2rem" }}>
           <Typography 
             variant="h2" 
             sx={{
