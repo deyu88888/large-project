@@ -173,7 +173,7 @@ const Support = () => {
       questions: [
         {
           question: "Who do I contact if I'm having website issues?",
-          answer: "Email support@studentsocieties.edu or use the \"Contact Support\" form in the website footer."
+          answer: "Email infiniteloop@gmail.com or use the \"Contact Support\" form in the website footer."
         },
         {
           question: "Is my payment information secure?",
@@ -417,7 +417,7 @@ const Support = () => {
               For urgent matters or if you prefer email communication, reach out to us at:
             </Typography>
             <Link
-              href="mailto:support@studentsocieties.edu"
+              href="mailto:infiniteloop@gmail.com"
               sx={{
                 color: colors.greenAccent[400],
                 fontWeight: 600,
@@ -426,7 +426,7 @@ const Support = () => {
                 },
               }}
             >
-              support@studentsocieties.edu
+              infiniteloop@gmail.com
             </Link>
           </Box>
         </Paper>
