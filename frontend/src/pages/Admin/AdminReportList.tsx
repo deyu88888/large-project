@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useContext, useCallback } from 'react';
-import { Box, Button, Typography, useTheme } from "@mui/material";
+import { Box, Button, useTheme } from "@mui/material";
 import { DataGrid, GridColDef, GridRenderCellParams, GridToolbar } from "@mui/x-data-grid";
 import { tokens } from "../../theme/theme";
 import { SearchContext } from "../../components/layout/SearchContext";
@@ -74,7 +74,27 @@ const AdminReportList: React.FC = () => {
    */
   const columns: GridColDef[] = [
     { field: "id", headerName: "ID", flex: 0.5 },
-    { field: "from_student", headerName: "Reporter", flex: 1 },
+    {
+      field: "from_student",
+      headerName: "Reporter",
+      flex: 1,
+      renderCell: (params: any) => {
+        return params.row.from_student || "Public User";
+      },
+    },
+    {
+      field: "email",
+      headerName: "Email",
+      flex: 1,
+      renderCell: (params: any) =>
+        params.row.email ? (
+          <a href={`mailto:${params.row.email}`}>
+            {params.row.email}
+          </a>
+        ) : (
+          "-"
+        ),
+    },    
     { field: "report_type", headerName: "Report Type", flex: 1 },
     { field: "subject", headerName: "Subject", flex: 1.5 },
     { field: "details", headerName: "Details", flex: 2 },
@@ -90,6 +110,20 @@ const AdminReportList: React.FC = () => {
       flex: 1,
       renderCell: (params: GridRenderCellParams) => {
         const reportId = params.row.id;
+        const isPublic = !params.row.from_student;
+        const email = params.row.email;
+        if (isPublic && email) {
+          return (
+            <Button
+              variant="contained"
+              color="secondary"
+              href={`mailto:${email}?subject=${encodeURIComponent(`Response to your report: "${params.row.subject}"`)}&body=${encodeURIComponent("Hi,\n\nRegarding your report, we would like to get in touch with you.\n\nKind regards,\nAdmin Team")}`}
+              >
+              Email Reply
+            </Button>
+          );
+        }
+    
         return (
           <Button
             variant="contained"
