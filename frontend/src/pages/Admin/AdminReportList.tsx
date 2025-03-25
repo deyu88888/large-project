@@ -99,15 +99,19 @@ const AdminReportList: React.FC = () => {
     { field: "subject", headerName: "Subject", flex: 1.5 },
     { field: "details", headerName: "Details", flex: 2 },
     {
-      field: "created_at",
-      headerName: "Created At",
+      field: "requested_at",
+      headerName: "Requested At",
       flex: 1.5,
-      renderCell: (params: GridRenderCellParams) => formatDate(params.row.created_at),
+      renderCell: (params: GridRenderCellParams) => formatDate(params.row.requested_at),
     },
     {
       field: "action", 
       headerName: "Actions",
       flex: 1,
+      filterable: false,
+      sortable: false,
+      minWidth: 130,
+      width: 130,
       renderCell: (params: GridRenderCellParams) => {
         const reportId = params.row.id;
         const isPublic = !params.row.from_student;
@@ -123,7 +127,6 @@ const AdminReportList: React.FC = () => {
             </Button>
           );
         }
-    
         return (
           <Button
             variant="contained"

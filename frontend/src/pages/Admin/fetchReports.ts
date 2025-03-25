@@ -24,7 +24,7 @@ export const fetchReportDetails = async (reportId: string) => {
 
 export const fetchReportThread = async (reportId: string) => {
   try {
-    const res = await apiClient.get(`/api/report-thread/${reportId}`);
+    const res = await apiClient.get(`/api/reports/report-thread/${reportId}`);
     return res.data;
   } catch (error) {
     console.error("Error fetching report thread:", error);

@@ -146,6 +146,7 @@ class AdminReportRequest(Request):
         ("System Issue", "System Issue"),
         ("Society Issue", "Society Issue"),
         ("Event Issue", "Event Issue"),
+        ("Feedback", "Feedback"), 
         ("Other", "Other"),
     ]
 
