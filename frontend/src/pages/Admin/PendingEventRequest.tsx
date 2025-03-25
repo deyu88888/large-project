@@ -1,8 +1,7 @@
 import React, { useContext, useCallback, useState, useMemo } from "react";
 import { 
   Box, 
-  Typography, 
-  useTheme, 
+  useTheme,
   Button, 
   Snackbar,
   Alert 
@@ -15,6 +14,8 @@ import { useFetchWebSocket } from "../../hooks/useFetchWebSocket";
 import { fetchPendingRequests } from "./utils";
 import { apiPaths } from "../../api";
 import { updateRequestStatus } from "../../api/requestApi";
+import { EventPreview } from "../../components/EventPreview";
+import type { EventData } from "../../components/EventDetailLayout";
 
 interface Event {
   id: number;
@@ -43,6 +44,9 @@ const PendingEventRequest: React.FC = () => {
   const colors = tokens(theme.palette.mode);
   const { searchTerm } = useContext(SearchContext);
   const { drawer } = useSettingsStore();
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<EventData | null>(null);
+
   
   // State for alerts/notifications
   const [alert, setAlert] = useState<AlertState>({
@@ -87,6 +91,30 @@ const PendingEventRequest: React.FC = () => {
     }
   }, []);
 
+  const handleViewEvent = useCallback((event: any) => {
+    const mapped = {
+      title: event.title || "",
+      mainDescription: event.main_description || "",
+      date: event.date || "",
+      startTime: event.start_time || "",
+      duration: event.duration || "",
+      location: event.location || "",
+      maxCapacity: event.max_capacity || 0,
+      hostedBy: event.hosted_by || 0,
+      eventId: event.id,
+      coverImageUrl: event.cover_image || "",
+      extraModules: event.extra_modules || [],
+      participantModules: event.participant_modules || [],
+      isParticipant: true,
+      isMember: false
+    };
+
+    setSelectedEvent(mapped);
+    setPreviewOpen(true);
+  }, []);
+
+
+
   // Close alert handler
   const handleCloseAlert = useCallback(() => {
     setAlert(prev => ({ ...prev, open: false }));
@@ -96,7 +124,6 @@ const PendingEventRequest: React.FC = () => {
   const columns: GridColDef[] = [
     { field: "id", headerName: "ID", flex: 0.3 },
     { field: "title", headerName: "Title", flex: 1 },
-    { field: "main_description", headerName: "Description", flex: 2 },
     { field: "date", headerName: "Date", flex: 1 },
     { field: "start_time", headerName: "Start Time", flex: 1 },
     { field: "duration", headerName: "Duration", flex: 1 },
@@ -112,6 +139,14 @@ const PendingEventRequest: React.FC = () => {
       filterable: false,
       renderCell: (params: GridRenderCellParams<any, Event>) => (
         <Box>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => handleViewEvent(params.row)}
+            sx={{ marginRight: "8px" }}
+          >
+            View
+          </Button>
           <Button
             variant="contained"
             color="success"
@@ -193,6 +228,14 @@ const PendingEventRequest: React.FC = () => {
           {alert.message}
         </Alert>
       </Snackbar>
+
+      {selectedEvent && (
+        <EventPreview
+          open={previewOpen}
+          onClose={() => setPreviewOpen(false)}
+          eventData={selectedEvent}
+        />
+      )}
     </Box>
   );
 };
