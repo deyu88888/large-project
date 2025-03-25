@@ -4,11 +4,11 @@ from django.utils import timezone
 from unittest.mock import patch, MagicMock
 from rest_framework.exceptions import ValidationError
 
-from api.recommendation_feedback_serializers import (
+from api.serializers_files.recommendation_feedback_serializers import (
     RecommendationFeedbackSerializer,
     RecommendationFeedbackCreateSerializer
 )
-from api.recommendation_feedback_model import RecommendationFeedback
+from api.models_files.recommendation_feedback_model import RecommendationFeedback
 from api.models import Society, Student, User
 
 

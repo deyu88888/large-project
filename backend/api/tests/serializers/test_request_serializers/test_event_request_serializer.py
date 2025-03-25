@@ -45,7 +45,7 @@ class EventRequestSerializerTestCase(TestCase):
         # Create an event
         self.event = Event.objects.create(
             title="Day",
-            description="Day out",
+            main_description="Day out",
             hosted_by=self.society,
             location="KCL Campus"
         )
@@ -53,18 +53,11 @@ class EventRequestSerializerTestCase(TestCase):
         # Create an existing EventRequest instance (for serialization and update tests)
         self.event_request = EventRequest.objects.create(
             event=self.event,
-            title="Night",
-            description="Night out",
-            location="UCL Campus",
-            date=timezone.now().date(),
-            start_time=timezone.now().time(),
-            duration=timedelta(hours=1),
             from_student=self.student1,
             hosted_by=self.society,
             intent="CreateSoc",
             approved=False
         )
-
         # Create a dummy request (for serializer context)
         factory = APIRequestFactory()
         self.request = factory.get('/')

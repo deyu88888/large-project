@@ -52,7 +52,7 @@ class BroadcastMessageModelTest(TestCase):
         
         cls.event = Event.objects.create(
             title="Test Event",
-            description="A test event",
+            main_description="A test event",
             hosted_by=cls.society,
             date=timezone.now().date(),
             start_time=timezone.now().time(),

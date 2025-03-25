@@ -57,7 +57,7 @@ class BroadcastSerializerTest(TestCase):
         
         self.event1 = Event.objects.create(
             title="Test Event 1",
-            description="A test event",
+            main_description="A test event",
             date=timezone.now().date(),
             start_time=timezone.now().time(),
             hosted_by=self.society1,
@@ -66,7 +66,7 @@ class BroadcastSerializerTest(TestCase):
         
         self.event2 = Event.objects.create(
             title="Test Event 2",
-            description="Another test event",
+            main_description="Another test event",
             date=timezone.now().date(),
             start_time=timezone.now().time(),
             hosted_by=self.society2,

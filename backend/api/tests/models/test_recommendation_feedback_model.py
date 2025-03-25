@@ -6,7 +6,7 @@ from django.utils import timezone
 from django.db import transaction
 
 from api.models import Student, Society, User
-from api.recommendation_feedback_model import RecommendationFeedback
+from api.models_files.recommendation_feedback_model import RecommendationFeedback
 
 
 class RecommendationFeedbackModelTests(TestCase):

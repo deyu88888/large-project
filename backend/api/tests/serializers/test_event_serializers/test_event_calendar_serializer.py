@@ -10,7 +10,7 @@ class TestEventCalendarSerializer(TestCase):
     def setUp(self):
         self.event = Event.objects.create(
             title="Sample Event",
-            description="Test event description",
+            main_description="Test event description",
             date=timezone.now().date(),
             start_time=timezone.now().time(),
             duration=timedelta(hours=2),

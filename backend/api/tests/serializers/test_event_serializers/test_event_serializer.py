@@ -39,7 +39,7 @@ class EventSerializerTestCase(TestCase):
         # Set up Event
         self.event = Event.objects.create(
             title="Day",
-            description="Day out",
+            main_description="Day out",
             hosted_by=self.society,
             location="KCL Campus"
         )
