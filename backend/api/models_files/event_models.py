@@ -21,7 +21,7 @@ class Event(models.Model):
     """
     title = models.CharField(max_length=20, default="")
     main_description = models.CharField(max_length=300, default="")
-    cover_image = models.ImageField(upload_to="event_covers/")
+    cover_image = models.ImageField(upload_to="event_covers/", default="default-event/event.jpeg")
     date = models.DateField(blank=False, null=False, default=get_date)
     start_time = models.TimeField(blank=False, null=False, default=get_time)
     duration = models.DurationField(
@@ -79,6 +79,7 @@ class Event(models.Model):
         super().save(*args, **kwargs)
 
 class EventModule(models.Model):
+    """A modular component of an event page"""
     MODULE_CHOICES = [
         ('subtitle', 'Subtitle'),
         ('description', 'Description'),

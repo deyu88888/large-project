@@ -88,7 +88,11 @@ const ViewStudent: React.FC = () => {
       formDataToSend.append("major", formData.major);
       formData.societies.forEach((id) => { formDataToSend.append("societies", String(id));});
 
-      formDataToSend.append("president_of", JSON.stringify(formData.president_of));
+      if (formData.president_of) {
+        formDataToSend.append("president_of", String(formData.president_of));
+      } else {
+        formDataToSend.append("president_of", "");
+      }
 
       formDataToSend.append("is_president", String(formData.is_president));
 
