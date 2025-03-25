@@ -11,6 +11,7 @@ export default function PublicLayout({
   children: React.ReactNode;
 }) {
   const location = useLocation();
+  const hideHero = ["/login", "/register"].includes(location.pathname);
 
   const heroContent = {
     "/": {
@@ -83,12 +84,14 @@ export default function PublicLayout({
     <SearchProvider>
       <Box minHeight={"100vh"} display={"flex"} flexDirection={"column"}>
         <DashboardNavbar />
-        <HeroSection
-          showCarousel={currentHero.showCarousel}
-          title={currentHero.title}
-          subtitle={currentHero.subtitle}
-          breadcrumbs={currentHero.breadcrumbs}
-        />
+        {!hideHero && (
+          <HeroSection
+            showCarousel={currentHero.showCarousel}
+            title={currentHero.title}
+            subtitle={currentHero.subtitle}
+            breadcrumbs={currentHero.breadcrumbs}
+          />
+        )}
         <Box flexGrow={1} marginBottom={3}>
           {children}
         </Box>
