@@ -1,9 +1,10 @@
 import { Box, Typography } from "@mui/material";
 import { StyledButton } from "./home/StyledButton";
 import { Event } from "../types";
+import { EventData } from "./EventDetailLayout";
 
-interface EventCardProps {
-  event: Event;
+export interface EventCardProps {
+  event: EventData;
   isLight: boolean;
   colors: any;
   onViewEvent: (id: number) => void;
