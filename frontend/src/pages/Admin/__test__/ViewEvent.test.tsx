@@ -54,6 +54,7 @@ vi.mock('react-router-dom', async () => {
 vi.mock('../../../theme/theme', () => ({
   tokens: (mode) => ({
     primary: {
+      400: '#f5f5f5',
       main: '#1976d2',
     },
     secondary: {
@@ -73,12 +74,12 @@ describe('ViewEvent Component', () => {
   const mockEvent = {
     id: 123,
     title: 'Test Event',
-    description: 'This is a test event',
+    main_description: 'This is a test event',
     date: '2025-12-31',
-    startTime: '14:00',
+    start_time: '14:00',
     duration: '2 hours',
     location: 'Test Location',
-    hostedBy: 'Test Host',
+    hosted_by: 'Test Host',
   };
 
   beforeEach(() => {
@@ -152,13 +153,23 @@ describe('ViewEvent Component', () => {
     });
     
     expect(screen.getByText('View Event Details')).toBeInTheDocument();
-    expect(screen.getByLabelText('Event Title')).toHaveValue('Test Event');
-    expect(screen.getByLabelText('Description')).toHaveValue('This is a test event');
-    expect(screen.getByLabelText('Date')).toHaveValue('2025-12-31');
-    expect(screen.getByLabelText('Start Time')).toHaveValue('14:00');
-    expect(screen.getByLabelText('Duration')).toHaveValue('2 hours');
-    expect(screen.getByLabelText('Location')).toHaveValue('Test Location');
-    expect(screen.getByLabelText('Hosted By')).toHaveValue('Test Host');
+    
+    // Use getByRole with name instead of getByLabelText
+    expect(screen.getByRole('textbox', { name: /Event Title/i })).toHaveValue('Test Event');
+    expect(screen.getByRole('textbox', { name: /Description/i })).toHaveValue('This is a test event');
+    
+    // For date and time inputs, use a different approach as they may have different roles
+    const dateInput = screen.getByLabelText(/Date/i);
+    const timeInput = screen.getByLabelText(/Start Time/i);
+    const durationInput = screen.getByLabelText(/Duration/i);
+    const locationInput = screen.getByLabelText(/Location/i);
+    const hostedByInput = screen.getByLabelText(/Hosted By/i);
+    
+    expect(dateInput).toHaveValue('2025-12-31');
+    expect(timeInput).toHaveValue('14:00');
+    expect(durationInput).toHaveValue('2 hours');
+    expect(locationInput).toHaveValue('Test Location');
+    expect(hostedByInput).toHaveValue('Test Host');
     
     expect(apiClient.get).toHaveBeenCalledWith(`/api/admin-events/${mockEventId}`);
   });
@@ -170,7 +181,7 @@ describe('ViewEvent Component', () => {
       expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
     
-    const titleInput = screen.getByLabelText('Event Title');
+    const titleInput = screen.getByRole('textbox', { name: /Event Title/i });
     fireEvent.change(titleInput, { target: { value: 'Updated Event Title' } });
     
     expect(titleInput).toHaveValue('Updated Event Title');
@@ -183,7 +194,7 @@ describe('ViewEvent Component', () => {
       expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
     
-    const titleInput = screen.getByLabelText('Event Title');
+    const titleInput = screen.getByRole('textbox', { name: /Event Title/i });
     fireEvent.change(titleInput, { target: { value: 'Updated Event Title' } });
     
     const submitButton = screen.getByText('Save Changes');
@@ -194,14 +205,17 @@ describe('ViewEvent Component', () => {
     
     await waitFor(() => {
       expect(apiClient.patch).toHaveBeenCalledWith(
-        `/api/admin-manage-event-details/${mockEventId}`,
+        `/api/admin/manage-event/${mockEventId}`,
         expect.objectContaining({
           title: 'Updated Event Title',
         })
       );
     });
     
-    expect(mockAlert).toHaveBeenCalledWith('Event updated successfully!');
+    // Instead of checking for an alert, check for the notification in the UI
+    await waitFor(() => {
+      expect(screen.getByText('Event updated successfully!')).toBeInTheDocument();
+    });
   });
 
   it('navigates back when back button is clicked', async () => {
@@ -211,7 +225,8 @@ describe('ViewEvent Component', () => {
       expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
     
-    const backButton = screen.getByText('← Back');
+    // Use getByRole and partial text match instead of exact text match
+    const backButton = screen.getByRole('button', { name: /back/i });
     
     await act(async () => {
       fireEvent.click(backButton);
@@ -237,10 +252,13 @@ describe('ViewEvent Component', () => {
       fireEvent.click(submitButton);
     });
     
+    // Modify this part to match your actual implementation
     await waitFor(() => {
       expect(consoleErrorSpy).toHaveBeenCalled();
-      expect(mockAlert).toHaveBeenCalledWith('There was an error updating the event.');
     });
+    
+    // Check that the notification is shown - match what your component actually shows
+    expect(screen.getByText('Failed to update event')).toBeInTheDocument();
     
     consoleErrorSpy.mockRestore();
   });
