@@ -119,7 +119,7 @@ const Layout: React.FC = () => {
                 onClick={() => {
                   if (location.pathname.startsWith("/admin")) {
                     navigate("/admin/profile");
-                  } else if (location.pathname.startsWith("/student")) {
+                  } else if (location.pathname.startsWith("/student") || location.pathname.startsWith("/president")) {
                     navigate("/student/profile");
                   } else {
                     navigate("/profile");
