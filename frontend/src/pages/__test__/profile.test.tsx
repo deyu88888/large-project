@@ -59,6 +59,26 @@ vi.mock('../../stores/auth-store', () => ({
   useAuthStore: () => mockUseAuthStore()
 }));
 
+// Mock awards data
+const mockAwards = [
+  {
+    id: 1,
+    award: {
+      title: 'Outstanding Achievement',
+      description: 'For exceptional contributions',
+      rank: 'Gold'
+    }
+  },
+  {
+    id: 2,
+    award: {
+      title: 'Excellence Award',
+      description: 'For excellence in performance',
+      rank: 'Silver'
+    }
+  }
+];
+
 // Mock the router hooks
 const mockNavigate = vi.fn();
 const mockUseParams = vi.fn();
@@ -124,8 +144,11 @@ describe('ProfilePage Component', () => {
     vi.clearAllMocks();
     
     // Mock the API responses
-    vi.mocked(apiClient.get).mockResolvedValue({
-      data: mockUser
+    vi.mocked(apiClient.get).mockImplementation((url) => {
+      if (url.includes('/api/awards/students')) {
+        return Promise.resolve({ data: mockAwards });
+      }
+      return Promise.resolve({ data: mockUser });
     });
 
     vi.mocked(apiClient.put).mockResolvedValue({
@@ -172,9 +195,16 @@ describe('ProfilePage Component', () => {
     
     mockUseParams.mockReturnValue({});
     const originalGet = vi.mocked(apiClient.get);
-    vi.mocked(apiClient.get).mockImplementation(() => new Promise(resolve => {
-      setTimeout(() => resolve({ data: mockUser }), 1000);
-    }));
+    vi.mocked(apiClient.get).mockImplementation((url) => {
+      if (url.includes('/api/awards/students')) {
+        return new Promise(resolve => {
+          setTimeout(() => resolve({ data: mockAwards }), 1000);
+        });
+      }
+      return new Promise(resolve => {
+        setTimeout(() => resolve({ data: mockUser }), 1000);
+      });
+    });
     
     await act(async () => {
       render(
@@ -240,8 +270,14 @@ describe('ProfilePage Component', () => {
       is_following: false
     };
     
-    vi.mocked(apiClient.get).mockResolvedValueOnce({
-      data: otherUser
+    vi.mocked(apiClient.get).mockImplementation((url) => {
+      if (url.includes('/api/awards/students')) {
+        return Promise.resolve({ data: mockAwards });
+      }
+      if (url.includes('/api/users/456')) {
+        return Promise.resolve({ data: otherUser });
+      }
+      return Promise.resolve({ data: mockUser });
     });
     
     await setup(false, false, '456');
@@ -270,8 +306,14 @@ describe('ProfilePage Component', () => {
       is_following: false
     };
     
-    vi.mocked(apiClient.get).mockResolvedValueOnce({
-      data: otherUser
+    vi.mocked(apiClient.get).mockImplementation((url) => {
+      if (url.includes('/api/awards/students')) {
+        return Promise.resolve({ data: mockAwards });
+      }
+      if (url.includes('/api/users/456')) {
+        return Promise.resolve({ data: otherUser });
+      }
+      return Promise.resolve({ data: mockUser });
     });
     
     await setup(false, false, '456');
@@ -294,6 +336,8 @@ describe('ProfilePage Component', () => {
     });
     
     // Update component with new state
+    otherUser.is_following = true;
+    
     await act(async () => {
       render(
         <ThemeProvider theme={theme}>
@@ -326,7 +370,15 @@ describe('ProfilePage Component', () => {
     mockUseAuthStore.mockReturnValue(mockAuthStore);
     
     // Mock API error
-    vi.mocked(apiClient.get).mockRejectedValueOnce(new Error('User not found'));
+    vi.mocked(apiClient.get).mockImplementation((url) => {
+      if (url.includes('/api/users/999')) {
+        return Promise.reject(new Error('User not found'));
+      }
+      if (url.includes('/api/awards/students')) {
+        return Promise.resolve({ data: mockAwards });
+      }
+      return Promise.resolve({ data: mockUser });
+    });
     
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     
@@ -370,7 +422,15 @@ describe('ProfilePage Component', () => {
     mockUseAuthStore.mockReturnValue(mockAuthStore);
     
     // Mock API error for profile fetch
-    vi.mocked(apiClient.get).mockRejectedValueOnce(new Error('Failed to fetch profile'));
+    vi.mocked(apiClient.get).mockImplementation((url) => {
+      if (url.includes('/api/users/999')) {
+        return Promise.reject(new Error('Failed to fetch profile'));
+      }
+      if (url.includes('/api/awards/students')) {
+        return Promise.resolve({ data: mockAwards });
+      }
+      return Promise.resolve({ data: mockUser });
+    });
     
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
