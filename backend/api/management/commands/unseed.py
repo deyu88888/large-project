@@ -1,7 +1,6 @@
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.storage import default_storage
 from django.core.management.base import BaseCommand
-from django.conf import settings
 import api.models as m
 
 class Command(BaseCommand):
@@ -17,6 +16,8 @@ class Command(BaseCommand):
 
         models = [
             m.Notification,
+            m.AdminReportRequest,
+            m.ReportReply,
             m.EventRequest,
             m.Event,
             m.SocietyShowreelRequest,
