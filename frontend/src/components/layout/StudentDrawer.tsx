@@ -61,13 +61,13 @@ const StudentDrawer: React.FC<StudentDrawerProps> = ({
     { title: "Discover Societies", icon: <GroupAddOutlinedIcon />, to: "/student/join-society" },
     { title: "Start A Society", icon: <AddCircleOutlineIcon />, to: "/student/start-society" },
   ];
-  
+
   const bottomMenuItems = [
     { title: "Notifications", icon: <NotificationsNoneOutlinedIcon />, to: "/student/view-notifications" },
     { title: "Inbox", icon: <InboxIcon />, to: "/student/view-inbox" },
     { title: "Report", icon: <ReportProblemOutlinedIcon />, to: "/student/report-to-admin" },
   ];
-  
+
 
   const logout = () => {
     localStorage.removeItem("access");

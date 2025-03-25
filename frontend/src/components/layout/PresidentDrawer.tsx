@@ -64,7 +64,7 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
     { title: "Dashboard", icon: <HomeOutlinedIcon />, to: "/student" },
     { title: "My Societies", icon: <PeopleOutlineIcon />, to: "/student/my-societies" },
     { title: "Start Society", icon: <AddCircleOutlineIcon />, to: "/student/start-society" },
-    { title: "View Events", icon: <EventAvailableIcon />, to: "/student/view-events" },
+    { title: "My Events", icon: <EventAvailableIcon />, to: "/student/view-events" },
     { title: "Notifications", icon: <NotificationsNoneOutlinedIcon />, to: "/student/view-notifications" },
     { title: "Inbox", icon: <NotificationImportantOutlinedIcon />, to: "/student/view-inbox" },
     { title: "Report to Admin", icon: <ReportProblemOutlinedIcon />, to: "/student/report-to-admin" },
@@ -158,6 +158,13 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
       <Divider />
 
       {/* Manage My Societies Section */}
+      {drawer && (
+        <Box sx={{ px: 2, py: 1 }}>
+          <Typography variant="subtitle2" color="textSecondary">
+            Manage
+          </Typography>
+        </Box>
+      )}
       <List>
         <ListItem disablePadding>
           <ListItemButton
@@ -213,7 +220,7 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
       {drawer && (
         <Box sx={{ px: 2, py: 1 }}>
           <Typography variant="subtitle2" color="textSecondary">
-            Join Societies
+            View
           </Typography>
         </Box>
       )}
@@ -233,9 +240,28 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
             >
               <GroupAddOutlinedIcon />
             </ListItemIcon>
-            {drawer && <ListItemText primary="Join Societies" />}
+            {drawer && <ListItemText primary="View All Societies" />}
           </ListItemButton>
         </ListItem>
+
+        <ListItem disablePadding>
+        <ListItemButton
+          component={Link}
+          to="/student/student-all-events" // Updated route to singular
+          sx={{ justifyContent: drawer ? "initial" : "center", px: 2.5 }}
+        >
+          <ListItemIcon
+            sx={{
+              minWidth: 0,
+              mr: drawer ? 3 : "auto",
+              justifyContent: "center",
+            }}
+          >
+            <GroupAddOutlinedIcon />
+          </ListItemIcon>
+          {drawer && <ListItemText primary="View All Events" />}
+        </ListItemButton>
+      </ListItem>
       </List>
       <Divider />
 
