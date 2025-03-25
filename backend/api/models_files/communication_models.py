@@ -113,7 +113,7 @@ class SocietyNews(models.Model):
     title = models.CharField(max_length=100, blank=False)
     content = models.TextField(blank=False)
 
-    image = models.ImageField(upload_to="society_news/images/", blank=True, null=True)
+    image = models.ImageField(upload_to="society_news/images/", blank=True, null=True, default="news_icons/newspaper.jpg")
     attachment = models.FileField(upload_to="society_news/attachments/", blank=True, null=True)
 
     author = models.ForeignKey(

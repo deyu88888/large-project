@@ -113,7 +113,7 @@ class PendingJoinRequestsView(APIView):
         # Get all pending requests for this student
         pending_requests = SocietyRequest.objects.filter(
             from_student=user.student,
-            approved=False
+            approved=None
         )
 
         serializer = SocietyRequestSerializer(pending_requests, many=True)
