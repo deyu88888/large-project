@@ -16,6 +16,7 @@ class Command(BaseCommand):
 
         models = [
             m.Notification,
+            m.Comment,
             m.AdminReportRequest,
             m.ReportReply,
             m.EventRequest,

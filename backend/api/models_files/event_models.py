@@ -79,6 +79,7 @@ class Event(models.Model):
         super().save(*args, **kwargs)
 
 class EventModule(models.Model):
+    """A modular component of an event page"""
     MODULE_CHOICES = [
         ('subtitle', 'Subtitle'),
         ('description', 'Description'),

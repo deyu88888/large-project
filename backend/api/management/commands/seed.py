@@ -7,9 +7,12 @@ from django.contrib.auth.hashers import make_password
 from django.core.management.base import BaseCommand
 
 from api.signals import broadcast_dashboard_update
-from api.management.commands.data.society_generator import RandomSocietyDataGenerator
-from api.management.commands.data.student_generator import RandomStudentDataGenerator
-from api.management.commands.data.event_generator import RandomEventDataGenerator
+from api.management.commands.data.generators import (
+    RandomCommentDataGenerator,
+    RandomEventDataGenerator,
+    RandomSocietyDataGenerator,
+    RandomStudentDataGenerator,
+)
 from api.models import (
     Student,
     Society,
@@ -23,6 +26,7 @@ from api.models import (
     AwardStudent,
     AdminReportRequest,
     ReportReply,
+    Comment,
 )
 
 class Command(BaseCommand):
@@ -397,6 +401,8 @@ class Command(BaseCommand):
             approved = self.handle_event_status(event)
             if approved and past:
                 self.handle_attendance(event)
+            if approved:
+                self.create_event_comments(event, past)
 
         print(self.style.SUCCESS(
             f"Seeding {'past' if past else ''} event {n}/{n}"
@@ -425,6 +431,8 @@ class Command(BaseCommand):
             status=status,
         )
 
+        if created and status=="Approved":
+            self.create_event_comments(event, past)
         if created:
             all_students = list(society.society_members.order_by("?"))
             num_attendees = min(randint(5, 20), len(all_students))
@@ -631,3 +639,33 @@ class Command(BaseCommand):
                 is_admin_reply = True if responder in admins else False,
             )
             prev_reply = rep_reply
+
+    def create_event_comments(self, event: Event, past=False, parent=None):
+        """Seeds comments on events"""
+        generator = RandomCommentDataGenerator()
+        if parent:
+            data = generator.generate_reply()
+        else:
+            data = generator.generate_comment(past)
+        content = data["content"]
+        society_members = list(event.hosted_by.society_members.all())
+
+        comment = Comment.objects.create(
+            event=event,
+            user=choice(society_members),
+            content=content,
+        )
+        like_num = randint(0, 5)
+        comment.likes.add(*society_members[:min(like_num, len(society_members))])
+        if like_num < len(society_members):
+            dislike_num = like_num + randint(0, 5)
+            comment.dislikes.add(*society_members[like_num:min(dislike_num, len(society_members))])
+
+        if parent:
+            comment.parent_comment = parent
+        if random() < 0.65:
+            self.create_event_comments(event, past, choice((comment, parent)))
+        comment.save()
+
+#SocietyNews
+#NewsComment + like/dislike
