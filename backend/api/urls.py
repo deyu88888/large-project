@@ -229,8 +229,8 @@ award_patterns = [
 
 # Verification patterns
 verification_patterns = [
-    path("request-otp/", request_otp, name="request_otp"),
-    path("verify-otp/", verify_otp, name="verify_otp"),
+    path("request-otp", request_otp, name="request_otp"),
+    path("verify-otp", verify_otp, name="verify_otp"),
 ]
 
 # Main URL patterns

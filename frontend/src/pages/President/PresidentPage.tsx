@@ -55,7 +55,7 @@ const PresidentPage: React.FC = () => {
         
         if (!id) throw new Error("No society ID available");
 
-        const societyResponse = await apiClient.get(`/api/manage-society-details/${id}/`);
+        const societyResponse = await apiClient.get(`/api/society/manage/${id}`);
         setSociety(societyResponse.data);
 
         const pendingResponse = await apiClient.get(`/api/society/${id}/pending-members/`);

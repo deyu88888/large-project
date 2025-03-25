@@ -43,7 +43,7 @@ const ViewSociety: React.FC = () => {
 
   const handleJoinSociety = async (societyId: number) => {
     try {
-      const response = await apiClient.post(`/api/join-society/${societyId}/`);
+      const response = await apiClient.post(`/api/society/join/${societyId}/`);
       if (response.data.message) {
         alert(response.data.message);
       } else {

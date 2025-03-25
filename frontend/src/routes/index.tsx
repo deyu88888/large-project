@@ -206,6 +206,19 @@ const routes = [
         ],
       },
       {
+        path: "manage-society-events/:societyId",
+        element: (
+          <PrivateGuard requiredRole="student">
+            <Suspense fallback={<LoadingView />}>
+              <Layout />
+            </Suspense>
+          </PrivateGuard>
+        ),
+        children: [
+          { index: true, element: <PageWithTitle title="Manage Society events"><ManageSocietyEvents /></PageWithTitle> },
+        ],
+      },
+      {
         path: "manage-society-news/:societyId",
         element: (
           <PrivateGuard requiredRole="student">
@@ -216,19 +229,6 @@ const routes = [
         ),
         children: [
           { index: true, element: <PageWithTitle title="Manage Society News"><SocietyNewsManager /></PageWithTitle> },
-        ],
-      },
-      {
-        path: "manage-society-events/:societyId",
-        element: (
-          <PrivateGuard requiredRole="student">
-            <Suspense fallback={<LoadingView />}>
-              <Layout />
-            </Suspense>
-          </PrivateGuard>
-        ),
-        children: [
-          { index: true, element: <PageWithTitle title="Manage Society Events"><ManageSocietyEvents /></PageWithTitle> },
         ],
       },
       {

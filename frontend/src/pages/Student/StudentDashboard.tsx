@@ -198,7 +198,7 @@ const StudentDashboard: React.FC = () => {
 
   const joinSociety = async (societyId: number) => {
     try {
-      await apiClient.post(`/api/join-society/${societyId}`);
+      await apiClient.post(`/api/society/join/${societyId}`);
       setSnackbarMessage("Successfully joined the society");
       setSnackbarSeverity("success");
       setSnackbarOpen(true);
@@ -214,7 +214,7 @@ const StudentDashboard: React.FC = () => {
 
   const handleLeaveSociety = async (societyId: number) => {
     try {
-      await apiClient.delete(`/api/leave-society/${societyId}/`);
+      await apiClient.delete(`/api/society/leave/${societyId}/`);
       setSnackbarMessage("Successfully left the society");
       setSnackbarSeverity("success");
       setSnackbarOpen(true);
