@@ -100,6 +100,7 @@ class ActivityLog(models.Model):
         deleted_count, _ = expired_logs.delete()
         return deleted_count
 
+
 class Activity(models.Model):
     """
     Represents a recent activity performed by a user.

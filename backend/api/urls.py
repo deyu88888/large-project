@@ -40,7 +40,10 @@ from api.views import (
     AwardView, AwardStudentView,
 
     # Utilities
-    custom_media_view, SearchView, PendingJoinRequestsView
+    custom_media_view, SearchView, PendingJoinRequestsView,
+
+    #Recommendation System
+    RecommendedSocietiesView, SocietyRecommendationExplanationView, RecommendationFeedbackView, RecommendationFeedbackAnalyticsView 
 )
 from .utils import request_otp, verify_otp
 
@@ -119,6 +122,8 @@ admin_patterns = [
     path('report-thread/<int:report_id>', ReportThreadView.as_view(), name='report_thread'),
     path("reports-replied", AdminReportsWithRepliesView.as_view(), name="report_replied"),
     path("reports-with-replies", AdminRepliesListView.as_view(), name="reports_with_replies"),
+    path('report-reply-notifications', ReportReplyNotificationsView.as_view(), name='report-reply-notifications'),
+    path('report-reply-notifications/<int:reply_id>', ReportReplyNotificationsView.as_view(), name='mark-report-reply-read'),
     path('news/publication-request/<int:request_id>/', AdminNewsApprovalView.as_view(), name='admin_news_approval'),
 ]
 

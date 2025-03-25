@@ -192,7 +192,7 @@ const ManageSocietyEvents: React.FC = () => {
 
       <Box display="flex" justifyContent="center" mb={3}>
         <Button
-          onClick={() => navigate(`/president-page/${society_id}/create-event/`)}
+          onClick={() => navigate(`/president-page/${society_id}/create-event`)}
           sx={{
             backgroundColor: colors.blueAccent[500],
             color: theme.palette.mode === "dark" ? "#141b2d" : "#ffffff",
