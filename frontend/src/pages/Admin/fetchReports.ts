@@ -14,7 +14,7 @@ export const fetchReports = async (): Promise<Report[]> => {
 
 export const fetchReportDetails = async (reportId: string) => {
   try {
-    const res = await apiClient.get(`/api/report-to-admin/${reportId}`);
+    const res = await apiClient.get(`/api/reports/to-admin/${reportId}/`);
     return res.data;
   } catch (error) {
     console.error("Error fetching report details:", error);
