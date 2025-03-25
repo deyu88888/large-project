@@ -14,7 +14,7 @@ export const fetchReports = async (): Promise<Report[]> => {
 
 export const fetchReportDetails = async (reportId: string) => {
   try {
-    const res = await apiClient.get(`/api/report-to-admin/${reportId}`);
+    const res = await apiClient.get(`/api/reports/to-admin/${reportId}/`);
     return res.data;
   } catch (error) {
     console.error("Error fetching report details:", error);
@@ -24,7 +24,7 @@ export const fetchReportDetails = async (reportId: string) => {
 
 export const fetchReportThread = async (reportId: string) => {
   try {
-    const res = await apiClient.get(`/api/report-thread/${reportId}`);
+    const res = await apiClient.get(`/api/reports/report-thread/${reportId}`);
     return res.data;
   } catch (error) {
     console.error("Error fetching report thread:", error);
@@ -34,7 +34,7 @@ export const fetchReportThread = async (reportId: string) => {
 
 export const submitReply = async (data: { report: string | number; parent_reply?: number | null; content: string }) => {
   try {
-    const res = await apiClient.post("/api/report-replies", data);
+    const res = await apiClient.post("/api/reports/report-replies", data);
     return res.data;
   } catch (error) {
     console.error("Error submitting reply:", error);
@@ -54,7 +54,7 @@ export const fetchMyReports = async () => {
 
 export const fetchMyReportsWithReplies = async () => {
   try {
-    const res = await apiClient.get("/api/my-reports-with-replies");
+    const res = await apiClient.get("/api/admin/my-reports-with-replies");
     return res.data;
   } catch (error) {
     console.error("Error fetching my reports with replies:", error);
@@ -64,7 +64,7 @@ export const fetchMyReportsWithReplies = async () => {
 
 export const fetchReportsWithReplies = async () => {
   try {
-    const res = await apiClient.get("/api/reports-with-replies");
+    const res = await apiClient.get("/api/admin/reports-with-replies");
     return res.data;
   } catch (error) {
     console.error("Error fetching reports with replies:", error);
@@ -74,7 +74,7 @@ export const fetchReportsWithReplies = async () => {
 
 export const fetchReportReplies = async (): Promise<ReportReply[]> => {
   try {
-    const response = await apiClient.get('/api/reports-replied');
+    const response = await apiClient.get('/api/admin/reports-replied');
     return response.data;
   } catch (error) {
     console.error('Error fetching report replies:', error);

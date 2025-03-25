@@ -155,7 +155,7 @@ const routes = [
           { path: "report-thread/:reportId", element: <PageWithTitle title="Report Thread"><ReportThread /></PageWithTitle> },
           { path: "report-to-admin", element: <PageWithTitle title="Report to Admin"><ReportToAdmin /></PageWithTitle> },
           { path: "student-search", element: <PageWithTitle title="Student Search"><SearchResultsPage /></PageWithTitle> },
-          { path: "student-all-events", element: <PageWithTitle title="Student All Events"><AllEventsPage /></PageWithTitle> }
+          { path: "all-events", element: <PageWithTitle title="Student All Events"><AllEventsPage /></PageWithTitle> }
         ],
       },
       {
@@ -181,19 +181,6 @@ const routes = [
         ],
       },
       {
-        path: "president-page/:societyId",
-        element: (
-          <PrivateGuard requiredRole="student">
-            <Suspense fallback={<LoadingView />}>
-              <Layout />
-            </Suspense>
-          </PrivateGuard>
-        ),
-        children: [
-          { index: true, element: <PageWithTitle title="Manage Society"><PresidentPage /></PageWithTitle> },
-        ],
-      },
-      {
         path: "manage-society-details/:societyId",
         element: (
           <PrivateGuard requiredRole="student">
@@ -206,6 +193,7 @@ const routes = [
           { index: true, element: <PageWithTitle title="Manage Society Details"><ManageSocietyDetails /></PageWithTitle> },
         ],
       },
+      // New route for managing society news
       {
         path: "manage-society-events/:societyId",
         element: (

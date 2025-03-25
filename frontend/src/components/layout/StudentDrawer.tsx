@@ -59,7 +59,7 @@ const StudentDrawer: React.FC<StudentDrawerProps> = ({
     { title: "My Events", icon: <EventAvailableIcon />, to: "/student/view-events" },
     { title: "News", icon: <NewspaperIcon />, to: "/student/view-news" },
     { title: "Discover Societies", icon: <GroupAddOutlinedIcon />, to: "/student/join-society" },
-    { title: "Discover Events", icon: <GroupAddOutlinedIcon />, to: "/student/student-all-events" },
+    { title: "Discover Events", icon: <GroupAddOutlinedIcon />, to: "/student/all-events" },
     { title: "Start A Society", icon: <AddCircleOutlineIcon />, to: "/student/start-society" },
   ];
 
@@ -153,26 +153,29 @@ const StudentDrawer: React.FC<StudentDrawerProps> = ({
           ))}
         </List>
         <Divider />
-
         <List>
-          <ListItem disablePadding>
-            <ListItemButton
-              component={Link}
-              to="/student/join-society"
-              sx={{ justifyContent: drawer ? "initial" : "center", px: 2.5 }}
-            >
-              <ListItemIcon
-                sx={{
-                  minWidth: 0,
-                  mr: drawer ? 3 : "auto",
-                  justifyContent: "center",
-                }}
+          {bottomMenuItems.map((item) => (
+            <ListItem key={item.title} disablePadding>
+              <ListItemButton
+                component={Link}
+                to={item.to}
+                selected={selected === item.title}
+                onClick={() => setSelected(item.title)}
+                sx={{ justifyContent: drawer ? "initial" : "center", px: 2.5 }}
               >
-                <GroupAddOutlinedIcon />
-              </ListItemIcon>
-              {drawer && <ListItemText primary="Join Societies" />}
-            </ListItemButton>
-          </ListItem>
+                <ListItemIcon
+                  sx={{
+                    minWidth: 0,
+                    mr: drawer ? 3 : "auto",
+                    justifyContent: "center",
+                  }}
+                >
+                  {item.icon}
+                </ListItemIcon>
+                {drawer && <ListItemText primary={item.title} />}
+              </ListItemButton>
+            </ListItem>
+          ))}
         </List>
         <Divider />
 

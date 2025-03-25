@@ -21,7 +21,7 @@ const ReportReply: React.FC = () => {
   const fetchReport = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get(`/api/report-to-admin/${reportId}`);
+      const response = await apiClient.get(`/api/reports/to-admin/${reportId}/`);
       setReport(response.data);
       setLoading(false);
     } catch (err) {
@@ -37,7 +37,7 @@ const ReportReply: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await apiClient.post("/api/report-replies", {
+      await apiClient.post("/api/reports/replies/", {
         report: reportId,
         content: replyContent,
       });

@@ -66,8 +66,8 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
     { title: "My Events", icon: <EventAvailableIcon />, to: "/student/view-events" },
     { title: "News", icon: <NewspaperIcon />, to: "/student/view-news" },
     { title: "Discover Societies", icon: <GroupAddOutlinedIcon />, to: "/student/join-society" },
-    { title: "Discover Events", icon: <GroupAddOutlinedIcon />, to: "/student/student-all-events" },
-    { title: "Start A Society", icon: <AddCircleOutlineIcon />, to: "/student/start-society" },
+    { title: "Discover Events", icon: <GroupAddOutlinedIcon />, to: "/student/all-events" },
+    // "Start A Society" item has been removed
   ];
 
   const bottomMenuItems = [

@@ -66,19 +66,21 @@ export const apiPaths = {
     ADMIN: "/api/admin/admin", // admin list for admins
     PENDINGSOCIETYREQUEST: "/api/admin/society/request/pending",  // TODO: DONT ADD BACKSLASH
     PROFILE: "/api/user/profile", // TODO: DONT ADD BACKSLASH
-    REPORT: "/api/report-to-admin", // TODO: DONT ADD BACKSLASH
+    REPORT: "/api/admin/report-to-admin", // TODO: DONT ADD BACKSLASH
     PENDINGEVENTREQUEST: "/api/event/request/pending",  // TODO: DONT ADD BACKSLASH
     REJECTEDEVENT: "/api/admin-panel/rejected-event", // TODO: DONT ADD BACKSLASH
-    PENDINGDESCRIPTIONREQUEST: "/api/description/request/pending",
+    PENDINGDESCRIPTIONREQUEST: "/api/admin/description/request/pending",
     BASE: "/api/users",
-    ADMINVIEW: (adminId: number) => `/api/admin-manage-admin-details/${adminId}`,
+
+    ADMINVIEW: (adminId: number) => `/api/admin/manage-admin/${adminId}`,
+
     ADMINSTUDENTVIEW: (studentId: number) => `/api/admin/manage-student/${studentId}`,
     ADMINSOCIETYVIEW: (societyId: number) => `/api/admin/manage-society/${societyId}`, // admin society view
     ADMINEVENTVIEW: (eventId: number) => `/api/admin/manage-event/${eventId}`,
     DELETE: (targetType: string, targetId: number) => `/api/admin/delete/${targetType}/${targetId}`,
     UNDO_DELETE: (logId: number) => `/api/undo-delete/${logId}`,
-    ACTIVITYLOG: "/api/activity-log",
-    DELETEACTIVITYLOG: (logId: number) => `/api/delete-activity-log/${logId}`,
+    ACTIVITYLOG: "/api/admin/activity-log",
+    DELETEACTIVITYLOG: (logId: number) => `/api/admin/delete-activity-log/${logId}`,
   },
   SOCIETY: {
     All: "/api/dashboard/all-societies",
@@ -94,10 +96,10 @@ export const apiPaths = {
   },
   EVENTS: {
     ALL: "/api/events", // TODO: DONT ADD BACKSLASH
-    PENDINGEVENTREQUEST: "api/society/event/pending",  // TODO: DONT ADD BACKSLASH
-    UPDATEENEVENTREQUEST: "api/society/event/request",  // TODO: DONT ADD BACKSLASH
-    APPROVEDEVENTLIST: "api/society/event/approved", // TODO: DONT ADD BACKSLASH
-    REJECTEDEVENTLIST: "api/society/event/rejected", // TODO: DONT ADD BACKSLASH
+    PENDINGEVENTREQUEST: "api/admin/society/event/pending",  // TODO: DONT ADD BACKSLASH
+    UPDATEENEVENTREQUEST: "api/admin/society/event/request",  // TODO: DONT ADD BACKSLASH
+    APPROVEDEVENTLIST: "api/admin/society/event/approved", // TODO: DONT ADD BACKSLASH
+    REJECTEDEVENTLIST: "api/admin/society/event/rejected", // TODO: DONT ADD BACKSLASH
   },
 };
 

@@ -62,16 +62,16 @@ const SocietyCard: React.FC<SocietyCardProps> = ({
           borderRadius: "0.5rem",
         }}
       >
-        {society.imageUrl ? (
+        {society.icon ? (
           <img
-            src={society.imageUrl}
-            alt={society.name}
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-              borderRadius: "0.5rem"
-            }}
+          src={society.icon || undefined}
+          alt={`${society.name} icon`}
+          style={{
+            width: "50px",
+            height: "50px",
+            borderRadius: "50%",
+            verticalAlign: "middle",
+          }}
           />
         ) : (
           <Typography sx={{ color: isLight ? colors.grey[800] : colors.grey[100] }}>

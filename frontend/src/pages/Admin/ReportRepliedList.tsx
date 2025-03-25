@@ -67,8 +67,20 @@ const ReportRepliedList: React.FC = () => {
   const fetchReportsWithReplies = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get("/api/reports-replied");
-      setReportsWithReplies(response.data || []);
+      const response = await apiClient.get("/api/admin/reports-replied");
+  
+      const processed = (response.data || []).map((report: any) => {
+        const replies = report.top_level_replies || [];
+        const latestReply = replies[replies.length - 1];
+  
+        return {
+          ...report,
+          latest_reply: latestReply?.content || "No reply yet",
+          latest_reply_date: latestReply?.created_at || "N/A",
+          reply_count: replies.length,
+        };
+      });
+      setReportsWithReplies(processed);
       setError(null);
     } catch (err) {
       console.error("Error fetching reports with replies:", err);
@@ -77,6 +89,7 @@ const ReportRepliedList: React.FC = () => {
       setLoading(false);
     }
   }, []);
+  
 
   // Load data on component mount
   useEffect(() => {
@@ -127,32 +140,17 @@ const ReportRepliedList: React.FC = () => {
     { field: "id", headerName: "ID", flex: 0.5 },
     { field: "from_student_username", headerName: "Reporter", flex: 1 },
     { field: "report_type", headerName: "Report Type", flex: 1 },
-    { 
-      field: "subject", 
-      headerName: "Subject", 
-      flex: 1.5,
-      renderCell: (params: GridRenderCellParams) => (
-        <Typography title={params.value as string}>
-          {renderTruncatedText(params.value as string, 50)}
-        </Typography>
-      )
-    },
+    { field: "subject", headerName: "Subject", flex: 1.5 },
     { 
       field: "latest_reply", 
       headerName: "Latest Reply", 
       flex: 2,
-      renderCell: (params: GridRenderCellParams) => (
-        <Typography title={params.value as string}>
-          {renderTruncatedText(params.value as string, 100)}
-        </Typography>
-      )
     },
     { field: "reply_count", headerName: "Total Replies", flex: 0.8 },
     {
       field: "latest_reply_date",
       headerName: "Latest Reply Date",
       flex: 1.5,
-      valueFormatter: (params) => formatDate(params.value as string),
     },
     {
       field: "action",
@@ -160,12 +158,13 @@ const ReportRepliedList: React.FC = () => {
       flex: 1,
       sortable: false,
       filterable: false,
+      minWidth: 140,
+      width: 140,
       renderCell: (params: GridRenderCellParams) => (
         <Button
           variant="contained"
           color="primary"
           onClick={() => handleViewThread(params.row.id)}
-          size="small"
         >
           View Thread
         </Button>
@@ -187,21 +186,8 @@ const ReportRepliedList: React.FC = () => {
       sx={{
         height: "calc(100vh - 64px)",
         maxWidth: drawer ? `calc(100% - 3px)` : "100%",
-        p: 2,
       }}
     >
-      <Typography
-        variant="h1"
-        sx={{
-          color: theme.palette.mode === "light" ? colors.grey[100] : colors.grey[100],
-          fontSize: "1.75rem",
-          fontWeight: 800,
-          marginBottom: "1rem",
-        }}
-      >
-        Replied Reports
-      </Typography>
-      
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
@@ -239,23 +225,14 @@ const ReportRepliedList: React.FC = () => {
         <DataGrid
           rows={filteredReports}
           columns={columns}
-          slots={{ 
-            toolbar: GridToolbar,
-            noRowsOverlay: () => <CustomNoRowsOverlay loading={loading} />,
-            loadingOverlay: () => <CircularProgress />
-          }}
-          getRowId={(row) => row.id}
+          slots={{ toolbar: GridToolbar }}
           resizeThrottleMs={0}
           autoHeight
           loading={loading}
-          initialState={{
-            pagination: { paginationModel: { pageSize: 25 } },
-            sorting: {
-              sortModel: [{ field: 'latest_reply_date', sort: 'desc' }],
-            },
-          }}
-          pageSizeOptions={[10, 25, 50]}
           disableRowSelectionOnClick
+          initialState={{
+            pagination: { paginationModel: { pageSize: 100 } },
+          }}
         />
       </Box>
     </Box>

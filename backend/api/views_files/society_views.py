@@ -47,7 +47,7 @@ class JoinedSocietiesView(APIView):
             )
 
         # Validates a student doesn't already have a role in a society
-        error = student_has_no_role(student, False)
+        error = student_has_no_role(student, False, society_id)
         if error:
             return error
 

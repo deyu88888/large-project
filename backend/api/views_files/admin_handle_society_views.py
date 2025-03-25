@@ -126,6 +126,7 @@ class SocietyStatusChangeUndoHandler(RestoreHandler):
                 society.approved_by = None
             
             society.save()
+            reason = log_entry.reason if log_entry.reason else "Admin update of society details"
             
             ActivityLog.objects.create(
                 action_type="Update",
@@ -134,6 +135,7 @@ class SocietyStatusChangeUndoHandler(RestoreHandler):
                 target_name=society.name,
                 performed_by=log_entry.performed_by,
                 timestamp=timezone.now(),
+                reason=reason,
                 expiration_date=timezone.now() + timedelta(days=30),
             )
             

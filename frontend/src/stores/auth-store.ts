@@ -1,20 +1,21 @@
 import { create } from "zustand";
+import { User } from "../types/user/user";
 
-interface User {
-  id: number;
-  username: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  is_active: boolean;
-  role: string;
-  is_president?: boolean;
-  is_vice_president: boolean;
-  vice_president_of_society?: number;
-  is_event_manager?: boolean;
-  event_manager_of_society?: number;
-  is_super_admin: boolean;
-}
+// interface User {
+//   id: number;
+//   username: string;
+//   first_name: string;
+//   last_name: string;
+//   email: string;
+//   is_active: boolean;
+//   role: string;
+//   is_president?: boolean;
+//   is_vice_president: boolean;
+//   vice_president_of_society?: number;
+//   is_event_manager?: boolean;
+//   event_manager_of_society?: number;
+//   is_super_admin: boolean;
+// }
 
 interface AuthStore {
   user: User | null;

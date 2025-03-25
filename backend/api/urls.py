@@ -9,7 +9,7 @@ from api.views import (
     AdminActivityLogView, AdminManageStudentDetailsView, AdminManageSocietyDetailsView,
     AdminManageEventDetailsView, AdminEventRequestView, AdminEventView,
     AdminSocietyRequestView, SocietyDescriptionRequestAdminView, AdminNewsApprovalView,
-    AdminRepliesListView, AdminReportsWithRepliesView,
+    AdminRepliesListView, AdminReportsWithRepliesView, AdminManageAdminDetailsView,
 
     # Society
     JoinedSocietiesView, RequestJoinSocietyView, StartSocietyRequestView,
@@ -40,7 +40,10 @@ from api.views import (
     AwardView, AwardStudentView,
 
     # Utilities
-    custom_media_view, SearchView, PendingJoinRequestsView
+    custom_media_view, SearchView, PendingJoinRequestsView,
+
+    #Recommendation System
+    RecommendedSocietiesView, SocietyRecommendationExplanationView, RecommendationFeedbackView, RecommendationFeedbackAnalyticsView 
 )
 from .utils import request_otp, verify_otp
 
@@ -76,6 +79,7 @@ admin_patterns = [
     path("manage-society/<int:society_id>", AdminManageSocietyDetailsView.as_view(), name="manage_society_details_admin"),
     path("manage-student/<int:student_id>", AdminManageStudentDetailsView.as_view(), name="manage_student_details_admin"),
     path("manage-event/<int:event_id>", AdminManageEventDetailsView.as_view(), name="manage_event_details_admin"),
+    path("manage-admin/<int:admin_id>", AdminManageAdminDetailsView.as_view(), name="manage_admin_details_admin"),
     path("activity-log", AdminActivityLogView.as_view(), name="activity_log"),
     path("delete-activity-log/<int:log_id>", AdminActivityLogView.as_view(), name="delete_activity_log"),
     path('delete/<str:target_type>/<int:target_id>', AdminDeleteView.as_view(), name='delete'),
@@ -119,6 +123,8 @@ admin_patterns = [
     path('report-thread/<int:report_id>', ReportThreadView.as_view(), name='report_thread'),
     path("reports-replied", AdminReportsWithRepliesView.as_view(), name="report_replied"),
     path("reports-with-replies", AdminRepliesListView.as_view(), name="reports_with_replies"),
+    path('report-reply-notifications', ReportReplyNotificationsView.as_view(), name='report-reply-notifications'),
+    path('report-reply-notifications/<int:reply_id>', ReportReplyNotificationsView.as_view(), name='mark-report-reply-read'),
     path('news/publication-request/<int:request_id>/', AdminNewsApprovalView.as_view(), name='admin_news_approval'),
 ]
 

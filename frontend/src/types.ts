@@ -29,14 +29,15 @@ export type SocietyEvent = {        // avoid naming conflicts with JavaScript's 
     location: string;
   };
 
-  export type Event = {   // TODO: change name of this event
+  export type Event = {
+    cover_image: any;   // TODO: change name of this event
     id: number;
     title: string;
-    description: string;
+    description?: string;
     date: string;
-    startTime: string;
+    start_time: string;
     duration: string;
-    hostedBy: number;
+    hosted_by: number;
     location: string;
     status?: "upcoming" | "ongoing" | "completed" | "cancelled";
   };
