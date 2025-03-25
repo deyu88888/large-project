@@ -94,7 +94,7 @@ def get_upcoming_events(request):
         .values(
             'id',
             'title',
-            'description',
+            'main_description',
             'date',
             'location',
             'start_time',
