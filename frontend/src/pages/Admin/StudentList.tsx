@@ -135,7 +135,7 @@ const StudentList: React.FC = () => {
     { field: "last_name", headerName: "Last Name", flex: 1 },
     { field: "email", headerName: "Email", flex: 1 },
     {
-      field: "isActive",
+      field: "is_active",
       headerName: "Active",
       renderCell: (params: GridRenderCellParams<Student>) => 
         params.row.isActive ? "Yes" : "No",
@@ -144,17 +144,25 @@ const StudentList: React.FC = () => {
     { field: "role", headerName: "Role", flex: 1 },
     { field: "major", headerName: "Major", flex: 1 },
     {
-      field: "presidentOf",
+      field: "president_of",
       headerName: "President Of",
-      renderCell: (params: GridRenderCellParams<Student>) => 
-        Array.isArray(params.row.presidentOf) ? params.row.presidentOf.join(", ") : "",
+      renderCell: (params: GridRenderCellParams<Student>) => {
+        const { is_president, president_of } = params.row;
+        if (!is_president) {
+          return "N/A";
+        }
+        return Array.isArray(president_of)
+          ? president_of.join(", ")
+          : president_of || "N/A";
+      },
       flex: 1,
     },
+    
     {
       field: "is_president",
       headerName: "Is President",
       renderCell: (params: GridRenderCellParams<Student>) => 
-        params.row.isPresident ? "Yes" : "No",
+        params.row.is_president ? "Yes" : "No",
       flex: 1,
     },
     {
@@ -243,7 +251,7 @@ const StudentList: React.FC = () => {
           loading={loading}
           disableRowSelectionOnClick
           initialState={{
-            pagination: { paginationModel: { pageSize: 25 } },
+            pagination: { paginationModel: { pageSize: 100 } },
           }}
         />
       </Box>

@@ -80,17 +80,17 @@ const ViewStudent: React.FC = () => {
 
       const formDataToSend = new FormData();
       formDataToSend.append("username", formData.username);
-      formDataToSend.append("firstName", formData.firstName);
-      formDataToSend.append("lastName", formData.lastName);
+      formDataToSend.append("first_name", formData.first_name);
+      formDataToSend.append("last_name", formData.last_name);
       formDataToSend.append("email", formData.email);
-      formDataToSend.append("isActive", String(formData.isActive));
+      formDataToSend.append("is_active", String(formData.is_active));
       formDataToSend.append("role", formData.role);
       formDataToSend.append("major", formData.major);
-      formDataToSend.append("societies", JSON.stringify(formData.societies));
-      formDataToSend.append("presidentOf", JSON.stringify(formData.presidentOf));
-      formDataToSend.append("isPresident", String(formData.isPresident));
+      formData.societies.forEach((id) => { formDataToSend.append("societies", String(id));});
+      formDataToSend.append("president_of", JSON.stringify(formData.president_of));
+      formDataToSend.append("is_president", String(formData.is_president));
 
-      await apiClient.patch(`/api/admin-manage-student-details/${studentId}`, formDataToSend, {
+      await apiClient.patch(`/api/admin/manage-student/${studentId}`, formDataToSend, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
@@ -141,8 +141,8 @@ const ViewStudent: React.FC = () => {
               <TextField
                 fullWidth
                 label="First Name"
-                name="firstName"
-                value={formData.firstName}
+                name="first_name"
+                value={formData.first_name}
                 onChange={handleChange}
               />
             </Grid>
@@ -151,8 +151,8 @@ const ViewStudent: React.FC = () => {
               <TextField
                 fullWidth
                 label="Last Name"
-                name="lastName"
-                value={formData.lastName}
+                name="last_name"
+                value={formData.last_name}
                 onChange={handleChange}
               />
             </Grid>
@@ -196,7 +196,24 @@ const ViewStudent: React.FC = () => {
                 onChange={(e) =>
                   setFormData({
                     ...formData,
-                    societies: e.target.value.split(",").map((s) => s.trim()),
+                    societies: e.target.value
+                      .split(",")
+                      .map((s) => parseInt(s.trim()))
+                      .filter((id) => !isNaN(id)), // ensure valid numbers
+                  })
+                }
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="President Of (IDs)"
+                name="president_of"
+                value={formData.president_of}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    president_of: e.target.value.split(",").map((id) => parseInt(id.trim())),
                   })
                 }
               />
@@ -218,34 +235,18 @@ const ViewStudent: React.FC = () => {
                 label="Active"
               />
             </Grid>
-
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="President Of (IDs)"
-                name="presidentOf"
-                value={formData.presidentOf}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    presidentOf: e.target.value.split(",").map((id) => parseInt(id.trim())),
-                  })
-                }
-              />
-            </Grid>
-
             <Grid item xs={12}>
               <FormControlLabel
                 control={
                   <Switch
-                    checked={formData.isPresident}
+                    checked={formData.is_president}
                     onChange={(e) =>
                       setFormData({
                         ...formData,
-                        isPresident: e.target.checked,
+                        is_president: e.target.checked,
                       })
                     }
-                    name="isPresident"
+                    name="is_president"
                   />
                 }
                 label="Is President"

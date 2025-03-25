@@ -183,7 +183,7 @@ const ViewEvent: React.FC = () => {
     try {
       setSaving(true);
       await apiClient.patch(
-        `/api/admin-manage-event-details/${eventId}`,
+        `/api/admin/manage-event/${eventId}`,
         formData
       );
       showNotification("Event updated successfully!", "success");

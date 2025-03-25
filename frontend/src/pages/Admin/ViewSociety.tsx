@@ -244,7 +244,7 @@ const ViewSociety: React.FC = () => {
         }
 
         await apiClient.patch(
-          `/api/admin-manage-society-details/${societyId}`, 
+          `/api/admin/manage-society/${societyId}`, 
           formDataToSend, 
           {
             headers: { "Content-Type": "multipart/form-data" },
