@@ -56,9 +56,10 @@ const StudentDrawer: React.FC<StudentDrawerProps> = ({
   const topMenuItems = [
     { title: "Dashboard", icon: <HomeOutlinedIcon />, to: "/student" },
     { title: "My Societies", icon: <Groups2Icon />, to: "/student/my-societies" },
-    { title: "View Events", icon: <EventAvailableIcon />, to: "/student/view-events" },
+    { title: "My Events", icon: <EventAvailableIcon />, to: "/student/view-events" },
     { title: "News", icon: <NewspaperIcon />, to: "/student/view-news" },
     { title: "Discover Societies", icon: <GroupAddOutlinedIcon />, to: "/student/join-society" },
+    { title: "Discover Events", icon: <GroupAddOutlinedIcon />, to: "/student/student-all-events" },
     { title: "Start A Society", icon: <AddCircleOutlineIcon />, to: "/student/start-society" },
   ];
 
