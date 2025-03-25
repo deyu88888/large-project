@@ -183,21 +183,8 @@ const ReportRepliesList: React.FC = () => {
         sx={{
           height: "calc(100vh - 64px)",
           maxWidth: drawer ? `calc(100% - 3px)`: "100%",
-          p: 2,
         }}
       > 
-        <Typography
-          variant="h1"
-          sx={{
-            color: theme.palette.mode === "light" ? colors.grey[100] : colors.grey[100],
-            fontSize: "1.75rem",
-            fontWeight: 800,
-            marginBottom: "1rem",
-          }}
-        >
-          Reports Needing Reply
-        </Typography>
-        
         {error && (
           <Alert 
             severity="error" 
@@ -207,7 +194,6 @@ const ReportRepliesList: React.FC = () => {
             {error}
           </Alert>
         )}
-  
         <Box
           sx={{
             height: "78vh",
@@ -239,31 +225,18 @@ const ReportRepliesList: React.FC = () => {
           <DataGrid
             rows={filteredReports}
             columns={columns}
-            slots={{ 
-              toolbar: GridToolbar,
-              noRowsOverlay: () => (
-                <Box display="flex" alignItems="center" justifyContent="center" height="100%">
-                  <Typography>No reports found</Typography>
-                </Box>
-              ),
-            }}
-            getRowId={(row) => row.id}
+            slots={{ toolbar: GridToolbar }}
             resizeThrottleMs={0}
             autoHeight
             loading={loading}
-            initialState={{
-              pagination: {
-                paginationModel: { pageSize: 10, page: 0 },
-              },
-              sorting: {
-                sortModel: [{ field: 'latest_reply_date', sort: 'desc' }],
-              },
-            }}
-            pageSizeOptions={[5, 10, 25, 50]}
             disableRowSelectionOnClick
+            initialState={{
+              pagination: { paginationModel: { pageSize: 100 } },
+            }}
           />
         </Box>
       </Box>
+      
     );
   };
   
