@@ -7,6 +7,19 @@ import { apiClient, apiPaths } from '../../../api';
 import { useAuthStore } from '../../../stores/auth-store';
 import ManageSocietyDetails from '../ManageSocietyDetails';
 
+// Mock SocietyPreview with the correct path
+vi.mock('../../../components/SocietyPreview', () => ({
+  SocietyPreview: vi.fn(({ open, onClose, society }) => {
+    if (!open) return null;
+    return (
+      <div data-testid="society-preview-modal">
+        <h2>{society?.name}</h2>
+        <button onClick={onClose}>Close Preview</button>
+      </div>
+    );
+  }),
+}));
+
 const mockNavigate = vi.fn();
 
 vi.mock('react-router-dom', async () => {
@@ -34,32 +47,27 @@ vi.mock('../../../stores/auth-store', () => ({
   useAuthStore: vi.fn(),
 }));
 
-vi.mock('../SocietyPreviewModal', () => ({
-  default: vi.fn(({ open, onClose, formData }) => {
-    if (!open) return null;
-    return (
-      <div data-testid="society-preview-modal">
-        <h2>{formData.name}</h2>
-        <button onClick={onClose}>Close Preview</button>
-      </div>
-    );
-  }),
-}));
+// Update the mockSocietyData to match the actual component structure
+const mockSocietyData = {
+  id: 123,
+  name: 'Test Society',
+  category: 'Sports',
+  social_media_links: {
+    WhatsApp: 'https://whatsapp.com/group/testsociety',
+    Facebook: 'https://facebook.com/testsociety',
+    Instagram: '',
+    X: '',
+    Other: '',
+  },
+  description: 'This is a test society description',
+  tags: ['fun', 'active'],
+  icon: null,
+};
 
 const theme = createTheme();
 
 describe('ManageSocietyDetails Component', () => {
   const mockUser = { id: 99, username: 'testpresident' };
-  const mockSocietyData = {
-    id: 123,
-    name: 'Test Society',
-    category: 'Sports',
-    social_media_links: { twitter: 'https://twitter.com/testsociety' },
-    membership_requirements: 'Open to all students.',
-    upcoming_projects_or_plans: 'Planning a big event soon!',
-    tags: ['fun', 'active'],
-    icon: null,
-  };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -99,12 +107,12 @@ describe('ManageSocietyDetails Component', () => {
     expect(nameField).toHaveValue('Test Society');
     const categoryField = screen.getByLabelText('Category');
     expect(categoryField).toHaveValue('Sports');
-    const membershipField = screen.getByLabelText('Membership Requirements');
-    expect(membershipField).toHaveValue('Open to all students.');
-    const upcomingField = screen.getByLabelText('Upcoming Projects or Plans');
-    expect(upcomingField).toHaveValue('Planning a big event soon!');
     const tagsField = screen.getByLabelText('Tags (comma separated)');
     expect(tagsField).toHaveValue('fun, active');
+
+    // Check for description field
+    const descriptionElement = screen.getByText('Description');
+    expect(descriptionElement).toBeInTheDocument();
   });
 
   it('submits form data (PATCH request) and navigates on success', async () => {
@@ -261,7 +269,7 @@ describe('ManageSocietyDetails Component', () => {
       }
       return [value, setValue];
     });
-    const { rerender } = renderComponent();
+    renderComponent();
     await screen.findByLabelText('Society Name');
     if (setFormDataCallback) {
       act(() => {
@@ -331,7 +339,7 @@ describe('ManageSocietyDetails Component', () => {
       return [value, setValue];
     });
     unmount();
-    const { container } = renderComponent();
+    renderComponent();
     await screen.findByLabelText('Society Name');
     if (setFormDataFn) {
       await act(async () => {
