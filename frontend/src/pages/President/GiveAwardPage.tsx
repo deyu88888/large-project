@@ -55,7 +55,7 @@ const GiveAwardPage: React.FC = () => {
   const handleGiveAward = async (awardId: number): Promise<void> => {
     try {
       const studentIdNumber = Number(student_id);
-      await apiClient.post("/api/award-students/", {
+      await apiClient.post("/api/awards/students/", {
         student_id: studentIdNumber,
         award_id: awardId,
       });
