@@ -6,19 +6,121 @@ import { apiClient } from "../../api";
 import { tokens } from "../../theme/theme.ts";
 import { ReportFormData, SelectChangeEvent } from "../../types/president/report.ts";
 
-// interface ReportFormData {
-//   report_type: string;
-//   subject: string;
-//   details: string;
-// }
+// Component for page header
+const PageHeader: React.FC<{ textColor: string }> = ({ textColor }) => (
+  <Typography 
+    variant="h2" 
+    fontWeight="bold" 
+    mb={3}
+    sx={{ color: textColor }}
+  >
+    Report to Admin
+  </Typography>
+);
 
-// type SelectChangeEvent = {
-//   target: {
-//     name: string;
-//     value: unknown;
-//   };
-// };
+// Component for field labels
+const FieldLabel: React.FC<{ 
+  label: string; 
+  textColor: string; 
+  marginTop?: number 
+}> = ({ label, textColor, marginTop = 0 }) => (
+  <Typography 
+    variant="h6" 
+    fontWeight="bold" 
+    mt={marginTop} 
+    mb={1}
+    sx={{ color: textColor }}
+  >
+    {label}
+  </Typography>
+);
 
+// Component for the report type dropdown
+const ReportTypeSelect: React.FC<{
+  value: string;
+  onChange: (e: SelectChangeEvent) => void;
+  selectBackgroundColor: string;
+  reportTypes: Array<{ value: string; label: string }>;
+}> = ({ value, onChange, selectBackgroundColor, reportTypes }) => (
+  <Select
+    name="report_type"
+    value={value}
+    onChange={onChange}
+    fullWidth
+    aria-label="Type of Report"
+    sx={{
+      backgroundColor: selectBackgroundColor,
+      color: "#000",
+      borderRadius: "4px",
+    }}
+  >
+    {reportTypes.map(type => (
+      <MenuItem key={type.value} value={type.value}>
+        {type.label}
+      </MenuItem>
+    ))}
+  </Select>
+);
+
+// Component for text input fields
+const TextInputField: React.FC<{
+  name: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  label: string;
+  multiline?: boolean;
+  rows?: number;
+  backgroundColor: string;
+  textColor: string;
+}> = ({ 
+  name, 
+  value, 
+  onChange, 
+  label, 
+  multiline = false, 
+  rows = 1, 
+  backgroundColor, 
+  textColor 
+}) => (
+  <TextField
+    name={name}
+    value={value}
+    onChange={onChange}
+    fullWidth
+    required
+    label={label}
+    aria-label={label}
+    multiline={multiline}
+    rows={rows}
+    sx={{
+      backgroundColor,
+      color: textColor,
+      borderRadius: "4px",
+    }}
+  />
+);
+
+// Component for the submit button
+const SubmitButton: React.FC<{
+  buttonColor: string;
+  hoverColor: string;
+}> = ({ buttonColor, hoverColor }) => (
+  <Button
+    type="submit"
+    fullWidth
+    sx={{
+      mt: 3,
+      backgroundColor: buttonColor,
+      color: "#ffffff",
+      fontWeight: "bold",
+      "&:hover": { backgroundColor: hoverColor },
+    }}
+  >
+    Submit Report
+  </Button>
+);
+
+// Main component
 const ReportToAdmin: React.FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
@@ -30,29 +132,38 @@ const ReportToAdmin: React.FC = () => {
     details: "",
   });
 
+  // Handle form field changes
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | SelectChangeEvent
   ): void => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  // Submit form data to API
+  const submitReport = async (formData: ReportFormData): Promise<void> => {
+    await apiClient.post("/api/reports/to-admin/", formData);
+    alert("Report submitted successfully!");
+    navigate(-1);
+  };
+
+  // Handle form submission
   const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
     try {
-      await apiClient.post("/api/reports/to-admin/", formData);
-      alert("Report submitted successfully!");
-      navigate(-1);
+      await submitReport(formData);
     } catch (error) {
       console.error("Error submitting report:", error);
     }
   };
 
+  // Theme-related variables
   const backgroundColor = theme.palette.mode === "dark" ? "#141b2d" : "#fcfcfc";
   const textColor = theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d";
   const formBackgroundColor = theme.palette.mode === "dark" ? colors.primary[500] : "#ffffff";
   const inputBackgroundColor = theme.palette.mode === "dark" ? colors.primary[600] : "#ffffff";
   const selectBackgroundColor = theme.palette.mode === "dark" ? colors.grey[300] : "#ffffff";
 
+  // Report type options
   const reportTypes = [
     { value: "Misconduct", label: "Misconduct" },
     { value: "System Issue", label: "System Issue" },
@@ -73,14 +184,7 @@ const ReportToAdmin: React.FC = () => {
         color: textColor,
       }}
     >
-      <Typography 
-        variant="h2" 
-        fontWeight="bold" 
-        mb={3}
-        sx={{ color: textColor }}
-      >
-        Report to Admin
-      </Typography>
+      <PageHeader textColor={textColor} />
 
       <Box
         component="form"
@@ -94,96 +198,40 @@ const ReportToAdmin: React.FC = () => {
           boxShadow: 3,
         }}
       >
-        <Typography 
-          variant="h6" 
-          fontWeight="bold" 
-          mb={1}
-          sx={{ color: textColor }}
-        >
-          Type of Report
-        </Typography>
-        <Select
-          name="report_type"
+        <FieldLabel label="Type of Report" textColor={textColor} />
+        <ReportTypeSelect 
           value={formData.report_type}
           onChange={handleChange}
-          fullWidth
-          aria-label="Type of Report"
-          sx={{
-            backgroundColor: selectBackgroundColor,
-            color: "#000",
-            borderRadius: "4px",
-          }}
-        >
-          {reportTypes.map(type => (
-            <MenuItem key={type.value} value={type.value}>
-              {type.label}
-            </MenuItem>
-          ))}
-        </Select>
+          selectBackgroundColor={selectBackgroundColor}
+          reportTypes={reportTypes}
+        />
 
-        <Typography 
-          variant="h6" 
-          fontWeight="bold" 
-          mt={3} 
-          mb={1}
-          sx={{ color: textColor }}
-        >
-          Subject
-        </Typography>
-        <TextField
+        <FieldLabel label="Subject" textColor={textColor} marginTop={3} />
+        <TextInputField
           name="subject"
           value={formData.subject}
           onChange={handleChange}
-          fullWidth
-          required
           label="Subject"
-          aria-label="Subject"
-          sx={{
-            backgroundColor: inputBackgroundColor,
-            color: textColor,
-            borderRadius: "4px",
-          }}
+          backgroundColor={inputBackgroundColor}
+          textColor={textColor}
         />
 
-        <Typography 
-          variant="h6" 
-          fontWeight="bold" 
-          mt={3} 
-          mb={1}
-          sx={{ color: textColor }}
-        >
-          Report Details
-        </Typography>
-        <TextField
+        <FieldLabel label="Report Details" textColor={textColor} marginTop={3} />
+        <TextInputField
           name="details"
           value={formData.details}
           onChange={handleChange}
-          fullWidth
-          multiline
-          rows={5}
-          required
           label="Report Details"
-          aria-label="Report Details"
-          sx={{
-            backgroundColor: inputBackgroundColor,
-            color: textColor,
-            borderRadius: "4px",
-          }}
+          multiline={true}
+          rows={5}
+          backgroundColor={inputBackgroundColor}
+          textColor={textColor}
         />
 
-        <Button
-          type="submit"
-          fullWidth
-          sx={{
-            mt: 3,
-            backgroundColor: colors.redAccent[500],
-            color: "#ffffff",
-            fontWeight: "bold",
-            "&:hover": { backgroundColor: colors.redAccent[600] },
-          }}
-        >
-          Submit Report
-        </Button>
+        <SubmitButton 
+          buttonColor={colors.redAccent[500]} 
+          hoverColor={colors.redAccent[600]} 
+        />
       </Box>
     </Box>
   );

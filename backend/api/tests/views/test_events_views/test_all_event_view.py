@@ -10,19 +10,19 @@ class AllEventViewTestCase(TestCase):
     def setUp(self):
         self.event1 = Event.objects.create(
             title="Event 1",
-            description="Description 1",
+            main_description="Description 1",
             location="Online",
             status="Approved"
         )
         self.event2 = Event.objects.create(
             title="Event 2",
-            description="Description 2",
+            main_description="Description 2",
             location="Campus",
             status="Approved"
         )
         self.unapproved_event = Event.objects.create(
             title="Unapproved Event",
-            description="Description 3",
+            main_description="Description 3",
             location="Offline",
             status="Pending"
         )

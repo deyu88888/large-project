@@ -272,17 +272,15 @@ const EventList: React.FC = () => {
           </DialogContentText>
           <TextField
             autoFocus
-            margin="dense"
-            label="Reason for Deletion"
             fullWidth
             variant="standard"
             value={reason}
             onChange={handleReasonChange}
-            required
+            color="white"
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog} color="primary">
+          <Button onClick={handleCloseDialog} color="white">
             Cancel
           </Button>
           <Button 

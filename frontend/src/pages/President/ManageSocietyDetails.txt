@@ -1,5 +1,3 @@
-// TODO: refactor after this page is fixed, id 1 is not loading
-
 import React, { useState, useEffect, ChangeEvent, FormEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
@@ -12,30 +10,47 @@ import {
   Grid,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import UploadIcon from "@mui/icons-material/Upload";
 import { apiClient, apiPaths } from "../../api";
 import { useAuthStore } from "../../stores/auth-store";
 import { tokens } from "../../theme/theme";
-import { SocietyPreview } from "../../components/SocietyPreview";
+import SocietyPreviewModal from "./SocietyPreviewModal";
 import { SocietyData } from "../../types/president/society";
+import { MnanageSocietyParams } from "../../types/president/routeParams";
+
+// interface SocietyData {
+//   id: number;
+//   name: string;
+//   category: string;
+//   social_media_links: Record<string, string>;
+//   membership_requirements: string;
+//   upcoming_projects_or_plans: string;
+//   tags: string[];
+//   icon: string | File | null;
+// }
+
+// interface ManageSocietyParams {
+//   society_id: string;
+// }
 
 const ManageSocietyDetails: React.FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
-  useAuthStore();
+  const { user } = useAuthStore();
   const navigate = useNavigate();
 
   const { societyId } = useParams<{ societyId: string }>();
   const numericSocietyId = Number(societyId);
+
+  // Debug logging to help diagnose the issue
+  console.log("URL params:", { societyId });
+  console.log("Numeric society ID:", numericSocietyId);
 
   const [society, setSociety] = useState<SocietyData | null>(null);
   const [formData, setFormData] = useState<SocietyData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
   const [openPreview, setOpenPreview] = useState<boolean>(false);
-  const [, setError] = useState<string | null>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // Check if societyId is valid
@@ -59,7 +74,7 @@ const ManageSocietyDetails: React.FC = () => {
   const fetchSociety = async (): Promise<void> => {
     try {
       setLoading(true);
-      const response = await apiClient.get(apiPaths.SOCIETY.MANAGE_DETAILS(numericSocietyId));
+      const response = await apiClient.get(apiPaths.SOCIETY.MANAGE_DETAILS(societyId));
       setSociety(response.data);
       setFormData({
         ...response.data,
@@ -71,13 +86,7 @@ const ManageSocietyDetails: React.FC = () => {
           Other: ""
         },
         tags: response.data.tags || [],
-        description: response.data.description || ""
       });
-      
-      // Set preview URL if icon exists
-      if (response.data.icon && typeof response.data.icon === 'string') {
-        setPreviewUrl(response.data.icon);
-      }
     } catch (error) {
       console.error("Error fetching society details", error);
     } finally {
@@ -104,22 +113,6 @@ const ManageSocietyDetails: React.FC = () => {
     });
   };
 
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>): void => {
-    if (e.target.files && e.target.files.length > 0) {
-      const file = e.target.files[0];
-      setSelectedFile(file);
-      
-      // Create a preview URL for the selected file
-      const fileUrl = URL.createObjectURL(file);
-      setPreviewUrl(fileUrl);
-      
-      // Update formData with the new file
-      setFormData((prevFormData) =>
-        prevFormData ? { ...prevFormData, icon: file } : null
-      );
-    }
-  };
-
   const handleSubmit = async (e: FormEvent): Promise<void> => {
     e.preventDefault();
     if (!formData || !society) return;
@@ -129,16 +122,18 @@ const ManageSocietyDetails: React.FC = () => {
       const formDataToSend = new FormData();
       formDataToSend.append("name", formData.name);
       formDataToSend.append("category", formData.category);
-      formDataToSend.append("description", formData.description);
+      formDataToSend.append("membership_requirements", formData.membership_requirements);
+      formDataToSend.append("upcoming_projects_or_plans", formData.upcoming_projects_or_plans);
       formDataToSend.append("tags", JSON.stringify(formData.tags));
+
       // Convert social_media_links to JSON string
       formDataToSend.append("social_media_links", JSON.stringify(formData.social_media_links));
 
-      if (selectedFile) {
-        formDataToSend.append("icon", selectedFile);
+      if (formData.icon && formData.icon instanceof File) {
+        formDataToSend.append("icon", formData.icon);
       }
 
-      await apiClient.patch(apiPaths.SOCIETY.MANAGE_DETAILS(numericSocietyId), formDataToSend, {
+      await apiClient.patch(apiPaths.SOCIETY.MANAGE_DETAILS(societyId), formDataToSend, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
@@ -227,55 +222,6 @@ const ManageSocietyDetails: React.FC = () => {
             sx={{ mb: 2 }}
           />
 
-          <Box sx={{ mb: 3, mt: 3 }}>
-            <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>
-              Society Icon
-            </Typography>
-            <Box display="flex" alignItems="center">
-              {previewUrl && (
-                <Box
-                  component="img"
-                  src={previewUrl}
-                  alt="Society Icon"
-                  sx={{
-                    width: 100,
-                    height: 100,
-                    objectFit: "cover",
-                    borderRadius: "8px",
-                    mr: 2,
-                    border: `1px solid ${colors.grey[300]}`
-                  }}
-                />
-              )}
-              <Box>
-                <input
-                  accept="image/*"
-                  style={{ display: "none" }}
-                  id="icon-upload"
-                  type="file"
-                  onChange={handleFileChange}
-                />
-                <label htmlFor="icon-upload">
-                  <Button
-                    variant="contained"
-                    component="span"
-                    startIcon={<UploadIcon />}
-                    sx={{
-                      backgroundColor: colors.blueAccent[500],
-                      color: "#ffffff",
-                      "&:hover": { backgroundColor: colors.blueAccent[600] },
-                    }}
-                  >
-                    Upload Icon
-                  </Button>
-                </label>
-                <Typography variant="caption" display="block" sx={{ mt: 1, color: colors.grey[500] }}>
-                  Recommended size: 100x100px
-                </Typography>
-              </Box>
-            </Box>
-          </Box>
-
           <Typography variant="h6" fontWeight="bold" sx={{ mt: 3, mb: 2 }}>
             Social Media Links
           </Typography>
@@ -307,59 +253,27 @@ const ManageSocietyDetails: React.FC = () => {
             ))}
           </Grid>
 
-          <Box sx={{ mb: 3 }}>
-            <Typography
-              variant="subtitle1"
-              sx={{
-                mb: 1,
-                fontWeight: "medium",
-                color: textColor
-              }}
-            >
-              Description
-            </Typography>
-            <Box
-              component="div"
-              sx={{
-                border: `1px solid ${theme.palette.mode === "dark" ? colors.grey[600] : colors.grey[300]}`,
-                borderRadius: "4px",
-                padding: "16.5px 14px",
-                backgroundColor: "transparent",
-                '&:hover': {
-                  borderColor: theme.palette.text.primary,
-                },
-                '&:focus-within': {
-                  borderColor: colors.blueAccent[500],
-                  borderWidth: "2px",
-                  padding: "15.5px 13px", // Adjust for border width change
-                },
-                overflow: "hidden",
-              }}
-            >
-              <Box
-                component="textarea"
-                name="description"
-                value={formData.description || ""}
-                onChange={handleChange}
-                sx={{
-                  width: "100%",
-                  height: "120px",
-                  border: "none",
-                  outline: "none",
-                  fontFamily: "inherit",
-                  fontSize: "1rem",
-                  backgroundColor: "transparent",
-                  color: textColor,
-                  resize: "none",
-                  '&::-webkit-scrollbar': {
-                    display: "none"
-                  },
-                  scrollbarWidth: "none",
-                  msOverflowStyle: "none",
-                }}
-              />
-            </Box>
-          </Box>
+          <TextField
+            fullWidth
+            label="Membership Requirements"
+            name="membership_requirements"
+            multiline
+            rows={3}
+            value={formData.membership_requirements}
+            onChange={handleChange}
+            sx={{ mb: 2 }}
+          />
+
+          <TextField
+            fullWidth
+            label="Upcoming Projects or Plans"
+            name="upcoming_projects_or_plans"
+            multiline
+            rows={3}
+            value={formData.upcoming_projects_or_plans}
+            onChange={handleChange}
+            sx={{ mb: 2 }}
+          />
 
           <TextField
             fullWidth
@@ -407,14 +321,7 @@ const ManageSocietyDetails: React.FC = () => {
         </form>
       </Paper>
 
-      <SocietyPreview
-        open={openPreview}
-        onClose={handlePreviewClose}
-        society={formData}
-        loading={false}
-        joined={0}
-        onJoinSociety={() => {}}
-      />
+      <SocietyPreviewModal open={openPreview} onClose={handlePreviewClose} formData={formData} />
     </Box>
   );
 };

@@ -1,4 +1,3 @@
-import pytest
 from django.test import TestCase
 from django.utils import timezone
 from unittest.mock import patch, MagicMock
@@ -8,8 +7,8 @@ from api.serializers_files.recommendation_feedback_serializers import (
     RecommendationFeedbackSerializer,
     RecommendationFeedbackCreateSerializer
 )
-from api.models_files.recommendation_feedback_model import RecommendationFeedback
-from api.models import Society, Student, User
+
+from api.models import Society, Student, User, RecommendationFeedback
 
 
 class TestRecommendationFeedbackSerializer(TestCase):
@@ -99,7 +98,7 @@ class TestRecommendationFeedbackSerializer(TestCase):
         serializer = RecommendationFeedbackSerializer()
         
         
-        with patch('api.recommendation_feedback_model.RecommendationFeedback.objects.get', 
+        with patch('api.models.RecommendationFeedback.objects.get',
                    side_effect=RecommendationFeedback.DoesNotExist):
             
             with patch('rest_framework.serializers.ModelSerializer.create') as mock_super_create:
