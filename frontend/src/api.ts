@@ -66,12 +66,14 @@ export const apiPaths = {
     ADMIN: "/api/admin/admin", // admin list for admins
     PENDINGSOCIETYREQUEST: "/api/admin/society/request/pending",  // TODO: DONT ADD BACKSLASH
     PROFILE: "/api/user/profile", // TODO: DONT ADD BACKSLASH
-    REPORT: "/api/admin/reports/to-admin/", // TODO: DONT ADD BACKSLASH
+    REPORT: "/api/admin/report-to-admin", // TODO: DONT ADD BACKSLASH
     PENDINGEVENTREQUEST: "/api/event/request/pending",  // TODO: DONT ADD BACKSLASH
     REJECTEDEVENT: "/api/admin-panel/rejected-event", // TODO: DONT ADD BACKSLASH
     PENDINGDESCRIPTIONREQUEST: "/api/admin/description/request/pending",
     BASE: "/api/users",
-    ADMINVIEW: (adminId: number) => `/api/admin/manage-admin/${adminId}`,
+
+    ADMINVIEW: (adminId: number) => `/api/admin-manage-admin-details/${adminId}`,
+
     ADMINSTUDENTVIEW: (studentId: number) => `/api/admin/manage-student/${studentId}`,
     ADMINSOCIETYVIEW: (societyId: number) => `/api/admin/manage-society/${societyId}`, // admin society view
     ADMINEVENTVIEW: (eventId: number) => `/api/admin/manage-event/${eventId}`,

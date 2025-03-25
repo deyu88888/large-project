@@ -24,7 +24,7 @@ export const fetchReportDetails = async (reportId: string) => {
 
 export const fetchReportThread = async (reportId: string) => {
   try {
-    const res = await apiClient.get(`/api/report-thread/${reportId}`);
+    const res = await apiClient.get(`/api/reports/report-thread/${reportId}`);
     return res.data;
   } catch (error) {
     console.error("Error fetching report thread:", error);
@@ -34,7 +34,7 @@ export const fetchReportThread = async (reportId: string) => {
 
 export const submitReply = async (data: { report: string | number; parent_reply?: number | null; content: string }) => {
   try {
-    const res = await apiClient.post("/api/report-replies", data);
+    const res = await apiClient.post("/api/reports/report-replies", data);
     return res.data;
   } catch (error) {
     console.error("Error submitting reply:", error);
