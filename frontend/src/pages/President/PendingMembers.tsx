@@ -41,10 +41,8 @@ const PendingMembers: React.FC = () => {
 
   const handleApproval = async (memberId: number, approved: boolean): Promise<void> => {
     try {
-      await apiClient.post(`/api/society/${societyId}/pending-members/${memberId}/`, {
-        approved: approved,
-      });
-
+      const action = approved ? "approve" : "reject";
+      await apiClient.post(`/api/society/${societyId}/pending-members/${memberId}/`, { action });
       fetchPendingMembers();
     } catch (error) {
       console.error("Error updating member status:", error);

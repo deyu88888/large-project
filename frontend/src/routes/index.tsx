@@ -171,7 +171,7 @@ const routes = [
           { index: true, element: <PageWithTitle title="Society Management"><PresidentPage /></PageWithTitle> },
           { path: "manage-society-details", element: <PageWithTitle title="Society Details"><ManageSocietyDetails /></PageWithTitle> },
           { path: "manage-society-events/:filter?", element: <PageWithTitle title="Society Events"><ManageSocietyEvents /></PageWithTitle> },
-          { path: "pending-members", element: <PageWithTitle title="Pending Members"><PendingMembers /></PageWithTitle> },
+          // { path: "pending-members", element: <PageWithTitle title="Pending Members"><PendingMembers /></PageWithTitle> },
           { path: "view-society-members", element: <PageWithTitle title="Society Members"><ViewSocietyMembers /></PageWithTitle> },
           { path: "create-event", element: <PageWithTitle title="Create Event"><CreateEventPage /></PageWithTitle> },
           { path: "edit-event/:eventId", element: <PageWithTitle title="Edit Event"><EditEventDetails /></PageWithTitle> },
@@ -242,7 +242,7 @@ const routes = [
           </PrivateGuard>
         ),
         children: [
-          { index: true, element: <PageWithTitle title="Pending Members"><PresidentPage /></PageWithTitle> },
+          { index: true, element: <PageWithTitle title="Pending Members"><PendingMembers /></PageWithTitle> },
         ],
       },
       {

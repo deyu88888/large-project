@@ -119,8 +119,10 @@ class PendingMembersView(APIView):
             return error
 
         # Get all pending membership requests
-        pending_requests = UserRequest.objects.filter(
-            intent="JoinSoc", approved=False, from_student__societies_belongs_to=society
+        pending_requests = SocietyRequest.objects.filter(
+            intent="JoinSoc",
+            approved=False,
+            society=society
         )
 
         serializer = PendingMemberSerializer(pending_requests, many=True)
@@ -144,10 +146,11 @@ class PendingMembersView(APIView):
             return error
 
         # Find the pending request
-        pending_request = UserRequest.objects.filter(
+        pending_request = SocietyRequest.objects.filter(
             id=request_id,
             intent="JoinSoc",
-            approved=False
+            approved=False,
+            society=society
         ).first()
         if not pending_request:
             return Response({"error": "Request not found."}, status=status.HTTP_404_NOT_FOUND)
