@@ -48,9 +48,9 @@ const EventCard = ({ event, isLight, colors, onViewEvent }: EventCardProps) => {
           borderRadius: "0.5rem",
         }}
       >
-        {event.imageUrl ? (
+        {event.cover_image ? (
           <img 
-            src={event.imageUrl} 
+            src={event.cover_image}
             alt={event.title} 
             style={{ 
               width: "100%", 

@@ -163,9 +163,12 @@ class RSVPEventSerializer(serializers.ModelSerializer):
 
         if self.context.get('action') == 'RSVP':
             event.current_attendees.add(student)
+            student.attended_events.add(event)
         elif self.context.get('action') == 'CANCEL':
             event.current_attendees.remove(student)
+            student.attended_events.remove(event)
 
+        event.save()
         return event
 
 

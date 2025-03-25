@@ -21,7 +21,7 @@ const SearchResultsPage = lazy(() => import("../pages/SearchResultsPage"))
 const ProfilePage = lazy(() => import("../pages/profile"));
 const StudentDashboard = lazy(() => import("../pages/Student/StudentDashboard"));
 const MySocieties = lazy(() => import("../pages/Student/MyJoinedSocieties"));
-const ViewEvents = lazy(() => import("../pages/ViewEvents"));
+const ViewEvents = lazy(() => import("../pages/Student/MyJoinedEvents"));
 const ViewNews = lazy(() => import("../pages/Student/ViewNews"));
 const ViewNotifications = lazy(() => import("../pages/Student/ViewNotifications"));
 const ViewInbox = lazy(() => import("../pages/Student/ViewInbox"));
@@ -43,8 +43,8 @@ const SocietyNewsManager = lazy(() => import("../pages/President/SocietyNewsMana
 const ReportThread = lazy(() => import("../pages/ReportThread"));
 
 // Public event pages
-const AllEventsPage = lazy(() => import("../pages/allEventsPage"));
-const EventDetailPage = lazy(() => import("../pages/eventDetailPage"));
+const AllEventsPage = lazy(() => import("../pages/AllEventsPage"));
+const EventDetailPage = lazy(() => import("../pages/EventDetailPage"));
 const AllSocietiesPage = lazy(() => import("../pages/AllSocieties"));
 const PublicCalendarPage = lazy(() => import("../pages/Calendar"));
 const SupportPage = lazy(() => import("../pages/Support"));

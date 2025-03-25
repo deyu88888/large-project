@@ -196,10 +196,10 @@ const StudentDashboard: React.FC<StudentDashboardProps> = () => {
   async function handleRSVP(eventId: number, isAttending: boolean) {
     try {
       if (isAttending) {
-        await apiClient.post("/api/events/rsvp", { event_id: eventId });
+        await apiClient.post("/api/events/rsvp/", { event_id: eventId });
         setSnackbarMessage("Successfully RSVP'd to the event");
       } else {
-        await apiClient.delete("/api/events/rsvp", {
+        await apiClient.delete("/api/events/rsvp/", {
           data: { event_id: eventId },
         });
         setSnackbarMessage("Successfully cancelled your RSVP");
@@ -791,7 +791,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = () => {
         open={snackbarOpen}
         autoHideDuration={6000}
         onClose={handleSnackbarClose}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
         <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: "100%" }}>
           {snackbarMessage}
