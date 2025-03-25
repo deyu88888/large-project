@@ -87,7 +87,7 @@ const ViewSocietyMembers: React.FC = () => {
   }, [societyId, user]);
 
   const handleViewProfile = (memberId: number): void => {
-    navigate(`/profile/${memberId}`);
+    navigate(`/student/profile/${memberId}`);
   };
 
   const handleGiveAward = (memberId: number): void => {
