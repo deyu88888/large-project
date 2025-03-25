@@ -1,7 +1,3 @@
-// TODO: seed first, then refactor 
-// TODO: refactor the working version of this page
-// TODO: cannot refactor at this stage, as there's no way of knowing if this page works 
-
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { apiClient } from "../../api";

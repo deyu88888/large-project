@@ -1,6 +1,3 @@
-// TODO: did not refactor, giving error message: 'Failed to assign award.'
-// TODO: Tala will fix this page, and refactor it.
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { apiClient } from "../../api";
