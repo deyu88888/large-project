@@ -60,11 +60,11 @@ export const apiPaths = {
     REFRESH: "/api/user/token/refresh", // TODO: DONT ADD BACKSLASH
     CURRENT: "/api/user/current/", // TODO: DONT ADD BACKSLASH
     USERSTATS: "/api/admin/user-stats/", // TODO: DONT REMOVE BACKSLASH
-    SOCIETY: "/api/society/request/approved",  // TODO: DONT ADD BACKSLASH
-    REJECTEDSOCIETY: "/api/society/request/rejected", // TODO: DONT ADD BACKSLASH
+    SOCIETY: "/api/admin/society/request/approved",  // TODO: DONT ADD BACKSLASH
+    REJECTEDSOCIETY: "/api/admin/society/request/rejected", // TODO: DONT ADD BACKSLASH
     STUDENTS: "/api/admin/student",  // student list for admins
     ADMIN: "/api/admin/admin", // admin list for admins
-    PENDINGSOCIETYREQUEST: "/api/society/request/pending",  // TODO: DONT ADD BACKSLASH
+    PENDINGSOCIETYREQUEST: "/api/admin/society/request/pending",  // TODO: DONT ADD BACKSLASH
     PROFILE: "/api/user/profile", // TODO: DONT ADD BACKSLASH
     REPORT: "/api/report-to-admin", // TODO: DONT ADD BACKSLASH
     PENDINGEVENTREQUEST: "/api/event/request/pending",  // TODO: DONT ADD BACKSLASH

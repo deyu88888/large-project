@@ -172,13 +172,26 @@ const SocietyList: React.FC = () => {
     { field: "id", headerName: "ID", flex: 0.3 },
     { field: "name", headerName: "Name", flex: 1 },
     { field: "description", headerName: "Description", flex: 1 },
-    { field: "president", headerName: "president", flex: 1 },
-    { field: "members", headerName: "Members", flex: 1 },
-    { field: "roles", headerName: "Roles", flex: 1 },
-    { field: "approvedBy", headerName: "Approved By", flex: 1 },
-    { field: "category", headerName: "Category", flex: 1 },
-    { field: "membershipRequirements", headerName: "Membership Requirements", flex: 1 },
-    { field: "upcomingProjectsOrPlans", headerName: "Upcoming Projects", flex: 1 },
+    {
+      field: "president",
+      headerName: "President",
+      flex: 0.8,
+      renderCell: (params: GridRenderCellParams) => {
+        const pres = params.row.president;
+        return pres ? `${pres.first_name} ${pres.last_name}` : "N/A";
+      },
+    },
+    {
+      field: "society_members",
+      headerName: "Members",
+      flex: 0.5,
+      renderCell: (params: GridRenderCellParams) => {
+        const members = params.row.society_members;
+        return Array.isArray(members) ? members.length : "0";
+      },
+    },
+    { field: "approved_by", headerName: "Approved By", flex: 0.5 },
+    { field: "category", headerName: "Category", flex: 1.3 },
     {
       field: "actions",
       headerName: "Actions",
@@ -261,11 +274,10 @@ const SocietyList: React.FC = () => {
         <DialogContent>
           <DialogContentText>
             You may undo this action in the Activity Log. <br />
-            <strong>Compulsory:</strong> Provide a reason for deleting this society.
+            <strong>Compulsory:</strong> Provide a reason for deleting this student.
           </DialogContentText>
           <TextField
             autoFocus
-            margin="dense"
             label="Reason for Deletion"
             fullWidth
             variant="standard"
@@ -277,7 +289,11 @@ const SocietyList: React.FC = () => {
           <Button onClick={handleCloseDialog} color="primary">
             Cancel
           </Button>
-          <Button onClick={handleConfirmDelete} color="error">
+          <Button 
+            onClick={handleConfirmDelete} 
+            color="error"
+            disabled={!reason.trim()}
+          >
             Confirm
           </Button>
         </DialogActions>

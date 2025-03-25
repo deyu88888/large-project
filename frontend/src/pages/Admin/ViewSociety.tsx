@@ -214,21 +214,12 @@ const ViewSociety: React.FC = () => {
         formDataToSend.append("name", formData.name);
         formDataToSend.append("description", formData.description);
         formDataToSend.append("category", formData.category);
-        
-        if (formData.timetable) {
-          formDataToSend.append("timetable", formData.timetable);
-        }
-        
-        if (formData.membership_requirements) {
-          formDataToSend.append("membership_requirements", formData.membership_requirements);
-        }
-        
-        if (formData.upcoming_projects_or_plans) {
-          formDataToSend.append("upcoming_projects_or_plans", formData.upcoming_projects_or_plans);
-        }
-        
         formDataToSend.append("tags", JSON.stringify(formData.tags));
 
+        if (formData.icon && formData.icon instanceof File) {
+          formDataToSend.append("icon", formData.icon);
+        }
+        
         // Add social media links if they exist
         if (formData.social_media_links && typeof formData.social_media_links === 'object') {
           Object.entries(formData.social_media_links).forEach(([platform, link]) => {
@@ -316,7 +307,6 @@ const ViewSociety: React.FC = () => {
       p={4}
       sx={{
         backgroundColor: colors.primary[500],
-        transition: "all 0.3s ease",
       }}
     >
       <Tooltip title="Go back">
@@ -356,6 +346,65 @@ const ViewSociety: React.FC = () => {
         }}
       >
         <form onSubmit={handleSubmit}>
+  <Grid container>
+    {/* Upload Icon */}
+    <Grid item xs={12} md={6}>
+      <Typography variant="subtitle1" sx={{ mb: 1 }}>
+        Upload Icon
+      </Typography>
+      <Button
+        variant="contained"
+        component="label"
+        sx={{ borderRadius: "8px", mb: 2 }}
+      >
+        Choose File
+        <input
+          type="file"
+          accept="image/*"
+          hidden
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) {
+              setFormData((prev) =>
+                prev ? { ...prev, icon: file } : prev
+              );
+            }
+          }}
+        />
+      </Button>
+
+      {/* Preview current icon */}
+      {formData.icon && typeof formData.icon === "string" && (
+        <Box mb={4}>
+          <Typography variant="caption" color="textSecondary">
+            Current Icon:
+          </Typography>
+          <Box mt={1}>
+            <img
+              src={formData.icon}
+              alt="Society Icon"
+              style={{ maxWidth: "120px", borderRadius: "8px" }}
+            />
+          </Box>
+        </Box>
+      )}
+
+      {/* Preview new upload */}
+      {formData.icon instanceof File && (
+        <Box mt={2}>
+          <Typography variant="caption" color="textSecondary">
+            New Icon Preview:
+          </Typography>
+          <Box mt={1}>
+            <img
+              src={URL.createObjectURL(formData.icon)}
+              alt="New Society Icon"
+              style={{ maxWidth: "120px", borderRadius: "8px" }}
+            />
+          </Box>
+        </Box>
+      )}
+    </Grid>
           <Grid container spacing={3}>
             <Grid item xs={12}>
               <TextField
@@ -404,11 +453,14 @@ const ViewSociety: React.FC = () => {
             <Grid item xs={12} md={6}>
               <TextField
                 {...commonTextFieldProps}
-                label="Leader"
-                name="leader"
-                value={formData.leader || ""}
+                label="President"
+                name="president"
+                value={
+                  formData.president
+                    ? `${formData.president.first_name} ${formData.president.last_name}`
+                    : ""
+                }
                 onChange={handleChange}
-                disabled
               />
             </Grid>
 
@@ -437,32 +489,6 @@ const ViewSociety: React.FC = () => {
             <Grid item xs={12}>
               <TextField
                 {...commonTextFieldProps}
-                label="Membership Requirements"
-                name="membership_requirements"
-                multiline
-                rows={2}
-                value={formData.membership_requirements || ""}
-                onChange={handleChange}
-                inputProps={{ maxLength: 500 }}
-              />
-            </Grid>
-
-            <Grid item xs={12}>
-              <TextField
-                {...commonTextFieldProps}
-                label="Upcoming Projects or Plans"
-                name="upcoming_projects_or_plans"
-                multiline
-                rows={2}
-                value={formData.upcoming_projects_or_plans || ""}
-                onChange={handleChange}
-                inputProps={{ maxLength: 500 }}
-              />
-            </Grid>
-
-            <Grid item xs={12}>
-              <TextField
-                {...commonTextFieldProps}
                 label="Tags (comma separated)"
                 name="tags"
                 value={Array.isArray(formData.tags) ? formData.tags.join(", ") : ""}
@@ -483,18 +509,6 @@ const ViewSociety: React.FC = () => {
             flexWrap="wrap"
           >
             <Button 
-              type="button" 
-              variant="outlined" 
-              onClick={handleReset}
-              disabled={saving}
-              sx={{ 
-                minWidth: 100,
-                borderRadius: "8px",
-              }}
-            >
-              Reset
-            </Button>
-            <Button 
               type="submit" 
               variant="contained" 
               color="primary"
@@ -514,6 +528,7 @@ const ViewSociety: React.FC = () => {
               )}
             </Button>
           </Box>
+          </Grid>
         </form>
       </Paper>
 
