@@ -127,7 +127,7 @@ const PresidentPage: React.FC = () => {
         {navigationItems.map((item) => (
           <Button
             key={item.text}
-            onClick={() => currentSocietyId && navigate(`/${item.path}/${currentSocietyId}`)}
+            onClick={() => currentSocietyId && navigate(`/president-page/${currentSocietyId}/${item.path}`)}
             sx={{
               backgroundColor: item.color,
               color: theme.palette.mode === "dark" ? colors.primary[900] : "#fff",
