@@ -166,9 +166,8 @@ export default function AllEventsPage() {
                                 event.current_attendees
                             ) {
                                 followingsAttending = event.current_attendees.filter((attendee) =>
-                                    currentUser.following!.map(f => f.id).includes(attendee.id)
+                                    currentUser.following!.includes(attendee.id)
                                 );
-
                             }
 
                             return (
