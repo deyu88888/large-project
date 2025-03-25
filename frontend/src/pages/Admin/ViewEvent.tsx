@@ -208,6 +208,7 @@ const ViewEvent: React.FC = () => {
   const handleReset = () => {
     setFormData(event);
     setErrors({});
+    showNotification("Form has been reset to original values", "info");
   };
 
   if (loading || !formData) {
@@ -349,6 +350,7 @@ const ViewEvent: React.FC = () => {
               variant="outlined" 
               onClick={handleReset}
               disabled={saving}
+              color="secondary"
             >
               Reset
             </Button>

@@ -11,7 +11,7 @@ export default function HeroSection({ showCarousel = false, title, subtitle, bre
   const renderContent = (customTitle: any, customSubtitle: any) => (
     <Box padding={2} sx={{ textAlign: "left", pl: { xs: 2, md: 4 } }}>
       <Typography 
-        color={colors.grey[100]} 
+        color={theme.palette.mode === "dark" ? "greenAccent.main" : "greenAccent.dark"} 
         variant="h1" 
         align="left" 
         sx={{ 
@@ -23,7 +23,7 @@ export default function HeroSection({ showCarousel = false, title, subtitle, bre
         {customTitle}
       </Typography>
       <Typography
-        color={colors.grey[200]}
+        color={ colors.grey[100] }
         variant="h6"
         align="left"
         sx={{ 
@@ -42,9 +42,7 @@ export default function HeroSection({ showCarousel = false, title, subtitle, bre
       sx={{
         overflow: "hidden",
         position: "relative",
-        backgroundColor: theme.palette.mode === "dark"
-        ? theme.palette.primary.dark
-        : theme.palette.primary.light,
+        backgroundColor: theme.palette.mode === "dark" ? "secondary.dark" : "secondary.light",
         height: 400,
         marginBottom: 4,
       }}
@@ -55,9 +53,7 @@ export default function HeroSection({ showCarousel = false, title, subtitle, bre
           PrevIcon={<div>{"<"}</div>}
           navButtonsProps={{
             style: {
-              backgroundColor: theme.palette.mode === "dark"
-              ? theme.palette.primary.dark
-              : theme.palette.primary.light,
+              backgroundColor: theme.palette.mode === "dark" ? "secondary.dark" : "secondary.light",
               color: "#ffffff",
               boxShadow: "0 2px 5px rgba(0,0,0,0.15)",
             },
@@ -84,9 +80,7 @@ export default function HeroSection({ showCarousel = false, title, subtitle, bre
               width={1}
               height={400}
               sx={{
-                backgroundColor: theme.palette.mode === "dark"
-                ? theme.palette.primary.dark
-                : theme.palette.primary.light,
+                backgroundColor: theme.palette.mode === "dark" ? "secondary.dark" : "secondary.light",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -106,9 +100,7 @@ export default function HeroSection({ showCarousel = false, title, subtitle, bre
           width={1}
           height="100%"
           sx={{
-            backgroundColor: theme.palette.mode === "dark"
-            ? theme.palette.primary.dark
-            : theme.palette.primary.light,
+            backgroundColor: theme.palette.mode === "dark" ? "secondary.dark" : "secondary.light",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
