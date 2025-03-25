@@ -258,7 +258,7 @@ const StudentList: React.FC = () => {
       
       <Dialog open={openDialog} onClose={handleCloseDialog}>
         <DialogTitle>
-          Please confirm that you would like to delete {selectedStudent?.firstName} {selectedStudent?.lastName}.
+          Please confirm that you would like to delete {selectedStudent?.first_name} {selectedStudent?.last_name}.
         </DialogTitle>
         <DialogContent>
           <DialogContentText>
