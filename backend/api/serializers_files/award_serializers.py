@@ -33,7 +33,8 @@ class AwardStudentSerializer(serializers.ModelSerializer):
     class Meta:
         """Metadata for AwardStudentSerializer"""
         model = AwardStudent
-        fields = ['id', 'award', 'student', 'student_id', 'award_id', 'awarded_at']
+        fields = ["id", "award", "student", "student_id", "award_id", "awarded_at"]
+        read_only_fields = ["awarded_at"]
 
 
 class StudentAwardSerializer(serializers.ModelSerializer):
