@@ -62,8 +62,8 @@ export const apiPaths = {
     USERSTATS: "/api/admin/user-stats/", // TODO: DONT REMOVE BACKSLASH
     SOCIETY: "/api/society/request/approved",  // TODO: DONT ADD BACKSLASH
     REJECTEDSOCIETY: "/api/society/request/rejected", // TODO: DONT ADD BACKSLASH
-    STUDENTS: "/api/user/student",  // TODO: DONT ADD BACKSLASH
-    ADMIN: "/api/user/admin", // TODO: DONT ADD BACKSLASH
+    STUDENTS: "/api/admin/student",  // student list for admins
+    ADMIN: "/api/admin/admin", // admin list for admins
     PENDINGSOCIETYREQUEST: "/api/society/request/pending",  // TODO: DONT ADD BACKSLASH
     PROFILE: "/api/user/profile", // TODO: DONT ADD BACKSLASH
     REPORT: "/api/report-to-admin", // TODO: DONT ADD BACKSLASH

@@ -56,8 +56,6 @@ auth_patterns = [
     path("register", RegisterView.as_view(), name="register"),
     path("login", TokenObtainPairView.as_view(), name="get_token"),
     path("current/", CurrentUserView.as_view(), name="current_user"),
-    path("admin", AdminListView.as_view(), name="admin"),
-    path("student", AdminStudentListView.as_view(), name="student"),
 ]
 
 # User profile patterns
@@ -68,6 +66,8 @@ profile_patterns = [
 
 # Admin management patterns
 admin_patterns = [
+    path("admin", AdminListView.as_view(), name="admin"),
+    path("student", AdminStudentListView.as_view(), name="student"),
     path("society/event/<str:event_status>", AdminEventView.as_view(), name="event"),
     path("society/event/request/<int:event_id>", AdminEventRequestView.as_view(), name="request_event"),
     path("society/request/<str:society_status>", AdminSocietyRequestView.as_view(), name="request_society"),
