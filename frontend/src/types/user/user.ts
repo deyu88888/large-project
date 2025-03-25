@@ -9,8 +9,8 @@ export interface User {
     isSuperAdmin: boolean;
     isSuperuser: boolean;
     isStaff: boolean;
-    following: User[];
-    followers: User[];
+    following: number[];
+    followers: number[];
     fullName: string;
     isStudent(): boolean;
     isAdmin(): boolean;

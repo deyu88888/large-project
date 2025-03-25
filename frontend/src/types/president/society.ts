@@ -11,6 +11,7 @@ export interface SocietyData {
   social_media_links: Record<string, string>;
   membership_requirements: string;
   upcoming_projects_or_plans: string;
+  description: string;
   tags: string[];
   icon?: string | File | null;
 }

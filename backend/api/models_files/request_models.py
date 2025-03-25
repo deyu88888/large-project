@@ -1,6 +1,6 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from api.models import Student, User, Society, Event
+from api.models import Student, User, Society
 
 class Request(models.Model):
     """
@@ -146,6 +146,7 @@ class AdminReportRequest(Request):
         ("System Issue", "System Issue"),
         ("Society Issue", "Society Issue"),
         ("Event Issue", "Event Issue"),
+        ("Feedback", "Feedback"), 
         ("Other", "Other"),
     ]
 

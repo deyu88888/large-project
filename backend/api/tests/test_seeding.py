@@ -64,7 +64,7 @@ class SeedingTestCase(TransactionTestCase):
 
         self.event = Event.objects.create(
             title="Day",
-            description="Day out",
+            main_description="Day out",
             hosted_by=self.society,
             location="KCL Campus",
         )
@@ -137,10 +137,7 @@ class SeedingTestCase(TransactionTestCase):
         initial_objects = Event.objects.count()
         self.command_instance.create_event(1)
         self.assertEqual(EventRequest.objects.count(), initial_requests + 1)
-        try:
-            self.assertEqual(Event.objects.count(), initial_objects)
-        except AssertionError:
-            self.assertTrue(EventRequest.objects.all().first().approved)
+        self.assertEqual(Event.objects.count(), initial_objects + 1)
 
     @patch("builtins.print")  # Avoids printing while testing
     def test_award_initialisation(self, mock_print):
@@ -199,7 +196,7 @@ class SeedingTestCase(TransactionTestCase):
             return seq[0]  # For valid_hours and valid_minutes
         mock_choice.side_effect = side_effect
 
-        result = self.command_instance.handle_event_status(self.society)
+        result = self.command_instance.handle_event_status(self.event)
         self.assertTrue(result)
         # Does now exist for notification reasons
         self.assertTrue(EventRequest.objects.filter(hosted_by=self.society).exists())
@@ -215,7 +212,7 @@ class SeedingTestCase(TransactionTestCase):
             return seq[0]
         mock_choice.side_effect = side_effect
 
-        result = self.command_instance.handle_event_status(self.society)
+        result = self.command_instance.handle_event_status(self.event)
         self.assertFalse(result)
         er = EventRequest.objects.get(hosted_by=self.society)
         self.assertEqual(er.intent, "CreateEve")
@@ -233,13 +230,13 @@ class SeedingTestCase(TransactionTestCase):
             return seq[0]
         mock_choice.side_effect = side_effect
 
-        result = self.command_instance.handle_event_status(self.society)
+        result = self.command_instance.handle_event_status(self.event)
         self.assertFalse(result)
         er = EventRequest.objects.get(hosted_by=self.society)
         self.assertEqual(er.intent, "CreateEve")
         self.assertFalse(er.approved)
 
-    @patch("api.signals.broadcast_dashboard_update")
+    @patch("api.management.commands.seed.broadcast_dashboard_update")
     @patch("builtins.print")  # Avoid printing during test
     def test_broadcast_updates(self, mock_print, mock_broadcast):
         """Test that broadcast_updates calls broadcast_dashboard_update."""
