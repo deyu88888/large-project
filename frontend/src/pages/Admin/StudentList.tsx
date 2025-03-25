@@ -267,15 +267,15 @@ const StudentList: React.FC = () => {
           </DialogContentText>
           <TextField
             autoFocus
-            label="Reason for Deletion"
             fullWidth
             variant="standard"
             value={reason}
             onChange={handleReasonChange}
+            color="white"
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog} color="primary">
+          <Button onClick={handleCloseDialog} color="white">
             Cancel
           </Button>
           <Button 

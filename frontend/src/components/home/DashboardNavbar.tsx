@@ -115,8 +115,8 @@ export const DashboardNavbar = () => {
 
   // Determine text colors based on theme to ensure visibility
   const navTextColor = theme.palette.mode === "dark" ? "#ffffff" : "#000000";
-  const highlightColor = theme.palette.mode === "dark" ? "#90caf9" : "#1976d2";
-  const hoverColor = theme.palette.mode === "dark" ? "#90caf9" : "#1976d2";
+  const highlightColor = theme.palette.mode === "dark" ? "greenAccent.main" : "greenAccent.dark";
+  const hoverColor = theme.palette.mode === "dark" ? "greenAccent.main" : "greenAccent.dark";
 
   return (
     <AppBar
@@ -124,9 +124,7 @@ export const DashboardNavbar = () => {
       elevation={0}
       sx={{
         bgcolor: (theme: any) =>
-          theme.palette.mode === "dark"
-            ? theme.palette.primary.dark
-            : theme.palette.primary.light,
+          theme.palette.mode === "dark" ? "secondary.dark" : "secondary.light"
       }}
     >
       <Container maxWidth="xl">

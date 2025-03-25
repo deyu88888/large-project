@@ -501,22 +501,21 @@ const ViewSociety: React.FC = () => {
             </Grid>
           </Grid>
 
-          <Box 
-            mt={4} 
-            display="flex" 
-            justifyContent="center" 
-            gap={2}
-            flexWrap="wrap"
-          >
+          <Box mt={3} display="flex" justifyContent="center" gap={2}>
+            <Button 
+              type="button" 
+              variant="outlined" 
+              onClick={handleReset}
+              disabled={saving}
+              color="secondary"
+            >
+              Reset
+            </Button>
             <Button 
               type="submit" 
               variant="contained" 
               color="primary"
               disabled={saving}
-              sx={{ 
-                minWidth: 150,
-                borderRadius: "8px",
-              }}
             >
               {saving ? (
                 <Box display="flex" alignItems="center" gap={1}>

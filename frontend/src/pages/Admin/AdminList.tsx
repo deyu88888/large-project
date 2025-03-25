@@ -229,23 +229,26 @@ const AdminList: React.FC = () => {
         <DialogContent>
           <DialogContentText>
             You may undo this action in the Activity Log. <br />
-            <strong>Compulsory:</strong> Provide a reason for deleting this admin.
+            <strong>Compulsory:</strong> Provide a reason for deleting this student.
           </DialogContentText>
           <TextField
             autoFocus
-            margin="dense"
-            label="Reason for Deletion"
             fullWidth
             variant="standard"
             value={reason}
             onChange={handleReasonChange}
+            color="white"
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog} color="primary">
+          <Button onClick={handleCloseDialog} color="white">
             Cancel
           </Button>
-          <Button onClick={handleConfirmDelete} color="error">
+          <Button 
+            onClick={handleConfirmDelete} 
+            color="error"
+            disabled={!reason.trim()}
+          >
             Confirm
           </Button>
         </DialogActions>
