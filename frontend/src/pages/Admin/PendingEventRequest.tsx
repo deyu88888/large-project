@@ -95,36 +95,29 @@ const PendingEventRequest: React.FC = () => {
 
   // Column definitions
   const columns: GridColDef[] = [
-    { field: "id", headerName: "ID", flex: 0.5 },
+    { field: "id", headerName: "ID", flex: 0.3 },
     { field: "title", headerName: "Title", flex: 1 },
-    { 
-      field: "description", 
-      headerName: "Description", 
-      flex: 2,
-      renderCell: (params) => (
-        <Typography noWrap title={params.value}>
-          {params.value}
-        </Typography>
-      ) 
-    },
+    { field: "main_description", headerName: "Description", flex: 2 },
     { field: "date", headerName: "Date", flex: 1 },
-    { field: "startTime", headerName: "Start Time", flex: 1 },
+    { field: "start_time", headerName: "Start Time", flex: 1 },
     { field: "duration", headerName: "Duration", flex: 1 },
-    { field: "hostedBy", headerName: "Hosted By", flex: 1 },
+    { field: "hosted_by", headerName: "Hosted By", flex: 0.5 },
     { field: "location", headerName: "Location", flex: 1 },
     {
       field: "actions",
       headerName: "Actions",
       flex: 1.6,
+      width: 190,
+      minWidth: 190,
       sortable: false,
       filterable: false,
       renderCell: (params: GridRenderCellParams<any, Event>) => (
-        <Box sx={{ display: 'flex', gap: 1 }}>
+        <Box>
           <Button
             variant="contained"
             color="success"
             onClick={() => handleStatusChange(params.row.id, "Approved")}
-            size="small"
+            sx={{ marginRight: "8px" }}
           >
             Accept
           </Button>
@@ -132,7 +125,6 @@ const PendingEventRequest: React.FC = () => {
             variant="contained" 
             color="error" 
             onClick={() => handleStatusChange(params.row.id, "Rejected")}
-            size="small"
           >
             Reject
           </Button>
@@ -143,24 +135,11 @@ const PendingEventRequest: React.FC = () => {
 
   return (
     <Box
-      sx={{
-        height: "calc(100vh - 64px)",
-        maxWidth: drawer ? `calc(100% - 3px)` : "100%",
-        p: 2
-      }}
-    >
-      <Typography
-        variant="h1"
-        sx={{
-          color: theme.palette.mode === "light" ? colors.grey[100] : colors.grey[100],
-          fontSize: "1.75rem",
-          fontWeight: 800,
-          marginBottom: "1rem",
-        }}
-      >
-        Pending Event Requests
-      </Typography>
-      
+    sx={{
+      height: "calc(100vh - 64px)",
+      maxWidth: drawer ? `calc(100% - 3px)` : "100%",
+    }}
+    >      
       <Box
         sx={{
           height: "78vh",
@@ -190,16 +169,12 @@ const PendingEventRequest: React.FC = () => {
           rows={filteredEvents}
           columns={columns}
           slots={{ toolbar: GridToolbar }}
+          resizeThrottleMs={0}
           autoHeight
           disableRowSelectionOnClick
-          resizeThrottleMs={0}
           initialState={{
-            pagination: {
-              paginationModel: { pageSize: 10, page: 0 },
-            },
+            pagination: { paginationModel: { pageSize: 100 } },
           }}
-          pageSizeOptions={[5, 10, 25]}
-          loading={events.length === 0}
         />
       </Box>
       

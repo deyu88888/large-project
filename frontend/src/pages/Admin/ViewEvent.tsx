@@ -21,12 +21,12 @@ import { Event } from "../../types";
  */
 interface FormErrors {
   title?: string;
-  description?: string;
+  main_description?: string;
   date?: string;
-  startTime?: string;
+  start_time?: string;
   duration?: string;
   location?: string;
-  hostedBy?: string;
+  hosted_by?: string;
 }
 
 /**
@@ -121,8 +121,8 @@ const ViewEvent: React.FC = () => {
       isValid = false;
     }
 
-    if (!formData?.description?.trim()) {
-      newErrors.description = "Description is required";
+    if (!formData?.main_description?.trim()) {
+      newErrors.main_description = "Description is required";
       isValid = false;
     }
 
@@ -131,8 +131,8 @@ const ViewEvent: React.FC = () => {
       isValid = false;
     }
 
-    if (!formData?.startTime) {
-      newErrors.startTime = "Start time is required";
+    if (!formData?.start_time) {
+      newErrors.start_time = "Start time is required";
       isValid = false;
     }
 
@@ -141,8 +141,8 @@ const ViewEvent: React.FC = () => {
       isValid = false;
     }
 
-    if (!formData?.hostedBy?.toString().trim()) {
-      newErrors.hostedBy = "Host information is required";
+    if (!formData?.hosted_by?.toString().trim()) {
+      newErrors.hosted_by = "Host information is required";
       isValid = false;
     }
 
@@ -265,10 +265,10 @@ const ViewEvent: React.FC = () => {
                 name="description"
                 multiline
                 rows={3}
-                value={formData.description || ""}
+                value={formData.main_description || ""}
                 onChange={handleChange}
-                error={Boolean(errors.description)}
-                helperText={errors.description}
+                error={Boolean(errors.main_description)}
+                helperText={errors.main_description}
                 required
               />
             </Grid>
@@ -292,13 +292,13 @@ const ViewEvent: React.FC = () => {
               <TextField
                 fullWidth
                 label="Start Time"
-                name="startTime"
+                name="start_time"
                 type="time"
-                value={formData.startTime || ""}
+                value={formData.start_time || ""}
                 onChange={handleChange}
                 InputLabelProps={{ shrink: true }}
-                error={Boolean(errors.startTime)}
-                helperText={errors.startTime}
+                error={Boolean(errors.start_time)}
+                helperText={errors.start_time}
                 required
               />
             </Grid>
@@ -333,11 +333,11 @@ const ViewEvent: React.FC = () => {
               <TextField
                 fullWidth
                 label="Hosted By"
-                name="hostedBy"
-                value={formData.hostedBy || ""}
+                name="hosted by"
+                value={formData.hosted_by || ""}
                 onChange={handleChange}
-                error={Boolean(errors.hostedBy)}
-                helperText={errors.hostedBy}
+                error={Boolean(errors.hosted_by)}
+                helperText={errors.hosted_by}
                 required
               />
             </Grid>
