@@ -95,8 +95,8 @@ describe('ReportReply', () => {
       expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
 
-    // Check API call
-    expect(apiClient.get).toHaveBeenCalledWith('/api/report-to-admin/123');
+    // Check API call - Updated to match the actual endpoint
+    expect(apiClient.get).toHaveBeenCalledWith('/api/reports/to-admin/123/');
 
     // Verify report details are displayed
     await waitFor(() => {
@@ -149,9 +149,9 @@ describe('ReportReply', () => {
     const submitButton = screen.getByRole('button', { name: /Submit Reply/i });
     await user.click(submitButton);
 
-    // Verify API call
+    // Verify API call - Updated to match the actual endpoint
     await waitFor(() => {
-      expect(apiClient.post).toHaveBeenCalledWith('/api/report-replies', {
+      expect(apiClient.post).toHaveBeenCalledWith('/api/reports/replies/', {
         report: '123',
         content: 'This is my test reply'
       });
