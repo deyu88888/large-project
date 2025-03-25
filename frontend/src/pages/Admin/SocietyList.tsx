@@ -218,14 +218,6 @@ const SocietyList: React.FC = () => {
         maxWidth: drawer ? `calc(100% - 3px)` : "100%",
       }}
     >
-      <Typography
-        variant="h4"
-        fontWeight="bold"
-        sx={{ mb: 2 }}
-        data-testid="society-list-title"
-      >
-        Society List
-      </Typography>
       <Box
         sx={{
           height: "78vh",
