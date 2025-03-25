@@ -1,3 +1,5 @@
+
+
 import React, { useState, useEffect, useContext, useCallback, useMemo } from "react";
 import { 
   Box, 
@@ -129,8 +131,8 @@ const StudentList: React.FC = () => {
   const columns: GridColDef[] = [
     { field: "id", headerName: "ID", flex: 0.3 },
     { field: "username", headerName: "Username", flex: 1 },
-    { field: "firstName", headerName: "First Name", flex: 1 },
-    { field: "lastName", headerName: "Last Name", flex: 1 },
+    { field: "first_name", headerName: "First Name", flex: 1 },
+    { field: "last_name", headerName: "Last Name", flex: 1 },
     { field: "email", headerName: "Email", flex: 1 },
     {
       field: "isActive",
@@ -142,13 +144,6 @@ const StudentList: React.FC = () => {
     { field: "role", headerName: "Role", flex: 1 },
     { field: "major", headerName: "Major", flex: 1 },
     {
-      field: "societies",
-      headerName: "Societies",
-      renderCell: (params: GridRenderCellParams<Student>) => 
-        Array.isArray(params.row.societies) ? params.row.societies.join(", ") : "",
-      flex: 1,
-    },
-    {
       field: "presidentOf",
       headerName: "President Of",
       renderCell: (params: GridRenderCellParams<Student>) => 
@@ -156,7 +151,7 @@ const StudentList: React.FC = () => {
       flex: 1,
     },
     {
-      field: "isPresident",
+      field: "is_president",
       headerName: "Is President",
       renderCell: (params: GridRenderCellParams<Student>) => 
         params.row.isPresident ? "Yes" : "No",
@@ -170,11 +165,12 @@ const StudentList: React.FC = () => {
       sortable: false,
       filterable: false,
       renderCell: (params: GridRenderCellParams<Student>) => (
-        <Box sx={{ display: 'flex', gap: 1 }}>
+        <Box>
           <Button
             variant="contained"
             color="primary"
-            onClick={() => handleViewStudent(params.row.id)}
+            onClick={() => handleViewStudent(params.row.id.toString())}
+            sx={{ marginRight: "8px" }}
           >
             View
           </Button>
@@ -189,7 +185,7 @@ const StudentList: React.FC = () => {
       ),
     },
   ];
-
+  
   // DataGrid styles
   const dataGridStyles = {
     height: "78vh",
@@ -263,7 +259,6 @@ const StudentList: React.FC = () => {
           </DialogContentText>
           <TextField
             autoFocus
-            margin="dense"
             label="Reason for Deletion"
             fullWidth
             variant="standard"

@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { apiClient } from "../../api";
 import {
-  Avatar,
   Box,
   Divider,
   IconButton,
@@ -15,18 +14,16 @@ import {
 } from "@mui/material";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
-import PeopleOutlineIcon from "@mui/icons-material/PeopleOutline";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import EventAvailableIcon from "@mui/icons-material/EventAvailable";
 import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";
-import NotificationImportantOutlinedIcon from '@mui/icons-material/NotificationImportantOutlined';
 import InboxIcon from "@mui/icons-material/MoveToInbox";
-import MailIcon from "@mui/icons-material/Mail";
 import GroupAddOutlinedIcon from "@mui/icons-material/GroupAddOutlined";
 import LogoutIcon from '@mui/icons-material/Logout';
+import NewspaperIcon from '@mui/icons-material/Newspaper';
 import { CustomDrawer, CustomDrawerHeader } from "./drawer/CustomDrawer";
 import ReportProblemOutlinedIcon from "@mui/icons-material/ReportProblemOutlined";
-
+import Groups2Icon from '@mui/icons-material/Groups2';
 
 interface StudentDrawerProps {
   drawer: boolean;
@@ -48,7 +45,6 @@ const StudentDrawer: React.FC<StudentDrawerProps> = ({
       try {
         const response = await apiClient.get("/api/user/current");
         setStudent(response.data);
-        console.log(student);
       } catch (error) {
         console.error("Error retrieving student:", error);
         alert("Failed to retrieve student. Please contact an administrator.");
@@ -57,16 +53,21 @@ const StudentDrawer: React.FC<StudentDrawerProps> = ({
   fetchStudentData();
   },[]);
 
-  const menuItems = [
+  const topMenuItems = [
     { title: "Dashboard", icon: <HomeOutlinedIcon />, to: "/student" },
-    { title: "My Societies", icon: <PeopleOutlineIcon />, to: "/student/my-societies" },
-    { title: "Start Society", icon: <AddCircleOutlineIcon />, to: "/student/start-society" },
+    { title: "My Societies", icon: <Groups2Icon />, to: "/student/my-societies" },
     { title: "View Events", icon: <EventAvailableIcon />, to: "/student/view-events" },
-    { title: "News", icon: <NotificationsNoneOutlinedIcon />, to: "/student/view-notifications" },
-    { title: "Notifications", icon: <NotificationsNoneOutlinedIcon />, to: "/student/view-notifications" },
-    { title: "Inbox", icon: <NotificationImportantOutlinedIcon />, to: "/student/view-inbox" },
-    { title: "Report to Admin", icon: <ReportProblemOutlinedIcon />, to: "/student/report-to-admin" },
+    { title: "News", icon: <NewspaperIcon />, to: "/student/view-news" },
+    { title: "Discover Societies", icon: <GroupAddOutlinedIcon />, to: "/student/join-society" },
+    { title: "Start A Society", icon: <AddCircleOutlineIcon />, to: "/student/start-society" },
   ];
+  
+  const bottomMenuItems = [
+    { title: "Notifications", icon: <NotificationsNoneOutlinedIcon />, to: "/student/view-notifications" },
+    { title: "Inbox", icon: <InboxIcon />, to: "/student/view-inbox" },
+    { title: "Report", icon: <ReportProblemOutlinedIcon />, to: "/student/report-to-admin" },
+  ];
+  
 
   const logout = () => {
     localStorage.removeItem("access");
@@ -92,22 +93,24 @@ const StudentDrawer: React.FC<StudentDrawerProps> = ({
         >
           {drawer ? (
             <Box sx={{ textAlign: "center" }}>
-              <img
-                src={student?.icon}
-                alt={`${student?.username} icon`}
-                style={{
-                  width: "72px",
-                  height: "72px",
-                  borderRadius: "50%",
-                  margin: "0 auto"
-                }}
-              />
-              <Typography variant="h6" fontWeight="bold" sx={{ mt: "10px" }}>
-                {student?.first_name} {student?.last_name}
-              </Typography>
-              <Typography variant="body2" color="textSecondary">
-                Student Dashboard
-              </Typography>
+              <Link to="/student/profile" style={{ textDecoration: "none", color: "inherit" }}>
+                <img
+                  src={student?.icon}
+                  alt={`${student?.username} icon`}
+                  style={{
+                    width: "72px",
+                    height: "72px",
+                    borderRadius: "50%",
+                    margin: "0 auto"
+                  }}
+                />
+                <Typography variant="h6" fontWeight="bold" sx={{ mt: "10px" }}>
+                  {student?.first_name} {student?.last_name}
+                </Typography>
+                <Typography variant="body2" color="textSecondary">
+                  Student
+                </Typography>
+              </Link>
             </Box>
           ) : (
             <img
@@ -125,7 +128,7 @@ const StudentDrawer: React.FC<StudentDrawerProps> = ({
 
         {/* Main Menu Items */}
         <List>
-          {menuItems.map((item) => (
+          {topMenuItems.map((item) => (
             <ListItem key={item.title} disablePadding>
               <ListItemButton
                 component={Link}
@@ -150,14 +153,6 @@ const StudentDrawer: React.FC<StudentDrawerProps> = ({
         </List>
         <Divider />
 
-        {/* Join Societies Section */}
-        {drawer && (
-          <Box sx={{ px: 2, py: 1 }}>
-            <Typography variant="subtitle2" color="textSecondary">
-              Join Societies
-            </Typography>
-          </Box>
-        )}
         <List>
           <ListItem disablePadding>
             <ListItemButton
