@@ -1,3 +1,9 @@
+export interface Attendee {
+  id: number;
+  first_name: string;
+  icon?: string | null;
+}
+
 export interface EventData {
   id: number;
   title: string;
@@ -10,6 +16,8 @@ export interface EventData {
   societyName?: string;
   rsvp?: boolean;
   status: string;
+  current_attendees?: Attendee[];
+  cover_image: string;
 }
 
 export interface TransformedEvent {

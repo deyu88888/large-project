@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { apiClient } from "../api";
-
+// import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
 
 // Import the theme
 import { useTheme } from "@mui/material/styles";
@@ -20,8 +21,13 @@ const ViewSociety: React.FC = () => {
   const [society, setSociety] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [joined, setJoined] = useState(0)
-
+  const { pathname } = useLocation();
   const { society_id } = useParams<{ society_id: string }>();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]); // Runs every time the route changes
+
 
   useEffect(() => {
     const fetchSocietyData = async (societyId : number) => {
