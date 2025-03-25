@@ -23,18 +23,20 @@ import { Award } from "../../types/president/award";
 //   is_custom: boolean;
 // }
 
-// interface StudentIdParam {
-//   student_id: string;
-// }
+interface StudentIdParam {
+  student_id: string;
+  memberId: string;
+}
 
 const GiveAwardPage: React.FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
-  const { student_id } = useParams<StudentIdParam>();
   const navigate = useNavigate();
+  const params = useParams<StudentIdParam>();
   const [awards, setAwards] = useState<Award[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const studentId = params.student_id || params.memberId;
 
   useEffect(() => {
     const fetchAwards = async (): Promise<void> => {
@@ -54,7 +56,7 @@ const GiveAwardPage: React.FC = () => {
 
   const handleGiveAward = async (awardId: number): Promise<void> => {
     try {
-      const studentIdNumber = Number(student_id);
+      const studentIdNumber = Number(studentId);
       await apiClient.post("/api/awards/students/", {
         student_id: studentIdNumber,
         award_id: awardId,
