@@ -18,9 +18,9 @@ const ViewInbox: React.FC = () => {
     const fetchInboxData = async () => {
       try {
         setLoading(true);
-        const response = await apiClient.get("/api/inbox");
+        const response = await apiClient.get("/api/notifications/inbox/");
         const inboxData = response.data || [];
-        const replyNotificationsResponse = await apiClient.get("/api/report-reply-notifications");
+        const replyNotificationsResponse = await apiClient.get("/api/reports/reply-notifications");
         const replyNotificationsData = replyNotificationsResponse.data || [];
         const allNotifications = [...inboxData, ...replyNotificationsData];
         allNotifications.sort((a, b) => {
@@ -42,7 +42,7 @@ const ViewInbox: React.FC = () => {
   const markNotificationAsRead = async (id: number, type: string = "notification") => {
     try {
       if (type === "report_reply") {
-        const response = await apiClient.patch(`/api/report-reply-notifications/${id}`);
+        const response = await apiClient.patch(`/api/reports/reply-notifications/${id}`);
         if (response.status === 200) {
           setNotifications((prev) =>
             prev.map((notification) =>
@@ -72,7 +72,7 @@ const ViewInbox: React.FC = () => {
   const deleteNotification = async (id: number, type: string = "notification") => {
     try {
       if (type === "report_reply") {
-        const response = await apiClient.delete(`/api/report-reply-notifications/${id}`);
+        const response = await apiClient.delete(`/api/reports/reply-notifications/${id}`);
         if (response.status === 204 || response.status === 200) {
           setNotifications((prev) => 
             prev.filter((notification) => 
@@ -81,7 +81,7 @@ const ViewInbox: React.FC = () => {
           );
         }
       } else {
-        const response = await apiClient.delete(`/api/inbox/${id}`);
+        const response = await apiClient.delete(`/api/notifications/inbox/${id}`);
         if (response.status === 204 || response.status === 200) {
           setNotifications((prev) => 
             prev.filter((notification) => notification.id !== id)
