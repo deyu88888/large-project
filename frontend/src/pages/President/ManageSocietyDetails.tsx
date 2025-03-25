@@ -8,35 +8,30 @@ import {
   CircularProgress,
   Paper,
   Grid,
-  IconButton,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import UploadIcon from "@mui/icons-material/Upload";
 import { apiClient, apiPaths } from "../../api";
 import { useAuthStore } from "../../stores/auth-store";
 import { tokens } from "../../theme/theme";
-import SocietyPreviewModal from "./SocietyPreviewModal";
+import { SocietyPreview } from "../../components/SocietyPreview";
 import { SocietyData } from "../../types/president/society";
 
 const ManageSocietyDetails: React.FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
-  const { user } = useAuthStore();
+  useAuthStore();
   const navigate = useNavigate();
 
   const { societyId } = useParams<{ societyId: string }>();
   const numericSocietyId = Number(societyId);
-
-  // Debug logging to help diagnose the issue
-  console.log("URL params:", { societyId });
-  console.log("Numeric society ID:", numericSocietyId);
 
   const [society, setSociety] = useState<SocietyData | null>(null);
   const [formData, setFormData] = useState<SocietyData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
   const [openPreview, setOpenPreview] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const [, setError] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
@@ -62,7 +57,7 @@ const ManageSocietyDetails: React.FC = () => {
   const fetchSociety = async (): Promise<void> => {
     try {
       setLoading(true);
-      const response = await apiClient.get(apiPaths.SOCIETY.MANAGE_DETAILS(societyId));
+      const response = await apiClient.get(apiPaths.SOCIETY.MANAGE_DETAILS(numericSocietyId));
       setSociety(response.data);
       setFormData({
         ...response.data,
@@ -134,7 +129,6 @@ const ManageSocietyDetails: React.FC = () => {
       formDataToSend.append("category", formData.category);
       formDataToSend.append("description", formData.description);
       formDataToSend.append("tags", JSON.stringify(formData.tags));
-
       // Convert social_media_links to JSON string
       formDataToSend.append("social_media_links", JSON.stringify(formData.social_media_links));
 
@@ -142,7 +136,7 @@ const ManageSocietyDetails: React.FC = () => {
         formDataToSend.append("icon", selectedFile);
       }
 
-      await apiClient.patch(apiPaths.SOCIETY.MANAGE_DETAILS(societyId), formDataToSend, {
+      await apiClient.patch(apiPaths.SOCIETY.MANAGE_DETAILS(numericSocietyId), formDataToSend, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
@@ -312,10 +306,10 @@ const ManageSocietyDetails: React.FC = () => {
           </Grid>
 
           <Box sx={{ mb: 3 }}>
-            <Typography 
-              variant="subtitle1" 
-              sx={{ 
-                mb: 1, 
+            <Typography
+              variant="subtitle1"
+              sx={{
+                mb: 1,
                 fontWeight: "medium",
                 color: textColor
               }}
@@ -411,7 +405,14 @@ const ManageSocietyDetails: React.FC = () => {
         </form>
       </Paper>
 
-      <SocietyPreviewModal open={openPreview} onClose={handlePreviewClose} formData={formData} />
+      <SocietyPreview
+        open={openPreview}
+        onClose={handlePreviewClose}
+        society={formData}
+        loading={false}
+        joined={0}
+        onJoinSociety={() => {}}
+      />
     </Box>
   );
 };
