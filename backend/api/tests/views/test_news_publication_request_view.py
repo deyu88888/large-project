@@ -31,7 +31,7 @@ def admin_user():
 
 @pytest.fixture
 def student_user():
-    # Create a student directly (one-phase creation)
+    
     student = Student.objects.create(
         username='studentuser',
         email='student@example.com',
@@ -46,7 +46,7 @@ def student_user():
 
 @pytest.fixture
 def another_student():
-    # Create another student directly
+    
     student = Student.objects.create(
         username='anotherstudent',
         email='another@example.com',
@@ -100,10 +100,10 @@ class TestNewsPublicationRequestView:
     
     def test_post_create_publication_request_success(self, api_client, student_user, news_post):
         """Test successful creation of a publication request"""
-        # Authenticate as the student who is the author
+        
         api_client.force_authenticate(user=student_user)
         
-        # Use the correct URL path from urls.py
+        
         url = '/api/news/publication-request/'
         data = {'news_post': news_post.id}
         
@@ -112,20 +112,20 @@ class TestNewsPublicationRequestView:
         assert response.status_code == status.HTTP_201_CREATED
         assert NewsPublicationRequest.objects.count() == 1
         
-        # Verify the response data
+        
         publication_request = NewsPublicationRequest.objects.first()
         assert publication_request.news_post.id == news_post.id
         assert publication_request.requested_by.id == student_user.id
         assert publication_request.status == 'Pending'
         
-        # Check serialized fields are present in response
+        
         assert 'news_post_title' in response.data
         assert 'society_name' in response.data
         assert 'requester_name' in response.data
     
     def test_post_non_student_denied(self, api_client, admin_user, news_post):
         """Test that non-students cannot create publication requests"""
-        # Authenticate as an admin user (not a student)
+        
         api_client.force_authenticate(user=admin_user)
         
         url = '/api/news/publication-request/'
@@ -142,7 +142,7 @@ class TestNewsPublicationRequestView:
         api_client.force_authenticate(user=student_user)
         
         url = '/api/news/publication-request/'
-        data = {}  # No news_post ID
+        data = {}  
         
         response = api_client.post(url, data, format='json')
         
@@ -154,7 +154,7 @@ class TestNewsPublicationRequestView:
         api_client.force_authenticate(user=student_user)
         
         url = '/api/news/publication-request/'
-        data = {'news_post': 99999}  # Non-existent ID
+        data = {'news_post': 99999}  
         
         response = api_client.post(url, data, format='json')
         
@@ -163,7 +163,7 @@ class TestNewsPublicationRequestView:
     
     def test_post_no_permission(self, api_client, another_student, news_post):
         """Test that a student without proper permissions cannot create a publication request"""
-        # Authenticate as a different student (not the author or society officer)
+        
         api_client.force_authenticate(user=another_student)
         
         url = '/api/news/publication-request/'
@@ -176,7 +176,7 @@ class TestNewsPublicationRequestView:
     
     def test_post_existing_request(self, api_client, student_user, news_post, pending_publication_request):
         """Test that duplicate pending requests are rejected"""
-        # A pending request already exists (from the fixture)
+        
         api_client.force_authenticate(user=student_user)
         
         url = '/api/news/publication-request/'
@@ -187,18 +187,18 @@ class TestNewsPublicationRequestView:
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "A publication request for this news post is already pending" in response.data['error']
         
-        # Verify only one request exists
+        
         assert NewsPublicationRequest.objects.count() == 1
     
     def test_post_non_draft_status(self, api_client, student_user, society):
         """Test creating a request for a post that is not in Draft status"""
-        # Create a news post with a non-Draft status
+        
         news = SocietyNews.objects.create(
             society=society,
             title='Non-Draft News',
             content='This post is already pending approval',
             author=student_user,
-            status='PendingApproval'  # Note: not Draft
+            status='PendingApproval'  
         )
         
         api_client.force_authenticate(user=student_user)
@@ -208,10 +208,10 @@ class TestNewsPublicationRequestView:
         
         response = api_client.post(url, data, format='json')
         
-        # Should succeed now that the "must be Draft" check was removed
+        
         assert response.status_code == status.HTTP_201_CREATED
         
-        # Verify the request was created
+        
         assert NewsPublicationRequest.objects.filter(news_post=news).exists()
     
     def test_get_student_own_requests(self, api_client, student_user, pending_publication_request):
@@ -226,7 +226,7 @@ class TestNewsPublicationRequestView:
         assert len(response.data) == 1
         assert response.data[0]['id'] == pending_publication_request.id
         
-        # Check that serialized fields from the serializer are present
+        
         assert 'news_post_title' in response.data[0]
         assert 'society_name' in response.data[0]
         assert 'requester_name' in response.data[0]
@@ -245,7 +245,7 @@ class TestNewsPublicationRequestView:
     
     def test_get_admin_all_requests(self, api_client, admin_user, news_post, student_user):
         """Test that admins can see all publication requests regardless of status"""
-        # Create requests with different statuses
+        
         pending = NewsPublicationRequest.objects.create(
             news_post=news_post,
             requested_by=student_user,
@@ -271,58 +271,58 @@ class TestNewsPublicationRequestView:
         
         api_client.force_authenticate(user=admin_user)
         
-        # With all_statuses=true
+        
         url = '/api/news/publication-request/?all_statuses=true'
         
         response = api_client.get(url)
         
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.data) == 3  # All three requests
+        assert len(response.data) == 3  
         
-        # Verify we get serialized fields for all entries
+        
         for entry in response.data:
             assert 'news_post_title' in entry
             assert 'society_name' in entry
             assert 'requester_name' in entry
         
-        # Check that reviewer name is correctly included for reviewed requests
+        
         reviewed_requests = [r for r in response.data if r['status'] in ['Approved', 'Rejected']]
         for entry in reviewed_requests:
             assert entry['reviewer_name'] is not None
             assert 'admin_notes' in entry
             
-        # Check that the rejected request has admin notes
+        
         rejected_request = next(r for r in response.data if r['status'] == 'Rejected')
         assert rejected_request['admin_notes'] == "This post violates guidelines"
         
-        # Without all_statuses parameter (default behavior)
+        
         url = '/api/news/publication-request/'
         
         response = api_client.get(url)
         
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.data) == 1  # Only pending requests
+        assert len(response.data) == 1  
         assert response.data[0]['id'] == pending.id
     
     def test_get_unauthorized_user(self, api_client):
         """Test that unauthorized users cannot access publication requests"""
-        # Not authenticating the client
+        
         
         url = '/api/news/publication-request/'
         
         response = api_client.get(url)
         
-        # Should get 401 Unauthorized since we're not authenticated
+        
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
     
     def test_get_non_admin_non_student(self, api_client):
         """Test with a user who is neither admin nor student"""
-        # Create a regular user (not admin, not student)
+        
         regular_user = User.objects.create_user(
             username='regularuser',
             email='regular@example.com',
             password='password',
-            role='user'  # Not 'student' or 'admin'
+            role='user'  
         )
         
         api_client.force_authenticate(user=regular_user)

@@ -7,7 +7,7 @@ from api.models import BroadcastMessage, User, Society, Student, Event
 class BroadcastMessageModelTest(TestCase):
     @classmethod
     def setUpTestData(cls):
-        # Create admin user as sender
+        
         cls.admin_user = User.objects.create_user(
             username="admin_sender",
             email="admin@example.com",
@@ -16,7 +16,7 @@ class BroadcastMessageModelTest(TestCase):
             is_staff=True
         )
         
-        # Create recipient users
+        
         cls.recipient1 = User.objects.create_user(
             username="recipient1",
             email="recipient1@example.com",
@@ -29,7 +29,7 @@ class BroadcastMessageModelTest(TestCase):
             password="password123"
         )
         
-        # Create a student for society president
+        
         cls.student = Student.objects.create_user(
             username="student1",
             email="student1@example.com",
@@ -40,7 +40,7 @@ class BroadcastMessageModelTest(TestCase):
             status="Approved"
         )
         
-        # Create a society
+        
         cls.society = Society.objects.create(
             name="Test Society",
             description="A test society",
@@ -49,7 +49,7 @@ class BroadcastMessageModelTest(TestCase):
             approved_by=cls.admin_user
         )
         
-        # Create an event
+        
         cls.event = Event.objects.create(
             title="Test Event",
             description="A test event",
@@ -59,7 +59,7 @@ class BroadcastMessageModelTest(TestCase):
             location="Test Location"
         )
         
-        # Create a basic broadcast message
+        
         cls.broadcast = BroadcastMessage.objects.create(
             sender=cls.admin_user,
             message="Test broadcast message"
@@ -88,7 +88,7 @@ class BroadcastMessageModelTest(TestCase):
         self.assertIn(self.recipient1, broadcast.recipients.all())
         self.assertIn(self.recipient2, broadcast.recipients.all())
         
-        # Verify reciprocal relationship
+        
         self.assertIn(broadcast, self.recipient1.received_broadcasts.all())
         self.assertIn(broadcast, self.recipient2.received_broadcasts.all())
 
@@ -102,7 +102,7 @@ class BroadcastMessageModelTest(TestCase):
         self.assertEqual(broadcast.societies.count(), 1)
         self.assertIn(self.society, broadcast.societies.all())
         
-        # Verify reciprocal relationship
+        
         self.assertIn(broadcast, self.society.broadcasts.all())
 
     def test_broadcast_with_events(self):
@@ -115,7 +115,7 @@ class BroadcastMessageModelTest(TestCase):
         self.assertEqual(broadcast.events.count(), 1)
         self.assertIn(self.event, broadcast.events.all())
         
-        # Verify reciprocal relationship
+        
         self.assertIn(broadcast, self.event.broadcasts.all())
 
     def test_broadcast_with_mixed_targets(self):
@@ -162,10 +162,10 @@ class BroadcastMessageModelTest(TestCase):
         )
         broadcast_id = broadcast.id
         
-        # Delete the sender
+        
         self.recipient1.delete()
         
-        # Verify broadcast is also deleted (CASCADE)
+        
         with self.assertRaises(BroadcastMessage.DoesNotExist):
             BroadcastMessage.objects.get(id=broadcast_id)
 
@@ -177,26 +177,26 @@ class BroadcastMessageModelTest(TestCase):
         broadcast.societies.add(self.society)
         self.assertEqual(broadcast.societies.count(), 1)
         
-        # Remove society
+        
         broadcast.societies.remove(self.society)
         self.assertEqual(broadcast.societies.count(), 0)
         self.assertNotIn(self.society, broadcast.societies.all())
 
     def test_broadcast_creation_time(self):
-        # Check created_at is set automatically and is recent
+        
         current_time = timezone.now()
         broadcast = BroadcastMessage.objects.create(
             sender=self.admin_user,
             message="Timestamp test"
         )
         
-        # Verify created_at is set and is within the last minute
+        
         self.assertIsNotNone(broadcast.created_at)
         time_diff = current_time - broadcast.created_at
         self.assertLess(time_diff.total_seconds(), 60)
 
     def test_broadcast_filtering_by_recipient(self):
-        # Create multiple broadcasts with different recipients
+        
         broadcast1 = BroadcastMessage.objects.create(
             sender=self.admin_user,
             message="For recipient 1"
@@ -209,7 +209,7 @@ class BroadcastMessageModelTest(TestCase):
         )
         broadcast2.recipients.add(self.recipient2)
         
-        # Verify filtering works correctly
+        
         recipient1_broadcasts = BroadcastMessage.objects.filter(recipients=self.recipient1)
         self.assertEqual(recipient1_broadcasts.count(), 1)
         self.assertIn(broadcast1, recipient1_broadcasts)
@@ -221,7 +221,7 @@ class BroadcastMessageModelTest(TestCase):
         self.assertNotIn(broadcast1, recipient2_broadcasts)
 
     def test_broadcast_filtering_by_society(self):
-        # Create another society
+        
         society2 = Society.objects.create(
             name="Another Society",
             description="Another test society",
@@ -230,7 +230,7 @@ class BroadcastMessageModelTest(TestCase):
             approved_by=self.admin_user
         )
         
-        # Create broadcasts for different societies
+        
         broadcast1 = BroadcastMessage.objects.create(
             sender=self.admin_user,
             message="For society 1"
@@ -243,7 +243,7 @@ class BroadcastMessageModelTest(TestCase):
         )
         broadcast2.societies.add(society2)
         
-        # Verify filtering works correctly
+        
         society1_broadcasts = BroadcastMessage.objects.filter(societies=self.society)
         self.assertEqual(society1_broadcasts.count(), 1)
         self.assertIn(broadcast1, society1_broadcasts)
@@ -255,7 +255,7 @@ class BroadcastMessageModelTest(TestCase):
         self.assertNotIn(broadcast1, society2_broadcasts)
 
     def test_broadcast_filtering_by_sender(self):
-        # Create broadcasts from different senders
+        
         admin_broadcast = BroadcastMessage.objects.create(
             sender=self.admin_user,
             message="From admin"
@@ -266,9 +266,9 @@ class BroadcastMessageModelTest(TestCase):
             message="From student"
         )
         
-        # Verify filtering works correctly
+        
         admin_broadcasts = BroadcastMessage.objects.filter(sender=self.admin_user)
-        self.assertIn(self.broadcast, admin_broadcasts)  # Original broadcast
+        self.assertIn(self.broadcast, admin_broadcasts)  
         self.assertIn(admin_broadcast, admin_broadcasts)
         self.assertNotIn(student_broadcast, admin_broadcasts)
         

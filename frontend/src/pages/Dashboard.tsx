@@ -472,12 +472,12 @@ const Dashboard: React.FC = () => {
 
   // -- Navigation Items --
   const navigationItems: NavigationItem[] = [
-    { label: "Dashboard", icon: <span className="text-xl">Dashboard</span>, ref: null, scrollToSection: () => handleNavItemClick(null) },
-    { label: "Statistics", icon: <span className="text-xl">Statistics</span>, ref: statsRef, scrollToSection: () => handleNavItemClick(statsRef) },
-    { label: "Popular Societies", icon: <span className="text-xl">Societies</span>, ref: popularSocietiesRef, scrollToSection: () => handleNavItemClick(popularSocietiesRef) },
-    { label: "Upcoming Events", icon: <span className="text-xl">Events</span>, ref: upcomingEventsRef, scrollToSection: () => handleNavItemClick(upcomingEventsRef) },
-    { label: "Event Calendar", icon: <span className="text-xl">Calendar</span>, ref: eventCalendarRef, scrollToSection: () => handleNavItemClick(eventCalendarRef) },
-    { label: "Updates", icon: <span className="text-xl">Updates</span>, ref: updatesRef, scrollToSection: () => handleNavItemClick(updatesRef) },
+    { label: "Dashboard", icon: <span className="text-xl">🏠</span>, ref: null, scrollToSection: () => handleNavItemClick(null) },
+    { label: "Statistics", icon: <span className="text-xl">📊</span>, ref: statsRef, scrollToSection: () => handleNavItemClick(statsRef) },
+    { label: "Popular Societies", icon: <span className="text-xl">🏆</span>, ref: popularSocietiesRef, scrollToSection: () => handleNavItemClick(popularSocietiesRef) },
+    { label: "Upcoming Events", icon: <span className="text-xl">📅</span>, ref: upcomingEventsRef, scrollToSection: () => handleNavItemClick(upcomingEventsRef) },
+    { label: "Event Calendar", icon: <span className="text-xl">🗓️</span>, ref: eventCalendarRef, scrollToSection: () => handleNavItemClick(eventCalendarRef) },
+    { label: "Updates", icon: <span className="text-xl">🔔</span>, ref: updatesRef, scrollToSection: () => handleNavItemClick(updatesRef) },
   ];
 
   // Overall loading state
@@ -534,7 +534,7 @@ const Dashboard: React.FC = () => {
                   <HiMenu className="h-6 w-6" />
                 </motion.span>
               </button>
-              <span role="img" aria-label="sparkles" className="text-3xl">Sparkles</span>
+              <span role="img" aria-label="sparkles" className="text-3xl">✨</span>
               <h1 className="text-xl font-extrabold tracking-wide text-gray-800 dark:text-gray-100">
                 Student Society Dashboard
               </h1>

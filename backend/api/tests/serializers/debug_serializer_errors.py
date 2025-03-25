@@ -3,7 +3,7 @@ from api.recommendation_feedback_serializers import (
     RecommendationFeedbackCreateSerializer
 )
 def print_test_case(self):
-    # Create the serializer with your test data
+    
     serializer = RecommendationFeedbackSerializer(data=self.valid_data)
     valid = serializer.is_valid()
     

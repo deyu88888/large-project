@@ -14,15 +14,15 @@ class TestActivityLogSerializer(TestCase):
 
     def setUp(self):
         """Set up test data"""
-        # Create mock models
+        
         self.user = MagicMock(spec=User)
         self.user.id = 1
         self.user.username = "testuser"
         
-        # Create a timestamp for testing
+        
         self.timestamp = timezone.now()
         
-        # Create an activity log instance
+        
         self.activity_log = MagicMock(spec=ActivityLog)
         self.activity_log.id = 1
         self.activity_log.action_type = "Create"
@@ -41,7 +41,7 @@ class TestActivityLogSerializer(TestCase):
         serializer = ActivityLogSerializer(instance=self.activity_log)
         data = serializer.data
         
-        # Expected fields
+        
         expected_fields = {
             'id', 'action_type', 'target_type', 'target_id', 'target_name',
             'target_email', 'reason', 'performed_by', 'timestamp',
@@ -51,7 +51,7 @@ class TestActivityLogSerializer(TestCase):
     
     def test_timestamp_format(self):
         """Test that the timestamp is correctly formatted"""
-        # Use Python's timezone.utc via dt_timezone
+        
         fixed_timestamp = datetime(2023, 5, 15, 10, 30, 45, tzinfo=dt_timezone.utc)
         self.activity_log.timestamp = fixed_timestamp
         
@@ -62,7 +62,7 @@ class TestActivityLogSerializer(TestCase):
     
     def test_serialization_performance(self):
         """Test that the serializer can handle a large number of activity logs efficiently"""
-        # Create a list of activity logs
+        
         activity_logs = []
         for i in range(100):
             log = MagicMock(spec=ActivityLog)
@@ -82,13 +82,13 @@ class TestActivityLogSerializer(TestCase):
         import time
         start_time = time.time()
         
-        # Serialize all logs at once using many=True
+        
         serializer = ActivityLogSerializer(instance=activity_logs, many=True)
         _ = serializer.data
         
         end_time = time.time()
         
-        # Verify that serialization of 100 records takes under 1 second
+        
         self.assertLess(end_time - start_time, 1.0)
     
     def test_create_activity_log(self):
@@ -106,15 +106,15 @@ class TestActivityLogSerializer(TestCase):
             'original_data': '{"name": "Original Name"}'
         }
         
-        # Mock user lookup so that performed_by can be resolved
+        
         with patch('api.models.User.objects.get', return_value=self.user):
-            # Patch the create method to simulate model creation
+            
             with patch('rest_framework.serializers.ModelSerializer.create') as mock_create:
                 mock_create.return_value = self.activity_log
                 
                 serializer = ActivityLogSerializer(data=activity_log_data)
                 with patch.object(serializer, 'is_valid', return_value=True):
-                    # Set the private validated data attribute
+                    
                     serializer._validated_data = activity_log_data
                     result = serializer.create(activity_log_data)
                     
@@ -158,15 +158,15 @@ class TestActivityLogSerializer(TestCase):
         """Test creating an activity log with missing required fields"""
         incomplete_data = {
             'action_type': 'Create',
-            # Missing target_type
+            
             'target_id': 5,
             'target_name': 'Test Society',
-            # Missing performed_by
+            
         }
         
         serializer = ActivityLogSerializer(data=incomplete_data)
         with patch.object(serializer, 'is_valid', return_value=False):
-            # Set errors that would normally be populated by the validation
+            
             serializer._errors = {
                 'target_type': ['This field is required.'],
                 'performed_by': ['This field is required.']
@@ -178,7 +178,7 @@ class TestActivityLogSerializer(TestCase):
     
     def test_serializer_handles_none_values(self):
         """Test that the serializer can handle None values appropriately"""
-        # Set some fields to None
+        
         self.activity_log.target_email = None
         self.activity_log.reason = None
         self.activity_log.original_data = None
@@ -193,14 +193,14 @@ class TestActivityLogSerializer(TestCase):
     def test_serializer_with_actual_model_instance(self):
         """Test the serializer with an actual model instance if possible"""
         try:
-            # Create a real user instance
+            
             user = User.objects.create_user(
                 username='testuser',
                 email='test@example.com',
                 password='password123'
             )
             
-            # Create a real activity log instance
+            
             log = ActivityLog.objects.create(
                 action_type='Create',
                 target_type='Society',
@@ -220,9 +220,9 @@ class TestActivityLogSerializer(TestCase):
             self.assertEqual(data['target_name'], 'Test Society')
             self.assertEqual(data['timestamp'], self.timestamp.strftime('%d-%m-%Y %H:%M:%S'))
             
-            # Clean up
+            
             log.delete()
             user.delete()
         except Exception:
-            # Skip the test if the database is not accessible
+            
             pass

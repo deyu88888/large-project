@@ -147,14 +147,14 @@ class NewsCommentModelTest(TestCase):
             NewsComment.objects.get(id=comment_id)
 
     def test_delete_user_cascades_to_comments(self):
-        # Create a separate user that's not linked to other objects
+        
         test_user = User.objects.create_user(
             username="test_only_user",
             email="testonly@example.com",
             password="password123"
         )
         
-        # Create a comment by this user
+        
         test_comment = NewsComment.objects.create(
             news_post=self.news_post,
             user=test_user,
@@ -191,13 +191,13 @@ class NewsCommentModelTest(TestCase):
             
     def test_user_required(self):
         """Test that user is required"""
-        # Skip this test if the previous test left a broken transaction
-        # This ensures we don't run this test if the database is in a bad state
+        
+        
         from django.db import connection
         if getattr(connection, 'needs_rollback', False):
             self.skipTest("Previous transaction is in a broken state")
             
-        # Use transaction.atomic to ensure this test is isolated
+        
         from django.db import transaction
         try:
             with transaction.atomic():
@@ -205,10 +205,10 @@ class NewsCommentModelTest(TestCase):
                     news_post=self.news_post,
                     content="Missing user"
                 )
-                # If we reach here, no exception was raised - test should fail
+                
                 self.fail("IntegrityError was not raised")
         except IntegrityError:
-            # This is what we expect, test passes
+            
             pass
     
     def test_ordering(self):
