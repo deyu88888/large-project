@@ -104,8 +104,8 @@ describe('ManageReports Component', () => {
     
     setup();
     
-    // Check that the localStorage was checked
-    expect(mockLocalStorage.getItem).toHaveBeenCalledWith('activeTab');
+    // Check that the localStorage was checked - update key to match component
+    expect(mockLocalStorage.getItem).toHaveBeenCalledWith('reportsActiveTab');
     
     // Check that tabs are visible
     expect(screen.getByText('New reports')).toBeInTheDocument();
@@ -119,8 +119,8 @@ describe('ManageReports Component', () => {
     
     setup();
     
-    // Verify localStorage was accessed
-    expect(mockLocalStorage.getItem).toHaveBeenCalledWith('activeTab');
+    // Verify localStorage was accessed - update key to match component
+    expect(mockLocalStorage.getItem).toHaveBeenCalledWith('reportsActiveTab');
     
     // The test can't reliably check which tab panel is shown due to the mock components,
     // but we can check that the component rendered successfully
@@ -139,16 +139,16 @@ describe('ManageReports Component', () => {
       fireEvent.click(screen.getByText('New replies'));
     });
     
-    // Should save to localStorage
-    expect(mockLocalStorage.setItem).toHaveBeenCalledWith('activeTab', '1');
+    // Should save to localStorage - update key to match component
+    expect(mockLocalStorage.setItem).toHaveBeenCalledWith('reportsActiveTab', '1');
     
     // Click on the third tab
     await act(async () => {
       fireEvent.click(screen.getByText('Replied'));
     });
     
-    // Should save to localStorage again
-    expect(mockLocalStorage.setItem).toHaveBeenCalledWith('activeTab', '2');
+    // Should save to localStorage again - update key to match component
+    expect(mockLocalStorage.setItem).toHaveBeenCalledWith('reportsActiveTab', '2');
   });
 
   it('renders correctly in dark theme', () => {
