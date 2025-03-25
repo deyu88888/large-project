@@ -3,10 +3,9 @@ import { Box, Typography, useTheme } from "@mui/material";
 import { FaUsers, FaCalendarAlt, FaEnvelope } from "react-icons/fa";
 import Header from "../../components/Header";
 import { tokens } from "../../theme/theme";
-import { apiClient } from "../../api";
+import { apiClient, apiPaths } from "../../api";
 import { useSettingsStore } from "../../stores/settings-store";
 import { useAuthStore } from "../../stores/auth-store";
-import { apiPaths } from "../../api/apiPaths";
 
 const AdminDashboard = () => {
   const theme = useTheme();
