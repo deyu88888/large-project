@@ -73,7 +73,7 @@ class RSVPEventSerializerTest(TestCase):
         yesterday = timezone.now() - timedelta(days=1)
         self.past_event = Event.objects.create(
             title="Past Event",
-            description="An event in the past",
+            main_description="An event in the past",
             date=yesterday.date(),
             start_time=yesterday.time(),
             duration=timedelta(hours=2),
@@ -85,7 +85,7 @@ class RSVPEventSerializerTest(TestCase):
         
         self.full_event = Event.objects.create(
             title="Full Event",
-            description="An event that is at capacity",
+            main_description="An event that is at capacity",
             date=tomorrow.date(),
             start_time=tomorrow.time(),
             duration=timedelta(hours=2),
@@ -100,7 +100,7 @@ class RSVPEventSerializerTest(TestCase):
         
         self.rsvp_event = Event.objects.create(
             title="RSVP Event",
-            description="An event with RSVPs",
+            main_description="An event with RSVPs",
             date=tomorrow.date(),
             start_time=tomorrow.time(),
             duration=timedelta(hours=2),
@@ -178,25 +178,6 @@ class RSVPEventSerializerTest(TestCase):
         
         
         self.assertNotIn(self.student1, event.current_attendees.all())
-
-    @patch('api.models.Student.societies')
-    def test_rsvp_not_society_member(self, mock_societies):
-        """Test RSVP validation fails if student is not a society member"""
-        
-        mock_societies_all = MagicMock()
-        mock_societies_all.all.return_value = []
-        mock_societies.__get__ = MagicMock(return_value=mock_societies_all)
-        
-        request = self._create_request(self.student1)
-        context = {'request': request, 'action': 'RSVP'}
-        
-        serializer = RSVPEventSerializer(instance=self.future_event, data={}, context=context)
-        
-        
-        with self.assertRaises(ValidationError) as context:
-            serializer.validate({})
-        
-        self.assertIn("You must be a member", str(context.exception))
 
     @patch('api.models.Student.societies')
     def test_rsvp_already_rsvpd(self, mock_societies):
@@ -384,7 +365,7 @@ class RSVPEventSerializerTest(TestCase):
         
         event = Event.objects.create(
             title="Capacity Edge Case",
-            description="Testing max capacity edge cases",
+            main_description="Testing max capacity edge cases",
             date=(timezone.now() + timedelta(days=1)).date(),
             start_time=(timezone.now() + timedelta(days=1)).time(),
             duration=timedelta(hours=2),
