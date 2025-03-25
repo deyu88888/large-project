@@ -1,0 +1,4 @@
+from api.management.commands.data.society_generator import RandomSocietyDataGenerator
+from api.management.commands.data.student_generator import RandomStudentDataGenerator
+from api.management.commands.data.event_generator import RandomEventDataGenerator
+from api.management.commands.data.comment_generator import RandomCommentDataGenerator

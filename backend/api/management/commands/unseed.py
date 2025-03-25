@@ -1,7 +1,6 @@
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.storage import default_storage
 from django.core.management.base import BaseCommand
-from django.conf import settings
 import api.models as m
 
 class Command(BaseCommand):
@@ -17,6 +16,11 @@ class Command(BaseCommand):
 
         models = [
             m.Notification,
+            m.NewsComment,
+            m.Comment,
+            m.AdminReportRequest,
+            m.ReportReply,
+            m.SocietyNews,
             m.EventRequest,
             m.Event,
             m.SocietyShowreelRequest,
@@ -56,4 +60,6 @@ class Command(BaseCommand):
         images.extend(list(m.SocietyRequest.objects.values_list('icon', flat=True)))
         images = [image for image in images if image and default_storage.exists(image)]
         images = [image for image in images if not image.startswith("pre-seed-icons")]
+        images = [image for image in images if not image.startswith("news_icons")]
+        images = [image for image in images if not image.startswith("default_event")]
         return images
