@@ -6,31 +6,8 @@ import { tokens } from "../theme/theme";
 import { CircularProgress } from "@mui/material";
 import EventCard from "../components/EventCard";
 import { useAuthStore } from "../stores/auth-store";
-
-interface Attendee {
-    id: number;
-    first_name: string;
-    icon?: string | null;
-}
-
-interface EventData {
-    id: number;
-    title: string;
-    date: string;
-    location: string;
-    current_attendees?: Attendee[];
-}
-
-interface User {
-    id: number;
-    first_name: string;
-    last_name: string;
-    username: string;
-    email: string;
-    role: string;
-    is_active: boolean;
-    following?: number[];
-}
+import { User } from "../types/user/user";
+import { EventData, Attendee } from "../types/shared/event";
 
 export default function AllEventsPage() {
     const navigate = useNavigate();
@@ -188,9 +165,10 @@ export default function AllEventsPage() {
                                 currentUser.following &&
                                 event.current_attendees
                             ) {
-                                followingsAttending = event.current_attendees.filter(
-                                    (attendee) => currentUser.following!.includes(attendee.id)
+                                followingsAttending = event.current_attendees.filter((attendee) =>
+                                    currentUser.following!.map(f => f.id).includes(attendee.id)
                                 );
+
                             }
 
                             return (
