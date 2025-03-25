@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { apiClient } from "../../api"; 
+import {apiClient, apiPaths} from "../../api";
 import { useAuthStore } from "../../stores/auth-store";
 import { useTheme } from "@mui/material/styles";
 import { 
@@ -69,7 +69,7 @@ const ViewSocietyMembers: React.FC = () => {
       }
 
       // Fetch society data to know roles
-      const societyResponse = await apiClient.get(`/api/manage-society-details/${id}/`);
+      const societyResponse = await apiClient.get(apiPaths.SOCIETY.MANAGE_DETAILS(societyId));
       setSociety(societyResponse.data);
 
       // Fetch members
@@ -116,7 +116,7 @@ const ViewSocietyMembers: React.FC = () => {
         [confirmDialog.role]: null
       };
       
-      await apiClient.patch(`/api/society-roles/${societyId}/`, payload);
+      await apiClient.patch(`/api/society/${societyId}/roles/`, payload);
       
       // Refresh data
       await fetchData();

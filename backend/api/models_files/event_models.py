@@ -1,8 +1,8 @@
-from datetime import timedelta
+from datetime import timedelta, datetime
+from datetime import timezone as dt_timezone
 from django.db import models
 from django.utils import timezone
-from django.utils.translation import gettext_lazy as _
-from api.models import Student, User
+from api.models import User
 
 
 def get_date():
@@ -20,19 +20,20 @@ class Event(models.Model):
     An event organized by a society.
     """
     title = models.CharField(max_length=20, default="")
-    description = models.CharField(max_length=300, default="")
+    main_description = models.CharField(max_length=300, default="")
+    cover_image = models.ImageField(upload_to="event_covers/")
     date = models.DateField(blank=False, null=False, default=get_date)
     start_time = models.TimeField(blank=False, null=False, default=get_time)
     duration = models.DurationField(
         blank=False, null=False, default=timedelta(hours=1)
     )
     hosted_by = models.ForeignKey(
-        "api.Society", on_delete=models.CASCADE, related_name="events", null=True
+        "Society", on_delete=models.CASCADE, related_name="events", null=True
     )
     location = models.CharField(max_length=300, default="")
 
     max_capacity = models.PositiveIntegerField(default=0)  # 0 = No limit
-    current_attendees = models.ManyToManyField(Student, blank=True)
+    current_attendees = models.ManyToManyField('Student', blank=True)
 
     STATUS_CHOICES = [
         ("Pending", "Pending Approval"),
@@ -55,8 +56,45 @@ class Event(models.Model):
     def has_started(self):
         """Returns a boolean representing whether an event has began"""
         now = timezone.now()
-        event_datetime = timezone.datetime.combine(self.date, self.start_time, tzinfo=timezone.utc)
+        event_datetime = timezone.datetime.combine(self.date, self.start_time, tzinfo=dt_timezone.utc)
         return now >= event_datetime
+
+    def save(self, *args, **kwargs):
+        now = timezone.now()
+        if isinstance(self.date, str):
+            self.date = datetime.strptime(self.date, "%Y-%m-%d").date()
+        if isinstance(self.start_time, str):
+            if isinstance(self.start_time, str):
+                parts = self.start_time.split(":")
+                if len(parts) == 2:
+                    self.start_time = datetime.strptime(self.start_time, "%H:%M").time()
+                elif len(parts) == 3:
+                    self.start_time = datetime.strptime(self.start_time, "%H:%M:%S").time()
+                else:
+                    raise ValueError(f"Invalid time format: {self.start_time}")
+        event_start = datetime.combine(self.date, self.start_time, tzinfo=dt_timezone.utc)
+
+        if self.status == "Pending" and now >= event_start:
+            self.status = "Rejected"
+        super().save(*args, **kwargs)
+
+class EventModule(models.Model):
+    MODULE_CHOICES = [
+        ('subtitle', 'Subtitle'),
+        ('description', 'Description'),
+        ('image', 'Image'),
+        ('file', 'File'),
+    ]
+    event = models.ForeignKey(
+        'Event', related_name='modules', on_delete=models.CASCADE, null=True, blank=True
+    )
+    type = models.CharField(max_length=20, choices=MODULE_CHOICES)
+    text_value = models.TextField(blank=True, null=True)
+    file_value = models.FileField(upload_to='event_modules_files/', blank=True, null=True)
+    is_participant_only = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.type} - {self.text_value or self.file_value.name}"
 
 class Comment(models.Model):
     """

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -8,40 +8,37 @@ import {
   Paper,
   ToggleButton,
   ToggleButtonGroup,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { apiClient } from "../../api";
 import { tokens } from "../../theme/theme";
-import { Event } from "../../types/president/event";
-import { ManageSocietyEventsParams } from "../../types/president/role";
-import { FilterType, FilterOption } from "../../types/president/society";
 
-// interface Event {
-//   id: number;
-//   title: string;
-//   date: string;
-//   start_time: string;
-//   status: string;
-//   hosted_by: number;
-//   description: string;
-//   location: string;
-//   duration: string;
-//   max_capacity: number;
-//   current_attendees: number[];
-// }
+interface Event {
+  id: number;
+  title: string;
+  date: string;
+  start_time: string;
+  status: string;
+  hosted_by: number;
+  main_description: string;
+  location: string;
+  duration: string;
+  max_capacity: number;
+  current_attendees: number[];
+}
+type FilterType = "upcoming" | "previous" | "pending" | "rejected";
 
-// interface ManageSocietyEventsParams {
-//   society_id: string;
-//   filter?: "upcoming" | "previous" | "pending";
-// }
-
-// type FilterType = "upcoming" | "previous" | "pending";
-
-// interface FilterOption {
-//   label: string;
-//   value: FilterType;
-//   color: string;
-// }
+interface FilterOption {
+  label: string;
+  value: FilterType;
+  color: string;
+}
 
 const formatDate = (dateString: string): string => {
   const options: Intl.DateTimeFormatOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
@@ -60,22 +57,36 @@ const ManageSocietyEvents: React.FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const navigate = useNavigate();
-  const location = useLocation();
   const { societyId, filter: filterParam } = useParams<{ societyId: string; filter?: string }>();
   const society_id = societyId;
 
-  const [filter, setFilter] = useState<FilterType>(filterParam || "upcoming");
+  const isFilterType = (value: any): value is FilterType => {
+    return ["upcoming", "previous", "pending", "rejected"].includes(value);
+  };
+
+  const [filter, setFilter] = useState<FilterType>(
+    isFilterType(filterParam) ? filterParam : "upcoming"
+  );
+
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [openDialog, setOpenDialog] = useState(false);
+  const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
+
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: "success" | "error" }>({
+    open: false,
+    message: "",
+    severity: "success",
+  });
+
   const numericSocietyId = society_id ? parseInt(society_id, 10) : null;
-  
+
   useEffect(() => {
     if (!society_id) return;
-    
     if (filter !== filterParam) {
-      navigate(`/president/${society_id}/manage-society-events/${filter}`, { replace: true });
+      navigate(`/president-page/${society_id}/manage-society-events/${filter}`, { replace: true });
     }
   }, [filter, filterParam, society_id, navigate]);
 
@@ -85,23 +96,19 @@ const ManageSocietyEvents: React.FC = () => {
       setLoading(false);
       return;
     }
-    
+
     const fetchEvents = async (): Promise<void> => {
       setLoading(true);
       setError(null);
       try {
-        const response = await apiClient.get("/api/events/", {
+        const response = await apiClient.get("/api/events/sorted/", {
           params: { society_id: numericSocietyId },
         });
-        
-        console.log(`[DEBUG] Filter: ${filter}, Society ID: ${numericSocietyId}`);
-        console.log(`[DEBUG] Raw response:`, response.data);
-        
+
         const allSocietyEvents = response.data.filter((event: Event) => event.hosted_by === numericSocietyId);
-        
         let filteredEvents: Event[] = [];
         const currentDate = new Date();
-        
+
         if (filter === "upcoming") {
           filteredEvents = allSocietyEvents.filter((event: Event) => {
             const eventDate = new Date(`${event.date}T${event.start_time}`);
@@ -113,15 +120,13 @@ const ManageSocietyEvents: React.FC = () => {
             return eventDate < currentDate && event.status === "Approved";
           });
         } else if (filter === "pending") {
-          filteredEvents = allSocietyEvents.filter((event: Event) => 
-            event.status === "Pending"
-          );
+          filteredEvents = allSocietyEvents.filter((event: Event) => event.status === "Pending");
+        } else if (filter === "rejected") {
+          filteredEvents = allSocietyEvents.filter((event: Event) => event.status === "Rejected");
         }
-        
-        console.log(`[DEBUG] Filtered events (${filteredEvents.length}):`, filteredEvents);
+
         setEvents(filteredEvents);
       } catch (err: any) {
-        console.error(`Error fetching ${filter} events:`, err);
         setError(`Failed to load ${filter} events: ${err.message || "Unknown error"}`);
       } finally {
         setLoading(false);
@@ -132,56 +137,52 @@ const ManageSocietyEvents: React.FC = () => {
   }, [numericSocietyId, filter]);
 
   const isEditable = (event: Event): boolean => {
-    if (event.status === "Pending") return true;
+    if (event.status === "Pending" || event.status === "Rejected") return true;
     const nowDate = new Date();
     const eventDateTime = new Date(`${event.date}T${event.start_time}`);
     return eventDateTime > nowDate;
   };
 
-  const handleDelete = async (eventId: number): Promise<void> => {
-    if (window.confirm("Are you sure you want to delete this event?")) {
+  const confirmDelete = (eventId: number) => {
+    setSelectedEventId(eventId);
+    setOpenDialog(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (selectedEventId !== null) {
       try {
-        await apiClient.delete(`/api/events/${eventId}/`);
-        alert("Event deleted successfully.");
-        setEvents((prev) => prev.filter((e) => e.id !== eventId));
+        await apiClient.delete(`/api/events/${selectedEventId}/manage/`);
+        setEvents((prev) => prev.filter((e) => e.id !== selectedEventId));
+        setSnackbar({ open: true, message: "Event deleted successfully.", severity: "success" });
       } catch (err) {
-        console.error("Error deleting event:", err);
-        alert("Failed to delete event.");
+        setSnackbar({ open: true, message: "Failed to delete event.", severity: "error" });
+      } finally {
+        setOpenDialog(false);
+        setSelectedEventId(null);
       }
     }
   };
 
-  // Handler for editing an event
   const handleEdit = (eventId: number) => {
-    navigate(`/president/${society_id}/edit-event-details/${eventId}`);
+    navigate(`/president-page/${society_id}/edit-event/${eventId}`);
   };
 
   const backgroundColor = theme.palette.mode === "dark" ? "#141b2d" : "#fcfcfc";
   const textColor = theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d";
   const paperBackgroundColor = theme.palette.mode === "dark" ? colors.primary[500] : "#ffffff";
   const paperHoverBackgroundColor = theme.palette.mode === "dark" ? colors.primary[600] : "#f5f5f5";
-  
+
   const filterOptions: FilterOption[] = [
     { label: "Upcoming", value: "upcoming", color: colors.blueAccent[500] },
     { label: "Previous", value: "previous", color: colors.greenAccent[500] },
     { label: "Pending Approval", value: "pending", color: colors.redAccent[500] },
+    { label: "Rejected", value: "rejected", color: colors.grey[500] },
   ];
 
   return (
-    <Box
-      minHeight="100vh"
-      p={4}
-      sx={{
-        backgroundColor,
-        color: textColor,
-      }}
-    >
+    <Box minHeight="100vh" p={4} sx={{ backgroundColor, color: textColor }}>
       <Box textAlign="center" mb={4}>
-        <Typography
-          variant="h2"
-          fontWeight="bold"
-          sx={{ color: textColor }}
-        >
+        <Typography variant="h2" fontWeight="bold" sx={{ color: textColor }}>
           Manage Society Events
         </Typography>
         <Typography variant="h6" sx={{ color: colors.grey[500] }}>
@@ -191,7 +192,7 @@ const ManageSocietyEvents: React.FC = () => {
 
       <Box display="flex" justifyContent="center" mb={3}>
         <Button
-          onClick={() => navigate(`/president/${society_id}/create-society-event/`)}
+          onClick={() => navigate(`/president-page/${society_id}/create-event/`)}
           sx={{
             backgroundColor: colors.blueAccent[500],
             color: theme.palette.mode === "dark" ? "#141b2d" : "#ffffff",
@@ -210,13 +211,8 @@ const ManageSocietyEvents: React.FC = () => {
         <ToggleButtonGroup
           value={filter}
           exclusive
-          onChange={(_, newFilter) => {
-            if (newFilter) setFilter(newFilter);
-          }}
-          sx={{
-            backgroundColor: colors.primary[500],
-            borderRadius: "8px",
-          }}
+          onChange={(_, newFilter) => newFilter && setFilter(newFilter)}
+          sx={{ backgroundColor: colors.primary[500], borderRadius: "8px" }}
         >
           {filterOptions.map(({ label, value, color }) => (
             <ToggleButton
@@ -278,7 +274,7 @@ const ManageSocietyEvents: React.FC = () => {
                   <Button variant="contained" color="primary" onClick={() => handleEdit(event.id)}>
                     Edit
                   </Button>
-                  <Button variant="contained" color="error" onClick={() => handleDelete(event.id)}>
+                  <Button variant="contained" color="error" onClick={() => confirmDelete(event.id)}>
                     Delete
                   </Button>
                 </Box>
@@ -287,6 +283,36 @@ const ManageSocietyEvents: React.FC = () => {
           ))}
         </Box>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
+        <DialogTitle>Confirm Deletion</DialogTitle>
+        <DialogContent>
+          <Typography>Are you sure you want to delete this event?</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenDialog(false)} color="secondary">Cancel</Button>
+          <Button onClick={handleConfirmDelete} color="error">
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Snackbar */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert
+          severity={snackbar.severity}
+          variant="filled"
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

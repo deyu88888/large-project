@@ -24,9 +24,6 @@ const apiUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
 export const apiClient = axios.create({
   baseURL: apiUrl,
-  headers: {
-    "Content-Type": "application/json",
-  },
   paramsSerializer: {
     indexes: null,
   },
@@ -58,8 +55,8 @@ export const apiPaths = {
   USER: {
     LOGIN: "/api/user/login",  // TODO: DONT ADD BACKSLASH
     REGISTER: "/api/user/register",   // TODO: DONT ADD BACKSLASH
-    REQUEST_OTP: "/api/request-otp",
-    VERIFY_OTP: "/api/verify-otp",
+    REQUEST_OTP: "/api/verification/request-otp",
+    VERIFY_OTP: "/api/verification/verify-otp",
     REFRESH: "/api/user/token/refresh", // TODO: DONT ADD BACKSLASH
     CURRENT: "/api/user/current", // TODO: DONT ADD BACKSLASH
     USERSTATS: "/api/admin/user-stats/", // TODO: DONT REMOVE BACKSLASH
@@ -93,7 +90,7 @@ export const apiPaths = {
       `/api/society-recommendation/${id}/feedback/`,
     RECOMMENDATION_FEEDBACK_LIST: "/api/society-recommendation/feedback/",
     RECOMMENDATION_FEEDBACK_ANALYTICS: "/api/recommendation-feedback/analytics/",
-    MANAGE_DETAILS: (id: number) => `/api/manage-society-details/${id}`,  // TODO: DONT ADD BACKSLASH
+    MANAGE_DETAILS: (id: number) => `/api/society/manage/${id}/`,
   },
   EVENTS: {
     ALL: "/api/events", // TODO: DONT ADD BACKSLASH

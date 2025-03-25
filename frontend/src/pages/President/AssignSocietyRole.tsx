@@ -57,7 +57,7 @@ const AssignSocietyRole: React.FC = () => {
       };
       
       // Use the new dedicated endpoint for role assignment
-      await apiClient.patch(`/api/society-roles/${societyId}/`, payload);
+      await apiClient.patch(`/api/society/${societyId}/roles/`, payload);
       alert(`Assigned ${roleKey.replace("_", " ")} role to student ${memberId}`);
       navigate(-1);
     } catch (err: any) {

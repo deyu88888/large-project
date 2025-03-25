@@ -123,8 +123,7 @@ def get_upcoming_events(request):
 @api_view(["GET"])
 @permission_classes([])
 def get_sorted_events(request):
-    """Get only upcoming events"""
-    events = Event.objects.filter(status="Approved", date__gte=now()).order_by("date", "start_time")
+    events = Event.objects.filter(date__gte=now()).order_by("date", "start_time")
     serializer = EventSerializer(events, many=True)
     return Response(serializer.data)
 

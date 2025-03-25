@@ -2,10 +2,11 @@ from datetime import datetime
 from django.utils.timezone import now, make_aware
 from django.shortcuts import get_object_or_404
 from rest_framework import status
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from api.models import Society, Student, Event, UserRequest, SocietyRequest
+from api.models import Society, Student, Event, UserRequest, SocietyRequest, EventRequest
 from api.serializers import SocietySerializer, SocietyRequestSerializer,\
     PendingMemberSerializer, EventSerializer, EventRequestSerializer
 from api.views_files.view_utility import has_society_management_permission
@@ -30,14 +31,13 @@ def get_management_error(student, society, **kwargs):
         )
     return None
 
-def get_society_and_management_error(society_id, student, **kwargs):
-    """Aggregate function to combine error checks"""
-    society, error = get_society_if_exists(society_id)
-    if error:
-        return society, error
-    error = get_management_error(student, society, **kwargs)
-    if error:
-        return society, error
+def get_society_and_management_error(society_id, student):
+    society = Society.objects.filter(id=society_id).first()
+    if not society:
+        error_response = Response({"error": "Society not found."}, status=404)
+        return None, error_response
+    return society, None
+
 
 
 class ManageSocietyDetailsView(APIView):
@@ -175,9 +175,10 @@ class PendingMembersView(APIView):
 
 class ManageEventDetailsView(APIView):
     """
-    API View for society presidents, vice presidents, and event manager to edit or delete events.
+    API View for society presidents, vice presidents, and event managers to edit or delete events.
     """
     permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
 
     def get_event(self, event_id):
         """Gets an event by id or 404s"""
@@ -187,18 +188,28 @@ class ManageEventDetailsView(APIView):
         """
         Determines if an event is editable.
         Editable if:
-         - The event status is "Pending", or
-         - The event's datetime (date + start_time) is in the future.
+         - status is "Pending", OR
+         - status is "Approved" and event is in the future
         """
+        if event.status == "Rejected":
+            return False
+
         current_datetime = now()
         # If event is pending, allow edits regardless of date/time.
         if event.status == "Pending":
             return True
 
+        # Combine the event's date and start_time.
         event_datetime = datetime.combine(event.date, event.start_time)
         if current_datetime.tzinfo:
             event_datetime = make_aware(event_datetime)
-        return event_datetime > current_datetime
+
+        if event.status == "Pending":
+            return True
+        elif event.status == "Approved":
+            return event_datetime > current_datetime
+
+        return False
 
     def get(self, request, event_id):
         """Returns a serialized event by id"""
@@ -212,81 +223,61 @@ class ManageEventDetailsView(APIView):
         try:
             student = Student.objects.get(pk=user.pk)
         except Student.DoesNotExist:
-            return Response(
-                {"error": "User is not a valid student."},
-                status=status.HTTP_403_FORBIDDEN
-            )
+            return Response({"error": "User is not a valid student."}, status=status.HTTP_403_FORBIDDEN)
 
         event = self.get_event(event_id)
         if not self.is_event_editable(event):
-            return Response(
-                {"error": "Only upcoming or pending events can be edited."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": "Only upcoming or pending events can be edited."}, status=status.HTTP_400_BAD_REQUEST)
 
         # Check if the user has management permissions for the society
         if not has_society_management_permission(student, event.hosted_by, for_events_only=True):
-            return Response(
-                {"error": "Only society presidents, vice presidents,"
-                " and event managers can modify events."},
-                status=status.HTTP_403_FORBIDDEN
+            return Response({"error": "No permission to modify this event."}, status=status.HTTP_403_FORBIDDEN)
+
+        event_request = EventRequest.objects.filter(event=event).first()
+        if not event_request:
+            event_request = EventRequest.objects.create(
+                event=event,
+                hosted_by=event.hosted_by,
+                from_student=student,
+                intent="CreateEve",
+                approved=None
             )
 
-        data = request.data.copy()
-        data.setdefault("title", event.title)
-        data.setdefault("description", event.description)
-        data.setdefault("location", event.location)
-        data.setdefault("date", event.date)
-        data.setdefault("start_time", event.start_time)
-        data.setdefault("duration", event.duration)
-
+        # Instantiate the serializer.
         serializer = EventRequestSerializer(
-            data=data,
-            context={
-                "request": request,
-                "hosted_by": event.hosted_by,
-                "event": event, 
-            }
+            instance=event_request,
+            data=request.data,
+            context={"request": request},
+            partial=True
         )
+
         if serializer.is_valid():
-            event_request = serializer.save()
+            serializer.save()
             return Response(
-                {
-                    "message": "Event update requested. Await admin approval.",
-                    "event_request_id": event_request.id,
-                },
-                status=status.HTTP_200_OK,
+                {"message": "Event update submitted. Awaiting admin approval."},
+                status=status.HTTP_200_OK
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, event_id):
-        """Allows deleting an event"""
         user = request.user
+        # Ensure the user is a valid student
         try:
             student = Student.objects.get(pk=user.pk)
         except Student.DoesNotExist:
-            return Response(
-                {"error": "User is not a valid student."},
-                status=status.HTTP_403_FORBIDDEN
-            )
+            return Response({"error": "User is not a valid student."}, status=status.HTTP_403_FORBIDDEN)
 
         event = self.get_event(event_id)
         if not self.is_event_editable(event):
-            return Response(
-                {"error": "Only upcoming or pending events can be deleted."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": "Only upcoming or pending events can be deleted."}, status=status.HTTP_400_BAD_REQUEST)
 
         # Check if the user has management permissions for the society
         if not has_society_management_permission(student, event.hosted_by, for_events_only=True):
-            return Response(
-                {"error": "Only society presidents, vice presidents, "
-                "and event managers can modify events."},
-                status=status.HTTP_403_FORBIDDEN
-            )
+            return Response({"error": "No permission to delete this event."}, status=status.HTTP_403_FORBIDDEN)
 
+        EventRequest.objects.filter(event=event).delete()
         event.delete()
-        return Response({"message": "Event deleted successfully."}, status=status.HTTP_200_OK)
+        return Response({"message": "Event and related request deleted."}, status=status.HTTP_200_OK)
 
 
 class SocietyRoleManagementView(APIView):

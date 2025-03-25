@@ -1,37 +1,52 @@
 import datetime
-from api.models import Event, Comment
+from api.models import Event, Comment, EventModule
 from api.serializers import StudentSerializer
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
 
+class EventModuleSerializer(serializers.ModelSerializer):
+    """
+    serializer for the EventModule model.
+    """
+    class Meta:
+        model = EventModule
+        fields = ['id', 'type', 'text_value', 'file_value', 'is_participant_only']
 
 class EventSerializer(serializers.ModelSerializer):
-    """ Serializer for objects of the Event model """
+    """
+    serializer for the EventModule model.
+    """
     current_attendees = StudentSerializer(many=True, read_only=True)
+    extra_modules = serializers.SerializerMethodField()
+    participant_modules = serializers.SerializerMethodField()
+    is_member = serializers.SerializerMethodField()
 
     class Meta:
-        """ EventSerializer meta data """
         model = Event
         fields = [
-            'id', 'title', 'description', 'date',
+            'id', 'title', 'main_description', 'cover_image', 'date',
             'start_time', 'duration', 'hosted_by', 'location',
-            'max_capacity', 'current_attendees', 'status'
+            'max_capacity', 'current_attendees', 'status',
+            'extra_modules', 'participant_modules', 'is_member'
         ]
         extra_kwargs = {'hosted_by': {'required': True}}
 
-    def create(self, validated_data):
-        """ Creates a new entry in the Event table according to json data """
-        return Event.objects.create(**validated_data)
+    def get_extra_modules(self, obj):
+        modules = obj.modules.filter(is_participant_only=False)
+        return EventModuleSerializer(modules, many=True).data
 
-    def update(self, instance, validated_data):
-        """ Update 'instance' object according to provided json data """
-        current_attendees_data = validated_data.pop('current_attendees', None)
-        for key, value in validated_data.items():
-            setattr(instance, key, value)
-        if current_attendees_data is not None:
-            instance.current_attendees.set(current_attendees_data)
-        instance.save()
-        return instance
+    def get_participant_modules(self, obj):
+        modules = obj.modules.filter(is_participant_only=True)
+        return EventModuleSerializer(modules, many=True).data
+
+    def get_is_member(self, obj):
+        request = self.context.get("request")
+        if not request or not request.user.is_authenticated:
+            return False
+        student = getattr(request.user, "student", None)
+        if not student:
+            return False
+        return obj.hosted_by.society_members.filter(id=student.id).exists()
 
 
 class CommentSerializer(serializers.ModelSerializer):
@@ -98,8 +113,9 @@ class CommentSerializer(serializers.ModelSerializer):
 
 
 class RSVPEventSerializer(serializers.ModelSerializer):
-    """Serializer used to RSVP an event"""
-
+    """
+    Serializer used to RSVP an event
+    """
     class Meta:
         """Metdata for RSVPEventSerializer"""
         model = Event
@@ -115,7 +131,7 @@ class RSVPEventSerializer(serializers.ModelSerializer):
 
         if self.context.get('action') == 'RSVP':
             # Ensure the student is a member of the hosting society
-            if event.hosted_by not in student.societies.all():
+            if not event.hosted_by.society_members.filter(id=student.id).exists():
                 raise serializers.ValidationError("You must be a member of the hosting society to RSVP for this event.")
 
             # Ensure the student has not already RSVP'd

@@ -119,7 +119,7 @@ def notify_on_event_requested(sender, instance, created, **kwargs):
             Notification.objects.create(
                 header="Event requested",
                 body=f"The society, '{instance.hosted_by}' has requested for "
-                f"the scheduling of an event, '{instance.title}' on {instance.date}",
+                f"the scheduling of an event, '{instance.event.title}' on {instance.event.date}",
                 for_user=admin,
             )
     except Exception as e:
@@ -133,19 +133,22 @@ def notify_on_event_status_update(sender, instance, created, **kwargs):
     try:
         if created or instance.intent != "CreateEve":
             return
+
+        event_title = instance.event.title if instance.event else "the event"
+
         if instance.approved:
             Notification.objects.create(
                 header="Event Approved",
                 for_user=instance.hosted_by.president,
-                body=f"Your request to create the event '{instance.title}' has been approved!",
+                body=f"Your request to create the event '{event_title}' has been approved!",
                 is_important=True,
             )
-        elif not instance.approved:
+        elif instance.approved is False:
             Notification.objects.create(
                 header="Event Denied",
                 for_user=instance.hosted_by.president,
-                body=f"Your request to create the event '{instance.title}'"
-                " was rejected. Please contact the admin for details.",
+                body=f"Your request to create the event '{event_title}' "
+                     "was rejected. Please contact the admin for details.",
                 is_important=True,
             )
     except Exception as e:
