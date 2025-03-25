@@ -21,7 +21,7 @@ export default function EditEventDetails() {
   useEffect(() => {
     const fetchEventData = async () => {
       try {
-        const response = await apiClient.get(`/api/event/${eventId}/manage/`);
+        const response = await apiClient.get(`/api/events/${eventId}/manage/`);
         const data = response.data;
 
         const mapModule = (mod: any): ExtraModule => {
@@ -65,7 +65,7 @@ export default function EditEventDetails() {
 
   const handleSubmit = async (formData: FormData) => {
     try {
-      const response = await apiClient.patch(`/api/event/${eventId}/manage/`, formData);
+      const response = await apiClient.patch(`/api/events/${eventId}/manage/`, formData);
       if (response.status === 200) {
         alert("Event update submitted. Awaiting admin approval.");
         navigate(-1);

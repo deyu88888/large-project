@@ -16,7 +16,7 @@ from api.views import (
     ManageSocietyDetailsView, StudentSocietyDataView, SocietyMembersListView,
     PendingMembersView, SocietyRoleManagementView, get_popular_societies, get_upcoming_events,
     RecommendedSocietiesView, SocietyRecommendationExplanationView,
-    RecommendationFeedbackView, RecommendationFeedbackAnalyticsView,
+    RecommendationFeedbackView, RecommendationFeedbackAnalyticsView, PublicSocietiesView,
 
     # Events
     ManageEventListView, CreateEventRequestView, RSVPEventView, EventHistoryView,
@@ -229,8 +229,8 @@ award_patterns = [
 
 # Verification patterns
 verification_patterns = [
-    path("request-otp/", request_otp, name="request_otp"),
-    path("verify-otp/", verify_otp, name="verify_otp"),
+    path("request-otp", request_otp, name="request_otp"),
+    path("verify-otp", verify_otp, name="verify_otp"),
 ]
 
 # Main URL patterns

@@ -8,7 +8,7 @@ export default function CreateEvent() {
 
   const handleSubmit = async (formData: FormData) => {
     try {
-      const response = await apiClient.post(`/api/society/${societyId}/create-society-event/`, formData);
+      const response = await apiClient.post(`/api/events/requests/${societyId}/`, formData);
       if (response.status === 201) {
         alert("Event created successfully!");
         navigate(-1);

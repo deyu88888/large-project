@@ -7,6 +7,7 @@ from django.contrib.auth.hashers import make_password
 from django.core.management.base import BaseCommand
 
 import api
+from api import signals
 from api.management.commands.data.society_generator import RandomSocietyDataGenerator
 from api.management.commands.data.student_generator import RandomStudentDataGenerator
 from api.management.commands.data.event_generator import RandomEventDataGenerator

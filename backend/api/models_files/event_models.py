@@ -64,7 +64,14 @@ class Event(models.Model):
         if isinstance(self.date, str):
             self.date = datetime.strptime(self.date, "%Y-%m-%d").date()
         if isinstance(self.start_time, str):
-            self.start_time = datetime.strptime(self.start_time, "%H:%M").time()
+            if isinstance(self.start_time, str):
+                parts = self.start_time.split(":")
+                if len(parts) == 2:
+                    self.start_time = datetime.strptime(self.start_time, "%H:%M").time()
+                elif len(parts) == 3:
+                    self.start_time = datetime.strptime(self.start_time, "%H:%M:%S").time()
+                else:
+                    raise ValueError(f"Invalid time format: {self.start_time}")
         event_start = datetime.combine(self.date, self.start_time, tzinfo=dt_timezone.utc)
 
         if self.status == "Pending" and now >= event_start:

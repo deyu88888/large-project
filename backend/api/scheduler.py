@@ -1,7 +1,7 @@
 from apscheduler.schedulers.background import BackgroundScheduler
 import datetime
 from django.utils import timezone
-from .models import Event
+from api.models import Event
 
 def auto_reject_events():
     now = timezone.now()

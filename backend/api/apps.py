@@ -1,5 +1,10 @@
 # api/apps.py
+import sys
 from django.apps import AppConfig
+
+
+def is_daphne_running():
+    return any("daphne" in arg.lower() for arg in sys.argv)
 
 
 class ApiConfig(AppConfig):
@@ -7,6 +12,7 @@ class ApiConfig(AppConfig):
     name = 'api'
 
     def ready(self):
-        import api.signals
-        from .scheduler import start_scheduler
-        start_scheduler()
+
+        if is_daphne_running() or "runserver" in sys.argv:
+            from .scheduler import start_scheduler
+            start_scheduler()

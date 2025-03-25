@@ -64,7 +64,7 @@ const EventDetailPage: React.FC = () => {
       if (!numericEventId) return;
       setLoading(true);
       try {
-        const eventRes = await apiClient.get(`/api/event/${numericEventId}`);
+        const eventRes = await apiClient.get(`/api/events/${numericEventId}`);
         setEvent(eventRes.data);
       } catch (error) {
         console.error("Error fetching event:", error);

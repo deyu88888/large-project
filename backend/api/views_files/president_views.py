@@ -31,14 +31,13 @@ def get_management_error(student, society, **kwargs):
         )
     return None
 
-def get_society_and_management_error(society_id, student, **kwargs):
-    """Aggregate function to combine error checks"""
-    society, error = get_society_if_exists(society_id)
-    if error:
-        return society, error
-    error = get_management_error(student, society, **kwargs)
-    if error:
-        return society, error
+def get_society_and_management_error(society_id, student):
+    society = Society.objects.filter(id=society_id).first()
+    if not society:
+        error_response = Response({"error": "Society not found."}, status=404)
+        return None, error_response
+    return society, None
+
 
 
 class ManageSocietyDetailsView(APIView):

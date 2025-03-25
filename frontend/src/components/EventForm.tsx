@@ -68,6 +68,10 @@ export const EventForm: React.FC<EventFormProps> = ({
   const now = new Date();
   const isPastEvent = eventDateTime < now;
 
+  const formatStartTime = (timeStr: string): string => {
+    return timeStr.length === 5 ? timeStr + ":00" : timeStr;  // 如果是 HH:MM，补 :00
+  };
+
   const handleAddModuleClick = (event: React.MouseEvent<HTMLButtonElement>) => setAnchorEl(event.currentTarget);
   const handleMenuClose = () => setAnchorEl(null);
   const handleAddParticipantModuleClick = (event: React.MouseEvent<HTMLButtonElement>) => setParticipantAnchorEl(event.currentTarget);
@@ -178,7 +182,7 @@ export const EventForm: React.FC<EventFormProps> = ({
     formData.append("title", title);
     formData.append("main_description", mainDescription);
     formData.append("date", date);
-    formData.append("start_time", startTime);
+    formData.append("start_time", formatStartTime(startTime));
     formData.append("duration", duration);
     formData.append("location", location);
     formData.append("max_capacity", String(maxCapacity));

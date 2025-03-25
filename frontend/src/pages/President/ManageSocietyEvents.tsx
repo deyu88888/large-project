@@ -101,7 +101,7 @@ const ManageSocietyEvents: React.FC = () => {
       setLoading(true);
       setError(null);
       try {
-        const response = await apiClient.get("/api/events", {
+        const response = await apiClient.get("/api/events/sorted/", {
           params: { society_id: numericSocietyId },
         });
 
@@ -151,7 +151,7 @@ const ManageSocietyEvents: React.FC = () => {
   const handleConfirmDelete = async () => {
     if (selectedEventId !== null) {
       try {
-        await apiClient.delete(`/api/event/${selectedEventId}/manage/`);
+        await apiClient.delete(`/api/events/${selectedEventId}/manage/`);
         setEvents((prev) => prev.filter((e) => e.id !== selectedEventId));
         setSnackbar({ open: true, message: "Event deleted successfully.", severity: "success" });
       } catch (err) {
