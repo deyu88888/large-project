@@ -144,21 +144,22 @@ export function CommentItem({
   // Render the comment content + reply box
   const renderCommentBody = () => (
     <Box sx={{ display: "flex", alignItems: "flex-start", mb: 1 }}>
-      <Avatar
-        src={comment.user_data.icon}
-        alt={comment.user_data.username}
-        sx={{ width: 30, height: 30, mr: 1 }}
-      />
+      <HoverCard userId={comment.user_data.id}>
+        <Link to={`/student/profile/${comment.user_data.id}`} style={{ textDecoration: "none" }}>
+          <Avatar
+            src={comment.user_data.icon}
+            alt={comment.user_data.username}
+            sx={{ width: 30, height: 30, mr: 1 }}
+          />
+        </Link>
+      </HoverCard>
       <Box sx={{ whiteSpace: "pre-wrap", wordBreak: "break-word", overflowWrap: "break-word" }}>
         {/* Username and reply context */}
         <Typography sx={{ fontSize: 14, fontWeight: "bold" }}>
           {parentUsername ? (
             <>
               <HoverCard userId={comment.user_data.id}>
-                <Link
-                  to={`/profile/${comment.user_data.id}`}
-                  style={{ textDecoration: "none", color: "inherit" }}
-                >
+                <Link to={`/student/profile/${comment.user_data.id}`} style={{ textDecoration: "none" }}>
                   {comment.user_data.username}
                 </Link>
               </HoverCard>
@@ -166,7 +167,7 @@ export function CommentItem({
               {parentUserId ? (
                 <HoverCard userId={parentUserId}>
                   <Link
-                    to={`/profile/${parentUserId}`}
+                    to={`/student/profile/${parentUserId}`}
                     style={{ textDecoration: "none", color: "inherit" }}
                   >
                     {parentUsername}
@@ -180,7 +181,7 @@ export function CommentItem({
           ) : (
             <HoverCard userId={comment.user_data.id}>
               <Link
-                to={`/profile/${comment.user_data.id}`}
+                to={`/student/profile/${comment.user_data.id}`}
                 style={{ textDecoration: "none", color: "inherit" }}
               >
                 {comment.user_data.username}:
