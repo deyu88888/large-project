@@ -1,4 +1,5 @@
 import pytest
+from django.test import TestCase
 from django.utils import timezone
 from django.db import IntegrityError, transaction
 from django.core.exceptions import ValidationError
