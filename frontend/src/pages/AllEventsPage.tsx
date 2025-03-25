@@ -6,18 +6,8 @@ import { tokens } from "../theme/theme";
 import { CircularProgress } from "@mui/material";
 import EventCard from "../components/EventCard";
 import { useAuthStore } from "../stores/auth-store";
-import { Attendee, EventData } from "../types/shared/event";
-
-interface User {
-    id: number;
-    first_name: string;
-    last_name: string;
-    username: string;
-    email: string;
-    role: string;
-    is_active: boolean;
-    following?: number[];
-}
+import { User } from "../types/user/user";
+import { EventData, Attendee } from "../types/shared/event";
 
 export default function AllEventsPage() {
     const navigate = useNavigate();
@@ -26,7 +16,7 @@ export default function AllEventsPage() {
     const isLight = theme.palette.mode === "light";
     const { user, setUser } = useAuthStore();
 
-    const [currentUser, setCurrentUser] = useState<User | null>(user);
+    const [currentUser, setCurrentUser] = useState<User | null>(user ?? null);
     const [events, setEvents] = useState<EventData[]>([]);
     const [userLoading, setUserLoading] = useState(true);
     const [eventsLoading, setEventsLoading] = useState(true);
@@ -175,9 +165,10 @@ export default function AllEventsPage() {
                                 currentUser.following &&
                                 event.current_attendees
                             ) {
-                                followingsAttending = event.current_attendees.filter(
-                                    (attendee) => currentUser.following!.includes(attendee.id)
+                                followingsAttending = event.current_attendees.filter((attendee) =>
+                                    currentUser.following!.map(f => f.id).includes(attendee.id)
                                 );
+
                             }
 
                             return (
