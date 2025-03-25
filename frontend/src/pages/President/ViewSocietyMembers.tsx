@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { apiClient } from "../../api"; 
+import {apiClient, apiPaths} from "../../api";
 import { useAuthStore } from "../../stores/auth-store";
 import { useTheme } from "@mui/material/styles";
 import { 
@@ -20,6 +20,8 @@ import {
   DialogActions
 } from "@mui/material";
 import { tokens } from "../../theme/theme";
+// import { Society } from "../../types/president/society";
+import { Member } from "../../types/president/member";
 
 interface Society {
   id: number;
@@ -29,13 +31,18 @@ interface Society {
   event_manager?: any;
   [key: string]: any;
 }
+// interface Society {
+//   id: number;
+//   name: string;
+//   [key: string]: any;
+// }
 
-interface Member {
-  id: number;
-  first_name: string;
-  last_name: string;
-  username: string;
-}
+// interface Member {
+//   id: number;
+//   first_name: string;
+//   last_name: string;
+//   username: string;
+// }
 
 const ViewSocietyMembers: React.FC = () => {
   const { societyId } = useParams<{ societyId: string }>();
@@ -62,7 +69,7 @@ const ViewSocietyMembers: React.FC = () => {
       }
 
       // Fetch society data to know roles
-      const societyResponse = await apiClient.get(`/api/manage-society-details/${id}/`);
+      const societyResponse = await apiClient.get(apiPaths.SOCIETY.MANAGE_DETAILS(societyId));
       setSociety(societyResponse.data);
 
       // Fetch members
@@ -80,7 +87,7 @@ const ViewSocietyMembers: React.FC = () => {
   }, [societyId, user]);
 
   const handleViewProfile = (memberId: number): void => {
-    navigate(`/profile/${memberId}`);
+    navigate(`/student/profile/${memberId}`);
   };
 
   const handleGiveAward = (memberId: number): void => {
@@ -109,7 +116,7 @@ const ViewSocietyMembers: React.FC = () => {
         [confirmDialog.role]: null
       };
       
-      await apiClient.patch(`/api/society-roles/${societyId}/`, payload);
+      await apiClient.patch(`/api/society/${societyId}/roles/`, payload);
       
       // Refresh data
       await fetchData();

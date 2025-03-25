@@ -108,7 +108,7 @@ export function CommentItem({
   // Handle like action
   const handleLike = async () => {
     try {
-      const response = await apiClient.post(`/api/comments/${comment.id}/like`);
+      const response = await apiClient.post(`/api/comments/${comment.id}/like/`);
       if (response.data.status === "liked") {
         setLiked(true);
         setDisliked(false);
@@ -126,7 +126,7 @@ export function CommentItem({
   // Handle dislike action
   const handleDislike = async () => {
     try {
-      const response = await apiClient.post(`/api/comments/${comment.id}/dislike`);
+      const response = await apiClient.post(`/api/comments/${comment.id}/dislike/`);
       if (response.data.status === "disliked") {
         setDisliked(true);
         setLiked(false);

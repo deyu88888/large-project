@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { apiClient } from '../api'; // 使用封装的 axios 实例
+import { apiClient } from '../api';
 
 const useAuthCheck = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);

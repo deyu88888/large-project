@@ -4,19 +4,20 @@ import { Box, Typography, Button, Select, MenuItem, TextField } from "@mui/mater
 import { useTheme } from "@mui/material/styles";
 import { apiClient } from "../../api";
 import { tokens } from "../../theme/theme.ts";
+import { ReportFormData, SelectChangeEvent } from "../../types/president/report.ts";
 
-interface ReportFormData {
-  report_type: string;
-  subject: string;
-  details: string;
-}
+// interface ReportFormData {
+//   report_type: string;
+//   subject: string;
+//   details: string;
+// }
 
-type SelectChangeEvent = {
-  target: {
-    name: string;
-    value: unknown;
-  };
-};
+// type SelectChangeEvent = {
+//   target: {
+//     name: string;
+//     value: unknown;
+//   };
+// };
 
 const ReportToAdmin: React.FC = () => {
   const theme = useTheme();

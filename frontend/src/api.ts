@@ -24,9 +24,6 @@ const apiUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
 export const apiClient = axios.create({
   baseURL: apiUrl,
-  headers: {
-    "Content-Type": "application/json",
-  },
   paramsSerializer: {
     indexes: null,
   },
@@ -58,32 +55,34 @@ export const apiPaths = {
   USER: {
     LOGIN: "/api/user/login",  // TODO: DONT ADD BACKSLASH
     REGISTER: "/api/user/register",   // TODO: DONT ADD BACKSLASH
-    REQUEST_OTP: "/api/request-otp",
-    VERIFY_OTP: "/api/verify-otp",
+    REQUEST_OTP: "/api/verification/request-otp",
+    VERIFY_OTP: "/api/verification/verify-otp",
     REFRESH: "/api/user/token/refresh", // TODO: DONT ADD BACKSLASH
-    CURRENT: "/api/user/current", // TODO: DONT ADD BACKSLASH
+    CURRENT: "/api/user/current/", // TODO: DONT ADD BACKSLASH
     USERSTATS: "/api/admin/user-stats/", // TODO: DONT REMOVE BACKSLASH
-    SOCIETY: "/api/society/request/approved",  // TODO: DONT ADD BACKSLASH
-    REJECTEDSOCIETY: "/api/society/request/rejected", // TODO: DONT ADD BACKSLASH
-    STUDENTS: "/api/user/student",  // TODO: DONT ADD BACKSLASH
-    ADMIN: "/api/user/admin", // TODO: DONT ADD BACKSLASH
-    PENDINGSOCIETYREQUEST: "/api/society/request/pending",  // TODO: DONT ADD BACKSLASH
+    SOCIETY: "/api/admin/society/request/approved",  // TODO: DONT ADD BACKSLASH
+    REJECTEDSOCIETY: "/api/admin/society/request/rejected", // TODO: DONT ADD BACKSLASH
+    STUDENTS: "/api/admin/student",  // student list for admins
+    ADMIN: "/api/admin/admin", // admin list for admins
+    PENDINGSOCIETYREQUEST: "/api/admin/society/request/pending",  // TODO: DONT ADD BACKSLASH
     PROFILE: "/api/user/profile", // TODO: DONT ADD BACKSLASH
     REPORT: "/api/report-to-admin", // TODO: DONT ADD BACKSLASH
     PENDINGEVENTREQUEST: "/api/event/request/pending",  // TODO: DONT ADD BACKSLASH
     REJECTEDEVENT: "/api/admin-panel/rejected-event", // TODO: DONT ADD BACKSLASH
     PENDINGDESCRIPTIONREQUEST: "/api/description/request/pending",
     BASE: "/api/users",
-    ADMINSTUDENTVIEW: (studentId: number) => `/api/admin-manage-student-details/${studentId}`,
-    ADMINSOCIETYVIEW: (societyId: number) => `/api/admin-manage-society-details/${societyId}`, // admin society view
-    ADMINEVENTVIEW: (eventId: number) => `/api/admin-manage-event-details/${eventId}`,
-    DELETE: (targetType: string, targetId: number) => `/api/delete/${targetType}/${targetId}`,
+    ADMINVIEW: (adminId: number) => `/api/admin-manage-admin-details/${adminId}`,
+    ADMINSTUDENTVIEW: (studentId: number) => `/api/admin/manage-student/${studentId}`,
+    ADMINSOCIETYVIEW: (societyId: number) => `/api/admin/manage-society/${societyId}`, // admin society view
+    ADMINEVENTVIEW: (eventId: number) => `/api/admin/manage-event/${eventId}`,
+    DELETE: (targetType: string, targetId: number) => `/api/admin/delete/${targetType}/${targetId}`,
     UNDO_DELETE: (logId: number) => `/api/undo-delete/${logId}`,
     ACTIVITYLOG: "/api/activity-log",
     DELETEACTIVITYLOG: (logId: number) => `/api/delete-activity-log/${logId}`,
   },
   SOCIETY: {
-    POPULAR_SOCIETIES: "/api/popular-societies",  // TODO: DONT ADD BACKSLASH
+    All: "/api/dashboard/all-societies",
+    POPULAR_SOCIETIES: "/api/dashboard/popular-societies/",  // TODO: DONT ADD BACKSLASH
     RECOMMENDED_SOCIETIES: "/api/recommended-societies", // New endpoint for recommendations
     RECOMMENDATION_EXPLANATION: (id: number) =>
       `/api/society-recommendation/${id}/explanation/`,
@@ -91,7 +90,7 @@ export const apiPaths = {
       `/api/society-recommendation/${id}/feedback/`,
     RECOMMENDATION_FEEDBACK_LIST: "/api/society-recommendation/feedback/",
     RECOMMENDATION_FEEDBACK_ANALYTICS: "/api/recommendation-feedback/analytics/",
-    MANAGE_DETAILS: (id: number) => `/api/manage-society-details/${id}`,  // TODO: DONT ADD BACKSLASH
+    MANAGE_DETAILS: (id: number) => `/api/society/manage/${id}/`,
   },
   EVENTS: {
     ALL: "/api/events", // TODO: DONT ADD BACKSLASH
@@ -323,10 +322,20 @@ export const getRecommendationFeedbackAnalytics = async () => {
 // ---------------------------------------------------------------------------
 export const getAllEvents = async () => {
   try {
-    const response = await apiClient.get(apiPaths.EVENTS.ALL);
+    const response = await apiClient.get("/api/events/all");
     return response.data;
   } catch (error: any) {
     console.error("Error fetching events:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const getUpcomingEvents = async () => {
+  try {
+    const response = await apiClient.get("/api/dashboard/events/upcoming/");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching upcoming events:", error);
     throw error;
   }
 };

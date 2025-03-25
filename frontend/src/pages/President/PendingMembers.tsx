@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { apiClient } from "../../api";
+import { PendingMember } from "../../types/president/member";
 
-interface PendingMember {
-  id: number;
-  first_name: string;
-  last_name: string;
-  username: string;
-}
+// interface PendingMember {
+//   id: number;
+//   first_name: string;
+//   last_name: string;
+//   username: string;
+// }
 
 const PendingMembers: React.FC = () => {
   const { societyId } = useParams<{ societyId: string }>();
@@ -40,10 +41,8 @@ const PendingMembers: React.FC = () => {
 
   const handleApproval = async (memberId: number, approved: boolean): Promise<void> => {
     try {
-      await apiClient.post(`/api/society/${societyId}/pending-members/${memberId}/`, {
-        approved: approved,
-      });
-
+      const action = approved ? "approve" : "reject";
+      await apiClient.post(`/api/society/${societyId}/pending-members/${memberId}/`, { action });
       fetchPendingMembers();
     } catch (error) {
       console.error("Error updating member status:", error);

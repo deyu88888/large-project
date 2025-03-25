@@ -8,42 +8,48 @@ import { apiClient } from "../../api";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 
 const localizer = momentLocalizer(moment);
+import {
+  SocietyData,
+  EventData,
+  CalendarEvent,
+  StudentCalendarProps
+} from "../../types/shared/calendar";
 
-interface SocietyData {
-  id: number;
-  name: string;
-}
+// interface SocietyData {
+//   id: number;
+//   name: string;
+// }
 
-interface EventData {
-  id: number;
-  title: string;
-  description?: string;
-  date: string;
-  start_time: string;
-  duration: string;
-  location?: string;
-  hosted_by: number;
-  societyName?: string;
-  rsvp?: boolean;
-}
+// interface EventData {
+//   id: number;
+//   title: string;
+//   description?: string;
+//   date: string;
+//   start_time: string;
+//   duration: string;
+//   location?: string;
+//   hosted_by: number;
+//   societyName?: string;
+//   rsvp?: boolean;
+// }
 
-interface CalendarEvent {
-  id: number;
-  title: string;
-  start: Date;
-  end: Date;
-  description: string;
-  location: string;
-  societyId: number;
-  societyName: string;
-  rsvp: boolean;
-}
+// interface CalendarEvent {
+//   id: number;
+//   title: string;
+//   start: Date;
+//   end: Date;
+//   description: string;
+//   location: string;
+//   societyId: number;
+//   societyName: string;
+//   rsvp: boolean;
+// }
 
-interface StudentCalendarProps {
-  societies?: SocietyData[];
-  userEvents?: EventData[];
-  timezone?: string;
-}
+// interface StudentCalendarProps {
+//   societies?: SocietyData[];
+//   userEvents?: EventData[];
+//   timezone?: string;
+// }
 
 function StudentCalendar({
   societies = [],
@@ -406,8 +412,8 @@ function StudentCalendar({
                 {rsvpLoading
                   ? "Updating..."
                   : selectedEvent.rsvp
-                  ? "Cancel RSVP"
-                  : "RSVP to Event"}
+                    ? "Cancel RSVP"
+                    : "RSVP to Event"}
               </Button>
             </DialogActions>
           </>

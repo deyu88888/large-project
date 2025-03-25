@@ -4,35 +4,43 @@ import { useTheme, Box, Typography, Button, Paper, CircularProgress } from "@mui
 import { apiClient } from "../../api";
 import { useAuthStore } from "../../stores/auth-store";
 import { tokens } from "../../theme/theme";
+import { Society } from "../../types/president/society";
+import { Member } from "../../types/president/member";
+import { SocietyIdParams } from "../../types/president/role";
+import { NavigationItem } from "../../types/president/navigation";
 
-interface Society {
-  id: number;
-  name: string;
-  [key: string]: any;
-}
+// interface Society {
+//   id: number;
+//   name: string;
+//   [key: string]: any;
+// }
 
-interface Member {
-  id: number;
-  first_name: string;
-  last_name: string;
-  username: string;
-}
+// interface Member {
+//   id: number;
+//   first_name: string;
+//   last_name: string;
+//   username: string;
+// }
 
 interface RouteParams {
   societyId: string;
 }
+// interface SocietyIdParams {
+//   society_id: string;
+// }
 
-interface NavigationItem {
-  text: string;
-  path: string;
-  color: string;
-}
+// interface NavigationItem {
+//   text: string;
+//   path: string;
+//   color: string;
+// }
 
 const PresidentPage: React.FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const navigate = useNavigate();
   const { societyId } = useParams<RouteParams>();
+  const { society_id } = useParams<SocietyIdParams>();
   const [society, setSociety] = useState<Society | null>(null);
   const [pendingMembers, setPendingMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -47,7 +55,7 @@ const PresidentPage: React.FC = () => {
         
         if (!id) throw new Error("No society ID available");
 
-        const societyResponse = await apiClient.get(`/api/manage-society-details/${id}/`);
+        const societyResponse = await apiClient.get(`/api/society/manage/${id}`);
         setSociety(societyResponse.data);
 
         const pendingResponse = await apiClient.get(`/api/society/${id}/pending-members/`);

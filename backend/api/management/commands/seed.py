@@ -7,6 +7,7 @@ from django.contrib.auth.hashers import make_password
 from django.core.management.base import BaseCommand
 
 import api
+from api import signals
 from api.management.commands.data.society_generator import RandomSocietyDataGenerator
 from api.management.commands.data.student_generator import RandomStudentDataGenerator
 from api.management.commands.data.event_generator import RandomEventDataGenerator
@@ -117,7 +118,7 @@ class Command(BaseCommand):
         self.create_event(5, True)
 
         self.pre_define_awards()
-        self.randomly_assign_awards(50)
+        self.randomly_assign_awards(200)
 
         self.broadcast_updates()
 
@@ -414,7 +415,7 @@ class Command(BaseCommand):
             data = self.event_generator.generate(society.name)
         event, created = Event.objects.get_or_create(
             title=data["name"],
-            description=data["description"],
+            main_description=data["description"],
             date=data["event_date"],
             start_time=data["event_time"],
             duration=data["duration"],
@@ -435,45 +436,44 @@ class Command(BaseCommand):
         return event, created
 
     def handle_event_status(self, society, data=None):
-        """
-        Creates event requests if random_status is Pending/Rejected.
-        """
         random_status = choice(["Pending", "Approved", "Rejected"])
         if not data:
             data = self.event_generator.generate(society.name)
+
         if data["event_date"] < date.today():
             random_status = "Approved" if random_status == "Pending" else random_status
 
-        # If the society has no president, pick any random student to avoid NULL
-        default_student = society.president if society.president else Student.objects.filter(is_active=True).first()
+        default_student = society.president or Student.objects.filter(is_active=True).first()
         if not default_student:
-            print(
-                "No student available to assign from_student. "
-                "Cannot create this event request."
-            )
+            print("No student available to assign from_student.")
             return False
 
-        # Always create an initial request
-        event_request, _ = EventRequest.objects.get_or_create(
+        # 创建 Event 实例
+        event = Event.objects.create(
             title=data["name"],
-            description=data["description"],
+            main_description=data["description"],
             date=data["event_date"],
             start_time=data["event_time"],
             duration=data["duration"],
             hosted_by=society,
-            from_student=default_student,  # Always assign a valid student
             location=data["location"],
+            status="Pending"
+        )
+
+        # 创建 EventRequest 并绑定 event
+        event_request = EventRequest.objects.create(
+            event=event,
+            hosted_by=society,
+            from_student=default_student,
             intent="CreateEve",
+            approved=(True if random_status == "Approved" else False if random_status == "Rejected" else None),
         )
 
         if random_status == "Approved":
-            event_request.approved = True
-            event_request.save()
-            return True
-        elif random_status == "Rejected":
-            event_request.approved = False
-        event_request.save()
-        return False
+            event.status = "Approved"
+            event.save()
+
+        return random_status == "Approved"
 
     def broadcast_updates(self):
         """Broadcast updates to the WebSocket"""

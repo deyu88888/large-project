@@ -23,13 +23,13 @@ import NotificationImportantOutlinedIcon from '@mui/icons-material/NotificationI
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import LogoutIcon from "@mui/icons-material/Logout";
 import ManageAccountsOutlinedIcon from "@mui/icons-material/ManageAccountsOutlined";
-import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
-import EventNoteOutlinedIcon from "@mui/icons-material/EventNoteOutlined";
-import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
 import ReportProblemOutlinedIcon from "@mui/icons-material/ReportProblemOutlined";
 import GroupAddOutlinedIcon from "@mui/icons-material/GroupAddOutlined";
 
 import { CustomDrawer, CustomDrawerHeader } from "./drawer/CustomDrawer";
+import Groups2Icon from "@mui/icons-material/Groups2";
+import NewspaperIcon from "@mui/icons-material/Newspaper";
+import InboxIcon from "@mui/icons-material/MoveToInbox";
 
 interface PresidentDrawerProps {
   drawer: boolean;
@@ -60,22 +60,20 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
     fetchStudentData();
     }, []);
 
-  const menuItems = [
+  const topMenuItems = [
     { title: "Dashboard", icon: <HomeOutlinedIcon />, to: "/student" },
-    { title: "My Societies", icon: <PeopleOutlineIcon />, to: "/student/my-societies" },
-    { title: "Start Society", icon: <AddCircleOutlineIcon />, to: "/student/start-society" },
-    { title: "View Events", icon: <EventAvailableIcon />, to: "/student/view-events" },
-    { title: "Notifications", icon: <NotificationsNoneOutlinedIcon />, to: "/student/view-notifications" },
-    { title: "Inbox", icon: <NotificationImportantOutlinedIcon />, to: "/student/view-inbox" },
-    { title: "Report to Admin", icon: <ReportProblemOutlinedIcon />, to: "/student/report-to-admin" },
+    { title: "My Societies", icon: <Groups2Icon />, to: "/student/my-societies" },
+    { title: "My Events", icon: <EventAvailableIcon />, to: "/student/view-events" },
+    { title: "News", icon: <NewspaperIcon />, to: "/student/view-news" },
+    { title: "Discover Societies", icon: <GroupAddOutlinedIcon />, to: "/student/join-society" },
+    { title: "Discover Events", icon: <GroupAddOutlinedIcon />, to: "/student/student-all-events" },
+    { title: "Start A Society", icon: <AddCircleOutlineIcon />, to: "/student/start-society" },
   ];
 
-  const manageMySocietiesItems = [
-    { title: "Society Details", icon: <DescriptionOutlinedIcon />, to: "/president-page/1/manage-society-details" },
-    { title: "Society Events", icon: <EventNoteOutlinedIcon />, to: "/president-page/1/manage-society-events" },
-    { title: "Pending Members", icon: <PeopleOutlineIcon />, to: "/president-page/1/pending-members" },
-    { title: "All Members", icon: <GroupOutlinedIcon />, to: "/president-page/1/view-society-members" },
-    // { title: "Report to Admin", icon: <ReportProblemOutlinedIcon />, to: "/president-page/1/report-to-admin" },
+  const bottomMenuItems = [
+    { title: "Notifications", icon: <NotificationsNoneOutlinedIcon />, to: "/student/view-notifications" },
+    { title: "Inbox", icon: <InboxIcon />, to: "/student/view-inbox" },
+    { title: "Report", icon: <ReportProblemOutlinedIcon />, to: "/student/report-to-admin" },
   ];
 
   const logout = () => {
@@ -97,22 +95,24 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
       <Box padding={2} display="flex" justifyContent="center" alignItems="center">
         {drawer ? (
           <Box sx={{ textAlign: "center" }}>
-            <img
-            src={student?.icon}
-            alt={`${student?.username} icon`}
-            style={{
-              width: "72px",
-              height: "72px",
-              borderRadius: "50%",
-              margin: "0 auto"
-            }}
-            />
-            <Typography variant="h6" fontWeight="bold" sx={{ mt: "10px" }}>
-              {student?.first_name} {student?.last_name}
-            </Typography>
-            <Typography variant="body2" color="textSecondary">
-              President Dashboard
-            </Typography>
+            <Link to="/student/profile" style={{ textDecoration: "none", color: "inherit" }}>
+              <img
+              src={student?.icon}
+              alt={`${student?.username} icon`}
+              style={{
+                width: "72px",
+                height: "72px",
+                borderRadius: "50%",
+                margin: "0 auto"
+              }}
+              />
+              <Typography variant="h6" fontWeight="bold" sx={{ mt: "10px" }}>
+                {student?.first_name} {student?.last_name}
+              </Typography>
+              <Typography variant="body2" color="textSecondary">
+                President
+              </Typography>
+            </Link>
           </Box>
         ) : (
           <img
@@ -129,33 +129,66 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
       <Divider />
 
       {/* Main Menu Items */}
-      <List>
-        {menuItems.map((item) => (
-          <ListItem key={item.title} disablePadding>
-            <ListItemButton
-              component={Link}
-              to={item.to}
-              selected={selected === item.title}
-              onClick={() => setSelected(item.title)}
-              sx={{ justifyContent: drawer ? "initial" : "center", px: 2.5 }}
-            >
-              <ListItemIcon
-                sx={{
-                  minWidth: 0,
-                  mr: drawer ? 3 : "auto",
-                  justifyContent: "center",
-                }}
+        <List>
+          {topMenuItems.map((item) => (
+            <ListItem key={item.title} disablePadding>
+              <ListItemButton
+                component={Link}
+                to={item.to}
+                selected={selected === item.title}
+                onClick={() => setSelected(item.title)}
+                sx={{ justifyContent: drawer ? "initial" : "center", px: 2.5 }}
               >
-                {item.icon}
-              </ListItemIcon>
-              {drawer && <ListItemText primary={item.title} />}
-            </ListItemButton>
-          </ListItem>
-        ))}
-      </List>
-      <Divider />
+                <ListItemIcon
+                  sx={{
+                    minWidth: 0,
+                    mr: drawer ? 3 : "auto",
+                    justifyContent: "center",
+                  }}
+                >
+                  {item.icon}
+                </ListItemIcon>
+                {drawer && <ListItemText primary={item.title} />}
+              </ListItemButton>
+            </ListItem>
+          ))}
+        </List>
+        <Divider />
+
+        <List>
+          {bottomMenuItems.map((item) => (
+            <ListItem key={item.title} disablePadding>
+              <ListItemButton
+                component={Link}
+                to={item.to}
+                selected={selected === item.title}
+                onClick={() => setSelected(item.title)}
+                sx={{ justifyContent: drawer ? "initial" : "center", px: 2.5 }}
+              >
+                <ListItemIcon
+                  sx={{
+                    minWidth: 0,
+                    mr: drawer ? 3 : "auto",
+                    justifyContent: "center",
+                  }}
+                >
+                  {item.icon}
+                </ListItemIcon>
+                {drawer && <ListItemText primary={item.title} />}
+              </ListItemButton>
+            </ListItem>
+          ))}
+        </List>
+        <Divider />
 
       {/* Manage My Societies Section */}
+      {drawer && (
+        <Box sx={{ px: 2, py: 1 }}>
+          <Typography variant="subtitle2" color="textSecondary">
+            Manage
+          </Typography>
+        </Box>
+      )}
       <List>
         <ListItem disablePadding>
           <ListItemButton
@@ -177,65 +210,9 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
             {drawer && <ListItemText primary="Manage My Societies" />}
           </ListItemButton>
         </ListItem>
-
-        {/* Society Management Items */}
-        {manageMySocietiesItems.map((item) => (
-          <ListItem key={item.title} disablePadding>
-            <ListItemButton
-              component={Link}
-              to={item.to}
-              selected={selected === item.title}
-              onClick={() => setSelected(item.title)}
-              sx={{ 
-                justifyContent: drawer ? "initial" : "center", 
-                px: 2.5
-              }}
-            >
-              <ListItemIcon
-                sx={{
-                  minWidth: 0,
-                  mr: drawer ? 3 : "auto",
-                  justifyContent: "center",
-                }}
-              >
-                {item.icon}
-              </ListItemIcon>
-              {drawer && <ListItemText primary={item.title} />}
-            </ListItemButton>
-          </ListItem>
-        ))}
       </List>
       <Divider />
 
-      {/* Join Societies Section */}
-      {drawer && (
-        <Box sx={{ px: 2, py: 1 }}>
-          <Typography variant="subtitle2" color="textSecondary">
-            Join Societies
-          </Typography>
-        </Box>
-      )}
-      <List>
-        <ListItem disablePadding>
-          <ListItemButton
-            component={Link}
-            to="/student/join-society"
-            sx={{ justifyContent: drawer ? "initial" : "center", px: 2.5 }}
-          >
-            <ListItemIcon
-              sx={{
-                minWidth: 0,
-                mr: drawer ? 3 : "auto",
-                justifyContent: "center",
-              }}
-            >
-              <GroupAddOutlinedIcon />
-            </ListItemIcon>
-            {drawer && <ListItemText primary="Join Societies" />}
-          </ListItemButton>
-        </ListItem>
-      </List>
-      <Divider />
 
       {/* Logout Item */}
       <List>

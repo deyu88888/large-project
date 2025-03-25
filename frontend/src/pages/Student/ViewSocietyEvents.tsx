@@ -13,20 +13,21 @@ import { tokens } from "../../theme/theme";
 import { apiClient } from "../../api";
 import { useAuthStore } from "../../stores/auth-store";
 import { FaCalendarAlt, FaRegClock, FaMapMarkerAlt } from "react-icons/fa";
+import { EventData } from "../../types/student/event";
 
-interface EventData {
-  id: number;
-  title: string;
-  description?: string;
-  date: string;
-  start_time: string;
-  duration: string;
-  location?: string;
-  hosted_by: number;
-  societyName?: string;
-  rsvp?: boolean;
-  status: string;
-}
+// interface EventData {
+//   id: number;
+//   title: string;
+//   description?: string;
+//   date: string;
+//   start_time: string;
+//   duration: string;
+//   location?: string;
+//   hosted_by: number;
+//   societyName?: string;
+//   rsvp?: boolean;
+//   status: string;
+// }
 
 const ViewSocietyEvents: React.FC = () => {
   const navigate = useNavigate();

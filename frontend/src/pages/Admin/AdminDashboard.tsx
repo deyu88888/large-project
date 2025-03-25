@@ -1,20 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { Box, Typography, useTheme, Button, Paper, CircularProgress, Card, CardContent, Divider } from "@mui/material";
-import { FaUsers, FaCalendarAlt, FaEnvelope, FaNewspaper } from "react-icons/fa";
-import { CheckCircle as ApproveIcon, Cancel as RejectIcon, Article as ArticleIcon } from "@mui/icons-material";
+import { Box, Typography, useTheme } from "@mui/material";
+import { FaUsers, FaCalendarAlt, FaEnvelope } from "react-icons/fa";
 import Header from "../../components/Header";
 import { tokens } from "../../theme/theme";
-import { apiClient, apiPaths } from "../../api";
+import { apiClient } from "../../api";
 import { useSettingsStore } from "../../stores/settings-store";
-import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../stores/auth-store";
-import { fetchPendingRequests } from "./utils";
+import { apiPaths } from "../../api/apiPaths";
 
 const AdminDashboard = () => {
   const theme = useTheme();
-  // Add null check for colors
-  const colours = tokens(theme?.palette?.mode) || {};
-  const navigate = useNavigate();
+  const colours = tokens(theme.palette.mode);
 
   const [userStats, setUserStats] = useState<any>(null);
   const [events, setEvents] = useState<any[]>([]);
@@ -231,12 +227,13 @@ const AdminDashboard = () => {
   return (
     <div
       style={{
+        // marginLeft: `${sidebarWidth}px`,
         marginTop: "64px",
         transition: "margin-left 0.3s ease-in-out",
         minHeight: "100vh",
         maxWidth: drawer ? `calc(100% - 5px)` : "100%",
         padding: "0px 0px",
-        background: `${primaryColor} !important`,
+        background: `${colours.primary[400]} !important`,
       }}
     >
       <div style={{ maxWidth: "1600px", margin: "0 auto" }}>
@@ -246,143 +243,47 @@ const AdminDashboard = () => {
 
         {loading ? (
           <div className="text-center">
-            <Typography variant="h4" color={greyColor}>
+            <Typography variant="h4" color={colours.grey[100]}>
               Loading your dashboard...
             </Typography>
           </div>
         ) : (
           <div className="space-y-8">
             {/* Stats Overview */}
-            <section className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <section className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <StatCard
-                icon={<FaUsers style={{ color: greenAccentColor }} />}
+                icon={<FaUsers style={{ color: colours.greenAccent[500] }} />}
                 title="Active Users"
                 value={userStats?.totalUsers || 0}
               />
               <StatCard
-                icon={<FaCalendarAlt style={{ color: blueAccentColor }} />}
+                icon={<FaCalendarAlt style={{ color: colours.blueAccent[500] }} />}
                 title="Active Events"
                 value={events.length}
               />
               <StatCard
-                icon={<FaEnvelope style={{ color: redAccentColor }} />}
+                icon={<FaEnvelope style={{ color: colours.redAccent[500] }} />}
                 title="Pending Requests"
                 value={notifications.length}
               />
-              <StatCard
-                icon={<FaNewspaper style={{ color: yellowAccentColor }} />}
-                title="News Approvals"
-                value={pendingPublications.length}
-              />
-            </section>
-
-            {/* Societies Bar Chart */}
-            <section className="mb-16">
-              <Typography variant="h5" color={greyColor} gutterBottom>
-                Societies Overview
-              </Typography>
-              <div style={{ height: "300px" }}>
-                <BarChart
-                  data={societiesData.map((society) => ({
-                    country: society?.name || "Unknown",
-                    members: society?.societyMembers?.length || 0,
-                  }))}
-                />
-              </div>
-            </section>
-
-            {/* News Publication Requests */}
-            <section className="mb-16">
-              <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                <Typography variant="h5" color={greyColor} gutterBottom>
-                  News Publication Requests
-                </Typography>
-                <Button 
-                  variant="contained" 
-                  color="primary"
-                  startIcon={<FaNewspaper />}
-                  onClick={() => navigate("/admin/news-approval")}
-                  sx={{ 
-                    backgroundColor: blueAccentHover,
-                    '&:hover': { backgroundColor: blueAccentHoverDark }
-                  }}
-                >
-                  View All Requests
-                </Button>
-              </Box>
-              
-              <div className="space-y-4">
-                {pendingPublications.length === 0 ? (
-                  <Paper sx={{ p: 3, backgroundColor: "rgba(255, 255, 255, 0.1)" }}>
-                    <Typography color={greyColorAlt}>
-                      No pending publication requests.
-                    </Typography>
-                  </Paper>
-                ) : (
-                  pendingPublications.slice(0, 3).map((request) => (
-                    <Card 
-                      key={request.id} 
-                      sx={{ 
-                        backgroundColor: "rgba(255, 255, 255, 0.1)",
-                        mb: 2
-                      }}
-                    >
-                      <CardContent>
-                        <Typography variant="h6" gutterBottom>
-                          {request.news_post_title || 'Untitled News Post'}
-                        </Typography>
-                        <Typography variant="body2" sx={{ mb: 1 }}>
-                          Society: {request.society_name || "Unknown"}
-                        </Typography>
-                        <Typography variant="body2" color={greyColorAlt}>
-                          Requested by: {request.requester_name || "Unknown"}
-                        </Typography>
-                        <Divider sx={{ my: 2 }} />
-                        <Box display="flex" justifyContent="flex-end" gap={1}>
-                          <Button 
-                            size="small" 
-                            variant="contained" 
-                            color="primary"
-                            onClick={() => navigate(`/admin/news-approval?request=${request.id}`)}
-                          >
-                            Review
-                          </Button>
-                        </Box>
-                      </CardContent>
-                    </Card>
-                  ))
-                )}
-                
-                {pendingPublications.length > 3 && (
-                  <Box textAlign="center" mt={2}>
-                    <Button 
-                      variant="text" 
-                      color="primary"
-                      onClick={() => navigate("/admin/news-approval")}
-                    >
-                      View {pendingPublications.length - 3} more requests
-                    </Button>
-                  </Box>
-                )}
-              </div>
             </section>
 
             {/* Notifications */}
             <section className="mb-20">
-              <Typography variant="h5" color={greyColor} gutterBottom>
+              <Typography variant="h5" color={colours.grey[100]} gutterBottom>
                 Notifications
               </Typography>
               <div className="space-y-6">
                 {notifications.length === 0 ? (
-                  <Typography color={greyColorAlt}>
+                  <Typography color={colours.grey[300]}>
                     No new notifications.
                   </Typography>
                 ) : (
                   notifications.map((notification) => (
                     <NotificationCard
                       key={notification.id}
-                      message={notification.body || ""}
-                      isRead={notification.is_read || false}
+                      message={notification.body}
+                      isRead={notification.is_read}
                     />
                   ))
                 )}
