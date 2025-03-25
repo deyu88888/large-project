@@ -24,6 +24,7 @@ import EmailIcon from "@mui/icons-material/Email";
 import ReportProblemIcon from "@mui/icons-material/ReportProblem";
 import { tokens } from "../theme/theme";
 import axios from "axios";
+import { sub } from "date-fns";
 
 const Support = () => {
   const theme = useTheme();
@@ -31,9 +32,11 @@ const Support = () => {
   const isLight = theme.palette.mode === "light";
   
   const [expanded, setExpanded] = useState(false);
-  const [issueType, setIssueType] = useState("");
+  const [reportType, setReportType] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
+  const [subject, setSubject] = useState("");
+
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [snackbar, setSnackbar] = useState({
@@ -56,13 +59,15 @@ const Support = () => {
     
     try {
       const reportData = {
-        subject: issueType,
-        details: message, 
+        report_type: reportType,
         email: email,
+        subject: subject,
+        details: message
       };
       await axios.post("/api/dashboard/public-report", reportData);      
-      setIssueType("");
+      setReportType("");
       setEmail("");
+      setSubject("");
       setMessage("");
       
       setSnackbar({
@@ -322,23 +327,23 @@ const Support = () => {
             <form onSubmit={handleSubmit}>
               <Box mb={3}>
                 <FormControl fullWidth required variant="outlined">
-                  <InputLabel id="issue-type-label">Issue Type</InputLabel>
+                  <InputLabel id="report-type-label">Report Type</InputLabel>
                   <Select
-                    labelId="issue-type-label"
-                    value={issueType}
-                    onChange={(e) => setIssueType(e.target.value)}
-                    label="Issue Type"
+                    labelId="report-type-label"
+                    value={reportType}
+                    onChange={(e) => setReportType(e.target.value)}
+                    label="Report Type"
                     sx={{
                       backgroundColor: isLight ? colors.primary[900] : colors.primary[600],
                     }}
                     disabled={isSubmitting}
                   >
-                    <MenuItem value="query">Query</MenuItem>
-                    <MenuItem value="feedback">Feedback</MenuItem>
-                    <MenuItem value="misconduct">Misconduct</MenuItem>
-                    <MenuItem value="system_issue">System Issue</MenuItem>
-                    <MenuItem value="inappropriate">Inappropriate Content</MenuItem>
-                    <MenuItem value="other">Other</MenuItem>
+                    <MenuItem value="Query">Query</MenuItem>
+                    <MenuItem value="Feedback">Feedback</MenuItem>
+                    <MenuItem value="Misconduct">Misconduct</MenuItem>
+                    <MenuItem value="System_issue">System Issue</MenuItem>
+                    <MenuItem value="Inappropriate">Inappropriate Content</MenuItem>
+                    <MenuItem value="Other">Other</MenuItem>
                   </Select>
                 </FormControl>
               </Box>
@@ -351,6 +356,22 @@ const Support = () => {
                   variant="outlined"
                   value={email}
                   onChange={(e:any) => setEmail(e.target.value)}
+                  required
+                  sx={{
+                    backgroundColor: isLight ? colors.primary[900] : colors.primary[600],
+                  }}
+                  disabled={isSubmitting}
+                />
+              </Box>
+
+              <Box mb={3}>
+                <TextField
+                  fullWidth
+                  label="Subject"
+                  type="subject"
+                  variant="outlined"
+                  value={subject}
+                  onChange={(e:any) => setSubject(e.target.value)}
                   required
                   sx={{
                     backgroundColor: isLight ? colors.primary[900] : colors.primary[600],

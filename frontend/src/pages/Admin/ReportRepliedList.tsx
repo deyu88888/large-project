@@ -68,7 +68,19 @@ const ReportRepliedList: React.FC = () => {
     try {
       setLoading(true);
       const response = await apiClient.get("/api/admin/reports-replied");
-      setReportsWithReplies(response.data || []);
+  
+      const processed = (response.data || []).map((report: any) => {
+        const replies = report.top_level_replies || [];
+        const latestReply = replies[replies.length - 1];
+  
+        return {
+          ...report,
+          latest_reply: latestReply?.content || "No reply yet",
+          latest_reply_date: latestReply?.created_at || "N/A",
+          reply_count: replies.length,
+        };
+      });
+      setReportsWithReplies(processed);
       setError(null);
     } catch (err) {
       console.error("Error fetching reports with replies:", err);
@@ -77,6 +89,7 @@ const ReportRepliedList: React.FC = () => {
       setLoading(false);
     }
   }, []);
+  
 
   // Load data on component mount
   useEffect(() => {
@@ -138,7 +151,6 @@ const ReportRepliedList: React.FC = () => {
       field: "latest_reply_date",
       headerName: "Latest Reply Date",
       flex: 1.5,
-      // valueFormatter: (params) => formatDate(params.value as string),
     },
     {
       field: "action",
@@ -146,12 +158,13 @@ const ReportRepliedList: React.FC = () => {
       flex: 1,
       sortable: false,
       filterable: false,
+      minWidth: 140,
+      width: 140,
       renderCell: (params: GridRenderCellParams) => (
         <Button
           variant="contained"
           color="primary"
           onClick={() => handleViewThread(params.row.id)}
-          size="small"
         >
           View Thread
         </Button>

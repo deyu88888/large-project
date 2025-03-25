@@ -267,7 +267,7 @@ class AdminReportRequestSerializer(serializers.ModelSerializer):
     class Meta:
         """AdminReportRequest meta data"""
         model = AdminReportRequest
-        fields = ["id", "report_type", "subject", "details", "requested_at", "from_student", "from_student_username", "top_level_replies"]
+        fields = ["id", "report_type", "subject", "details", "requested_at", "from_student", "from_student_username", "top_level_replies", "email"]
         extra_kwargs = {"from_student": {"read_only": True}}  # Auto-assign the user
 
     def get_top_level_replies(self, obj):

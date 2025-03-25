@@ -61,7 +61,7 @@ const ReportThread: React.FC = () => {
   useEffect(() => {
     const fetchReportThread = async () => {
       try {
-        const response = await apiClient.get(`/api/report-thread/${reportId}`);
+        const response = await apiClient.get(`/api/admin/report-thread/${reportId}`);
         setReport(response.data);
         
         // Check if user is admin or president - this should be replaced with your actual auth logic
@@ -88,14 +88,14 @@ const ReportThread: React.FC = () => {
   const handleReplySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await apiClient.post("/api/reports/report-replies", {
+      await apiClient.post("/api/admin/report-replies", {
         report: reportId,
         parent_reply: selectedReplyId,
         content: replyContent,
       });
       
       // Refresh the thread data
-      const response = await apiClient.get(`/api/report-thread/${reportId}`);
+      const response = await apiClient.get(`/api/admin/report-thread/${reportId}`);
       setReport(response.data);
       
       // Reset form
