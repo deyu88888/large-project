@@ -16,7 +16,7 @@ export default function AllEventsPage() {
     const isLight = theme.palette.mode === "light";
     const { user, setUser } = useAuthStore();
 
-    const [currentUser, setCurrentUser] = useState<User | null>(user ?? null);
+    const [currentUser, setCurrentUser] = useState<User | null>(user);
     const [events, setEvents] = useState<EventData[]>([]);
     const [userLoading, setUserLoading] = useState(true);
     const [eventsLoading, setEventsLoading] = useState(true);
