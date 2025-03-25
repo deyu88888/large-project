@@ -352,7 +352,6 @@ class SocietyRoleManagementView(APIView):
                  except Student.DoesNotExist:
                      return Response({"error": "Student not found"}, status=status.HTTP_404_NOT_FOUND)
  
-         # Save the society with updated roles
          society.save()
          
          return Response(SocietySerializer(society).data)
