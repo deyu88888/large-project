@@ -138,7 +138,7 @@ const ReportRepliedList: React.FC = () => {
       field: "latest_reply_date",
       headerName: "Latest Reply Date",
       flex: 1.5,
-      valueFormatter: (params) => formatDate(params.value as string),
+      // valueFormatter: (params) => formatDate(params.value as string),
     },
     {
       field: "action",

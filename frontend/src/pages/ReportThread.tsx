@@ -88,7 +88,7 @@ const ReportThread: React.FC = () => {
   const handleReplySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await apiClient.post("/api/report-replies", {
+      await apiClient.post("/api/reports/report-replies", {
         report: reportId,
         parent_reply: selectedReplyId,
         content: replyContent,

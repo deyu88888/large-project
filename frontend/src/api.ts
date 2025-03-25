@@ -66,7 +66,7 @@ export const apiPaths = {
     ADMIN: "/api/admin/admin", // admin list for admins
     PENDINGSOCIETYREQUEST: "/api/admin/society/request/pending",  // TODO: DONT ADD BACKSLASH
     PROFILE: "/api/user/profile", // TODO: DONT ADD BACKSLASH
-    REPORT: "/api/admin/reports/to-admin/", // TODO: DONT ADD BACKSLASH
+    REPORT: "/api/admin/report-to-admin", // TODO: DONT ADD BACKSLASH
     PENDINGEVENTREQUEST: "/api/event/request/pending",  // TODO: DONT ADD BACKSLASH
     REJECTEDEVENT: "/api/admin-panel/rejected-event", // TODO: DONT ADD BACKSLASH
     PENDINGDESCRIPTIONREQUEST: "/api/admin/description/request/pending",
