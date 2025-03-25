@@ -20,7 +20,7 @@ class CurrentUserViewTestCase(APITestCase):
         )
         refresh = RefreshToken.for_user(self.user)
         self.access_token = str(refresh.access_token)
-        self.current_user_url = "/api/user/current"
+        self.current_user_url = "/api/user/current/"
 
     def test_get_current_user_with_valid_token(self):
         """

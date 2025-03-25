@@ -9,7 +9,7 @@ from api.models_files.communication_models import *
 from api.models_files.event_models import *
 from api.models_files.society_models import *
 from api.models_files.request_models import *
-from api.models_files.recommendation_feedback_model import RecommendationFeedback
+from api.models_files.recommendation_feedback_model import *
 
 
 class SiteSettings(models.Model):

@@ -179,7 +179,7 @@ class TestRecommendationFeedbackCreateSerializer(TestCase):
             mock_get.side_effect = Society.DoesNotExist
             with self.assertRaises(ValidationError) as context:
                 serializer.validate_society_id(999)
-            self.assertEqual(str(context.exception.detail[0]), "Society does not exist.")
+                self.assertEqual(str(context.exception.detail['society_id'][0]), "Society does not exist.")
     
     def test_create_method(self):
         """Test the create method directly"""
