@@ -78,7 +78,6 @@ const ManageReports: React.FC = () => {
       sx={{
         height: "calc(100vh - 64px)",
         backgroundColor: theme.palette.background.default,
-        p: 2,
       }}
     >
       <Typography
