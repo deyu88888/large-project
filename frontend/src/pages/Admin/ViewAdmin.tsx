@@ -96,7 +96,7 @@ const ViewAdmin: React.FC = () => {
       console.log("Sending data to backend:", dataToSend);
       
       const response = await apiClient.patch(
-        `/api/admin-manage-admin-details/${adminId}`, 
+        `/api/admin/manage-admin/${adminId}`, 
         dataToSend
       );
       
