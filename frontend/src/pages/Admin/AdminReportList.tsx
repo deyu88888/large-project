@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext, useCallback } from 'react';
+import React, { useEffect, useState, useContext, useCallback, FC } from 'react';
 import { Box, Button, useTheme } from "@mui/material";
 import { DataGrid, GridColDef, GridRenderCellParams, GridToolbar } from "@mui/x-data-grid";
 import { tokens } from "../../theme/theme";
@@ -8,10 +8,140 @@ import { fetchReports } from './fetchReports';
 import { Report } from '../../types';
 import { useNavigate } from 'react-router-dom';
 
+// Types and Interfaces
+interface DataGridContainerProps {
+  filteredReports: Report[];
+  columns: GridColDef[];
+  loading: boolean;
+  colors: any;
+}
+
+interface ActionButtonProps {
+  reportId: string;
+  isPublic: boolean;
+  email: string;
+  subject: string;
+  onReply: (id: string) => void;
+}
+
+// Format date for display
+const formatDate = (dateString: string): string => {
+  return new Date(dateString).toLocaleString();
+};
+
+// Create mailto URL
+const createMailtoUrl = (email: string, subject: string): string => {
+  const emailSubject = encodeURIComponent(`Response to your report: "${subject}"`);
+  const emailBody = encodeURIComponent("Hi,\n\nRegarding your report, we would like to get in touch with you.\n\nKind regards,\nAdmin Team");
+  
+  return `mailto:${email}?subject=${emailSubject}&body=${emailBody}`;
+};
+
+// Component for handling email or reply button
+const ActionButton: FC<ActionButtonProps> = ({
+  reportId,
+  isPublic,
+  email,
+  subject,
+  onReply
+}) => {
+  if (isPublic && email) {
+    return (
+      <Button
+        variant="contained"
+        color="secondary"
+        href={createMailtoUrl(email, subject)}
+      >
+        Email Reply
+      </Button>
+    );
+  }
+
+  return (
+    <Button
+      variant="contained"
+      color="primary"
+      onClick={() => onReply(reportId)}
+    >
+      Reply
+    </Button>
+  );
+};
+
+// Data Grid Container Component
+const DataGridContainer: FC<DataGridContainerProps> = ({
+  filteredReports,
+  columns,
+  loading,
+  colors
+}) => {
+  const getDataGridStyles = () => ({
+    height: "78vh",
+    "& .MuiDataGrid-root": { border: "none" },
+    "& .MuiDataGrid-cell": { borderBottom: "none" },
+    "& .MuiDataGrid-columnHeaders": {
+      backgroundColor: colors.blueAccent[700],
+      borderBottom: "none",
+    },
+    "& .MuiDataGrid-columnHeader": {
+      whiteSpace: "normal",
+      wordBreak: "break-word",
+    },
+    "& .MuiDataGrid-virtualScroller": {
+      backgroundColor: colors.primary[400],
+    },
+    "& .MuiDataGrid-footerContainer": {
+      borderTop: "none",
+      backgroundColor: colors.blueAccent[700],
+    },
+    "& .MuiCheckbox-root": {
+      color: `${colors.blueAccent[400]} !important`,
+    },
+    "& .MuiDataGrid-toolbarContainer .MuiButton-text": {
+      color: `${colors.blueAccent[500]} !important`,
+    },
+  });
+
+  return (
+    <Box sx={getDataGridStyles()}>
+      <DataGrid
+        rows={filteredReports}
+        columns={columns}
+        slots={{ toolbar: GridToolbar }}
+        getRowId={(row) => row.id}
+        resizeThrottleMs={0}
+        loading={loading}
+        autoHeight
+      />
+    </Box>
+  );
+};
+
+// EmailCell Component
+const EmailCell: FC<{ email: string | null }> = ({ email }) => {
+  if (!email) return <>-</>;
+  
+  return (
+    <a href={`mailto:${email}`}>
+      {email}
+    </a>
+  );
+};
+
+// ReporterCell Component
+const ReporterCell: FC<{ reporter: string | null }> = ({ reporter }) => {
+  return <>{reporter || "Public User"}</>;
+};
+
+// DateCell Component
+const DateCell: FC<{ date: string }> = ({ date }) => {
+  return <>{formatDate(date)}</>;
+};
+
 /**
  * AdminReportList component displays a list of reports with filtering and reply actions
  */
-const AdminReportList: React.FC = () => {
+const AdminReportList: FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const navigate = useNavigate();  
@@ -23,9 +153,7 @@ const AdminReportList: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  /**
-   * Fetch reports from API
-   */
+  // Load reports data
   const loadReports = useCallback(async () => {
     try {
       setLoading(true);
@@ -40,60 +168,44 @@ const AdminReportList: React.FC = () => {
     }
   }, []);
 
-  // Load reports on component mount
+  // Initialize data
   useEffect(() => {
     loadReports();
   }, [loadReports]);
 
-  /**
-   * Filter reports based on search term
-   */
-  const filteredReports = reports.filter((report) =>
-    Object.values(report)
-      .join(" ")
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase())
-  );   
-  
-  /**
-   * Navigate to reply page
-   */
-  const handleReplyClick = (reportId: string) => {
+  // Filter reports based on search term
+  const getFilteredReports = useCallback(() => {
+    return reports.filter((report) =>
+      Object.values(report)
+        .join(" ")
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase())
+    );
+  }, [reports, searchTerm]);
+
+  // Navigate to reply page
+  const handleReplyClick = useCallback((reportId: string) => {
     navigate(`/admin/report-list/${reportId}/reply`);
-  };
+  }, [navigate]);
 
-  /**
-   * Format date for display
-   */
-  const formatDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleString();
-  };
-
-  /**
-   * Column definitions for DataGrid
-   */
-  const columns: GridColDef[] = [
+  // Define columns for DataGrid
+  const getColumns = useCallback((): GridColDef[] => [
     { field: "id", headerName: "ID", flex: 0.5 },
     {
       field: "from_student",
       headerName: "Reporter",
       flex: 1,
-      renderCell: (params: any) => {
-        return params.row.from_student || "Public User";
-      },
+      renderCell: (params: GridRenderCellParams) => (
+        <ReporterCell reporter={params.row.from_student} />
+      ),
     },
     {
       field: "email",
       headerName: "Email",
       flex: 1,
-      renderCell: (params: any) =>
-        params.row.email ? (
-          <a href={`mailto:${params.row.email}`}>
-            {params.row.email}
-          </a>
-        ) : (
-          "-"
-        ),
+      renderCell: (params: GridRenderCellParams) => (
+        <EmailCell email={params.row.email} />
+      ),
     },    
     { field: "report_type", headerName: "Report Type", flex: 1 },
     { field: "subject", headerName: "Subject", flex: 1.5 },
@@ -102,86 +214,44 @@ const AdminReportList: React.FC = () => {
       field: "created_at",
       headerName: "Created At",
       flex: 1.5,
-      renderCell: (params: GridRenderCellParams) => formatDate(params.row.created_at),
+      renderCell: (params: GridRenderCellParams) => (
+        <DateCell date={params.row.created_at} />
+      ),
     },
     {
       field: "action", 
       headerName: "Actions",
       flex: 1,
-      renderCell: (params: GridRenderCellParams) => {
-        const reportId = params.row.id;
-        const isPublic = !params.row.from_student;
-        const email = params.row.email;
-        if (isPublic && email) {
-          return (
-            <Button
-              variant="contained"
-              color="secondary"
-              href={`mailto:${email}?subject=${encodeURIComponent(`Response to your report: "${params.row.subject}"`)}&body=${encodeURIComponent("Hi,\n\nRegarding your report, we would like to get in touch with you.\n\nKind regards,\nAdmin Team")}`}
-              >
-              Email Reply
-            </Button>
-          );
-        }
-    
-        return (
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={() => handleReplyClick(reportId)}
-          >
-            Reply
-          </Button>
-        );
-      },
+      renderCell: (params: GridRenderCellParams) => (
+        <ActionButton
+          reportId={params.row.id}
+          isPublic={!params.row.from_student}
+          email={params.row.email}
+          subject={params.row.subject}
+          onReply={handleReplyClick}
+        />
+      ),
     }
-  ];
+  ], [handleReplyClick]);
+
+  // Get container styles
+  const getContainerStyles = useCallback(() => ({
+    height: "calc(100vh - 64px)",
+    maxWidth: drawer ? `calc(100% - 3px)`: "100%",
+  }), [drawer]);
+
+  // Process data for rendering
+  const filteredReports = getFilteredReports();
+  const columns = getColumns();
 
   return (
-    <Box
-      sx={{
-        height: "calc(100vh - 64px)",
-        maxWidth: drawer ? `calc(100% - 3px)`: "100%",
-      }}
-    >
-      <Box
-        sx={{
-          height: "78vh",
-          "& .MuiDataGrid-root": { border: "none" },
-          "& .MuiDataGrid-cell": { borderBottom: "none" },
-          "& .MuiDataGrid-columnHeaders": {
-            backgroundColor: colors.blueAccent[700],
-            borderBottom: "none",
-          },
-          "& .MuiDataGrid-columnHeader": {
-            whiteSpace: "normal",
-            wordBreak: "break-word",
-          },
-          "& .MuiDataGrid-virtualScroller": {
-            backgroundColor: colors.primary[400],
-          },
-          "& .MuiDataGrid-footerContainer": {
-            borderTop: "none",
-            backgroundColor: colors.blueAccent[700],
-          },
-          "& .MuiCheckbox-root": {
-            color: `${colors.blueAccent[400]} !important`,
-          },
-          "& .MuiDataGrid-toolbarContainer .MuiButton-text": {
-            color: `${colors.blueAccent[500]} !important`,
-          },
-        }}
-      >
-        <DataGrid
-          rows={filteredReports}
-          columns={columns}
-          slots={{ toolbar: GridToolbar }}
-          getRowId={(row) => row.id}
-          resizeThrottleMs={0}
-          loading={loading}
-          autoHeight
-        />
-      </Box>
+    <Box sx={getContainerStyles()}>
+      <DataGridContainer 
+        filteredReports={filteredReports}
+        columns={columns}
+        loading={loading}
+        colors={colors}
+      />
     </Box>
   );
 };

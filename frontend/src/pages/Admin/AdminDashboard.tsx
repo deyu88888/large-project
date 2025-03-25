@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, FC } from "react";
 import { Box, Typography, useTheme, Button, Paper, CircularProgress, Card, CardContent, Divider } from "@mui/material";
 import { FaUsers, FaCalendarAlt, FaEnvelope, FaNewspaper } from "react-icons/fa";
 import { CheckCircle as ApproveIcon, Cancel as RejectIcon, Article as ArticleIcon } from "@mui/icons-material";
@@ -9,17 +9,373 @@ import { useSettingsStore } from "../../stores/settings-store";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../stores/auth-store";
 
-const AdminDashboard = () => {
+// Types and Interfaces
+interface UserStats {
+  totalUsers: number;
+  [key: string]: any;
+}
+
+interface Event {
+  id: number;
+  [key: string]: any;
+}
+
+interface Notification {
+  id: number;
+  body: string;
+  is_read: boolean;
+  [key: string]: any;
+}
+
+interface Society {
+  id: number;
+  [key: string]: any;
+}
+
+interface Publication {
+  id: number;
+  news_post_title: string;
+  society_name: string;
+  requester_name: string;
+  status: string;
+  [key: string]: any;
+}
+
+interface User {
+  first_name: string;
+  [key: string]: any;
+}
+
+interface StatCardProps {
+  icon: React.ReactNode;
+  title: string;
+  value: number | string;
+}
+
+interface NotificationCardProps {
+  message: string;
+  isRead: boolean;
+}
+
+interface ColorsInterface {
+  greenAccent: string;
+  blueAccent: string;
+  redAccent: string;
+  yellowAccent: string;
+  grey: string;
+  greyAlt: string;
+  primary: string;
+  blueAccentHover: string;
+  blueAccentHoverDark: string;
+}
+
+interface PublicationSectionProps {
+  publications: Publication[];
+  colors: ColorsInterface;
+  onNavigate: (path: string) => void;
+}
+
+interface NotificationsSectionProps {
+  notifications: Notification[];
+  colors: ColorsInterface;
+}
+
+interface StatsSectionProps {
+  userStats: UserStats;
+  eventsCount: number;
+  notificationsCount: number;
+  publicationsCount: number;
+  colors: ColorsInterface;
+}
+
+interface DashboardContentProps {
+  loading: boolean;
+  userStats: UserStats | null;
+  events: Event[];
+  notifications: Notification[];
+  pendingPublications: Publication[];
+  user: User | null;
+  colors: ColorsInterface;
+  onNavigate: (path: string) => void;
+}
+
+// Helper function to extract colors with fallbacks
+const extractColors = (colours: any): ColorsInterface => {
+  return {
+    greenAccent: colours?.greenAccent?.[500] || "#4caf50",
+    blueAccent: colours?.blueAccent?.[500] || "#2196f3",
+    redAccent: colours?.redAccent?.[500] || "#f44336",
+    yellowAccent: colours?.yellowAccent?.[500] || "#ffeb3b",
+    grey: colours?.grey?.[100] || "#f5f5f5",
+    greyAlt: colours?.grey?.[300] || "#e0e0e0",
+    primary: colours?.primary?.[400] || "#121212",
+    blueAccentHover: colours?.blueAccent?.[600] || "#1976d2",
+    blueAccentHoverDark: colours?.blueAccent?.[700] || "#0d47a1",
+  };
+};
+
+// StatCard Component
+const StatCard: FC<StatCardProps> = ({ icon, title, value }) => {
+  return (
+    <Box
+      className="p-6 rounded-xl shadow hover:shadow-lg transition-transform hover:-translate-y-1"
+      style={{
+        backgroundColor: "rgba(255, 255, 255, 0.1)",
+        border: "1px solid rgba(255, 255, 255, 0.2)",
+      }}
+    >
+      <Box display="flex" alignItems="center" mb="16px">
+        {icon}
+        <Typography variant="h6" style={{ marginLeft: "12px" }}>
+          {title}
+        </Typography>
+      </Box>
+      <Typography variant="h4" fontWeight="bold">
+        {value}
+      </Typography>
+    </Box>
+  );
+};
+
+// NotificationCard Component
+const NotificationCard: FC<NotificationCardProps> = ({ message, isRead }) => {
+  return (
+    <Box
+      className="p-5 rounded-lg shadow-md transition-all"
+      style={{
+        backgroundColor: isRead ? "rgba(0, 128, 0, 0.1)" : "rgba(255, 0, 0, 0.1)",
+        border: "1px solid rgba(255, 255, 255, 0.2)",
+      }}
+    >
+      <Typography>{message}</Typography>
+    </Box>
+  );
+};
+
+// Publications Section Component
+const PublicationsSection: FC<PublicationSectionProps> = ({ publications, colors, onNavigate }) => {
+  const renderEmptyState = () => {
+    return (
+      <Paper sx={{ p: 3, backgroundColor: "rgba(255, 255, 255, 0.1)" }}>
+        <Typography color={colors.greyAlt}>
+          No pending publication requests.
+        </Typography>
+      </Paper>
+    );
+  };
+
+  const renderPublicationCard = (request: Publication) => {
+    return (
+      <Card 
+        key={request.id} 
+        sx={{ 
+          backgroundColor: "rgba(255, 255, 255, 0.1)",
+          mb: 2
+        }}
+      >
+        <CardContent>
+          <Typography variant="h6" gutterBottom>
+            {request.news_post_title || 'Untitled News Post'}
+          </Typography>
+          <Typography variant="body2" sx={{ mb: 1 }}>
+            Society: {request.society_name || "Unknown"}
+          </Typography>
+          <Typography variant="body2" color={colors.greyAlt}>
+            Requested by: {request.requester_name || "Unknown"}
+          </Typography>
+          <Divider sx={{ my: 2 }} />
+          <Box display="flex" justifyContent="flex-end" gap={1}>
+            <Button 
+              size="small" 
+              variant="contained" 
+              color="primary"
+              onClick={() => onNavigate(`/admin/news-approval?request=${request.id}`)}
+            >
+              Review
+            </Button>
+          </Box>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  const renderMoreButton = () => {
+    if (publications.length <= 3) return null;
+    
+    return (
+      <Box textAlign="center" mt={2}>
+        <Button 
+          variant="text" 
+          color="primary"
+          onClick={() => onNavigate("/admin/news-approval")}
+        >
+          View {publications.length - 3} more requests
+        </Button>
+      </Box>
+    );
+  };
+
+  return (
+    <section className="mb-16">
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+        <Typography variant="h5" color={colors.grey} gutterBottom>
+          News Publication Requests
+        </Typography>
+        <Button 
+          variant="contained" 
+          color="primary"
+          startIcon={<FaNewspaper />}
+          onClick={() => onNavigate("/admin/news-approval")}
+          sx={{ 
+            backgroundColor: colors.blueAccentHover,
+            '&:hover': { backgroundColor: colors.blueAccentHoverDark }
+          }}
+        >
+          View All Requests
+        </Button>
+      </Box>
+      
+      <div className="space-y-4">
+        {publications.length === 0 
+          ? renderEmptyState() 
+          : publications.slice(0, 3).map(renderPublicationCard)}
+        
+        {renderMoreButton()}
+      </div>
+    </section>
+  );
+};
+
+// Notifications Section Component
+const NotificationsSection: FC<NotificationsSectionProps> = ({ notifications, colors }) => {
+  const renderEmptyState = () => {
+    return (
+      <Typography color={colors.greyAlt}>
+        No new notifications.
+      </Typography>
+    );
+  };
+
+  const renderNotifications = () => {
+    return notifications.map((notification) => (
+      <NotificationCard
+        key={notification.id}
+        message={notification.body || ""}
+        isRead={notification.is_read || false}
+      />
+    ));
+  };
+
+  return (
+    <section className="mb-20">
+      <Typography variant="h5" color={colors.grey} gutterBottom>
+        Notifications
+      </Typography>
+      <div className="space-y-6">
+        {notifications.length === 0 
+          ? renderEmptyState() 
+          : renderNotifications()}
+      </div>
+    </section>
+  );
+};
+
+// Stats Section Component
+const StatsSection: FC<StatsSectionProps> = ({ 
+  userStats, 
+  eventsCount, 
+  notificationsCount, 
+  publicationsCount,
+  colors 
+}) => {
+  return (
+    <section className="grid grid-cols-1 md:grid-cols-4 gap-8">
+      <StatCard
+        icon={<FaUsers style={{ color: colors.greenAccent }} />}
+        title="Active Users"
+        value={userStats?.totalUsers || 0}
+      />
+      <StatCard
+        icon={<FaCalendarAlt style={{ color: colors.blueAccent }} />}
+        title="Active Events"
+        value={eventsCount}
+      />
+      <StatCard
+        icon={<FaEnvelope style={{ color: colors.redAccent }} />}
+        title="Pending Requests"
+        value={notificationsCount}
+      />
+      <StatCard
+        icon={<FaNewspaper style={{ color: colors.yellowAccent }} />}
+        title="News Approvals"
+        value={publicationsCount}
+      />
+    </section>
+  );
+};
+
+// Loading State Component
+const LoadingState: FC<{ color: string }> = ({ color }) => {
+  return (
+    <div className="text-center">
+      <Typography variant="h4" color={color}>
+        Loading your dashboard...
+      </Typography>
+    </div>
+  );
+};
+
+// Dashboard Content Component
+const DashboardContent: FC<DashboardContentProps> = ({ 
+  loading, 
+  userStats, 
+  events, 
+  notifications, 
+  pendingPublications, 
+  user,
+  colors,
+  onNavigate
+}) => {
+  if (loading) {
+    return <LoadingState color={colors.grey} />;
+  }
+
+  return (
+    <div className="space-y-8">
+      <StatsSection 
+        userStats={userStats || { totalUsers: 0 }}
+        eventsCount={events.length}
+        notificationsCount={notifications.length}
+        publicationsCount={pendingPublications.length}
+        colors={colors}
+      />
+      
+      <PublicationsSection 
+        publications={pendingPublications}
+        colors={colors}
+        onNavigate={onNavigate}
+      />
+      
+      <NotificationsSection 
+        notifications={notifications}
+        colors={colors}
+      />
+    </div>
+  );
+};
+
+// Main Component
+const AdminDashboard: FC = () => {
   const theme = useTheme();
-  // Add null check for colors
   const colours = tokens(theme?.palette?.mode) || {};
   const navigate = useNavigate();
+  const colors = extractColors(colours);
 
-  const [userStats, setUserStats] = useState<any>(null);
-  const [events, setEvents] = useState<any[]>([]);
-  const [notifications, setNotifications] = useState<any[]>([]);
-  const [societiesData, setSocietiesData] = useState<any[]>([]);
-  const [pendingPublications, setPendingPublications] = useState<any[]>([]);
+  const [userStats, setUserStats] = useState<UserStats | null>(null);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [societiesData, setSocietiesData] = useState<Society[]>([]);
+  const [pendingPublications, setPendingPublications] = useState<Publication[]>([]);
   const [loading, setLoading] = useState(true);
 
   const { drawer } = useSettingsStore();
@@ -38,23 +394,38 @@ const AdminDashboard = () => {
       setUser(response.data);
     } catch (error) {
       console.error("Error fetching current user:", error);
-      // Initialize with a default value to prevent errors
       setUser({ firstName: "User" });
     }
   };
 
   const fetchData = async () => {
+    await fetchUserStats();
+    await fetchEvents();
+    await fetchNotifications();
+    setLoading(false);
+  };
+
+  const fetchUserStats = async () => {
     try {
-      setLoading(true);
       const statsResponse = await apiClient.get("/api/dashboard/stats/");
       setUserStats(statsResponse.data || {});
+    } catch (error) {
+      console.error("Error fetching user stats:", error);
+      setUserStats({});
+    }
+  };
+
+  const fetchEvents = async () => {
+    try {
       const eventsResponse = await apiClient.get("/api/events/all/");
       setEvents(eventsResponse.data || []);
     } catch (error) {
-      console.error("Error fetching data:", error);
-      setUserStats({});
+      console.error("Error fetching events:", error);
       setEvents([]);
     }
+  };
+
+  const fetchNotifications = async () => {
     try {
       const notificationsResponse = await apiClient.get("/api/notifications/");
       setNotifications(notificationsResponse.data || []);
@@ -62,7 +433,6 @@ const AdminDashboard = () => {
       console.error("Error fetching notifications:", error);
       setNotifications([]);
     }
-    setLoading(false);
   };
 
   const fetchSocieties = async () => {
@@ -86,211 +456,41 @@ const AdminDashboard = () => {
     }
   };
 
-  interface StatCardProps {
-    icon: React.ReactNode;
-    title: string;
-    value: number | string;
-  }
-
-  const StatCard = ({ icon, title, value }: StatCardProps) => {
-    return (
-      <Box
-        className="p-6 rounded-xl shadow hover:shadow-lg transition-transform hover:-translate-y-1"
-        style={{
-          backgroundColor: "rgba(255, 255, 255, 0.1)",
-          border: "1px solid rgba(255, 255, 255, 0.2)",
-        }}
-      >
-        <Box display="flex" alignItems="center" mb="16px">
-          {icon}
-          <Typography variant="h6" style={{ marginLeft: "12px" }}>
-            {title}
-          </Typography>
-        </Box>
-        <Typography variant="h4" fontWeight="bold">
-          {value}
-        </Typography>
-      </Box>
-    );
+  const handleNavigate = (path: string) => {
+    navigate(path);
   };
 
-  interface NotificationCardProps {
-    message: string;
-    isRead: boolean;
-  }
-
-  const NotificationCard = ({ message, isRead }: NotificationCardProps) => {
-    return (
-      <Box
-        className="p-5 rounded-lg shadow-md transition-all"
-        style={{
-          backgroundColor: isRead ? "rgba(0, 128, 0, 0.1)" : "rgba(255, 0, 0, 0.1)",
-          border: "1px solid rgba(255, 255, 255, 0.2)",
-        }}
-      >
-        <Typography>{message}</Typography>
-      </Box>
-    );
+  const getContainerStyle = () => {
+    return {
+      marginTop: "64px",
+      transition: "margin-left 0.3s ease-in-out",
+      minHeight: "100vh",
+      maxWidth: drawer ? `calc(100% - 5px)` : "100%",
+      padding: "0px 0px",
+      background: `${colors.primary} !important`,
+    };
   };
-
-  // Ensure we have fallback colors
-  const greenAccentColor = colours?.greenAccent?.[500] || "#4caf50";
-  const blueAccentColor = colours?.blueAccent?.[500] || "#2196f3";
-  const redAccentColor = colours?.redAccent?.[500] || "#f44336";
-  const yellowAccentColor = colours?.yellowAccent?.[500] || "#ffeb3b";
-  const greyColor = colours?.grey?.[100] || "#f5f5f5";
-  const greyColorAlt = colours?.grey?.[300] || "#e0e0e0";
-  const primaryColor = colours?.primary?.[400] || "#121212";
-  const blueAccentHover = colours?.blueAccent?.[600] || "#1976d2";
-  const blueAccentHoverDark = colours?.blueAccent?.[700] || "#0d47a1";
 
   return (
-    <div
-      style={{
-        marginTop: "64px",
-        transition: "margin-left 0.3s ease-in-out",
-        minHeight: "100vh",
-        maxWidth: drawer ? `calc(100% - 5px)` : "100%",
-        padding: "0px 0px",
-        background: `${primaryColor} !important`,
-      }}
-    >
+    <div style={getContainerStyle()}>
       <div style={{ maxWidth: "1600px", margin: "0 auto" }}>
         <header className="text-center mb-16">
-          <Header title={`Welcome to your Dashboard, ${user?.first_name || "User"}!`} subtitle="Manage users, societies, and more." />
+          <Header 
+            title={`Welcome to your Dashboard, ${user?.first_name || "User"}!`} 
+            subtitle="Manage users, societies, and more." 
+          />
         </header>
 
-        {loading ? (
-          <div className="text-center">
-            <Typography variant="h4" color={greyColor}>
-              Loading your dashboard...
-            </Typography>
-          </div>
-        ) : (
-          <div className="space-y-8">
-            {/* Stats Overview */}
-            <section className="grid grid-cols-1 md:grid-cols-4 gap-8">
-              <StatCard
-                icon={<FaUsers style={{ color: greenAccentColor }} />}
-                title="Active Users"
-                value={userStats?.totalUsers || 0}
-              />
-              <StatCard
-                icon={<FaCalendarAlt style={{ color: blueAccentColor }} />}
-                title="Active Events"
-                value={events.length}
-              />
-              <StatCard
-                icon={<FaEnvelope style={{ color: redAccentColor }} />}
-                title="Pending Requests"
-                value={notifications.length}
-              />
-              <StatCard
-                icon={<FaNewspaper style={{ color: yellowAccentColor }} />}
-                title="News Approvals"
-                value={pendingPublications.length}
-              />
-            </section>
-
-            {/* News Publication Requests */}
-            <section className="mb-16">
-              <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                <Typography variant="h5" color={greyColor} gutterBottom>
-                  News Publication Requests
-                </Typography>
-                <Button 
-                  variant="contained" 
-                  color="primary"
-                  startIcon={<FaNewspaper />}
-                  onClick={() => navigate("/admin/news-approval")}
-                  sx={{ 
-                    backgroundColor: blueAccentHover,
-                    '&:hover': { backgroundColor: blueAccentHoverDark }
-                  }}
-                >
-                  View All Requests
-                </Button>
-              </Box>
-              
-              <div className="space-y-4">
-                {pendingPublications.length === 0 ? (
-                  <Paper sx={{ p: 3, backgroundColor: "rgba(255, 255, 255, 0.1)" }}>
-                    <Typography color={greyColorAlt}>
-                      No pending publication requests.
-                    </Typography>
-                  </Paper>
-                ) : (
-                  pendingPublications.slice(0, 3).map((request) => (
-                    <Card 
-                      key={request.id} 
-                      sx={{ 
-                        backgroundColor: "rgba(255, 255, 255, 0.1)",
-                        mb: 2
-                      }}
-                    >
-                      <CardContent>
-                        <Typography variant="h6" gutterBottom>
-                          {request.news_post_title || 'Untitled News Post'}
-                        </Typography>
-                        <Typography variant="body2" sx={{ mb: 1 }}>
-                          Society: {request.society_name || "Unknown"}
-                        </Typography>
-                        <Typography variant="body2" color={greyColorAlt}>
-                          Requested by: {request.requester_name || "Unknown"}
-                        </Typography>
-                        <Divider sx={{ my: 2 }} />
-                        <Box display="flex" justifyContent="flex-end" gap={1}>
-                          <Button 
-                            size="small" 
-                            variant="contained" 
-                            color="primary"
-                            onClick={() => navigate(`/admin/news-approval?request=${request.id}`)}
-                          >
-                            Review
-                          </Button>
-                        </Box>
-                      </CardContent>
-                    </Card>
-                  ))
-                )}
-                
-                {pendingPublications.length > 3 && (
-                  <Box textAlign="center" mt={2}>
-                    <Button 
-                      variant="text" 
-                      color="primary"
-                      onClick={() => navigate("/admin/news-approval")}
-                    >
-                      View {pendingPublications.length - 3} more requests
-                    </Button>
-                  </Box>
-                )}
-              </div>
-            </section>
-
-            {/* Notifications */}
-            <section className="mb-20">
-              <Typography variant="h5" color={greyColor} gutterBottom>
-                Notifications
-              </Typography>
-              <div className="space-y-6">
-                {notifications.length === 0 ? (
-                  <Typography color={greyColorAlt}>
-                    No new notifications.
-                  </Typography>
-                ) : (
-                  notifications.map((notification) => (
-                    <NotificationCard
-                      key={notification.id}
-                      message={notification.body || ""}
-                      isRead={notification.is_read || false}
-                    />
-                  ))
-                )}
-              </div>
-            </section>
-          </div>
-        )}
+        <DashboardContent 
+          loading={loading}
+          userStats={userStats}
+          events={events}
+          notifications={notifications}
+          pendingPublications={pendingPublications}
+          user={user}
+          colors={colors}
+          onNavigate={handleNavigate}
+        />
       </div>
     </div>
   );

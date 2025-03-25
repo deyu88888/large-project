@@ -9,9 +9,7 @@ import { updateRequestStatus } from "../../api/requestApi";
 import { apiPaths } from "../../api";
 import { fetchPendingRequests } from "./utils";
 
-/**
- * Interface for Society data
- */
+// Interfaces
 interface Society {
   id: number;
   name: string;
@@ -24,192 +22,141 @@ interface Society {
   [key: string]: any;
 }
 
-/**
- * PendingSocietyRequest Component
- * Displays and manages pending society requests that need approval or rejection
- */
-const PendingSocietyRequest: React.FC = () => {
-  const theme = useTheme();
-  const colors = tokens(theme.palette.mode);
-  const { searchTerm } = useContext(SearchContext);
-  const { drawer } = useSettingsStore();
+interface ProcessedSociety extends Omit<Society, 'society_members'> {
+  society_members: string;
+}
+
+interface NotificationState {
+  open: boolean;
+  message: string;
+  severity: 'success' | 'error';
+}
+
+interface ActionButtonsProps {
+  societyId: number;
+  onStatusChange: (id: number, status: "Approved" | "Rejected") => void;
+}
+
+interface NotificationProps {
+  notification: NotificationState;
+  onClose: () => void;
+}
+
+interface TruncatedCellProps {
+  value: string;
+}
+
+interface EmptyStateProps {
+  colors: ReturnType<typeof tokens>;
+}
+
+interface DataGridContainerProps {
+  societies: ProcessedSociety[];
+  columns: GridColDef[];
+  colors: ReturnType<typeof tokens>;
+  loading: boolean;
+  drawer: boolean;
+}
+
+// Helper functions
+const processSocietyMembers = (society: Society): ProcessedSociety => {
+  return {
+    ...society,
+    society_members: Array.isArray(society.society_members)
+      ? society.society_members.join(", ")
+      : society.society_members as string,
+  };
+};
+
+const processSocieties = (societies: Society[]): ProcessedSociety[] => {
+  if (!Array.isArray(societies)) return [];
+  return societies.map(processSocietyMembers);
+};
+
+const filterSocietiesBySearchTerm = (societies: ProcessedSociety[], searchTerm: string): ProcessedSociety[] => {
+  if (!Array.isArray(societies)) return [];
+  if (!searchTerm) return societies;
   
-  // State for societies and notifications
-  const [societies, setSocieties] = useState<Society[]>([]);
-  const [notification, setNotification] = useState<{
-    open: boolean;
-    message: string;
-    severity: 'success' | 'error';
-  }>({
-    open: false,
-    message: '',
-    severity: 'success'
+  const normalizedSearchTerm = searchTerm.toLowerCase();
+  
+  return societies.filter((society) => {
+    const searchString = Object.entries(society)
+      .map(([key, value]) => String(value))
+      .join(" ")
+      .toLowerCase();
+    return searchString.includes(normalizedSearchTerm);
   });
-  
-  // Fetch societies using WebSocket hook
-  const fetchedSocieties = useFetchWebSocket<Society[]>(
-    () => fetchPendingRequests(apiPaths.USER.PENDINGSOCIETYREQUEST), 
-    'society'
+};
+
+// Component functions
+const TruncatedCell: React.FC<TruncatedCellProps> = ({ value }) => {
+  return (
+    <Typography noWrap title={value}>
+      {value}
+    </Typography>
   );
-  
-  // Update societies state when data from WebSocket changes
-  useEffect(() => {
-    if (Array.isArray(fetchedSocieties)) {
-      setSocieties(fetchedSocieties);
-    }
-  }, [fetchedSocieties]);
+};
 
-  /**
-   * Close notification handler
-   */
-  const handleCloseNotification = useCallback(() => {
-    setNotification(prev => ({ ...prev, open: false }));
-  }, []);
+const ActionButtons: React.FC<ActionButtonsProps> = ({ societyId, onStatusChange }) => {
+  return (
+    <Box sx={{ display: 'flex', gap: 1 }}>
+      <Button
+        variant="contained"
+        color="success"
+        onClick={() => onStatusChange(societyId, "Approved")}
+        size="small"
+      >
+        Accept
+      </Button>
+      <Button 
+        variant="contained" 
+        color="error" 
+        onClick={() => onStatusChange(societyId, "Rejected")}
+        size="small"
+      >
+        Reject
+      </Button>
+    </Box>
+  );
+};
 
-  /**
-   * Handle status change (approve/reject)
-   */
-  const handleStatusChange = useCallback(async (id: number, status: "Approved" | "Rejected") => {
-    try {
-      // Optimistically update UI
-      const updatedSocieties = societies.filter(society => society.id !== id);
-      setSocieties(updatedSocieties);
-      
-      // Send request to API
-      await updateRequestStatus(id, status, apiPaths.USER.PENDINGSOCIETYREQUEST);
-      
-      // Show success notification
-      setNotification({
-        open: true,
-        message: `Society ${status === "Approved" ? "approved" : "rejected"} successfully.`,
-        severity: 'success'
-      });
-    } catch (error) {
-      console.error(`Error updating society status:`, error);
-      
-      // Show error notification
-      setNotification({
-        open: true,
-        message: `Failed to ${status.toLowerCase()} society request.`,
-        severity: 'error'
-      });
-      
-      // Refetch data to restore state
-      const data = await fetchPendingRequests(apiPaths.USER.PENDINGSOCIETYREQUEST);
-      if (Array.isArray(data)) {
-        setSocieties(data);
-      }
-    }
-  }, [societies]);
+const NotificationAlert: React.FC<NotificationProps> = ({ notification, onClose }) => {
+  return (
+    <Snackbar 
+      open={notification.open}
+      autoHideDuration={6000}
+      onClose={onClose}
+      anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+    >
+      <Alert 
+        onClose={onClose} 
+        severity={notification.severity} 
+        variant="filled"
+        sx={{ width: '100%' }}
+      >
+        {notification.message}
+      </Alert>
+    </Snackbar>
+  );
+};
 
-  /**
-   * Process society data to prepare for display
-   */
-  const processedSocieties = useMemo(() => {
-    if (!Array.isArray(societies)) return [];
-    
-    return societies.map((society) => ({
-      ...society,
-      society_members: Array.isArray(society.society_members) 
-        ? society.society_members.join(", ") 
-        : society.society_members,
-    }));
-  }, [societies]);
+const EmptyState: React.FC<EmptyStateProps> = ({ colors }) => {
+  return (
+    <Box display="flex" alignItems="center" justifyContent="center" height="100%">
+      <Typography variant="h6" color={colors.grey[100]}>
+        No pending society requests found
+      </Typography>
+    </Box>
+  );
+};
 
-  /**
-   * Filter societies based on search term
-   */
-  const filteredSocieties = useMemo(() => {
-    if (!Array.isArray(processedSocieties)) return [];
-    
-    return processedSocieties.filter((society) => {
-      const searchString = Object.entries(society)
-        .map(([key, value]) => String(value))
-        .join(" ")
-        .toLowerCase();
-      return searchString.includes((searchTerm || '').toLowerCase());
-    });
-  }, [processedSocieties, searchTerm]);
-
-  /**
-   * Column definitions for DataGrid
-   */
-  const columns: GridColDef[] = useMemo(() => [
-    { field: "id", headerName: "ID", flex: 0.3 },
-    { field: "name", headerName: "Name", flex: 1 },
-    { 
-      field: "description", 
-      headerName: "Description", 
-      flex: 1,
-      renderCell: (params: GridRenderCellParams) => (
-        <Typography noWrap title={params.value as string}>
-          {params.value}
-        </Typography>
-      )
-    },
-    {      
-      field: "society_members",
-      headerName: "Members",
-      flex: 1,
-      renderCell: (params: GridRenderCellParams) => (
-        <Typography noWrap title={params.value as string}>
-          {params.value}
-        </Typography>
-      )
-    },
-    { field: "president", headerName: "President", flex: 1 },
-    { field: "category", headerName: "Category", flex: 1 },
-    { 
-      field: "membershipRequirements", 
-      headerName: "Membership Requirements", 
-      flex: 1,
-      renderCell: (params: GridRenderCellParams) => (
-        <Typography noWrap title={params.value as string}>
-          {params.value}
-        </Typography>
-      )
-    },
-    { 
-      field: "upcomingProjectsOrPlans", 
-      headerName: "Upcoming Projects", 
-      flex: 1,
-      renderCell: (params: GridRenderCellParams) => (
-        <Typography noWrap title={params.value as string}>
-          {params.value}
-        </Typography>
-      )
-    },
-    {
-      field: "actions",
-      headerName: "Actions",
-      width: 188,
-      minWidth: 188,
-      sortable: false,
-      filterable: false, 
-      renderCell: (params: GridRenderCellParams<any, Society>) => (
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button
-            variant="contained"
-            color="success"
-            onClick={() => handleStatusChange(params.row.id, "Approved")}
-            size="small"
-          >
-            Accept
-          </Button>
-          <Button 
-            variant="contained" 
-            color="error" 
-            onClick={() => handleStatusChange(params.row.id, "Rejected")}
-            size="small"
-          >
-            Reject
-          </Button>
-        </Box>
-      ),
-      flex: 1.6,
-    },
-  ], [handleStatusChange]);
-
+const DataGridContainer: React.FC<DataGridContainerProps> = ({ 
+  societies, 
+  columns, 
+  colors, 
+  loading,
+  drawer 
+}) => {
   return (
     <Box
       sx={{
@@ -238,17 +185,11 @@ const PendingSocietyRequest: React.FC = () => {
         }}
       >
         <DataGrid
-          rows={filteredSocieties}
+          rows={societies}
           columns={columns}
           slots={{ 
             toolbar: GridToolbar,
-            noRowsOverlay: () => (
-              <Box display="flex" alignItems="center" justifyContent="center" height="100%">
-                <Typography variant="h6" color={colors.grey[100]}>
-                  No pending society requests found
-                </Typography>
-              </Box>
-            ),
+            noRowsOverlay: () => <EmptyState colors={colors} />
           }}
           autoHeight
           resizeThrottleMs={0}
@@ -259,27 +200,185 @@ const PendingSocietyRequest: React.FC = () => {
           }}
           pageSizeOptions={[5, 10, 25]}
           disableRowSelectionOnClick
-          loading={societies.length === 0}
+          loading={loading}
         />
       </Box>
-
-      {/* Notification for operations */}
-      <Snackbar 
-        open={notification.open}
-        autoHideDuration={6000}
-        onClose={handleCloseNotification}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-      >
-        <Alert 
-          onClose={handleCloseNotification} 
-          severity={notification.severity} 
-          variant="filled"
-          sx={{ width: '100%' }}
-        >
-          {notification.message}
-        </Alert>
-      </Snackbar>
     </Box>
+  );
+};
+
+// Column factory
+const createSocietyColumns = (
+  handleStatusChange: (id: number, status: "Approved" | "Rejected") => void
+): GridColDef[] => {
+  return [
+    { field: "id", headerName: "ID", flex: 0.3 },
+    { field: "name", headerName: "Name", flex: 1 },
+    { 
+      field: "description", 
+      headerName: "Description", 
+      flex: 1,
+      renderCell: (params: GridRenderCellParams) => (
+        <TruncatedCell value={params.value as string} />
+      )
+    },
+    {      
+      field: "society_members",
+      headerName: "Members",
+      flex: 1,
+      renderCell: (params: GridRenderCellParams) => (
+        <TruncatedCell value={params.value as string} />
+      )
+    },
+    { field: "president", headerName: "President", flex: 1 },
+    { field: "category", headerName: "Category", flex: 1 },
+    { 
+      field: "membershipRequirements", 
+      headerName: "Membership Requirements", 
+      flex: 1,
+      renderCell: (params: GridRenderCellParams) => (
+        <TruncatedCell value={params.value as string} />
+      )
+    },
+    { 
+      field: "upcomingProjectsOrPlans", 
+      headerName: "Upcoming Projects", 
+      flex: 1,
+      renderCell: (params: GridRenderCellParams) => (
+        <TruncatedCell value={params.value as string} />
+      )
+    },
+    {
+      field: "actions",
+      headerName: "Actions",
+      width: 188,
+      minWidth: 188,
+      sortable: false,
+      filterable: false, 
+      renderCell: (params: GridRenderCellParams<any, Society>) => (
+        <ActionButtons 
+          societyId={params.row.id} 
+          onStatusChange={handleStatusChange} 
+        />
+      ),
+      flex: 1.6,
+    },
+  ];
+};
+
+// Main component
+const PendingSocietyRequest: React.FC = () => {
+  const theme = useTheme();
+  const colors = tokens(theme.palette.mode);
+  const { searchTerm } = useContext(SearchContext);
+  const { drawer } = useSettingsStore();
+  
+  // State
+  const [societies, setSocieties] = useState<Society[]>([]);
+  const [notification, setNotification] = useState<NotificationState>({
+    open: false,
+    message: '',
+    severity: 'success'
+  });
+  
+  // Fetch societies using WebSocket hook
+  const fetchedSocieties = useFetchWebSocket<Society[]>(
+    () => fetchPendingRequests(apiPaths.USER.PENDINGSOCIETYREQUEST), 
+    'society'
+  );
+  
+  // Event handlers
+  const handleCloseNotification = useCallback(() => {
+    setNotification(prev => ({ ...prev, open: false }));
+  }, []);
+
+  const showNotification = useCallback((message: string, severity: 'success' | 'error') => {
+    setNotification({
+      open: true,
+      message,
+      severity
+    });
+  }, []);
+
+  const updateSocietiesAfterStatusChange = useCallback((societyId: number) => {
+    setSocieties(prevSocieties => 
+      prevSocieties.filter(society => society.id !== societyId)
+    );
+  }, []);
+
+  const handleStatusChange = useCallback(async (id: number, status: "Approved" | "Rejected") => {
+    try {
+      // Optimistically update UI
+      updateSocietiesAfterStatusChange(id);
+      
+      // Send request to API
+      await updateRequestStatus(id, status, apiPaths.USER.PENDINGSOCIETYREQUEST);
+      
+      // Show success notification
+      showNotification(
+        `Society ${status === "Approved" ? "approved" : "rejected"} successfully.`, 
+        'success'
+      );
+    } catch (error) {
+      console.error(`Error updating society status:`, error);
+      
+      // Show error notification
+      showNotification(
+        `Failed to ${status.toLowerCase()} society request.`, 
+        'error'
+      );
+      
+      // Refetch data to restore state
+      recoverSocietyData();
+    }
+  }, [updateSocietiesAfterStatusChange, showNotification]);
+
+  const recoverSocietyData = useCallback(async () => {
+    const data = await fetchPendingRequests(apiPaths.USER.PENDINGSOCIETYREQUEST);
+    if (Array.isArray(data)) {
+      setSocieties(data);
+    }
+  }, []);
+
+  // Data processing
+  useEffect(() => {
+    if (Array.isArray(fetchedSocieties)) {
+      setSocieties(fetchedSocieties);
+    }
+  }, [fetchedSocieties]);
+
+  // Derived state
+  const processedSocieties = useMemo(() => 
+    processSocieties(societies),
+    [societies]
+  );
+
+  const filteredSocieties = useMemo(() => 
+    filterSocietiesBySearchTerm(processedSocieties, searchTerm || ''),
+    [processedSocieties, searchTerm]
+  );
+
+  const columns = useMemo(() => 
+    createSocietyColumns(handleStatusChange),
+    [handleStatusChange]
+  );
+
+  // Render
+  return (
+    <>
+      <DataGridContainer 
+        societies={filteredSocieties}
+        columns={columns}
+        colors={colors}
+        loading={societies.length === 0}
+        drawer={drawer}
+      />
+
+      <NotificationAlert 
+        notification={notification}
+        onClose={handleCloseNotification}
+      />
+    </>
   );
 };
 

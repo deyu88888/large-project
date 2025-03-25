@@ -17,213 +17,171 @@ import { SearchContext } from "../../components/layout/SearchContext";
 import { Society } from '../../types';
 import { useNavigate } from "react-router-dom";
 
-/**
- * SocietyList Component
- * Displays a list of societies with options to view details or delete
- */
-const SocietyList: React.FC = () => {
-  // Hooks
-  const theme = useTheme();
-  const colors = tokens(theme.palette.mode);
-  const navigate = useNavigate();
-  const ws = useRef<WebSocket | null>(null);
-  const { drawer } = useSettingsStore();
-  const { searchTerm } = useContext(SearchContext);
+// Constants
+const WS_URL = "ws://127.0.0.1:8000/ws/admin/society/";
+const RECONNECT_DELAY = 5000;
+
+// Interfaces
+interface SocietyDialogState {
+  open: boolean;
+  reason: string;
+  selectedSociety: Society | null;
+}
+
+interface WebSocketRef {
+  current: WebSocket | null;
+}
+
+interface ActionButtonsProps {
+  societyId: string | number;
+  onView: (id: string) => void;
+  onDelete: (society: Society) => void;
+  society: Society;
+}
+
+interface DataGridContainerProps {
+  societies: Society[];
+  columns: GridColDef[];
+  colors: ReturnType<typeof tokens>;
+  drawer: boolean;
+}
+
+interface DeleteDialogProps {
+  state: SocietyDialogState;
+  onClose: () => void;
+  onReasonChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onConfirm: () => void;
+}
+
+interface PresidentCellProps {
+  president: {
+    first_name: string;
+    last_name: string;
+  } | null;
+}
+
+interface MembersCellProps {
+  members: any[] | null;
+}
+
+// Helper functions
+const filterSocietiesBySearchTerm = (societies: Society[], searchTerm: string): Society[] => {
+  if (!searchTerm) return societies;
   
-  // State
-  const [societies, setSocieties] = useState<Society[]>([]);
-  const [socket, setSocket] = useState<WebSocket | null>(null);
-  const [openDialog, setOpenDialog] = useState<boolean>(false);
-  const [selectedSociety, setSelectedSociety] = useState<Society | null>(null);
-  const [reason, setReason] = useState<string>('');
-
-  /**
-   * Fetch societies from API
-   */
-  const fetchSocieties = useCallback(async () => {
-    try {
-      const res = await apiClient.get(apiPaths.USER.SOCIETY);
-      setSocieties(res.data);
-    } catch (error) {
-      console.error("Error fetching societies:", error);
-    }
-  }, []);
-
-  /**
-   * Set up WebSocket connection for real-time updates
-   */
-  const connectWebSocket = useCallback(() => {
-    ws.current = new WebSocket("ws://127.0.0.1:8000/ws/admin/society/");
-
-    ws.current.onopen = () => {
-      console.log("WebSocket Connected for Society List");
-    };
-
-    ws.current.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        console.log("WebSocket Update Received:", data);
-        fetchSocieties();
-      } catch (error) {
-        console.error("Error parsing WebSocket message:", error);
-      }
-    };
-
-    ws.current.onerror = (event) => {
-      console.error("WebSocket Error:", event);
-    };
-
-    ws.current.onclose = (event) => {
-      console.log("WebSocket Disconnected:", event.reason);
-      setTimeout(() => {
-        connectWebSocket();
-      }, 5000);
-    };
-  }, [fetchSocieties]);
-
-  // Initialize data and WebSocket connection
-  useEffect(() => {
-    fetchSocieties();
-    connectWebSocket();
-
-    // Cleanup WebSocket on component unmount
-    return () => {
-      if (ws.current) {
-        ws.current.close();
-      }
-    };
-  }, [connectWebSocket, fetchSocieties]);
-
-  /**
-   * Handle navigation to society detail view
-   */
-  const handleViewSociety = useCallback((societyId: string) => {
-    navigate(`/admin/view-society/${societyId}`);
-  }, [navigate]);
-
-  /**
-   * Open dialog for society deletion confirmation
-   */
-  const handleOpenDialog = useCallback((society: Society) => {
-    setSelectedSociety(society);
-    setOpenDialog(true);
-  }, []);
-
-  /**
-   * Close dialog and reset state
-   */
-  const handleCloseDialog = useCallback(() => {
-    setOpenDialog(false);
-    setSelectedSociety(null);
-    setReason('');
-  }, []);
-
-  /**
-   * Process society deletion with reason
-   */
-  const handleDeleteConfirmed = useCallback(async (reason: string) => {
-    if (selectedSociety !== null) {
-      try {
-        await apiClient.request({
-          method: "DELETE",
-          url: apiPaths.USER.DELETE("Society", selectedSociety.id),
-          data: { reason: reason },
-        });
-        fetchSocieties();
-      } catch (error) {
-        console.error("Error deleting society:", error);
-      }
-      handleCloseDialog();
-    }
-  }, [selectedSociety, fetchSocieties, handleCloseDialog]);
-
-  /**
-   * Handle changes to deletion reason input
-   */
-  const handleReasonChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    setReason(event.target.value);
-  }, []);
-
-  /**
-   * Handle delete confirmation button click
-   */
-  const handleConfirmDelete = useCallback(() => {
-    handleDeleteConfirmed(reason);
-  }, [reason, handleDeleteConfirmed]);
-
-  /**
-   * Filter societies based on search term
-   */
-  const filteredSocieties = useMemo(
-    () =>
-      societies.filter((society) =>
-        Object.values(society)
-          .join(" ")
-          .toLowerCase()
-          .includes((searchTerm || '').toLowerCase())
-      ),
-    [societies, searchTerm]
+  const normalizedSearchTerm = searchTerm.toLowerCase();
+  
+  return societies.filter((society) =>
+    Object.values(society)
+      .join(" ")
+      .toLowerCase()
+      .includes(normalizedSearchTerm)
   );
+};
 
-  /**
-   * Column definitions for the DataGrid
-   */
-  const columns: GridColDef[] = useMemo(() => [
-    { field: "id", headerName: "ID", flex: 0.3 },
-    { field: "name", headerName: "Name", flex: 1 },
-    { field: "description", headerName: "Description", flex: 1 },
-    {
-      field: "president",
-      headerName: "President",
-      flex: 0.8,
-      renderCell: (params: GridRenderCellParams) => {
-        const pres = params.row.president;
-        return pres ? `${pres.first_name} ${pres.last_name}` : "N/A";
-      },
-    },
-    {
-      field: "society_members",
-      headerName: "Members",
-      flex: 0.5,
-      renderCell: (params: GridRenderCellParams) => {
-        const members = params.row.society_members;
-        return Array.isArray(members) ? members.length : "0";
-      },
-    },
-    { field: "approved_by", headerName: "Approved By", flex: 0.5 },
-    { field: "category", headerName: "Category", flex: 1.3 },
-    {
-      field: "actions",
-      headerName: "Actions",
-      width: 170,
-      minWidth: 170,
-      sortable: false,
-      filterable: false,
-      renderCell: (params: GridRenderCellParams) => {
-        const societyId = params.row.id;
-        return (
-          <Box>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={() => handleViewSociety(societyId)}
-              sx={{ marginRight: "8px" }}
-            >
-              View
-            </Button>
-            <Button
-              variant="contained"
-              color="error"
-              onClick={() => handleOpenDialog(params.row)}
-            >
-              Delete
-            </Button>
-          </Box>
-        );
-      },
-    },
-  ], [handleViewSociety, handleOpenDialog]);
+// API functions
+const fetchSocietyList = async (): Promise<Society[]> => {
+  const res = await apiClient.get(apiPaths.USER.SOCIETY);
+  return res.data;
+};
 
+const deleteSociety = async (societyId: number | string, reason: string): Promise<void> => {
+  await apiClient.request({
+    method: "DELETE",
+    url: apiPaths.USER.DELETE("Society", societyId),
+    data: { reason },
+  });
+};
+
+// WebSocket functions
+const setupWebSocketHandlers = (
+  socket: WebSocket,
+  onMessage: () => void
+): void => {
+  socket.onopen = () => {
+    console.log("WebSocket Connected for Society List");
+  };
+
+  socket.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data);
+      console.log("WebSocket Update Received:", data);
+      onMessage();
+    } catch (error) {
+      console.error("Error parsing WebSocket message:", error);
+    }
+  };
+
+  socket.onerror = (event) => {
+    console.error("WebSocket Error:", event);
+  };
+};
+
+const createWebSocketConnection = (
+  url: string,
+  onMessage: () => void,
+  onClose: () => void
+): WebSocket => {
+  const socket = new WebSocket(url);
+  setupWebSocketHandlers(socket, onMessage);
+  
+  socket.onclose = (event) => {
+    console.log("WebSocket Disconnected:", event.reason);
+    onClose();
+  };
+  
+  return socket;
+};
+
+// Component functions
+const PresidentCell: React.FC<PresidentCellProps> = ({ president }) => {
+  return (
+    <Typography>
+      {president ? `${president.first_name} ${president.last_name}` : "N/A"}
+    </Typography>
+  );
+};
+
+const MembersCell: React.FC<MembersCellProps> = ({ members }) => {
+  return (
+    <Typography>
+      {Array.isArray(members) ? members.length : "0"}
+    </Typography>
+  );
+};
+
+const ActionButtons: React.FC<ActionButtonsProps> = ({ 
+  societyId, 
+  onView, 
+  onDelete,
+  society
+}) => {
+  return (
+    <Box>
+      <Button
+        variant="contained"
+        color="primary"
+        onClick={() => onView(societyId.toString())}
+        sx={{ marginRight: "8px" }}
+      >
+        View
+      </Button>
+      <Button
+        variant="contained"
+        color="error"
+        onClick={() => onDelete(society)}
+      >
+        Delete
+      </Button>
+    </Box>
+  );
+};
+
+const DataGridContainer: React.FC<DataGridContainerProps> = ({ 
+  societies, 
+  columns, 
+  colors, 
+  drawer 
+}) => {
   return (
     <Box
       sx={{
@@ -260,45 +218,244 @@ const SocietyList: React.FC = () => {
         }}
       >
         <DataGrid
-          rows={filteredSocieties}
+          rows={societies}
           columns={columns}
           slots={{ toolbar: GridToolbar }}
           autoHeight
           resizeThrottleMs={0}
         />
       </Box>
-      <Dialog open={openDialog} onClose={handleCloseDialog}>
-        <DialogTitle>
-          Please confirm that you would like to delete {selectedSociety?.name}.
-        </DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            You may undo this action in the Activity Log. <br />
-            <strong>Compulsory:</strong> Provide a reason for deleting this student.
-          </DialogContentText>
-          <TextField
-            autoFocus
-            label="Reason for Deletion"
-            fullWidth
-            variant="standard"
-            value={reason}
-            onChange={handleReasonChange}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog} color="primary">
-            Cancel
-          </Button>
-          <Button 
-            onClick={handleConfirmDelete} 
-            color="error"
-            disabled={!reason.trim()}
-          >
-            Confirm
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Box>
+  );
+};
+
+const DeleteDialog: React.FC<DeleteDialogProps> = ({ 
+  state, 
+  onClose, 
+  onReasonChange, 
+  onConfirm 
+}) => {
+  const { open, reason, selectedSociety } = state;
+  const isConfirmDisabled = !reason.trim();
+  
+  return (
+    <Dialog open={open} onClose={onClose}>
+      <DialogTitle>
+        Please confirm that you would like to delete {selectedSociety?.name}.
+      </DialogTitle>
+      <DialogContent>
+        <DialogContentText>
+          You may undo this action in the Activity Log. <br />
+          <strong>Compulsory:</strong> Provide a reason for deleting this student.
+        </DialogContentText>
+        <TextField
+          autoFocus
+          label="Reason for Deletion"
+          fullWidth
+          variant="standard"
+          value={reason}
+          onChange={onReasonChange}
+        />
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose} color="primary">
+          Cancel
+        </Button>
+        <Button 
+          onClick={onConfirm} 
+          color="error"
+          disabled={isConfirmDisabled}
+        >
+          Confirm
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
+
+// Column factory
+const createSocietyColumns = (
+  handleViewSociety: (id: string) => void,
+  handleOpenDialog: (society: Society) => void
+): GridColDef[] => {
+  return [
+    { field: "id", headerName: "ID", flex: 0.3 },
+    { field: "name", headerName: "Name", flex: 1 },
+    { field: "description", headerName: "Description", flex: 1 },
+    {
+      field: "president",
+      headerName: "President",
+      flex: 0.8,
+      renderCell: (params: GridRenderCellParams) => (
+        <PresidentCell president={params.value} />
+      ),
+    },
+    {
+      field: "society_members",
+      headerName: "Members",
+      flex: 0.5,
+      renderCell: (params: GridRenderCellParams) => (
+        <MembersCell members={params.value} />
+      ),
+    },
+    { field: "approved_by", headerName: "Approved By", flex: 0.5 },
+    { field: "category", headerName: "Category", flex: 1.3 },
+    {
+      field: "actions",
+      headerName: "Actions",
+      width: 170,
+      minWidth: 170,
+      sortable: false,
+      filterable: false,
+      renderCell: (params: GridRenderCellParams) => (
+        <ActionButtons 
+          societyId={params.row.id}
+          society={params.row}
+          onView={handleViewSociety}
+          onDelete={handleOpenDialog}
+        />
+      ),
+    },
+  ];
+};
+
+/**
+ * SocietyList Component
+ * Displays a list of societies with options to view details or delete
+ */
+const SocietyList: React.FC = () => {
+  // Hooks
+  const theme = useTheme();
+  const colors = tokens(theme.palette.mode);
+  const navigate = useNavigate();
+  const { drawer } = useSettingsStore();
+  const { searchTerm } = useContext(SearchContext);
+  const ws = useRef<WebSocket | null>(null);
+  
+  // State
+  const [societies, setSocieties] = useState<Society[]>([]);
+  const [dialogState, setDialogState] = useState<SocietyDialogState>({
+    open: false,
+    reason: '',
+    selectedSociety: null
+  });
+
+  // Data loading
+  const loadSocieties = useCallback(async () => {
+    try {
+      const data = await fetchSocietyList();
+      setSocieties(data);
+    } catch (error) {
+      console.error("Error fetching societies:", error);
+    }
+  }, []);
+
+  // WebSocket handling
+  const handleWebSocketMessage = useCallback(() => {
+    loadSocieties();
+  }, [loadSocieties]);
+
+  const reconnectWebSocket = useCallback(() => {
+    setTimeout(() => {
+      connectWebSocket();
+    }, RECONNECT_DELAY);
+  }, []);
+
+  const connectWebSocket = useCallback(() => {
+    if (ws.current) {
+      ws.current.close();
+    }
+    
+    ws.current = createWebSocketConnection(
+      WS_URL,
+      handleWebSocketMessage,
+      reconnectWebSocket
+    );
+  }, [handleWebSocketMessage, reconnectWebSocket]);
+
+  // Initialize data and WebSocket connection
+  useEffect(() => {
+    loadSocieties();
+    connectWebSocket();
+
+    // Cleanup WebSocket on component unmount
+    return () => {
+      if (ws.current) {
+        ws.current.close();
+      }
+    };
+  }, [connectWebSocket, loadSocieties]);
+
+  // Event handlers
+  const handleViewSociety = useCallback((societyId: string) => {
+    navigate(`/admin/view-society/${societyId}`);
+  }, [navigate]);
+
+  const handleOpenDialog = useCallback((society: Society) => {
+    setDialogState({
+      open: true,
+      reason: '',
+      selectedSociety: society
+    });
+  }, []);
+
+  const handleCloseDialog = useCallback(() => {
+    setDialogState({
+      open: false,
+      reason: '',
+      selectedSociety: null
+    });
+  }, []);
+
+  const handleReasonChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    setDialogState(prev => ({
+      ...prev,
+      reason: event.target.value
+    }));
+  }, []);
+
+  const handleDeleteConfirmed = useCallback(async () => {
+    const { selectedSociety, reason } = dialogState;
+    
+    if (!selectedSociety) return;
+    
+    try {
+      await deleteSociety(selectedSociety.id, reason);
+      loadSocieties();
+    } catch (error) {
+      console.error("Error deleting society:", error);
+    }
+    
+    handleCloseDialog();
+  }, [dialogState, loadSocieties, handleCloseDialog]);
+
+  // Derived data
+  const filteredSocieties = useMemo(() => 
+    filterSocietiesBySearchTerm(societies, searchTerm || ''),
+    [societies, searchTerm]
+  );
+
+  const columns = useMemo(() => 
+    createSocietyColumns(handleViewSociety, handleOpenDialog),
+    [handleViewSociety, handleOpenDialog]
+  );
+
+  return (
+    <>
+      <DataGridContainer 
+        societies={filteredSocieties}
+        columns={columns}
+        colors={colors}
+        drawer={drawer}
+      />
+      
+      <DeleteDialog 
+        state={dialogState}
+        onClose={handleCloseDialog}
+        onReasonChange={handleReasonChange}
+        onConfirm={handleDeleteConfirmed}
+      />
+    </>
   );
 };
 

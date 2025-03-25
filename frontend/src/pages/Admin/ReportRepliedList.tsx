@@ -16,9 +16,7 @@ import { useSettingsStore } from "../../stores/settings-store";
 import { apiClient } from "../../api";
 import { useNavigate } from 'react-router-dom';
 
-/**
- * Interface for report with replies
- */
+// Interfaces
 interface ReportWithReplies {
   id: number | string;
   from_student_username: string;
@@ -30,10 +28,62 @@ interface ReportWithReplies {
   [key: string]: any; // For other potential fields
 }
 
-/**
- * Custom NoRowsOverlay component for DataGrid
- */
-const CustomNoRowsOverlay: React.FC<{ loading: boolean }> = ({ loading }) => {
+interface NoRowsOverlayProps {
+  loading: boolean;
+}
+
+interface ReportState {
+  items: ReportWithReplies[];
+  loading: boolean;
+  error: string | null;
+}
+
+interface DataGridContainerProps {
+  reports: ReportWithReplies[];
+  columns: GridColDef[];
+  loading: boolean;
+  colors: ReturnType<typeof tokens>;
+}
+
+interface ErrorAlertProps {
+  message: string;
+}
+
+// Helper functions
+const filterReportsBySearchTerm = (reports: ReportWithReplies[], searchTerm: string): ReportWithReplies[] => {
+  if (!searchTerm) return reports;
+  
+  const normalizedSearchTerm = searchTerm.toLowerCase();
+  
+  return reports.filter((report) =>
+    Object.values(report)
+      .join(" ")
+      .toLowerCase()
+      .includes(normalizedSearchTerm)
+  );
+};
+
+const formatDateString = (dateStr: string): string => {
+  try {
+    return new Date(dateStr).toLocaleString();
+  } catch (e) {
+    return "Invalid date";
+  }
+};
+
+const truncateText = (text: string, maxLength: number): string => {
+  if (!text) return '';
+  return text.length > maxLength ? `${text.substring(0, maxLength - 3)}...` : text;
+};
+
+// API functions
+const fetchReportReplies = async (): Promise<ReportWithReplies[]> => {
+  const response = await apiClient.get("/api/admin/reports-replied");
+  return response.data || [];
+};
+
+// Component functions
+const CustomNoRowsOverlay: React.FC<NoRowsOverlayProps> = ({ loading }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   
@@ -46,84 +96,86 @@ const CustomNoRowsOverlay: React.FC<{ loading: boolean }> = ({ loading }) => {
   );
 };
 
-/**
- * ReportRepliedList component displays reports that have been replied to
- */
-const ReportRepliedList: React.FC = () => {
-  const theme = useTheme();
-  const colors = tokens(theme.palette.mode);
-  const navigate = useNavigate();
-  const { searchTerm } = useContext(SearchContext);
-  const { drawer } = useSettingsStore();
-  
-  // Component state
-  const [reportsWithReplies, setReportsWithReplies] = useState<ReportWithReplies[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  /**
-   * Fetch reports with replies from the API
-   */
-  const fetchReportsWithReplies = useCallback(async () => {
-    try {
-      setLoading(true);
-      const response = await apiClient.get("/api/admin/reports-replied");
-      setReportsWithReplies(response.data || []);
-      setError(null);
-    } catch (err) {
-      console.error("Error fetching reports with replies:", err);
-      setError("Failed to fetch reports with replies. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  // Load data on component mount
-  useEffect(() => {
-    fetchReportsWithReplies();
-  }, [fetchReportsWithReplies]);
-
-  /**
-   * Navigate to report thread detail view
-   */
-  const handleViewThread = useCallback((reportId: string | number) => {
-    navigate(`/admin/report-thread/${reportId}`);
-  }, [navigate]);
-
-  /**
-   * Filter reports based on search term
-   */
-  const filteredReports = useMemo(() => 
-    reportsWithReplies.filter((report) =>
-      Object.values(report)
-        .join(" ")
-        .toLowerCase()
-        .includes((searchTerm || '').toLowerCase())
-    ),
-    [reportsWithReplies, searchTerm]
+const ErrorAlert: React.FC<ErrorAlertProps> = ({ message }) => {
+  return (
+    <Alert severity="error" sx={{ mb: 2 }}>
+      {message}
+    </Alert>
   );
+};
 
-  /**
-   * Render truncated text with ellipsis
-   */
-  const renderTruncatedText = useCallback((text: string, maxLength: number) => {
-    if (!text) return '';
-    return text.length > maxLength ? `${text.substring(0, maxLength - 3)}...` : text;
-  }, []);
+const FullPageErrorAlert: React.FC<ErrorAlertProps> = ({ message }) => {
+  return (
+    <Box p={2} display="flex" justifyContent="center">
+      <Alert severity="error">{message}</Alert>
+    </Box>
+  );
+};
 
-  /**
-   * Format date string to locale format
-   */
-  const formatDate = useCallback((dateStr: string) => {
-    try {
-      return new Date(dateStr).toLocaleString();
-    } catch (e) {
-      return "Invalid date";
-    }
-  }, []);
+const ActionButton: React.FC<{ reportId: string | number; onClick: (id: string | number) => void }> = ({ reportId, onClick }) => {
+  return (
+    <Button
+      variant="contained"
+      color="primary"
+      onClick={() => onClick(reportId)}
+      size="small"
+    >
+      View Thread
+    </Button>
+  );
+};
 
-  // Column definitions for the data grid
-  const columns: GridColDef[] = useMemo(() => [
+const DataGridContainer: React.FC<DataGridContainerProps> = ({ reports, columns, loading, colors }) => {
+  return (
+    <Box
+      sx={{
+        height: "78vh",
+        "& .MuiDataGrid-root": { border: "none" },
+        "& .MuiDataGrid-cell": { borderBottom: "none" },
+        "& .MuiDataGrid-columnHeaders": {
+          backgroundColor: colors.blueAccent[700],
+          borderBottom: "none",
+        },
+        "& .MuiDataGrid-columnHeader": {
+          whiteSpace: "normal",
+          wordBreak: "break-word",
+        },
+        "& .MuiDataGrid-virtualScroller": {
+          backgroundColor: colors.primary[400],
+        },
+        "& .MuiDataGrid-footerContainer": {
+          borderTop: "none",
+          backgroundColor: colors.blueAccent[700],
+        },
+        "& .MuiCheckbox-root": {
+          color: `${colors.blueAccent[400]} !important`,
+        },
+        "& .MuiDataGrid-toolbarContainer .MuiButton-text": {
+          color: `${colors.blueAccent[500]} !important`,
+        },
+      }}
+    >
+      <DataGrid
+        rows={reports}
+        columns={columns}
+        slots={{ toolbar: GridToolbar }}
+        resizeThrottleMs={0}
+        autoHeight
+        loading={loading}
+        disableRowSelectionOnClick
+        initialState={{
+          pagination: { paginationModel: { pageSize: 100 } },
+        }}
+      />
+    </Box>
+  );
+};
+
+// Column factory
+const createReportColumns = (
+  handleViewThread: (id: string | number) => void,
+): GridColDef[] => {
+  return [
     { field: "id", headerName: "ID", flex: 0.5 },
     { field: "from_student_username", headerName: "Reporter", flex: 1 },
     { field: "report_type", headerName: "Report Type", flex: 1 },
@@ -138,7 +190,7 @@ const ReportRepliedList: React.FC = () => {
       field: "latest_reply_date",
       headerName: "Latest Reply Date",
       flex: 1.5,
-      valueFormatter: (params) => formatDate(params.value as string),
+      valueFormatter: (params) => formatDateString(params.value as string),
     },
     {
       field: "action",
@@ -147,27 +199,75 @@ const ReportRepliedList: React.FC = () => {
       sortable: false,
       filterable: false,
       renderCell: (params: GridRenderCellParams) => (
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={() => handleViewThread(params.row.id)}
-          size="small"
-        >
-          View Thread
-        </Button>
+        <ActionButton reportId={params.row.id} onClick={handleViewThread} />
       ),
     }
-  ], [handleViewThread, renderTruncatedText, formatDate]);
+  ];
+};
 
-  // Early return if there's an error and no data
-  if (error && !reportsWithReplies.length) {
-    return (
-      <Box p={2} display="flex" justifyContent="center">
-        <Alert severity="error">{error}</Alert>
-      </Box>
-    );
+// Main component
+const ReportRepliedList: React.FC = () => {
+  const theme = useTheme();
+  const colors = tokens(theme.palette.mode);
+  const navigate = useNavigate();
+  const { searchTerm } = useContext(SearchContext);
+  const { drawer } = useSettingsStore();
+  
+  // State initialization
+  const [reportState, setReportState] = useState<ReportState>({
+    items: [],
+    loading: true,
+    error: null
+  });
+
+  // Event handlers
+  const handleViewThread = useCallback((reportId: string | number) => {
+    navigate(`/admin/report-thread/${reportId}`);
+  }, [navigate]);
+
+  const loadReportReplies = useCallback(async () => {
+    setReportState(prev => ({ ...prev, loading: true }));
+    
+    try {
+      const data = await fetchReportReplies();
+      setReportState({
+        items: data,
+        loading: false,
+        error: null
+      });
+    } catch (err) {
+      console.error("Error fetching reports with replies:", err);
+      setReportState({
+        items: [],
+        loading: false,
+        error: "Failed to fetch reports with replies. Please try again."
+      });
+    }
+  }, []);
+
+  // Initialize data on component mount
+  useEffect(() => {
+    loadReportReplies();
+  }, [loadReportReplies]);
+
+  // Derived state
+  const filteredReports = useMemo(() => 
+    filterReportsBySearchTerm(reportState.items, searchTerm || ''),
+    [reportState.items, searchTerm]
+  );
+
+  // Column definitions
+  const columns = useMemo(() => 
+    createReportColumns(handleViewThread),
+    [handleViewThread]
+  );
+
+  // Handle error state with no data
+  if (reportState.error && !reportState.items.length) {
+    return <FullPageErrorAlert message={reportState.error} />;
   }
 
+  // Render component
   return (
     <Box
       sx={{
@@ -175,53 +275,14 @@ const ReportRepliedList: React.FC = () => {
         maxWidth: drawer ? `calc(100% - 3px)` : "100%",
       }}
     >
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
+      {reportState.error && <ErrorAlert message={reportState.error} />}
       
-      <Box
-        sx={{
-          height: "78vh",
-          "& .MuiDataGrid-root": { border: "none" },
-          "& .MuiDataGrid-cell": { borderBottom: "none" },
-          "& .MuiDataGrid-columnHeaders": {
-            backgroundColor: colors.blueAccent[700],
-            borderBottom: "none",
-          },
-          "& .MuiDataGrid-columnHeader": {
-            whiteSpace: "normal",
-            wordBreak: "break-word",
-          },
-          "& .MuiDataGrid-virtualScroller": {
-            backgroundColor: colors.primary[400],
-          },
-          "& .MuiDataGrid-footerContainer": {
-            borderTop: "none",
-            backgroundColor: colors.blueAccent[700],
-          },
-          "& .MuiCheckbox-root": {
-            color: `${colors.blueAccent[400]} !important`,
-          },
-          "& .MuiDataGrid-toolbarContainer .MuiButton-text": {
-            color: `${colors.blueAccent[500]} !important`,
-          },
-        }}
-      >
-        <DataGrid
-          rows={filteredReports}
-          columns={columns}
-          slots={{ toolbar: GridToolbar }}
-          resizeThrottleMs={0}
-          autoHeight
-          loading={loading}
-          disableRowSelectionOnClick
-          initialState={{
-            pagination: { paginationModel: { pageSize: 100 } },
-          }}
-        />
-      </Box>
+      <DataGridContainer 
+        reports={filteredReports}
+        columns={columns}
+        loading={reportState.loading}
+        colors={colors}
+      />
     </Box>
   );
 };

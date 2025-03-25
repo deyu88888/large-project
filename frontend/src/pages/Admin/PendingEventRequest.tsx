@@ -16,17 +16,18 @@ import { fetchPendingRequests } from "./utils";
 import { apiPaths } from "../../api";
 import { updateRequestStatus } from "../../api/requestApi";
 
-// Define interfaces for type safety
+// Interfaces
 interface Event {
   id: number;
   title: string;
   description: string;
+  main_description: string;
   date: string;
-  startTime: string;
+  start_time: string;
   duration: string;
-  hostedBy: string;
+  hosted_by: string;
   location: string;
-  [key: string]: any; // Allow for additional properties
+  [key: string]: any;
 }
 
 interface AlertState {
@@ -35,66 +36,141 @@ interface AlertState {
   severity: 'success' | 'error';
 }
 
-/**
- * PendingEventRequest Component
- * Displays and manages pending event requests that need approval or rejection
- */
-const PendingEventRequest: React.FC = () => {
-  const theme = useTheme();
-  const colors = tokens(theme.palette.mode);
-  const { searchTerm } = useContext(SearchContext);
-  const { drawer } = useSettingsStore();
+interface ActionButtonsProps {
+  id: number;
+  onStatusChange: (id: number, status: "Approved" | "Rejected") => void;
+}
+
+interface EventNotificationProps {
+  alert: AlertState;
+  onClose: () => void;
+}
+
+interface DataGridCustomProps {
+  events: Event[];
+  columns: GridColDef[];
+  drawer: boolean;
+  colors: ReturnType<typeof tokens>;
+}
+
+// Helper functions
+const filterEventsBySearchTerm = (events: Event[], searchTerm: string): Event[] => {
+  if (!searchTerm) return events;
   
-  // State for alerts/notifications
-  const [alert, setAlert] = useState<AlertState>({
-    open: false,
-    message: '',
+  const normalizedSearchTerm = searchTerm.toLowerCase();
+  
+  return events.filter((event) =>
+    Object.values(event)
+      .join(" ")
+      .toLowerCase()
+      .includes(normalizedSearchTerm)
+  );
+};
+
+const createSuccessAlert = (message: string): AlertState => {
+  return {
+    open: true,
+    message,
     severity: 'success'
-  });
+  };
+};
 
-  // Fetch pending event requests using WebSocket
-  const events = useFetchWebSocket<Event[]>(
-    () => fetchPendingRequests(apiPaths.EVENTS.PENDINGEVENTREQUEST),
-    'event'
+const createErrorAlert = (message: string): AlertState => {
+  return {
+    open: true,
+    message,
+    severity: 'error'
+  };
+};
+
+// Component functions
+const ActionButtons: React.FC<ActionButtonsProps> = ({ id, onStatusChange }) => {
+  return (
+    <Box>
+      <Button
+        variant="contained"
+        color="success"
+        onClick={() => onStatusChange(id, "Approved")}
+        sx={{ marginRight: "8px" }}
+      >
+        Accept
+      </Button>
+      <Button 
+        variant="contained" 
+        color="error" 
+        onClick={() => onStatusChange(id, "Rejected")}
+      >
+        Reject
+      </Button>
+    </Box>
   );
+};
 
-  // Filter events based on search term - memoized for performance
-  const filteredEvents = useMemo(() => 
-    events.filter((event) =>
-      Object.values(event)
-        .join(" ")
-        .toLowerCase()
-        .includes((searchTerm || '').toLowerCase())
-    ),
-    [events, searchTerm]
+const EventNotification: React.FC<EventNotificationProps> = ({ alert, onClose }) => {
+  return (
+    <Snackbar 
+      open={alert.open} 
+      autoHideDuration={6000} 
+      onClose={onClose}
+      anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+    >
+      <Alert 
+        onClose={onClose} 
+        severity={alert.severity} 
+        variant="filled"
+        sx={{ width: '100%' }}
+      >
+        {alert.message}
+      </Alert>
+    </Snackbar>
   );
+};
 
-  // Handle status change (approve/reject)
-  const handleStatusChange = useCallback(async (id: number, status: "Approved" | "Rejected") => {
-    try {
-      await updateRequestStatus(id, status, apiPaths.EVENTS.UPDATEENEVENTREQUEST);
-      setAlert({
-        open: true,
-        message: `Event ${status.toLowerCase()} successfully.`,
-        severity: 'success'
-      });
-    } catch (error) {
-      console.error(`Error updating event status:`, error);
-      setAlert({
-        open: true,
-        message: `Failed to ${status.toLowerCase()} event.`,
-        severity: 'error'
-      });
-    }
-  }, []);
+const EventsDataGrid: React.FC<DataGridCustomProps> = ({ events, columns, drawer, colors }) => {
+  return (
+    <Box
+      sx={{
+        height: "78vh",
+        "& .MuiDataGrid-root": { border: "none" },
+        "& .MuiDataGrid-cell": { borderBottom: "none" },
+        "& .MuiDataGrid-columnHeaders": {
+          backgroundColor: colors.blueAccent[700],
+          borderBottom: "none",
+        },
+        "& .MuiDataGrid-columnHeader": { 
+          whiteSpace: "normal", 
+          wordBreak: "break-word" 
+        },
+        "& .MuiDataGrid-virtualScroller": { 
+          backgroundColor: colors.primary[400] 
+        },
+        "& .MuiDataGrid-footerContainer": {
+          borderTop: "none",
+          backgroundColor: colors.blueAccent[700],
+        },
+        "& .MuiDataGrid-toolbarContainer .MuiButton-text": {
+          color: `${colors.blueAccent[500]} !important`,
+        },
+      }}
+    >
+      <DataGrid
+        rows={events}
+        columns={columns}
+        slots={{ toolbar: GridToolbar }}
+        resizeThrottleMs={0}
+        autoHeight
+        disableRowSelectionOnClick
+        initialState={{
+          pagination: { paginationModel: { pageSize: 100 } },
+        }}
+      />
+    </Box>
+  );
+};
 
-  // Close alert handler
-  const handleCloseAlert = useCallback(() => {
-    setAlert(prev => ({ ...prev, open: false }));
-  }, []);
-
-  // Column definitions
-  const columns: GridColDef[] = [
+// Column definition factory
+const createEventColumns = (handleStatusChange: (id: number, status: "Approved" | "Rejected") => void): GridColDef[] => {
+  return [
     { field: "id", headerName: "ID", flex: 0.3 },
     { field: "title", headerName: "Title", flex: 1 },
     { field: "main_description", headerName: "Description", flex: 2 },
@@ -112,88 +188,82 @@ const PendingEventRequest: React.FC = () => {
       sortable: false,
       filterable: false,
       renderCell: (params: GridRenderCellParams<any, Event>) => (
-        <Box>
-          <Button
-            variant="contained"
-            color="success"
-            onClick={() => handleStatusChange(params.row.id, "Approved")}
-            sx={{ marginRight: "8px" }}
-          >
-            Accept
-          </Button>
-          <Button 
-            variant="contained" 
-            color="error" 
-            onClick={() => handleStatusChange(params.row.id, "Rejected")}
-          >
-            Reject
-          </Button>
-        </Box>
+        <ActionButtons 
+          id={params.row.id} 
+          onStatusChange={handleStatusChange} 
+        />
       ),
     },
   ];
+};
 
+// Main component
+const PendingEventRequest: React.FC = () => {
+  const theme = useTheme();
+  const colors = tokens(theme.palette.mode);
+  const { searchTerm } = useContext(SearchContext);
+  const { drawer } = useSettingsStore();
+  
+  // State for alerts
+  const [alert, setAlert] = useState<AlertState>({
+    open: false,
+    message: '',
+    severity: 'success'
+  });
+
+  // Fetch pending events
+  const events = useFetchWebSocket<Event[]>(
+    () => fetchPendingRequests(apiPaths.EVENTS.PENDINGEVENTREQUEST),
+    'event'
+  );
+
+  // Event handlers
+  const handleStatusChange = useCallback(async (id: number, status: "Approved" | "Rejected") => {
+    try {
+      await updateRequestStatus(id, status, apiPaths.EVENTS.UPDATEENEVENTREQUEST);
+      const successMessage = `Event ${status.toLowerCase()} successfully.`;
+      setAlert(createSuccessAlert(successMessage));
+    } catch (error) {
+      console.error(`Error updating event status:`, error);
+      const errorMessage = `Failed to ${status.toLowerCase()} event.`;
+      setAlert(createErrorAlert(errorMessage));
+    }
+  }, []);
+
+  const handleCloseAlert = useCallback(() => {
+    setAlert(prev => ({ ...prev, open: false }));
+  }, []);
+
+  // Derived state
+  const filteredEvents = useMemo(() => 
+    filterEventsBySearchTerm(events, searchTerm || ''),
+    [events, searchTerm]
+  );
+
+  const columns = useMemo(() => 
+    createEventColumns(handleStatusChange),
+    [handleStatusChange]
+  );
+
+  // Render
   return (
     <Box
-    sx={{
-      height: "calc(100vh - 64px)",
-      maxWidth: drawer ? `calc(100% - 3px)` : "100%",
-    }}
+      sx={{
+        height: "calc(100vh - 64px)",
+        maxWidth: drawer ? `calc(100% - 3px)` : "100%",
+      }}
     >      
-      <Box
-        sx={{
-          height: "78vh",
-          "& .MuiDataGrid-root": { border: "none" },
-          "& .MuiDataGrid-cell": { borderBottom: "none" },
-          "& .MuiDataGrid-columnHeaders": {
-            backgroundColor: colors.blueAccent[700],
-            borderBottom: "none",
-          },
-          "& .MuiDataGrid-columnHeader": { 
-            whiteSpace: "normal", 
-            wordBreak: "break-word" 
-          },
-          "& .MuiDataGrid-virtualScroller": { 
-            backgroundColor: colors.primary[400] 
-          },
-          "& .MuiDataGrid-footerContainer": {
-            borderTop: "none",
-            backgroundColor: colors.blueAccent[700],
-          },
-          "& .MuiDataGrid-toolbarContainer .MuiButton-text": {
-            color: `${colors.blueAccent[500]} !important`,
-          },
-        }}
-      >
-        <DataGrid
-          rows={filteredEvents}
-          columns={columns}
-          slots={{ toolbar: GridToolbar }}
-          resizeThrottleMs={0}
-          autoHeight
-          disableRowSelectionOnClick
-          initialState={{
-            pagination: { paginationModel: { pageSize: 100 } },
-          }}
-        />
-      </Box>
+      <EventsDataGrid 
+        events={filteredEvents}
+        columns={columns}
+        drawer={drawer}
+        colors={colors}
+      />
       
-      {/* Alert for success/failure messages */}
-      <Snackbar 
-        open={alert.open} 
-        autoHideDuration={6000} 
+      <EventNotification 
+        alert={alert}
         onClose={handleCloseAlert}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-      >
-        <Alert 
-          onClose={handleCloseAlert} 
-          severity={alert.severity} 
-          variant="filled"
-          sx={{ width: '100%' }}
-        >
-          {alert.message}
-        </Alert>
-      </Snackbar>
+      />
     </Box>
   );
 };

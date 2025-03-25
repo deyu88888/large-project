@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useContext, useCallback, useMemo } from "react";
 import { 
   Box, 
@@ -21,180 +19,192 @@ import { useSettingsStore } from "../../stores/settings-store";
 import { Student } from "../../types";
 import { useNavigate } from "react-router-dom";
 
-/**
- * StudentList component displays a list of all students with filtering and actions
- */
-const StudentList: React.FC = () => {
-  const theme = useTheme();
-  const colors = tokens(theme.palette.mode);
-  const navigate = useNavigate();
-  const { searchTerm } = useContext(SearchContext);
-  const { drawer } = useSettingsStore();
+// Interfaces
+interface StudentListState {
+  students: Student[];
+  loading: boolean;
+}
+
+interface DialogState {
+  open: boolean;
+  selectedStudent: Student | null;
+  reason: string;
+}
+
+interface ActionButtonsProps {
+  studentId: number | string;
+  student: Student;
+  onView: (id: string) => void;
+  onDelete: (student: Student) => void;
+}
+
+interface DeleteDialogProps {
+  dialogState: DialogState;
+  onClose: () => void;
+  onReasonChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onConfirm: () => void;
+}
+
+interface DataGridContainerProps {
+  students: Student[];
+  columns: GridColDef[];
+  loading: boolean;
+  colors: ReturnType<typeof tokens>;
+  drawer: boolean;
+}
+
+interface PageTitleProps {
+  title: string;
+  colors: ReturnType<typeof tokens>;
+}
+
+interface PresidentCellProps {
+  isPresident: boolean;
+  presidentOf: string[] | string | null;
+}
+
+interface BooleanCellProps {
+  value: boolean;
+}
+
+// Helper functions
+const filterStudentsBySearchTerm = (students: Student[], searchTerm: string): Student[] => {
+  if (!searchTerm) return students;
   
-  // State management
-  const [students, setStudents] = useState<Student[]>([]);
-  const [openDialog, setOpenDialog] = useState(false);
-  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
-  const [reason, setReason] = useState('');
-  const [loading, setLoading] = useState(true);
-
-  /**
-   * Fetch students data from API
-   */
-  const fetchStudents = useCallback(async () => {
-    try {
-      setLoading(true);
-      const res = await apiClient.get(apiPaths.USER.STUDENTS);
-      setStudents(res.data || []);
-    } catch (error) {
-      console.error("Error fetching students:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchStudents();
-  }, [fetchStudents]);
-
-  /**
-   * Filter students based on search term
-   */
-  const filteredStudents = useMemo(() => 
-    students.filter((student) =>
-      Object.values(student)
-        .join(" ")
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase())
-    ),
-    [students, searchTerm]
+  const normalizedSearchTerm = searchTerm.toLowerCase();
+  
+  return students.filter((student) =>
+    Object.values(student)
+      .join(" ")
+      .toLowerCase()
+      .includes(normalizedSearchTerm)
   );
+};
 
-  /**
-   * Handle navigation to student detail page
-   */
-  const handleViewStudent = useCallback((studentId: string) => {
-    navigate(`/admin/view-student/${studentId}`);
-  }, [navigate]);
+// API functions
+const fetchStudentList = async (): Promise<Student[]> => {
+  const res = await apiClient.get(apiPaths.USER.STUDENTS);
+  return res.data || [];
+};
 
-  /**
-   * Open delete confirmation dialog
-   */
-  const handleOpenDialog = useCallback((student: Student) => {
-    setSelectedStudent(student);
-    setOpenDialog(true);
-  }, []);
+const deleteStudent = async (studentId: number | string, reason: string): Promise<void> => {
+  await apiClient.request({
+    method: "DELETE",
+    url: apiPaths.USER.DELETE("Student", studentId),
+    data: { reason },
+  });
+};
 
-  /**
-   * Close delete confirmation dialog
-   */
-  const handleCloseDialog = useCallback(() => {
-    setOpenDialog(false);
-    setSelectedStudent(null);
-    setReason('');
-  }, []);
+// Component functions
+const PageTitle: React.FC<PageTitleProps> = ({ title, colors }) => {
+  return (
+    <Typography
+      variant="h1"
+      sx={{
+        color: colors.grey[100],
+        fontSize: "1.75rem",
+        fontWeight: 800,
+        marginBottom: "1rem",
+      }}
+    >
+      {title}
+    </Typography>
+  );
+};
 
-  /**
-   * Handle student deletion
-   */
-  const handleDeleteConfirmed = useCallback(async (reason: string) => {
-    if (!selectedStudent) return;
-    
-    try {
-      await apiClient.request({
-        method: "DELETE",
-        url: apiPaths.USER.DELETE("Student", selectedStudent.id),
-        data: { reason },
-      });
-      fetchStudents();
-    } catch (error) {
-      console.error("Error deleting student:", error);
-    }
-    handleCloseDialog();
-  }, [selectedStudent, fetchStudents, handleCloseDialog]);
+const ActionButtons: React.FC<ActionButtonsProps> = ({ 
+  studentId, 
+  student, 
+  onView, 
+  onDelete 
+}) => {
+  return (
+    <Box>
+      <Button
+        variant="contained"
+        color="primary"
+        onClick={() => onView(studentId.toString())}
+        sx={{ marginRight: "8px" }}
+      >
+        View
+      </Button>
+      <Button
+        variant="contained"
+        color="error"
+        onClick={() => onDelete(student)}
+      >
+        Delete
+      </Button>
+    </Box>
+  );
+};
 
-  /**
-   * Handle reason text field change
-   */
-  const handleReasonChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    setReason(event.target.value);
-  }, []);
+const BooleanCell: React.FC<BooleanCellProps> = ({ value }) => {
+  return <>{value ? "Yes" : "No"}</>;
+};
 
-  /**
-   * Handle delete confirmation button click
-   */
-  const handleConfirmDelete = useCallback(() => {
-    handleDeleteConfirmed(reason);
-  }, [handleDeleteConfirmed, reason]);
-
-  // DataGrid columns configuration
-  const columns: GridColDef[] = [
-    { field: "id", headerName: "ID", flex: 0.3 },
-    { field: "username", headerName: "Username", flex: 1 },
-    { field: "first_name", headerName: "First Name", flex: 1 },
-    { field: "last_name", headerName: "Last Name", flex: 1 },
-    { field: "email", headerName: "Email", flex: 1 },
-    {
-      field: "is_active",
-      headerName: "Active",
-      renderCell: (params: GridRenderCellParams<Student>) => 
-        params.row.isActive ? "Yes" : "No",
-      flex: 1,
-    },
-    { field: "role", headerName: "Role", flex: 1 },
-    { field: "major", headerName: "Major", flex: 1 },
-    {
-      field: "president_of",
-      headerName: "President Of",
-      renderCell: (params: GridRenderCellParams<Student>) => {
-        const { is_president, president_of } = params.row;
-        if (!is_president) {
-          return "N/A";
-        }
-        return Array.isArray(president_of)
-          ? president_of.join(", ")
-          : president_of || "N/A";
-      },
-      flex: 1,
-    },
-    
-    {
-      field: "is_president",
-      headerName: "Is President",
-      renderCell: (params: GridRenderCellParams<Student>) => 
-        params.row.is_president ? "Yes" : "No",
-      flex: 1,
-    },
-    {
-      field: "actions",
-      headerName: "Actions",
-      width: 170,
-      minWidth: 170,
-      sortable: false,
-      filterable: false,
-      renderCell: (params: GridRenderCellParams<Student>) => (
-        <Box>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={() => handleViewStudent(params.row.id.toString())}
-            sx={{ marginRight: "8px" }}
-          >
-            View
-          </Button>
-          <Button
-            variant="contained"
-            color="error"
-            onClick={() => handleOpenDialog(params.row)}
-          >
-            Delete
-          </Button>
-        </Box>
-      ),
-    },
-  ];
+const PresidentCell: React.FC<PresidentCellProps> = ({ isPresident, presidentOf }) => {
+  if (!isPresident) {
+    return <>N/A</>;
+  }
   
-  // DataGrid styles
+  if (Array.isArray(presidentOf)) {
+    return <>{presidentOf.join(", ")}</>;
+  }
+  
+  return <>{presidentOf || "N/A"}</>;
+};
+
+const DeleteDialog: React.FC<DeleteDialogProps> = ({ 
+  dialogState, 
+  onClose, 
+  onReasonChange, 
+  onConfirm 
+}) => {
+  const { open, selectedStudent, reason } = dialogState;
+  
+  return (
+    <Dialog open={open} onClose={onClose}>
+      <DialogTitle>
+        Please confirm that you would like to delete {selectedStudent?.first_name} {selectedStudent?.last_name}.
+      </DialogTitle>
+      <DialogContent>
+        <DialogContentText>
+          You may undo this action in the Activity Log. <br />
+          <strong>Compulsory:</strong> Provide a reason for deleting this student.
+        </DialogContentText>
+        <TextField
+          autoFocus
+          label="Reason for Deletion"
+          fullWidth
+          variant="standard"
+          value={reason}
+          onChange={onReasonChange}
+        />
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose} color="primary">
+          Cancel
+        </Button>
+        <Button 
+          onClick={onConfirm} 
+          color="error"
+          disabled={!reason.trim()}
+        >
+          Confirm
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
+
+const DataGridContainer: React.FC<DataGridContainerProps> = ({
+  students,
+  columns,
+  loading,
+  colors,
+  drawer
+}) => {
   const dataGridStyles = {
     height: "78vh",
     "& .MuiDataGrid-root": { border: "none" },
@@ -223,70 +233,202 @@ const StudentList: React.FC = () => {
   };
 
   return (
+    <Box sx={dataGridStyles}>
+      <DataGrid
+        rows={students}
+        columns={columns}
+        slots={{ toolbar: GridToolbar }}
+        resizeThrottleMs={0}
+        autoHeight
+        loading={loading}
+        disableRowSelectionOnClick
+        initialState={{
+          pagination: { paginationModel: { pageSize: 100 } },
+        }}
+      />
+    </Box>
+  );
+};
+
+// Column factory
+const createStudentColumns = (
+  handleViewStudent: (id: string) => void,
+  handleOpenDialog: (student: Student) => void
+): GridColDef[] => {
+  return [
+    { field: "id", headerName: "ID", flex: 0.3 },
+    { field: "username", headerName: "Username", flex: 1 },
+    { field: "first_name", headerName: "First Name", flex: 1 },
+    { field: "last_name", headerName: "Last Name", flex: 1 },
+    { field: "email", headerName: "Email", flex: 1 },
+    {
+      field: "is_active",
+      headerName: "Active",
+      renderCell: (params: GridRenderCellParams<Student>) => (
+        <BooleanCell value={params.row.isActive} />
+      ),
+      flex: 1,
+    },
+    { field: "role", headerName: "Role", flex: 1 },
+    { field: "major", headerName: "Major", flex: 1 },
+    {
+      field: "president_of",
+      headerName: "President Of",
+      renderCell: (params: GridRenderCellParams<Student>) => (
+        <PresidentCell 
+          isPresident={params.row.is_president} 
+          presidentOf={params.row.president_of} 
+        />
+      ),
+      flex: 1,
+    },
+    {
+      field: "is_president",
+      headerName: "Is President",
+      renderCell: (params: GridRenderCellParams<Student>) => (
+        <BooleanCell value={params.row.is_president} />
+      ),
+      flex: 1,
+    },
+    {
+      field: "actions",
+      headerName: "Actions",
+      width: 170,
+      minWidth: 170,
+      sortable: false,
+      filterable: false,
+      renderCell: (params: GridRenderCellParams<Student>) => (
+        <ActionButtons 
+          studentId={params.row.id}
+          student={params.row}
+          onView={handleViewStudent}
+          onDelete={handleOpenDialog}
+        />
+      ),
+    },
+  ];
+};
+
+/**
+ * StudentList component displays a list of all students with filtering and actions
+ */
+const StudentList: React.FC = () => {
+  const theme = useTheme();
+  const colors = tokens(theme.palette.mode);
+  const navigate = useNavigate();
+  const { searchTerm } = useContext(SearchContext);
+  const { drawer } = useSettingsStore();
+  
+  // State
+  const [studentState, setStudentState] = useState<StudentListState>({
+    students: [],
+    loading: true
+  });
+  
+  const [dialogState, setDialogState] = useState<DialogState>({
+    open: false,
+    selectedStudent: null,
+    reason: ''
+  });
+
+  // Data loading
+  const loadStudents = useCallback(async () => {
+    setStudentState(prev => ({ ...prev, loading: true }));
+    
+    try {
+      const data = await fetchStudentList();
+      setStudentState({
+        students: data,
+        loading: false
+      });
+    } catch (error) {
+      console.error("Error fetching students:", error);
+      setStudentState(prev => ({ ...prev, loading: false }));
+    }
+  }, []);
+
+  // Initialize data
+  useEffect(() => {
+    loadStudents();
+  }, [loadStudents]);
+
+  // Event handlers
+  const handleViewStudent = useCallback((studentId: string) => {
+    navigate(`/admin/view-student/${studentId}`);
+  }, [navigate]);
+
+  const handleOpenDialog = useCallback((student: Student) => {
+    setDialogState({
+      open: true,
+      selectedStudent: student,
+      reason: ''
+    });
+  }, []);
+
+  const handleCloseDialog = useCallback(() => {
+    setDialogState({
+      open: false,
+      selectedStudent: null,
+      reason: ''
+    });
+  }, []);
+
+  const handleReasonChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    setDialogState(prev => ({
+      ...prev,
+      reason: event.target.value
+    }));
+  }, []);
+
+  const handleDeleteConfirmed = useCallback(async () => {
+    const { selectedStudent, reason } = dialogState;
+    
+    if (!selectedStudent) return;
+    
+    try {
+      await deleteStudent(selectedStudent.id, reason);
+      loadStudents();
+    } catch (error) {
+      console.error("Error deleting student:", error);
+    }
+    
+    handleCloseDialog();
+  }, [dialogState, loadStudents, handleCloseDialog]);
+
+  // Derived state
+  const filteredStudents = useMemo(() => 
+    filterStudentsBySearchTerm(studentState.students, searchTerm || ''),
+    [studentState.students, searchTerm]
+  );
+
+  const columns = useMemo(() => 
+    createStudentColumns(handleViewStudent, handleOpenDialog),
+    [handleViewStudent, handleOpenDialog]
+  );
+
+  return (
     <Box
       sx={{
         height: "calc(100vh - 64px)",
         maxWidth: drawer ? `calc(100% - 3px)` : "100%",
       }}
     >
-      <Typography
-        variant="h1"
-        sx={{
-          color: colors.grey[100],
-          fontSize: "1.75rem",
-          fontWeight: 800,
-          marginBottom: "1rem",
-        }}
-      >
-        Student List
-      </Typography>
+      <PageTitle title="Student List" colors={colors} />
 
-      <Box sx={dataGridStyles}>
-        <DataGrid
-          rows={filteredStudents}
-          columns={columns}
-          slots={{ toolbar: GridToolbar }}
-          resizeThrottleMs={0}
-          autoHeight
-          loading={loading}
-          disableRowSelectionOnClick
-          initialState={{
-            pagination: { paginationModel: { pageSize: 100 } },
-          }}
-        />
-      </Box>
+      <DataGridContainer 
+        students={filteredStudents}
+        columns={columns}
+        loading={studentState.loading}
+        colors={colors}
+        drawer={drawer}
+      />
       
-      <Dialog open={openDialog} onClose={handleCloseDialog}>
-        <DialogTitle>
-          Please confirm that you would like to delete {selectedStudent?.first_name} {selectedStudent?.last_name}.
-        </DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            You may undo this action in the Activity Log. <br />
-            <strong>Compulsory:</strong> Provide a reason for deleting this student.
-          </DialogContentText>
-          <TextField
-            autoFocus
-            label="Reason for Deletion"
-            fullWidth
-            variant="standard"
-            value={reason}
-            onChange={handleReasonChange}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog} color="primary">
-            Cancel
-          </Button>
-          <Button 
-            onClick={handleConfirmDelete} 
-            color="error"
-            disabled={!reason.trim()}
-          >
-            Confirm
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <DeleteDialog 
+        dialogState={dialogState}
+        onClose={handleCloseDialog}
+        onReasonChange={handleReasonChange}
+        onConfirm={handleDeleteConfirmed}
+      />
     </Box>
   );
 };
