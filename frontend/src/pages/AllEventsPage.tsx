@@ -66,9 +66,10 @@ export default function AllEventsPage() {
     }, []);
 
     const handleViewEvent = (eventId: number) => {
-        console.log("Viewing event:", eventId);
-        navigate(`/event/${eventId}`);
+        const isStudentPage = location.pathname.includes("/student");
+        navigate(`${isStudentPage ? "/student" : ""}/event/${eventId}`);
     };
+
 
     return (
         <div

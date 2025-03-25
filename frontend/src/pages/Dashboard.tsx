@@ -1,5 +1,3 @@
-// TODO: refactored, one bug remaining
-
 import { Box, Container, Typography, useTheme } from "@mui/material";
 import { tokens } from "../theme/theme";
 import { useWebSocketChannel } from "../hooks/useWebSocketChannel";
@@ -8,6 +6,8 @@ import SocietyCard from "../components/SocietyCard";
 import EventCard from "../components/EventCard";
 import { Society, Event } from "../types";
 import { useNavigate } from "react-router-dom";
+import { useEffect, useState, useRef } from "react";
+import { useWebSocketManager, CONNECTION_STATES } from "../hooks/useWebSocketManager";
 
 export default function Dashboard() {
   const theme = useTheme();
@@ -15,21 +15,43 @@ export default function Dashboard() {
   const colors = tokens(theme.palette.mode);
   const isLight = theme.palette.mode === "light";
 
+  // Get WebSocket connection status
+  const { status, connect } = useWebSocketManager();
+  const prevStatus = useRef(status);
+
+  // Society data from WebSocket
   const {
     data: popularSocieties,
     loading: societiesLoading,
     error: societiesError,
-    // refresh: refreshSocieties, // TODO: remove if not used
-  } = useWebSocketChannel("dashboard/dashboard/popular-societies/", getPopularSocieties);
+    refresh: refreshSocieties,
+  } = useWebSocketChannel("dashboard/popular-societies", getPopularSocieties);
 
+  // Upcoming events data from WebSocket
   const {
     data: upcomingEvents,
     loading: eventsLoading,
     error: eventsError,
-    // refresh: refreshEvents,  // TODO: remove if not used
+    refresh: refreshEvents,
   } = useWebSocketChannel("dashboard/upcoming-events", getUpcomingEvents);
 
   const isLoading = societiesLoading;
+
+  // Initialize WebSocket connection on mount
+  useEffect(() => {
+    // On mount, if disconnected, connect once
+    if (status === CONNECTION_STATES.DISCONNECTED) {
+      connect();
+    }
+    
+    // On the first transition to AUTHENTICATED, refresh data
+    if (status === CONNECTION_STATES.AUTHENTICATED && prevStatus.current !== CONNECTION_STATES.AUTHENTICATED) {
+      refreshSocieties();
+      refreshEvents();
+    }
+    
+    prevStatus.current = status;
+  }, [status, connect, refreshSocieties, refreshEvents]);
 
   const handleViewSociety = (id: number): void => {
     navigate(`/view-society/${id}`);
