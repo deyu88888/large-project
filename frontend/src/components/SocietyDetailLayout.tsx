@@ -4,6 +4,8 @@ import Link from "@mui/material/Link";
 import FacebookIcon from "@mui/icons-material/Facebook";
 import InstagramIcon from "@mui/icons-material/Instagram";
 import XIcon from "@mui/icons-material/X";
+import WhatsAppIcon from '@mui/icons-material/WhatsApp';
+import StarOutlineRoundedIcon from '@mui/icons-material/StarOutlineRounded';
 import { tokens } from "../theme/theme";
 
 interface SocietyDetailLayoutProps {
@@ -244,27 +246,47 @@ const SocietyDetailLayout: React.FC<SocietyDetailLayoutProps> = ({
             </p>
           </div>
           <div style={{ flex: 1.0 }}>
-            <Link
-              href={society?.social_media_links["facebook"]}
-              target="_blank"
-            >
-              <FacebookIcon
+            {society?.social_media_links["Instagram"] && (
+              <Link
+                href={society?.social_media_links["Facebook"]}
+                target="_blank"
+              >
+                <FacebookIcon
+                  style={{ fontSize: 70, color: isLight ? "black" : "white" }}
+                />
+              </Link>
+            )}
+            {society?.social_media_links["Instagram"] && (
+              <Link
+                href={society?.social_media_links["Instagram"]}
+                target="_blank"
+              >
+                <InstagramIcon
+                  style={{ fontSize: 70, color: isLight ? "black" : "white" }}
+                />
+              </Link>
+            )}
+            {society?.social_media_links["X"] && (
+              <Link href={society?.social_media_links["X"]} target="_blank">
+                <XIcon
+                  style={{ fontSize: 70, color: isLight ? "black" : "white" }}
+                />
+              </Link>
+            )}
+            {society?.social_media_links["WhatsApp"] && (
+              <Link href={society?.social_media_links["WhatsApp"]} target="_blank">
+                <WhatsAppIcon
+                  style={{ fontSize: 70, color: isLight ? "black" : "white" }}
+                />
+              </Link>
+            )}
+            {society?.social_media_links["Other"] && (
+              <Link href={society?.social_media_links["Other"]} target="_blank">
+              <StarOutlineRoundedIcon
                 style={{ fontSize: 70, color: isLight ? "black" : "white" }}
               />
             </Link>
-            <Link
-              href={society?.social_media_links["instagram"]}
-              target="_blank"
-            >
-              <InstagramIcon
-                style={{ fontSize: 70, color: isLight ? "black" : "white" }}
-              />
-            </Link>
-            <Link href={society?.social_media_links["x"]} target="_blank">
-              <XIcon
-                style={{ fontSize: 70, color: isLight ? "black" : "white" }}
-              />
-            </Link>
+            )}
           </div>
         </div>
       </div>
