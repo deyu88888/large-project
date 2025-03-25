@@ -60,7 +60,7 @@ class RSVPEventSerializerTest(TestCase):
         tomorrow = timezone.now() + timedelta(days=1)
         self.future_event = Event.objects.create(
             title="Future Event",
-            description="An event in the future",
+            main_description="An event in the future",
             date=tomorrow.date(),
             start_time=tomorrow.time(),
             duration=timedelta(hours=2),

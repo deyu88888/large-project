@@ -4,6 +4,7 @@ from django.core.exceptions import ValidationError
 from django.test import TestCase
 from api.models import Event, Society, User, Student
 from api.tests.file_deletion import delete_file
+from django.core.files.uploadedfile import SimpleUploadedFile
 
 class EventModelTestCase(TestCase):
     """ Unit tests for the Event model """
@@ -45,16 +46,23 @@ class EventModelTestCase(TestCase):
             approved_by=self.admin,
         )
         self.society.society_members.add(self.student2)
+        
+        dummy_cover = SimpleUploadedFile(
+            "test_cover.jpg",
+            b"dummy image content",
+            content_type="image/jpeg"
+        )
 
         # Create an event
         self.event = Event.objects.create(
             title='Day',
-            description='Day out',
+            main_description='Day out',
             hosted_by=self.society,
             location="KCL Campus",
             max_capacity=2,
-            date=(now() + timedelta(days=1)).date(),  # Event is in the future
-            start_time=(now() + timedelta(hours=1)).time(),  # One hour from now
+            date=(now() + timedelta(days=1)).date(),  
+            start_time=(now() + timedelta(hours=1)).time(),
+            cover_image=dummy_cover
         )
 
     def test_event_valid(self):
@@ -79,7 +87,7 @@ class EventModelTestCase(TestCase):
         """Test that max capacity defaults to 0 (no limit)"""
         event = Event.objects.create(
             title="Unlimited Event",
-            description="No capacity limit",
+            main_description="No capacity limit",
             hosted_by=self.society,
             location="Open Field",
             date=(now() + timedelta(days=1)).date(),

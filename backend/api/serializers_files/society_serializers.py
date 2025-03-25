@@ -117,7 +117,7 @@ class LeaveSocietySerializer(serializers.Serializer):
         """
         Validate if the user can leave the given society.
         """
-        request_user = is_user_student(self.context, "Only students can join societies.")
+        request_user = is_user_student(self.context, "Only students can leave societies.")
 
         society_id = self.society_id
         if society_id is None:

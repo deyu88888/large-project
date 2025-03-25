@@ -37,7 +37,6 @@ class NotificationModelTestCase(TestCase):
         # Create an event hosted by the society
         self.event = Event.objects.create(
             title="Test Event",
-            description="Event description",
             hosted_by=self.society,
             location="KCL Campus",
             date=now().date() + timedelta(days=1),

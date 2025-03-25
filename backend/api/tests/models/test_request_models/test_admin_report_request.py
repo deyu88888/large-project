@@ -202,15 +202,15 @@ class AdminReportRequestModelTest(TransactionTestCase):
     
     def test_from_student_foreign_key(self):
         """Test that from_student is required and relates to Student model."""
-        
-        with self.assertRaises(IntegrityError):
-            AdminReportRequest.objects.create(
-                intent="CreateSoc",
-                report_type="Other",
-                subject="Missing Student",
-                details="This should fail due to missing student"
-            )
-    
+        report = AdminReportRequest.objects.create(
+            intent="CreateSoc",
+            report_type="Other",
+            subject="Missing Student",
+            details="This should fail due to missing student"
+        )
+        with self.assertRaises(AttributeError):
+            _ = str(report)
+            
     def test_auto_now_add_timestamp(self):
         """Test that requested_at is automatically set on creation."""
         

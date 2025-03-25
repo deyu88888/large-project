@@ -91,7 +91,8 @@ class AdminReportRequestSerializerTest(TestCase):
         
         expected_fields = {
             'id', 'report_type', 'subject', 'details', 'requested_at', 
-            'from_student', 'from_student_username', 'top_level_replies'
+            'from_student', 'from_student_username', 'top_level_replies',
+            'email'
         }
         
         self.assertEqual(set(data.keys()), expected_fields)

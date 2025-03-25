@@ -69,10 +69,14 @@ class RequestTestCase(TestCase):
         )
         self.assertFalse(temp_request.approved)
 
-    def test_from_student_required(self):
-        """Test Request.from_student is a required field"""
+    def test_from_student_optional(self):
+        """Test that Request.from_student can be left blank (optional)"""
         self.request.from_student = None
-        self._assert_request_is_invalid()
+        try:
+            self.request.full_clean()
+        except ValidationError:
+            self.fail("from_student should be optional, but full_clean() raised ValidationError.")
+
 
     def _assert_request_is_valid(self):
         try:
