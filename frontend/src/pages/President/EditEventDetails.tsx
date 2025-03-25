@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { apiClient } from "../../api";
 import { EventForm, EventFormInitialData } from "../../components/EventForm";
@@ -12,6 +12,7 @@ export default function EditEventDetails() {
 
   const [initialData, setInitialData] = useState<EventFormInitialData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (eventId) {
@@ -25,8 +26,10 @@ export default function EditEventDetails() {
       const data = response.data;
       const formattedData = formatInitialData(data);
       setInitialData(formattedData);
+      setError(null);
     } catch (error: unknown) {
       console.error("Failed to fetch event data:", error);
+      setError("Failed to load event data");
       alert("Failed to load event data.");
     } finally {
       setLoading(false);
@@ -35,33 +38,37 @@ export default function EditEventDetails() {
 
   const formatInitialData = (data: any): EventFormInitialData => {
     return {
-      title: data.title,
-      mainDescription: data.main_description,
-      date: data.date,
-      startTime: data.start_time,
-      duration: data.duration,
-      location: data.location,
+      title: data.title || "",
+      mainDescription: data.main_description || "",
+      date: data.date || "",
+      startTime: data.start_time || "",
+      duration: data.duration || "",
+      location: data.location || "",
       maxCapacity: data.max_capacity || 0,
       coverImageFile: null,
-      coverImageUrl: data.cover_image,
-      extraModules: extractModules(data.extra_modules, false),
-      participantModules: extractModules(data.participant_modules, true),
+      coverImageUrl: data.cover_image || "",
+      extraModules: extractModules(data.extra_modules || [], false),
+      participantModules: extractModules(data.participant_modules || [], true),
       adminReason: "",
     };
   };
 
   const extractModules = (modules: unknown[], isParticipantOnly: boolean): ExtraModule[] => {
+    if (!Array.isArray(modules)) return [];
+    
     return (modules as any[])
-      .filter((mod) => mod.is_participant_only === isParticipantOnly)
+      .filter((mod) => mod && mod.is_participant_only === isParticipantOnly)
       .map(mapModule);
   };
 
   const mapModule = (mod: any): ExtraModule => {
+    if (!mod) return { id: '0', type: 'text', textValue: '' };
+    
     const fileUrl = mod.file_value || mod.text_value || "";
     return {
-      id: mod.id.toString(),
-      type: mod.type,
-      textValue: mod.text_value || mod.file_value,
+      id: mod.id?.toString() || '0',
+      type: mod.type || 'text',
+      textValue: mod.text_value || mod.file_value || "",
       fileValue: mod.type === "file" && fileUrl ? fileUrl : undefined,
     };
   };
@@ -83,18 +90,32 @@ export default function EditEventDetails() {
     }
   };
 
-  const renderLoading = () => (
-    <Box display="flex" justifyContent="center" mt={4}>
-      <CircularProgress color="secondary" />
-    </Box>
-  );
+  const handleCancel = () => {
+    navigate(-1);
+  };
 
-  if (loading) return renderLoading();
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" mt={4}>
+        <CircularProgress color="secondary" />
+      </Box>
+    );
+  }
+
+  if (error || !initialData) {
+    return (
+      <Box display="flex" flexDirection="column" alignItems="center" mt={4}>
+        <p>{error || "Event not found."}</p>
+        <button onClick={() => navigate(-1)}>Go Back</button>
+      </Box>
+    );
+  }
 
   return (
     <EventForm
       onSubmit={handleSubmit}
-      initialData={initialData!}
+      onCancel={handleCancel}
+      initialData={initialData}
       isEditMode={true}
     />
   );
