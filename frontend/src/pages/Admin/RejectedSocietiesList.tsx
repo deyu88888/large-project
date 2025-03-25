@@ -105,21 +105,8 @@ const SocietyListRejected: React.FC = () => {
       sx={{
         height: "calc(100vh - 64px)",
         maxWidth: drawer ? `calc(100% - 3px)` : "100%",
-        p: 2
       }}
     >
-      <Typography
-        variant="h1"
-        sx={{
-          color: theme.palette.mode === "light" ? colors.grey[100] : colors.grey[100],
-          fontSize: "1.75rem",
-          fontWeight: 800,
-          marginBottom: "1rem",
-        }}
-      >
-        Rejected Societies
-      </Typography>
-
       <Box
         sx={{
           height: "78vh",

@@ -107,8 +107,6 @@ const ManageSocieties: React.FC = () => {
     <Box
       sx={{
         height: "calc(100vh - 64px)",
-        backgroundColor: colors.primary[400],
-        padding: 2,
       }}
     >
       <Typography
