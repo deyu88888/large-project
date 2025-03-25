@@ -37,7 +37,7 @@ const ReportReply: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await apiClient.post("/api/report-replies", {
+      await apiClient.post("/api/reports/replies/", {
         report: reportId,
         content: replyContent,
       });
