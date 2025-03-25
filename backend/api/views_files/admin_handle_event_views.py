@@ -84,6 +84,7 @@ class EventStatusChangeUndoHandler(RestoreHandler):
                 event.approved_by = None
             
             event.save()
+            reason = log_entry.reason if log_entry.reason else "Admin update of event details"
             
             # Create a new activity log for this undo action
             ActivityLog.objects.create(
@@ -93,6 +94,7 @@ class EventStatusChangeUndoHandler(RestoreHandler):
                 target_name=event.title,
                 performed_by=log_entry.performed_by,
                 timestamp=timezone.now(),
+                reason=reason,
                 expiration_date=timezone.now() + timedelta(days=30),
             )
             
