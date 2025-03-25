@@ -1,16 +1,14 @@
 import { Box, Typography } from "@mui/material";
 import { StyledButton } from "./home/StyledButton";
-import { Event } from "../types";
-import {EventData} from "../pages/AllEventsPage";
+import { EventCardProps } from "../types/shared/event";
 
-interface EventCardProps {
-  event: EventData;
-  isLight: boolean;
-  colors: any;
-  onViewEvent: (id: number) => void;
-}
-
-const EventCard = ({ event, isLight, colors, onViewEvent }: EventCardProps) => {
+const EventCard = ({
+  event,
+  isLight,
+  colors,
+  onViewEvent,
+  followingsAttending = [],
+}: EventCardProps) => {
   return (
     <Box
       sx={{
@@ -26,6 +24,7 @@ const EventCard = ({ event, isLight, colors, onViewEvent }: EventCardProps) => {
         height: "100%",
       }}
     >
+      {/* Title */}
       <Typography
         variant="h5"
         sx={{
@@ -38,6 +37,8 @@ const EventCard = ({ event, isLight, colors, onViewEvent }: EventCardProps) => {
       >
         {event.title}
       </Typography>
+
+      {/* Cover image */}
       <Box
         sx={{
           height: "120px",
@@ -50,22 +51,26 @@ const EventCard = ({ event, isLight, colors, onViewEvent }: EventCardProps) => {
         }}
       >
         {event.cover_image ? (
-          <img 
+          <img
             src={event.cover_image}
-            alt={event.title} 
-            style={{ 
-              width: "100%", 
-              height: "100%", 
+            alt={event.title}
+            style={{
+              width: "100%",
+              height: "100%",
               objectFit: "cover",
-              borderRadius: "0.5rem" 
-            }} 
+              borderRadius: "0.5rem",
+            }}
           />
         ) : (
-          <Typography sx={{ color: isLight ? colors.grey[800] : colors.grey[100] }}>
+          <Typography
+            sx={{ color: isLight ? colors.grey[800] : colors.grey[100] }}
+          >
             Event Image
           </Typography>
         )}
       </Box>
+
+      {/* Date and location */}
       <Box
         sx={{
           display: "flex",
@@ -76,7 +81,9 @@ const EventCard = ({ event, isLight, colors, onViewEvent }: EventCardProps) => {
       >
         <span
           style={{
-            backgroundColor: isLight ? colors.blueAccent[400] : colors.blueAccent[700],
+            backgroundColor: isLight
+              ? colors.blueAccent[400]
+              : colors.blueAccent[700],
             color: "white",
             padding: "0.2rem 0.5rem",
             borderRadius: "0.25rem",
@@ -90,7 +97,9 @@ const EventCard = ({ event, isLight, colors, onViewEvent }: EventCardProps) => {
         {event.location && (
           <span
             style={{
-              backgroundColor: isLight ? colors.greenAccent[400] : colors.greenAccent[700],
+              backgroundColor: isLight
+                ? colors.greenAccent[400]
+                : colors.greenAccent[700],
               color: "white",
               padding: "0.2rem 0.5rem",
               borderRadius: "0.25rem",
@@ -103,6 +112,8 @@ const EventCard = ({ event, isLight, colors, onViewEvent }: EventCardProps) => {
           </span>
         )}
       </Box>
+
+      {/* Main description */}
       <Box sx={{ mb: 2 }}>
         <Typography
           sx={{
@@ -112,17 +123,92 @@ const EventCard = ({ event, isLight, colors, onViewEvent }: EventCardProps) => {
             mb: 2,
           }}
         >
-          {event.description?.substring(0, 120)}
-          {event.description && event.description.length > 120 ? "..." : ""}
+          {event.main_description?.substring(0, 120)}
+          {event.main_description && event.main_description.length > 120
+            ? "..."
+            : ""}
         </Typography>
       </Box>
+
+      {/* Followings Attending (Avatar and Description) */}
+      {followingsAttending.length > 0 && (
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: "0.75rem",
+            mt: 1,
+            mb: 1.5,
+            flexWrap: "wrap"
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            {followingsAttending.slice(0, 3).map((att, index) => (
+              <Box
+                key={att.id}
+                sx={{
+                  width: index === 0 ? 36 : 28,
+                  height: index === 0 ? 36 : 28,
+                  borderRadius: "50%",
+                  overflow: "hidden",
+                  border: `2px solid ${isLight ? "#fff" : colors.primary[600]}`,
+                  marginLeft: index > 0 ? "-10px" : 0,
+                  zIndex: 10 - index,
+                  position: "relative",
+                }}
+              >
+                <img
+                  src={att.icon || "/default-avatar.png"}
+                  alt={att.first_name}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    display: "block",
+                  }}
+                />
+              </Box>
+            ))}
+            {followingsAttending.length > 3 && (
+              <Typography
+                sx={{
+                  fontSize: "0.75rem",
+                  color: colors.grey[300],
+                  marginLeft: "0.5rem",
+                }}
+              >
+                +{followingsAttending.length - 3}
+              </Typography>
+            )}
+          </Box>
+
+          <Typography
+            variant="body2"
+            sx={{
+              color: colors.grey[300],
+              fontSize: "0.8rem",
+              whiteSpace: "normal",
+              wordBreak: "break-word",
+              flex: 1
+            }}
+          >
+            {followingsAttending[0].first_name}
+            {followingsAttending.length > 1
+              ? ` and ${followingsAttending.length - 1} more following`
+              : ""}{" "}
+            also attending this event
+          </Typography>
+        </Box>
+      )}
+
+      {/* View Button */}
       <Box sx={{ display: "flex", justifyContent: "flex-end", mt: "auto" }}>
-        <StyledButton 
+        <StyledButton
           onClick={() => onViewEvent(event.id)}
-          sx={{ 
+          sx={{
             "& .MuiButtonBase-root, & .MuiButton-root": {
-              color: isLight ? "black !important" : "white !important" 
-            }
+              color: isLight ? "black !important" : "white !important",
+            },
           }}
         >
           <span style={{ position: "relative", zIndex: 10 }}>View Event</span>

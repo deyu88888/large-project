@@ -6,22 +6,7 @@ import { tokens } from "../theme/theme";
 import { CircularProgress } from "@mui/material";
 import EventCard from "../components/EventCard";
 import { useAuthStore } from "../stores/auth-store";
-
-interface Attendee {
-    id: number;
-    first_name: string;
-    icon?: string | null;
-}
-
-export interface EventData {
-    id: number;
-    title: string;
-    date: string;
-    location: string;
-    description?: string;
-    cover_image?: string;
-    current_attendees?: Attendee[];
-}
+import { Attendee, EventData } from "../types/shared/event";
 
 interface User {
     id: number;
