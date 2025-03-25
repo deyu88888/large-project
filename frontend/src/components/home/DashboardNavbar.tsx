@@ -16,8 +16,8 @@ import {
   Typography,
   useTheme,
 } from "@mui/material";
-import { useContext, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useContext, useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import MenuIcon from "@mui/icons-material/Menu";
 import SearchIcon from "@mui/icons-material/Search";
 import { SearchContext } from "../../components/layout/SearchContext";
@@ -79,6 +79,7 @@ const StyledInputBase = styled(InputBase)(({ theme }: { theme: any }) => ({
 export const DashboardNavbar = () => {
   const theme = useTheme();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toggleThemeMode } = useSettingsStore();
   const { searchTerm, setSearchTerm } = useContext(SearchContext);
 
@@ -112,6 +113,11 @@ export const DashboardNavbar = () => {
     "Light/Dark": handleThemeToggle,
   };
 
+  // Determine text colors based on theme to ensure visibility
+  const navTextColor = theme.palette.mode === "dark" ? "#ffffff" : "#000000";
+  const highlightColor = theme.palette.mode === "dark" ? "#90caf9" : "#1976d2";
+  const hoverColor = theme.palette.mode === "dark" ? "#90caf9" : "#1976d2";
+
   return (
     <AppBar
       position="sticky"
@@ -134,42 +140,47 @@ export const DashboardNavbar = () => {
           }}
         >
           <Box sx={{ flexGrow: 1, display: { xs: "none", md: "flex" } }}>
-            {pages.map((page) => (
-              <Button
-                key={page.name}
-                onClick={() => {
-                  handleCloseNavMenu();
-                  navigate(page.path);
-                }}
-                sx={{
-                  color: "white",
-                  display: "block",
-                  position: "relative",
-                  height: "64px",
-                  mx: 1,
-                  transition: "color 0.3s ease-in-out",
-                  "&::after": {
-                    content: '""',
-                    position: "absolute",
-                    width: "0",
-                    height: "2px",
-                    bottom: 0,
-                    left: 0,
-                    backgroundColor: "black",
-                    transition: "width 0.3s ease-in-out",
-                  },
-                  "&:hover": {
-                    color: "black",
-                  },
-                  "&:hover::after": { width: "100%" },
-                  "&.active": { color: "black" },
-                  "&.active::after": { width: "100%" },
-                }}
-                className={location.pathname === page.path ? "active" : ""}
-              >
-                {page.name}
-              </Button>
-            ))}
+            {pages.map((page) => {
+              const isActive = location.pathname === page.path;
+              return (
+                <Button
+                  key={page.name}
+                  onClick={() => {
+                    handleCloseNavMenu();
+                    navigate(page.path);
+                  }}
+                  sx={{
+                    color: isActive ? highlightColor : navTextColor,
+                    display: "block",
+                    position: "relative",
+                    height: "64px",
+                    mx: 1,
+                    transition: "color 0.3s ease-in-out",
+                    fontWeight: isActive ? "bold" : "normal",
+                    "&::after": {
+                      content: '""',
+                      position: "absolute",
+                      width: isActive ? "100%" : "0",
+                      height: "2px",
+                      bottom: 0,
+                      left: 0,
+                      backgroundColor: highlightColor,
+                      transition: "width 0.3s ease-in-out",
+                    },
+                    "&:hover": {
+                      color: hoverColor,
+                      bgcolor: "transparent",
+                    },
+                    "&:hover::after": { 
+                      width: "100%", 
+                      backgroundColor: hoverColor 
+                    },
+                  }}
+                >
+                  {page.name}
+                </Button>
+              );
+            })}
           </Box>
 
           <Box sx={{ flexGrow: 1, display: { xs: "flex", md: "none" } }}>
@@ -195,51 +206,28 @@ export const DashboardNavbar = () => {
               }}
             >
               <Box width={"50vw"}>
-                {pages.map((page) => (
-                  <MenuItem
-                    key={page.name}
-                    onClick={() => {
-                      handleCloseNavMenu();
-                      navigate(page.path);
-                    }}
-                  >
-                    <Typography sx={{ textAlign: "center" }}>
-                      {page.name}
-                    </Typography>
-                  </MenuItem>
-                ))}
+                {pages.map((page) => {
+                  const isActive = location.pathname === page.path;
+                  return (
+                    <MenuItem
+                      key={page.name}
+                      onClick={() => {
+                        handleCloseNavMenu();
+                        navigate(page.path);
+                      }}
+                    >
+                      <Typography sx={{ 
+                        textAlign: "center", 
+                        color: isActive ? highlightColor : navTextColor,
+                        fontWeight: isActive ? "bold" : "normal"
+                      }}>
+                        {page.name}
+                      </Typography>
+                    </MenuItem>
+                  );
+                })}
               </Box>
             </Drawer>
-            {/* <Menu
-              id="menu-appbar"
-              anchorEl={anchorElNav}
-              anchorOrigin={{
-                vertical: "bottom",
-                horizontal: "left",
-              }}
-              keepMounted
-              transformOrigin={{
-                vertical: "top",
-                horizontal: "left",
-              }}
-              open={Boolean(anchorElNav)}
-              onClose={handleCloseNavMenu}
-              sx={{ display: { xs: "block", md: "none" } }}
-            >
-              {pages.map((page) => (
-                <MenuItem
-                  key={page.name}
-                  onClick={() => {
-                    handleCloseNavMenu();
-                    navigate(page.path);
-                  }}
-                >
-                  <Typography sx={{ textAlign: "center" }}>
-                    {page.name}
-                  </Typography>
-                </MenuItem>
-              ))}
-            </Menu> */}
           </Box>
 
           <Search>

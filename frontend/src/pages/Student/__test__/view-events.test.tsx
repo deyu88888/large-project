@@ -3,7 +3,7 @@ import { render, screen, waitFor, fireEvent, act } from "@testing-library/react"
 import { vi } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
-import ViewEvents from "../../ViewEvents";
+import MyJoinedEvents from "../MyJoinedEvents";
 import { apiClient } from "../../../api";
 
 vi.mock("../../../api", () => ({
@@ -50,7 +50,7 @@ describe("ViewEvents", () => {
     render(
       <ThemeProvider theme={theme}>
         <MemoryRouter>
-          <ViewEvents />
+          <MyJoinedEvents />
         </MemoryRouter>
       </ThemeProvider>
     );

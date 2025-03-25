@@ -21,7 +21,7 @@ from api.views import (
     # Events
     ManageEventListView, CreateEventRequestView, RSVPEventView, EventHistoryView,
     get_sorted_events, AllEventsView, EventDetailsView, EventCommentsView,
-    ManageEventDetailsView, like_comment, dislike_comment,
+    ManageEventDetailsView, like_comment, dislike_comment, JoinedEventsView,
 
     # News
     NewsView, BroadcastListAPIView, NewsPublicationRequestView,
@@ -151,6 +151,7 @@ recommendation_patterns = [
 # Event patterns
 event_patterns = [
     path("requests/<int:society_id>/", CreateEventRequestView.as_view(), name="create-event-request"),
+    path("joined/", JoinedEventsView.as_view(), name="joined-events"),
     path("list/", ManageEventListView.as_view(), name="event-list"),
     path("rsvp/", RSVPEventView.as_view(), name="rsvp_event"),
     path("history/", EventHistoryView.as_view(), name="event_history"),

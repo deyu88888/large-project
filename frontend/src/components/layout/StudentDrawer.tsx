@@ -155,28 +155,24 @@ const StudentDrawer: React.FC<StudentDrawerProps> = ({
         <Divider />
 
         <List>
-          {bottomMenuItems.map((item) => (
-            <ListItem key={item.title} disablePadding>
-              <ListItemButton
-                component={Link}
-                to={item.to}
-                selected={selected === item.title}
-                onClick={() => setSelected(item.title)}
-                sx={{ justifyContent: drawer ? "initial" : "center", px: 2.5 }}
+          <ListItem disablePadding>
+            <ListItemButton
+              component={Link}
+              to="/student/join-society"
+              sx={{ justifyContent: drawer ? "initial" : "center", px: 2.5 }}
+            >
+              <ListItemIcon
+                sx={{
+                  minWidth: 0,
+                  mr: drawer ? 3 : "auto",
+                  justifyContent: "center",
+                }}
               >
-                <ListItemIcon
-                  sx={{
-                    minWidth: 0,
-                    mr: drawer ? 3 : "auto",
-                    justifyContent: "center",
-                  }}
-                >
-                  {item.icon}
-                </ListItemIcon>
-                {drawer && <ListItemText primary={item.title} />}
-              </ListItemButton>
-            </ListItem>
-          ))}
+                <GroupAddOutlinedIcon />
+              </ListItemIcon>
+              {drawer && <ListItemText primary="Join Societies" />}
+            </ListItemButton>
+          </ListItem>
         </List>
         <Divider />
 

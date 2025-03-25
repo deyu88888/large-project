@@ -23,9 +23,6 @@ import NotificationImportantOutlinedIcon from '@mui/icons-material/NotificationI
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import LogoutIcon from "@mui/icons-material/Logout";
 import ManageAccountsOutlinedIcon from "@mui/icons-material/ManageAccountsOutlined";
-import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
-import EventNoteOutlinedIcon from "@mui/icons-material/EventNoteOutlined";
-import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
 import ReportProblemOutlinedIcon from "@mui/icons-material/ReportProblemOutlined";
 import GroupAddOutlinedIcon from "@mui/icons-material/GroupAddOutlined";
 
@@ -77,14 +74,6 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
     { title: "Notifications", icon: <NotificationsNoneOutlinedIcon />, to: "/student/view-notifications" },
     { title: "Inbox", icon: <InboxIcon />, to: "/student/view-inbox" },
     { title: "Report", icon: <ReportProblemOutlinedIcon />, to: "/student/report-to-admin" },
-  ];
-
-  const manageMySocietiesItems = [
-    { title: "Society Details", icon: <DescriptionOutlinedIcon />, to: "/president-page/1/manage-society-details" },
-    { title: "Society Events", icon: <EventNoteOutlinedIcon />, to: "/president-page/1/manage-society-events" },
-    { title: "Pending Members", icon: <PeopleOutlineIcon />, to: "/president-page/1/pending-members" },
-    { title: "All Members", icon: <GroupOutlinedIcon />, to: "/president-page/1/view-society-members" },
-    // { title: "Report to Admin", icon: <ReportProblemOutlinedIcon />, to: "/president-page/1/report-to-admin" },
   ];
 
   const logout = () => {
@@ -221,33 +210,6 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
             {drawer && <ListItemText primary="Manage My Societies" />}
           </ListItemButton>
         </ListItem>
-
-        {/* Society Management Items */}
-        {manageMySocietiesItems.map((item) => (
-          <ListItem key={item.title} disablePadding>
-            <ListItemButton
-              component={Link}
-              to={item.to}
-              selected={selected === item.title}
-              onClick={() => setSelected(item.title)}
-              sx={{ 
-                justifyContent: drawer ? "initial" : "center", 
-                px: 2.5
-              }}
-            >
-              <ListItemIcon
-                sx={{
-                  minWidth: 0,
-                  mr: drawer ? 3 : "auto",
-                  justifyContent: "center",
-                }}
-              >
-                {item.icon}
-              </ListItemIcon>
-              {drawer && <ListItemText primary={item.title} />}
-            </ListItemButton>
-          </ListItem>
-        ))}
       </List>
       <Divider />
 

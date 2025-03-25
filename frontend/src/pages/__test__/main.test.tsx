@@ -1,17 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createRoot } from 'react-dom/client';
-import { App } from '../../app';
 import { StrictMode } from 'react';
 
-// Mock dependencies
+// Create mock for render function
+const mockRender = vi.fn();
+
+// Mock createRoot to return an object with the mockRender function
 vi.mock('react-dom/client', () => ({
   createRoot: vi.fn(() => ({
-    render: vi.fn()
+    render: mockRender
   }))
 }));
 
+// Mock App component
+const MockApp = vi.fn(() => <div data-testid="app">App Component</div>);
 vi.mock('../../app', () => ({
-  App: () => <div data-testid="app">App Component</div>
+  App: MockApp
 }));
 
 // Mock globals.css import
@@ -26,21 +29,15 @@ describe('Main entry point', () => {
     document.body.innerHTML = '<div id="root"></div>';
   });
 
-  it('renders App component in StrictMode', () => {
-    // Instead of requiring the main file, we'll simulate its behavior
-    // by calling createRoot and render with the same arguments
+  it('renders App component in StrictMode', async () => {
+    // Import the main module - this is what actually executes the code in main.tsx
+    await import('../../main');
     
-    // Get the root element
+    // Get the root element that should have been used
     const rootElement = document.getElementById('root');
     
-    // Call createRoot with the root element
-    createRoot(rootElement);
-    
-    // Get the render function that was returned by createRoot
-    const mockRender = createRoot().render;
-    
-    // Manually invoke a simulated version of what main.tsx does
-    mockRender(<StrictMode><App /></StrictMode>);
+    // Import createRoot to check if it was called correctly
+    const { createRoot } = await import('react-dom/client');
     
     // Verify createRoot was called with the root element
     expect(createRoot).toHaveBeenCalledWith(rootElement);
@@ -51,6 +48,6 @@ describe('Main entry point', () => {
     // Verify the structure of what was rendered
     const renderArg = mockRender.mock.calls[0][0];
     expect(renderArg.type).toBe(StrictMode);
-    expect(renderArg.props.children.type).toBe(App);
+    expect(renderArg.props.children.type).toBe(MockApp);
   });
 });
