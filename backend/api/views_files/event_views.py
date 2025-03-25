@@ -152,7 +152,6 @@ class CreateEventRequestView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-
 class ManageEventListView(APIView):
     """
     Lists events for the society the current student is managing.

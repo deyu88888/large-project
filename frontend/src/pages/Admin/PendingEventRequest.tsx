@@ -16,7 +16,6 @@ import { fetchPendingRequests } from "./utils";
 import { apiPaths } from "../../api";
 import { updateRequestStatus } from "../../api/requestApi";
 
-// Define interfaces for type safety
 interface Event {
   id: number;
   title: string;

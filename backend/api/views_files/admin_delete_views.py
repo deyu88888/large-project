@@ -22,6 +22,7 @@ class AdminBaseView(APIView):
         "Student": Student,
         "Society": Society,
         "Event": Event,
+         "Admin": User,
     }
 
     def check_admin_permission(self, user):
@@ -65,7 +66,7 @@ class AdminBaseView(APIView):
 
 
 class AdminDeleteView(AdminBaseView):
-    """View for admins to delete students, societies, and events."""
+    """View for admins to delete students, societies, events, and other admins."""
 
     def delete(self, request, target_type, target_id):
         """Handle resource deletion and log the action."""
@@ -73,17 +74,42 @@ class AdminDeleteView(AdminBaseView):
         if error:
             return error
 
+        if target_type == "Admin":
+            if not request.user.is_super_admin:
+                return Response(
+                    {"error": "Only super admins can delete admin users."}, 
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            if int(target_id) == request.user.id:
+                return Response(
+                    {"error": "You cannot delete your own account."}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
         model = self.model_mapping.get(target_type)
         if not model:
-            return Response({"error": "Invalid target type."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Invalid target type."}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
-        target = model.objects.filter(id=target_id).first()
+        if target_type == "Admin":
+            target = model.objects.filter(id=target_id, role="admin").first()
+        else:
+            target = model.objects.filter(id=target_id).first()
+
         if not target:
-            return Response({"error": f"{target_type} not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"error": f"{target_type} not found."}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
 
-        reason = request.data.get('reason', None)
+        reason = request.data.get('reason')
         if not reason:
-            return Response({"error": "Reason for deletion is required."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Reason for deletion is required."}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         try:
             serializable_data = self.serialize_model_data(target)
@@ -94,11 +120,16 @@ class AdminDeleteView(AdminBaseView):
                 "details": "Cannot serialize data for activity log"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+        if target_type == "Admin":
+            target_name = f"{target.first_name} {target.last_name}".strip()
+        else:
+            target_name = str(target)
+
         ActivityLog.objects.create(
             action_type="Delete",
             target_type=target_type,
             target_id=target_id,
-            target_name=str(target),
+            target_name=target_name,
             performed_by=admin,
             timestamp=timezone.now(),
             reason=reason,
@@ -109,7 +140,10 @@ class AdminDeleteView(AdminBaseView):
         target.delete()
         ActivityLog.delete_expired_logs()
 
-        return Response({"message": f"Deleted {target_type.lower()} moved to Activity Log."}, status=status.HTTP_200_OK)
+        return Response(
+            {"message": f"Deleted {target_type.lower()} moved to Activity Log."}, 
+            status=status.HTTP_200_OK
+        )
 
 
 class AdminRestoreView(AdminBaseView):
@@ -122,15 +156,19 @@ class AdminRestoreView(AdminBaseView):
             return error
         try:
             log_entry = ActivityLog.objects.get(id=log_id)
+            target_type = log_entry.target_type
 
-            # Check if the action type is supported
+            if target_type == "Admin":
+                if not request.user.is_authenticated or not request.user.is_super_admin:
+                    return Response(
+                        {"error": "Only super admins can undo operations related to admins."}, 
+                        status=status.HTTP_403_FORBIDDEN
+                    )
+
             supported_actions = ["Delete", "Approve", "Reject", "Update"]
             if log_entry.action_type not in supported_actions:
                 return Response({"error": "Invalid action type."}, status=status.HTTP_400_BAD_REQUEST)
-
-            target_type = log_entry.target_type
             
-            # For Delete and Update actions, we need original data
             if log_entry.action_type in ["Delete", "Update"]:
                 original_data_json = log_entry.original_data
 

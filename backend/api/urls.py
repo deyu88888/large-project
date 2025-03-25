@@ -9,7 +9,7 @@ from api.views import (
     AdminActivityLogView, AdminManageStudentDetailsView, AdminManageSocietyDetailsView,
     AdminManageEventDetailsView, AdminEventRequestView, AdminEventView,
     AdminSocietyRequestView, SocietyDescriptionRequestAdminView, AdminNewsApprovalView,
-    AdminRepliesListView, AdminReportsWithRepliesView,
+    AdminRepliesListView, AdminReportsWithRepliesView, AdminManageAdminDetailsView,
 
     # Society
     JoinedSocietiesView, RequestJoinSocietyView, StartSocietyRequestView,
@@ -79,6 +79,7 @@ admin_patterns = [
     path("manage-society/<int:society_id>", AdminManageSocietyDetailsView.as_view(), name="manage_society_details_admin"),
     path("manage-student/<int:student_id>", AdminManageStudentDetailsView.as_view(), name="manage_student_details_admin"),
     path("manage-event/<int:event_id>", AdminManageEventDetailsView.as_view(), name="manage_event_details_admin"),
+    path("manage-admin/<int:admin_id>", AdminManageAdminDetailsView.as_view(), name="manage_admin_details_admin"),
     path("activity-log", AdminActivityLogView.as_view(), name="activity_log"),
     path("delete-activity-log/<int:log_id>", AdminActivityLogView.as_view(), name="delete_activity_log"),
     path('delete/<str:target_type>/<int:target_id>', AdminDeleteView.as_view(), name='delete'),
