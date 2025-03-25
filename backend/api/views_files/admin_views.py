@@ -130,7 +130,7 @@ class AdminManageSocietyDetailsView(APIView):
         society = Society.objects.filter(id=society_id).first()
         if not society:
             return Response({"error": "Society not found."}, status=status.HTTP_404_NOT_FOUND)
-        serializer = SocietySerializer(society)
+        serializer = SocietySerializer(society, context={"request": request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def patch(self, request, society_id):
@@ -179,7 +179,7 @@ class AdminManageSocietyDetailsView(APIView):
                 "problematic_fields": problematic_fields
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        serializer = SocietySerializer(society, data=request.data, partial=True)
+        serializer = SocietySerializer(society, data=request.data, partial=True, context={"request": request})
         if serializer.is_valid():
             log_entry = ActivityLog.objects.create(
                 action_type="Update",
