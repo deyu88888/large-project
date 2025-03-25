@@ -23,15 +23,17 @@ import {
   FaCogs,
   FaRegClock,
   FaNewspaper,
+  FaTrophy, // 1) Add trophy icon import
 } from "react-icons/fa";
 import { apiClient } from "../../api";
 import { useAuthStore } from "../../stores/auth-store";
 import StudentCalendar from "./StudentCalendar";
-import SocietyNewsFeed from './SocietyNewsFeed'; // Import the news feed component
+import SocietyNewsFeed from "./SocietyNewsFeed";
 import { Society } from "../../types/student/society";
-import { EventData, TransformedEvent } from "../../types/student/event"
-import { Notification } from "../../types/student/notification"; 
+import { EventData, TransformedEvent } from "../../types/student/event";
+import { Notification } from "../../types/student/notification";
 import { AwardAssignment } from "../../types/student/award";
+import AwardCard from "../../components/AwardCard";
 
 const CustomTabs = styled(Tabs)(({ theme, activecolor }) => ({
   "& .MuiTabs-indicator": {
@@ -39,62 +41,13 @@ const CustomTabs = styled(Tabs)(({ theme, activecolor }) => ({
   },
 }));
 
-// interface Society {
-//   id: number;
-//   name: string;
-//   is_president: boolean;
-//   is_vice_president?: boolean;
-//   is_event_manager?: boolean;
-// }
+interface StudentDashboardProps {}
 
-// interface EventData {
-//   id: number;
-//   title: string;
-//   description?: string;
-//   date: string;
-//   start_time: string;
-//   duration: string;
-//   location?: string;
-//   hosted_by: number;
-//   societyName?: string;
-//   rsvp: boolean;
-//   status: string;
-// }
-
-// interface TransformedEvent {
-//   id: number;
-//   title: string;
-//   description: string;
-//   date: string;
-//   startTime: string;
-//   duration: string;
-//   location: string;
-//   hostedBy: number;
-//   societyName?: string;
-//   rsvp: boolean;
-//   status: string;
-// }
-
-// interface Notification {
-//   id: number;
-//   header: string;
-//   body: string;
-//   is_read: boolean;
-// }
-
-interface AwardAssignment {
-  id: number;
-  award: {
-    title: string;
-    description: string;
-    rank: string;
-  };
-}
-
-const StudentDashboard: React.FC = () => {
+const StudentDashboard: React.FC<StudentDashboardProps> = () => {
   const navigate = useNavigate();
   const theme = useTheme();
   const colours = tokens(theme.palette.mode);
+
   const [societies, setSocieties] = useState<Society[]>([]);
   const [events, setEvents] = useState<TransformedEvent[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -104,23 +57,37 @@ const StudentDashboard: React.FC = () => {
   const [showCalendar, setShowCalendar] = useState<boolean>(false);
   const { user } = useAuthStore();
   const [student, setStudent] = useState<any>(null);
-  
+
   const [snackbarOpen, setSnackbarOpen] = useState<boolean>(false);
   const [snackbarMessage, setSnackbarMessage] = useState<string>("");
-  const [snackbarSeverity, setSnackbarSeverity] = useState<"error" | "warning" | "info" | "success">("error");
+  const [snackbarSeverity, setSnackbarSeverity] =
+    useState<"error" | "warning" | "info" | "success">("error");
+
+  // 2) Add a color for Awards (purpleAccent) and shift the existing color array
+  const tabColors = [
+    colours.greenAccent?.[500] || "#4CAF50",
+    colours.blueAccent?.[500] || "#2196F3",
+    colours.redAccent?.[500] || "#F44336",
+    colours.purpleAccent?.[500] || "#9C27B0", // New color for Awards tab
+    colours.orangeAccent?.[500] || "#FF9800",
+  ];
 
   const allSocieties = useMemo(() => {
     const allSocs = [...societies];
-    if (student?.president_of && !allSocs.some(s => s.id === student.president_of)) {
+    if (
+      student?.president_of &&
+      !allSocs.some((s) => s.id === student.president_of)
+    ) {
       allSocs.push({
         id: student.president_of,
-        name: student?.president_of_society_name || `Society ${student.president_of}`,
+        name:
+          student?.president_of_society_name || `Society ${student.president_of}`,
         is_president: true,
       });
     }
     if (
       student?.vice_president_of_society &&
-      !allSocs.some(s => s.id === student.vice_president_of_society)
+      !allSocs.some((s) => s.id === student.vice_president_of_society)
     ) {
       allSocs.push({
         id: student.vice_president_of_society,
@@ -132,13 +99,6 @@ const StudentDashboard: React.FC = () => {
     }
     return allSocs;
   }, [societies, student]);
-
-  const tabColors = [
-    colours.greenAccent?.[500] || '#4CAF50',
-    colours.blueAccent?.[500] || '#2196F3',
-    colours.redAccent?.[500] || '#F44336',
-    colours.orangeAccent?.[500] || '#FF9800',
-  ];
 
   useEffect(() => {
     const callFetchData = async () => {
@@ -158,14 +118,14 @@ const StudentDashboard: React.FC = () => {
       const studentResponse = await apiClient.get("api/user/current");
       setStudent(studentResponse.data);
       console.log("Student data:", studentResponse.data);
-      
+
       const societiesResponse = await apiClient.get("/api/society/joined");
       setSocieties(societiesResponse.data || []);
-      
+
       const allEvents: EventData[] = await getAllEvents();
       const transformed = allEvents
-        .filter(ev => ev.status === "Approved")
-        .map(ev => ({
+        .filter((ev) => ev.status === "Approved")
+        .map((ev) => ({
           id: ev.id,
           title: ev.title,
           description: ev.description || "",
@@ -179,22 +139,23 @@ const StudentDashboard: React.FC = () => {
           status: ev.status,
         }));
       setEvents(transformed);
-      
+
       const notificationsResponse = await apiClient.get("/api/notifications/");
       setNotifications(notificationsResponse.data || []);
 
       const awardsResponse = await apiClient.get("/api/awards/students/");
-      setAwards(awardsResponse.data);
+      setAwards(awardsResponse.data || []);
     } catch (error: any) {
       console.error("Error fetching data:", error);
-      const errorMessage = error.response?.data?.error || "An error occurred while fetching data.";
+      const errorMessage =
+        error.response?.data?.error || "An error occurred while fetching data.";
       setSnackbarMessage(errorMessage);
       setSnackbarSeverity("error");
       setSnackbarOpen(true);
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   const joinSociety = async (societyId: number) => {
     try {
@@ -205,7 +166,9 @@ const StudentDashboard: React.FC = () => {
       fetchData();
     } catch (error: any) {
       console.error("Error joining society:", error);
-      const errorMessage = error.response?.data?.error || "An error occurred while trying to join the society.";
+      const errorMessage =
+        error.response?.data?.error ||
+        "An error occurred while trying to join the society.";
       setSnackbarMessage(errorMessage);
       setSnackbarSeverity("error");
       setSnackbarOpen(true);
@@ -221,9 +184,9 @@ const StudentDashboard: React.FC = () => {
       fetchData();
     } catch (error: any) {
       console.error("Error leaving society:", error);
-      // Extract the error message from the response
-      const errorMessage = error.response?.data?.error || "An error occurred while trying to leave the society.";
-      
+      const errorMessage =
+        error.response?.data?.error ||
+        "An error occurred while trying to leave the society.";
       setSnackbarMessage(errorMessage);
       setSnackbarSeverity("error");
       setSnackbarOpen(true);
@@ -236,7 +199,9 @@ const StudentDashboard: React.FC = () => {
         await apiClient.post("/api/events/rsvp", { event_id: eventId });
         setSnackbarMessage("Successfully RSVP'd to the event");
       } else {
-        await apiClient.delete("/api/events/rsvp", { data: { event_id: eventId } });
+        await apiClient.delete("/api/events/rsvp", {
+          data: { event_id: eventId },
+        });
         setSnackbarMessage("Successfully cancelled your RSVP");
       }
       setSnackbarSeverity("success");
@@ -244,7 +209,9 @@ const StudentDashboard: React.FC = () => {
       fetchData();
     } catch (error: any) {
       console.error("Error updating RSVP:", error);
-      const errorMessage = error.response?.data?.error || "An error occurred while updating your RSVP.";
+      const errorMessage =
+        error.response?.data?.error ||
+        "An error occurred while updating your RSVP.";
       setSnackbarMessage(errorMessage);
       setSnackbarSeverity("error");
       setSnackbarOpen(true);
@@ -253,10 +220,12 @@ const StudentDashboard: React.FC = () => {
 
   async function markNotificationAsRead(id: number) {
     try {
-      const response = await apiClient.patch(`/api/notifications/${id}`, { is_read: true });
+      const response = await apiClient.patch(`/api/notifications/${id}`, {
+        is_read: true,
+      });
       if (response.status === 200) {
-        setNotifications(prev =>
-          prev.map(n => (n.id === id ? { ...n, is_read: true } : n))
+        setNotifications((prev) =>
+          prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
         );
         setSnackbarMessage("Notification marked as read");
         setSnackbarSeverity("success");
@@ -268,7 +237,9 @@ const StudentDashboard: React.FC = () => {
       }
     } catch (error: any) {
       console.error("Error marking notification as read:", error);
-      const errorMessage = error.response?.data?.error || "An error occurred while marking the notification as read.";
+      const errorMessage =
+        error.response?.data?.error ||
+        "An error occurred while marking the notification as read.";
       setSnackbarMessage(errorMessage);
       setSnackbarSeverity("error");
       setSnackbarOpen(true);
@@ -284,8 +255,8 @@ const StudentDashboard: React.FC = () => {
   }
 
   function getMyEventsCount() {
-    const mySocietyIds = allSocieties.map(s => s.id);
-    return events.filter(e => mySocietyIds.includes(e.hostedBy)).length;
+    const mySocietyIds = allSocieties.map((s) => s.id);
+    return events.filter((e) => mySocietyIds.includes(e.hostedBy)).length;
   }
 
   if (loading) {
@@ -302,7 +273,6 @@ const StudentDashboard: React.FC = () => {
     );
   }
 
-
   return (
     <Box minHeight="100vh" bgcolor={colours.primary[500]} py={8}>
       <Box maxWidth="1920px" mx="auto" px={4}>
@@ -311,9 +281,9 @@ const StudentDashboard: React.FC = () => {
             Dashboard
           </Typography>
           <Box display="flex" gap={2}>
-            {(student?.is_president === true || 
-              student?.is_vice_president === true || 
-              student?.is_event_manager === true) && (  
+            {(student?.is_president === true ||
+              student?.is_vice_president === true ||
+              student?.is_event_manager === true) && (
               <Button
                 variant="contained"
                 onClick={() => {
@@ -322,8 +292,9 @@ const StudentDashboard: React.FC = () => {
                   } else if (student?.is_vice_president) {
                     navigate(`/president-page/${student.vice_president_of_society}`);
                   } else if (student?.is_event_manager) {
-                    // Direct event managers straight to events management page
-                    navigate(`/president-page/${student.event_manager_of_society}/manage-society-events`);
+                    navigate(
+                      `/president-page/${student.event_manager_of_society}/manage-society-events`
+                    );
                   }
                 }}
                 sx={{
@@ -332,14 +303,16 @@ const StudentDashboard: React.FC = () => {
                 }}
               >
                 <FaCogs style={{ marginRight: 4 }} />
-                {student?.is_event_manager ? 'Manage Society Events' : 'Manage My Society'}
+                {student?.is_event_manager ? "Manage Society Events" : "Manage My Society"}
               </Button>
             )}
           </Box>
         </Box>
+
+        {/* 3) & 4) Add the new Award StatCard by expanding to 4 columns and adding My Awards */}
         <Box
           display="grid"
-          gridTemplateColumns={{ xs: "1fr", md: "repeat(3, 1fr)" }}
+          gridTemplateColumns={{ xs: "1fr", md: "repeat(4, 1fr)" }}
           gap={3}
           mb={4}
         >
@@ -358,10 +331,17 @@ const StudentDashboard: React.FC = () => {
           <StatCard
             icon={<FaBell size={24} />}
             title="Unread Notifications"
-            value={notifications.filter(n => !n.is_read).length}
+            value={notifications.filter((n) => !n.is_read).length}
             color={colours.redAccent[500]}
           />
+          <StatCard
+            icon={<FaTrophy size={24} />}
+            title="My Awards"
+            value={awards.length}
+            color={colours.purpleAccent?.[500] || "#9C27B0"}
+          />
         </Box>
+
         <Paper
           elevation={3}
           sx={{
@@ -379,6 +359,9 @@ const StudentDashboard: React.FC = () => {
             <Tab label="Societies" />
             <Tab label="Events" />
             <Tab label="Notifications" />
+            {/* 4) Add a new Awards tab (index 3) */}
+            <Tab label="Awards" icon={<FaTrophy />} iconPosition="start" />
+            {/* Shift the Society News tab to index 4 */}
             <Tab label="Society News" icon={<FaNewspaper />} iconPosition="start" />
           </CustomTabs>
           <Box p={3}>
@@ -393,7 +376,7 @@ const StudentDashboard: React.FC = () => {
                 gap={3}
               >
                 {allSocieties.length > 0 ? (
-                  allSocieties.map(society => (
+                  allSocieties.map((society) => (
                     <Paper
                       key={society.id}
                       elevation={2}
@@ -434,12 +417,12 @@ const StudentDashboard: React.FC = () => {
                             <Typography variant="caption">Vice President</Typography>
                           </Box>
                         )}
-                        {society.is_event_manager && (  
+                        {society.is_event_manager && (
                           <Box
                             px={1}
                             py={0.5}
                             borderRadius="4px"
-                            bgcolor={colours.blueAccent[500]} 
+                            bgcolor={colours.blueAccent[500]}
                             color={colours.primary[500]}
                           >
                             <Typography variant="caption">Event Manager</Typography>
@@ -474,6 +457,7 @@ const StudentDashboard: React.FC = () => {
                 )}
               </Box>
             )}
+
             {activeTab === 1 && (
               <Box
                 display="grid"
@@ -485,8 +469,8 @@ const StudentDashboard: React.FC = () => {
                 gap={3}
               >
                 {events
-                  .filter(e => allSocieties.some(s => s.id === e.hostedBy))
-                  .map(event => (
+                  .filter((e) => allSocieties.some((s) => s.id === e.hostedBy))
+                  .map((event) => (
                     <Paper
                       key={event.id}
                       elevation={2}
@@ -496,25 +480,36 @@ const StudentDashboard: React.FC = () => {
                         p: 2,
                       }}
                     >
-                      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                      <Box
+                        display="flex"
+                        justifyContent="space-between"
+                        alignItems="center"
+                        mb={2}
+                      >
                         <Box>
                           <Typography variant="h6" sx={{ color: colours.grey[100] }}>
                             {event.title}
                           </Typography>
                           <Box display="flex" alignItems="center" mt={1}>
-                            <FaRegClock style={{ marginRight: 8, color: colours.grey[300] }} />
+                            <FaRegClock
+                              style={{ marginRight: 8, color: colours.grey[300] }}
+                            />
                             <Typography variant="body2" sx={{ color: colours.grey[300] }}>
-                              {event.date} {event.startTime && `at ${event.startTime}`}
+                              {event.date}{" "}
+                              {event.startTime && `at ${event.startTime}`}
                             </Typography>
                           </Box>
                           {event.location && (
-                            <Typography variant="body2" sx={{ color: colours.grey[300], mt: 1 }}>
+                            <Typography
+                              variant="body2"
+                              sx={{ color: colours.grey[300], mt: 1 }}
+                            >
                               Location: {event.location}
                             </Typography>
                           )}
                           <Typography variant="body2" sx={{ color: colours.grey[300], mt: 1 }}>
                             Hosted by:{" "}
-                            {allSocieties.find(s => s.id === event.hostedBy)?.name ||
+                            {allSocieties.find((s) => s.id === event.hostedBy)?.name ||
                               event.societyName ||
                               `Society ${event.hostedBy}`}
                           </Typography>
@@ -535,7 +530,9 @@ const StudentDashboard: React.FC = () => {
                       </Button>
                     </Paper>
                   ))}
-                {events.filter(e => allSocieties.some(s => s.id === e.hostedBy)).length === 0 && (
+                {events.filter((e) =>
+                  allSocieties.some((s) => s.id === e.hostedBy)
+                ).length === 0 && (
                   <Box
                     gridColumn={{ xs: "1", md: "1 / span 2", lg: "1 / span 3" }}
                     p={4}
@@ -548,6 +545,7 @@ const StudentDashboard: React.FC = () => {
                 )}
               </Box>
             )}
+
             {activeTab === 2 && (
               <Box>
                 {notifications.length === 0 ? (
@@ -560,7 +558,7 @@ const StudentDashboard: React.FC = () => {
                   </Typography>
                 ) : (
                   <div className="space-y-6">
-                    {notifications.map(notification => (
+                    {notifications.map((notification) => (
                       <Paper
                         key={notification.id}
                         elevation={2}
@@ -628,18 +626,52 @@ const StudentDashboard: React.FC = () => {
                 )}
               </Box>
             )}
+
+            {/* 5) Awards tab content at index 3 */}
             {activeTab === 3 && (
+              <Box>
+                {awards.length === 0 ? (
+                  <Typography
+                    variant="body1"
+                    align="center"
+                    sx={{ color: colours.grey[300], py: 4 }}
+                  >
+                    You haven't earned any awards yet
+                  </Typography>
+                ) : (
+                  <Box
+                    display="grid"
+                    gridTemplateColumns={{
+                      xs: "1fr",
+                      md: "repeat(2, 1fr)",
+                      lg: "repeat(3, 1fr)",
+                    }}
+                    gap={3}
+                  >
+                    {awards.map((award) => (
+                      <AwardCard key={award.id} award={award} />
+                    ))}
+                  </Box>
+                )}
+              </Box>
+            )}
+
+            {/* 6) Update Society News tab to index 4 */}
+            {activeTab === 4 && (
               <Box>
                 <SocietyNewsFeed />
               </Box>
             )}
           </Box>
         </Paper>
+
         {/* Start a Society Section */}
         {/* Only show this section if the user is not a president, vice president, or event manager */}
-        {!(student?.is_president === true || 
-          student?.is_vice_president === true || 
-          student?.is_event_manager === true) && (
+        {!(
+          student?.is_president === true ||
+          student?.is_vice_president === true ||
+          student?.is_event_manager === true
+        ) && (
           <Box
             display="grid"
             gridTemplateColumns={{ xs: "1fr", md: "repeat(1, 1fr)" }}
@@ -664,7 +696,8 @@ const StudentDashboard: React.FC = () => {
                 </Typography>
               </Box>
               <Typography variant="body2" sx={{ color: colours.grey[300], mb: 2 }}>
-                Have an idea for a new society? Share your passion and bring others together!
+                Have an idea for a new society? Share your passion and bring others
+                together!
               </Typography>
               <Button
                 variant="contained"
@@ -680,6 +713,7 @@ const StudentDashboard: React.FC = () => {
             </Paper>
           </Box>
         )}
+
         <Box mt={4}>
           <Paper
             elevation={3}
@@ -716,8 +750,9 @@ const StudentDashboard: React.FC = () => {
                 variant="contained"
                 onClick={() => {
                   if (student?.event_manager_of_society) {
-                    // Navigate directly to the events management page instead of president page
-                    navigate(`/president-page/${student.event_manager_of_society}/manage-society-events`);
+                    navigate(
+                      `/president-page/${student.event_manager_of_society}/manage-society-events`
+                    );
                   } else {
                     console.error("No society ID found for event manager");
                   }
@@ -725,14 +760,14 @@ const StudentDashboard: React.FC = () => {
                 sx={{
                   backgroundColor: colours.redAccent[500],
                   color: colours.grey[100],
-                  mb: 2
+                  mb: 2,
                 }}
               >
                 <FaCalendarAlt style={{ marginRight: 4 }} />
                 Manage Society Events
               </Button>
             )}
-            
+
             {showCalendar ? (
               <StudentCalendar societies={allSocieties} userEvents={events} />
             ) : (
@@ -752,17 +787,13 @@ const StudentDashboard: React.FC = () => {
           </Paper>
         </Box>
       </Box>
-      <Snackbar 
-        open={snackbarOpen} 
-        autoHideDuration={6000} 
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
         onClose={handleSnackbarClose}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
-        <Alert 
-          onClose={handleSnackbarClose} 
-          severity={snackbarSeverity}
-          sx={{ width: '100%' }}
-        >
+        <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: "100%" }}>
           {snackbarMessage}
         </Alert>
       </Snackbar>
