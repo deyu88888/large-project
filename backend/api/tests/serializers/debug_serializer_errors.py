@@ -1,4 +1,4 @@
-from api.recommendation_feedback_serializers import (
+from api.serializers_files.recommendation_feedback_serializers import (
     RecommendationFeedbackSerializer,
     RecommendationFeedbackCreateSerializer
 )
