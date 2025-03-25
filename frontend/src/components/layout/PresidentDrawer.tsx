@@ -193,7 +193,7 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
         <ListItem disablePadding>
           <ListItemButton
             component={Link}
-            to="/president-page/1"
+            to={"/president-page/"+student.president_of}
             selected={selected === "Manage My Societies"}
             onClick={() => setSelected("Manage My Societies")}
             sx={{ justifyContent: drawer ? "initial" : "center", px: 2.5 }}
