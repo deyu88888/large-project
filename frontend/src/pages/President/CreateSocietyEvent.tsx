@@ -75,116 +75,32 @@ const CreateEvent: React.FC = () => {
     };
   }, [theme.palette.mode]);
 
-  const handleSubmit = async (formData: FormData) => {
-    setLoading(true);
-    try {
-      const response = await apiClient.post(`/api/events/requests/${societyId}/`, formData);
-      if (response.status === 201) {
-        setSnackbar({
-          open: true,
-          message: "Event created successfully!",
-          severity: "success",
-        });
-        setTimeout(() => {
-          navigate(-1);
-        }, 1500);
-      } else {
-        throw new Error(`Server error: ${response.statusText}`);
-      }
-    } catch (error: any) {
-      console.error("Error creating event:", error);
-      setSnackbar({
-        open: true,
-        message: "Failed to create event.",
-        severity: "error",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  const isSuccessful = (status: number): boolean => status === 201;
 
-  const handleCancel = () => {
+  const showSuccessAndNavigateBack = () => {
+    alert("Event created successfully!");
     navigate(-1);
   };
 
-  const backgroundColor = theme.palette.mode === "dark" ? "#141b2d" : "#fcfcfc";
-  const textColor = theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d";
+  const showError = (error: unknown) => {
+    console.error("Error creating event:", error);
+    alert("Failed to create event.");
+  };
 
-  return (
-    <Box minHeight="100vh" p={4} sx={{ backgroundColor, color: textColor }}>
-      <Box textAlign="center" mb={4}>
-        <Typography variant="h2" fontWeight="bold" sx={{ color: textColor }}>
-          Create New Event
-        </Typography>
-        <Typography variant="h6" sx={{ color: colors.grey[500] }}>
-          Add a new event for Society {societyId}
-        </Typography>
-      </Box>
+  const handleSubmit = async (formData: FormData): Promise<void> => {
+    try {
+      const response = await apiClient.post(`/api/events/requests/${societyId}/`, formData);
 
-      <Paper
-        elevation={3}
-        sx={{
-          p: 4,
-          mx: "auto",
-          maxWidth: "800px",
-          backgroundColor: theme.palette.mode === "dark" ? colors.primary[500] : "#ffffff",
-          borderRadius: "8px",
-          boxShadow: 3,
-          "& .MuiTypography-root": {
-            color: textColor,
-          },
-          "& .MuiButton-root": {
-            color: textColor,
-          },
-        }}
-        className="event-form-wrapper"
-      >
-        {loading ? (
-          <Box display="flex" justifyContent="center" alignItems="center" height="300px">
-            <CircularProgress color="secondary" />
-          </Box>
-        ) : (
-          <>
-            <div className="event-form-wrapper">
-              <EventForm onSubmit={handleSubmit} />
-            </div>
-            
-            <Box mt={4} display="flex" justifyContent="space-between">
-              <Button
-                onClick={handleCancel}
-                variant="outlined"
-                sx={{
-                  color: theme.palette.mode === "dark" ? colors.grey[100] : colors.grey[700],
-                  borderColor: theme.palette.mode === "dark" ? colors.grey[100] : colors.grey[700],
-                  "&:hover": {
-                    borderColor: theme.palette.mode === "dark" ? colors.grey[200] : colors.grey[800],
-                  },
-                }}
-              >
-                Cancel
-              </Button>
-            </Box>
-          </>
-        )}
-      </Paper>
+      if (isSuccessful(response.status)) {
+        showSuccessAndNavigateBack();
+        return;
+      }
 
-      {/* Snackbar for notifications */}
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={3000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: "top", horizontal: "center" }}
-      >
-        <Alert
-          severity={snackbar.severity}
-          variant="filled"
-          onClose={() => setSnackbar({ ...snackbar, open: false })}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
-    </Box>
-  );
-};
+      throw new Error(`Server error: ${response.statusText}`);
+    } catch (error: unknown) {
+      showError(error);
+    }
+  };
 
-export default CreateEvent;
+  return <EventForm onSubmit={handleSubmit} />;
+}
