@@ -13,11 +13,13 @@ interface Attendee {
     icon?: string | null;
 }
 
-interface EventData {
+export interface EventData {
     id: number;
     title: string;
     date: string;
     location: string;
+    description?: string;
+    cover_image?: string;
     current_attendees?: Attendee[];
 }
 
