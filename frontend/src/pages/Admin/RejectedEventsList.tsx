@@ -132,28 +132,11 @@ const EventListRejected = () => {
   const columns: GridColDef[] = [
     { field: "id", headerName: "ID", flex: 0.5 },
     { field: "title", headerName: "Title", flex: 1 },
-    { 
-      field: "description", 
-      headerName: "Description", 
-      flex: 1.5,
-      renderCell: (params: GridRenderCellParams) => (
-        <Typography
-          variant="body2"
-          sx={{
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-          }}
-          title={params.value as string} // Shows full text on hover
-        >
-          {params.value}
-        </Typography>
-      )
-    },
+    { field: "main_description", headerName: "Description", flex: 2},
     { field: "date", headerName: "Date", flex: 1 },
-    { field: "startTime", headerName: "Start Time", flex: 1 },
+    { field: "start_time", headerName: "Start Time", flex: 1 },
     { field: "duration", headerName: "Duration", flex: 1 },
-    { field: "hostedBy", headerName: "Hosted By", flex: 1 },
+    { field: "hosted_by", headerName: "Hosted By", flex: 1 },
     { field: "location", headerName: "Location", flex: 1 },
   ];
 
@@ -162,21 +145,8 @@ const EventListRejected = () => {
       sx={{
         height: "calc(100vh - 64px)",
         maxWidth: drawer ? `calc(100% - 3px)` : "100%",
-        p: 2,
       }}
     >
-      <Typography
-        variant="h1"
-        sx={{
-          color: theme.palette.mode === "light" ? colors.grey[100] : colors.grey[100],
-          fontSize: "1.75rem",
-          fontWeight: 800,
-          mb: 2,
-        }}
-      >
-        Rejected Events
-      </Typography>
-
       <Box
         sx={{
           height: "78vh",
@@ -209,16 +179,12 @@ const EventListRejected = () => {
           rows={filteredEvents}
           columns={columns}
           slots={{ toolbar: GridToolbar }}
-          autoHeight
-          loading={loading}
           resizeThrottleMs={0}
+          autoHeight
           disableRowSelectionOnClick
           initialState={{
-            pagination: {
-              paginationModel: { pageSize: 10, page: 0 },
-            },
+            pagination: { paginationModel: { pageSize: 100 } },
           }}
-          pageSizeOptions={[5, 10, 25]}
         />
       </Box>
     </Box>

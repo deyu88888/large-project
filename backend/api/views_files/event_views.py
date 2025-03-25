@@ -1,5 +1,3 @@
-import logging
-
 from django.utils.timezone import now
 from django.shortcuts import get_object_or_404
 from rest_framework import status
@@ -23,7 +21,6 @@ def get_event_if_exists(event_id):
             status=status.HTTP_404_NOT_FOUND
         )
 
-logger = logging.getLogger(__name__)
 class JoinedEventsView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -32,10 +29,7 @@ class JoinedEventsView(APIView):
         if not student:
             return Response({"error": "Only students can access this endpoint."}, status=403)
 
-        logger.info(f"[JoinedEventsView] Looking up events for student: {student.id}")
-
         events = Event.objects.filter(current_attendees__id=student.id).distinct()
-        logger.info(f"[JoinedEventsView] Found {events.count()} events with student in attendees.")
 
         serializer = EventSerializer(events, many=True)
         return Response(serializer.data)

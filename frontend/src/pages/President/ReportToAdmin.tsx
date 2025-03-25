@@ -39,7 +39,7 @@ const ReportToAdmin: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
     try {
-      await apiClient.post("/api/report-to-admin", formData);
+      await apiClient.post("/api/reports/to-admin/", formData);
       alert("Report submitted successfully!");
       navigate(-1);
     } catch (error) {
