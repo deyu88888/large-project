@@ -346,65 +346,65 @@ const ViewSociety: React.FC = () => {
         }}
       >
         <form onSubmit={handleSubmit}>
-  <Grid container>
-    {/* Upload Icon */}
-    <Grid item xs={12} md={6}>
-      <Typography variant="subtitle1" sx={{ mb: 1 }}>
-        Upload Icon
-      </Typography>
-      <Button
-        variant="contained"
-        component="label"
-        sx={{ borderRadius: "8px", mb: 2 }}
-      >
-        Choose File
-        <input
-          type="file"
-          accept="image/*"
-          hidden
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) {
-              setFormData((prev) =>
-                prev ? { ...prev, icon: file } : prev
-              );
-            }
-          }}
-        />
-      </Button>
+        <Grid container>
+          {/* Upload Icon */}
+          <Grid item xs={12} md={6}>
+            <Typography variant="subtitle1" sx={{ mb: 1 }}>
+              Upload Icon
+            </Typography>
+            <Button
+              variant="contained"
+              component="label"
+              sx={{ borderRadius: "8px", mb: 2 }}
+            >
+              Choose File
+              <input
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    setFormData((prev) =>
+                      prev ? { ...prev, icon: file } : prev
+                    );
+                  }
+                }}
+              />
+            </Button>
 
-      {/* Preview current icon */}
-      {formData.icon && typeof formData.icon === "string" && (
-        <Box mb={4}>
-          <Typography variant="caption" color="textSecondary">
-            Current Icon:
-          </Typography>
-          <Box mt={1}>
-            <img
-              src={formData.icon}
-              alt="Society Icon"
-              style={{ maxWidth: "120px", borderRadius: "8px" }}
-            />
-          </Box>
-        </Box>
-      )}
+            {/* Preview current icon */}
+            {formData.icon && typeof formData.icon === "string" && (
+              <Box mb={4}>
+                <Typography variant="caption" color="textSecondary">
+                  Current Icon:
+                </Typography>
+                <Box mt={1}>
+                  <img
+                    src={formData.icon}
+                    alt="Society Icon"
+                    style={{ maxWidth: "120px", borderRadius: "8px" }}
+                  />
+                </Box>
+              </Box>
+            )}
 
-      {/* Preview new upload */}
-      {formData.icon instanceof File && (
-        <Box mt={2}>
-          <Typography variant="caption" color="textSecondary">
-            New Icon Preview:
-          </Typography>
-          <Box mt={1}>
-            <img
-              src={URL.createObjectURL(formData.icon)}
-              alt="New Society Icon"
-              style={{ maxWidth: "120px", borderRadius: "8px" }}
-            />
-          </Box>
-        </Box>
-      )}
-    </Grid>
+            {/* Preview new upload */}
+            {formData.icon instanceof File && (
+              <Box mt={2}>
+                <Typography variant="caption" color="textSecondary">
+                  New Icon Preview:
+                </Typography>
+                <Box mt={1}>
+                  <img
+                    src={URL.createObjectURL(formData.icon)}
+                    alt="New Society Icon"
+                    style={{ maxWidth: "120px", borderRadius: "8px" }}
+                  />
+                </Box>
+              </Box>
+            )}
+          </Grid>
           <Grid container spacing={3}>
             <Grid item xs={12}>
               <TextField
