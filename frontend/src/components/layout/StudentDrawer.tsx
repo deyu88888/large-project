@@ -162,7 +162,7 @@ const StudentDrawer: React.FC<StudentDrawerProps> = ({
           <ListItem disablePadding>
             <ListItemButton
               component={Link}
-              to="/student/join-society" // Updated route to singular
+              to="/student/join-society"
               sx={{ justifyContent: drawer ? "initial" : "center", px: 2.5 }}
             >
               <ListItemIcon
@@ -179,33 +179,6 @@ const StudentDrawer: React.FC<StudentDrawerProps> = ({
           </ListItem>
         </List>
         <Divider />
-
-        {/* Additional Items */}
-        <List>
-          {["All mail", "Trash", "Spam"].map((text, index) => (
-            <ListItem key={text} disablePadding>
-              <ListItemButton
-                sx={{
-                  minHeight: 48,
-                  px: 2.5,
-                  justifyContent: drawer ? "initial" : "center",
-                }}
-              >
-                <ListItemIcon
-                  sx={{
-                    minWidth: 0,
-                    mr: drawer ? 3 : "auto",
-                    justifyContent: "center",
-                  }}
-                >
-                  {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
-                </ListItemIcon>
-                {drawer && <ListItemText primary={text} />}
-              </ListItemButton>
-            </ListItem>
-          ))}
-        </List>
-        <Divider/>
 
         {/* Logout Item */}
         <List>
