@@ -178,11 +178,11 @@ const EventList: React.FC = () => {
   const columns: GridColDef[] = [
     { field: "id", headerName: "ID", flex: 0.3 },
     { field: "title", headerName: "Title", flex: 1 },
-    { field: "description", headerName: "Description", flex: 2 },
+    { field: "main_description", headerName: "Description", flex: 2 },
     { field: "date", headerName: "Date", flex: 1 },
-    { field: "startTime", headerName: "Start Time", flex: 1 },
+    { field: "start_time", headerName: "Start Time", flex: 1 },
     { field: "duration", headerName: "Duration", flex: 1 },
-    { field: "hostedBy", headerName: "Hosted By", flex: 1 },
+    { field: "hosted_by", headerName: "Hosted By", flex: 0.5 },
     { field: "location", headerName: "Location", flex: 1 },
     {
       field: "actions",

@@ -87,7 +87,9 @@ const ViewStudent: React.FC = () => {
       formDataToSend.append("role", formData.role);
       formDataToSend.append("major", formData.major);
       formData.societies.forEach((id) => { formDataToSend.append("societies", String(id));});
+
       formDataToSend.append("president_of", JSON.stringify(formData.president_of));
+
       formDataToSend.append("is_president", String(formData.is_president));
 
       await apiClient.patch(`/api/admin/manage-student/${studentId}`, formDataToSend, {

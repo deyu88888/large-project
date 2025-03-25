@@ -105,10 +105,13 @@ class AwardStudentView(APIView):
 
     def post(self, request) -> Response:
         """Assign an award to a student"""
-        serializer = AwardStudentSerializer(data=request.data)
-        if serializer_is_valid_and_save(serializer):
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            serializer = AwardStudentSerializer(data=request.data)
+            if serializer_is_valid_and_save(serializer):
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def put(self, request, pk: int) -> Response:
         """Update a specific award assignment"""

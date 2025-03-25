@@ -21,7 +21,7 @@ const ReportReply: React.FC = () => {
   const fetchReport = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get(`/api/report-to-admin/${reportId}`);
+      const response = await apiClient.get(`/api/reports/to-admin/${reportId}/`);
       setReport(response.data);
       setLoading(false);
     } catch (err) {
