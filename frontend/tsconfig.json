@@ -4,11 +4,5 @@
     { "path": "./tsconfig.app.json" },
     { "path": "./tsconfig.node.json" }
   ],
-
-  "compilerOptions": {
-
-    "types": ["vitest/globals"],
-  },
-
-  "include": ["src"]
+  "exclude": ["node_modules", "coverage", "**/*.test.ts", "**/*.test.tsx"]
 }

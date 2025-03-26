@@ -2,19 +2,10 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTheme, Box, Typography, Paper, Button, CircularProgress, Chip, 
   Avatar, Divider, Card, CardContent, CardActions, IconButton } from '@mui/material';
 import { tokens } from '../../theme/theme';
-import {
-  getNewsPostDetail,
-  getNewsComments,
-  createNewsComment,
-  updateNewsComment,
-  deleteNewsComment,
-  toggleLikeOnComment,
-  apiClient,
-} from "../../api";
+import { apiClient } from "../../api";
 
 import NewsComment from "../../components/NewsComment";
 import {
-  ThumbUp as ThumbUpIcon,
   Comment as CommentIcon,
   StarOutline as StarOutlineIcon,
   PushPin as PushPinIcon,

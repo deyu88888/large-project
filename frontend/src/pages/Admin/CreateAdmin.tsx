@@ -22,6 +22,7 @@ import { useAuthStore } from "../../stores/auth-store";
 import { Admin } from "../../types";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { tokens } from "../../theme/theme";
+import TextFieldComponent from "../../components/TextFieldComponent";
 
 
 interface AdminFormValues {
@@ -220,49 +221,6 @@ const FormButtons: FC<FormButtonsProps> = ({ isValid, dirty, loading }) => {
 };
 
 
-const TextFieldComponent: FC<{
-  label: string;
-  name: string;
-  value: string;
-  handleBlur: any;
-  handleChange: any;
-  error: boolean;
-  helperText?: string;
-  gridSpan: string;
-  disabled: boolean;
-}> = ({ 
-  label, 
-  name, 
-  value, 
-  handleBlur, 
-  handleChange, 
-  error, 
-  helperText, 
-  gridSpan, 
-  disabled 
-}) => {
-  return (
-    <TextField
-      fullWidth
-      variant="filled"
-      type="text"
-      label={label}
-      onBlur={handleBlur}
-      onChange={handleChange}
-      value={value}
-      name={name}
-      error={error}
-      helperText={helperText}
-      sx={{ gridColumn: gridSpan }}
-      disabled={disabled}
-      InputProps={{
-        "aria-label": label,
-      }}
-    />
-  );
-};
-
-
 const PasswordField: FC<PasswordFieldProps> = ({
   name,
   label,
@@ -331,7 +289,7 @@ const FormFields: FC<FormFieldsProps> = ({
         handleBlur={handleBlur}
         handleChange={handleChange}
         error={Boolean(touched.first_name && errors.first_name)}
-        helperText={touched.first_name && errors.first_name}
+        helperText={touched.first_name && errors.first_name ? errors.first_name : undefined}
         gridSpan="span 2"
         disabled={loading}
       />
@@ -343,7 +301,7 @@ const FormFields: FC<FormFieldsProps> = ({
         handleBlur={handleBlur}
         handleChange={handleChange}
         error={Boolean(touched.last_name && errors.last_name)}
-        helperText={touched.last_name && errors.last_name}
+        helperText={touched.last_name && errors.last_name ? errors.last_name : undefined}
         gridSpan="span 2"
         disabled={loading}
       />
@@ -355,7 +313,7 @@ const FormFields: FC<FormFieldsProps> = ({
         handleBlur={handleBlur}
         handleChange={handleChange}
         error={Boolean(touched.username && errors.username)}
-        helperText={touched.username && errors.username}
+        helperText={touched.username && errors.username ? errors.username : undefined}
         gridSpan="span 4"
         disabled={loading}
       />
@@ -367,11 +325,12 @@ const FormFields: FC<FormFieldsProps> = ({
         handleBlur={handleBlur}
         handleChange={handleChange}
         error={Boolean(touched.email && errors.email)}
-        helperText={touched.email && errors.email}
+        helperText={touched.email && errors.email? errors.email : undefined}
         gridSpan="span 4"
         disabled={loading}
       />
-      
+
+
       <PasswordField
         name="password"
         label="Password"
@@ -381,7 +340,7 @@ const FormFields: FC<FormFieldsProps> = ({
         handleChange={handleChange}
         handleTogglePasswordVisibility={onTogglePasswordVisibility}
         error={Boolean(touched.password && errors.password)}
-        helperText={touched.password && errors.password}
+        helperText={touched.password && errors.password ? errors.password : undefined}
         disabled={loading}
       />
       
@@ -394,7 +353,7 @@ const FormFields: FC<FormFieldsProps> = ({
         handleChange={handleChange}
         handleTogglePasswordVisibility={onTogglePasswordVisibility}
         error={Boolean(touched.confirmPassword && errors.confirmPassword)}
-        helperText={touched.confirmPassword && errors.confirmPassword}
+        helperText={touched.confirmPassword && errors.confirmPassword? errors.confirmPassword : undefined}
         disabled={loading}
       />
     </Box>
@@ -424,8 +383,8 @@ const AdminInfoItem: FC<{ label: string; value: string }> = ({ label, value }) =
 
 
 const SuccessView: FC<SuccessViewProps> = ({ createdAdmin, onCreateAnother, colors, theme }) => {
-  const firstName = createdAdmin.first_name || createdAdmin.firstName;
-  const lastName = createdAdmin.last_name || createdAdmin.lastName;
+  const firstName = createdAdmin.first_name;
+  const lastName = createdAdmin.last_name;
   const paperStyle = { 
     width: "100%", 
     maxWidth: "500px", 
@@ -543,9 +502,7 @@ const FormView: FC<FormViewProps> = ({
   return (
     <Box sx={containerStyle}>
       <Header title="Create Admin" subtitle="Create a New Admin Profile" />
-      
-      <ErrorAlert error={error} onClose={onErrorClose} />
-      
+      <ErrorAlert error={error ?? ""} onClose={onErrorClose} />
       <Paper elevation={3} sx={paperStyle}>
         <FormikWrapper 
           onSubmit={onSubmit}
@@ -678,11 +635,8 @@ const CreateAdmin: FC = () => {
     }
   };
 
-  
   const shouldShowUnauthorizedView = !user?.is_super_admin;
   const shouldShowSuccessView = formState.isSuccess && formState.createdAdmin !== null;
-  const shouldShowFormView = !formState.isSuccess && user?.is_super_admin;
-
   
   if (shouldShowUnauthorizedView) {
     return (

@@ -5,7 +5,7 @@ from channels.testing import WebsocketCommunicator
 from django.test import TestCase, override_settings
 from django.urls import re_path
 from asgiref.sync import sync_to_async
-from api.consumer.consumers import DashboardConsumer
+from api.consumer.dashboard_consumer import DashboardConsumer
 from api.models import Society, Event, Student, User
 from api.tests.file_deletion import delete_file
 
@@ -59,13 +59,13 @@ class TestDashboardConsumer(TestCase):
         Event.objects.create(
             title="Event 1", 
             location="Room A",
-            hosted_by=approved_society  # Add the hosted_by field if required
+            hosted_by=approved_society
         )
 
     async def discard_initial_messages(self, communicator):
         """Discard initial messages sent when the consumer connects."""
-        await communicator.receive_json_from()  # dashboard.update
-        await communicator.receive_json_from()  # update_introduction
+        await communicator.receive_json_from()
+        await communicator.receive_json_from()
 
     async def test_websocket_connect(self):
         """Test successful WebSocket connection."""
@@ -87,7 +87,6 @@ class TestDashboardConsumer(TestCase):
         connected, _ = await communicator.connect()
         self.assertTrue(connected)
 
-        # Discard initial messages
         await self.discard_initial_messages(communicator)
 
         # Construct message data and send group broadcast
@@ -112,7 +111,6 @@ class TestDashboardConsumer(TestCase):
         connected, _ = await communicator.connect()
         self.assertTrue(connected)
 
-        # Discard initial messages
         await self.discard_initial_messages(communicator)
 
         payload = {

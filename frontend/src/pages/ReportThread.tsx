@@ -3,52 +3,22 @@ import { useParams, useNavigate } from "react-router-dom";
 import { apiClient } from "../api";
 import { tokens } from "../theme/theme";
 import { 
-    Box, Typography, Button, TextField, Paper, Avatar, 
-    Divider, CircularProgress, Card, CardHeader, CardContent,
+    Box, Typography, Button, TextField, Avatar, 
+    CircularProgress, Card, CardHeader, CardContent,
     IconButton, List, ListItem, MenuItem, Select, FormControl, InputLabel,
     FormHelperText, Alert
   } from "@mui/material";
-  import { useTheme } from "@mui/material/styles";
-  import ReplyIcon from '@mui/icons-material/Reply';
-  import EmailIcon from '@mui/icons-material/Email';
-  import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-
-interface Reply {
-  id: number;
-  content: string;
-  created_at: string;
-  replied_by_username: string;
-  is_admin_reply: boolean;
-  child_replies: Reply[];
-}
-
-interface ReportThread {
-  id: number;
-  report_type: string;
-  subject: string;
-  details: string;
-  requested_at: string;
-  from_student_username: string;
-  top_level_replies: Reply[];
-}
-
-interface FlattenedMessage {
-  id: number;
-  subject: string;
-  content: string;
-  sender: string;
-  timestamp: string;
-  is_admin: boolean;
-  is_original: boolean;
-  level: number;
-}
+import { useTheme } from "@mui/material/styles";
+import EmailIcon from '@mui/icons-material/Email';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import { Reply, ReportThread as ReportThreadType, FlattenedMessage } from '../types/president/report'
 
 const ReportThread: React.FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const navigate = useNavigate();
   const { reportId } = useParams<{ reportId: string }>();
-  const [report, setReport] = useState<ReportThread | null>(null);
+  const [report, setReport] = useState<ReportThreadType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState("");
@@ -129,7 +99,6 @@ const ReportThread: React.FC = () => {
   const flattenMessages = () => {
     if (!report) return [];
     
-    // Start with the original report as the first email
     const originalEmail = {
       id: report.id,
       subject: report.subject,

@@ -13,7 +13,7 @@ export interface EventData {
   duration: string;
   location?: string;
   hosted_by: number;
-  societyName?: string;
+  society_name?: string;
   rsvp?: boolean;
   status: string;
   current_attendees?: Attendee[];
@@ -25,11 +25,11 @@ export interface TransformedEvent {
   title: string;
   description: string;
   date: string;
-  startTime: string;
+  start_time: string;
   duration: string;
   location: string;
-  hostedBy: number;
-  societyName?: string;
+  hosted_by: number;
+  society_name?: string;
   status: string;
   current_attendees?: Attendee[];
 }

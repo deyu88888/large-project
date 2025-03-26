@@ -2,10 +2,9 @@
 
 
 import { useState, useEffect, useContext, useRef, useCallback } from "react";
-import { Box, Typography, useTheme } from "@mui/material";
-import { DataGrid, GridColDef, GridToolbar, GridRenderCellParams } from "@mui/x-data-grid";
+import { Box, useTheme } from "@mui/material";
+import { DataGrid, GridColDef, GridToolbar } from "@mui/x-data-grid";
 import { apiClient, apiPaths } from "../../api";
-import { useNavigate } from "react-router-dom";
 import { tokens } from "../../theme/theme";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { useSettingsStore } from "../../stores/settings-store";
@@ -27,7 +26,7 @@ interface DataGridProps {
 }
 
 
-const WS_URL = "ws:
+const WS_URL = "ws:";
 const RECONNECT_DELAY = 5000;
 
 
@@ -172,20 +171,20 @@ const EventsDataGrid: React.FC<DataGridProps> = ({ events, columns, colors }) =>
 const EventListRejected: React.FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
-  const navigate = useNavigate();
   const { drawer } = useSettingsStore();
   const [events, setEvents] = useState<Event[]>([]);
-  const [loading, setLoading] = useState(true);
+  const loadingRef = useRef(true);
   const { searchTerm } = useContext(SearchContext);
   const ws = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  
+
   const loadEvents = useCallback(async () => {
-    setLoading(true);
+    loadingRef.current=true;
     const data = await fetchRejectedEvents();
     setEvents(data);
-    setLoading(false);
+    loadingRef.current=false;
+    ;
   }, []);
 
   
@@ -219,14 +218,8 @@ const EventListRejected: React.FC = () => {
   }, [loadEvents, connectWebSocket]);
 
   
-  const handleBackToEvents = useCallback(() => {
-    navigate("/admin/event-list");
-  }, [navigate]);
-
-  
   const filteredEvents = filterEventsBySearchTerm(events, searchTerm || "");
-  
-  
+
   const columns = createEventColumns();
 
   return (

@@ -15,7 +15,7 @@ import { apiClient, apiPaths } from "../../api";
 import { tokens } from "../../theme/theme";
 import { useSettingsStore } from "../../stores/settings-store";
 import { SearchContext } from "../../components/layout/SearchContext";
-import { Event } from '../../types';
+import { Event as AppEvent } from '../../types';
 import { EventPreview } from "../../components/EventPreview";
 import type { EventData } from "../../components/EventDetailLayout";
 
@@ -25,7 +25,7 @@ const RECONNECT_TIMEOUT = 5000;
 
 interface DeleteDialogProps {
   open: boolean;
-  event: Event | null;
+  event: AppEvent | null;
   reason: string;
   onReasonChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onCancel: () => void;
@@ -34,13 +34,13 @@ interface DeleteDialogProps {
 
 interface ActionButtonsProps {
   eventId: string;
-  event: Event;
-  onView: (event: Event) => void;
-  onDelete: (event: Event) => void;
+  event: AppEvent;
+  onView: (event: AppEvent) => void;
+  onDelete: (event: AppEvent) => void;
 }
 
 interface DataGridContainerProps {
-  filteredEvents: Event[];
+  filteredEvents: AppEvent[];
   columns: GridColDef[];
   loading: boolean;
   colors: any;
@@ -57,6 +57,7 @@ function mapToEventData(raw: any): EventData {
     maxCapacity: raw.max_capacity || 0,
     hostedBy: raw.hosted_by || 0,
     eventId: raw.id,
+    current_attendees: raw.any,
     coverImageUrl: raw.cover_image || "",
     extraModules: raw.extra_modules || [],
     participantModules: raw.participant_modules || [],
@@ -66,7 +67,6 @@ function mapToEventData(raw: any): EventData {
 }
 
 const ActionButtons: FC<ActionButtonsProps> = ({
-  eventId,
   event,
   onView,
   onDelete
@@ -186,8 +186,17 @@ const DataGridContainer: FC<DataGridContainerProps> = ({
   );
 };
 
+const handleSocketError = useCallback((event: Event) => {
+  console.error("WebSocket Error:", event);
+}, []);
 
-const createWebSocket = (url: string, onOpen: () => void, onMessage: (data: any) => void, onError: (event: Event) => void, onClose: (event: CloseEvent) => void): WebSocket => {
+const createWebSocket = (
+  url: string,
+  onOpen: () => void,
+  onMessage: (data: any) => void,
+  onError: (event: globalThis.Event) => void,
+  onClose: (event: CloseEvent) => void
+): WebSocket => {
   const socket = new WebSocket(url);
   socket.onopen = onOpen;
   socket.onmessage = onMessage;
@@ -205,26 +214,22 @@ const parseWebSocketMessage = (event: MessageEvent): any => {
   }
 };
 
-
 const EventList: FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const { drawer } = useSettingsStore();
   const { searchTerm } = useContext(SearchContext);
-
   
-  const [events, setEvents] = useState<Event[]>([]);
+  const [events, setEvents] = useState<AppEvent[]>([]);
   const [openDialog, setOpenDialog] = useState(false);
-  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<AppEvent | null>(null);
   const [reason, setReason] = useState('');
   const [loading, setLoading] = useState(true);
   const [previewEvent, setPreviewEvent] = useState<EventData | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
 
-  
   const ws = useRef<WebSocket | null>(null);
 
-  
   const fetchEvents = useCallback(async () => {
     try {
       setLoading(true);
@@ -236,7 +241,6 @@ const EventList: FC = () => {
       setLoading(false);
     }
   }, []);
-
   
   const handleSocketOpen = useCallback(() => {
     console.log("WebSocket Connected for Event List");
@@ -250,7 +254,7 @@ const EventList: FC = () => {
     }
   }, [fetchEvents]);
 
-  const handleSocketError = useCallback((event: Event) => {
+  const handleSocketError = useCallback((event: AppEvent) => {
     console.error("WebSocket Error:", event);
   }, []);
 
@@ -286,13 +290,13 @@ const EventList: FC = () => {
     };
   }, [fetchEvents, connectWebSocket]);
 
-  const handleViewEvent = useCallback((event: Event) => {
+  const handleViewEvent = useCallback((event: AppEvent) => {
     const data = mapToEventData(event);
     setPreviewEvent(data);
     setPreviewOpen(true);
   }, []);
 
-  const handleOpenDialog = useCallback((event: Event) => {
+  const handleOpenDialog = useCallback((event: AppEvent) => {
     setSelectedEvent(event);
     setOpenDialog(true);
   }, []);

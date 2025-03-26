@@ -54,6 +54,7 @@ const getTabAccessibilityProps = (index: number): TabAccessibilityProps => {
   };
 };
 
+
 const getInitialTabState = (): number => {
   try {
     const savedTab = localStorage.getItem(ACTIVE_TAB_KEY);
@@ -154,15 +155,12 @@ const ManageEvents: FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   
-  
   const [activeTab, setActiveTab] = useState<number>(getInitialTabState);
   
-  
-  const handleTabChange = useCallback((event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = useCallback((_: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
     saveTabState(newValue);
   }, []);
-  
   
   const containerStyle = {
     height: "calc(100vh - 64px)",

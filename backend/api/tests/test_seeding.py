@@ -12,7 +12,6 @@ from api.models import (
     AwardStudent,
 )
 from api.management.commands import seed
-# from api.tests.file_deletion import delete_file
 
 class SeedingTestCase(TransactionTestCase):
     """Unit test for the seed Command"""
