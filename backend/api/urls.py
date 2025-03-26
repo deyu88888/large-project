@@ -3,7 +3,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from api.views import (
     # Authentication & Users
     RegisterView, CurrentUserView, MyProfileView, toggle_follow, UpdatePasswordView,
-    check_email,
+    check_email, upload_avatar,
 
     # Admin
     AdminListView, AdminStudentListView, AdminDeleteView, AdminRestoreView,
@@ -33,7 +33,7 @@ from api.views import (
     # Reports
     ReportToAdminView, ReportReplyView, MyReportsView, MyReportsWithRepliesView,
     ReportThreadView, ReportReplyNotificationsView, PublicReportView,
-    
+
     # Dashboard
     DashboardStatsView, RecentActivitiesView, EventCalendarView,
 
@@ -43,8 +43,9 @@ from api.views import (
     # Utilities
     custom_media_view, SearchView, PendingJoinRequestsView,
 
-    #Recommendation System
-    RecommendedSocietiesView, SocietyRecommendationExplanationView, RecommendationFeedbackView, RecommendationFeedbackAnalyticsView 
+    # Recommendation System
+    RecommendedSocietiesView, SocietyRecommendationExplanationView, RecommendationFeedbackView,
+    RecommendationFeedbackAnalyticsView
 )
 from .utils import request_otp, verify_otp
 
@@ -67,6 +68,8 @@ profile_patterns = [
     path("<int:user_id>/follow", toggle_follow, name="toggle_follow"),
     path("<int:user_id>", MyProfileView.as_view(), name="user_profile"),
     path("password", UpdatePasswordView.as_view(), name="update_password"),
+    path("avatar", upload_avatar, name="upload_avatar"),
+
 ]
 
 # Admin management patterns

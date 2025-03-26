@@ -1,4 +1,7 @@
-from django.db.models import Count, Sum
+from PIL import Image
+from io import BytesIO
+from django.core.files.base import ContentFile
+from django.db.models import Sum
 from django.utils.timezone import now
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
@@ -203,3 +206,39 @@ def check_email(request):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
     return JsonResponse({"error": "Invalid request method."}, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def upload_avatar(request):
+    try:
+        student = Student.objects.get(pk=request.user.pk)
+    except Student.DoesNotExist:
+        return Response({"detail": "Only students can change avatar."}, status=403)
+
+    image = request.FILES.get("image")
+    try:
+        crop_x = int(request.POST.get("crop_x"))
+        crop_y = int(request.POST.get("crop_y"))
+        crop_width = int(request.POST.get("crop_width"))
+        crop_height = int(request.POST.get("crop_height"))
+    except Exception as e:
+        return Response({"detail": "Invalid crop params."}, status=400)
+
+    if not image:
+        return Response({"detail": "No image uploaded."}, status=400)
+
+    try:
+        img = Image.open(image)
+        cropped = img.crop((crop_x, crop_y, crop_x + crop_width, crop_y + crop_height))
+        cropped = cropped.resize((300, 300))
+
+        buffer = BytesIO()
+        cropped.save(fp=buffer, format='PNG')
+        file_name = f"user_{student.id}_avatar.png"
+        student.icon.save(file_name, ContentFile(buffer.getvalue()))
+        student.save()
+
+        return Response({"icon": student.icon.url})
+    except Exception as e:
+        print("Avatar upload error:", e)
+        return Response({"detail": "Image processing failed."}, status=500)
