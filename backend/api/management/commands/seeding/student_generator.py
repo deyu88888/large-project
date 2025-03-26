@@ -1,5 +1,9 @@
 from random import choice
 from faker import Faker
+from django.contrib.auth.hashers import make_password
+from django.core.management import color_style
+from api.models import Student, UserRequest
+
 
 class RandomStudentDataGenerator():
     """Class encompassing tools to generate student data"""
@@ -27,6 +31,8 @@ class RandomStudentDataGenerator():
         self.generated_usernames = set()
 
         self.fake = Faker()
+        self.style = color_style()
+
 
     def generate(self) -> dict:
         """Generates artificial data for a student and returns in a dict"""
@@ -56,3 +62,41 @@ class RandomStudentDataGenerator():
             if f"{fn}-{ln}{i}" not in self.generated_usernames:
                 self.generated_usernames.add(f"{fn}-{ln}{i}")
                 return f"{fn}-{ln}{i}"
+
+    def create_student(self, n):
+        """Create n different students"""
+        created_count = 0
+
+        while created_count < n:
+            created_count += 1
+            print(f"Seeding student {created_count}/{n}", end='\r', flush=True)
+
+            data = self.generate()
+
+            email = f"{data['username']}@kcl.ac.uk"
+
+            student = Student.objects.create(
+                email=email,
+                username=data["username"],
+                first_name=data["first_name"],
+                last_name=data["last_name"],
+                major=data["major"],
+                password=make_password("studentpassword"),
+            )
+            self.handle_user_status(student)
+            student.save()
+
+        print(self.style.SUCCESS(f"Seeding student {created_count}/{n}"), flush=True)
+        return created_count
+
+    def handle_user_status(self, user):
+        """Creates user requests if pending"""
+        update_request = choice((True, False))
+
+        if update_request:
+            UserRequest.objects.create(
+                major="CompSci",
+                from_student=user,
+                intent="UpdateUse",
+            )
+        return update_request

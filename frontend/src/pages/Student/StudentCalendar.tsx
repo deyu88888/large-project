@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Calendar, momentLocalizer } from "react-big-calendar";
 import moment from "moment-timezone";
 import { Box, CircularProgress, Typography, useTheme, Dialog, DialogTitle, DialogContent, DialogActions, Button, Chip, Alert, IconButton } from "@mui/material";
@@ -9,7 +9,7 @@ import "react-big-calendar/lib/css/react-big-calendar.css";
 
 const localizer = momentLocalizer(moment);
 import {
-  SocietyData,
+  // SocietyData,
   EventData,
   CalendarEvent,
   StudentCalendarProps

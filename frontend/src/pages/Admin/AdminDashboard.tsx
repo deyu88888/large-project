@@ -1,5 +1,5 @@
-import React, { useState, useEffect, FC } from "react";
-import { Box, Typography, useTheme, Button, Paper, CircularProgress, Card, CardContent, Divider } from "@mui/material";
+import { useState, useEffect, FC } from "react";
+import { Box, Typography, useTheme, Button, Paper, Card, CardContent, Divider } from "@mui/material";
 import { FaUsers, FaCalendarAlt, FaEnvelope, FaNewspaper } from "react-icons/fa";
 import Header from "../../components/Header";
 import { tokens } from "../../theme/theme";
@@ -7,112 +7,13 @@ import { apiClient } from "../../api";
 import { useSettingsStore } from "../../stores/settings-store";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../stores/auth-store";
+import { Event, Notification, UserStats, Publication, StatCardProps, NotificationCardProps, 
+  PublicationSectionProps, NotificationsSectionProps, DashboardContentProps, StatsSectionProps } 
+from "../../types/admin/dashboard"
 
 
-interface UserStats {
-  totalUsers: number;
-  [key: string]: any;
-}
-
-interface Event {
-  id: number;
-  [key: string]: any;
-}
-
-interface Notification {
-  id: number;
-  body: string;
-  is_read: boolean;
-  [key: string]: any;
-}
-
-interface Society {
-  id: number;
-  [key: string]: any;
-}
-
-interface Publication {
-  id: number;
-  news_post_title: string;
-  society_name: string;
-  requester_name: string;
-  status: string;
-  [key: string]: any;
-}
-
-interface User {
-  first_name: string;
-  [key: string]: any;
-}
-
-interface StatCardProps {
-  icon: React.ReactNode;
-  title: string;
-  value: number | string;
-}
-
-interface NotificationCardProps {
-  message: string;
-  isRead: boolean;
-}
-
-interface ColorsInterface {
-  greenAccent: string;
-  blueAccent: string;
-  redAccent: string;
-  yellowAccent: string;
-  grey: string;
-  greyAlt: string;
-  primary: string;
-  blueAccentHover: string;
-  blueAccentHoverDark: string;
-}
-
-interface PublicationSectionProps {
-  publications: Publication[];
-  colors: ColorsInterface;
-  onNavigate: (path: string) => void;
-}
-
-interface NotificationsSectionProps {
-  notifications: Notification[];
-  colors: ColorsInterface;
-}
-
-interface StatsSectionProps {
-  userStats: UserStats;
-  eventsCount: number;
-  notificationsCount: number;
-  publicationsCount: number;
-  colors: ColorsInterface;
-}
-
-interface DashboardContentProps {
-  loading: boolean;
-  userStats: UserStats | null;
-  events: Event[];
-  notifications: Notification[];
-  pendingPublications: Publication[];
-  user: User | null;
-  colors: ColorsInterface;
-  onNavigate: (path: string) => void;
-}
-
-
-const extractColors = (colours: any): ColorsInterface => {
-  return {
-    greenAccent: colours?.greenAccent?.[500] || "#4caf50",
-    blueAccent: colours?.blueAccent?.[500] || "#2196f3",
-    redAccent: colours?.redAccent?.[500] || "#f44336",
-    yellowAccent: colours?.yellowAccent?.[500] || "#ffeb3b",
-    grey: colours?.grey?.[100] || "#f5f5f5",
-    greyAlt: colours?.grey?.[300] || "#e0e0e0",
-    primary: colours?.primary?.[400] || "#121212",
-    blueAccentHover: colours?.blueAccent?.[600] || "#1976d2",
-    blueAccentHoverDark: colours?.blueAccent?.[700] || "#0d47a1",
-  };
-};
-
+const theme = useTheme();
+const colours = tokens(theme.palette.mode);
 
 const StatCard: FC<StatCardProps> = ({ icon, title, value }) => {
   return (
@@ -136,7 +37,6 @@ const StatCard: FC<StatCardProps> = ({ icon, title, value }) => {
   );
 };
 
-
 const NotificationCard: FC<NotificationCardProps> = ({ message, isRead }) => {
   return (
     <Box
@@ -151,12 +51,11 @@ const NotificationCard: FC<NotificationCardProps> = ({ message, isRead }) => {
   );
 };
 
-
-const PublicationsSection: FC<PublicationSectionProps> = ({ publications, colors, onNavigate }) => {
+const PublicationsSection: FC<PublicationSectionProps> = ({ publications, onNavigate }) => {
   const renderEmptyState = () => {
     return (
       <Paper sx={{ p: 3, backgroundColor: "rgba(255, 255, 255, 0.1)" }}>
-        <Typography color={colors.greyAlt}>
+        <Typography color={colours.grey[300]}>
           No pending publication requests.
         </Typography>
       </Paper>
@@ -179,7 +78,7 @@ const PublicationsSection: FC<PublicationSectionProps> = ({ publications, colors
           <Typography variant="body2" sx={{ mb: 1 }}>
             Society: {request.society_name || "Unknown"}
           </Typography>
-          <Typography variant="body2" color={colors.greyAlt}>
+          <Typography variant="body2" color={colours.grey[300]}>
             Requested by: {request.requester_name || "Unknown"}
           </Typography>
           <Divider sx={{ my: 2 }} />
@@ -217,7 +116,7 @@ const PublicationsSection: FC<PublicationSectionProps> = ({ publications, colors
   return (
     <section className="mb-16">
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h5" color={colors.grey} gutterBottom>
+        <Typography variant="h5" color={colours.grey[300]} gutterBottom>
           News Publication Requests
         </Typography>
         <Button 
@@ -226,8 +125,8 @@ const PublicationsSection: FC<PublicationSectionProps> = ({ publications, colors
           startIcon={<FaNewspaper />}
           onClick={() => onNavigate("/admin/news-approval")}
           sx={{ 
-            backgroundColor: colors.blueAccentHover,
-            '&:hover': { backgroundColor: colors.blueAccentHoverDark }
+            backgroundColor: colours.blueAccent[600],
+            '&:hover': { backgroundColor: colours.blueAccent[700] }
           }}
         >
           View All Requests
@@ -245,11 +144,10 @@ const PublicationsSection: FC<PublicationSectionProps> = ({ publications, colors
   );
 };
 
-
-const NotificationsSection: FC<NotificationsSectionProps> = ({ notifications, colors }) => {
+const NotificationsSection: FC<NotificationsSectionProps> = ({ notifications }) => {
   const renderEmptyState = () => {
     return (
-      <Typography color={colors.greyAlt}>
+      <Typography color={colours.grey[300]}>
         No new notifications.
       </Typography>
     );
@@ -267,7 +165,7 @@ const NotificationsSection: FC<NotificationsSectionProps> = ({ notifications, co
 
   return (
     <section className="mb-20">
-      <Typography variant="h5" color={colors.grey} gutterBottom>
+      <Typography variant="h5" color={colours.grey[300]} gutterBottom>
         Notifications
       </Typography>
       <div className="space-y-6">
@@ -279,40 +177,37 @@ const NotificationsSection: FC<NotificationsSectionProps> = ({ notifications, co
   );
 };
 
-
 const StatsSection: FC<StatsSectionProps> = ({ 
   userStats, 
   eventsCount, 
   notificationsCount, 
   publicationsCount,
-  colors 
 }) => {
   return (
     <section className="grid grid-cols-1 md:grid-cols-4 gap-8">
       <StatCard
-        icon={<FaUsers style={{ color: colors.greenAccent }} />}
+        icon={<FaUsers style={{ color: colours.greenAccent[400] }} />}
         title="Active Users"
         value={userStats?.totalUsers || 0}
       />
       <StatCard
-        icon={<FaCalendarAlt style={{ color: colors.blueAccent }} />}
+        icon={<FaCalendarAlt style={{ color: colours.blueAccent[500] }} />}
         title="Active Events"
         value={eventsCount}
       />
       <StatCard
-        icon={<FaEnvelope style={{ color: colors.redAccent }} />}
+        icon={<FaEnvelope style={{ color: colours.redAccent[500] }} />}
         title="Pending Requests"
         value={notificationsCount}
       />
       <StatCard
-        icon={<FaNewspaper style={{ color: colors.yellowAccent }} />}
+        icon={<FaNewspaper style={{ color: colours.yellowAccent[500] }} />}
         title="News Approvals"
         value={publicationsCount}
       />
     </section>
   );
 };
-
 
 const LoadingState: FC<{ color: string }> = ({ color }) => {
   return (
@@ -324,19 +219,17 @@ const LoadingState: FC<{ color: string }> = ({ color }) => {
   );
 };
 
-
 const DashboardContent: FC<DashboardContentProps> = ({ 
   loading, 
   userStats, 
   events, 
   notifications, 
   pendingPublications, 
-  user,
   colors,
   onNavigate
 }) => {
   if (loading) {
-    return <LoadingState color={colors.grey} />;
+    return <LoadingState color={colours.grey[300]} />;
   }
 
   return (
@@ -363,17 +256,14 @@ const DashboardContent: FC<DashboardContentProps> = ({
   );
 };
 
-
 const AdminDashboard: FC = () => {
   const theme = useTheme();
   const colours = tokens(theme?.palette?.mode) || {};
   const navigate = useNavigate();
-  const colors = extractColors(colours);
 
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [societiesData, setSocietiesData] = useState<Society[]>([]);
   const [pendingPublications, setPendingPublications] = useState<Publication[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -392,7 +282,7 @@ const AdminDashboard: FC = () => {
       setUser(response.data);
     } catch (error) {
       console.error("Error fetching current user:", error);
-      setUser({ firstName: "User" });
+      setUser(null);
     }
   };
 
@@ -409,7 +299,7 @@ const AdminDashboard: FC = () => {
       setUserStats(statsResponse.data || {});
     } catch (error) {
       console.error("Error fetching user stats:", error);
-      setUserStats({});
+      setUserStats(null);
     }
   };
 
@@ -430,16 +320,6 @@ const AdminDashboard: FC = () => {
     } catch (error) {
       console.error("Error fetching notifications:", error);
       setNotifications([]);
-    }
-  };
-
-  const fetchSocieties = async () => {
-    try {
-      const res = await apiClient.get("/api/dashboard/all-societies");
-      setSocietiesData(res.data || []);
-    } catch (error) {
-      console.error("Error fetching societies:", error);
-      setSocietiesData([]);
     }
   };
 
@@ -465,7 +345,7 @@ const AdminDashboard: FC = () => {
       minHeight: "100vh",
       maxWidth: drawer ? `calc(100% - 5px)` : "100%",
       padding: "0px 0px",
-      background: `${colors.primary} !important`,
+      background: `${colours.primary} !important`,
     };
   };
 
@@ -474,7 +354,7 @@ const AdminDashboard: FC = () => {
       <div style={{ maxWidth: "1600px", margin: "0 auto" }}>
         <header className="text-center mb-16">
           <Header 
-            title={`Welcome to your Dashboard, ${user?.first_name || "User"}!`} 
+            title={`Welcome to your Dashboard, ${user?.first_name ?? "User"}!`} 
             subtitle="Manage users, societies, and more." 
           />
         </header>
@@ -486,7 +366,7 @@ const AdminDashboard: FC = () => {
           notifications={notifications}
           pendingPublications={pendingPublications}
           user={user}
-          colors={colors}
+          colors={colours}
           onNavigate={handleNavigate}
         />
       </div>

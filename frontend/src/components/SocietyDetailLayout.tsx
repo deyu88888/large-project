@@ -177,21 +177,25 @@ const SocietyDetailLayout: React.FC<SocietyDetailLayoutProps> = ({
               </Box>
               <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
                 <Typography variant="h5" sx={{ mb: 1 }}>
-                  <strong>President:</strong> {society?.president.first_name} {society?.president.last_name}
+                  <strong>President: </strong>
+                  <a href={"/student/profile/"+society.president.id}>
+                    {society?.president.first_name} {society?.president.last_name}
+                  </a>
                 </Typography>
                 {society?.vice_president && (
                   <Typography variant="h5" sx={{ mb: 1 }}>
-                    <strong>Vice President:</strong> {society.vice_president.first_name} {society.vice_president.last_name}
+                    <strong>Vice President: </strong> 
+                    <a href={"/student/profile/"+society.vice_president.id}>
+                      {society.vice_president.first_name} {society.vice_president.last_name}
+                    </a>
                   </Typography>
                 )}
                 {society?.event_manager && (
                   <Typography variant="h5" sx={{ mb: 1 }}>
-                    <strong>Event Manager:</strong> {society.event_manager.first_name} {society.event_manager.last_name}
-                  </Typography>
-                )}
-                {society?.treasurer && (
-                  <Typography variant="h5" sx={{ mb: 1 }}>
-                    <strong>Treasurer:</strong> {society.treasurer.first_name} {society.treasurer.last_name}
+                    <strong>Event Manager: </strong> 
+                    <a href={"/student/profile/"+society.event_manager.id}>
+                      {society.event_manager.first_name} {society.event_manager.last_name}
+                    </a>
                   </Typography>
                 )}
               </Box>
@@ -318,7 +322,7 @@ const SocietyDetailLayout: React.FC<SocietyDetailLayoutProps> = ({
             </p>
           </div>
           <div style={{ flex: 1.0 }}>
-            {society?.social_media_links["Instagram"] && (
+            {society?.social_media_links["Facebook"] && (
               <Link
                 href={society?.social_media_links["Facebook"]}
                 target="_blank"
