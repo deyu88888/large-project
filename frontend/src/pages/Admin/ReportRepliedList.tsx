@@ -2,9 +2,7 @@ import React, { useEffect, useState, useContext, useCallback, useMemo } from 're
 import { 
   Box, 
   Button, 
-  Typography, 
   useTheme, 
-  CircularProgress, 
   Alert 
 } from "@mui/material";
 import { DataGrid, GridColDef, GridToolbar, GridRenderCellParams } from "@mui/x-data-grid";
@@ -24,10 +22,6 @@ interface ReportWithReplies {
   reply_count: number;
   latest_reply_date: string;
   [key: string]: any; 
-}
-
-interface NoRowsOverlayProps {
-  loading: boolean;
 }
 
 interface ReportState {
@@ -69,29 +63,10 @@ const formatDateString = (dateStr: string): string => {
   }
 };
 
-const truncateText = (text: string, maxLength: number): string => {
-  if (!text) return '';
-  return text.length > maxLength ? `${text.substring(0, maxLength - 3)}...` : text;
-};
-
 
 const fetchReportReplies = async (): Promise<ReportWithReplies[]> => {
   const response = await apiClient.get("/api/admin/reports-replied");
   return response.data || [];
-};
-
-
-const CustomNoRowsOverlay: React.FC<NoRowsOverlayProps> = ({ loading }) => {
-  const theme = useTheme();
-  const colors = tokens(theme.palette.mode);
-  
-  return (
-    <Box display="flex" alignItems="center" justifyContent="center" height="100%">
-      <Typography variant="h6" color={colors.grey[100]}>
-        {loading ? "Loading reports..." : "No reports with replies found"}
-      </Typography>
-    </Box>
-  );
 };
 
 const ErrorAlert: React.FC<ErrorAlertProps> = ({ message }) => {
@@ -188,7 +163,7 @@ const createReportColumns = (
       field: "latest_reply_date",
       headerName: "Latest Reply Date",
       flex: 1.5,
-      valueFormatter: (params) => formatDateString(params.value as string),
+      valueFormatter: (params: { value: string }) => formatDateString(params.value),
     },
     {
       field: "action",

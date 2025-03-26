@@ -7,29 +7,8 @@ import { useSettingsStore } from "../../stores/settings-store";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { SocietyPreview } from "../../components/SocietyPreview";
 import { EventPreview } from "../../components/EventPreview";
+import { SocietyDetailRequest } from "../../types/admin/society";
 
-export interface SocietyDetailRequest {
-  id: number;
-  society: number;
-  name: string;
-  description: string;
-  category: string;
-  social_media_links: Record<string, string>;
-  tags: string[];
-  icon: string | null;
-  membership_requirements: string | null;
-  upcoming_projects_or_plans: string | null;
-  intent: string;
-  approved: boolean;
-  created_at: string;
-  vice_president?: number | null;
-  event_manager?: number | null;
-  president?: number | null;
-  approved_by?: number | null;
-  status: "Pending" | "Approved" | "Rejected"; 
-  preview_requested?: boolean;
-  from_
-}
 
 interface AlertState {
   open: boolean;
@@ -70,7 +49,7 @@ const PendingSocietyDetailRequests: React.FC = () => {
   const filteredDetailRequests = Array.isArray(detailRequests)
     ? detailRequests.filter((request) => {
         const searchString = Object.entries(request)
-          .map(([key, value]) => Array.isArray(value) ? value.join(", ") : String(value))
+          .map(([_, value]) => Array.isArray(value) ? value.join(", ") : String(value))
           .join(" ")
           .toLowerCase();
         return searchString.includes(searchTerm.toLowerCase());
@@ -81,7 +60,7 @@ const PendingSocietyDetailRequests: React.FC = () => {
       }))
     : [];
 
-  const handlePreview = (id: number) => {
+  const handlePreview = (_: number) => {
   };
 
   const handlePreviewClose = () => {
@@ -266,7 +245,7 @@ const PendingSocietyDetailRequests: React.FC = () => {
             icon: selectedRequest.icon || selectedRequest.icon,
             joined: 0,
           }}
-          loading={false} joined={0} onJoinSociety={function (societyId: number): void {
+          loading={false} joined={0} onJoinSociety={function (_: number): void {
             throw new Error("Function not implemented.");
           } }        />
       )}
@@ -290,8 +269,8 @@ const PendingSocietyDetailRequests: React.FC = () => {
 
       {selectedRequest && (
         <EventPreview
-          open={previewOpen}
-          onClose={() => setPreviewOpen(false)}
+          open={openPreview}
+          onClose={() => setOpenPreview(false)}
           eventData={selectedRequest}
         />
       )}

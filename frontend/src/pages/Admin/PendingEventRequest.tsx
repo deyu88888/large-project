@@ -16,6 +16,7 @@ import { apiPaths } from "../../api";
 import { updateRequestStatus } from "../../api/requestApi";
 import { EventPreview } from "../../components/EventPreview";
 import type { EventData } from "../../components/EventDetailLayout";
+import { Attendee } from "../../types/student/event";
 
 interface Event {
   id: number;
@@ -25,8 +26,9 @@ interface Event {
   date: string;
   start_time: string;
   duration: string;
-  hosted_by: string;
+  hosted_by: number;
   location: string;
+  current_attendees: Attendee[];
   [key: string]: any;
 }
 
@@ -88,19 +90,20 @@ const createErrorAlert = (message: string): AlertState => {
 const mapToEventData = (event: Event): EventData => {
   return {
     title: event.title || "",
-    mainDescription: event.main_description || "",
+    main_description: event.main_description || "",
     date: event.date || "",
-    startTime: event.start_time || "",
+    start_time: event.start_time || "",
     duration: event.duration || "",
     location: event.location || "",
-    maxCapacity: event.max_capacity || 0,
-    hostedBy: event.hosted_by || 0,
-    eventId: event.id,
-    coverImageUrl: event.cover_image || "",
-    extraModules: event.extra_modules || [],
-    participantModules: event.participant_modules || [],
-    isParticipant: true,
-    isMember: false
+    max_capacity: event.max_capacity || 0,
+    hosted_by: event.hosted_by || 0,
+    event_id: event.id,
+    cover_image_url: event.cover_image || "",
+    extra_modules: event.extra_modules || [],
+    participant_modules: event.participant_modules || [],
+    is_participant: true,
+    is_member: false,
+    current_attendees: event.current_attendees,
   };
 };
 
@@ -155,7 +158,7 @@ const EventNotification: React.FC<EventNotificationProps> = ({ alert, onClose })
   );
 };
 
-const EventsDataGrid: React.FC<DataGridCustomProps> = ({ events, columns, drawer, colors }) => {
+const EventsDataGrid: React.FC<DataGridCustomProps> = ({ events, columns, colors }) => {
   return (
     <Box
       sx={{
@@ -266,9 +269,9 @@ const PendingEventRequest: React.FC = () => {
   ], [handleStatusChange, handleViewEvent]);
   
   const filteredEvents = useMemo(() => 
-    filterEventsBySearchTerm(events, searchTerm || ''),
+    filterEventsBySearchTerm(events.flat(), searchTerm || ''),
     [events, searchTerm]
-  );
+  );  
 
   const columns = useMemo(() => 
     createColumns(),

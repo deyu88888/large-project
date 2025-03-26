@@ -55,16 +55,6 @@ export type Student = {
     presidentOf: number[];
     isPresident: boolean;
   };
-  
-export type Report = {
-    id: number;
-    from_student: string | null;
-    email?: string | null;
-    report_type: string;
-    subject: string;
-    details: string;
-    created_at: string;
-};
 
   export type News = {
     id: number;

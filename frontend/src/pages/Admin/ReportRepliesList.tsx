@@ -11,19 +11,6 @@ import { useNavigate } from 'react-router-dom';
 const REFRESH_INTERVAL = 5 * 60 * 1000; 
 
 
-interface Report {
-  id: number | string;
-  subject: string;
-  from_student_name: string;
-  latest_reply: {
-    replied_by: string;
-    content: string;
-    created_at: string;
-  };
-  requested_at: string;
-  [key: string]: any;
-}
-
 interface ReportState {
   items: Report[];
   loading: boolean;

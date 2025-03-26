@@ -1,11 +1,18 @@
 export interface Report {
   id: number;
   from_student: string | null;
+  from_student_username?: string;
   email?: string | null;
   report_type: string;
   subject: string;
   details: string;
   created_at: string;
+  requested_at?: string;
+  latest_reply?: {
+    replied_by: string;
+    content: string;
+    created_at: string;
+  };
 }
 
 export interface ReportFormData {
@@ -23,11 +30,15 @@ export type SelectChangeEvent = {
 
 export interface Reply {
   id: number;
+  report_id: number;
+  report_subject: string;
   content: string;
   created_at: string;
   replied_by_username: string;
   is_admin_reply: boolean;
   child_replies: Reply[];
+  user_type: 'admin' | 'student' | 'moderator';
+  is_new: boolean;
 };
 
 export interface ReportThread {
