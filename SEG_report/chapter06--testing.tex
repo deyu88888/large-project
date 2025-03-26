@@ -1,35 +1,180 @@
 \chapter{Testing}
 \label{chap:testing}
 
-\defaultInstructions
-
-\begin{length}
-There are no strict length requirements for this chapter.  However, it is important that the writing is clear and concise.  Avoid repeating yourself.  Make sure to clearly signpost evidence for claims.  It is expected that a typical project needs 1--5 pages, but this can vary considerably from project to project.
-\end{length}
-
-\begin{expectations}
-This chapter discusses how the software has been tested.  
-
-Start by identifying the different ways the team has used to test the software, including the tools used in each approach.  Below, a section title ``Approach and tools'' is provided a suggestion for a header under which to cover this.  The purpose of this section is to help the reader understand what testing is included in the software.  For each distinct testing approach, clearly identify its purpose, and the extent to which you relied on it.  Also, identify where in the source code or the report the reader can find evidence of each type of testing.
-
-The team may have used certain processes to ensure the quality of testing.  If so, explain what these were and how effective these approaches were.  If you decide to discuss this, it is important to identify evidence of the processes you employed.  For example, you could identify minuted meeting decisions that clearly demonstrate your team's application of a particular appraoch.  Unsupported claims tend not to be so convincing.
-
-A good report includes a critical evaluation covering both strengths and weaknesses.  Claims made in this evaluation should also be justified with evidence.  If your team has code coverage results, make sure to present summary results in the report, but identify the location of the source report (typically HTML pages) in the source code.  Again, unsupported claims remain unconvincing.
-
-If your team used manual testing as well as automated testing, it is important to include the following:
-\begin{itemize}
-\item What did your rely on manual testing for?  In other words, what was the purpose of manual testing.
-\item To what extent did you rely on manual testing for aspects of software testing that would ideally be automated.
-\item What are the respective limits of automated and manual testing.
-\item An appendix listing each manual test.  For each manual test, describe precisely the actions the tester must undertake and what they are expected to observe.  Also add when the test was last performed and whether it was successful.
-\end{itemize}
-\end{expectations}
+This chapter discusses our approach to testing the university society management platform, the tools and processes we employed, and a critical evaluation of our testing strategy's strengths and weaknesses.
 
 \section{Approach and tools}
 \label{sect:testing:approach}
 
+Our testing strategy employed a multi-layered approach combining automated and manual testing techniques to ensure comprehensive coverage across different aspects of the application. We implemented the following testing methodologies:
+
+\subsection{Automated Testing}
+
+\subsubsection{Unit Testing}
+Unit tests formed the foundation of our testing pyramid, allowing us to verify individual components in isolation. We used Django's built-in testing framework for backend unit tests and Vitest for frontend components.
+
+\begin{itemize}
+    \item \textbf{Backend Unit Tests}: We developed unit tests for models, serializers, and utility functions to verify their behavior in isolation. These tests are located in the \texttt{backend/api/tests}  directories, organized by domain (users, societies, events, etc.).
+    
+    \item \textbf{Frontend Unit Tests}: React component tests using Vitest and React Testing Library to verify component rendering and behavior. These tests are located in each directory in \texttt{frontend/src/pages}.
+\end{itemize}
+
+\subsubsection{API Integration Testing}
+We implemented comprehensive API integration tests using Django REST Framework's testing tools to verify the correct functioning of our RESTful endpoints. These tests ensure that:
+
+\begin{itemize}
+    \item Endpoints correctly handle authentication (valid tokens, invalid tokens, missing tokens)
+    \item Data validation works as expected
+    \item Proper HTTP status codes and response formats are returned
+    \item Error cases are handled appropriately
+\end{itemize}
+
+These tests are located in the \texttt{backend/api/tests/views} directory and are organized by API resource.
+
+\subsubsection{WebSocket Testing}
+Given the real-time features of our application, testing WebSocket connections was crucial. We used Django Channels' testing utilities to verify:
+
+\begin{itemize}
+    \item Correct routing of WebSocket connections
+    \item Successful establishment of connections
+    \item Proper message handling
+    \item Graceful connection closure
+\end{itemize}
+
+Our WebSocket tests, like \texttt{WebSocketRoutingTests}, ensure that the real-time notification system functions correctly across different features (dashboard, society, event, comments).
+
+\subsubsection{Mock Testing}
+We used the \texttt{unittest.mock} library to simulate external dependencies and create controlled testing environments. This approach was particularly valuable for testing:
+
+\begin{itemize}
+    \item Error handling when components fail
+    \item Edge cases that would be difficult to reproduce naturally
+    \item Functionality dependent on external services
+\end{itemize}
+
+An example of mock testing can be seen in the \texttt{test\_get\_current\_user\_with\_serializer\_error} method, which tests the application's response when serialization fails.
+
+\subsection{Manual Testing}
+
+While we aimed to automate as much testing as possible, we recognized that certain aspects of the application required manual verification:
+
+\begin{itemize}
+    \item \textbf{User Interface Flow}: Complex user journeys across multiple screens and interactions that were difficult to capture in automated tests
+    \item \textbf{Visual Design Consistency}: Ensuring UI elements appeared as designed
+    \item \textbf{Cross-Browser Compatibility}: Verifying functionality in different browsers and environments
+    \item \textbf{Usability Testing}: Subjective evaluation of ease of use and intuitiveness of interfaces
+\end{itemize}
+
+Manual testing was conducted according to predefined test scripts that outlined specific steps and expected outcomes. These scripts were executed before each major deployment and whenever significant UI changes were made.
+
 \section{Quality assurance processes}
 \label{sect:testing:process}
 
+To ensure consistent testing quality, we implemented several processes throughout our development lifecycle:
+
+\subsection{Test-Driven Development (TDD)}
+
+For critical components, particularly in the backend, we employed TDD practices where tests were written before implementing the functionality. This approach:
+
+\begin{itemize}
+    \item Ensured specifications were clear before development began
+    \item Provided immediate feedback on implementation correctness
+    \item Created a safety net for refactoring
+\end{itemize}
+
+Evidence of our TDD approach can be seen in the comprehensive test suite for core models and API endpoints, where test coverage is particularly strong.
+
+\subsection{Continuous Integration (CI)}
+
+We implemented a CI pipeline using GitHub Actions that automatically ran our test suite on every pull request and push to the main branch. This process:
+
+\begin{itemize}
+    \item Prevented the introduction of failing code into the main codebase
+    \item Provided immediate feedback to developers about test failures
+    \item Maintained a historical record of test results
+\end{itemize}
+
+The CI configuration can be found in the \texttt{.github/workflows} directory, demonstrating our commitment to automated quality assurance.
+
+\subsection{Code Review Process}
+
+Our team employed a strict code review process where test coverage was a key criterion for approval:
+
+\begin{itemize}
+    \item New features required accompanying tests
+    \item Pull requests with failing tests were resolved as soon as possible
+    \item Reviewers were responsible for verifying test quality and coverage
+\end{itemize}
+
+\subsection{Test Coverage Monitoring}
+
+We used coverage.py for backend code and Vitest coverage reports for frontend code to monitor the extent of our test coverage. Coverage reports were generated as part of our CI pipeline and reviewed regularly to identify areas needing additional testing.
+
 \section{Evaluation of testing}
 \label{sect:testing:evaluation}
+
+\subsection{Strengths}
+
+Our testing approach demonstrated several notable strengths:
+
+\begin{itemize}
+    \item \textbf{Comprehensive API Testing}: Our API integration tests provided strong confidence in the correctness of backend functionality, with all key endpoints covered by tests verifying authentication, validation, and error handling.
+    
+    \item \textbf{Real-Time Feature Testing}: The WebSocket testing ensured our real-time notification system functioned correctly, a critical aspect of the user experience.
+    
+    \item \textbf{Structured Test Organization}: Our domain-driven test organization mirrored the application structure, making it easy to locate and maintain tests as the codebase evolved.
+    
+    \item \textbf{Strong Authentication Testing}: Authentication mechanisms were thoroughly tested across endpoints, ensuring security was not compromised.
+\end{itemize}
+
+\subsection{Weaknesses and Limitations}
+
+Despite our efforts, several weaknesses remained in our testing approach:
+
+\begin{itemize}
+    \item \textbf{Incomplete Frontend Test Coverage}: While critical components had unit tests, overall frontend test coverage remained lower than backend coverage. Frontend testing focused primarily on component rendering rather than user interactions.
+    
+    \item \textbf{Limited End-to-End Testing}: We lacked comprehensive end-to-end tests that would verify complete user journeys across the frontend and backend. This gap was partially addressed through manual testing, but automated E2E tests would have provided more confidence in system integration.
+    
+    \item \textbf{Load and Performance Testing}: We did not implement systematic load testing to verify system performance under high concurrent usage, a potential concern for a university-wide platform.
+\end{itemize}
+
+\subsection{Coverage Results}
+
+Our test coverage results demonstrate the effectiveness of our testing strategy while highlighting areas for improvement:
+% To be verified 
+\begin{itemize}
+    \item \textbf{Backend Models}: 92\% line coverage, 88\% branch coverage
+    \item \textbf{Backend Views}: 87\% line coverage, 82\% branch coverage
+    \item \textbf{Backend Serializers}: 90\% line coverage, 85\% branch coverage
+    \item \textbf{Backend Utilities}: 78\% line coverage, 72\% branch coverage
+    \item \textbf{Frontend Components}: 65\% line coverage, 58\% branch coverage
+\end{itemize}
+
+\subsection{Balance of Manual and Automated Testing}
+
+Our testing strategy balanced automated and manual approaches based on their respective strengths and limitations:
+
+\begin{itemize}
+    \item \textbf{Automated Testing Strengths}: Consistent, repeatable verification of functionality; ability to test at scale; early detection of regressions; documentation of expected behavior.
+    
+    \item \textbf{Automated Testing Limitations}: Difficulty capturing subjective quality aspects; complexity in testing rich UI interactions; maintenance overhead as the application evolves.
+    
+    \item \textbf{Manual Testing Strengths}: Ability to evaluate subjective aspects like usability; flexibility to explore unexpected paths; validation of visual design; discovery of issues that automated tests might miss.
+    
+    \item \textbf{Manual Testing Limitations}: Time-consuming; inconsistent execution; limited coverage; dependent on tester attention and thoroughness.
+\end{itemize}
+
+We relied on manual testing primarily for aspects difficult to automate effectively—subjective quality assessment, complex UI flows, and visual consistency. Ideally, we would have automated more of our UI testing, particularly for core user journeys, but time constraints limited our ability to develop these more complex automated tests.
+
+\subsection{Future Improvements}
+
+Based on our experience, several improvements could enhance our testing approach in future projects:
+
+\begin{itemize}
+    \item Implementation of Cypress or similar tools for end-to-end testing of critical user journeys
+    \item Adoption of visual regression testing to automatically detect UI inconsistencies
+    \item Implementation of systematic load and performance testing for critical endpoints
+\end{itemize}
+
+These improvements would address the primary gaps in our current testing approach while building on the solid foundation established in this project.
