@@ -8,10 +8,9 @@ export interface User {
   last_name: string;
   major?: string;
   email: string;
-  isActive: boolean;
   role: "student" | "admin";
-  isSuperAdmin: boolean;
-  isSuperuser: boolean;
+  is_super_admin: boolean;
+  is_superuser: boolean;
   is_president?: boolean;
   is_vice_president?: boolean;
   is_event_manager?: boolean;

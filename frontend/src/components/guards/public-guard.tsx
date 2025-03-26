@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { LoadingView } from "../loading/loading-view";
 import { useAuthStore } from "../../stores/auth-store";
 import { jwtDecode } from "jwt-decode";
+import { User } from "../../types/user/user";
 
 interface DecodedToken {
   exp: number;
@@ -63,7 +64,7 @@ export function PublicGuard({ children }: { children: React.ReactNode }) {
               };
               
               console.log("PublicGuard: Setting minimal user from token:", minimalUser);
-              setUser(minimalUser);
+              setUser(minimalUser as User);
             } else {
               console.log("PublicGuard: User already exists in store:", user);
             }

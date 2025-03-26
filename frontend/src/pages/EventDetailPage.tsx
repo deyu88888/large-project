@@ -173,7 +173,7 @@ const EventDetailPage: React.FC = () => {
 
   return (
     <div style={{ padding: "40px", maxWidth: "1000px", margin: "0 auto" }}>
-      <EventDetailLayout eventData={eventData} />
+      <EventDetailLayout eventData={eventData as any} />
       <CommentsSectionWrapper isAuthenticated={!!isAuthenticated}>
         <CommentSection eventId={numericEventId as number} />
       </CommentsSectionWrapper>

@@ -1,23 +1,21 @@
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
-import { checker } from "vite-plugin-checker";
 
 export default defineConfig({
-  plugins: [react(), checker({ typescript: false })],
+  plugins: [react()],
   build: {
     rollupOptions: {
-      external: [/\.test\.(js|jsx|ts|tsx)$/, /\.spec\.(js|jsx|ts|tsx)$/],
+      external: (id) => {
+        const normalized = id.replace(/\\/g, "/");
+        return (
+          normalized.includes("__test__/") ||
+          /\.test\.(t|j)sx?$/.test(normalized)
+        );
+      },
     },
   },
   server: {
     port: 3000,
-    proxy: {
-      "/api": {
-        target: "http://localhost:8000",
-        changeOrigin: true,
-        secure: false,
-      },
-    },
   },
   test: {
     globals: true,

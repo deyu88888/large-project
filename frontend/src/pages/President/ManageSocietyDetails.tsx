@@ -59,7 +59,9 @@ const ManageSocietyDetails: React.FC = () => {
   const fetchSociety = async (): Promise<void> => {
     try {
       setLoading(true);
-      const response = await apiClient.get(apiPaths.SOCIETY.MANAGE_DETAILS(numericSocietyId));
+      const response = await apiClient.get(
+        apiPaths.SOCIETY.MANAGE_DETAILS(numericSocietyId)
+      );
       setSociety(response.data);
       setFormData({
         ...response.data,
@@ -68,14 +70,14 @@ const ManageSocietyDetails: React.FC = () => {
           Facebook: "",
           Instagram: "",
           X: "",
-          Other: ""
+          Other: "",
         },
         tags: response.data.tags || [],
-        description: response.data.description || ""
+        description: response.data.description || "",
       });
-      
+
       // Set preview URL if icon exists
-      if (response.data.icon && typeof response.data.icon === 'string') {
+      if (response.data.icon && typeof response.data.icon === "string") {
         setPreviewUrl(response.data.icon);
       }
     } catch (error) {
@@ -85,7 +87,9 @@ const ManageSocietyDetails: React.FC = () => {
     }
   };
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void => {
+  const handleChange = (
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ): void => {
     const { name, value } = e.target;
     setFormData((prevFormData) =>
       prevFormData ? { ...prevFormData, [name]: value } : null
@@ -94,13 +98,13 @@ const ManageSocietyDetails: React.FC = () => {
 
   const handleSocialMediaChange = (platform: string, value: string): void => {
     if (!formData) return;
-    
+
     setFormData({
       ...formData,
       social_media_links: {
         ...formData.social_media_links,
-        [platform]: value
-      }
+        [platform]: value,
+      },
     });
   };
 
@@ -108,11 +112,11 @@ const ManageSocietyDetails: React.FC = () => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
       setSelectedFile(file);
-      
+
       // Create a preview URL for the selected file
       const fileUrl = URL.createObjectURL(file);
       setPreviewUrl(fileUrl);
-      
+
       // Update formData with the new file
       setFormData((prevFormData) =>
         prevFormData ? { ...prevFormData, icon: file } : null
@@ -132,15 +136,22 @@ const ManageSocietyDetails: React.FC = () => {
       formDataToSend.append("description", formData.description);
       formDataToSend.append("tags", JSON.stringify(formData.tags));
       // Convert social_media_links to JSON string
-      formDataToSend.append("social_media_links", JSON.stringify(formData.social_media_links));
+      formDataToSend.append(
+        "social_media_links",
+        JSON.stringify(formData.social_media_links)
+      );
 
       if (selectedFile) {
         formDataToSend.append("icon", selectedFile);
       }
 
-      await apiClient.patch(apiPaths.SOCIETY.MANAGE_DETAILS(numericSocietyId), formDataToSend, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      await apiClient.patch(
+        apiPaths.SOCIETY.MANAGE_DETAILS(numericSocietyId),
+        formDataToSend,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
 
       alert("Society update request submitted. Await admin approval.");
       navigate(`/president-page/${societyId}`);
@@ -161,8 +172,10 @@ const ManageSocietyDetails: React.FC = () => {
   };
 
   const backgroundColor = theme.palette.mode === "dark" ? "#141b2d" : "#fcfcfc";
-  const textColor = theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d";
-  const paperBackgroundColor = theme.palette.mode === "dark" ? colors.primary[500] : "#ffffff";
+  const textColor =
+    theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d";
+  const paperBackgroundColor =
+    theme.palette.mode === "dark" ? colors.primary[500] : "#ffffff";
 
   if (loading || !formData) {
     return (
@@ -188,11 +201,7 @@ const ManageSocietyDetails: React.FC = () => {
       }}
     >
       <Box textAlign="center" mb={4}>
-        <Typography
-          variant="h2"
-          fontWeight="bold"
-          sx={{ color: textColor }}
-        >
+        <Typography variant="h2" fontWeight="bold" sx={{ color: textColor }}>
           Manage My Society
         </Typography>
       </Box>
@@ -243,7 +252,7 @@ const ManageSocietyDetails: React.FC = () => {
                     objectFit: "cover",
                     borderRadius: "8px",
                     mr: 2,
-                    border: `1px solid ${colors.grey[300]}`
+                    border: `1px solid ${colors.grey[300]}`,
                   }}
                 />
               )}
@@ -269,7 +278,11 @@ const ManageSocietyDetails: React.FC = () => {
                     Upload Icon
                   </Button>
                 </label>
-                <Typography variant="caption" display="block" sx={{ mt: 1, color: colors.grey[500] }}>
+                <Typography
+                  variant="caption"
+                  display="block"
+                  sx={{ mt: 1, color: colors.grey[500] }}
+                >
                   Recommended size: 100x100px
                 </Typography>
               </Box>
@@ -282,29 +295,33 @@ const ManageSocietyDetails: React.FC = () => {
 
           <Grid container spacing={2} sx={{ mb: 3 }}>
             {/* Social media input fields */}
-            {['WhatsApp', 'Facebook', 'Instagram', 'X', 'Other'].map((platform) => (
-              <Grid item xs={12} key={platform}>
-                <Box display="flex" alignItems="center">
-                  <Typography
-                    sx={{ 
-                      minWidth: '100px', 
-                      fontWeight: 'medium',
-                      color: textColor
-                    }}
-                  >
-                    {platform}:
-                  </Typography>
-                  <TextField
-                    fullWidth
-                    placeholder={`Enter ${platform} link`}
-                    value={formData.social_media_links[platform] || ''}
-                    onChange={(e) => handleSocialMediaChange(platform, e.target.value)}
-                    sx={{ ml: 1 }}
-                    size="small"
-                  />
-                </Box>
-              </Grid>
-            ))}
+            {["WhatsApp", "Facebook", "Instagram", "X", "Other"].map(
+              (platform) => (
+                <Grid size={{ xs: 12 }} key={platform}>
+                  <Box display="flex" alignItems="center">
+                    <Typography
+                      sx={{
+                        minWidth: "100px",
+                        fontWeight: "medium",
+                        color: textColor,
+                      }}
+                    >
+                      {platform}:
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      placeholder={`Enter ${platform} link`}
+                      value={formData.social_media_links[platform] || ""}
+                      onChange={(e) =>
+                        handleSocialMediaChange(platform, e.target.value)
+                      }
+                      sx={{ ml: 1 }}
+                      size="small"
+                    />
+                  </Box>
+                </Grid>
+              )
+            )}
           </Grid>
 
           <Box sx={{ mb: 3 }}>
@@ -313,7 +330,7 @@ const ManageSocietyDetails: React.FC = () => {
               sx={{
                 mb: 1,
                 fontWeight: "medium",
-                color: textColor
+                color: textColor,
               }}
             >
               Description
@@ -321,14 +338,18 @@ const ManageSocietyDetails: React.FC = () => {
             <Box
               component="div"
               sx={{
-                border: `1px solid ${theme.palette.mode === "dark" ? colors.grey[600] : colors.grey[300]}`,
+                border: `1px solid ${
+                  theme.palette.mode === "dark"
+                    ? colors.grey[600]
+                    : colors.grey[300]
+                }`,
                 borderRadius: "4px",
                 padding: "16.5px 14px",
                 backgroundColor: "transparent",
-                '&:hover': {
+                "&:hover": {
                   borderColor: theme.palette.text.primary,
                 },
-                '&:focus-within': {
+                "&:focus-within": {
                   borderColor: colors.blueAccent[500],
                   borderWidth: "2px",
                   padding: "15.5px 13px", // Adjust for border width change
@@ -351,8 +372,8 @@ const ManageSocietyDetails: React.FC = () => {
                   backgroundColor: "transparent",
                   color: textColor,
                   resize: "none",
-                  '&::-webkit-scrollbar': {
-                    display: "none"
+                  "&::-webkit-scrollbar": {
+                    display: "none",
                   },
                   scrollbarWidth: "none",
                   msOverflowStyle: "none",
@@ -398,7 +419,10 @@ const ManageSocietyDetails: React.FC = () => {
                 fontWeight: "bold",
                 borderColor: colors.blueAccent[500],
                 color: colors.blueAccent[500],
-                "&:hover": { borderColor: colors.blueAccent[600], color: colors.blueAccent[600] },
+                "&:hover": {
+                  borderColor: colors.blueAccent[600],
+                  color: colors.blueAccent[600],
+                },
               }}
             >
               Preview

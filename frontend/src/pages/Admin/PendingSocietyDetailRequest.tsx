@@ -55,7 +55,7 @@ const PendingSocietyDetailRequests: React.FC = () => {
         return searchString.includes(searchTerm.toLowerCase());
       }).map((request) => ({
         ...request,
-        society: request.society?.name,
+        society: request.society,
         requested_by: request.from_student?.username,
       }))
     : [];

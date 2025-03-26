@@ -6,7 +6,6 @@ import { useAuthStore } from "../../stores/auth-store";
 import { tokens } from "../../theme/theme";
 import { Society } from "../../types/president/society";
 import { Member } from "../../types/president/member";
-import { SocietyIdParams } from "../../types/president/role";
 import { NavigationItem } from "../../types/president/navigation";
 
 // interface Society {
@@ -22,9 +21,9 @@ import { NavigationItem } from "../../types/president/navigation";
 //   username: string;
 // }
 
-interface RouteParams {
-  societyId: string;
-}
+// interface RouteParams {
+//   societyId: string;
+// }
 // interface SocietyIdParams {
 //   society_id: string;
 // }
@@ -39,8 +38,7 @@ const PresidentPage: React.FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const navigate = useNavigate();
-  const { societyId } = useParams<RouteParams>();
-  const { society_id } = useParams<SocietyIdParams>();
+  const { societyId } = useParams();
   const [society, setSociety] = useState<Society | null>(null);
   const [pendingMembers, setPendingMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState<boolean>(true);

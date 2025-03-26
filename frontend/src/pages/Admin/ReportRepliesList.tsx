@@ -268,7 +268,7 @@ const createReportColumns = (
 
 
 const loadReportData = async (): Promise<Report[]> => {
-  return await fetchReportsWithReplies();
+  return await fetchReportsWithReplies() as any;
 };
 
 

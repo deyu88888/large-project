@@ -56,7 +56,14 @@ export default function AwardList({ awards, isSelf, colors }: AwardListProps) {
                 : "rgba(205, 127, 50, 0.1)";
 
             return (
-              <Grid item xs={12} sm={6} md={4} key={award.id}>
+              <Grid
+                size={{
+                  xs: 12,
+                  sm: 6,
+                  md: 4,
+                }}
+                key={award.id}
+              >
                 <Paper
                   elevation={3}
                   sx={{
@@ -72,8 +79,14 @@ export default function AwardList({ awards, isSelf, colors }: AwardListProps) {
                   }}
                 >
                   <Box display="flex" alignItems="center" mb={1}>
-                    <FaTrophy size={24} style={{ marginRight: 12, color: rankColor }} />
-                    <Typography variant="h6" sx={{ color: colors.grey[100], fontWeight: "bold" }}>
+                    <FaTrophy
+                      size={24}
+                      style={{ marginRight: 12, color: rankColor }}
+                    />
+                    <Typography
+                      variant="h6"
+                      sx={{ color: colors.grey[100], fontWeight: "bold" }}
+                    >
                       {award.award.title}
                     </Typography>
                   </Box>
@@ -91,7 +104,10 @@ export default function AwardList({ awards, isSelf, colors }: AwardListProps) {
                   >
                     {award.award.rank} Award
                   </Typography>
-                  <Typography variant="body2" sx={{ color: colors.grey[300], mt: 1 }}>
+                  <Typography
+                    variant="body2"
+                    sx={{ color: colors.grey[300], mt: 1 }}
+                  >
                     {award.award.description}
                   </Typography>
                 </Paper>

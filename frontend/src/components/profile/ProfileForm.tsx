@@ -1,7 +1,12 @@
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
 import {
-  Grid, TextField, Button, Typography, Box, Divider
+  Grid,
+  TextField,
+  Button,
+  Typography,
+  Box,
+  Divider,
 } from "@mui/material";
 import { apiClient, apiPaths } from "../../api";
 import { User } from "../../types/user/user";
@@ -59,7 +64,6 @@ export default function ProfileForm({
   setEmailVerified,
   setSnackbarData,
 }: ProfileFormProps) {
-
   return (
     <Formik
       initialValues={{
@@ -74,9 +78,16 @@ export default function ProfileForm({
       onSubmit={async (values, { setSubmitting }) => {
         try {
           await apiClient.put(apiPaths.USER.CURRENT, {
-            first_name: user.first_name === values.first_name ? undefined : values.first_name,
-            last_name: user.last_name === values.last_name ? undefined : values.last_name,
-            username: user.username === values.username ? undefined : values.username,
+            first_name:
+              user.first_name === values.first_name
+                ? undefined
+                : values.first_name,
+            last_name:
+              user.last_name === values.last_name
+                ? undefined
+                : values.last_name,
+            username:
+              user.username === values.username ? undefined : values.username,
             email: user.email === values.email ? undefined : values.email,
             role: user.role === values.role ? undefined : values.role,
           });
@@ -114,7 +125,10 @@ export default function ProfileForm({
 
         const verifyOTP = async (email: string, otp: string) => {
           try {
-            await apiClient.post("/api/verification/verify-otp", { email, otp });
+            await apiClient.post("/api/verification/verify-otp", {
+              email,
+              otp,
+            });
             setEmailVerified(true);
             setOtpSent(false);
             setOtpMessage("");
@@ -149,7 +163,11 @@ export default function ProfileForm({
 
             <Grid container spacing={3}>
               {/* First Name */}
-              <Grid item xs={12}>
+              <Grid
+                size={{
+                  xs: 12,
+                }}
+              >
                 <TextField
                   fullWidth
                   name="first_name"
@@ -164,14 +182,16 @@ export default function ProfileForm({
                   InputProps={{
                     style: {
                       color: colors.grey[100],
-                      backgroundColor: isDark ? colors.primary[600] : colors.primary[0],
+                      backgroundColor: isDark
+                        ? colors.primary[600]
+                        : colors.primary[0],
                     },
                   }}
                 />
               </Grid>
 
               {/* Last Name */}
-              <Grid item xs={12}>
+              <Grid size={{ xs: 12 }}>
                 <TextField
                   fullWidth
                   name="last_name"
@@ -186,14 +206,16 @@ export default function ProfileForm({
                   InputProps={{
                     style: {
                       color: colors.grey[100],
-                      backgroundColor: isDark ? colors.primary[600] : colors.primary[0],
+                      backgroundColor: isDark
+                        ? colors.primary[600]
+                        : colors.primary[0],
                     },
                   }}
                 />
               </Grid>
 
               {/* Email */}
-              <Grid item xs={12}>
+              <Grid size={{ xs: 12 }}>
                 <TextField
                   fullWidth
                   name="email"
@@ -211,9 +233,15 @@ export default function ProfileForm({
                     const newEmail = e.target.value;
                     if (newEmail.toLowerCase() !== user.email.toLowerCase()) {
                       try {
-                        const res = await apiClient.post("/api/verification/check-email", { email: newEmail });
+                        const res = await apiClient.post(
+                          "/api/verification/check-email",
+                          { email: newEmail }
+                        );
                         if (res.data.inUse) {
-                          setFieldError("email", "This email is already in use.");
+                          setFieldError(
+                            "email",
+                            "This email is already in use."
+                          );
                         }
                       } catch (err) {
                         setFieldError("email", "Unable to verify email.");
@@ -227,7 +255,9 @@ export default function ProfileForm({
                   InputProps={{
                     style: {
                       color: colors.grey[100],
-                      backgroundColor: isDark ? colors.primary[600] : colors.primary[0],
+                      backgroundColor: isDark
+                        ? colors.primary[600]
+                        : colors.primary[0],
                     },
                   }}
                 />
@@ -235,9 +265,13 @@ export default function ProfileForm({
 
               {/* OTP */}
               {values.email.toLowerCase() !== user.email.toLowerCase() && (
-                <Grid item xs={12}>
+                <Grid size={{ xs: 12 }}>
                   {!otpSent ? (
-                    <Button variant="outlined" color="secondary" onClick={() => sendOTP(values.email)}>
+                    <Button
+                      variant="outlined"
+                      color="secondary"
+                      onClick={() => sendOTP(values.email)}
+                    >
                       Send OTP
                     </Button>
                   ) : (
@@ -253,7 +287,9 @@ export default function ProfileForm({
                         InputProps={{
                           style: {
                             color: colors.grey[100],
-                            backgroundColor: isDark ? colors.primary[600] : colors.primary[0],
+                            backgroundColor: isDark
+                              ? colors.primary[600]
+                              : colors.primary[0],
                           },
                         }}
                         sx={{ mt: 1 }}
@@ -276,14 +312,16 @@ export default function ProfileForm({
               )}
 
               {/* Submit */}
-              <Grid item xs={12}>
+              <Grid size={{ xs: 12 }}>
                 <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
                   <Button
                     type="submit"
                     variant="contained"
                     disabled={
                       isSubmitting ||
-                      (values.email.toLowerCase() !== user.email.toLowerCase() && !emailVerified)
+                      (values.email.toLowerCase() !==
+                        user.email.toLowerCase() &&
+                        !emailVerified)
                     }
                     sx={{
                       backgroundColor: colors.blueAccent[600],

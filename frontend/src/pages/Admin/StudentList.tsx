@@ -90,7 +90,7 @@ const fetchStudentList = async (): Promise<Student[]> => {
 const deleteStudent = async (studentId: number | string, reason: string): Promise<void> => {
   await apiClient.request({
     method: "DELETE",
-    url: apiPaths.USER.DELETE("Student", studentId),
+    url: apiPaths.USER.DELETE("Student", Number(studentId)),
     data: { reason },
   });
 };
@@ -265,7 +265,7 @@ const createStudentColumns = (
       field: "is_active",
       headerName: "Active",
       renderCell: (params: GridRenderCellParams<Student>) => (
-        <BooleanCell value={params.row.isActive} />
+        <BooleanCell value={params.row.is_active} />
       ),
       flex: 1,
     },
@@ -277,7 +277,7 @@ const createStudentColumns = (
       renderCell: (params: GridRenderCellParams<Student>) => (
         <PresidentCell 
           isPresident={params.row.is_president} 
-          presidentOf={params.row.president_of} 
+          presidentOf={params.row.president_of as any} 
         />
       ),
       flex: 1,

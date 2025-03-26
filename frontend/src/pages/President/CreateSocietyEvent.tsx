@@ -39,10 +39,9 @@ const createStyleTag = (isDarkMode: boolean) => {
 
 const CreateEvent: React.FC = () => {
   const theme = useTheme();
-  const colors = tokens(theme.palette.mode);
   const { societyId } = useParams<{ societyId: string }>();
   const navigate = useNavigate();
-
+  
   const [loading, setLoading] = useState<boolean>(false);
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
