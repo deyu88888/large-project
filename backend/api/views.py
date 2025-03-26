@@ -115,7 +115,7 @@ def get_upcoming_events(request):
         if event['id'] not in seen_ids:
             seen_ids.add(event['id'])
             unique_events.append(event)
-            if len(unique_events) >= 4:
+            if len(unique_events) >= 5:
                 break
 
     return JsonResponse(unique_events, safe=False)
