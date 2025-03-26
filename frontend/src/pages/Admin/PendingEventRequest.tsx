@@ -1,8 +1,7 @@
 import React, { useContext, useCallback, useState, useMemo } from "react";
 import { 
   Box, 
-  Typography, 
-  useTheme, 
+  useTheme,
   Button, 
   Snackbar,
   Alert 
@@ -15,7 +14,8 @@ import { useFetchWebSocket } from "../../hooks/useFetchWebSocket";
 import { fetchPendingRequests } from "./utils";
 import { apiPaths } from "../../api";
 import { updateRequestStatus } from "../../api/requestApi";
-
+import { EventPreview } from "../../components/EventPreview";
+import type { EventData } from "../../components/EventDetailLayout";
 
 interface Event {
   id: number;
@@ -38,7 +38,9 @@ interface AlertState {
 
 interface ActionButtonsProps {
   id: number;
+  event: Event;
   onStatusChange: (id: number, status: "Approved" | "Rejected") => void;
+  onView: (event: Event) => void;
 }
 
 interface EventNotificationProps {
@@ -83,10 +85,37 @@ const createErrorAlert = (message: string): AlertState => {
   };
 };
 
+const mapToEventData = (event: Event): EventData => {
+  return {
+    title: event.title || "",
+    mainDescription: event.main_description || "",
+    date: event.date || "",
+    startTime: event.start_time || "",
+    duration: event.duration || "",
+    location: event.location || "",
+    maxCapacity: event.max_capacity || 0,
+    hostedBy: event.hosted_by || 0,
+    eventId: event.id,
+    coverImageUrl: event.cover_image || "",
+    extraModules: event.extra_modules || [],
+    participantModules: event.participant_modules || [],
+    isParticipant: true,
+    isMember: false
+  };
+};
 
-const ActionButtons: React.FC<ActionButtonsProps> = ({ id, onStatusChange }) => {
+
+const ActionButtons: React.FC<ActionButtonsProps> = ({ id, event, onStatusChange, onView }) => {
   return (
     <Box>
+      <Button
+        variant="contained"
+        color="primary"
+        onClick={() => onView(event)}
+        sx={{ marginRight: "8px" }}
+      >
+        View
+      </Button>
       <Button
         variant="contained"
         color="success"
@@ -168,56 +197,31 @@ const EventsDataGrid: React.FC<DataGridCustomProps> = ({ events, columns, drawer
   );
 };
 
-
-const createEventColumns = (handleStatusChange: (id: number, status: "Approved" | "Rejected") => void): GridColDef[] => {
-  return [
-    { field: "id", headerName: "ID", flex: 0.3 },
-    { field: "title", headerName: "Title", flex: 1 },
-    { field: "main_description", headerName: "Description", flex: 2 },
-    { field: "date", headerName: "Date", flex: 1 },
-    { field: "start_time", headerName: "Start Time", flex: 1 },
-    { field: "duration", headerName: "Duration", flex: 1 },
-    { field: "hosted_by", headerName: "Hosted By", flex: 0.5 },
-    { field: "location", headerName: "Location", flex: 1 },
-    {
-      field: "actions",
-      headerName: "Actions",
-      flex: 1.6,
-      width: 190,
-      minWidth: 190,
-      sortable: false,
-      filterable: false,
-      renderCell: (params: GridRenderCellParams<any, Event>) => (
-        <ActionButtons 
-          id={params.row.id} 
-          onStatusChange={handleStatusChange} 
-        />
-      ),
-    },
-  ];
-};
-
-
 const PendingEventRequest: React.FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const { searchTerm } = useContext(SearchContext);
   const { drawer } = useSettingsStore();
   
-  
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<EventData | null>(null);
   const [alert, setAlert] = useState<AlertState>({
     open: false,
     message: '',
     severity: 'success'
   });
 
-  
   const events = useFetchWebSocket<Event[]>(
     () => fetchPendingRequests(apiPaths.EVENTS.PENDINGEVENTREQUEST),
     'event'
   );
-
   
+  const handleViewEvent = useCallback((event: Event) => {
+    const mappedEvent = mapToEventData(event);
+    setSelectedEvent(mappedEvent);
+    setPreviewOpen(true);
+  }, []);
+
   const handleStatusChange = useCallback(async (id: number, status: "Approved" | "Rejected") => {
     try {
       await updateRequestStatus(id, status, apiPaths.EVENTS.UPDATEENEVENTREQUEST);
@@ -234,6 +238,32 @@ const PendingEventRequest: React.FC = () => {
     setAlert(prev => ({ ...prev, open: false }));
   }, []);
 
+  const createColumns = useCallback((): GridColDef[] => [
+    { field: "id", headerName: "ID", flex: 0.3 },
+    { field: "title", headerName: "Title", flex: 1 },
+    { field: "date", headerName: "Date", flex: 1 },
+    { field: "start_time", headerName: "Start Time", flex: 1 },
+    { field: "duration", headerName: "Duration", flex: 1 },
+    { field: "hosted_by", headerName: "Hosted By", flex: 0.5 },
+    { field: "location", headerName: "Location", flex: 1 },
+    {
+      field: "actions",
+      headerName: "Actions",
+      flex: 1.6,
+      width: 250,
+      minWidth: 250,
+      sortable: false,
+      filterable: false,
+      renderCell: (params: GridRenderCellParams<any, Event>) => (
+        <ActionButtons 
+          id={params.row.id}
+          event={params.row}
+          onStatusChange={handleStatusChange}
+          onView={handleViewEvent}
+        />
+      ),
+    },
+  ], [handleStatusChange, handleViewEvent]);
   
   const filteredEvents = useMemo(() => 
     filterEventsBySearchTerm(events, searchTerm || ''),
@@ -241,11 +271,10 @@ const PendingEventRequest: React.FC = () => {
   );
 
   const columns = useMemo(() => 
-    createEventColumns(handleStatusChange),
-    [handleStatusChange]
+    createColumns(),
+    [createColumns]
   );
 
-  
   return (
     <Box
       sx={{
@@ -264,6 +293,14 @@ const PendingEventRequest: React.FC = () => {
         alert={alert}
         onClose={handleCloseAlert}
       />
+
+      {selectedEvent && (
+        <EventPreview
+          open={previewOpen}
+          onClose={() => setPreviewOpen(false)}
+          eventData={selectedEvent}
+        />
+      )}
     </Box>
   );
 };

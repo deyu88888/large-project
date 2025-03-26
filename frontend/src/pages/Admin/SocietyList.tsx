@@ -18,7 +18,7 @@ import { Society } from '../../types';
 import { useNavigate } from "react-router-dom";
 
 
-const WS_URL = "ws:
+const WS_URL = "ws:";
 const RECONNECT_DELAY = 5000;
 
 

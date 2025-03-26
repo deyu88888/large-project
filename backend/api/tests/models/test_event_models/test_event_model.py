@@ -1,9 +1,12 @@
-from django.utils.timezone import now, make_aware
+from datetime import date, time
 from datetime import datetime, timedelta
 from django.core.exceptions import ValidationError
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
-from api.models import Event, Society, User, Student
+from django.utils.timezone import now, make_aware
+from api.models import Event, Student, User, Society
 from api.tests.file_deletion import delete_file
+
 
 class EventModelTestCase(TestCase):
     """ Unit tests for the Event model """
@@ -46,15 +49,22 @@ class EventModelTestCase(TestCase):
         )
         self.society.society_members.add(self.student2)
 
+        dummy_cover = SimpleUploadedFile(
+            "test_cover.jpg",
+            b"dummy image content",
+            content_type="image/jpeg"
+        )
+
         # Create an event
         self.event = Event.objects.create(
             title='Day',
-            description='Day out',
+            main_description='Day out',
             hosted_by=self.society,
             location="KCL Campus",
             max_capacity=2,
-            date=(now() + timedelta(days=1)).date(),  # Event is in the future
-            start_time=(now() + timedelta(hours=1)).time(),  # One hour from now
+            date=(now() + timedelta(days=1)).date(),
+            start_time=(now() + timedelta(hours=1)).time(),
+            cover_image=dummy_cover
         )
 
     def test_event_valid(self):
@@ -79,7 +89,7 @@ class EventModelTestCase(TestCase):
         """Test that max capacity defaults to 0 (no limit)"""
         event = Event.objects.create(
             title="Unlimited Event",
-            description="No capacity limit",
+            main_description="No capacity limit",
             hosted_by=self.society,
             location="Open Field",
             date=(now() + timedelta(days=1)).date(),
@@ -88,8 +98,8 @@ class EventModelTestCase(TestCase):
         self.assertEqual(event.max_capacity, 0)
 
     def test_event_is_full(self):
-        """Test to ensure event reports as full when max capacity is reached"""
-        self.event.current_attendees.add(self.student1)  # Add one attendee
+        """Test to ensure event is full"""
+        self.event.current_attendees.add(self.student1)
         another_student = Student.objects.create_user(
             username="student2",
             password="password123",
@@ -97,38 +107,98 @@ class EventModelTestCase(TestCase):
             first_name="Another",
             last_name="Student",
         )
-        self.event.current_attendees.add(another_student)  # Add another attendee
+        self.event.current_attendees.add(another_student)
         self.assertTrue(self.event.is_full())
 
     def test_event_is_not_full(self):
-        """Test to ensure event reports as not full when under max capacity"""
-        self.event.current_attendees.add(self.student1)  # Add one attendee
+        """Test to ensure event is not full"""
+        self.event.current_attendees.add(self.student1)
         self.assertFalse(self.event.is_full())
 
     def test_event_has_not_started(self):
-        """Test to ensure event reports as not started when in the future"""
+        """Test to ensure event has not started"""
         event_datetime = make_aware(
             datetime.combine(self.event.date, self.event.start_time)
         )
-        self.assertTrue(event_datetime > now())  # Future event
+        self.assertTrue(event_datetime > now())
 
     def test_event_has_started(self):
-        """Test to ensure event reports as started when in the past"""
-        self.event.date = (now() - timedelta(days=1)).date()  # Past event
-        self.event.start_time = (now() - timedelta(hours=1)).time()  # One hour ago
+        """Test to ensure event has started"""
+        self.event.date = (now() - timedelta(days=1)).date()
+        self.event.start_time = (now() - timedelta(hours=1)).time()
         self.event.save()
         event_datetime = make_aware(
             datetime.combine(self.event.date, self.event.start_time)
         )
-        self.assertTrue(event_datetime <= now())  # Event has started
+        self.assertTrue(event_datetime <= now())
+
+    def test_status_defaults_to_pending(self):
+        """Test to ensure status defaults to pending"""
+        self.assertEqual(self.event.status, "Pending")
+
+    def test_pending_event_past_start_becomes_rejected(self):
+        """Test to ensure status defaults to rejected"""
+        self.event.date = (now() - timedelta(days=1)).date()
+        self.event.start_time = (now() - timedelta(hours=1)).time()
+        self.event.save()
+        self.assertEqual(self.event.status, "Rejected")
+
+    def test_approved_event_past_start_stays_approved(self):
+        """Test to ensure status defaults to approved"""
+        self.event.status = "Approved"
+        self.event.date = (now() - timedelta(days=1)).date()
+        self.event.start_time = (now() - timedelta(hours=1)).time()
+        self.event.save()
+        self.assertEqual(self.event.status, "Approved")
+
+    def test_default_duration_is_one_hour(self):
+        """Test to ensure default duration is one hour"""
+        event = Event.objects.create(
+            title="Short Event",
+            main_description="Quick one",
+            hosted_by=self.society,
+            location="Library",
+            date=(now() + timedelta(days=2)).date(),
+            start_time=(now() + timedelta(hours=2)).time(),
+        )
+        self.assertEqual(event.duration, timedelta(hours=1))
+
+    def test_date_and_time_as_string_parsed_correctly(self):
+        """Test to ensure date and time are parsed correctly"""
+        event = Event(
+            title="String Event",
+            main_description="String time and date",
+            hosted_by=self.society,
+            location="Somewhere",
+            date=(now() + timedelta(days=1)).strftime("%Y-%m-%d"),
+            start_time=(now() + timedelta(hours=1)).strftime("%H:%M"),
+        )
+        event.save()
+        self.assertIsInstance(event.date, date)
+        self.assertIsInstance(event.start_time, time)
+
+    def test_invalid_time_format_raises_error(self):
+        """Test to ensure time format is invalid"""
+        event = Event(
+            title="Bad Time Event",
+            main_description="Invalid time",
+            hosted_by=self.society,
+            location="Error zone",
+            date=(now() + timedelta(days=1)).strftime("%Y-%m-%d"),
+            start_time="invalid-time-format",
+        )
+        with self.assertRaises(ValueError):
+            event.save()
 
     def _assert_event_is_valid(self):
+        """Test to ensure event is valid"""
         try:
             self.event.full_clean()
         except ValidationError:
             self.fail("Test event should be valid")
 
     def _assert_event_is_invalid(self):
+        """Test to ensure event is invalid"""
         with self.assertRaises(ValidationError):
             self.event.full_clean()
 

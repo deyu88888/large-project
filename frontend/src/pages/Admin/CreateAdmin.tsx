@@ -25,8 +25,8 @@ import { tokens } from "../../theme/theme";
 
 
 interface AdminFormValues {
-  firstName: string;
-  lastName: string;
+  first_name: string;
+  last_name: string;
   username: string;
   email: string;
   password: string;
@@ -113,11 +113,11 @@ interface FormButtonsProps {
 
 
 const validationSchema = yup.object().shape({
-  firstName: yup.string()
+  first_name: yup.string()
     .trim()
     .max(50, "First name must be at most 50 characters")
     .required("First name is required"),
-  lastName: yup.string()
+  last_name: yup.string()
     .trim()
     .max(50, "Last name must be at most 50 characters")
     .required("Last name is required"),
@@ -150,14 +150,12 @@ const validationSchema = yup.object().shape({
 
 const initialValues: AdminFormValues = {
   username: "",
-  firstName: "",
-  lastName: "",
+  first_name: "",
+  last_name: "",
   email: "",
   password: "",
   confirmPassword: "",
 };
-
-
 const ErrorAlert: FC<ErrorAlertProps> = ({ error, onClose }) => {
   if (!error) return null;
   
@@ -308,8 +306,6 @@ const PasswordField: FC<PasswordFieldProps> = ({
     />
   );
 };
-
-
 const FormFields: FC<FormFieldsProps> = ({ 
   formikProps, 
   isNonMobile, 
@@ -330,24 +326,24 @@ const FormFields: FC<FormFieldsProps> = ({
     >
       <TextFieldComponent
         label="First Name"
-        name="firstName"
-        value={values.firstName}
+        name="first_name"
+        value={values.first_name}
         handleBlur={handleBlur}
         handleChange={handleChange}
-        error={Boolean(touched.firstName && errors.firstName)}
-        helperText={touched.firstName && errors.firstName}
+        error={Boolean(touched.first_name && errors.first_name)}
+        helperText={touched.first_name && errors.first_name}
         gridSpan="span 2"
         disabled={loading}
       />
       
       <TextFieldComponent
         label="Last Name"
-        name="lastName"
-        value={values.lastName}
+        name="last_name"
+        value={values.last_name}
         handleBlur={handleBlur}
         handleChange={handleChange}
-        error={Boolean(touched.lastName && errors.lastName)}
-        helperText={touched.lastName && errors.lastName}
+        error={Boolean(touched.last_name && errors.last_name)}
+        helperText={touched.last_name && errors.last_name}
         gridSpan="span 2"
         disabled={loading}
       />
@@ -428,7 +424,8 @@ const AdminInfoItem: FC<{ label: string; value: string }> = ({ label, value }) =
 
 
 const SuccessView: FC<SuccessViewProps> = ({ createdAdmin, onCreateAnother, colors, theme }) => {
-  const firstName = createdAdmin.firstName || createdAdmin.firsName;
+  const firstName = createdAdmin.first_name || createdAdmin.firstName;
+  const lastName = createdAdmin.last_name || createdAdmin.lastName;
   const paperStyle = { 
     width: "100%", 
     maxWidth: "500px", 
@@ -445,7 +442,7 @@ const SuccessView: FC<SuccessViewProps> = ({ createdAdmin, onCreateAnother, colo
       <Paper elevation={3} sx={paperStyle}>
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
           <AdminInfoItem label="First Name" value={firstName} />
-          <AdminInfoItem label="Last Name" value={createdAdmin.lastName} />
+          <AdminInfoItem label="Last Name" value={lastName} />
           <AdminInfoItem label="Username" value={createdAdmin.username} />
           <AdminInfoItem label="Email" value={createdAdmin.email} />
         </Box>
@@ -462,8 +459,6 @@ const SuccessView: FC<SuccessViewProps> = ({ createdAdmin, onCreateAnother, colo
     </Box>
   );
 };
-
-
 const FormikWrapper: FC<{
   onSubmit: (values: AdminFormValues, helpers: FormikHelpers<AdminFormValues>) => Promise<void>;
   isNonMobile: boolean;
@@ -576,8 +571,6 @@ const createAdminRequest = async (values: AdminFormValues) => {
   const response = await apiClient.post(apiPaths.USER.ADMIN, values);
   return response.data.admin;
 };
-
-
 const CreateAdmin: FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);

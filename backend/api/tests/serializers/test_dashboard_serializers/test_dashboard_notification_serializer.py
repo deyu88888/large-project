@@ -26,7 +26,7 @@ class TestNotificationSerializer(TestCase):
         # Create an event
         self.event = Event.objects.create(
             title="Test Event",
-            description="A test event.",
+            main_description="A test event.",
             date=timezone.now().date(),
             start_time=timezone.now().time(),
             duration=timedelta(hours=2),

@@ -1,4 +1,5 @@
 // Path: frontend/src/pages/President/SocietyNewsManager.tsx
+// TODO: not refactored, issue: invalid json tag, fix this first 
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';

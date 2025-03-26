@@ -67,7 +67,7 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
     { title: "News", icon: <NewspaperIcon />, to: "/student/view-news" },
     { title: "Discover Societies", icon: <GroupAddOutlinedIcon />, to: "/student/join-society" },
     { title: "Discover Events", icon: <GroupAddOutlinedIcon />, to: "/student/all-events" },
-    { title: "Start A Society", icon: <AddCircleOutlineIcon />, to: "/student/start-society" },
+    // "Start A Society" item has been removed
   ];
 
   const bottomMenuItems = [
@@ -193,7 +193,7 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
         <ListItem disablePadding>
           <ListItemButton
             component={Link}
-            to="/president-page/1"
+            to={"/president-page/"+student.president_of}
             selected={selected === "Manage My Societies"}
             onClick={() => setSelected("Manage My Societies")}
             sx={{ justifyContent: drawer ? "initial" : "center", px: 2.5 }}

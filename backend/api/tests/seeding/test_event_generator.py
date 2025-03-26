@@ -15,7 +15,7 @@ class SeedingTestCase(TestCase):
 
     def test_generate_random_date(self):
         """Test that generate_random_date returns a date that is today or in the future."""
-        generated_date = self.generator.generate_random_date()
+        generated_date = self.generator.generate_random_date(past=False)
         self.assertIsInstance(generated_date, date)
         today = date.today()
         self.assertGreaterEqual(generated_date, today)

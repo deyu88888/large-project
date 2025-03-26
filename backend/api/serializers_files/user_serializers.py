@@ -1,3 +1,5 @@
+from django.contrib.auth.password_validation import validate_password
+
 from api.models import User, Student, Society
 from rest_framework.validators import UniqueValidator
 from rest_framework import serializers
@@ -167,3 +169,39 @@ class StudentSerializer(UserSerializer):
             student.save()
 
         return student
+
+class AdminSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Admin users.
+    """
+    full_name = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = User
+        fields = [
+            'id', 
+            'first_name', 
+            'last_name', 
+            'username', 
+            'email', 
+            'is_active', 
+            'role', 
+            'is_super_admin',
+            'full_name',
+            'following',
+            'followers'
+        ]
+        read_only_fields = ['id']
+    
+    def get_full_name(self, obj):
+        return f"{obj.first_name} {obj.last_name}".strip()
+
+class PasswordUpdateSerializer(serializers.Serializer):
+    current_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True, validators=[validate_password])
+    confirm_password = serializers.CharField(required=True)
+
+    def validate(self, data):
+        if data["new_password"] != data["confirm_password"]:
+            raise serializers.ValidationError("New Password and Confirm Password do not match.")
+        return data

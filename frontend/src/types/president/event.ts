@@ -5,6 +5,7 @@ export interface Event {
   start_time: string;
   status: string;
   hosted_by: number;
+  main_description: string;
   description: string;
   location: string;
   duration: string;
@@ -22,3 +23,9 @@ export interface EventDetail {
   duration: string;
   status: string;
 }
+
+export interface RouteParams extends Record<string, string | undefined> {
+  society_id?: string;
+  event_id?: string;
+}
+

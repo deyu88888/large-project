@@ -24,6 +24,7 @@ import EmailIcon from "@mui/icons-material/Email";
 import ReportProblemIcon from "@mui/icons-material/ReportProblem";
 import { tokens } from "../theme/theme";
 import axios from "axios";
+import { sub } from "date-fns";
 
 const Support = () => {
   const theme = useTheme();
@@ -31,9 +32,11 @@ const Support = () => {
   const isLight = theme.palette.mode === "light";
   
   const [expanded, setExpanded] = useState(false);
-  const [issueType, setIssueType] = useState("");
+  const [reportType, setReportType] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
+  const [subject, setSubject] = useState("");
+
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [snackbar, setSnackbar] = useState({
@@ -56,13 +59,15 @@ const Support = () => {
     
     try {
       const reportData = {
-        subject: issueType,
-        details: message, 
+        report_type: reportType,
         email: email,
+        subject: subject,
+        details: message
       };
       await axios.post("/api/dashboard/public-report", reportData);      
-      setIssueType("");
+      setReportType("");
       setEmail("");
+      setSubject("");
       setMessage("");
       
       setSnackbar({
@@ -89,15 +94,11 @@ const Support = () => {
       questions: [
         {
           question: "How do I join a society?",
-          answer: "To join a society, navigate to the society's page and click the \"Join\" button. You may need to complete registration and pay any applicable membership fees."
-        },
-        {
-          question: "How much are membership fees?",
-          answer: "Membership fees vary by society. Each society's page lists their specific fees and what benefits they include."
+          answer: "To join a society, navigate to the society's page and click the \"Join\" button. You will need to complete registration with your student email to join any societies."
         },
         {
           question: "Can I join multiple societies?",
-          answer: "Yes, you can join as many societies as you wish. Just be mindful of managing your time and commitments."
+          answer: "Yes, you can join as many societies as you wish. Just be mindful of managing your time and commitments!"
         },
         {
           question: "Is there a deadline to join societies?",
@@ -110,7 +111,7 @@ const Support = () => {
       questions: [
         {
           question: "How do I register for society events?",
-          answer: "Navigate to the \"Events\" section, find the event you're interested in, and click \"Register\" or \"RSVP.\""
+          answer: "You must be logged in. Navigate to the \"Events\" section, find the event you're interested in, and click \"RSVP.\""
         },
         {
           question: "Are events only for society members?",
@@ -118,12 +119,8 @@ const Support = () => {
         },
         {
           question: "How can I find out about upcoming events?",
-          answer: "You can view all upcoming events on the \"Events\" page, filter by society, or check the dashboard for highlighted events. You'll also receive notifications for events from societies you've joined."
+          answer: "You can view all upcoming events on the \" All Events\" page, filter by society, or check the dashboard for highlighted events. You'll also receive notifications for events from societies you've joined."
         },
-        {
-          question: "Can I suggest ideas for society activities?",
-          answer: "Yes! Reach out to the society's leadership team through their contact page or attend their general meetings where ideas are often discussed."
-        }
       ]
     },
     {
@@ -131,20 +128,12 @@ const Support = () => {
       questions: [
         {
           question: "How do I create an account?",
-          answer: "Click \"Sign Up\" in the top navigation, enter your student email and create a password. Verify your email to complete registration."
-        },
-        {
-          question: "How do I reset my password?",
-          answer: "Click \"Forgot Password\" on the login page and follow the instructions sent to your email."
+          answer: "Click \"Register\" in the top navigation, enter your student email and create a password. Verify your email to complete registration."
         },
         {
           question: "How do I update my profile information?",
-          answer: "After logging in, click on your profile picture/icon and select \"Edit Profile\" to update your information."
+          answer: "After logging in, click on your profile picture/icon and update your information."
         },
-        {
-          question: "Can I change my notification settings?",
-          answer: "Yes, go to \"Account Settings\" and select \"Notifications\" to customize what updates you receive."
-        }
       ]
     },
     {
@@ -152,11 +141,11 @@ const Support = () => {
       questions: [
         {
           question: "How can I start a new society?",
-          answer: "Visit the \"Create Society\" page to submit an application. You'll need to provide a society name, description, at least 5 founding members, and a faculty advisor."
+          answer: "Visit the \"Start Society\" page to submit an application. You'll need to provide a society name, description. You will receive a notification once your application is reviewed."
         },
         {
           question: "What responsibilities do society leaders have?",
-          answer: "Leaders manage membership, organize events, handle society finances, and ensure compliance with university regulations."
+          answer: "Leaders manage membership, organise events, handle society finances, and ensure compliance with university regulations."
         },
         {
           question: "How are society elections conducted?",
@@ -176,16 +165,8 @@ const Support = () => {
           answer: "Email infiniteloop@gmail.com or use the \"Contact Support\" form in the website footer."
         },
         {
-          question: "Is my payment information secure?",
-          answer: "Yes, all payment processing is handled through encrypted, secure payment gateways. We never store your complete payment information."
-        },
-        {
-          question: "Can I access the website on mobile devices?",
-          answer: "Yes, our website is fully responsive and works on smartphones, tablets, and desktop computers."
-        },
-        {
           question: "How do I report inappropriate content or behavior?",
-          answer: "Use the \"Report\" button available on all content pages, or contact the website administrators through the support form."
+          answer: "Use the \"Report\" button available on all content pages, or contact the website administrators through the support form below."
         }
       ]
     }
@@ -212,7 +193,7 @@ const Support = () => {
               marginBottom: "1rem"
             }}
           >
-            Support Center
+            Support Centre
           </Typography>
           <Typography 
             variant="h5"
@@ -322,23 +303,23 @@ const Support = () => {
             <form onSubmit={handleSubmit}>
               <Box mb={3}>
                 <FormControl fullWidth required variant="outlined">
-                  <InputLabel id="issue-type-label">Issue Type</InputLabel>
+                  <InputLabel id="report-type-label">Report Type</InputLabel>
                   <Select
-                    labelId="issue-type-label"
-                    value={issueType}
-                    onChange={(e) => setIssueType(e.target.value)}
-                    label="Issue Type"
+                    labelId="report-type-label"
+                    value={reportType}
+                    onChange={(e) => setReportType(e.target.value)}
+                    label="Report Type"
                     sx={{
                       backgroundColor: isLight ? colors.primary[900] : colors.primary[600],
                     }}
                     disabled={isSubmitting}
                   >
-                    <MenuItem value="query">Query</MenuItem>
-                    <MenuItem value="feedback">Feedback</MenuItem>
-                    <MenuItem value="misconduct">Misconduct</MenuItem>
-                    <MenuItem value="system_issue">System Issue</MenuItem>
-                    <MenuItem value="inappropriate">Inappropriate Content</MenuItem>
-                    <MenuItem value="other">Other</MenuItem>
+                    <MenuItem value="Query">Query</MenuItem>
+                    <MenuItem value="Feedback">Feedback</MenuItem>
+                    <MenuItem value="Misconduct">Misconduct</MenuItem>
+                    <MenuItem value="System_issue">System Issue</MenuItem>
+                    <MenuItem value="Inappropriate">Inappropriate Content</MenuItem>
+                    <MenuItem value="Other">Other</MenuItem>
                   </Select>
                 </FormControl>
               </Box>
@@ -351,6 +332,22 @@ const Support = () => {
                   variant="outlined"
                   value={email}
                   onChange={(e:any) => setEmail(e.target.value)}
+                  required
+                  sx={{
+                    backgroundColor: isLight ? colors.primary[900] : colors.primary[600],
+                  }}
+                  disabled={isSubmitting}
+                />
+              </Box>
+
+              <Box mb={3}>
+                <TextField
+                  fullWidth
+                  label="Subject"
+                  type="subject"
+                  variant="outlined"
+                  value={subject}
+                  onChange={(e:any) => setSubject(e.target.value)}
                   required
                   sx={{
                     backgroundColor: isLight ? colors.primary[900] : colors.primary[600],

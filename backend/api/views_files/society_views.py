@@ -47,7 +47,7 @@ class JoinedSocietiesView(APIView):
             )
 
         # Validates a student doesn't already have a role in a society
-        error = student_has_no_role(student, False)
+        error = student_has_no_role(student, False, society_id)
         if error:
             return error
 
@@ -113,7 +113,7 @@ class PendingJoinRequestsView(APIView):
         # Get all pending requests for this student
         pending_requests = SocietyRequest.objects.filter(
             from_student=user.student,
-            approved=False
+            approved=None
         )
 
         serializer = SocietyRequestSerializer(pending_requests, many=True)

@@ -1,27 +1,210 @@
-\chapter{Design and implementation}
+\chapter{Design and Implementation}
 \label{chap:design-and-implementation}
 
-\defaultInstructions
-
-\begin{length}
-There are no strict length requirements for this chapter.  However, it is important that the writing is clear and concise.  Avoid repeating yourself.  Make sure to clearly signpost evidence for claims.  It should be possible for a reader to understand this chapter without consulting other sources.  It is expected that a typical project needs 3--6 pages, but this can vary considerably from project to project.
-\end{length}
-
-\begin{expectations}
-In this chapter, the team should discuss the key design and implementation decisions made during the project, and how these are reflected in the end product.  Design refers to the way the software system is organised into smaller components and the way in which they are related.  We are \emph{not} looking for a discussion of a series of screenshots of your application.
-
-Normally, all teams should present the overall architecture of the software.  The remainder of the chapter will depend on the type of system that is built.  To decide what to cover, consider the following to aspects of the project:
-\begin{itemize}
-\item What design and implementation decisions did you make to improve software quality?
-\item What design and implementation decisions did you make to achieve challenging functional and non-functional specifications
-\end{itemize}
-Depending on your answers to these questions, you may cover the design an implementation specific components, interfaces, the overall class structure, the database design, algorithms, business processes, etc.
-
-A good report considers alternative options for key decisions and includes sound justifications for the decisions made.  If applicable, you may reflect on changes made during the project.  Ideally, key decisions are rooted in Software Engineering theory.
-\end{expectations}
+This chapter discusses the key design and implementation decisions made during the 
+development of our university society management platform. We explore the architectural
+choices, component organization, and significant implementation strategies that shaped
+our system.
 
 \section{Architecture}
-\label{sect:architecture}
-\begin{expectations}
-Add other sections and sub-sections as necessary.
-\end{expectations}
+
+\subsection{Overall System Architecture}
+
+We implemented a modern client-server architecture using a clear separation between frontend and backend components. This separation follows the principles of the Model-View-Controller (MVC) pattern, which promotes modularity and maintainability by isolating different aspects of the application. Our system architecture consists of:
+
+\begin{itemize}
+    \item \textbf{Frontend Layer}: A React-based single-page application that handles user interface rendering and client-side logic
+    \item \textbf{Backend Layer}: A Django-based REST API that provides data services, business logic, and database interactions
+    \item \textbf{Database Layer}: Persistent storage for all application data
+\end{itemize}
+
+This architecture was chosen for several reasons:
+
+\begin{itemize}
+    \item \textbf{Scalability}: The separation of concerns allows independent scaling of frontend and backend components
+    \item \textbf{Development Efficiency}: Different team members could work on frontend and backend components simultaneously
+    \item \textbf{Maintainability}: Changes to one layer have minimal impact on other layers when interfaces remain stable
+    \item \textbf{Modern Web Standards}: Alignment with industry best practices for web application development
+\end{itemize}
+
+\subsection{Backend Architecture}
+
+Our backend follows Django's recommended project structure with significant customizations to better support our application's requirements:
+
+\begin{itemize}
+    \item \textbf{API-First Design}: All functionality is exposed through a comprehensive REST API
+    \item \textbf{Model-Driven Development}: Database schema and relationships defined through Django's ORM models
+    \item \textbf{Domain-Driven Organization}: Functionality organized into logical modules based on domain responsibilities
+    \item \textbf{File Separation by Function Type}: Rather than large monolithic files, we separated models, views, serializers, and tests into dedicated directories with domain-specific files
+\end{itemize}
+
+This organization is evident in our project structure:
+
+\begin{itemize}
+    \item \texttt{models\_files/}: Contains domain-specific model definitions (\texttt{user\_models.py}, \texttt{society\_models.py}, \texttt{event\_models.py}, etc.)
+    \item \texttt{views\_files/}: Contains endpoint implementations categorized by functionality (\texttt{admin\_views.py}, \texttt{president\_views.py}, \texttt{event\_views.py}, etc.)
+    \item \texttt{serializers\_files/}: Contains domain-specific serializers for API data transformation
+    \item \texttt{tests/}: Contains hierarchically organized test files mirroring the application structure
+\end{itemize}
+
+The backend architecture employs several key design patterns:
+
+\begin{itemize}
+    \item \textbf{Service Layer Pattern}: Complex business logic encapsulated in service classes (e.g., \texttt{recommendation\_service.py})
+    \item \textbf{Repository Pattern}: Data access logic separated from business logic
+    \item \textbf{Signals Architecture}: Django signals used for event-driven functionality (as seen in \texttt{signals.py})
+    \item \textbf{Resource-Oriented Design}: API endpoints organized around domain resources following RESTful principles
+\end{itemize}
+
+\subsection{Frontend Architecture}
+
+The frontend architecture employs a component-based design using React and follows these key principles:
+
+\begin{itemize}
+    \item \textbf{Component Hierarchy}: UI organized into reusable components with clear parent-child relationships
+    \item \textbf{State Management}: Application state managed through React hooks and context
+    \item \textbf{Route-Based Code Organization}: Features organized around application routes
+    \item \textbf{Responsive Design Approach}: UI components designed to function across different viewport sizes
+\end{itemize}
+
+\section{Key Design Decisions}
+
+\subsection{Multi-Tiered Dashboard Design}
+
+One of the most significant design decisions was implementing a multi-tiered dashboard system to serve different user roles. This approach required careful consideration of:
+
+\begin{itemize}
+    \item \textbf{Role-Based Access Control}: Each dashboard provides access only to appropriate functionality
+    \item \textbf{Component Reusability}: Shared components across dashboards where functionality overlaps
+    \item \textbf{Consistent User Experience}: Maintaining design consistency while accommodating different functionality
+\end{itemize}
+
+We considered two alternative approaches:
+
+\begin{enumerate}
+    \item \textbf{Single Dashboard with Conditional Elements}: This would have simplified routing but created more complex components with numerous conditional rendering branches.
+    \item \textbf{Completely Separate Dashboards}: This would have eliminated shared code but led to significant duplication.
+\end{enumerate}
+
+Our chosen approach balances these considerations by implementing role-specific dashboards while extracting common functionality into shared components. This decision improved maintainability by reducing duplicated code while preserving clear separation between role-specific functionality.
+
+\subsection{Data Model Design}
+
+Our data model design focused on capturing the complex relationships between users, societies, events, and administrative functions. Key design decisions included:
+
+\begin{itemize}
+    \item \textbf{Role Flexibility}: Rather than creating separate user types, we implemented a role-based system where a single user can have multiple relationships with societies (member, president, event manager)
+    \item \textbf{Content Approval Workflow}: Integrated approval states for societies, events, and news to support administrative oversight
+    \item \textbf{Temporal Modeling}: Proper datetime handling for events and activities to support calendar functionality
+\end{itemize}
+
+This design supports the complex relationships inherent in university societies while maintaining data integrity and facilitating administrative oversight. The approach is evident in our \texttt{models.py} file, which defines clear relationships between entities.
+
+\subsection{Real-Time Notifications}
+
+To enhance user experience, we implemented real-time notifications using WebSockets through Django Channels. This design decision required:
+
+\begin{itemize}
+    \item \textbf{Asynchronous Communication}: Integration of asynchronous processing with Django's synchronous environment
+    \item \textbf{Channel Layer Design}: Implementation of message routing and consumer patterns as seen in the \texttt{consumer} directory
+    \item \textbf{Event-Driven Architecture}: Using Django signals to trigger notifications based on system events
+\end{itemize}
+
+We considered a polling-based approach as an alternative, but rejected it due to increased server load and potential delays in notification delivery. The WebSocket implementation provides immediate updates to users while being more resource-efficient despite its increased implementation complexity.
+
+\section{Implementation Strategies}
+
+\subsection{Authentication and Authorization}
+
+The implementation of authentication and authorization was critical for our multi-role system. Our approach included:
+
+\begin{itemize}
+    \item \textbf{Token-Based Authentication}: Secure authentication using JWT tokens
+    \item \textbf{University Email Verification}: OTP-based verification to ensure only university students can register
+    \item \textbf{Permission Granularity}: Fine-grained permissions for different actions rather than broad role-based access
+\end{itemize}
+
+This implementation supports our security requirements while providing a streamlined user experience. The token-based approach facilitates authentication across our separated frontend and backend architecture.
+
+\subsection{Society and Event Management}
+
+The society and event management functionality required careful implementation to support various user roles:
+
+\begin{itemize}
+    \item \textbf{Administrative Approval Flow}: Implementation of multi-step approval processes for societies, events, and content
+    \item \textbf{Role-Specific Interfaces}: Tailored interfaces for society presidents, event managers, and regular members
+    \item \textbf{Moderation Controls}: Tools for administrators to monitor and moderate content
+\end{itemize}
+
+The implementation uses a state machine pattern for managing content status (draft, pending, approved, rejected), providing a consistent approach to approval workflows across different content types.
+
+\subsection{API Design and Frontend Integration}
+
+Our API design focused on creating intuitive, resource-oriented endpoints that aligned with frontend requirements:
+
+\begin{itemize}
+    \item \textbf{RESTful Resource Modeling}: API endpoints organized around resources with appropriate HTTP methods
+    \item \textbf{Comprehensive Serialization}: Detailed serializers to transform complex Django models into appropriate JSON representations
+    \item \textbf{Nested Resource Access}: Endpoints structured to minimize client-side data assembly
+\end{itemize}
+
+This design is evident in our \texttt{urls.py} and \texttt{serializers.py} files, which show a consistent pattern of resource mapping and data transformation. The approach simplified frontend development by providing properly structured data that matched component requirements.
+
+\section{Technical Challenges and Solutions}
+
+\subsection{Managing Complex User Permissions}
+
+Implementing the multi-tiered permission system presented significant challenges:
+
+\begin{itemize}
+    \item \textbf{Challenge}: Ensuring users could only access appropriate functionality while minimizing permission checks
+    \item \textbf{Solution}: Implementation of a permission caching system and hierarchical permission structure
+\end{itemize}
+
+Our solution, visible in the views and permissions implementations, provides efficient permission checking without compromising security. We used Django's built-in permission system as a foundation but extended it with custom permission classes to handle our specific requirements.
+
+\subsection{Code Organization for Maintainability}
+
+As the codebase grew, maintaining organization became increasingly important:
+
+\begin{itemize}
+    \item \textbf{Challenge}: Keeping related functionality together while preventing files from becoming unmanageably large
+    \item \textbf{Solution}: Implementation of a modular file structure with domain-specific directories
+\end{itemize}
+
+Our backend structure shows this approach with the separation of views, serializers, and models into dedicated files and directories (e.g., \texttt{views\_files}, \texttt{serializers\_files}, \texttt{models\_files}). This organization improved maintainability by making code locations predictable and keeping related functionality together.
+
+\subsection{Testing and Quality Assurance}
+
+Ensuring system quality required a comprehensive testing approach:
+
+\begin{itemize}
+    \item \textbf{Challenge}: Testing complex interactions between components and user roles
+    \item \textbf{Solution}: Implementation of multi-layered testing strategy including unit tests and manual testing
+\end{itemize}
+
+The \texttt{tests} directory structure shows our approach to organizing tests by functionality rather than by file structure, improving test discoverability and maintenance.
+
+\section{Evolution of Implementation}
+
+Throughout the project, our implementation approach evolved in response to challenges and changing requirements:
+
+\begin{itemize}
+    \item \textbf{Initial Phase (First 5 Weeks)}: Focus on core entity models, basic CRUD operations, and role-specific dashboards, establishing the foundation of the system with rapid feature development
+    \item \textbf{Middle Phase}: Refinement of existing features and implementation of complex business logic and approval workflows
+    \item \textbf{Final Phase}: Refinement of user experience, performance optimization, and bug fixing
+\end{itemize}
+
+This phased approach allowed us to deliver a functional system early while progressively adding sophistication. The evolution is visible in our code structure, which shows a progression from basic functionality to more complex implementations.
+
+\section{Reflections on Design and Implementation}
+
+In retrospect, several key decisions significantly influenced our project's outcome:
+
+\begin{itemize}
+    \item \textbf{Positive Impact}: The separation of front-end and backend allowed parallel development and clear boundaries between concerns
+    \item \textbf{Challenge}: The implementation of real-time features added complexity but significantly enhanced user experience
+    \item \textbf{Learning}: An earlier focus on directory organization would have reduced late-stage adjustments.
+\end{itemize}
+
+These reflections inform our understanding of effective design and implementation strategies for future projects, particularly the importance of early architectural decisions on the overall project trajectory.

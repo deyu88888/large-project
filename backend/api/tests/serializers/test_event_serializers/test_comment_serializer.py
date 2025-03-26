@@ -15,7 +15,7 @@ class CommentSerializerTestCase(TestCase):
 
         self.event = Event.objects.create(
             title="Test Event",
-            description="This is a test event",
+            main_description="This is a test event",
             location="Online"
         )
 
@@ -30,7 +30,7 @@ class CommentSerializerTestCase(TestCase):
         serializer = CommentSerializer(instance=self.comment)
         data = serializer.data
         self.assertEqual(data["content"], self.comment.content)
-        self.assertEqual(data["user_data"], {"id": self.user.id, "username": self.user.username})
+        self.assertEqual(data["user_data"], {"id": self.user.id, "username": self.user.username, "icon": None})
         self.assertEqual(data["likes"], 0)
         self.assertEqual(data["dislikes"], 0)
 

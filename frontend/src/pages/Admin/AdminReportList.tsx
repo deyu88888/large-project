@@ -211,8 +211,8 @@ const AdminReportList: FC = () => {
     { field: "subject", headerName: "Subject", flex: 1.5 },
     { field: "details", headerName: "Details", flex: 2 },
     {
-      field: "created_at",
-      headerName: "Created At",
+      field: "requested_at",
+      headerName: "Requested At",
       flex: 1.5,
       renderCell: (params: GridRenderCellParams) => (
         <DateCell date={params.row.created_at} />

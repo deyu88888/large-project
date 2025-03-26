@@ -39,7 +39,7 @@ class EventSerializerTestCase(TestCase):
         # Set up Event
         self.event = Event.objects.create(
             title="Day",
-            description="Day out",
+            main_description="Day out",
             hosted_by=self.society,
             location="KCL Campus"
         )
@@ -48,7 +48,7 @@ class EventSerializerTestCase(TestCase):
         self.serializer = None
         self.data = {
             "title": "event",
-            "description": "an event",
+            "main_description": "an event",
             "date": timezone.now().date(),
             "start_time": timezone.now().time(),
             "duration": timedelta(hours=2),
@@ -63,7 +63,7 @@ class EventSerializerTestCase(TestCase):
         data = self.serializer.data
 
         self.assertEqual(data["title"], self.event.title)
-        self.assertEqual(data["description"], self.event.description)
+        self.assertEqual(data["main_description"], self.event.main_description)
         self.assertEqual(data["date"], self.event.date.strftime("%Y-%m-%d"))
         self.assertEqual(data["start_time"][:8], self.event.start_time.strftime("%H:%M:%S"))
         self.assertEqual(data["hosted_by"], self.event.hosted_by.id)
@@ -78,7 +78,7 @@ class EventSerializerTestCase(TestCase):
         event = self.serializer.save()
 
         self.assertEqual(event.title, self.data["title"])
-        self.assertEqual(event.description, self.data["description"])
+        self.assertEqual(event.main_description, self.data["main_description"])
         self.assertEqual(event.date, self.data["date"])
         self.assertEqual(event.start_time, self.data["start_time"])
         self.assertEqual(event.hosted_by.id, self.data["hosted_by"])
@@ -97,7 +97,7 @@ class EventSerializerTestCase(TestCase):
         self.serializer.save()
 
         self.assertEqual(self.event.title, self.data["title"])
-        self.assertEqual(self.event.description, self.data["description"])
+        self.assertEqual(self.event.main_description, self.data["main_description"])
         self.assertEqual(self.event.date, self.data["date"])
         self.assertEqual(self.event.start_time, self.data["start_time"])
         self.assertEqual(self.event.hosted_by.id, self.data["hosted_by"])

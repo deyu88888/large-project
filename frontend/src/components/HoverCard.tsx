@@ -1,7 +1,16 @@
 // HoverCard.tsx
 import React, { useState, useRef } from "react";
-import { Popover, Box, Button, Typography, Avatar } from "@mui/material";
+import {
+  Popover,
+  Box,
+  Button,
+  Typography,
+  Avatar,
+  Snackbar,
+  Alert,
+} from "@mui/material";
 import { apiClient } from "../api";
+import { useAuthStore } from "../stores/auth-store";
 
 interface SocietyInfo {
   id: number;
@@ -28,6 +37,11 @@ export function HoverCard({ userId, children }: HoverCardProps) {
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [open, setOpen] = useState(false);
   const timerRef = useRef<number | null>(null);
+
+  const { user } = useAuthStore();
+
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMsg, setSnackbarMsg] = useState("");
 
   const handleMouseEnter = (event: React.MouseEvent<HTMLElement>) => {
     if (!open) {
@@ -59,6 +73,13 @@ export function HoverCard({ userId, children }: HoverCardProps) {
 
   const handleToggleFollow = async () => {
     if (!userInfo) return;
+
+    if (userInfo.id === user?.id) {
+      setSnackbarMsg("You cannot follow yourself.");
+      setSnackbarOpen(true);
+      return;
+    }
+
     try {
       const res = await apiClient.post(`/api/users/${userInfo.id}/follow`);
       if (res.data.message === "Followed successfully.") {
@@ -86,6 +107,7 @@ export function HoverCard({ userId, children }: HoverCardProps) {
       style={{ display: "inline-block" }}
     >
       {children}
+
       <Popover
         open={open}
         anchorEl={anchorEl}
@@ -104,7 +126,7 @@ export function HoverCard({ userId, children }: HoverCardProps) {
               <Box
                 sx={{
                   backgroundColor: "#f5f5f5",
-                  height: 60,
+                  height: 50,
                   borderRadius: 1,
                   mb: 2,
                 }}
@@ -150,6 +172,22 @@ export function HoverCard({ userId, children }: HoverCardProps) {
           )}
         </Box>
       </Popover>
+
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={4000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setSnackbarOpen(false)}
+          severity="error"
+          variant="filled"
+          sx={{ width: "100%" }}
+        >
+          {snackbarMsg}
+        </Alert>
+      </Snackbar>
     </span>
   );
 }

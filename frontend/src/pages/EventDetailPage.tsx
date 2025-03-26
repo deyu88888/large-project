@@ -76,7 +76,6 @@ const EventDetailPage: React.FC = () => {
     fetchEvent();
   }, [numericEventId]);
 
-  // 获取评论
   useEffect(() => {
     const fetchComments = async () => {
       if (!numericEventId || !isAuthenticated) return;
@@ -91,7 +90,6 @@ const EventDetailPage: React.FC = () => {
     fetchComments();
   }, [numericEventId, isAuthenticated]);
 
-  // WebSocket 评论
   useEffect(() => {
     if (!numericEventId || !isAuthenticated) return;
 

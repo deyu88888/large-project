@@ -1,26 +1,107 @@
 \chapter{Specifications}
-\label{chap:specifications}
 
-\defaultInstructions
+This chapter outlines the functional and non-functional specifications of our student society management platform. All features described below have been successfully implemented and deployed in the final system.
 
-\begin{length}
-There are no strict length requirements for this chapter.  However, it is important that the writing is clear and concise.  Avoid repeating yourself.  It is expected that a typical project needs 1--5 pages, but this can vary considerably from project to project.
-\end{length}
+\section{Functional Specifications}
 
-\begin{expectations}
-This chapter should provide the specifications of the software that you have implemented.  Good specifications are clear, concise, consistent (with one another and with the project objectives), estimable (the effort required of functional requirements should be estimable), and testable (you should be able to create automated or manual tests for these specifications).
+\subsection{User Authentication and Profile Management}
+\begin{itemize}
+    \item \textbf{University-Restricted Registration}: System validates that email addresses end with the university domain (e.g., @kcl.ac.uk) to ensure only legitimate university students can register.
+    \item \textbf{Two-Step Verification}: Registration process includes email verification through OTP (One-Time Password) to confirm email ownership.
+    \item \textbf{Profile Customization}: Users can set and modify their username, password, and academic major.
+    \item \textbf{Social Connections}: Students can search for, follow, and view profiles of other students, facilitating community building.
+\end{itemize}
 
-A significant part of this chapter covers functional requirements/specifications.  These refer to the product features your team has developed.  Present a clear overview of all functional requirements/specifications that can be found in the deployed system.  For each feature, explain how it contributes to the project objectives, and explain how/where it can be found.  Do \emph{not} mix the specifications the team managed to implement with those they did not.  
+\subsection{Personalized Student Dashboard}
+\begin{itemize}
+    \item \textbf{Activity Overview}: Dashboard displays membership counts, upcoming events, and unread notifications.
+    \item \textbf{Society Management}: Students can view societies they've joined with options to leave if desired.
+    \item \textbf{Event Tracking}: Comprehensive display of all events with RSVP functionality and attendance management.
+    \item \textbf{Notification System}: Centralizes all society-related communications with read/unread status tracking.
+    \item \textbf{News Feed}: Displays news published by societies the student has joined.
+    \item \textbf{Calendar Integration}: Visual calendar interface showing all events for better planning.
+    \item \textbf{Society Application}: Interface for students to propose new societies, requiring administrative approval.
+    \item \textbf{Search Functionality}: Allows searching for events and societies across the platform.
+\end{itemize}
 
-If necessary or helpful for clarity, explain what is out of scope of the project in a distinct section.  You may discuss ideas for functional specifications the team did not manage to implement, provided this discussion is clearly distinct from the project's achieved functional specifications.
+\subsection{Society Management Tools}
+\begin{itemize}
+    \item \textbf{Society Detail Management}: The society managers can edit the name, description, category, social media links, images, icons, and tags of the society (subject to admin approval).
+    \item \textbf{Event Creation and Management}: Interface for creating, editing, and managing society events with approval workflows.
+    \item \textbf{Membership Administration}: Tools for reviewing pending membership requests and managing existing members.
+    \item \textbf{News Publication System}: Functionality to create, draft, publish, and manage society news posts.
+    \item \textbf{Member Recognition}: System for assigning awards and roles to society members.
+    \item \textbf{Preview Functionality}: Live preview of the society page and events before submission for approval.
+    \item \textbf{Administrative Communication}: Direct reporting channel to university administrators for issue resolution.
+\end{itemize}
 
-The project objectives will also entail certain non-functional specifications.  These may include, for example, reliability, usability, portability, scalability, performance, compatibility, security, compliance, etc.  Identify which non-functional specifications are important to this project and define them.  Make sure to present them in order of importance, and relate each one to the project objectives.  
+\subsection{Administrative Oversight Dashboard}
+\begin{itemize}
+    \item \textbf{Platform Analytics}: Real-time metrics showing active users, events, and pending requests.
+    \item \textbf{Student Management}: Comprehensive student database with filtering, search, and administrative actions.
+    \item \textbf{Society Approval Workflow}: Tools for reviewing and approving new societies and society modification requests.
+    \item \textbf{Event Approval System}: Interface for reviewing event requests to ensure compliance with university policies.
+    \item \textbf{Report Management}: System for handling and responding to reports from users.
+    \item \textbf{Administrative Team Management}: Tools for managing admin permissions and responsibilities.
+    \item \textbf{Activity Logging}: Comprehensive tracking of administrative actions with undo functionality.
+\end{itemize}
 
-The section headers below provide a suggested structure.  You should feel free to change it or extend it.
-\end{expectations}
+\subsection{AI-Powered Recommendation System}
+\begin{itemize}
+    \item \textbf{Multi-faceted Similarity Scoring}: Combines neural embeddings (35\%), TF-IDF cosine similarity (25\%), keyword overlap (15\%), basic word overlap (5\%), and domain-specific semantic relationships (20\%).
+    \item \textbf{Diversity Algorithm}: Implements Maximal Marginal Relevance to balance relevance with variety in recommendations.
+    \item \textbf{Temporal Awareness}: Prioritizes societies with recent activity in recommendations.
+    \item \textbf{Adaptive Feedback System}: Collects and processes both explicit ratings and implicit user behavior signals.
+    \item \textbf{Personalization}: Recommendations improve over time based on user interactions and preferences.
+\end{itemize}
 
-\section{Functional specifications}
-\label{sect:functional-specifications}
+\section{Non-functional Specifications}
 
-\section{Non-functional specifications}
-\label{sect:non-functional-specifications}
+\subsection{Usability}
+\begin{itemize}
+    \item \textbf{Desktop-Optimized Design}: Platform is designed primarily for desktop use, with limited mobile responsiveness. 
+    \item \textbf{Accessibility Features}: Interface follows accessibility best practices for inclusive user experience.
+    \item \textbf{Appearance Customization}: Users can switch between light and dark modes to enhance readability.
+    \item \textbf{Consistent Navigation}: Intuitive navigation patterns maintained across all system interfaces.
+\end{itemize}
+
+\subsection{Security and Privacy}
+\begin{itemize}
+    \item \textbf{Role-Based Access Control}: Multi-tiered permission structure ensuring users only access appropriate functionality.
+    \item \textbf{Data Protection}: Personal information is securely stored with multiple protection measures: user profiles are not searchable by non-logged-in users, email addresses are hidden from other users, authentication tokens are encrypted, and sensitive data is appropriately anonymized where necessary.
+    \item \textbf{Approval Workflows}: Multi-step approval processes for society creation, event scheduling, and content publication.
+    \item \textbf{Activity Monitoring}: Administrative logging of system actions.
+\end{itemize}
+
+\subsection{Performance and Reliability}
+\begin{itemize}
+    \item \textbf{Real-time Updates}: WebSocket integration for immediate notification delivery and content updates.
+    \item \textbf{Concurrency Management}: System handles multiple simultaneous users without degradation.
+    \item \textbf{Data Integrity}: Robust data validation and error handling throughout the system.
+\end{itemize}
+
+\subsection{Scalability}
+\begin{itemize}
+    \item \textbf{User Capacity}: Architecture designed to accommodate the entire university student population.
+    \item \textbf{Society Growth}: No artificial limits on the number of societies or events the system can manage.
+    \item \textbf{Data Retention}: Historical events and society information maintained with appropriate archiving.
+\end{itemize}
+
+\subsection{Maintainability}
+\begin{itemize}
+    \item \textbf{Component Modularity}: System designed with clear separation of concerns for easier updates.
+    \item \textbf{Technology Stack Standardization}: Consistent use of Django and React frameworks across the application.
+    \item \textbf{Code Organization}: Logical structure facilitating future extensions and modifications.
+\end{itemize}
+
+\section{Out of Scope}
+While the implemented system provides comprehensive society management capabilities, the following features were considered but determined to be outside the project scope:
+
+\begin{itemize}
+    \item \textbf{Financial Management}: Tools for society budget tracking and financial reporting.
+    \item \textbf{External Event Ticketing}: Integration with third-party ticketing platforms for paid events.
+    \item \textbf{Mobile Applications}: Native mobile applications for iOS and Android platforms.
+    \item \textbf{Integration with University Learning Management Systems}: Direct connection with academic course platforms.
+\end{itemize}
+
+These features represent potential future enhancements that would build upon the current system capabilities while maintaining alignment with the core project objectives.

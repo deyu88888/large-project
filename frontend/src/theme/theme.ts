@@ -6,6 +6,7 @@ type ColorTokens = {
   greenAccent: Record<number, string>;
   redAccent: Record<number, string>;
   blueAccent: Record<number, string>;
+  yellowAccent: Record<number, string>;
 };
 
 // color design tokens
@@ -67,6 +68,13 @@ export const tokens = (mode: ThemeMode): ColorTokens => ({
           800: "#2a2d64",
           900: "#151632",
         },
+        yellowAccent: {
+          100: "#f9f9a0",
+          200: "#f7f56a",
+          300: "#f5f433",
+          400: "#f3f000",
+          500: "#f2e000",
+        }
       }
     : {
         grey: {
@@ -124,6 +132,13 @@ export const tokens = (mode: ThemeMode): ColorTokens => ({
           800: "#c3c6fd",
           900: "#e1e2fe",
         },
+        yellowAccent: {
+          100: "#f9f9a0",
+          200: "#f7f56a",
+          300: "#f5f433",
+          400: "#f3f000",
+          500: "#f2e000",
+        }
       }),
 });
 
@@ -137,7 +152,13 @@ export const themeSettings = (mode: ThemeMode) => {
         main: colors.primary[500],
       },
       secondary: {
+        dark: colors.blueAccent[800],
         main: colors.blueAccent[500],
+      },
+      greenAccent: {
+        main: colors.greenAccent[500],
+        light: colors.greenAccent[200],
+        dark: colors.greenAccent[700],
       },
       neutral: {
         dark: colors.grey[700],
@@ -151,12 +172,28 @@ export const themeSettings = (mode: ThemeMode) => {
     typography: {
       fontFamily: ["Source Sans Pro", "sans-serif"].join(","),
       fontSize: 12,
-      h1: { fontSize: 40 },
-      h2: { fontSize: 32 },
-      h3: { fontSize: 24 },
-      h4: { fontSize: 20 },
-      h5: { fontSize: 16 },
-      h6: { fontSize: 14 },
+      h1: { 
+        fontSize: 40, 
+        fontFamily: "Monaco, monospace",
+        fontWeight: "bold",
+      },
+      h2: { 
+        fontSize: 32, 
+        fontFamily: "Monaco, monospace",
+      },
+      h3: { 
+        fontSize: 24, 
+        fontFamily: "Monaco, monospace",
+      },
+      h4: { 
+        fontSize: 20, 
+      },
+      h5: { 
+        fontSize: 16, 
+      },
+      h6: { 
+        fontSize: 14, 
+      },
     },
   };
 };

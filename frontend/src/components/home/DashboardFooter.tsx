@@ -1,4 +1,4 @@
-import { Box, Container, Grid2 as Grid, Typography, Link, IconButton, useTheme, alpha } from "@mui/material";
+import { Box, Container, Typography, Link, IconButton, useTheme, alpha, Grid } from "@mui/material";
 import EmailIcon from "@mui/icons-material/Email";
 import LinkedInIcon from "@mui/icons-material/LinkedIn";
 import GitHubIcon from "@mui/icons-material/GitHub";
@@ -13,7 +13,7 @@ export const DashboardFooter = () => {
     <Box
       component="footer"
       sx={{
-        backgroundColor: "secondary.main",
+        backgroundColor: theme.palette.mode === "dark" ? "secondary.dark" : "secondary.light",
         color: "white",
         pt: 8,
         pb: 4,
@@ -26,14 +26,14 @@ export const DashboardFooter = () => {
           left: 0,
           right: 0,
           height: 4,
-          background: `linear-gradient(to right, ${theme.palette.primary.main}, ${theme.palette.info.main})`,
+          background: `linear-gradient(to right, ${theme.palette.primary.main}, ${theme.palette.secondary.light})`,
         }
       }}
     >
       <Container maxWidth="xl">
         <Grid container spacing={15}>
           {/* Brand Section */}
-          <Grid xs={12} md={3} ml={6}>
+          <Grid item xs={12} md={3} sx={{ ml: 6 }}>
             <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
               {/* Infinity Logo */}
               <Box 
@@ -125,7 +125,7 @@ export const DashboardFooter = () => {
           </Grid>
           
           {/* Links Section */}
-          <Grid xs={12} md={3}>
+          <Grid item xs={12} md={3}>
             <Typography variant="h6" sx={{ mb: 2, fontWeight: 500, position: "relative", display: "inline-block" }}>
               Quick Links
               <Box 
@@ -163,7 +163,7 @@ export const DashboardFooter = () => {
             </Box>
           </Grid>
           
-          <Grid xs={12} md={3}>
+          <Grid item xs={12} md={3}>
             <Typography variant="h6" sx={{ mb: 2, fontWeight: 500, position: "relative", display: "inline-block" }}>
               Resources
               <Box 
@@ -202,7 +202,7 @@ export const DashboardFooter = () => {
           </Grid>
           
           {/* Contact Section */}
-          <Grid xs={12} md={3}>
+          <Grid item xs={12} md={3}>
             <Typography variant="h6" sx={{ mb: 2, fontWeight: 500, position: "relative", display: "inline-block" }}>
               Contact Us
               <Box 

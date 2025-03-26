@@ -30,7 +30,7 @@ const JoinSocietiesPage = lazy(() => import("../pages/Student/JoinSociety"));
 const ViewSocietyPage = lazy(() => import("../pages/ViewSociety"));
 const PresidentPage = lazy(() => import("../pages/President/PresidentPage"));
 const ManageSocietyDetails = lazy(() => import("../pages/President/ManageSocietyDetails"));
-const SocietyPreviewModal = lazy(() => import("../pages/President/SocietyPreviewModal"));
+//const SocietyPreviewModal = lazy(() => import("../pages/President/SocietyPreviewModal"));
 const EditEventDetails = lazy(() => import("../pages/President/EditEventDetails"));
 const ManageSocietyEvents = lazy(() => import("../pages/President/ManageSocietyEvents"));
 const CreateEventPage = lazy(() => import("../pages/President/CreateSocietyEvent"));
@@ -58,7 +58,6 @@ const AdminDashboardPage = lazy(() => import("../pages/Admin/AdminDashboard"));
 const CalendarPage = lazy(() => import("../pages/Admin/AdminCalendar"));
 const StudentListPage = lazy(() => import("../pages/Admin/StudentList"));
 const DashboardPage = lazy(() => import("../pages/Dashboard"));
-const OldDashboardPage = lazy(() => import("../pages/OldDashboard"));
 const CreateAdminPage = lazy(() => import("../pages/Admin/CreateAdmin"));
 const AdminListPage = lazy(() => import("../pages/Admin/AdminList"));
 const RequestSocietyPage = lazy(() => import("../pages/Admin/SocietyCreationRequests"));
@@ -70,7 +69,7 @@ const NewsApprovalDashboard = lazy(() => import("../pages/Admin/NewsApprovalDash
 const ReportReply = lazy(() => import("../pages/Admin/ReportReply"));
 const ReportRepliedList = lazy(() => import("../pages/Admin/ReportRepliedList"));
 const AdminViewSocietyPage = lazy(() => import("../pages/Admin/ViewSociety"));
-const RequestDescriptionPage = lazy(() => import("../pages/Admin/SocietyDesChangeRequest"));
+const PendingSocietyDetailRequestPage = lazy(() => import("../pages/Admin/PendingSocietyDetailRequests.tsx"));
 const AdminViewStudentPage = lazy(() => import("../pages/Admin/ViewStudent"));
 const AdminViewEventPage = lazy(() => import("../pages/Admin/ViewEvent"));
 const AdminViewAdminPage = lazy(() => import("../pages/Admin/ViewAdmin"));
@@ -115,7 +114,7 @@ const routes = [
           { path: "calendar", element: <PageWithTitle title="Admin Calendar"><CalendarPage /></PageWithTitle> },
           { path: "request-society", element: <PageWithTitle title="Society Creation Requests"><RequestSocietyPage /></PageWithTitle> },
           { path: "request-event", element: <PageWithTitle title="Pending Event Requests"><RequestEventPage /></PageWithTitle> },
-          { path: "request-description", element: <PageWithTitle title="Description Change Requests"><RequestDescriptionPage /></PageWithTitle> },
+          { path: "society-detail-request", element: <PageWithTitle title="Pending Society Detail Requests"><PendingSocietyDetailRequestPage /></PageWithTitle> },
           { path: "reports", element: <PageWithTitle title="Reports"><ManageReports /></PageWithTitle> },
           { path: "report-list", element: <PageWithTitle title="Admin Reports"><AdminReportList /></PageWithTitle> },
           { path: "report-list/:reportId/reply", element: <PageWithTitle title="Reply to Report"><ReportReply /></PageWithTitle> },
@@ -124,7 +123,7 @@ const routes = [
           { path: "news-approval", element: <PageWithTitle title="News Publication Approval"><NewsApprovalDashboard /></PageWithTitle> },
           { path: "view-student/:student_id", element: <PageWithTitle title="View Student"><AdminViewStudentPage /></PageWithTitle> },
           { path: "view-society/:society_id", element: <PageWithTitle title="View Society"><AdminViewSocietyPage /></PageWithTitle> },
-          { path: "view-event/:event_id", element: <PageWithTitle title="View Event"><AdminViewEventPage /></PageWithTitle> },
+          // { path: "view-event/:event_id", element: <PageWithTitle title="View Event"><AdminViewEventPage /></PageWithTitle> },
           { path: "view-admin/:admin_id", element: <PageWithTitle title="Admin Details"><AdminViewAdminPage /></PageWithTitle> },
           { path: "activity-log", element: <PageWithTitle title="Activity Log"><ActivityLogPage /></PageWithTitle> },
           { path: "my-team", element: <PageWithTitle title="My Team"><AdminListPage /></PageWithTitle> },
@@ -169,94 +168,16 @@ const routes = [
         ),
         children: [
           { index: true, element: <PageWithTitle title="Society Management"><PresidentPage /></PageWithTitle> },
-          { path: "manage-society-details", element: <PageWithTitle title="Society Details"><ManageSocietyDetails /></PageWithTitle> },
+          { path: "manage-society-details/", element: <PageWithTitle title="Manage Society Details"><ManageSocietyDetails /></PageWithTitle> },
           { path: "manage-society-events/:filter?", element: <PageWithTitle title="Society Events"><ManageSocietyEvents /></PageWithTitle> },
-          // { path: "pending-members", element: <PageWithTitle title="Pending Members"><PendingMembers /></PageWithTitle> },
+          { path: "pending-members", element: <PageWithTitle title="Pending Members"><PendingMembers /></PageWithTitle> },
           { path: "view-society-members", element: <PageWithTitle title="Society Members"><ViewSocietyMembers /></PageWithTitle> },
           { path: "create-event", element: <PageWithTitle title="Create Event"><CreateEventPage /></PageWithTitle> },
           { path: "edit-event/:eventId", element: <PageWithTitle title="Edit Event"><EditEventDetails /></PageWithTitle> },
           { path: "give-award-page/:memberId", element: <PageWithTitle title="Give Award to Member"><GiveAwardPage /></PageWithTitle> },
           { path: "assign-role/:memberId", element: <PageWithTitle title="Assign Society Role"><AssignRolePage /></PageWithTitle> },
           { path: "manage-society-news", element: <PageWithTitle title="Manage Society News"><SocietyNewsManager /></PageWithTitle> },
-        ],
-      },
-      {
-        path: "manage-society-details/:societyId",
-        element: (
-          <PrivateGuard requiredRole="student">
-            <Suspense fallback={<LoadingView />}>
-              <Layout />
-            </Suspense>
-          </PrivateGuard>
-        ),
-        children: [
-          { index: true, element: <PageWithTitle title="Manage Society Details"><ManageSocietyDetails /></PageWithTitle> },
-        ],
-      },
-      // New route for managing society news
-      {
-        path: "manage-society-events/:societyId",
-        element: (
-          <PrivateGuard requiredRole="student">
-            <Suspense fallback={<LoadingView />}>
-              <Layout />
-            </Suspense>
-          </PrivateGuard>
-        ),
-        children: [
-          { index: true, element: <PageWithTitle title="Manage Society events"><ManageSocietyEvents /></PageWithTitle> },
-        ],
-      },
-      {
-        path: "manage-society-news/:societyId",
-        element: (
-          <PrivateGuard requiredRole="student">
-            <Suspense fallback={<LoadingView />}>
-              <Layout />
-            </Suspense>
-          </PrivateGuard>
-        ),
-        children: [
-          { index: true, element: <PageWithTitle title="Manage Society News"><SocietyNewsManager /></PageWithTitle> },
-        ],
-      },
-      {
-        path: "pending-members/:societyId",
-        element: (
-          <PrivateGuard requiredRole="student">
-            <Suspense fallback={<LoadingView />}>
-              <Layout />
-            </Suspense>
-          </PrivateGuard>
-        ),
-        children: [
-          { index: true, element: <PageWithTitle title="Pending Members"><PendingMembers /></PageWithTitle> },
-        ],
-      },
-      {
-        path: "report-to-admin/:societyId",
-        element: (
-          <PrivateGuard requiredRole="student">
-            <Suspense fallback={<LoadingView />}>
-              <Layout />
-            </Suspense>
-          </PrivateGuard>
-        ),
-        children: [
-          { index: true, element: <PageWithTitle title="Report to Admin"><ReportToAdmin /></PageWithTitle> },
-        ],
-      },
-      {
-        path: "view-society-members/:societyId",
-        element: (
-          <PrivateGuard requiredRole="student">
-            <Suspense fallback={<LoadingView />}>
-              <Layout />
-            </Suspense>
-          </PrivateGuard>
-        ),
-        children: [
-          { index: true, element: <PageWithTitle title="Society Members"><ViewSocietyMembers /></PageWithTitle> },
+          { path: "report-to-admin", element: <PageWithTitle title="Report to Admin"><ReportToAdmin /></PageWithTitle> },
         ],
       },
       {
@@ -295,7 +216,6 @@ const routes = [
       { path: "all-societies", element: <PageWithTitle title="All Societies"><AllSocietiesPage /></PageWithTitle> },
       { path: "event/:event_id", element: <PageWithTitle title="Event Details"><EventDetailPage /></PageWithTitle> },
       { path: "view-society/:society_id", element: <PageWithTitle title="Society Details"><ViewSocietyPage /></PageWithTitle> },
-      { path: "profile/:student_id", element: <PageWithTitle title="Student Progile"><ProfilePage /></PageWithTitle> },
       { path: "search", element: <PageWithTitle title="Search"><SearchResultsPage /></PageWithTitle> },
       { path: "calendar", element: <PageWithTitle title="Calendar"><PublicCalendarPage /></PageWithTitle> },
       { path: "support", element: <PageWithTitle title="Support"><SupportPage /></PageWithTitle> },

@@ -286,19 +286,20 @@ const ActivityLogList: React.FC<ActivityLogListProps> = () => {
     [data, searchTerm]
   );
 
-  
+  // Using the refactored code from local branch
   const getColumns = (): GridColDef[] => [
     { field: "id", headerName: "ID", flex: 0.3 },
     { field: "action_type", headerName: "Action Type", flex: 1 },
     { field: "target_type", headerName: "Type", flex: 1 },
     { field: "target_name", headerName: "Name", flex: 1 },
-    { field: "performed_by", headerName: "Performed By", flex: 1 },
-    { 
-      field: "timestamp", 
-      headerName: "Timestamp", 
-      flex: 1,
-      valueFormatter: (params) => formatTimestamp(params.value as string)
+    { field: "performed_by", headerName: "Performed By", flex: 1, 
+      renderCell: (params: GridRenderCellParams) => {
+        const user = params.row.performed_by;
+        if (!user) return "-";
+        return `(${user.id}) ${user.first_name} ${user.last_name}`;
+      },
     },
+    { field: "timestamp", headerName: "Timestamp", flex: 1 },
     { field: "reason", headerName: "Reason", flex: 2 },
     {
       field: "actions",

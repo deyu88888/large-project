@@ -1,7 +1,6 @@
 import React, { useState, useEffect, FC } from "react";
 import { Box, Typography, useTheme, Button, Paper, CircularProgress, Card, CardContent, Divider } from "@mui/material";
 import { FaUsers, FaCalendarAlt, FaEnvelope, FaNewspaper } from "react-icons/fa";
-import { CheckCircle as ApproveIcon, Cancel as RejectIcon, Article as ArticleIcon } from "@mui/icons-material";
 import Header from "../../components/Header";
 import { tokens } from "../../theme/theme";
 import { apiClient } from "../../api";
@@ -383,7 +382,6 @@ const AdminDashboard: FC = () => {
 
   useEffect(() => {
     fetchData();
-    fetchSocieties();
     fetchCurrentUser();
     fetchPendingPublications();
   }, []);

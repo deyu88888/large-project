@@ -21,6 +21,7 @@ class MyProfileViewTestCase(TestCase):
 
     def test_get_student_profile(self):
         """Test retrieving a student's profile successfully."""
+        self.client.force_authenticate(user=self.student)
         url = reverse("user_profile", kwargs={"user_id": self.student.id})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -28,6 +29,7 @@ class MyProfileViewTestCase(TestCase):
 
     def test_get_nonexistent_student_profile(self):
         """Test retrieving a non-existent student's profile should return 404."""
+        self.client.force_authenticate(user=self.user)
         url = reverse("user_profile", kwargs={"user_id": 999})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)

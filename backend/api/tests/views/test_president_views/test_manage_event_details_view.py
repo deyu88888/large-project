@@ -52,7 +52,7 @@ class ManageEventDetailsViewTestCase(APITestCase):
         future_date = now().date() + datetime.timedelta(days=10)
         self.upcoming_event = Event.objects.create(
             title="Upcoming Event",
-            description="Future event",
+            main_description="Future event",
             location="Auditorium",
             date=future_date,
             start_time=datetime.time(15, 0),
@@ -65,7 +65,7 @@ class ManageEventDetailsViewTestCase(APITestCase):
         past_date = now().date() - datetime.timedelta(days=10)
         self.past_event = Event.objects.create(
             title="Past Event",
-            description="Past event",
+            main_description="Past event",
             location="Lecture Hall",
             date=past_date,
             start_time=datetime.time(10, 0),
@@ -77,7 +77,7 @@ class ManageEventDetailsViewTestCase(APITestCase):
         # Also create an event with status "Pending" (which is editable regardless of time)
         self.pending_event = Event.objects.create(
             title="Pending Event",
-            description="Event pending approval",
+            main_description="Event pending approval",
             location="Room 101",
             date=past_date,  # past date but status is pending so it's editable
             start_time=datetime.time(10, 0),

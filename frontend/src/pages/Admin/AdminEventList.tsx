@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useContext, useRef, useCallback, FC } from "react";
 import {
   Box,
-  Typography,
   useTheme,
   Button,
   DialogTitle,
@@ -13,16 +12,16 @@ import {
 } from "@mui/material";
 import { DataGrid, GridColDef, GridToolbar, GridRenderCellParams } from "@mui/x-data-grid";
 import { apiClient, apiPaths } from "../../api";
-import { useNavigate } from "react-router-dom";
 import { tokens } from "../../theme/theme";
 import { useSettingsStore } from "../../stores/settings-store";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { Event } from '../../types';
+import { EventPreview } from "../../components/EventPreview";
+import type { EventData } from "../../components/EventDetailLayout";
 
 
-const WEBSOCKET_URL = "ws:
+const WEBSOCKET_URL = "ws:";
 const RECONNECT_TIMEOUT = 5000;
-
 
 interface DeleteDialogProps {
   open: boolean;
@@ -36,7 +35,7 @@ interface DeleteDialogProps {
 interface ActionButtonsProps {
   eventId: string;
   event: Event;
-  onView: (id: string) => void;
+  onView: (event: Event) => void;
   onDelete: (event: Event) => void;
 }
 
@@ -47,6 +46,24 @@ interface DataGridContainerProps {
   colors: any;
 }
 
+function mapToEventData(raw: any): EventData {
+  return {
+    title: raw.title || "",
+    mainDescription: raw.main_description || "",
+    date: raw.date || "",
+    startTime: raw.start_time || "",
+    duration: raw.duration || "",
+    location: raw.location || "",
+    maxCapacity: raw.max_capacity || 0,
+    hostedBy: raw.hosted_by || 0,
+    eventId: raw.id,
+    coverImageUrl: raw.cover_image || "",
+    extraModules: raw.extra_modules || [],
+    participantModules: raw.participant_modules || [],
+    isParticipant: false,
+    isMember: false,
+  };
+}
 
 const ActionButtons: FC<ActionButtonsProps> = ({
   eventId,
@@ -59,7 +76,7 @@ const ActionButtons: FC<ActionButtonsProps> = ({
       <Button
         variant="contained"
         color="primary"
-        onClick={() => onView(eventId)}
+        onClick={() => onView(event)}
         sx={{ marginRight: "8px" }}
       >
         View
@@ -192,7 +209,6 @@ const parseWebSocketMessage = (event: MessageEvent): any => {
 const EventList: FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
-  const navigate = useNavigate();
   const { drawer } = useSettingsStore();
   const { searchTerm } = useContext(SearchContext);
 
@@ -202,6 +218,8 @@ const EventList: FC = () => {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [reason, setReason] = useState('');
   const [loading, setLoading] = useState(true);
+  const [previewEvent, setPreviewEvent] = useState<EventData | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   
   const ws = useRef<WebSocket | null>(null);
@@ -268,10 +286,11 @@ const EventList: FC = () => {
     };
   }, [fetchEvents, connectWebSocket]);
 
-  
-  const handleViewEvent = useCallback((eventId: string) => {
-    navigate(`/admin/view-event/${eventId}`);
-  }, [navigate]);
+  const handleViewEvent = useCallback((event: Event) => {
+    const data = mapToEventData(event);
+    setPreviewEvent(data);
+    setPreviewOpen(true);
+  }, []);
 
   const handleOpenDialog = useCallback((event: Event) => {
     setSelectedEvent(event);
@@ -370,6 +389,14 @@ const EventList: FC = () => {
         onCancel={handleCloseDialog}
         onConfirm={handleConfirmDelete}
       />
+
+      {previewEvent && (
+        <EventPreview
+          open={previewOpen}
+          onClose={() => setPreviewOpen(false)}
+          eventData={previewEvent}
+        />
+      )}
     </Box>
   );
 };

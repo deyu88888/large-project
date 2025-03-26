@@ -5,7 +5,6 @@ import { tokens } from "../../theme/theme";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { useSettingsStore } from "../../stores/settings-store";
 import { fetchReportsWithReplies } from './fetchReports';
-import { ReportReply } from '../../types';
 import { useNavigate } from 'react-router-dom';
 
 

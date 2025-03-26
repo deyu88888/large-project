@@ -1,5 +1,3 @@
-
-
 import React, { useEffect, useState, useContext, useCallback, useMemo } from 'react';
 import { 
   Box, 
@@ -198,6 +196,8 @@ const createReportColumns = (
       flex: 1,
       sortable: false,
       filterable: false,
+      minWidth: 140,
+      width: 140,
       renderCell: (params: GridRenderCellParams) => (
         <ActionButton reportId={params.row.id} onClick={handleViewThread} />
       ),

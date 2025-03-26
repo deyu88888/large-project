@@ -1,15 +1,14 @@
-import pytest
 from django.test import TestCase
 from django.utils import timezone
 from unittest.mock import patch, MagicMock
 from rest_framework.exceptions import ValidationError
 
-from api.recommendation_feedback_serializers import (
+from api.serializers_files.recommendation_feedback_serializers import (
     RecommendationFeedbackSerializer,
     RecommendationFeedbackCreateSerializer
 )
-from api.recommendation_feedback_model import RecommendationFeedback
-from api.models import Society, Student, User
+
+from api.models import Society, Student, User, RecommendationFeedback
 
 
 class TestRecommendationFeedbackSerializer(TestCase):
@@ -99,7 +98,7 @@ class TestRecommendationFeedbackSerializer(TestCase):
         serializer = RecommendationFeedbackSerializer()
         
         
-        with patch('api.recommendation_feedback_model.RecommendationFeedback.objects.get', 
+        with patch('api.models.RecommendationFeedback.objects.get',
                    side_effect=RecommendationFeedback.DoesNotExist):
             
             with patch('rest_framework.serializers.ModelSerializer.create') as mock_super_create:
@@ -180,7 +179,7 @@ class TestRecommendationFeedbackCreateSerializer(TestCase):
             mock_get.side_effect = Society.DoesNotExist
             with self.assertRaises(ValidationError) as context:
                 serializer.validate_society_id(999)
-            self.assertEqual(str(context.exception.detail[0]), "Society does not exist.")
+                self.assertEqual(str(context.exception.detail['society_id'][0]), "Society does not exist.")
     
     def test_create_method(self):
         """Test the create method directly"""
@@ -191,10 +190,10 @@ class TestRecommendationFeedbackCreateSerializer(TestCase):
         with patch('api.models.Society.objects.get') as mock_society_get:
             mock_society_get.return_value = self.society
             
-            with patch('api.recommendation_feedback_model.RecommendationFeedback.objects.get', 
+            with patch('api.models.RecommendationFeedback.objects.get', 
                       side_effect=RecommendationFeedback.DoesNotExist):
                 
-                with patch('api.recommendation_feedback_model.RecommendationFeedback.objects.create') as mock_create:
+                with patch('api.models.RecommendationFeedback.objects.create') as mock_create:
                     
                     new_feedback = MagicMock(spec=RecommendationFeedback)
                     new_feedback.student = self.student
@@ -269,9 +268,9 @@ class TestRecommendationFeedbackIntegration(TestCase):
         
         
         with patch('api.models.Society.objects.get', return_value=self.society), \
-             patch('api.recommendation_feedback_model.RecommendationFeedback.objects.get', 
+             patch('api.models.RecommendationFeedback.objects.get', 
                    side_effect=RecommendationFeedback.DoesNotExist), \
-             patch('api.recommendation_feedback_model.RecommendationFeedback.objects.create', 
+             patch('api.models.RecommendationFeedback.objects.create', 
                    return_value=self.feedback):
             
             

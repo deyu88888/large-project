@@ -4,7 +4,7 @@ import { tokens } from "../../theme/theme";
 import SocietyList from "./SocietyList";
 import SocietyListRejected from "./RejectedSocietiesList";
 import PendingSocietyRequest from "./SocietyCreationRequests";
-import PendingDescriptionRequest from "./SocietyDesChangeRequest";
+import PendingSocietyDetailRequests from "./PendingSocietyDetailRequests.tsx";
 
 
 interface TabPanelProps {
@@ -45,7 +45,7 @@ const TABS: TabConfig[] = [
   { label: "Current societies", component: <SocietyList /> },
   { label: "Pending societies", component: <PendingSocietyRequest /> },
   { label: "Rejected societies", component: <SocietyListRejected /> },
-  { label: "Description requests", component: <PendingDescriptionRequest /> },
+  { label: "Society detail requests", component: <PendingSocietyDetailRequests /> },
 ];
 
 

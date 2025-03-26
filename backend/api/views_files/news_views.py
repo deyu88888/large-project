@@ -5,7 +5,7 @@ from rest_framework.permissions import IsAuthenticated, BasePermission
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from api.models import BroadcastMessage, User, Society, Event,\
-    SocietyNews, NewsPublicationRequest
+    SocietyNews, NewsPublicationRequest, Notification
 from api.serializers import BroadcastSerializer, NewsPublicationRequestSerializer
 from api.views_files.view_utility import has_society_management_permission
 
