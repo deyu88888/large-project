@@ -72,7 +72,7 @@ export default function Dashboard() {
       );
     }
 
-    return events.slice(0, 4).map((event: Event) => (
+    return events.map((event: Event) => (
       <EventCard
         key={event.id}
         event={event}
@@ -95,7 +95,7 @@ export default function Dashboard() {
       );
     }
 
-    return societies.slice(0, 4).map((society: Society) => (
+    return societies.map((society: Society) => (
       <SocietyCard
         key={society.id}
         society={society}
@@ -138,7 +138,7 @@ export default function Dashboard() {
   const renderEventsSection = () => (
     <Container maxWidth="xl" style={{ padding: "2rem" }}>
       <Box sx={{ mb: 3 }}>
-        {renderSectionHeading("Check Out Upcoming Events!")}
+        {renderSectionHeading("Check Our Upcoming Events!")}
         {renderSectionText(
           `Join us for exciting gatherings, workshops, social mixers, and networking opportunities. 
            Our events are designed to connect you with like-minded students and industry professionals.

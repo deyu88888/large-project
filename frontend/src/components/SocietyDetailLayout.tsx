@@ -1,5 +1,5 @@
 import React from "react";
-import { useTheme } from "@mui/material/styles";
+import { keyframes, useTheme } from "@mui/material/styles";
 import Link from "@mui/material/Link";
 import FacebookIcon from "@mui/icons-material/Facebook";
 import InstagramIcon from "@mui/icons-material/Instagram";
@@ -7,6 +7,8 @@ import XIcon from "@mui/icons-material/X";
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import StarOutlineRoundedIcon from '@mui/icons-material/StarOutlineRounded';
 import { tokens } from "../theme/theme";
+import { Box, Divider, Paper, Typography } from "@mui/material";
+import { useSettingsStore } from "../stores/settings-store";
 
 interface SocietyDetailLayoutProps {
   society: any;
@@ -22,8 +24,18 @@ const SocietyDetailLayout: React.FC<SocietyDetailLayoutProps> = ({
   onJoinSociety,
 }) => {
   const theme = useTheme();
+  const { drawer } = useSettingsStore();
   const colours = tokens(theme.palette.mode);
   const isLight = theme.palette.mode === "light";
+
+  const scrollAnimation = keyframes`
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-10%);
+    }
+  `;
 
   if (loading) {
     return (
@@ -48,198 +60,258 @@ const SocietyDetailLayout: React.FC<SocietyDetailLayoutProps> = ({
   }
 
   return (
-    <div
-      style={{
-        marginLeft: "0px",
+    <Box
+      sx={{
         marginTop: "0px",
         transition: "margin-left 0.3s ease-in-out",
         minHeight: "100vh",
-        padding: "20px 40px",
+        padding: "30px 50px",
+        backgroundColor: isLight ? colours.primary[500] : colours.primary[500],
+        maxWidth: drawer ? `calc(90vw - 125px)` : "90vw",
+        marginLeft: "auto",
+        marginRight: "auto", 
       }}
     >
-      <div style={{ maxWidth: "1920px", margin: "0 auto" }}>
-        <header
-          style={{
-            textAlign: "center",
-            marginBottom: "0rem",
-            alignItems: "center",
-            justifyContent: "center",
-            display: "flex",
-            gap: "2rem",
-          }}
-        >
-          {society?.icon && (
-            <img
-              src={iconSrc}
-              alt={`${society.name} icon`}
+      <Box
+        sx={{
+          margin: "0 auto",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: "2rem",
+        }}
+      >
+        <header style={{ textAlign: "center", marginBottom: "0rem" }}>
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", flexDirection: "column" }}>
+            {society?.icon && (
+              <img
+                src={iconSrc}
+                alt={`${society.name} icon`}
+                style={{
+                  width: "100px",
+                  height: "100px",
+                  borderRadius: "50%",
+                  verticalAlign: "middle",
+                  marginBottom: "1rem",
+                }}
+              />
+            )}
+            
+            <h1
               style={{
-                width: "50px",
-                height: "50px",
-                borderRadius: "50%",
-                verticalAlign: "middle",
+                fontSize: "2.25rem",
+                fontWeight: 700,
+                fontFamily: "monaco",
               }}
-            />
-          )}
-          <h1
-            style={{
-              fontSize: "2.25rem",
-              fontWeight: 700,
-              marginBottom: "0rem",
-            }}
-          >
-            {society?.name}
-          </h1>
+            >
+              {society?.name}
+            </h1>
+          </div>
         </header>
-        <div
+
+        <p
           style={{
+            fontSize: "1rem",
+            fontWeight: 400,
+            marginBottom: "4rem",
+            marginTop: "-1.5rem",
             textAlign: "center",
-            marginBottom: "1.5rem",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "2rem",
           }}
         >
-          <p
-            style={{
-              fontSize: "1rem",
-              fontWeight: 400,
-              marginBottom: "2.5rem",
-            }}
-          >
-            {society?.category}
-          </p>
-        </div>
+          {society?.category}
+        </p>
+        
         <div
           style={{
             display: "flex",
-            gap: "2rem",
-            maxWidth: "100%",
-            minHeight: "45.0rem",
+            gap: "3rem",
           }}
         >
-          <div style={{ flex: 2.5 }}>
+          <div style={{ flex: 1.5 }}>
             <p
               style={{
                 fontSize: 20,
                 whiteSpace: "pre-wrap",
-                marginBottom: "2.5rem",
+                marginBottom: "1.5rem",
               }}
             >
               {society?.description}
             </p>
-            <p style={{ fontSize: 18 }}>
-              <b>Society Roles</b>
-            </p>
-            <p>
-              President: {society?.president.first_name}{" "}
-              {society?.president.last_name}
-            </p>
-            {society?.vice_president && (
-              <p>
-                Vice President: {society.vice_president.first_name}{" "}
-                {society.vice_president.last_name}
-              </p>
-            )}
-            {society?.event_manager && (
-              <p>
-                Event Manager: {society.event_manager.first_name}{" "}
-                {society.event_manager.last_name}
-              </p>
-            )}
-            {society?.treasurer && (
-              <p>
-                Treasurer: {society.treasurer.first_name}{" "}
-                {society.treasurer.last_name}
-              </p>
-            )}
-            {joined === 0 && (
-              <button
-                onClick={() => onJoinSociety(society.id)}
-                style={{
-                  backgroundColor: isLight
-                    ? colours.blueAccent[400]
-                    : colours.blueAccent[500],
-                  color: isLight ? "#ffffff" : colours.grey[100],
-                  padding: "0.5rem 1.5rem",
-                  borderRadius: "0.5rem",
-                  transition: "all 0.2s ease",
-                  border: "none",
-                  cursor: "pointer",
-                  marginTop: "2.5rem",
-                }}
-              >
-                Join Society
-              </button>
-            )}
-            {joined === 1 && (
-              <button
-                disabled
-                style={{
-                  backgroundColor: isLight
-                    ? colours.grey[900]
-                    : colours.grey[300],
-                  color: isLight ? colours.grey[0] : "#ffffff",
-                  padding: "0.5rem 1.5rem",
-                  borderRadius: "0.5rem",
-                  transition: "all 0.2s ease",
-                  border: "none",
-                  cursor: "not-allowed",
-                  marginTop: "2.5rem",
-                }}
-              >
-                Request Pending
-              </button>
-            )}
+          </div>
 
-          </div>
-          <div style={{ flex: 1.5 }}>
-            {society?.showreel_images && society.showreel_images.length > 0 && (
-              <div
-                style={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: "1rem",
-                  marginTop: "2rem",
-                }}
-              >
-                {society.showreel_images.map((showreel: any, index: number) => (
-                  <div key={index} style={{ textAlign: "center" }}>
-                    <img
-                      src={showreel.photo}
-                      alt={"Showreel " + (index + 1)}
-                      style={{
-                        width: "150px",
-                        height: "150px",
-                        objectFit: "cover",
-                        borderRadius: "10px",
-                      }}
-                    />
-                    <p style={{ fontSize: "0.9rem", color: "grey" }}>
-                      {showreel.caption}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-        <div style={{ display: "flex" }}>
-          <div style={{ flex: 3.0 }}>
-            <p
-              style={{
-                marginBottom: "1.5rem",
-                color: isLight ? colours.grey[600] : colours.grey[300],
+          <div style={{ flex: 0.5, fontFamily: "monaco" }}>
+            <Box
+              sx={{
+                border: 3,
+                borderColor: "secondary.main",
+                borderRadius: 2,
+                position: "relative",
+                pt: 3,
+                px: 2,
+                pb: 2,
+                mb: 3,
+                backgroundColor: isLight ? colours.primary[500] : colours.primary[500],
               }}
             >
-              {society?.tags
-                ?.map((tag: string) => "#" + tag || "No society tags!")
-                .join(", ")}
+              <Box
+                sx={{
+                  position: "absolute",
+                  top: -12,
+                  left: 0,
+                  right: 0,
+                  display: "flex",
+                  justifyContent: "center",
+                }}
+              >
+                <Box
+                  sx={{
+                    px: 2,
+                    backgroundColor: isLight ? colours.primary[500] : colours.primary[500],
+                    color: "secondary.main",
+                    fontWeight: "bold",
+                    textAlign: "center",
+                  }}
+                >
+                  SOCIETY ROLES
+                </Box>
+              </Box>
+              <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                <Typography variant="h5" sx={{ mb: 1 }}>
+                  <strong>President:</strong> {society?.president.first_name} {society?.president.last_name}
+                </Typography>
+                {society?.vice_president && (
+                  <Typography variant="h5" sx={{ mb: 1 }}>
+                    <strong>Vice President:</strong> {society.vice_president.first_name} {society.vice_president.last_name}
+                  </Typography>
+                )}
+                {society?.event_manager && (
+                  <Typography variant="h5" sx={{ mb: 1 }}>
+                    <strong>Event Manager:</strong> {society.event_manager.first_name} {society.event_manager.last_name}
+                  </Typography>
+                )}
+                {society?.treasurer && (
+                  <Typography variant="h5" sx={{ mb: 1 }}>
+                    <strong>Treasurer:</strong> {society.treasurer.first_name} {society.treasurer.last_name}
+                  </Typography>
+                )}
+              </Box>
+            </Box>
+            <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
+              {joined === 0 && (
+                <button
+                  onClick={() => onJoinSociety(society.id)}
+                  style={{
+                    backgroundColor: isLight ? colours.blueAccent[400] : colours.blueAccent[500],
+                    color: isLight ? "#ffffff" : colours.grey[100],
+                    padding: "0.5rem 1.5rem",
+                    borderRadius: "0.5rem",
+                    transition: "all 0.2s ease",
+                    border: "none",
+                    cursor: "pointer",
+                  }}
+                >
+                  Join Society
+                </button>
+              )}
+              {joined === 1 && (
+                <button
+                  disabled
+                  style={{
+                    backgroundColor: isLight ? colours.grey[900] : colours.grey[300],
+                    color: isLight ? colours.grey[0] : "#ffffff",
+                    padding: "0.5rem 1.5rem",
+                    borderRadius: "0.5rem",
+                    transition: "all 0.2s ease",
+                    border: "none",
+                    cursor: "not-allowed",
+                  }}
+                >
+                  Request Pending
+                </button>
+              )}
+            </Box>
+          </div>
+        </div>
+
+        {/* Showreel Images Section */}
+        {society?.showreel_images && society.showreel_images.length > 0 && (
+          <Box
+            sx={{
+              overflow: "hidden",
+              width: "100%",
+              position: "relative",
+              mt: 4,
+              p: 6,
+            }}
+          >
+            <Typography variant="h3" gutterBottom textAlign="center" padding={2} sx={{ fontWeight: "bold", fontFamily: "monaco" }}>
+              Our Society Moments!
+            </Typography>
+            <Box
+              sx={{
+                display: "inline-flex",
+                animation: `${scrollAnimation} 20s linear infinite`,
+                width: "max-content",
+                gap: 2,
+                "&:hover": {
+                  animationPlayState: "paused",
+                },
+              }}
+            >
+              {[...Array(6).keys()].map((_, index) => (
+                <Box key={index} sx={{ display: "inline-flex", gap: 2 }}>
+                  {society.showreel_images.map((showreel: any, showreelIndex: number) => (
+                    <Paper
+                      key={showreelIndex}
+                      elevation={2}
+                      sx={{
+                        p: 1,
+                        textAlign: "center",
+                        minWidth: 200,
+                        transition: "transform 0.3s",
+                        backgroundColor: isLight ? colours.primary[500] : colours.primary[500],
+                        "&:hover": {
+                          transform: "scale(1.05)",
+                          zIndex: 10,
+                        },
+                      }}
+                    >
+                      <img
+                        src={showreel.photo}
+                        alt={`Showreel ${showreelIndex + 1}`}
+                        style={{
+                          width: 200,
+                          height: 150,
+                          objectFit: "cover",
+                          borderRadius: 8,
+                        }}
+                      />
+                      <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: "block" }}>
+                        {showreel.caption}
+                      </Typography>
+                    </Paper>
+                  ))}
+                </Box>
+              ))}
+            </Box>
+          </Box>
+        )}
+
+        {/* Tags and Contact Information */}
+        <Divider/>
+        <div style={{ display: "flex" }}>
+          <div style={{ flex: 1.0 }}>
+            <p style={{ marginBottom: "1.5rem", fontFamily: "monaco", fontSize: 15 }}>
+              {society?.tags?.map((tag: string) => "#" + tag || "No society tags!").join(", ")}
             </p>
-            <p>
+            <p style={{ fontSize: 18 }}>
               Contact us:{" "}
               <Link
                 href={"mailto:" + society?.president.email}
-                style={{ color: isLight ? "black" : "white" }}
+                style={{
+                  color: isLight ? colours.primary[600] : colours.primary[100],
+                  textDecoration: "none",
+                }}
               >
                 {society?.president.email}
               </Link>
@@ -289,8 +361,8 @@ const SocietyDetailLayout: React.FC<SocietyDetailLayoutProps> = ({
             )}
           </div>
         </div>
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 };
 

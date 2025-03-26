@@ -1,10 +1,12 @@
-import { Box, Typography, Card, CardContent, Button, Snackbar } from "@mui/material";
+import { Box, Typography, Button, Snackbar, useTheme } from "@mui/material";
 import MuiAlert from "@mui/material/Alert";
 import { ExtraModule } from "./SortableItem";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiClient } from "../api";
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
+import { useSettingsStore } from "../stores/settings-store";
+import { tokens } from "../theme/theme";
 
 export interface EventData {
   title: string;
@@ -43,7 +45,11 @@ export function EventDetailLayout({ eventData }: { eventData: EventData }) {
     hostedBy,
   } = eventData;
 
+  const theme = useTheme();
   const navigate = useNavigate();
+  const colours = tokens(theme.palette.mode);
+  const isLight = theme.palette.mode === "light";
+  const { drawer } = useSettingsStore();
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMsg, setSnackbarMsg] = useState("");
 
@@ -165,13 +171,18 @@ export function EventDetailLayout({ eventData }: { eventData: EventData }) {
   };
 
   return (
-    <Box sx={{ p: 0 }}>
+    <Box sx={{ 
+      p: 0 ,         
+      maxWidth: drawer ? `calc(90vw - 125px)` : "90vw",
+      marginLeft: "auto",
+      marginRight: "auto",
+     }}>
       <Box sx={{ textAlign: "center" }}>
         <Typography variant="h1" gutterBottom sx={{ fontWeight: "bold" }}>
           {title || "Event Title"}
         </Typography>
       </Box>
-
+  
       {coverImageSrc && (
         <Box sx={{ textAlign: "center", my: 2 }}>
           <Box
@@ -189,7 +200,7 @@ export function EventDetailLayout({ eventData }: { eventData: EventData }) {
           />
         </Box>
       )}
-
+  
       <Box
         sx={{
           display: "flex",
@@ -204,67 +215,88 @@ export function EventDetailLayout({ eventData }: { eventData: EventData }) {
           minWidth={200}
           sx={{ order: { xs: 1, md: 2 } }}
         >
-          <Card
-            sx={{
-              borderRadius: 2,
-              boxShadow: 4,
-              overflow: "hidden",
-              backgroundColor: "#fafafa",
+          <Box
+            sx={{ 
+              border: 3,
+              borderColor: 'secondary.main', 
+              borderRadius: 2, 
+              position: 'relative', 
+              pt: 3,
+              px: 2,
+              pb: 2
             }}
           >
-            <CardContent>
-              <Typography variant="h6" sx={{ mb: 2 }}>
-                Event Details
-              </Typography>
-              <Typography variant="body1" sx={{ mb: 1 }}>
-                <strong>Date:</strong> {date}
-              </Typography>
-              <Typography variant="body1" sx={{ mb: 1 }}>
-                <strong>Time:</strong> {startTime}
-              </Typography>
-              <Typography variant="body1" sx={{ mb: 1 }}>
-                <strong>Duration:</strong> {duration}
-              </Typography>
-              <Typography variant="body1" sx={{ mb: 1 }}>
-                <strong>Location:</strong> {location}
-              </Typography>
-              <Typography variant="body1" sx={{ mb: 1 }}>
-                <strong>Max Capacity:</strong> {maxCapacity}
-              </Typography>
-            </CardContent>
-          </Card>
-
-          <Box sx={{ mt: 2 }}>
-            {!isMember ? (
-              <Button variant="outlined"
-                      onClick={handleJoinSociety}
-                      sx={{
-                        color: "white",
-                        backgroundColor: "green",
-                        border: "1px auto",
-                      }}
+            <Box 
+              sx={{ 
+                position: 'absolute', 
+                top: -12, 
+                left: 0,
+                right: 0,
+                display: 'flex',
+                justifyContent: 'center',
+              }}
+            >
+              <Box 
+                sx={{ 
+                  px: 2, 
+                  backgroundColor: isLight ? colours.primary[500] : colours.primary[500],
+                  color: 'secondary.main',
+                  fontWeight: 'bold',
+                  textAlign: 'center',
+                  fontFamily: "monaco",
+                }}
               >
-                Join Society to RSVP
-              </Button>
-            ) : isParticipant ? (
-              <Button variant="contained" color="error" onClick={handleCancelRSVP}>
-                Cancel RSVP
-              </Button>
-            ) : (
-              <Button variant="contained"
-                      onClick={handleJoinEvent}
-                      sx={{
+                EVENT DETAILS
+              </Box>
+            </Box>
+            <Typography variant="body1" sx={{ mb: 1 }}>
+              <strong>Date:</strong> {date}
+            </Typography>
+            <Typography variant="body1" sx={{ mb: 1 }}>
+              <strong>Time:</strong> {startTime}
+            </Typography>
+            <Typography variant="body1" sx={{ mb: 1 }}>
+              <strong>Duration:</strong> {duration}
+            </Typography>
+            <Typography variant="body1" sx={{ mb: 1 }}>
+              <strong>Location:</strong> {location}
+            </Typography>
+            <Typography variant="body1" sx={{ mb: 1 }}>
+              <strong>Max Capacity:</strong> {maxCapacity}
+            </Typography>
+  
+            <Box sx={{ mt: 2 }}>
+              {!isMember ? (
+                <Button variant="outlined"
+                        onClick={handleJoinSociety}
+                        sx={{
                           color: "white",
-                          backgroundColor: "green",
-                          border: "1px auto"
-                      }}
-              >
-                Join Event
-              </Button>
-            )}
+                          backgroundColor: "greenAccent.main",
+                          border: "1px auto",
+                        }}
+                >
+                  Join Society to RSVP
+                </Button>
+              ) : isParticipant ? (
+                <Button variant="contained" color="error" onClick={handleCancelRSVP}>
+                  Cancel RSVP
+                </Button>
+              ) : (
+                <Button variant="contained"
+                        onClick={handleJoinEvent}
+                        sx={{
+                            color: "white",
+                            backgroundColor: "green",
+                            border: "1px auto"
+                        }}
+                >
+                  Join Event
+                </Button>
+              )}
+            </Box>
           </Box>
         </Box>
-
+  
         <Box
           flex="1 1"
           pr={{ md: 2 }}
@@ -277,9 +309,9 @@ export function EventDetailLayout({ eventData }: { eventData: EventData }) {
           <Typography variant="body1" sx={{ whiteSpace: "pre-wrap", mb: 3 }}>
             {mainDescription || "No description provided."}
           </Typography>
-
+  
           {extraModules.map(renderModule)}
-
+  
           {participantModules.length > 0 && (
             isParticipant ? (
               <>
@@ -301,7 +333,7 @@ export function EventDetailLayout({ eventData }: { eventData: EventData }) {
           )}
         </Box>
       </Box>
-
+  
       <Snackbar
           open={snackbarOpen}
           autoHideDuration={3000}
