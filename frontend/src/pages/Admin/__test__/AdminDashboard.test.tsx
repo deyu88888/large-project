@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, screen, waitFor, act, within } from '@testing-library/react';
 import { vi } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
 import AdminDashboard from '../AdminDashboard';
 import { apiClient } from '../../../api';
 import * as settingsStoreModule from '../../../stores/settings-store';
@@ -12,6 +13,15 @@ vi.mock('../../../api', () => ({
     get: vi.fn(),
   },
 }));
+
+// Mock React Router
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return {
+    ...actual,
+    useNavigate: () => vi.fn(),
+  };
+});
 
 // Mock Zustand stores
 vi.mock('../../../stores/settings-store', () => {
@@ -43,6 +53,7 @@ vi.mock('react-icons/fa', () => ({
   FaUsers: () => <div data-testid="users-icon" />,
   FaCalendarAlt: () => <div data-testid="calendar-icon" />,
   FaEnvelope: () => <div data-testid="envelope-icon" />,
+  FaNewspaper: () => <div data-testid="newspaper-icon" />,
 }));
 
 describe('AdminDashboard Component', () => {
@@ -69,6 +80,16 @@ describe('AdminDashboard Component', () => {
     { id: 2, body: 'Event request pending approval', is_read: true },
   ];
 
+  const mockPendingPublications = [
+    { 
+      id: 1, 
+      news_post_title: 'Test Publication', 
+      society_name: 'Test Society',
+      requester_name: 'Test User',
+      status: 'Pending'
+    }
+  ];
+
   const mockSetUser = vi.fn();
 
   beforeEach(() => {
@@ -84,37 +105,46 @@ describe('AdminDashboard Component', () => {
       setUser: mockSetUser 
     }));
 
-    // Mock the API calls
+    // Mock the API calls - make sure these match the endpoint paths in AdminDashboard.tsx
     apiClient.get.mockImplementation((url) => {
       switch (url) {
-        case '/api/admin/user-stats/':
+        case '/api/dashboard/stats/':
           return Promise.resolve({ data: mockUserStats });
-        case '/api/admin/events/':
+        case '/api/events/all/':
           return Promise.resolve({ data: mockEvents });
-        case '/api/notifications':
+        case '/api/notifications/':
           return Promise.resolve({ data: mockNotifications });
-        case '/api/admin/societies':
+        case '/api/society/joined/':
           return Promise.resolve({ data: [] });
+        case '/api/news/publication-request/':
+          return Promise.resolve({ data: mockPendingPublications });
+        case '/api/user/current/':
+          return Promise.resolve({ data: mockUser });
         default:
-          return Promise.reject(new Error('Not found'));
+          return Promise.reject(new Error(`URL not mocked: ${url}`));
       }
     });
   });
 
-  it('renders dashboard content', async () => {
-    await act(async () => {
-      render(<AdminDashboard />);
+  const renderComponent = async () => {
+    return act(async () => {
+      render(
+        <MemoryRouter>
+          <AdminDashboard />
+        </MemoryRouter>
+      );
     });
+  };
+
+  it('renders dashboard content', async () => {
+    await renderComponent();
     
-    // Simply verify that the dashboard renders without checking for loading state
-    // since the component may not show a loading indicator in test environment
+    // Verify the header renders
     expect(screen.getByTestId('header-title')).toBeInTheDocument();
   });
 
   it('renders the dashboard with correct content', async () => {
-    await act(async () => {
-      render(<AdminDashboard />);
-    });
+    await renderComponent();
 
     // Wait for the loading state to finish
     await waitFor(() => {
@@ -124,23 +154,28 @@ describe('AdminDashboard Component', () => {
     // Check if the header is rendered with the correct user name
     expect(screen.getByTestId('header-title')).toHaveTextContent('Welcome to your Dashboard, John!');
     
-    // Check if the stats are rendered
+    // Check if the main sections are rendered
     expect(screen.getByText('Active Users')).toBeInTheDocument();
     expect(screen.getByText('120')).toBeInTheDocument();
     
-    expect(screen.getByText('Active Events')).toBeInTheDocument();
-    
-    // Instead of trying to find specific "2" values, just verify the presence of all expected elements
+    // Check for section titles instead of specific values
     expect(screen.getByText('Active Events')).toBeInTheDocument();
     expect(screen.getByText('Pending Requests')).toBeInTheDocument();
-    
-    // Test the total number of stats cards instead of individual values
-    expect(screen.getAllByText(/Active|Pending/).length).toBe(3);
+    expect(screen.getByText('News Approvals')).toBeInTheDocument();
     
     // Check if notifications are rendered
     expect(screen.getByText('Notifications')).toBeInTheDocument();
     expect(screen.getByText('New user registered')).toBeInTheDocument();
     expect(screen.getByText('Event request pending approval')).toBeInTheDocument();
+    
+    // Check publication requests section
+    expect(screen.getByText('News Publication Requests')).toBeInTheDocument();
+    expect(screen.getByText('Test Publication')).toBeInTheDocument();
+    
+    // Use regex to find text that contains "Test Society", even if it's part of a larger string
+    expect(screen.getByText(/Test Society/)).toBeInTheDocument();
+    expect(screen.getByText(/Test User/)).toBeInTheDocument();
+    expect(screen.getByText('Review')).toBeInTheDocument();
   });
 
   it('handles API errors gracefully', async () => {
@@ -149,9 +184,7 @@ describe('AdminDashboard Component', () => {
     
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     
-    await act(async () => {
-      render(<AdminDashboard />);
-    });
+    await renderComponent();
 
     // Wait for the loading state to finish
     await waitFor(() => {
@@ -174,9 +207,7 @@ describe('AdminDashboard Component', () => {
       drawer: true
     }));
     
-    await act(async () => {
-      render(<AdminDashboard />);
-    });
+    await renderComponent();
 
     await waitFor(() => {
       expect(screen.queryByText('Loading your dashboard...')).not.toBeInTheDocument();
@@ -193,9 +224,7 @@ describe('AdminDashboard Component', () => {
       setUser: mockSetUser 
     }));
     
-    await act(async () => {
-      render(<AdminDashboard />);
-    });
+    await renderComponent();
 
     await waitFor(() => {
       expect(screen.queryByText('Loading your dashboard...')).not.toBeInTheDocument();
