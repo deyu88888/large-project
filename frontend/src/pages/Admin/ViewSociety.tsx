@@ -18,7 +18,7 @@ import { apiClient, apiPaths } from "../../api";
 import { tokens } from "../../theme/theme";
 import { Society } from "../../types";
 
-// Interfaces
+
 interface FormErrors {
   name?: string;
   description?: string;
@@ -90,7 +90,7 @@ interface SocietyFormProps {
   onSubmit: (e: FormEvent) => void;
 }
 
-// API functions
+
 const fetchSocietyData = async (societyId: number): Promise<Society> => {
   const response = await apiClient.get(apiPaths.USER.ADMINSOCIETYVIEW(societyId));
   return response.data;
@@ -106,7 +106,7 @@ const updateSocietyData = async (societyId: number, formData: FormData): Promise
   );
 };
 
-// Helper functions
+
 const createFormDataFromSociety = (society: Society, icon?: File): FormData => {
   const formDataToSend = new FormData();
   formDataToSend.append("name", society.name || '');
@@ -114,12 +114,12 @@ const createFormDataFromSociety = (society: Society, icon?: File): FormData => {
   formDataToSend.append("category", society.category || '');
   formDataToSend.append("tags", JSON.stringify(society.tags || []));
 
-  // Add icon if it's a File
+  
   if (icon instanceof File) {
     formDataToSend.append("icon", icon);
   }
   
-  // Add social media links if they exist
+  
   if (society.social_media_links && typeof society.social_media_links === 'object') {
     Object.entries(society.social_media_links).forEach(([platform, link]) => {
       if (link) {
@@ -143,7 +143,7 @@ const parseTagsString = (tagsString: string): string[] => {
     .filter(tag => tag.length > 0);
 };
 
-// Validation functions
+
 const validateSocietyForm = (formData: Society | null): FormErrors => {
   const errors: FormErrors = {};
   
@@ -168,7 +168,7 @@ const isFormValid = (errors: FormErrors): boolean => {
   return Object.keys(errors).length === 0;
 };
 
-// Component functions
+
 const FormTextField: React.FC<TextFieldProps> = ({
   label,
   name,
@@ -358,7 +358,7 @@ const SocietyForm: React.FC<SocietyFormProps> = ({
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   
-  // Memoized text field props for consistent styling
+  
   const commonTextFieldProps = useMemo(() => ({
     variant: "outlined" as const,
     fullWidth: true,
@@ -494,14 +494,14 @@ const SocietyForm: React.FC<SocietyFormProps> = ({
  * ViewSociety component for viewing and editing society details
  */
 const ViewSociety: React.FC = () => {
-  // Hooks
+  
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const navigate = useNavigate();
   const { society_id } = useParams<{ society_id: string }>();
   const societyId = Number(society_id);
 
-  // State management
+  
   const [formState, setFormState] = useState<SocietyFormState>({
     society: null,
     formData: null,
@@ -516,7 +516,7 @@ const ViewSociety: React.FC = () => {
     severity: "info",
   });
 
-  // Event handlers
+  
   const showNotification = useCallback(
     (message: string, severity: "success" | "error" | "info" | "warning" = "info") => {
       setNotification({
@@ -539,10 +539,10 @@ const ViewSociety: React.FC = () => {
       setFormState(prev => {
         if (!prev.formData) return prev;
         
-        // Update form data
+        
         const updatedFormData = { ...prev.formData, [name]: value };
         
-        // Clear field-specific error
+        
         const updatedErrors = { ...prev.errors };
         if (updatedErrors[name]) {
           delete updatedErrors[name];
@@ -568,7 +568,7 @@ const ViewSociety: React.FC = () => {
         
         const updatedFormData = { ...prev.formData, tags: tagsArray };
         
-        // Clear tags error if it exists
+        
         const updatedErrors = { ...prev.errors };
         if (updatedErrors.tags) {
           delete updatedErrors.tags;
@@ -616,7 +616,7 @@ const ViewSociety: React.FC = () => {
     showNotification("Form has been reset to original values", "info");
   }, [showNotification]);
 
-  // Validation
+  
   const validateAndSetErrors = useCallback(() => {
     const newErrors = validateSocietyForm(formState.formData);
     
@@ -628,7 +628,7 @@ const ViewSociety: React.FC = () => {
     return isFormValid(newErrors);
   }, [formState.formData]);
 
-  // Data loading
+  
   const loadSocietyData = useCallback(async () => {
     try {
       setFormState(prev => ({ ...prev, loading: true }));
@@ -659,7 +659,7 @@ const ViewSociety: React.FC = () => {
     }
   }, [societyId, showNotification]);
 
-  // Form submission
+  
   const handleSubmit = useCallback(async (e: FormEvent) => {
     e.preventDefault();
     
@@ -682,7 +682,7 @@ const ViewSociety: React.FC = () => {
       await updateSocietyData(societyId, formDataToSend);
       
       showNotification("Society updated successfully!", "success");
-      await loadSocietyData(); // Refresh data after successful update
+      await loadSocietyData(); 
     } catch (error) {
       console.error("Error updating society:", error);
       showNotification("Failed to update society", "error");
@@ -691,17 +691,17 @@ const ViewSociety: React.FC = () => {
     }
   }, [formState.formData, formState.society, societyId, validateAndSetErrors, showNotification, loadSocietyData]);
 
-  // Initialize data
+  
   useEffect(() => {
     loadSocietyData();
   }, [loadSocietyData]);
 
-  // Loading state
+  
   if (formState.loading || !formState.formData) {
     return <LoadingSpinner />;
   }
 
-  // Render main component
+  
   return (
     <Box 
       minHeight="100vh" 

@@ -35,7 +35,7 @@ import { apiClient } from '../../api';
 import { useTheme } from '@mui/material/styles';
 import { tokens } from '../../theme/theme';
 
-// Interfaces
+
 interface PublicationRequest {
   id: number;
   news_post: number;
@@ -85,7 +85,7 @@ interface ContentsState {
   loading: Record<number, boolean>;
 }
 
-// API Functions
+
 const fetchAllRequests = async (): Promise<PublicationRequest[]> => {
   const response = await apiClient.get('/api/news/publication-request/', {
     params: { all_statuses: 'true' }
@@ -109,7 +109,7 @@ const updateRequestStatus = async (
   });
 };
 
-// Helper Functions
+
 const getStatusColor = (status: string): 'warning' | 'success' | 'error' => {
   if (status === 'Pending') return 'warning';
   if (status === 'Approved') return 'success';
@@ -131,7 +131,7 @@ const formatDateTime = (dateString: string): string => {
   return new Date(dateString).toLocaleString();
 };
 
-// Component Functions
+
 const PageHeader: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
@@ -498,13 +498,13 @@ const ActionDialog: React.FC<{
   );
 };
 
-// Main Component
+
 const NewsApprovalDashboard: React.FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const navigate = useNavigate();
 
-  // Request state
+  
   const [requestsState, setRequestsState] = useState<RequestsState>({
     items: [],
     loading: true,
@@ -512,13 +512,13 @@ const NewsApprovalDashboard: React.FC = () => {
     expandedRequestId: null
   });
 
-  // Contents state
+  
   const [contentsState, setContentsState] = useState<ContentsState>({
     items: {},
     loading: {}
   });
 
-  // Dialog state
+  
   const [dialogState, setDialogState] = useState<DialogState>({
     open: false,
     action: null,
@@ -527,12 +527,12 @@ const NewsApprovalDashboard: React.FC = () => {
     currentRequest: null
   });
 
-  // Initialize data on load
+  
   useEffect(() => {
     loadAllRequests();
   }, []);
 
-  // Functions to update state
+  
   const setRequests = (items: PublicationRequest[]): void => {
     setRequestsState(prev => ({ ...prev, items }));
   };
@@ -563,7 +563,7 @@ const NewsApprovalDashboard: React.FC = () => {
     }));
   };
 
-  // API interaction functions
+  
   const loadAllRequests = async (): Promise<void> => {
     setRequestsLoading(true);
     
@@ -578,7 +578,7 @@ const NewsApprovalDashboard: React.FC = () => {
   };
 
   const loadNewsContent = async (newsPostId: number): Promise<void> => {
-    // Skip if already loaded
+    
     if (contentsState.items[newsPostId]) return;
     
     setContentLoading(newsPostId, true);
@@ -593,20 +593,20 @@ const NewsApprovalDashboard: React.FC = () => {
     }
   };
 
-  // Event handlers
+  
   const handleTabChange = (event: React.SyntheticEvent, newValue: number): void => {
     setTabValue(newValue);
-    setExpandedRequestId(null); // Collapse all when changing tabs
+    setExpandedRequestId(null); 
   };
 
   const handleToggleRequestExpansion = (request: PublicationRequest): void => {
-    // If already expanded, collapse it
+    
     if (requestsState.expandedRequestId === request.id) {
       setExpandedRequestId(null);
       return;
     }
 
-    // Otherwise, expand it and load its content
+    
     setExpandedRequestId(request.id);
     loadNewsContent(request.news_post);
   };
@@ -638,7 +638,7 @@ const NewsApprovalDashboard: React.FC = () => {
   const optimisticallyUpdateRequest = (request: PublicationRequest, newStatus: string): void => {
     const updatedRequest = { ...request, status: newStatus };
     
-    // Update requests array with the new status
+    
     setRequests(
       requestsState.items.map(req => 
         req.id === request.id ? updatedRequest : req
@@ -655,30 +655,30 @@ const NewsApprovalDashboard: React.FC = () => {
     setDialogState(prev => ({ ...prev, processing: true }));
     
     try {
-      // 1. Create the new status
+      
       const newStatus = action === 'approve' ? 'Approved' : 'Rejected';
       
-      // 2. Update local state FIRST (optimistic update)
+      
       const updatedRequest = optimisticallyUpdateRequest(currentRequest, newStatus);
       
-      // 3. Switch to the appropriate tab
+      
       setTabValue(action === 'approve' ? 1 : 2);
       
-      // 4. Close dialog
+      
       handleCloseDialog();
       
-      // 5. Update the expanded state to show the processed request
+      
       setExpandedRequestId(updatedRequest.id);
       
-      // 6. Send the API request
+      
       await updateRequestStatus(currentRequest.id, newStatus, notes);
       
-      // 7. Refresh all data
+      
       await refreshAllData(currentRequest.news_post);
     } catch (error) {
       console.error('Error processing request:', error);
       
-      // If the API call fails, revert the optimistic update
+      
       loadAllRequests();
     } finally {
       setDialogState(prev => ({ ...prev, processing: false }));
@@ -686,21 +686,21 @@ const NewsApprovalDashboard: React.FC = () => {
   };
 
   const refreshAllData = async (newsPostId: number): Promise<void> => {
-    // Refresh requests
+    
     const updatedRequests = await fetchAllRequests();
     setRequests(updatedRequests);
     
-    // Refresh news content
+    
     if (contentsState.items[newsPostId]) {
       const updatedContent = await fetchNewsContent(newsPostId);
       setNewsContent(newsPostId, updatedContent);
     }
   };
 
-  // Filter requests based on current tab
+  
   const filteredRequests = filterRequestsByTab(requestsState.items, requestsState.tabValue);
 
-  // Render component
+  
   return (
     <Box p={3}>
       <PageHeader onBack={() => navigate(-1)} />

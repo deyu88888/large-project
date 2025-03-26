@@ -9,7 +9,7 @@ import { useSettingsStore } from "../../stores/settings-store";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../stores/auth-store";
 
-// Types and Interfaces
+
 interface UserStats {
   totalUsers: number;
   [key: string]: any;
@@ -99,7 +99,7 @@ interface DashboardContentProps {
   onNavigate: (path: string) => void;
 }
 
-// Helper function to extract colors with fallbacks
+
 const extractColors = (colours: any): ColorsInterface => {
   return {
     greenAccent: colours?.greenAccent?.[500] || "#4caf50",
@@ -114,7 +114,7 @@ const extractColors = (colours: any): ColorsInterface => {
   };
 };
 
-// StatCard Component
+
 const StatCard: FC<StatCardProps> = ({ icon, title, value }) => {
   return (
     <Box
@@ -137,7 +137,7 @@ const StatCard: FC<StatCardProps> = ({ icon, title, value }) => {
   );
 };
 
-// NotificationCard Component
+
 const NotificationCard: FC<NotificationCardProps> = ({ message, isRead }) => {
   return (
     <Box
@@ -152,7 +152,7 @@ const NotificationCard: FC<NotificationCardProps> = ({ message, isRead }) => {
   );
 };
 
-// Publications Section Component
+
 const PublicationsSection: FC<PublicationSectionProps> = ({ publications, colors, onNavigate }) => {
   const renderEmptyState = () => {
     return (
@@ -246,7 +246,7 @@ const PublicationsSection: FC<PublicationSectionProps> = ({ publications, colors
   );
 };
 
-// Notifications Section Component
+
 const NotificationsSection: FC<NotificationsSectionProps> = ({ notifications, colors }) => {
   const renderEmptyState = () => {
     return (
@@ -280,7 +280,7 @@ const NotificationsSection: FC<NotificationsSectionProps> = ({ notifications, co
   );
 };
 
-// Stats Section Component
+
 const StatsSection: FC<StatsSectionProps> = ({ 
   userStats, 
   eventsCount, 
@@ -314,7 +314,7 @@ const StatsSection: FC<StatsSectionProps> = ({
   );
 };
 
-// Loading State Component
+
 const LoadingState: FC<{ color: string }> = ({ color }) => {
   return (
     <div className="text-center">
@@ -325,7 +325,7 @@ const LoadingState: FC<{ color: string }> = ({ color }) => {
   );
 };
 
-// Dashboard Content Component
+
 const DashboardContent: FC<DashboardContentProps> = ({ 
   loading, 
   userStats, 
@@ -364,7 +364,7 @@ const DashboardContent: FC<DashboardContentProps> = ({
   );
 };
 
-// Main Component
+
 const AdminDashboard: FC = () => {
   const theme = useTheme();
   const colours = tokens(theme?.palette?.mode) || {};

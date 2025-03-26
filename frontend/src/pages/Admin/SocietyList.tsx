@@ -17,11 +17,11 @@ import { SearchContext } from "../../components/layout/SearchContext";
 import { Society } from '../../types';
 import { useNavigate } from "react-router-dom";
 
-// Constants
-const WS_URL = "ws://127.0.0.1:8000/ws/admin/society/";
+
+const WS_URL = "ws:
 const RECONNECT_DELAY = 5000;
 
-// Interfaces
+
 interface SocietyDialogState {
   open: boolean;
   reason: string;
@@ -64,7 +64,7 @@ interface MembersCellProps {
   members: any[] | null;
 }
 
-// Helper functions
+
 const filterSocietiesBySearchTerm = (societies: Society[], searchTerm: string): Society[] => {
   if (!searchTerm) return societies;
   
@@ -78,7 +78,7 @@ const filterSocietiesBySearchTerm = (societies: Society[], searchTerm: string): 
   );
 };
 
-// API functions
+
 const fetchSocietyList = async (): Promise<Society[]> => {
   const res = await apiClient.get(apiPaths.USER.SOCIETY);
   return res.data;
@@ -92,7 +92,7 @@ const deleteSociety = async (societyId: number | string, reason: string): Promis
   });
 };
 
-// WebSocket functions
+
 const setupWebSocketHandlers = (
   socket: WebSocket,
   onMessage: () => void
@@ -132,7 +132,7 @@ const createWebSocketConnection = (
   return socket;
 };
 
-// Component functions
+
 const PresidentCell: React.FC<PresidentCellProps> = ({ president }) => {
   return (
     <Typography>
@@ -273,7 +273,7 @@ const DeleteDialog: React.FC<DeleteDialogProps> = ({
   );
 };
 
-// Column factory
+
 const createSocietyColumns = (
   handleViewSociety: (id: string) => void,
   handleOpenDialog: (society: Society) => void
@@ -324,7 +324,7 @@ const createSocietyColumns = (
  * Displays a list of societies with options to view details or delete
  */
 const SocietyList: React.FC = () => {
-  // Hooks
+  
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const navigate = useNavigate();
@@ -332,7 +332,7 @@ const SocietyList: React.FC = () => {
   const { searchTerm } = useContext(SearchContext);
   const ws = useRef<WebSocket | null>(null);
   
-  // State
+  
   const [societies, setSocieties] = useState<Society[]>([]);
   const [dialogState, setDialogState] = useState<SocietyDialogState>({
     open: false,
@@ -340,7 +340,7 @@ const SocietyList: React.FC = () => {
     selectedSociety: null
   });
 
-  // Data loading
+  
   const loadSocieties = useCallback(async () => {
     try {
       const data = await fetchSocietyList();
@@ -350,7 +350,7 @@ const SocietyList: React.FC = () => {
     }
   }, []);
 
-  // WebSocket handling
+  
   const handleWebSocketMessage = useCallback(() => {
     loadSocieties();
   }, [loadSocieties]);
@@ -373,12 +373,12 @@ const SocietyList: React.FC = () => {
     );
   }, [handleWebSocketMessage, reconnectWebSocket]);
 
-  // Initialize data and WebSocket connection
+  
   useEffect(() => {
     loadSocieties();
     connectWebSocket();
 
-    // Cleanup WebSocket on component unmount
+    
     return () => {
       if (ws.current) {
         ws.current.close();
@@ -386,7 +386,7 @@ const SocietyList: React.FC = () => {
     };
   }, [connectWebSocket, loadSocieties]);
 
-  // Event handlers
+  
   const handleViewSociety = useCallback((societyId: string) => {
     navigate(`/admin/view-society/${societyId}`);
   }, [navigate]);
@@ -429,7 +429,7 @@ const SocietyList: React.FC = () => {
     handleCloseDialog();
   }, [dialogState, loadSocieties, handleCloseDialog]);
 
-  // Derived data
+  
   const filteredSocieties = useMemo(() => 
     filterSocietiesBySearchTerm(societies, searchTerm || ''),
     [societies, searchTerm]

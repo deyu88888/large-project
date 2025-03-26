@@ -19,11 +19,11 @@ import { useSettingsStore } from "../../stores/settings-store";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { Event } from '../../types';
 
-// Constants
-const WEBSOCKET_URL = "ws://127.0.0.1:8000/ws/admin/event/";
+
+const WEBSOCKET_URL = "ws:
 const RECONNECT_TIMEOUT = 5000;
 
-// Types and Interfaces
+
 interface DeleteDialogProps {
   open: boolean;
   event: Event | null;
@@ -47,7 +47,7 @@ interface DataGridContainerProps {
   colors: any;
 }
 
-// Action Buttons Component
+
 const ActionButtons: FC<ActionButtonsProps> = ({
   eventId,
   event,
@@ -75,7 +75,7 @@ const ActionButtons: FC<ActionButtonsProps> = ({
   );
 };
 
-// Delete Confirmation Dialog Component
+
 const DeleteDialog: FC<DeleteDialogProps> = ({
   open,
   event,
@@ -121,7 +121,7 @@ const DeleteDialog: FC<DeleteDialogProps> = ({
   );
 };
 
-// DataGrid Container Component
+
 const DataGridContainer: FC<DataGridContainerProps> = ({
   filteredEvents,
   columns,
@@ -169,7 +169,7 @@ const DataGridContainer: FC<DataGridContainerProps> = ({
   );
 };
 
-// WebSocket Management Functions
+
 const createWebSocket = (url: string, onOpen: () => void, onMessage: (data: any) => void, onError: (event: Event) => void, onClose: (event: CloseEvent) => void): WebSocket => {
   const socket = new WebSocket(url);
   socket.onopen = onOpen;
@@ -188,7 +188,7 @@ const parseWebSocketMessage = (event: MessageEvent): any => {
   }
 };
 
-// Main component
+
 const EventList: FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
@@ -196,17 +196,17 @@ const EventList: FC = () => {
   const { drawer } = useSettingsStore();
   const { searchTerm } = useContext(SearchContext);
 
-  // State management
+  
   const [events, setEvents] = useState<Event[]>([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [reason, setReason] = useState('');
   const [loading, setLoading] = useState(true);
 
-  // WebSocket reference
+  
   const ws = useRef<WebSocket | null>(null);
 
-  // Data fetching function
+  
   const fetchEvents = useCallback(async () => {
     try {
       setLoading(true);
@@ -219,7 +219,7 @@ const EventList: FC = () => {
     }
   }, []);
 
-  // WebSocket event handlers
+  
   const handleSocketOpen = useCallback(() => {
     console.log("WebSocket Connected for Event List");
   }, []);
@@ -241,7 +241,7 @@ const EventList: FC = () => {
     setTimeout(() => connectWebSocket(), RECONNECT_TIMEOUT);
   }, []);
 
-  // WebSocket connection function
+  
   const connectWebSocket = useCallback(() => {
     if (ws.current?.readyState === WebSocket.OPEN) {
       return;
@@ -256,7 +256,7 @@ const EventList: FC = () => {
     );
   }, [handleSocketOpen, handleSocketMessage, handleSocketError, handleSocketClose]);
 
-  // Initialize data and WebSocket
+  
   useEffect(() => {
     fetchEvents();
     connectWebSocket();
@@ -268,7 +268,7 @@ const EventList: FC = () => {
     };
   }, [fetchEvents, connectWebSocket]);
 
-  // Event handlers
+  
   const handleViewEvent = useCallback((eventId: string) => {
     navigate(`/admin/view-event/${eventId}`);
   }, [navigate]);
@@ -307,7 +307,7 @@ const EventList: FC = () => {
     }
   }, [selectedEvent, reason, fetchEvents, handleCloseDialog]);
 
-  // Filter events based on search term
+  
   const getFilteredEvents = useCallback(() => {
     return events.filter((event) =>
       Object.values(event)
@@ -317,7 +317,7 @@ const EventList: FC = () => {
     );
   }, [events, searchTerm]);
 
-  // Column definitions
+  
   const getColumns = useCallback((): GridColDef[] => [
     { field: "id", headerName: "ID", flex: 0.3 },
     { field: "title", headerName: "Title", flex: 1 },
@@ -346,7 +346,7 @@ const EventList: FC = () => {
   ], [handleViewEvent, handleOpenDialog]);
 
   const getContainerStyle = useCallback(() => ({
-    height: "calc(100vh - 64px)", // Full height minus AppBar height
+    height: "calc(100vh - 64px)", 
     maxWidth: drawer ? `calc(100% - 3px)` : "100%",
   }), [drawer]);
 

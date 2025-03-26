@@ -1,5 +1,5 @@
-// TODO: refactor once this page loads
-// TODO: page does not load
+
+
 
 import React, { useState, useEffect, ChangeEvent, FormEvent, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -20,7 +20,7 @@ import { useAuthStore } from "../../stores/auth-store.ts";
 import { tokens } from "../../theme/theme.ts";
 import { Student } from "../../types.ts";
 
-// Interfaces
+
 interface StudentFormState {
   student: Student | null;
   formData: Student | null;
@@ -55,7 +55,7 @@ interface SocietiesFieldProps {
 }
 
 interface PresidentFieldProps {
-  value: any; // Using any since formData.president_of type is unclear
+  value: any; 
   onChange: (presidentOf: number[]) => void;
 }
 
@@ -82,7 +82,7 @@ interface StudentFormProps {
   onSubmit: (e: FormEvent) => void;
 }
 
-// API functions
+
 const fetchStudentData = async (studentId: number): Promise<Student> => {
   const response = await apiClient.get(apiPaths.USER.ADMINSTUDENTVIEW(studentId));
   return response.data;
@@ -94,7 +94,7 @@ const updateStudentData = async (studentId: number, formData: FormData): Promise
   });
 };
 
-// Helper functions
+
 const createFormDataFromStudent = (student: Student): FormData => {
   const formDataToSend = new FormData();
   
@@ -134,7 +134,7 @@ const parsePresidentOfString = (value: string): number[] => {
     .map((id) => parseInt(id.trim()));
 };
 
-// Component functions
+
 const FormTextField: React.FC<TextFieldProps> = ({
   label,
   name,
@@ -330,7 +330,7 @@ const StudentForm: React.FC<StudentFormProps> = ({
   );
 };
 
-// Main component
+
 const ViewStudent: React.FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
@@ -339,7 +339,7 @@ const ViewStudent: React.FC = () => {
   const { student_id } = useParams<{ student_id: string }>();
   const studentId = Number(student_id);
   
-  // State management
+  
   const [formState, setFormState] = useState<StudentFormState>({
     student: null,
     formData: null,
@@ -353,7 +353,7 @@ const ViewStudent: React.FC = () => {
     severity: "success"
   });
 
-  // Event handlers
+  
   const handleTextChange = useCallback((e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     
@@ -415,7 +415,7 @@ const ViewStudent: React.FC = () => {
     navigate(-1);
   }, [navigate]);
 
-  // Data loading
+  
   const loadStudentData = useCallback(async () => {
     try {
       setFormState(prev => ({ ...prev, loading: true }));
@@ -448,7 +448,7 @@ const ViewStudent: React.FC = () => {
     loadStudentData();
   }, [loadStudentData]);
 
-  // Form submission
+  
   const handleSubmit = useCallback(async (e: FormEvent) => {
     e.preventDefault();
     
@@ -469,12 +469,12 @@ const ViewStudent: React.FC = () => {
     }
   }, [formState.formData, formState.student, studentId]);
 
-  // Loading state
+  
   if (formState.loading || !formState.formData) {
     return <LoadingSpinner />;
   }
 
-  // Render main component
+  
   return (
     <Box minHeight="100vh" p={4}>
       <BackButton onClick={handleGoBack} />

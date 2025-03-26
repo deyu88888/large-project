@@ -23,7 +23,7 @@ import { Admin } from "../../types";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { tokens } from "../../theme/theme";
 
-// Types and Interfaces
+
 interface AdminFormValues {
   firstName: string;
   lastName: string;
@@ -111,7 +111,7 @@ interface FormButtonsProps {
   loading: boolean;
 }
 
-// Validation Schema
+
 const validationSchema = yup.object().shape({
   firstName: yup.string()
     .trim()
@@ -147,7 +147,7 @@ const validationSchema = yup.object().shape({
     .required("Please confirm the password"),
 });
 
-// Initial form values
+
 const initialValues: AdminFormValues = {
   username: "",
   firstName: "",
@@ -157,7 +157,7 @@ const initialValues: AdminFormValues = {
   confirmPassword: "",
 };
 
-// Error Alert Component
+
 const ErrorAlert: FC<ErrorAlertProps> = ({ error, onClose }) => {
   if (!error) return null;
   
@@ -172,7 +172,7 @@ const ErrorAlert: FC<ErrorAlertProps> = ({ error, onClose }) => {
   );
 };
 
-// Snackbar Alert Component
+
 const SnackbarAlert: FC<SnackbarAlertProps> = ({ open, message, severity, onClose }) => {
   return (
     <Snackbar
@@ -193,7 +193,7 @@ const SnackbarAlert: FC<SnackbarAlertProps> = ({ open, message, severity, onClos
   );
 };
 
-// Form Buttons Component
+
 const FormButtons: FC<FormButtonsProps> = ({ isValid, dirty, loading }) => {
   return (
     <Box display="flex" justifyContent="space-between" mt="20px">
@@ -221,7 +221,7 @@ const FormButtons: FC<FormButtonsProps> = ({ isValid, dirty, loading }) => {
   );
 };
 
-// Text Field Component
+
 const TextFieldComponent: FC<{
   label: string;
   name: string;
@@ -264,7 +264,7 @@ const TextFieldComponent: FC<{
   );
 };
 
-// Password field component
+
 const PasswordField: FC<PasswordFieldProps> = ({
   name,
   label,
@@ -309,7 +309,7 @@ const PasswordField: FC<PasswordFieldProps> = ({
   );
 };
 
-// Form Fields Component
+
 const FormFields: FC<FormFieldsProps> = ({ 
   formikProps, 
   isNonMobile, 
@@ -405,7 +405,7 @@ const FormFields: FC<FormFieldsProps> = ({
   );
 };
 
-// Unauthorized View
+
 const UnauthorizedView: FC<UnauthorizedViewProps> = ({ title, subtitle }) => {
   return (
     <Box m="20px" display="flex" justifyContent="center" flexDirection="column" alignItems="center">
@@ -417,7 +417,7 @@ const UnauthorizedView: FC<UnauthorizedViewProps> = ({ title, subtitle }) => {
   );
 };
 
-// Admin Info Item Component
+
 const AdminInfoItem: FC<{ label: string; value: string }> = ({ label, value }) => {
   return (
     <Typography variant="body1">
@@ -426,7 +426,7 @@ const AdminInfoItem: FC<{ label: string; value: string }> = ({ label, value }) =
   );
 };
 
-// Success View
+
 const SuccessView: FC<SuccessViewProps> = ({ createdAdmin, onCreateAnother, colors, theme }) => {
   const firstName = createdAdmin.firstName || createdAdmin.firsName;
   const paperStyle = { 
@@ -463,7 +463,7 @@ const SuccessView: FC<SuccessViewProps> = ({ createdAdmin, onCreateAnother, colo
   );
 };
 
-// FormikWrapper Component
+
 const FormikWrapper: FC<{
   onSubmit: (values: AdminFormValues, helpers: FormikHelpers<AdminFormValues>) => Promise<void>;
   isNonMobile: boolean;
@@ -491,7 +491,7 @@ const FormikWrapper: FC<{
   );
 };
 
-// Form Content Component
+
 const FormContent: FC<{
   formikProps: FormikProps<AdminFormValues>;
   isNonMobile: boolean;
@@ -520,7 +520,7 @@ const FormContent: FC<{
   );
 };
 
-// Form View
+
 const FormView: FC<FormViewProps> = ({ 
   formState, 
   onSubmit, 
@@ -571,13 +571,13 @@ const FormView: FC<FormViewProps> = ({
   );
 };
 
-// API Request Functions
+
 const createAdminRequest = async (values: AdminFormValues) => {
   const response = await apiClient.post(apiPaths.USER.ADMIN, values);
   return response.data.admin;
 };
 
-// Main component
+
 const CreateAdmin: FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
@@ -585,7 +585,7 @@ const CreateAdmin: FC = () => {
   const isNonMobile = useMediaQuery("(min-width:600px)");
   const { drawer } = useSettingsStore();
 
-  // Component state
+  
   const [formState, setFormState] = useState<FormState>({
     loading: false,
     isSuccess: false,
@@ -599,7 +599,7 @@ const CreateAdmin: FC = () => {
     }
   });
 
-  // Event Handlers
+  
   const handleTogglePasswordVisibility = () => {
     setFormState(prev => ({ ...prev, showPassword: !prev.showPassword }));
   };
@@ -685,12 +685,12 @@ const CreateAdmin: FC = () => {
     }
   };
 
-  // View selectors
+  
   const shouldShowUnauthorizedView = !user?.is_super_admin;
   const shouldShowSuccessView = formState.isSuccess && formState.createdAdmin !== null;
   const shouldShowFormView = !formState.isSuccess && user?.is_super_admin;
 
-  // Render views
+  
   if (shouldShowUnauthorizedView) {
     return (
       <UnauthorizedView 

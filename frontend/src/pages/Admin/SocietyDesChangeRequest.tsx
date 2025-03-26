@@ -1,5 +1,5 @@
-// TODO: to refactor
-// TODO: refactor once the seed data is updated and ready
+
+
 
 import React, { useEffect, useState, useContext, useCallback, useMemo } from "react";
 import { Box, Typography, useTheme, Button } from "@mui/material";
@@ -11,7 +11,7 @@ import { fetchPendingDescriptions } from "./fetchPendingDescriptions";
 import { useFetchWebSocket } from "../../hooks/useFetchWebSocket";
 import { SearchContext } from "../../components/layout/SearchContext";
 
-// Interfaces
+
 interface Society {
   id: number;
   name: string;
@@ -51,7 +51,7 @@ interface DataGridContainerProps {
   drawer: boolean;
 }
 
-// Helper functions
+
 const transformDescriptionForDisplay = (description: DescriptionRequest): DisplayableDescription => {
   return {
     ...description,
@@ -81,7 +81,7 @@ const formatDate = (dateString: string): string => {
   return new Date(dateString).toLocaleString();
 };
 
-// API functions
+
 const acceptDescription = async (id: number): Promise<void> => {
   await apiClient.put(`${apiPaths.USER.PENDINGDESCRIPTIONREQUEST}/${id}`, { status: "Approved" });
 };
@@ -95,7 +95,7 @@ const fetchDescriptionRequests = async (): Promise<DescriptionRequest[]> => {
   return res.data;
 };
 
-// Component functions
+
 const ActionButtons: React.FC<ActionButtonsProps> = ({ id, onAccept, onReject }) => {
   return (
     <>
@@ -172,7 +172,7 @@ const DataGridContainer: React.FC<DataGridContainerProps> = ({
   );
 };
 
-// Column factory
+
 const createDescriptionColumns = (
   onAccept: (id: number) => void,
   onReject: (id: number) => void
@@ -203,25 +203,25 @@ const createDescriptionColumns = (
   ];
 };
 
-// Main component
+
 const PendingDescriptionRequest: React.FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const { searchTerm } = useContext(SearchContext);
   const { drawer } = useSettingsStore();
   
-  // State
+  
   const [requests, setRequests] = useState<DescriptionRequest[]>([]);
   
-  // Fetch data using WebSocket
+  
   const descriptions = useFetchWebSocket<DescriptionRequest[]>(fetchPendingDescriptions, 'description');
 
-  // Load initial data
+  
   useEffect(() => {
     loadDescriptionRequests();
   }, []);
 
-  // Data loading
+  
   const loadDescriptionRequests = async () => {
     try {
       const data = await fetchDescriptionRequests();
@@ -231,7 +231,7 @@ const PendingDescriptionRequest: React.FC = () => {
     }
   };
 
-  // Event handlers
+  
   const handleAccept = useCallback(async (id: number) => {
     try {
       await acceptDescription(id);
@@ -248,7 +248,7 @@ const PendingDescriptionRequest: React.FC = () => {
     }
   }, []);
 
-  // Process data for display
+  
   const processedDescriptions = useMemo(() => {
     if (!Array.isArray(descriptions)) return [];
     
@@ -256,7 +256,7 @@ const PendingDescriptionRequest: React.FC = () => {
     return filteredData.map(transformDescriptionForDisplay);
   }, [descriptions, searchTerm]);
 
-  // Create columns
+  
   const columns = useMemo(() => 
     createDescriptionColumns(handleAccept, handleReject),
     [handleAccept, handleReject]

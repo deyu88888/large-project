@@ -19,7 +19,7 @@ import { useSettingsStore } from "../../stores/settings-store";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../stores/auth-store";
 
-// Types and Interfaces
+
 interface AdminUser {
   id: string;
   username: string;
@@ -66,7 +66,7 @@ interface ActionButtonsProps {
   onDelete: (admin: AdminUser) => void;
 }
 
-// Component for the header
+
 const Header: FC<HeaderProps> = ({ colors, theme }) => {
   return (
     <Typography
@@ -83,7 +83,7 @@ const Header: FC<HeaderProps> = ({ colors, theme }) => {
   );
 };
 
-// Component for the data grid container
+
 const DataGridContainer: FC<DataGridContainerProps> = ({ 
   filteredAdmins, 
   columns, 
@@ -144,7 +144,7 @@ const DataGridContainer: FC<DataGridContainerProps> = ({
   );
 };
 
-// Component for the delete confirmation dialog
+
 const DeleteDialog: FC<DeleteDialogProps> = ({ 
   open, 
   admin, 
@@ -185,7 +185,7 @@ const DeleteDialog: FC<DeleteDialogProps> = ({
   );
 };
 
-// Component for action buttons in the table
+
 const ActionButtons: FC<ActionButtonsProps> = ({ 
   adminId, 
   admin, 
@@ -216,7 +216,7 @@ const ActionButtons: FC<ActionButtonsProps> = ({
   );
 };
 
-// Main component
+
 const AdminList: FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
@@ -225,17 +225,17 @@ const AdminList: FC = () => {
   const { drawer } = useSettingsStore();
   const { user, setUser } = useAuthStore();
 
-  // State management
+  
   const [admins, setAdmins] = useState<AdminUser[]>([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedAdmin, setSelectedAdmin] = useState<AdminUser | null>(null);
   const [reason, setReason] = useState('');
 
-  // Derived data
+  
   const isSuperAdmin = user?.is_super_admin === true;
   const actionsColumnWidth = isSuperAdmin ? 170 : 85;
 
-  // Fetch admin data
+  
   const fetchAdmins = async () => {
     try {
       const res = await apiClient.get(apiPaths.USER.ADMIN);
@@ -246,7 +246,7 @@ const AdminList: FC = () => {
     }
   };
 
-  // Fetch current user data
+  
   const fetchCurrentUser = async () => {
     try {
       const res = await apiClient.get(apiPaths.USER.CURRENT);
@@ -256,13 +256,13 @@ const AdminList: FC = () => {
     }
   };
 
-  // Initialize data
+  
   useEffect(() => {
     fetchAdmins();
     fetchCurrentUser();
   }, []);
 
-  // Filter admins based on search term
+  
   const getFilteredAdmins = () => {
     return admins.filter((admin) =>
       Object.values(admin)
@@ -272,7 +272,7 @@ const AdminList: FC = () => {
     );
   };
 
-  // Event handlers
+  
   const handleViewAdmin = (adminId: string) => {
     navigate(`/admin/view-admin/${adminId}`);
   };
@@ -308,7 +308,7 @@ const AdminList: FC = () => {
     handleCloseDialog();
   };
 
-  // Define columns
+  
   const getColumns = (): GridColDef[] => [
     { field: "id", headerName: "ID", flex: 0.3 },
     { field: "username", headerName: "Username", flex: 1 },
@@ -347,7 +347,7 @@ const AdminList: FC = () => {
     },
   ];
 
-  // Filtered data and columns
+  
   const filteredAdmins = getFilteredAdmins();
   const columns = getColumns();
 

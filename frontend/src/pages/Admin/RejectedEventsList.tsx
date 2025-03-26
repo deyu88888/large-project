@@ -1,5 +1,5 @@
-// TODO: description column and action buttons needs better positioning
-// come back to refactor
+
+
 
 import { useState, useEffect, useContext, useRef, useCallback } from "react";
 import { Box, Typography, useTheme } from "@mui/material";
@@ -11,7 +11,7 @@ import { SearchContext } from "../../components/layout/SearchContext";
 import { useSettingsStore } from "../../stores/settings-store";
 import { Event } from '../../types';
 
-// Interfaces
+
 interface WebSocketRef {
   current: WebSocket | null;
 }
@@ -26,11 +26,11 @@ interface DataGridProps {
   colors: ReturnType<typeof tokens>;
 }
 
-// Constants
-const WS_URL = "ws://127.0.0.1:8000/ws/admin/event/";
+
+const WS_URL = "ws:
 const RECONNECT_DELAY = 5000;
 
-// Helper Functions
+
 const filterEventsBySearchTerm = (events: Event[], searchTerm: string): Event[] => {
   if (!searchTerm) return events;
   
@@ -57,7 +57,7 @@ const createEventColumns = (): GridColDef[] => {
   ];
 };
 
-// API Functions
+
 const fetchRejectedEvents = async (): Promise<Event[]> => {
   try {
     const res = await apiClient.get(apiPaths.EVENTS.REJECTEDEVENTLIST);
@@ -68,7 +68,7 @@ const fetchRejectedEvents = async (): Promise<Event[]> => {
   }
 };
 
-// WebSocket Functions
+
 const closeWebSocket = (ws: WebSocketRef): void => {
   if (ws.current) {
     ws.current.close();
@@ -120,7 +120,7 @@ const setupWebSocketOnClose = (
   };
 };
 
-// Component Functions
+
 const EventsDataGrid: React.FC<DataGridProps> = ({ events, columns, colors }) => {
   return (
     <Box
@@ -180,7 +180,7 @@ const EventListRejected: React.FC = () => {
   const ws = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Data fetching function
+  
   const loadEvents = useCallback(async () => {
     setLoading(true);
     const data = await fetchRejectedEvents();
@@ -188,16 +188,16 @@ const EventListRejected: React.FC = () => {
     setLoading(false);
   }, []);
 
-  // WebSocket connection management
+  
   const connectWebSocket = useCallback(() => {
-    // Clean up existing connection
+    
     closeWebSocket(ws);
     clearReconnectTimeout(reconnectTimeoutRef);
     
-    // Create new connection
+    
     ws.current = new WebSocket(WS_URL);
     
-    // Set up event handlers
+    
     if (ws.current) {
       setupWebSocketOnOpen(ws.current);
       setupWebSocketOnMessage(ws.current, loadEvents);
@@ -206,27 +206,27 @@ const EventListRejected: React.FC = () => {
     }
   }, [loadEvents]);
 
-  // Initialize data and connection
+  
   useEffect(() => {
     loadEvents();
     connectWebSocket();
   
-    // Cleanup function
+    
     return () => {
       closeWebSocket(ws);
       clearReconnectTimeout(reconnectTimeoutRef);
     };
   }, [loadEvents, connectWebSocket]);
 
-  // Navigate to events list
+  
   const handleBackToEvents = useCallback(() => {
     navigate("/admin/event-list");
   }, [navigate]);
 
-  // Data filtering
+  
   const filteredEvents = filterEventsBySearchTerm(events, searchTerm || "");
   
-  // Column definitions
+  
   const columns = createEventColumns();
 
   return (

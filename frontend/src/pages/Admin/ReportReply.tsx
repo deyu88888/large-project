@@ -1,5 +1,5 @@
-// TODO: to refactor
-// TODO: refactor once the presidents' dashboard is functional, and can make a request
+
+
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Box, Typography, Button, TextField, CircularProgress } from "@mui/material";
@@ -7,7 +7,7 @@ import { useTheme } from "@mui/material/styles";
 import { apiClient } from "../../api";
 import { tokens } from "../../theme/theme";
 
-// Interfaces
+
 interface Report {
   report_type: string;
   subject: string;
@@ -46,7 +46,7 @@ interface ReplyFormProps {
   onSubmit: (e: React.FormEvent) => void;
 }
 
-// API functions
+
 const fetchReportById = async (reportId: string): Promise<Report> => {
   const response = await apiClient.get(`/api/reports/to-admin/${reportId}/`);
   return response.data;
@@ -59,7 +59,7 @@ const submitReportReply = async (reportId: string, content: string): Promise<voi
   });
 };
 
-// UI Components
+
 const LoadingState: React.FC<LoadingStateProps> = () => {
   return <CircularProgress />;
 };
@@ -195,12 +195,12 @@ const PageTitle: React.FC = () => {
   );
 };
 
-// Main component
+
 const ReportReply: React.FC = () => {
   const navigate = useNavigate();
   const { reportId } = useParams<{ reportId: string }>();
   
-  // State management
+  
   const [reportState, setReportState] = useState<ReportState>({
     data: null,
     loading: true,
@@ -212,7 +212,7 @@ const ReportReply: React.FC = () => {
     error: null
   });
 
-  // Load report data
+  
   const loadReportData = async () => {
     if (!reportId) {
       setReportState({
@@ -241,12 +241,12 @@ const ReportReply: React.FC = () => {
     }
   };
 
-  // Handle reply content changes
+  
   const handleReplyContentChange = (content: string) => {
     setReplyState(prev => ({ ...prev, content }));
   };
 
-  // Handle form submission
+  
   const handleSubmitReply = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -264,27 +264,27 @@ const ReportReply: React.FC = () => {
     }
   };
 
-  // Load data on component mount
+  
   useEffect(() => {
     loadReportData();
   }, [reportId]);
 
-  // Show loading state
+  
   if (reportState.loading) {
     return <LoadingState />;
   }
 
-  // Show error state
+  
   if (reportState.error) {
     return <ErrorState message={reportState.error} />;
   }
 
-  // Show reply state error
+  
   if (replyState.error) {
     return <ErrorState message={replyState.error} />;
   }
 
-  // Main render
+  
   return (
     <PageContainer>
       <PageTitle />

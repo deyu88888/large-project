@@ -1,4 +1,4 @@
-// TODO: make sure this page works once seed is ready
+
 import React, { ReactNode, useState, useCallback } from "react";
 import { Box, Tabs, Tab, useTheme, Typography } from "@mui/material";
 import { tokens } from "../../theme/theme";
@@ -6,7 +6,7 @@ import AdminReportList from "./AdminReportList";
 import ReportRepliedList from "./ReportRepliedList";
 import ReportRepliesList from "./ReportRepliesList";
 
-// Interfaces
+
 interface TabPanelProps {
   children: ReactNode;
   value: number;
@@ -24,10 +24,10 @@ interface StorageOperations {
   setActiveTab: (value: number) => void;
 }
 
-// Constants
+
 const STORAGE_KEY = "reportsActiveTab";
 
-// Helper Functions
+
 const createTabConfigs = (): TabConfig[] => [
   { label: "New reports", component: <AdminReportList />, ariaLabel: "New reports tab" },
   { label: "New replies", component: <ReportRepliesList />, ariaLabel: "New replies tab" },
@@ -59,7 +59,7 @@ const createStorageOperations = (): StorageOperations => {
   };
 };
 
-// Components
+
 const CustomTabPanel: React.FC<TabPanelProps> = ({ children, value, index }) => {
   if (value !== index) {
     return null;
@@ -139,7 +139,7 @@ const PageTitle: React.FC<{ colors: ReturnType<typeof tokens> }> = ({ colors }) 
   );
 };
 
-// Main Component
+
 const ManageReports: React.FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);

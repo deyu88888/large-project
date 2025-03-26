@@ -6,7 +6,7 @@ import SocietyListRejected from "./RejectedSocietiesList";
 import PendingSocietyRequest from "./SocietyCreationRequests";
 import PendingDescriptionRequest from "./SocietyDesChangeRequest";
 
-// Types and Interfaces
+
 interface TabPanelProps {
   children: ReactNode;
   value: number;
@@ -38,7 +38,7 @@ interface HeaderProps {
   colors: any;
 }
 
-// Constants
+
 const ACTIVE_TAB_KEY = "activeTab";
 
 const TABS: TabConfig[] = [
@@ -48,7 +48,7 @@ const TABS: TabConfig[] = [
   { label: "Description requests", component: <PendingDescriptionRequest /> },
 ];
 
-// Helper Functions
+
 const getTabAccessibilityProps = (index: number): TabAccessibilityProps => {
   return {
     id: `society-tab-${index}`,
@@ -74,7 +74,7 @@ const saveTabToStorage = (tabIndex: number): void => {
   }
 };
 
-// Component: CustomTabPanel
+
 const CustomTabPanel: FC<TabPanelProps> = ({ children, value, index }) => {
   if (value !== index) return null;
   
@@ -89,7 +89,7 @@ const CustomTabPanel: FC<TabPanelProps> = ({ children, value, index }) => {
   );
 };
 
-// Component: Header
+
 const Header: FC<HeaderProps> = ({ colors }) => {
   return (
     <Typography
@@ -106,7 +106,7 @@ const Header: FC<HeaderProps> = ({ colors }) => {
   );
 };
 
-// Component: TabsContainer
+
 const TabsContainer: FC<TabsContainerProps> = ({ activeTab, onTabChange, tabs }) => {
   return (
     <Box
@@ -134,7 +134,7 @@ const TabsContainer: FC<TabsContainerProps> = ({ activeTab, onTabChange, tabs })
   );
 };
 
-// Component: TabPanels
+
 const TabPanels: FC<TabPanelsProps> = ({ activeTab, tabs }) => {
   return (
     <>
@@ -151,15 +151,15 @@ const TabPanels: FC<TabPanelsProps> = ({ activeTab, tabs }) => {
   );
 };
 
-// Main Component
+
 const ManageSocieties: FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   
-  // State
+  
   const [activeTab, setActiveTab] = useState<number>(getInitialTabState);
   
-  // Event handlers
+  
   const saveTabPreference = useCallback((tabIndex: number) => {
     saveTabToStorage(tabIndex);
   }, []);
@@ -169,14 +169,14 @@ const ManageSocieties: FC = () => {
     saveTabPreference(newValue);
   }, [saveTabPreference]);
   
-  // Cleanup on unmount
+  
   useEffect(() => {
     return () => {
       saveTabPreference(activeTab);
     };
   }, [activeTab, saveTabPreference]);
   
-  // Container style
+  
   const containerStyle = {
     height: "calc(100vh - 64px)",
   };

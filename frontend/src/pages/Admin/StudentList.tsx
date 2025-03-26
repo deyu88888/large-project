@@ -19,7 +19,7 @@ import { useSettingsStore } from "../../stores/settings-store";
 import { Student } from "../../types";
 import { useNavigate } from "react-router-dom";
 
-// Interfaces
+
 interface StudentListState {
   students: Student[];
   loading: boolean;
@@ -67,7 +67,7 @@ interface BooleanCellProps {
   value: boolean;
 }
 
-// Helper functions
+
 const filterStudentsBySearchTerm = (students: Student[], searchTerm: string): Student[] => {
   if (!searchTerm) return students;
   
@@ -81,7 +81,7 @@ const filterStudentsBySearchTerm = (students: Student[], searchTerm: string): St
   );
 };
 
-// API functions
+
 const fetchStudentList = async (): Promise<Student[]> => {
   const res = await apiClient.get(apiPaths.USER.STUDENTS);
   return res.data || [];
@@ -95,7 +95,7 @@ const deleteStudent = async (studentId: number | string, reason: string): Promis
   });
 };
 
-// Component functions
+
 const PageTitle: React.FC<PageTitleProps> = ({ title, colors }) => {
   return (
     <Typography
@@ -250,7 +250,7 @@ const DataGridContainer: React.FC<DataGridContainerProps> = ({
   );
 };
 
-// Column factory
+
 const createStudentColumns = (
   handleViewStudent: (id: string) => void,
   handleOpenDialog: (student: Student) => void
@@ -319,7 +319,7 @@ const StudentList: React.FC = () => {
   const { searchTerm } = useContext(SearchContext);
   const { drawer } = useSettingsStore();
   
-  // State
+  
   const [studentState, setStudentState] = useState<StudentListState>({
     students: [],
     loading: true
@@ -331,7 +331,7 @@ const StudentList: React.FC = () => {
     reason: ''
   });
 
-  // Data loading
+  
   const loadStudents = useCallback(async () => {
     setStudentState(prev => ({ ...prev, loading: true }));
     
@@ -347,12 +347,12 @@ const StudentList: React.FC = () => {
     }
   }, []);
 
-  // Initialize data
+  
   useEffect(() => {
     loadStudents();
   }, [loadStudents]);
 
-  // Event handlers
+  
   const handleViewStudent = useCallback((studentId: string) => {
     navigate(`/admin/view-student/${studentId}`);
   }, [navigate]);
@@ -395,7 +395,7 @@ const StudentList: React.FC = () => {
     handleCloseDialog();
   }, [dialogState, loadStudents, handleCloseDialog]);
 
-  // Derived state
+  
   const filteredStudents = useMemo(() => 
     filterStudentsBySearchTerm(studentState.students, searchTerm || ''),
     [studentState.students, searchTerm]

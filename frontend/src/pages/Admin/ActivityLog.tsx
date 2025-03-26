@@ -23,7 +23,7 @@ import { useSettingsStore } from "../../stores/settings-store";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { fetchPendingRequests } from "./utils";
 
-// Types and Interfaces
+
 interface NotificationState {
   open: boolean;
   message: string;
@@ -37,7 +37,7 @@ interface ProcessingState {
   isProcessing: boolean;
 }
 
-// Component for rendering action buttons
+
 const ActionButtons: React.FC<{
   row: ActivityLog;
   processing: ProcessingState;
@@ -74,7 +74,7 @@ const ActionButtons: React.FC<{
   );
 };
 
-// Confirmation Dialog Component
+
 const ConfirmDeleteDialog: React.FC<{
   open: boolean;
   log: ActivityLog | null;
@@ -130,7 +130,7 @@ const ConfirmDeleteDialog: React.FC<{
   );
 };
 
-// Notification Component
+
 const NotificationAlert: React.FC<{
   notification: NotificationState;
   onClose: () => void;
@@ -153,7 +153,7 @@ const NotificationAlert: React.FC<{
   );
 };
 
-// LoadingIndicator Component
+
 const LoadingIndicator: React.FC = () => {
   return (
     <Box display="flex" justifyContent="center" alignItems="center" height="70vh">
@@ -162,9 +162,9 @@ const LoadingIndicator: React.FC = () => {
   );
 };
 
-// Main component
+
 const ActivityLogList: React.FC<ActivityLogListProps> = () => {
-  // State management
+  
   const [data, setData] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [openDialog, setOpenDialog] = useState(false);
@@ -179,13 +179,13 @@ const ActivityLogList: React.FC<ActivityLogListProps> = () => {
     isProcessing: false
   });
   
-  // Hooks and context
+  
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const { drawer } = useSettingsStore();
   const { searchTerm } = useContext(SearchContext);
 
-  // Helper functions
+  
   const formatTimestamp = (timestamp: string): string => {
     try {
       return new Date(timestamp).toLocaleString();
@@ -213,7 +213,7 @@ const ActivityLogList: React.FC<ActivityLogListProps> = () => {
     setProcessing({ id, isProcessing });
   };
 
-  // Data fetching
+  
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -227,12 +227,12 @@ const ActivityLogList: React.FC<ActivityLogListProps> = () => {
     }
   };
 
-  // Fetch data on component mount
+  
   useEffect(() => {
     fetchData();
   }, []);
 
-  // Dialog management
+  
   const handleOpenDialog = (log: ActivityLog) => {
     setSelectedLog(log);
     setOpenDialog(true);
@@ -243,7 +243,7 @@ const ActivityLogList: React.FC<ActivityLogListProps> = () => {
     setSelectedLog(null);
   };
 
-  // Action handlers
+  
   const handleDeleteConfirmed = async () => {
     if (!selectedLog) return;
     
@@ -275,7 +275,7 @@ const ActivityLogList: React.FC<ActivityLogListProps> = () => {
     }
   };
 
-  // Filtering
+  
   const filteredActivityLogs = useMemo(() => 
     data.filter((activityLog) =>
       Object.values(activityLog)
@@ -286,7 +286,7 @@ const ActivityLogList: React.FC<ActivityLogListProps> = () => {
     [data, searchTerm]
   );
 
-  // Column definitions
+  
   const getColumns = (): GridColDef[] => [
     { field: "id", headerName: "ID", flex: 0.3 },
     { field: "action_type", headerName: "Action Type", flex: 1 },
@@ -318,7 +318,7 @@ const ActivityLogList: React.FC<ActivityLogListProps> = () => {
     }
   ];
 
-  // Styles
+  
   const getDataGridStyles = () => ({
     height: "78vh",
     "& .MuiDataGrid-root": { border: "none" },
@@ -359,7 +359,7 @@ const ActivityLogList: React.FC<ActivityLogListProps> = () => {
     marginBottom: "1rem",
   });
 
-  // Render
+  
   return (
     <Box sx={getContainerStyles()}>
       <Typography variant="h1" sx={getTitleStyles()}>

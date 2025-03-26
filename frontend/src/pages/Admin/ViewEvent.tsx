@@ -16,7 +16,7 @@ import { apiClient, apiPaths } from "../../api";
 import { tokens } from "../../theme/theme";
 import { Event } from "../../types";
 
-// Interfaces
+
 interface FormErrors {
   title?: string;
   main_description?: string;
@@ -87,7 +87,7 @@ interface EventFormProps {
   onReset: () => void;
 }
 
-// Helper functions
+
 const createField = (
   formData: Event | null,
   name: string,
@@ -97,7 +97,7 @@ const createField = (
   return formData[name as keyof Event]?.toString() || defaultValue;
 };
 
-// API functions
+
 const fetchEventData = async (eventId: number): Promise<Event> => {
   const response = await apiClient.get(apiPaths.USER.ADMINEVENTVIEW(eventId));
   return response.data;
@@ -107,7 +107,7 @@ const updateEventData = async (eventId: number, data: Event): Promise<void> => {
   await apiClient.patch(`/api/admin/manage-event/${eventId}`, data);
 };
 
-// Validation functions
+
 const validateRequiredField = (value: string | undefined, fieldName: string): string | undefined => {
   if (!value?.trim()) {
     return `${fieldName} is required`;
@@ -127,7 +127,7 @@ const validateEventForm = (formData: Event | null): FormErrors => {
   errors.location = validateRequiredField(formData.location, "Location");
   errors.hosted_by = validateRequiredField(formData.hosted_by?.toString(), "Host information");
   
-  // Remove undefined values
+  
   Object.keys(errors).forEach(key => {
     if (errors[key] === undefined) {
       delete errors[key];
@@ -141,7 +141,7 @@ const isFormValid = (errors: FormErrors): boolean => {
   return Object.keys(errors).length === 0;
 };
 
-// Component functions
+
 const FormTextField: React.FC<TextFieldProps> = ({
   label,
   name,
@@ -361,7 +361,7 @@ const ViewEvent: React.FC = () => {
   const { event_id } = useParams<{ event_id: string }>();
   const eventId = Number(event_id);
 
-  // State management
+  
   const [formState, setFormState] = useState<EventFormState>({
     event: null,
     formData: null,
@@ -376,17 +376,17 @@ const ViewEvent: React.FC = () => {
     severity: "info",
   });
 
-  // Event handlers
+  
   const handleChange = useCallback((e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     
     setFormState(prev => {
-      // Update form data
+      
       const updatedFormData = prev.formData 
         ? { ...prev.formData, [name]: value } 
         : null;
       
-      // Clear field-specific error
+      
       const updatedErrors = { ...prev.errors };
       if (updatedErrors[name]) {
         delete updatedErrors[name];
@@ -427,7 +427,7 @@ const ViewEvent: React.FC = () => {
     });
   }, []);
 
-  // Data loading
+  
   const loadEventData = useCallback(async () => {
     try {
       setFormState(prev => ({ ...prev, loading: true }));
@@ -457,7 +457,7 @@ const ViewEvent: React.FC = () => {
     loadEventData();
   }, [loadEventData]);
 
-  // Form submission
+  
   const validateAndSetErrors = useCallback(() => {
     const newErrors = validateEventForm(formState.formData);
     
@@ -491,12 +491,12 @@ const ViewEvent: React.FC = () => {
     }
   }, [formState.formData, formState.event, eventId, validateAndSetErrors, showNotificationMessage]);
 
-  // Render loading state
+  
   if (formState.loading || !formState.formData) {
     return <LoadingSpinner />;
   }
 
-  // Render main component
+  
   return (
     <Box minHeight="100vh" p={4}>
       <BackButton onClick={handleGoBack} />

@@ -8,7 +8,7 @@ import { fetchReports } from './fetchReports';
 import { Report } from '../../types';
 import { useNavigate } from 'react-router-dom';
 
-// Types and Interfaces
+
 interface DataGridContainerProps {
   filteredReports: Report[];
   columns: GridColDef[];
@@ -24,12 +24,12 @@ interface ActionButtonProps {
   onReply: (id: string) => void;
 }
 
-// Format date for display
+
 const formatDate = (dateString: string): string => {
   return new Date(dateString).toLocaleString();
 };
 
-// Create mailto URL
+
 const createMailtoUrl = (email: string, subject: string): string => {
   const emailSubject = encodeURIComponent(`Response to your report: "${subject}"`);
   const emailBody = encodeURIComponent("Hi,\n\nRegarding your report, we would like to get in touch with you.\n\nKind regards,\nAdmin Team");
@@ -37,7 +37,7 @@ const createMailtoUrl = (email: string, subject: string): string => {
   return `mailto:${email}?subject=${emailSubject}&body=${emailBody}`;
 };
 
-// Component for handling email or reply button
+
 const ActionButton: FC<ActionButtonProps> = ({
   reportId,
   isPublic,
@@ -68,7 +68,7 @@ const ActionButton: FC<ActionButtonProps> = ({
   );
 };
 
-// Data Grid Container Component
+
 const DataGridContainer: FC<DataGridContainerProps> = ({
   filteredReports,
   columns,
@@ -117,7 +117,7 @@ const DataGridContainer: FC<DataGridContainerProps> = ({
   );
 };
 
-// EmailCell Component
+
 const EmailCell: FC<{ email: string | null }> = ({ email }) => {
   if (!email) return <>-</>;
   
@@ -128,12 +128,12 @@ const EmailCell: FC<{ email: string | null }> = ({ email }) => {
   );
 };
 
-// ReporterCell Component
+
 const ReporterCell: FC<{ reporter: string | null }> = ({ reporter }) => {
   return <>{reporter || "Public User"}</>;
 };
 
-// DateCell Component
+
 const DateCell: FC<{ date: string }> = ({ date }) => {
   return <>{formatDate(date)}</>;
 };
@@ -148,12 +148,12 @@ const AdminReportList: FC = () => {
   const { searchTerm } = useContext(SearchContext);
   const { drawer } = useSettingsStore(); 
 
-  // State management
+  
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Load reports data
+  
   const loadReports = useCallback(async () => {
     try {
       setLoading(true);
@@ -168,12 +168,12 @@ const AdminReportList: FC = () => {
     }
   }, []);
 
-  // Initialize data
+  
   useEffect(() => {
     loadReports();
   }, [loadReports]);
 
-  // Filter reports based on search term
+  
   const getFilteredReports = useCallback(() => {
     return reports.filter((report) =>
       Object.values(report)
@@ -183,12 +183,12 @@ const AdminReportList: FC = () => {
     );
   }, [reports, searchTerm]);
 
-  // Navigate to reply page
+  
   const handleReplyClick = useCallback((reportId: string) => {
     navigate(`/admin/report-list/${reportId}/reply`);
   }, [navigate]);
 
-  // Define columns for DataGrid
+  
   const getColumns = useCallback((): GridColDef[] => [
     { field: "id", headerName: "ID", flex: 0.5 },
     {
@@ -234,13 +234,13 @@ const AdminReportList: FC = () => {
     }
   ], [handleReplyClick]);
 
-  // Get container styles
+  
   const getContainerStyles = useCallback(() => ({
     height: "calc(100vh - 64px)",
     maxWidth: drawer ? `calc(100% - 3px)`: "100%",
   }), [drawer]);
 
-  // Process data for rendering
+  
   const filteredReports = getFilteredReports();
   const columns = getColumns();
 

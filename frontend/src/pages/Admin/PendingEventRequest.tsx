@@ -16,7 +16,7 @@ import { fetchPendingRequests } from "./utils";
 import { apiPaths } from "../../api";
 import { updateRequestStatus } from "../../api/requestApi";
 
-// Interfaces
+
 interface Event {
   id: number;
   title: string;
@@ -53,7 +53,7 @@ interface DataGridCustomProps {
   colors: ReturnType<typeof tokens>;
 }
 
-// Helper functions
+
 const filterEventsBySearchTerm = (events: Event[], searchTerm: string): Event[] => {
   if (!searchTerm) return events;
   
@@ -83,7 +83,7 @@ const createErrorAlert = (message: string): AlertState => {
   };
 };
 
-// Component functions
+
 const ActionButtons: React.FC<ActionButtonsProps> = ({ id, onStatusChange }) => {
   return (
     <Box>
@@ -168,7 +168,7 @@ const EventsDataGrid: React.FC<DataGridCustomProps> = ({ events, columns, drawer
   );
 };
 
-// Column definition factory
+
 const createEventColumns = (handleStatusChange: (id: number, status: "Approved" | "Rejected") => void): GridColDef[] => {
   return [
     { field: "id", headerName: "ID", flex: 0.3 },
@@ -197,27 +197,27 @@ const createEventColumns = (handleStatusChange: (id: number, status: "Approved" 
   ];
 };
 
-// Main component
+
 const PendingEventRequest: React.FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const { searchTerm } = useContext(SearchContext);
   const { drawer } = useSettingsStore();
   
-  // State for alerts
+  
   const [alert, setAlert] = useState<AlertState>({
     open: false,
     message: '',
     severity: 'success'
   });
 
-  // Fetch pending events
+  
   const events = useFetchWebSocket<Event[]>(
     () => fetchPendingRequests(apiPaths.EVENTS.PENDINGEVENTREQUEST),
     'event'
   );
 
-  // Event handlers
+  
   const handleStatusChange = useCallback(async (id: number, status: "Approved" | "Rejected") => {
     try {
       await updateRequestStatus(id, status, apiPaths.EVENTS.UPDATEENEVENTREQUEST);
@@ -234,7 +234,7 @@ const PendingEventRequest: React.FC = () => {
     setAlert(prev => ({ ...prev, open: false }));
   }, []);
 
-  // Derived state
+  
   const filteredEvents = useMemo(() => 
     filterEventsBySearchTerm(events, searchTerm || ''),
     [events, searchTerm]
@@ -245,7 +245,7 @@ const PendingEventRequest: React.FC = () => {
     [handleStatusChange]
   );
 
-  // Render
+  
   return (
     <Box
       sx={{

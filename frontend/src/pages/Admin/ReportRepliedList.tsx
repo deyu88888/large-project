@@ -1,4 +1,4 @@
-// TODO: come back to make sure this page works once seed is working
+
 
 import React, { useEffect, useState, useContext, useCallback, useMemo } from 'react';
 import { 
@@ -16,7 +16,7 @@ import { useSettingsStore } from "../../stores/settings-store";
 import { apiClient } from "../../api";
 import { useNavigate } from 'react-router-dom';
 
-// Interfaces
+
 interface ReportWithReplies {
   id: number | string;
   from_student_username: string;
@@ -25,7 +25,7 @@ interface ReportWithReplies {
   latest_reply: string;
   reply_count: number;
   latest_reply_date: string;
-  [key: string]: any; // For other potential fields
+  [key: string]: any; 
 }
 
 interface NoRowsOverlayProps {
@@ -49,7 +49,7 @@ interface ErrorAlertProps {
   message: string;
 }
 
-// Helper functions
+
 const filterReportsBySearchTerm = (reports: ReportWithReplies[], searchTerm: string): ReportWithReplies[] => {
   if (!searchTerm) return reports;
   
@@ -76,13 +76,13 @@ const truncateText = (text: string, maxLength: number): string => {
   return text.length > maxLength ? `${text.substring(0, maxLength - 3)}...` : text;
 };
 
-// API functions
+
 const fetchReportReplies = async (): Promise<ReportWithReplies[]> => {
   const response = await apiClient.get("/api/admin/reports-replied");
   return response.data || [];
 };
 
-// Component functions
+
 const CustomNoRowsOverlay: React.FC<NoRowsOverlayProps> = ({ loading }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
@@ -171,7 +171,7 @@ const DataGridContainer: React.FC<DataGridContainerProps> = ({ reports, columns,
   );
 };
 
-// Column factory
+
 const createReportColumns = (
   handleViewThread: (id: string | number) => void,
 ): GridColDef[] => {
@@ -205,7 +205,7 @@ const createReportColumns = (
   ];
 };
 
-// Main component
+
 const ReportRepliedList: React.FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
@@ -213,14 +213,14 @@ const ReportRepliedList: React.FC = () => {
   const { searchTerm } = useContext(SearchContext);
   const { drawer } = useSettingsStore();
   
-  // State initialization
+  
   const [reportState, setReportState] = useState<ReportState>({
     items: [],
     loading: true,
     error: null
   });
 
-  // Event handlers
+  
   const handleViewThread = useCallback((reportId: string | number) => {
     navigate(`/admin/report-thread/${reportId}`);
   }, [navigate]);
@@ -245,29 +245,29 @@ const ReportRepliedList: React.FC = () => {
     }
   }, []);
 
-  // Initialize data on component mount
+  
   useEffect(() => {
     loadReportReplies();
   }, [loadReportReplies]);
 
-  // Derived state
+  
   const filteredReports = useMemo(() => 
     filterReportsBySearchTerm(reportState.items, searchTerm || ''),
     [reportState.items, searchTerm]
   );
 
-  // Column definitions
+  
   const columns = useMemo(() => 
     createReportColumns(handleViewThread),
     [handleViewThread]
   );
 
-  // Handle error state with no data
+  
   if (reportState.error && !reportState.items.length) {
     return <FullPageErrorAlert message={reportState.error} />;
   }
 
-  // Render component
+  
   return (
     <Box
       sx={{

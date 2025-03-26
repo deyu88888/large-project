@@ -5,7 +5,7 @@ import EventList from "./AdminEventList";
 import EventListRejected from "./RejectedEventsList";
 import PendingEventRequest from "./PendingEventRequest";
 
-// Types and Interfaces
+
 interface TabPanelProps {
   children: ReactNode;
   value: number;
@@ -37,7 +37,7 @@ interface PageHeaderProps {
   colors: any;
 }
 
-// Constants
+
 const ACTIVE_TAB_KEY = "activeEventTab";
 
 const TABS: TabConfig[] = [
@@ -46,7 +46,7 @@ const TABS: TabConfig[] = [
   { label: "Rejected events", component: <EventListRejected /> },
 ];
 
-// Helper functions
+
 const getTabAccessibilityProps = (index: number): TabAccessibilityProps => {
   return {
     id: `event-tab-${index}`,
@@ -72,7 +72,7 @@ const saveTabState = (newValue: number): void => {
   }
 };
 
-// Component: CustomTabPanel
+
 const CustomTabPanel: FC<TabPanelProps> = ({ children, value, index }) => {
   if (value !== index) return null;
   
@@ -87,7 +87,7 @@ const CustomTabPanel: FC<TabPanelProps> = ({ children, value, index }) => {
   );
 };
 
-// Component: PageHeader
+
 const PageHeader: FC<PageHeaderProps> = ({ colors }) => {
   return (
     <Typography
@@ -104,7 +104,7 @@ const PageHeader: FC<PageHeaderProps> = ({ colors }) => {
   );
 };
 
-// Component: TabContainer
+
 const TabContainer: FC<TabContainerProps> = ({ activeTab, handleTabChange, tabs }) => {
   return (
     <Box
@@ -132,7 +132,7 @@ const TabContainer: FC<TabContainerProps> = ({ activeTab, handleTabChange, tabs 
   );
 };
 
-// Component: TabPanels
+
 const TabPanels: FC<TabPanelsProps> = ({ activeTab, tabs }) => {
   return (
     <>
@@ -149,21 +149,21 @@ const TabPanels: FC<TabPanelsProps> = ({ activeTab, tabs }) => {
   );
 };
 
-// Main component
+
 const ManageEvents: FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   
-  // State
+  
   const [activeTab, setActiveTab] = useState<number>(getInitialTabState);
   
-  // Event handlers
+  
   const handleTabChange = useCallback((event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
     saveTabState(newValue);
   }, []);
   
-  // Container style
+  
   const containerStyle = {
     height: "calc(100vh - 64px)",
   };

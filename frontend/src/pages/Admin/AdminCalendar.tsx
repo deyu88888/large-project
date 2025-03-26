@@ -10,11 +10,11 @@ import { tokens } from "../../theme/theme";
 import { getAllEvents } from "../../api";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 
-// Constants
+
 const EVENT_COLORS = ["#6c5ce7", "#00cec9", "#fd79a8", "#fdcb6e", "#e17055", "#0984e3", "#00b894"];
 const localizer = momentLocalizer(moment);
 
-// Custom event component
+
 const CustomEvent = memo(({ event }) => (
   <div className="p-1 overflow-hidden text-ellipsis">
     <strong className="block text-sm whitespace-nowrap overflow-hidden text-ellipsis">{event.title}</strong>
@@ -24,13 +24,13 @@ const CustomEvent = memo(({ event }) => (
   </div>
 ));
 
-// Format events
+
 const formatEvents = (data) => {
   if (!Array.isArray(data)) return [];
   
   return data.map(event => {
     try {
-      // Determine start date
+      
       let start = event.start ? new Date(event.start) : 
                  event.date && event.startTime ? new Date(`${event.date}T${event.startTime}`) :
                  event.startDate ? new Date(event.startDate) : 
@@ -41,13 +41,13 @@ const formatEvents = (data) => {
       
       if (isNaN(start.getTime())) start = new Date();
       
-      // Determine end date
+      
       let end = event.end ? new Date(event.end) :
                event.endDate ? new Date(event.endDate) :
                event.end_date ? new Date(event.end_date) :
-               new Date(start.getTime() + 3600000); // Default: 1 hour
+               new Date(start.getTime() + 3600000); 
       
-      // Create event object
+      
       return {
         id: event.id || Math.random().toString(36).slice(2, 9),
         title: event.title || event.name || 'Untitled Event',
@@ -63,7 +63,7 @@ const formatEvents = (data) => {
   }).filter(Boolean);
 };
 
-// Main Component
+
 const AdminCalendar = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
@@ -75,7 +75,7 @@ const AdminCalendar = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [moreEvents, setMoreEvents] = useState({ open: false, data: [] });
 
-  // Fetch events
+  
   useEffect(() => {
     const fetchEvents = async () => {
       try {
@@ -92,7 +92,7 @@ const AdminCalendar = () => {
     fetchEvents();
   }, []);
 
-  // Event handlers
+  
   const handleSelectEvent = useCallback(event => {
     setSelectedEvent(event);
     setDialogOpen(true);
@@ -111,7 +111,7 @@ const AdminCalendar = () => {
     setMoreEvents(prev => ({ ...prev, open: false }));
   }, []);
 
-  // Event styling
+  
   const eventStyleGetter = useCallback(event => ({
     style: {
       backgroundColor: EVENT_COLORS[Number(event.id) % EVENT_COLORS.length],
@@ -122,7 +122,7 @@ const AdminCalendar = () => {
     }
   }), []);
 
-  // Event components
+  
   const components = {
     event: CustomEvent,
     eventWrapper: ({ event, children }) => (
@@ -144,14 +144,14 @@ const AdminCalendar = () => {
     )
   };
 
-  // More events modal content
+  
   const renderMoreEventsModal = () => {
     if (!moreEvents.data.length) return null;
     
     const sorted = [...moreEvents.data].sort((a, b) => a.start.getTime() - b.start.getTime());
     const date = moreEvents.data[0]?.start ? moment(moreEvents.data[0].start).format('MMM D, YYYY') : '';
     
-    // Group by time of day
+    
     const timeGroups = [
       { title: "MORNING", items: sorted.filter(e => e.start.getHours() < 12) },
       { title: "AFTERNOON", items: sorted.filter(e => e.start.getHours() >= 12 && e.start.getHours() < 17) },
@@ -211,7 +211,7 @@ const AdminCalendar = () => {
     );
   };
 
-  // Event details modal content
+  
   const renderEventDetailsModal = () => {
     if (!selectedEvent) return null;
     

@@ -19,7 +19,7 @@ import { useAuthStore } from "../../stores/auth-store.ts";
 import { tokens } from "../../theme/theme.ts";
 import { Admin } from "../../types.ts";
 
-// Interfaces
+
 interface AdminFormData {
   username: string;
   first_name: string;
@@ -84,7 +84,7 @@ interface AdminDetailFormProps {
   onSubmit: (e: FormEvent) => void;
 }
 
-// API functions
+
 const fetchAdminData = async (adminId: number): Promise<Admin> => {
   const response = await apiClient.get(`${apiPaths.USER.ADMINVIEW(adminId)}`);
   return response.data;
@@ -95,7 +95,7 @@ const updateAdminData = async (adminId: number, data: Partial<AdminFormData>): P
   return response.data.data || response.data;
 };
 
-// Component functions
+
 const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ color = "secondary" }) => (
   <Box display="flex" alignItems="center" justifyContent="center" minHeight="100vh">
     <CircularProgress color={color} />
@@ -275,7 +275,7 @@ const AdminDetailForm: React.FC<AdminDetailFormProps> = ({
   </Paper>
 );
 
-// Main component
+
 const ViewAdmin: React.FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
@@ -284,7 +284,7 @@ const ViewAdmin: React.FC = () => {
   const { admin_id } = useParams<{ admin_id: string }>();
   const adminId = Number(admin_id);
   
-  // State
+  
   const [admin, setAdmin] = useState<Admin | null>(null);
   const [formData, setFormData] = useState<AdminFormData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -295,11 +295,11 @@ const ViewAdmin: React.FC = () => {
     severity: "success"
   });
   
-  // Derived state
+  
   const isCurrentUserSuperAdmin = user?.is_super_admin || false;
   const canEdit = isCurrentUserSuperAdmin;
 
-  // Event handlers
+  
   const handleChange = useCallback(
     (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       if (!canEdit) return;
@@ -339,7 +339,7 @@ const ViewAdmin: React.FC = () => {
     });
   }, []);
 
-  // Data loading
+  
   const loadAdminData = useCallback(async () => {
     try {
       setLoading(true);
@@ -359,7 +359,7 @@ const ViewAdmin: React.FC = () => {
     loadAdminData();
   }, [loadAdminData]);
 
-  // Form submission
+  
   const handleSubmit = useCallback(
     async (e: FormEvent) => {
       e.preventDefault();
@@ -396,12 +396,12 @@ const ViewAdmin: React.FC = () => {
     [formData, admin, canEdit, adminId, showSnackbar]
   );
 
-  // Loading state
+  
   if (loading || !formData) {
     return <LoadingSpinner />;
   }
 
-  // Render
+  
   return (
     <Box minHeight="100vh" p={4}>
       <BackButton onClick={handleGoBack} />

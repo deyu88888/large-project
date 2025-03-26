@@ -8,10 +8,10 @@ import { fetchReportsWithReplies } from './fetchReports';
 import { ReportReply } from '../../types';
 import { useNavigate } from 'react-router-dom';
 
-// Constants
-const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes in milliseconds
 
-// Interfaces
+const REFRESH_INTERVAL = 5 * 60 * 1000; 
+
+
 interface Report {
   id: number | string;
   subject: string;
@@ -64,7 +64,7 @@ interface DataGridContainerProps {
   drawer: boolean;
 }
 
-// Helper functions
+
 const formatDateToLocale = (dateString: string): string => {
   try {
     return new Date(dateString).toLocaleString();
@@ -86,7 +86,7 @@ const filterReportsBySearchTerm = (reports: Report[], searchTerm: string): Repor
   );
 };
 
-// Component functions
+
 const LatestReplyCell: React.FC<LatestReplyProps> = ({ repliedBy, content }) => {
   return (
     <Box>
@@ -216,7 +216,7 @@ const DataGridContainer: React.FC<DataGridContainerProps> = ({ reports, columns,
   );
 };
 
-// Column factory
+
 const createReportColumns = (
   handleViewThread: (id: number | string) => void,
   handleReply: (id: number | string) => void,
@@ -280,12 +280,12 @@ const createReportColumns = (
   ];
 };
 
-// Data fetching
+
 const loadReportData = async (): Promise<Report[]> => {
   return await fetchReportsWithReplies();
 };
 
-// Main component
+
 const ReportRepliesList: React.FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
@@ -293,14 +293,14 @@ const ReportRepliesList: React.FC = () => {
   const { drawer } = useSettingsStore();
   const navigate = useNavigate();
   
-  // State
+  
   const [reportState, setReportState] = useState<ReportState>({
     items: [],
     loading: true,
     error: null
   });
 
-  // Event handlers
+  
   const handleViewThread = useCallback((reportId: number | string) => {
     navigate(`/admin/report-thread/${reportId}`);
   }, [navigate]);
@@ -313,7 +313,7 @@ const ReportRepliesList: React.FC = () => {
     setReportState(prev => ({ ...prev, error: null }));
   }, []);
 
-  // Data loading
+  
   const fetchReports = useCallback(async () => {
     setReportState(prev => ({ ...prev, loading: true }));
     
@@ -334,7 +334,7 @@ const ReportRepliesList: React.FC = () => {
     }
   }, []);
 
-  // Set up data fetching and refresh
+  
   useEffect(() => {
     fetchReports();
     
@@ -343,27 +343,27 @@ const ReportRepliesList: React.FC = () => {
     return () => clearInterval(intervalId);
   }, [fetchReports]);
 
-  // Formatting functions
+  
   const formatDate = useCallback(formatDateToLocale, []);
 
-  // Filter reports by search term
+  
   const filteredReports = useMemo(() => 
     filterReportsBySearchTerm(reportState.items, searchTerm || ''),
     [reportState.items, searchTerm]
   );
 
-  // Create column definitions
+  
   const columns = useMemo(() => 
     createReportColumns(handleViewThread, handleReply, formatDate),
     [handleViewThread, handleReply, formatDate]
   );
 
-  // Render loading state
+  
   if (reportState.loading && reportState.items.length === 0) {
     return <LoadingState message="Loading reports..." />;
   }
 
-  // Render main component
+  
   return (
     <>
       {reportState.error && (
