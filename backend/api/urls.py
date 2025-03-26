@@ -2,7 +2,8 @@ from django.urls import path, include
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from api.views import (
     # Authentication & Users
-    RegisterView, CurrentUserView, MyProfileView, toggle_follow,
+    RegisterView, CurrentUserView, MyProfileView, toggle_follow, UpdatePasswordView,
+    check_email,
 
     # Admin
     AdminListView, AdminStudentListView, AdminDeleteView, AdminRestoreView,
@@ -65,6 +66,7 @@ auth_patterns = [
 profile_patterns = [
     path("<int:user_id>/follow", toggle_follow, name="toggle_follow"),
     path("<int:user_id>", MyProfileView.as_view(), name="user_profile"),
+    path("password", UpdatePasswordView.as_view(), name="update_password"),
 ]
 
 # Admin management patterns
@@ -238,6 +240,7 @@ award_patterns = [
 verification_patterns = [
     path("request-otp", request_otp, name="request_otp"),
     path("verify-otp", verify_otp, name="verify_otp"),
+    path("check-email", check_email, name="check_email"),
 ]
 
 # Main URL patterns

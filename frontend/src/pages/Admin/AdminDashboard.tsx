@@ -39,7 +39,7 @@ const AdminDashboard = () => {
     } catch (error) {
       console.error("Error fetching current user:", error);
       // Initialize with a default value to prevent errors
-      setUser({ firstName: "User" });
+      setUser({ first_name: "User" });
     }
   };
 
