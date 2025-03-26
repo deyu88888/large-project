@@ -11,39 +11,11 @@ const JoinSocieties: React.FC = () => {
   const colours = tokens(theme.palette.mode);
   const isLight = theme.palette.mode === "light";
 
-  const purpleAccent = {
-    100: "#f4e7ff",
-    200: "#d9beff",
-    300: "#b894ff",
-    400: "#9a6dff",
-    500: "#8047FF",
-    600: "#6635cc",
-    700: "#4d2599",
-    800: "#331766",
-    900: "#1a0833"
-  };
-
-  const orangeAccent = {
-    100: "#fff2e6",
-    200: "#ffe0cc",
-    300: "#ffcdb3",
-    400: "#ffb999",
-    500: "#FF8C52",
-    600: "#cc7042",
-    700: "#995431",
-    800: "#663821",
-    900: "#331c10"
-  };
-
   const [recommendations, setRecommendations] = useState<SocietyRecommendation[]>([]);
   const [loading, setLoading] = useState(true);
-  const [pendingRequests, setPendingRequests] = useState<{[key: number]: boolean}>({});
-  const [joinMessages, setJoinMessages] = useState<{[key: number]: string}>({});
-  const [pendingSocietyIds, setPendingSocietyIds] = useState<number[]>([]);
-
   const [error, setError] = useState<string | null>(null);
-  const [joining, setJoining] = useState<number | null>(null);
-  const [joinSuccess, setJoinSuccess] = useState<boolean>(false);
+  const [joining] = useState<number | null>(null);
+  const [joinSuccess,] = useState<boolean>(false);
   const [viewByCategory, setViewByCategory] = useState<boolean>(true);
 
   useEffect(() => {
@@ -107,9 +79,9 @@ const JoinSocieties: React.FC = () => {
       case "tags":
         return isLight ? colours.blueAccent[500] : colours.blueAccent[400];
       case "content":
-        return isLight ? purpleAccent[500] : purpleAccent[400];
+        return isLight ? colours.purpleAccent[500] : colours.purpleAccent[400];
       case "semantic":
-        return isLight ? orangeAccent[500] : orangeAccent[400];
+        return isLight ? colours.orangeAccent[500] : colours.orangeAccent[400];
       default:
         return isLight ? colours.grey[500] : colours.grey[400];
     }

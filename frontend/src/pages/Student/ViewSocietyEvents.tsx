@@ -11,29 +11,13 @@ import {
 } from "@mui/material";
 import { tokens } from "../../theme/theme";
 import { apiClient } from "../../api";
-import { useAuthStore } from "../../stores/auth-store";
-import { FaCalendarAlt, FaRegClock, FaMapMarkerAlt } from "react-icons/fa";
+import { FaRegClock, FaMapMarkerAlt } from "react-icons/fa";
 import { EventData } from "../../types/student/event";
-
-// interface EventData {
-//   id: number;
-//   title: string;
-//   description?: string;
-//   date: string;
-//   start_time: string;
-//   duration: string;
-//   location?: string;
-//   hosted_by: number;
-//   societyName?: string;
-//   rsvp?: boolean;
-//   status: string;
-// }
 
 const ViewSocietyEvents: React.FC = () => {
   const navigate = useNavigate();
   const theme = useTheme();
   const colours = tokens(theme.palette.mode);
-  const { user } = useAuthStore();
   const { society_id, event_type } = useParams();
   const [events, setEvents] = useState<EventData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -224,7 +208,7 @@ const ViewSocietyEvents: React.FC = () => {
                           event.status === "Approved"
                             ? colours.greenAccent[500]
                             : event.status === "Pending"
-                            ? colours.orangeAccent[500] || colours.yellowAccent[500]
+                            ? colours.orangeAccent[500]
                             : colours.redAccent[500]
                         }
                         color={colours.primary[500]}

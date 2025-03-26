@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useContext, useMemo } from "react";
 import { 
   Box, 
   Typography, 
@@ -37,7 +37,6 @@ interface ProcessingState {
   isProcessing: boolean;
 }
 
-
 const ActionButtons: React.FC<{
   row: ActivityLog;
   processing: ProcessingState;
@@ -73,7 +72,6 @@ const ActionButtons: React.FC<{
     </Stack>
   );
 };
-
 
 const ConfirmDeleteDialog: React.FC<{
   open: boolean;
@@ -130,7 +128,6 @@ const ConfirmDeleteDialog: React.FC<{
   );
 };
 
-
 const NotificationAlert: React.FC<{
   notification: NotificationState;
   onClose: () => void;
@@ -153,7 +150,6 @@ const NotificationAlert: React.FC<{
   );
 };
 
-
 const LoadingIndicator: React.FC = () => {
   return (
     <Box display="flex" justifyContent="center" alignItems="center" height="70vh">
@@ -161,7 +157,6 @@ const LoadingIndicator: React.FC = () => {
     </Box>
   );
 };
-
 
 const ActivityLogList: React.FC<ActivityLogListProps> = () => {
   
@@ -179,20 +174,10 @@ const ActivityLogList: React.FC<ActivityLogListProps> = () => {
     isProcessing: false
   });
   
-  
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const { drawer } = useSettingsStore();
   const { searchTerm } = useContext(SearchContext);
-
-  
-  const formatTimestamp = (timestamp: string): string => {
-    try {
-      return new Date(timestamp).toLocaleString();
-    } catch (error) {
-      return timestamp;
-    }
-  };
 
   const showNotification = (
     message: string, 
@@ -213,7 +198,6 @@ const ActivityLogList: React.FC<ActivityLogListProps> = () => {
     setProcessing({ id, isProcessing });
   };
 
-  
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -226,12 +210,10 @@ const ActivityLogList: React.FC<ActivityLogListProps> = () => {
       setLoading(false);
     }
   };
-
   
   useEffect(() => {
     fetchData();
   }, []);
-
   
   const handleOpenDialog = (log: ActivityLog) => {
     setSelectedLog(log);
@@ -243,7 +225,6 @@ const ActivityLogList: React.FC<ActivityLogListProps> = () => {
     setSelectedLog(null);
   };
 
-  
   const handleDeleteConfirmed = async () => {
     if (!selectedLog) return;
     
@@ -274,7 +255,6 @@ const ActivityLogList: React.FC<ActivityLogListProps> = () => {
       setIsProcessing(null, false);
     }
   };
-
   
   const filteredActivityLogs = useMemo(() => 
     data.filter((activityLog) =>
@@ -318,7 +298,6 @@ const ActivityLogList: React.FC<ActivityLogListProps> = () => {
       ),
     }
   ];
-
   
   const getDataGridStyles = () => ({
     height: "78vh",
@@ -360,7 +339,6 @@ const ActivityLogList: React.FC<ActivityLogListProps> = () => {
     marginBottom: "1rem",
   });
 
-  
   return (
     <Box sx={getContainerStyles()}>
       <Typography variant="h1" sx={getTitleStyles()}>

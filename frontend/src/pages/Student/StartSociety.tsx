@@ -1,11 +1,9 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useTheme } from "@mui/material/styles";
 import { tokens } from "../../theme/theme";
 
 const StartSociety: React.FC = () => {
-  const navigate = useNavigate();
   const theme = useTheme();
   const colours = tokens(theme.palette.mode);
   const isLight = theme.palette.mode === "light";

@@ -164,7 +164,7 @@ const ManageSocieties: FC = () => {
     saveTabToStorage(tabIndex);
   }, []);
   
-  const handleTabChange = useCallback((event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = useCallback((_: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
     saveTabPreference(newValue);
   }, [saveTabPreference]);
