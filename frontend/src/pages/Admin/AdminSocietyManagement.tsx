@@ -4,7 +4,7 @@ import { tokens } from "../../theme/theme";
 import SocietyList from "./SocietyList";
 import SocietyListRejected from "./RejectedSocietiesList";
 import PendingSocietyRequest from "./SocietyCreationRequests";
-import PendingSocietyDetailRequests from "./PendingSocietyDetailRequests.tsx";
+import PendingSocietyDetailRequests from "./PendingSocietyDetailRequest";
 
 
 interface TabPanelProps {
