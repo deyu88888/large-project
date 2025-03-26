@@ -1,5 +1,5 @@
-// TODO: description column and action buttons needs better positioning
-// come back to refactor
+
+
 
 import { useState, useEffect, useContext, useRef, useCallback } from "react";
 import { Box, Typography, useTheme } from "@mui/material";
@@ -11,14 +11,165 @@ import { SearchContext } from "../../components/layout/SearchContext";
 import { useSettingsStore } from "../../stores/settings-store";
 import { Event } from '../../types';
 
-// Constants for configuration
-const WS_URL = "ws://127.0.0.1:8000/ws/admin/event/";
+
+interface WebSocketRef {
+  current: WebSocket | null;
+}
+
+interface TimeoutRef {
+  current: NodeJS.Timeout | null;
+}
+
+interface DataGridProps {
+  events: Event[];
+  columns: GridColDef[];
+  colors: ReturnType<typeof tokens>;
+}
+
+
+const WS_URL = "ws:
 const RECONNECT_DELAY = 5000;
+
+
+const filterEventsBySearchTerm = (events: Event[], searchTerm: string): Event[] => {
+  if (!searchTerm) return events;
+  
+  const normalizedSearchTerm = searchTerm.toLowerCase();
+  
+  return events.filter((event) =>
+    Object.values(event)
+      .join(" ")
+      .toLowerCase()
+      .includes(normalizedSearchTerm)
+  );
+};
+
+const createEventColumns = (): GridColDef[] => {
+  return [
+    { field: "id", headerName: "ID", flex: 0.5 },
+    { field: "title", headerName: "Title", flex: 1 },
+    { field: "main_description", headerName: "Description", flex: 2},
+    { field: "date", headerName: "Date", flex: 1 },
+    { field: "start_time", headerName: "Start Time", flex: 1 },
+    { field: "duration", headerName: "Duration", flex: 1 },
+    { field: "hosted_by", headerName: "Hosted By", flex: 1 },
+    { field: "location", headerName: "Location", flex: 1 },
+  ];
+};
+
+
+const fetchRejectedEvents = async (): Promise<Event[]> => {
+  try {
+    const res = await apiClient.get(apiPaths.EVENTS.REJECTEDEVENTLIST);
+    return res.data || [];
+  } catch (error) {
+    console.error("Error fetching rejected events:", error);
+    return [];
+  }
+};
+
+
+const closeWebSocket = (ws: WebSocketRef): void => {
+  if (ws.current) {
+    ws.current.close();
+  }
+};
+
+const clearReconnectTimeout = (timeoutRef: TimeoutRef): void => {
+  if (timeoutRef.current) {
+    clearTimeout(timeoutRef.current);
+    timeoutRef.current = null;
+  }
+};
+
+const setupWebSocketOnOpen = (ws: WebSocket): void => {
+  ws.onopen = () => {
+    console.log("WebSocket Connected for Rejected Events List");
+  };
+};
+
+const setupWebSocketOnMessage = (ws: WebSocket, onUpdate: () => void): void => {
+  ws.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data);
+      console.log("WebSocket Update Received:", data);
+      onUpdate();
+    } catch (error) {
+      console.error("Error parsing WebSocket message:", error);
+    }
+  };
+};
+
+const setupWebSocketOnError = (ws: WebSocket): void => {
+  ws.onerror = (event) => {
+    console.error("WebSocket Error:", event);
+  };
+};
+
+const setupWebSocketOnClose = (
+  ws: WebSocket,
+  reconnectFn: () => void,
+  reconnectTimeoutRef: TimeoutRef
+): void => {
+  ws.onclose = (event) => {
+    console.log("WebSocket Disconnected:", event.reason);
+    
+    reconnectTimeoutRef.current = setTimeout(() => {
+      reconnectFn();
+    }, RECONNECT_DELAY);
+  };
+};
+
+
+const EventsDataGrid: React.FC<DataGridProps> = ({ events, columns, colors }) => {
+  return (
+    <Box
+      sx={{
+        height: "78vh",
+        "& .MuiDataGrid-root": { border: "none" },
+        "& .MuiDataGrid-cell": { borderBottom: "none" },
+        "& .MuiDataGrid-columnHeaders": {
+          backgroundColor: colors.blueAccent[700],
+          borderBottom: "none",
+        },
+        "& .MuiDataGrid-columnHeader": {
+          whiteSpace: "normal",
+          wordBreak: "break-word",
+        },
+        "& .MuiDataGrid-virtualScroller": {
+          backgroundColor: colors.primary[400],
+        },
+        "& .MuiDataGrid-footerContainer": {
+          borderTop: "none",
+          backgroundColor: colors.blueAccent[700],
+        },
+        "& .MuiCheckbox-root": {
+          color: `${colors.greenAccent[200]} !important`,
+        },
+        "& .MuiDataGrid-toolbarContainer .MuiButton-text": {
+          color: `${colors.blueAccent[500]} !important`,
+        },
+      }}
+    >
+      <DataGrid
+        rows={events}
+        columns={columns}
+        slots={{ toolbar: GridToolbar }}
+        resizeThrottleMs={0}
+        autoHeight
+        disableRowSelectionOnClick
+        initialState={{
+          pagination: { paginationModel: { pageSize: 100 } },
+        }}
+      />
+    </Box>
+  );
+};
 
 /**
  * EventListRejected component that displays a list of rejected events
  */
-const EventListRejected = () => {
+const EventListRejected: React.FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const navigate = useNavigate();
@@ -29,116 +180,54 @@ const EventListRejected = () => {
   const ws = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  /**
-   * Fetches rejected events from the API
-   */
-  const fetchEvents = useCallback(async () => {
+  
+  const loadEvents = useCallback(async () => {
     setLoading(true);
-    try {
-      const res = await apiClient.get(apiPaths.EVENTS.REJECTEDEVENTLIST);
-      setEvents(res.data || []);
-    } catch (error) {
-      console.error("Error fetching rejected events:", error);
-    } finally {
-      setLoading(false);
-    }
+    const data = await fetchRejectedEvents();
+    setEvents(data);
+    setLoading(false);
   }, []);
 
-  /**
-   * Creates and manages WebSocket connection
-   */
+  
   const connectWebSocket = useCallback(() => {
-    // Clean up existing connection if any
-    if (ws.current) {
-      ws.current.close();
-    }
-
-    // Clear any existing reconnection timeout
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-    }
-
-    // Create new WebSocket connection
+    
+    closeWebSocket(ws);
+    clearReconnectTimeout(reconnectTimeoutRef);
+    
+    
     ws.current = new WebSocket(WS_URL);
+    
+    
+    if (ws.current) {
+      setupWebSocketOnOpen(ws.current);
+      setupWebSocketOnMessage(ws.current, loadEvents);
+      setupWebSocketOnError(ws.current);
+      setupWebSocketOnClose(ws.current, connectWebSocket, reconnectTimeoutRef);
+    }
+  }, [loadEvents]);
 
-    ws.current.onopen = () => {
-      console.log("WebSocket Connected for Rejected Events List");
-    };
-
-    ws.current.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        console.log("WebSocket Update Received:", data);
-        // Re-fetch on any update
-        fetchEvents();
-      } catch (error) {
-        console.error("Error parsing WebSocket message:", error);
-      }
-    };
-
-    ws.current.onerror = (event) => {
-      console.error("WebSocket Error:", event);
-    };
-
-    ws.current.onclose = (event) => {
-      console.log("WebSocket Disconnected:", event.reason);
-      
-      // Set up reconnection with timeout
-      reconnectTimeoutRef.current = setTimeout(() => {
-        connectWebSocket();
-      }, RECONNECT_DELAY);
-    };
-  }, [fetchEvents]);
-
-  /**
-   * Initialize data and WebSocket connection
-   */
+  
   useEffect(() => {
-    fetchEvents();
+    loadEvents();
     connectWebSocket();
   
-    // Cleanup function for component unmount
+    
     return () => {
-      if (ws.current) {
-        ws.current.close();
-      }
-      
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-      }
+      closeWebSocket(ws);
+      clearReconnectTimeout(reconnectTimeoutRef);
     };
-  }, [fetchEvents, connectWebSocket]);
+  }, [loadEvents, connectWebSocket]);
 
-  /**
-   * Filter events based on search term
-   */
-  const filteredEvents = events.filter((event) =>
-    Object.values(event)
-      .join(" ")
-      .toLowerCase()
-      .includes((searchTerm || "").toLowerCase())
-  );
-
-  /**
-   * Navigate back to the main events list
-   */
+  
   const handleBackToEvents = useCallback(() => {
     navigate("/admin/event-list");
   }, [navigate]);
 
-  /**
-   * DataGrid column definitions
-   */
-  const columns: GridColDef[] = [
-    { field: "id", headerName: "ID", flex: 0.5 },
-    { field: "title", headerName: "Title", flex: 1 },
-    { field: "main_description", headerName: "Description", flex: 2},
-    { field: "date", headerName: "Date", flex: 1 },
-    { field: "start_time", headerName: "Start Time", flex: 1 },
-    { field: "duration", headerName: "Duration", flex: 1 },
-    { field: "hosted_by", headerName: "Hosted By", flex: 1 },
-    { field: "location", headerName: "Location", flex: 1 },
-  ];
+  
+  const filteredEvents = filterEventsBySearchTerm(events, searchTerm || "");
+  
+  
+  const columns = createEventColumns();
 
   return (
     <Box
@@ -147,46 +236,11 @@ const EventListRejected = () => {
         maxWidth: drawer ? `calc(100% - 3px)` : "100%",
       }}
     >
-      <Box
-        sx={{
-          height: "78vh",
-          "& .MuiDataGrid-root": { border: "none" },
-          "& .MuiDataGrid-cell": { borderBottom: "none" },
-          "& .MuiDataGrid-columnHeaders": {
-            backgroundColor: colors.blueAccent[700],
-            borderBottom: "none",
-          },
-          "& .MuiDataGrid-columnHeader": {
-            whiteSpace: "normal",
-            wordBreak: "break-word",
-          },
-          "& .MuiDataGrid-virtualScroller": {
-            backgroundColor: colors.primary[400],
-          },
-          "& .MuiDataGrid-footerContainer": {
-            borderTop: "none",
-            backgroundColor: colors.blueAccent[700],
-          },
-          "& .MuiCheckbox-root": {
-            color: `${colors.greenAccent[200]} !important`,
-          },
-          "& .MuiDataGrid-toolbarContainer .MuiButton-text": {
-            color: `${colors.blueAccent[500]} !important`,
-          },
-        }}
-      >
-        <DataGrid
-          rows={filteredEvents}
-          columns={columns}
-          slots={{ toolbar: GridToolbar }}
-          resizeThrottleMs={0}
-          autoHeight
-          disableRowSelectionOnClick
-          initialState={{
-            pagination: { paginationModel: { pageSize: 100 } },
-          }}
-        />
-      </Box>
+      <EventsDataGrid 
+        events={filteredEvents}
+        columns={columns}
+        colors={colors}
+      />
     </Box>
   );
 };

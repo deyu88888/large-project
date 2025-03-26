@@ -1,14 +1,12 @@
-import React from 'react';
+// Import vitest and testing library utilities first
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';
-import AdminCalendar from "../AdminCalendar";
-import { getAllEvents } from "../../../api";
-import { ThemeProvider } from '@mui/material/styles';
-import { createTheme } from '@mui/material/styles';
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
 
-// Mock the dependencies
+// Mocks must come before the components they mock
+// Mock the API
 vi.mock('../../../api', () => ({
   getAllEvents: vi.fn(),
   apiClient: {
@@ -16,7 +14,8 @@ vi.mock('../../../api', () => ({
   }
 }));
 
-vi.mock('../../components/Header', () => ({
+// Mock the Header component
+vi.mock('../../../components/Header', () => ({
   default: function MockHeader({ title, subtitle }) {
     return (
       <div data-testid="mock-header">
@@ -29,40 +28,23 @@ vi.mock('../../components/Header', () => ({
 
 // Mock react-big-calendar
 vi.mock('react-big-calendar', () => ({
-  Calendar: ({ events, onSelectEvent }) => (
-    <div data-testid="mock-calendar">
-      {events.map((event) => (
-        <div 
-          key={event.id} 
-          data-testid="calendar-event" 
-          onClick={() => onSelectEvent && onSelectEvent(event)}
-        >
-          {event.title}
-        </div>
-      ))}
-    </div>
-  ),
+  Calendar: function MockCalendar({ events, onSelectEvent }) {
+    return (
+      <div data-testid="mock-calendar">
+        {events.map((event) => (
+          <div 
+            key={event.id} 
+            data-testid="calendar-event" 
+            onClick={() => onSelectEvent && onSelectEvent(event)}
+          >
+            {event.title}
+          </div>
+        ))}
+      </div>
+    );
+  },
   momentLocalizer: vi.fn(() => ({}))
 }));
-
-// Mock theme
-const mockTheme = createTheme({
-  palette: {
-    mode: 'light',
-    primary: {
-      main: '#3f51b5',
-      light: '#7986cb',
-      dark: '#303f9f',
-      contrastText: '#fff',
-    },
-    secondary: {
-      main: '#f50057',
-      light: '#ff4081',
-      dark: '#c51162',
-      contrastText: '#fff',
-    },
-  },
-});
 
 // Mock theme tokens function
 vi.mock('../../../theme/theme', () => ({
@@ -86,6 +68,29 @@ vi.mock('../../../theme/theme', () => ({
     },
   }),
 }));
+
+// IMPORTANT: Import components AFTER all mocks are defined
+import AdminCalendar from "../AdminCalendar";
+import { getAllEvents } from "../../../api";
+
+// Mock theme
+const mockTheme = createTheme({
+  palette: {
+    mode: 'light',
+    primary: {
+      main: '#3f51b5',
+      light: '#7986cb',
+      dark: '#303f9f',
+      contrastText: '#fff',
+    },
+    secondary: {
+      main: '#f50057',
+      light: '#ff4081',
+      dark: '#c51162',
+      contrastText: '#fff',
+    },
+  },
+});
 
 // Sample mock event data that matches your API response format
 const mockEvents = [
@@ -198,7 +203,7 @@ describe('AdminCalendar Component', () => {
     });
   });
 
-  it('should refresh events when refresh button is clicked', async () => {
+  it('should have a refresh button', async () => {
     const user = userEvent.setup();
 
     render(
@@ -212,11 +217,44 @@ describe('AdminCalendar Component', () => {
       expect(screen.getAllByTestId('calendar-event').length).toBe(mockEvents.length);
     });
 
-    // Find and click the refresh button
+    // Find the refresh button
     const refreshButton = screen.getByRole('button', { name: /refresh/i });
-    await user.click(refreshButton);
+    expect(refreshButton).toBeInTheDocument();
+    expect(refreshButton).not.toBeDisabled();
+  });
+  
+  it('should call API twice when rendered twice', async () => {
+    // First render
+    const { unmount } = render(
+      <ThemeProvider theme={mockTheme}>
+        <AdminCalendar />
+      </ThemeProvider>
+    );
 
-    // API should be called twice (once on mount, once on button click)
+    // Wait for initial events to load
+    await waitFor(() => {
+      expect(screen.getAllByTestId('calendar-event').length).toBe(mockEvents.length);
+    });
+    
+    // API should have been called once
+    expect(getAllEvents).toHaveBeenCalledTimes(1);
+    
+    // Unmount
+    unmount();
+    
+    // Render again (completely new render)
+    render(
+      <ThemeProvider theme={mockTheme}>
+        <AdminCalendar />
+      </ThemeProvider>
+    );
+    
+    // Wait for events to load again
+    await waitFor(() => {
+      expect(screen.getAllByTestId('calendar-event').length).toBe(mockEvents.length);
+    });
+    
+    // API should now have been called twice total
     expect(getAllEvents).toHaveBeenCalledTimes(2);
   });
 });

@@ -69,7 +69,7 @@ const NewsApprovalDashboard = lazy(() => import("../pages/Admin/NewsApprovalDash
 const ReportReply = lazy(() => import("../pages/Admin/ReportReply"));
 const ReportRepliedList = lazy(() => import("../pages/Admin/ReportRepliedList"));
 const AdminViewSocietyPage = lazy(() => import("../pages/Admin/ViewSociety"));
-const PendingSocietyDetailRequestPage = lazy(() => import("../pages/Admin/PendingSocietyDetailRequests.tsx"));
+const PendingSocietyDetailRequestPage = lazy(() => import("../pages/Admin/PendingSocietyDetailRequest"));
 const AdminViewStudentPage = lazy(() => import("../pages/Admin/ViewStudent"));
 const AdminViewEventPage = lazy(() => import("../pages/Admin/ViewEvent"));
 const AdminViewAdminPage = lazy(() => import("../pages/Admin/ViewAdmin"));
