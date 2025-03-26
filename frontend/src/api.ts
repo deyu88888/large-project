@@ -302,7 +302,12 @@ export const getRecommendationFeedback = async (societyId: number) => {
   const debugLog = {
     societyId,
     timeStarted: new Date().toISOString(),
-    endpoint: apiPaths.SOCIETY.RECOMMENDATION_FEEDBACK(societyId)
+    endpoint: apiPaths.SOCIETY.RECOMMENDATION_FEEDBACK(societyId),
+    timeEnded: null,
+    optionsStatus: null,
+    status: null,
+    statusText: null,
+    error: null,
   };
 
   try {
