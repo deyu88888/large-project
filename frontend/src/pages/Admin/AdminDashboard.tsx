@@ -437,7 +437,7 @@ const AdminDashboard: FC = () => {
 
   const fetchSocieties = async () => {
     try {
-      const res = await apiClient.get("/api/society/joined/");
+      const res = await apiClient.get("/api/dashboard/all-societies");
       setSocietiesData(res.data || []);
     } catch (error) {
       console.error("Error fetching societies:", error);
