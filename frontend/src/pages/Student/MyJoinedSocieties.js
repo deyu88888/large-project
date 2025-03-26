@@ -1,0 +1,106 @@
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import { useState, useEffect } from "react";
+import { apiClient } from "../../api";
+import { useNavigate } from "react-router-dom";
+import { useTheme } from "@mui/material/styles";
+import { tokens } from "../../theme/theme";
+const MySocieties = () => {
+    const [societies, setSocieties] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const theme = useTheme();
+    const navigate = useNavigate();
+    const colours = tokens(theme.palette.mode);
+    const isLight = theme.palette.mode === "light";
+    useEffect(() => {
+        const fetchSocieties = async () => {
+            try {
+                setLoading(true);
+                const response = await apiClient.get("/api/society/joined");
+                setSocieties(response.data || []);
+            }
+            catch (error) {
+                console.error("Error fetching societies:", error);
+            }
+            finally {
+                setLoading(false);
+            }
+        };
+        fetchSocieties();
+    }, []);
+    const handleViewSociety = async (societyId) => {
+        try {
+            navigate("/student/view-society/" + societyId);
+        }
+        catch (error) {
+            console.error("Error viewing society:", error);
+        }
+    };
+    return (_jsx("div", { style: {
+            marginLeft: "0px",
+            marginTop: "0px",
+            transition: "margin-left 0.3s ease-in-out",
+            minHeight: "100vh",
+            padding: "20px 40px",
+            backgroundColor: isLight ? colours.primary[1000] : colours.primary[500],
+        }, children: _jsxs("div", { style: { maxWidth: "1920px", margin: "0 auto" }, children: [_jsx("header", { style: {
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        marginBottom: "2rem",
+                    }, children: _jsx("h1", { style: {
+                            color: isLight ? colours.grey[100] : colours.grey[100],
+                            fontSize: "2.25rem",
+                            fontWeight: 800,
+                            margin: 0,
+                        }, children: "My Societies" }) }), loading ? (_jsx("p", { style: {
+                        color: isLight ? colours.grey[700] : colours.grey[300],
+                        textAlign: "center",
+                        fontSize: "1.125rem",
+                    }, children: "Loading societies..." })) : societies.length === 0 ? (_jsx("p", { style: {
+                        color: isLight ? colours.grey[600] : colours.grey[300],
+                        textAlign: "center",
+                        fontSize: "1.125rem",
+                    }, children: "You haven't joined any societies yet." })) : (_jsx("div", { style: {
+                        display: "grid",
+                        gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+                        gap: "2rem",
+                        padding: "1rem 0",
+                    }, children: societies.map((society) => (_jsxs("div", { style: {
+                            backgroundColor: isLight
+                                ? colours.primary[400]
+                                : colours.primary[400],
+                            borderRadius: "12px",
+                            padding: "1.5rem",
+                            border: `1px solid ${isLight ? colours.grey[300] : colours.grey[700]}`,
+                            transition: "transform 0.3s, box-shadow 0.3s",
+                        }, children: [_jsx("h3", { style: {
+                                    color: isLight ? colours.grey[100] : colours.grey[100],
+                                    fontSize: "1.25rem",
+                                    fontWeight: 600,
+                                    marginBottom: "0.5rem",
+                                }, children: _jsxs("div", { style: { display: "flex", alignItems: "center", gap: "0.5rem" }, children: [_jsx("img", { src: society.icon, alt: `${society.name} icon`, style: {
+                                                width: "35px",
+                                                height: "35px",
+                                                borderRadius: "50%",
+                                                verticalAlign: "middle",
+                                            } }), society.name] }) }), _jsx("p", { style: {
+                                    color: isLight ? colours.grey[300] : colours.grey[300],
+                                    fontSize: "0.875rem",
+                                    lineHeight: "1.5",
+                                    marginBottom: "1.25rem",
+                                }, children: society.description
+                                    ? society.description.length > 160
+                                        ? society.description.slice(0, 160) + "..."
+                                        : society.description
+                                    : "No description available." }), _jsx("button", { onClick: () => handleViewSociety(society.id), style: {
+                                    backgroundColor: isLight ? colours.blueAccent[400] : colours.blueAccent[500],
+                                    color: isLight ? "#ffffff" : colours.grey[100],
+                                    padding: "0.5rem 1.5rem",
+                                    borderRadius: "0.5rem",
+                                    transition: "all 0.2s ease",
+                                    border: "none",
+                                    cursor: "pointer",
+                                    marginLeft: "5.0rem",
+                                }, children: "View Society" })] }, society.id))) }))] }) }));
+};
+export default MySocieties;
