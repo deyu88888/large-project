@@ -183,3 +183,23 @@ def toggle_follow(request, user_id):
     else:
         current_user.following.add(target_user)
         return Response({"message": "Followed successfully."}, status=status.HTTP_200_OK)
+
+@csrf_exempt
+def check_email(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            email = data.get("email", "").lower()
+            if not email or not email.endswith("@kcl.ac.uk"):
+                return JsonResponse(
+                    {"error": "Invalid email. Only KCL emails are allowed."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            in_use = User.objects.filter(email=email).exists()
+            return JsonResponse({"inUse": in_use}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return JsonResponse(
+                {"error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    return JsonResponse({"error": "Invalid request method."}, status=status.HTTP_400_BAD_REQUEST)

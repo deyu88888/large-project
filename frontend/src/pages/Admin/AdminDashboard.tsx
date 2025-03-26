@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Box, Typography, useTheme, Button, Paper, CircularProgress, Card, CardContent, Divider } from "@mui/material";
+import { Box, Typography, useTheme, Button, Paper, Card, CardContent, Divider } from "@mui/material";
 import { FaUsers, FaCalendarAlt, FaEnvelope, FaNewspaper } from "react-icons/fa";
-import { CheckCircle as ApproveIcon, Cancel as RejectIcon, Article as ArticleIcon } from "@mui/icons-material";
 import Header from "../../components/Header";
 import { tokens } from "../../theme/theme";
 import { apiClient } from "../../api";
@@ -18,7 +17,6 @@ const AdminDashboard = () => {
   const [userStats, setUserStats] = useState<any>(null);
   const [events, setEvents] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
-  const [societiesData, setSocietiesData] = useState<any[]>([]);
   const [pendingPublications, setPendingPublications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -27,7 +25,6 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     fetchData();
-    fetchSocieties();
     fetchCurrentUser();
     fetchPendingPublications();
   }, []);
@@ -39,7 +36,7 @@ const AdminDashboard = () => {
     } catch (error) {
       console.error("Error fetching current user:", error);
       // Initialize with a default value to prevent errors
-      setUser({ firstName: "User" });
+      setUser({ first_name: "User" });
     }
   };
 
@@ -63,16 +60,6 @@ const AdminDashboard = () => {
       setNotifications([]);
     }
     setLoading(false);
-  };
-
-  const fetchSocieties = async () => {
-    try {
-      const res = await apiClient.get("/api/society/joined/");
-      setSocietiesData(res.data || []);
-    } catch (error) {
-      console.error("Error fetching societies:", error);
-      setSocietiesData([]);
-    }
   };
 
   const fetchPendingPublications = async () => {

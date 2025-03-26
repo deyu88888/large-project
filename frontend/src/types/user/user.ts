@@ -1,8 +1,8 @@
 export interface User {
     id: number;
     username: string;
-    firstName: string;
-    lastName: string;
+    first_name: string;
+    last_name: string;
     email: string;
     isActive: boolean;
     role: "student" | "admin";
@@ -14,4 +14,7 @@ export interface User {
     fullName: string;
     isStudent(): boolean;
     isAdmin(): boolean;
+    is_active: boolean;
+    is_following?: boolean;
+    icon?: string;
   }

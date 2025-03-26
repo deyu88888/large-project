@@ -93,6 +93,7 @@ export const apiPaths = {
     RECOMMENDATION_FEEDBACK_LIST: "/api/society-recommendation/feedback/",
     RECOMMENDATION_FEEDBACK_ANALYTICS: "/api/recommendation-feedback/analytics/",
     MANAGE_DETAILS: (id: number) => `/api/society/manage/${id}/`,
+    DETAIL_REQUEST: `/api/admin/society-detail-request/`,
   },
   EVENTS: {
     ALL: "/api/events", // TODO: DONT ADD BACKSLASH

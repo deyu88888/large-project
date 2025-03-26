@@ -67,7 +67,7 @@ export function PrivateGuard({ children, requiredRole }: PrivateGuardProps) {
         console.error("PrivateGuard: Failed to fetch user data", error);
         // Create a minimal user object to prevent crashes
         const fallbackUser = { 
-          firstName: "User", 
+          first_name: "User",
           role: requiredRole || "student" 
         };
         console.log("PrivateGuard: Using fallback user", fallbackUser);
