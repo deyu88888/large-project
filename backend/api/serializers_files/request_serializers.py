@@ -2,7 +2,7 @@ import datetime
 import json
 
 from api.models import AdminReportRequest, Society, Event, EventModule, Request, SocietyRequest, SocietyShowreelRequest, \
-    EventRequest, UserRequest, DescriptionRequest, ReportReply, NewsPublicationRequest
+    EventRequest, UserRequest, ReportReply, NewsPublicationRequest
 from api.serializers_files.serializers_utility import is_user_student, get_report_reply_chain
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
@@ -340,14 +340,3 @@ class NewsPublicationRequestSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"status": "Status must be Pending, Approved, or Rejected"})
 
         return data
-    
-class DescriptionRequestSerializer(serializers.ModelSerializer):
-    """
-    Serializer for society description change requests
-    """
-
-    class Meta:
-        """Serializer metadata for DescriptionRequestSerializer"""
-        model = DescriptionRequest
-        fields = ['id', 'society', 'new_description', 'status', 'reviewed_by', 'created_at', 'updated_at']
-

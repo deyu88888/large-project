@@ -9,7 +9,7 @@ from api.views import (
     AdminListView, AdminStudentListView, AdminDeleteView, AdminRestoreView,
     AdminActivityLogView, AdminManageStudentDetailsView, AdminManageSocietyDetailsView,
     AdminManageEventDetailsView, AdminEventRequestView, AdminEventView,
-    AdminSocietyRequestView, SocietyDescriptionRequestAdminView, AdminNewsApprovalView,
+    AdminSocietyRequestView, AdminSocietyDetailRequestView, AdminNewsApprovalView,
     AdminRepliesListView, AdminReportsWithRepliesView, AdminManageAdminDetailsView,
 
     # Society
@@ -77,7 +77,6 @@ admin_patterns = [
     path("society/event/request/<int:event_id>", AdminEventRequestView.as_view(), name="request_event"),
     path("society/request/<str:society_status>", AdminSocietyRequestView.as_view(), name="request_society"),
     path("society/request/pending/<int:society_id>", AdminSocietyRequestView.as_view(), name="request_society"),
-    path("description/request/pending", SocietyDescriptionRequestAdminView.as_view(), name="request_description"),
     path("manage-society/<int:society_id>", AdminManageSocietyDetailsView.as_view(), name="manage_society_details_admin"),
     path("manage-student/<int:student_id>", AdminManageStudentDetailsView.as_view(), name="manage_student_details_admin"),
     path("manage-event/<int:event_id>", AdminManageEventDetailsView.as_view(), name="manage_event_details_admin"),
@@ -128,6 +127,8 @@ admin_patterns = [
     path('report-reply-notifications', ReportReplyNotificationsView.as_view(), name='report-reply-notifications'),
     path('report-reply-notifications/<int:reply_id>', ReportReplyNotificationsView.as_view(), name='mark-report-reply-read'),
     path('news/publication-request/<int:request_id>/', AdminNewsApprovalView.as_view(), name='admin_news_approval'),
+    path('society-detail-request/', AdminSocietyDetailRequestView.as_view(), name='society_detail_requests'),
+    path('society-detail-request/<int:request_id>/', AdminSocietyDetailRequestView.as_view(), name='society_detail_request_action'),
 ]
 
 # Society patterns

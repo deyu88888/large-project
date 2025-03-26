@@ -61,28 +61,6 @@ class SocietyRequest(Request):
     icon = models.ImageField(upload_to="icon_request/", blank=True, null=True)
 
 
-class DescriptionRequest(models.Model):
-    """
-    Society description change requests
-    """
-
-    STATUS_CHOICES = [
-        ("Pending", "Pending Approval"),
-        ("Approved", "Approved"),
-        ("Rejected", "Rejected"),
-    ]
-
-    society = models.ForeignKey(Society, on_delete=models.CASCADE, related_name="description_requests")
-    requested_by = models.ForeignKey(Student, on_delete=models.CASCADE, related_name="description_requests")
-    new_description = models.TextField(blank=False)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="Pending")
-    created_at = models.DateTimeField(auto_now_add=True)
-    reviewed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
-
-    def __str__(self):
-        return f"Description update request for {self.society.name} - {self.status}"
-
-
 class SocietyShowreelRequest(models.Model):
     """
     Requests related to societies showreel photos

@@ -6,6 +6,7 @@ type ColorTokens = {
   greenAccent: Record<number, string>;
   redAccent: Record<number, string>;
   blueAccent: Record<number, string>;
+  yellowAccent: Record<number, string>;
 };
 
 // color design tokens
@@ -67,6 +68,13 @@ export const tokens = (mode: ThemeMode): ColorTokens => ({
           800: "#2a2d64",
           900: "#151632",
         },
+        yellowAccent: {
+          100: "#f9f9a0",
+          200: "#f7f56a",
+          300: "#f5f433",
+          400: "#f3f000",
+          500: "#f2e000",
+        }
       }
     : {
         grey: {
@@ -124,6 +132,13 @@ export const tokens = (mode: ThemeMode): ColorTokens => ({
           800: "#c3c6fd",
           900: "#e1e2fe",
         },
+        yellowAccent: {
+          100: "#f9f9a0",
+          200: "#f7f56a",
+          300: "#f5f433",
+          400: "#f3f000",
+          500: "#f2e000",
+        }
       }),
 });
 

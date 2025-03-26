@@ -58,7 +58,6 @@ const AdminDashboardPage = lazy(() => import("../pages/Admin/AdminDashboard"));
 const CalendarPage = lazy(() => import("../pages/Admin/AdminCalendar"));
 const StudentListPage = lazy(() => import("../pages/Admin/StudentList"));
 const DashboardPage = lazy(() => import("../pages/Dashboard"));
-const OldDashboardPage = lazy(() => import("../pages/OldDashboard"));
 const CreateAdminPage = lazy(() => import("../pages/Admin/CreateAdmin"));
 const AdminListPage = lazy(() => import("../pages/Admin/AdminList"));
 const RequestSocietyPage = lazy(() => import("../pages/Admin/SocietyCreationRequests"));
@@ -70,7 +69,7 @@ const NewsApprovalDashboard = lazy(() => import("../pages/Admin/NewsApprovalDash
 const ReportReply = lazy(() => import("../pages/Admin/ReportReply"));
 const ReportRepliedList = lazy(() => import("../pages/Admin/ReportRepliedList"));
 const AdminViewSocietyPage = lazy(() => import("../pages/Admin/ViewSociety"));
-const RequestDescriptionPage = lazy(() => import("../pages/Admin/SocietyDesChangeRequest"));
+const PendingSocietyDetailRequestPage = lazy(() => import("../pages/Admin/PendingSocietyDetailRequests.tsx"));
 const AdminViewStudentPage = lazy(() => import("../pages/Admin/ViewStudent"));
 const AdminViewEventPage = lazy(() => import("../pages/Admin/ViewEvent"));
 const AdminViewAdminPage = lazy(() => import("../pages/Admin/ViewAdmin"));
@@ -115,7 +114,7 @@ const routes = [
           { path: "calendar", element: <PageWithTitle title="Admin Calendar"><CalendarPage /></PageWithTitle> },
           { path: "request-society", element: <PageWithTitle title="Society Creation Requests"><RequestSocietyPage /></PageWithTitle> },
           { path: "request-event", element: <PageWithTitle title="Pending Event Requests"><RequestEventPage /></PageWithTitle> },
-          { path: "request-description", element: <PageWithTitle title="Description Change Requests"><RequestDescriptionPage /></PageWithTitle> },
+          { path: "society-detail-request", element: <PageWithTitle title="Pending Society Detail Requests"><PendingSocietyDetailRequestPage /></PageWithTitle> },
           { path: "reports", element: <PageWithTitle title="Reports"><ManageReports /></PageWithTitle> },
           { path: "report-list", element: <PageWithTitle title="Admin Reports"><AdminReportList /></PageWithTitle> },
           { path: "report-list/:reportId/reply", element: <PageWithTitle title="Reply to Report"><ReportReply /></PageWithTitle> },
