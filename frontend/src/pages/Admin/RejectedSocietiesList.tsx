@@ -12,14 +12,14 @@ import { Society } from '../../types';
  * Displays a list of rejected societies with real-time updates via WebSocket
  */
 const SocietyListRejected: React.FC = () => {
-  // Hooks and state
+  
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const [societies, setSocieties] = useState<Society[]>([]);
   const ws = useRef<WebSocket | null>(null);
   const { drawer } = useSettingsStore();
   const { searchTerm } = useContext(SearchContext);
-  const WEBSOCKET_URL = "ws://127.0.0.1:8000/ws/admin/society/";
+  const WEBSOCKET_URL = "ws:
   const RECONNECT_TIMEOUT = 5000;
   
   /**
@@ -48,7 +48,7 @@ const SocietyListRejected: React.FC = () => {
       try {
         const data = JSON.parse(event.data);
         console.log("WebSocket Update Received:", data);
-        fetchSocieties(); // Re-fetch on update
+        fetchSocieties(); 
       } catch (error) {
         console.error("Error parsing WebSocket message:", error);
       }
@@ -66,12 +66,12 @@ const SocietyListRejected: React.FC = () => {
     };
   }, [fetchSocieties]);
 
-  // Initialize data fetch and WebSocket connection
+  
   useEffect(() => {
     fetchSocieties();
     connectWebSocket();
 
-    // Cleanup WebSocket connection on component unmount
+    
     return () => {
       if (ws.current) {
         ws.current.close();
@@ -79,7 +79,7 @@ const SocietyListRejected: React.FC = () => {
     };
   }, [fetchSocieties, connectWebSocket]);
 
-  // Column definitions for the DataGrid
+  
   const columns: GridColDef[] = [
     { field: "id", headerName: "ID", flex: 0.5 },
     { field: "name", headerName: "Name", flex: 1 },
@@ -88,7 +88,7 @@ const SocietyListRejected: React.FC = () => {
     { field: "membershipRequirements", headerName: "Membership Requirements", flex: 1 },
   ];
 
-  // Filter societies based on search term
+  
   const filteredSocieties = useMemo(
     () =>
       societies.filter((society) =>
