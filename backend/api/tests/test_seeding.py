@@ -1,3 +1,4 @@
+from datetime import date
 from unittest.mock import patch
 from django.test import TransactionTestCase
 
@@ -10,6 +11,9 @@ from api.models import (
     SocietyRequest,
     Award,
     AwardStudent,
+    SocietyNews,
+    NewsComment,
+    Comment,
 )
 from api.management.commands import seed
 
@@ -139,6 +143,8 @@ class SeedingTestCase(TransactionTestCase):
         generator.create_event(1)
         self.assertEqual(EventRequest.objects.count(), initial_requests + 1)
         self.assertEqual(Event.objects.count(), initial_objects + 1)
+        event = Event.objects.exclude(title="Day").first()
+        self.assertTrue(event.date >= date.today())
 
     @patch("builtins.print")  # Avoids printing while testing
     def test_award_initialisation(self, mock_print):
@@ -243,6 +249,25 @@ class SeedingTestCase(TransactionTestCase):
         self.assertEqual(er.intent, "CreateEve")
         self.assertFalse(er.approved)
 
+    def test_create_event_comment(self):
+        """Test that event comments are created as expected"""
+        generator = self.command_instance.event_generator
+        generator.create_event_comments(self.event)
+        self.assertTrue(Comment.objects.count() > 0)
+        comment = Comment.objects.first()
+        self.assertIn(comment.user.student, list(self.society.society_members.all()))
+        self.assertEqual(comment.event, self.event)
+
+    def test_past_event_creation(self):
+        """Test that events can be created in the past and are formed correctly"""
+        generator = self.command_instance.event_generator
+        initial_requests = EventRequest.objects.count()
+        initial_objects = Event.objects.count()
+        generator.generate_random_event(self.society, past=True)
+        event = Event.objects.exclude(title="Day").first()
+        self.assertTrue(event.date < date.today())
+        self.assertEqual(Event.objects.count(), initial_objects+1)
+
     @patch("api.management.commands.seed.broadcast_dashboard_update")
     @patch("builtins.print")  # Avoid printing during test
     def test_broadcast_updates(self, mock_print, mock_broadcast):
@@ -305,3 +330,38 @@ class SeedingTestCase(TransactionTestCase):
         initial_count = AwardStudent.objects.count()
         self.command_instance.randomly_assign_awards(5)
         self.assertGreater(AwardStudent.objects.count(), initial_count)
+
+    def test_create_society_news(self):
+        """Test that society news is created as expected"""
+        self.command_instance.create_society_news(5)
+        self.assertEqual(SocietyNews.objects.count(), 5)
+        news_instance = SocietyNews.objects.first()
+        self.assertEqual(news_instance.society, self.society)
+        self.assertEqual(news_instance.tags, self.society.tags)
+        self.assertIn(news_instance.author, list(self.society.society_members.all()))
+
+    def test_create_news_comments(self):
+        """Test that news comments are created as expected"""
+        self.command_instance.create_society_news(1)
+        news_instance = SocietyNews.objects.first()
+        self.command_instance.create_news_comments(news_instance)
+        self.assertTrue(NewsComment.objects.count() > 0)
+        comment = NewsComment.objects.first()
+        self.assertIn(comment.user.student, list(self.society.society_members.all()))
+        self.assertEqual(comment.news_post, news_instance)
+
+    @patch("builtins.print")  # Avoid printing during test
+    def test_handle(self, mock_print):
+        """Test that handle behaves as expected"""
+        Society.objects.all().delete()
+        User.objects.all().delete()
+        Student.objects.all().delete()
+        Award.objects.all().delete()
+        AwardStudent.objects.all().delete()
+        self.command_instance.handle(quantity=[1, 10, 1, 1, 1, 1, 1, 1])
+        self.assertEqual(User.get_admins().count(), 3)
+        self.assertEqual(Student.objects.count(), 14)
+        create_soc_requests = SocietyRequest.objects.filter(intent="CreateSoc").count()
+        self.assertEqual(Society.objects.count() + create_soc_requests, 3)
+        self.assertEqual(Award.objects.count(), 9)
+        self.assertEqual(AwardStudent.objects.count(), 1)

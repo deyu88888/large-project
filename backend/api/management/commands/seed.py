@@ -42,21 +42,24 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         """Handles database seeding"""
         # Create/Get Admin using create_admin, to avoid code duplication
-        self.admin_generator.create_admin(5)
+        if not kwargs["quantity"]:
+            kwargs["quantity"] = [5, 100, 50, 35, 5, 200, 10, 15]
+        quantity = kwargs["quantity"]
+        self.admin_generator.create_admin(quantity[0])
         self.admin_generator.create_super_admins()
 
-        self.student_generator.create_student(100)
+        self.student_generator.create_student(quantity[1])
 
         self.create_default_students()
-        self.society_generator.create_society(50)
-        self.event_generator.create_event(35, past=False)
-        self.event_generator.create_event(5, past=True)
+        self.society_generator.create_society(quantity[2])
+        self.event_generator.create_event(quantity[3], past=False)
+        self.event_generator.create_event(quantity[4], past=True)
 
         self.pre_define_awards()
-        self.randomly_assign_awards(200)
+        self.randomly_assign_awards(quantity[5])
 
-        self.admin_generator.create_admin_reports(10)
-        self.create_society_news(15)
+        self.admin_generator.create_admin_reports(quantity[6])
+        self.create_society_news(quantity[7])
 
         self.broadcast_updates()
 
