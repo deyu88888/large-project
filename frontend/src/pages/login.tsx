@@ -7,9 +7,7 @@ import {
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { apiClient, apiPaths } from "../api";
 import { tokens } from "../theme/theme";
-
-export const ACCESS_TOKEN = "ACCESS_TOKEN";
-export const REFRESH_TOKEN = "REFRESH_TOKEN";
+import { ACCESS_TOKEN, REFRESH_TOKEN } from "../constants";
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
@@ -69,7 +67,6 @@ export default function LoginPage() {
             color: colors.grey[100],
             marginBottom: 2
           }}
-          data-testid="login-heading"
         >
           Login
         </Typography>
@@ -111,8 +108,8 @@ export default function LoginPage() {
         />
 
         {loading && (
-          <Box display="flex" justifyContent="center" mb={2} data-testid="loading-indicator">
-            <CircularProgress role="progressbar" aria-label="Loading" />
+          <Box display="flex" justifyContent="center" mb={2}>
+            <CircularProgress />
           </Box>
         )}
 
@@ -125,7 +122,6 @@ export default function LoginPage() {
             color: "#fff",
             "&:hover": { backgroundColor: colors.blueAccent[700] },
           }}
-          data-testid="login-button"
         >
           Login
         </Button>

@@ -13,7 +13,7 @@ interface User {
   vice_president_of_society?: number;
   is_event_manager?: boolean;
   event_manager_of_society?: number;
-  is_super_admin: boolean;
+
 }
 
 interface AuthStore {
