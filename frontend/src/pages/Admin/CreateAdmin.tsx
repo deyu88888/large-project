@@ -27,8 +27,8 @@ import { tokens } from "../../theme/theme";
  * Form values interface for better type checking
  */
 interface AdminFormValues {
-  firstName: string;
-  lastName: string;
+  first_name: string;
+  last_name: string;
   username: string;
   email: string;
   password: string;
@@ -39,11 +39,11 @@ interface AdminFormValues {
  * Enhanced validation schema for admin creation form
  */
 const validationSchema = yup.object().shape({
-  firstName: yup.string()
+  first_name: yup.string()
     .trim()
     .max(50, "First name must be at most 50 characters")
     .required("First name is required"),
-  lastName: yup.string()
+  last_name: yup.string()
     .trim()
     .max(50, "Last name must be at most 50 characters")
     .required("Last name is required"),
@@ -78,8 +78,8 @@ const validationSchema = yup.object().shape({
  */
 const initialValues: AdminFormValues = {
   username: "",
-  firstName: "",
-  lastName: "",
+  first_name: "",
+  last_name: "",
   email: "",
   password: "",
   confirmPassword: "",
@@ -204,10 +204,10 @@ const CreateAdmin: React.FC = () => {
         >
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <Typography variant="body1">
-              <strong>First Name:</strong> {createdAdmin.firstName || createdAdmin.firsName}
+              <strong>First Name:</strong> {createdAdmin.first_name}
             </Typography>
             <Typography variant="body1">
-              <strong>Last Name:</strong> {createdAdmin.lastName}
+              <strong>Last Name:</strong> {createdAdmin.last_name}
             </Typography>
             <Typography variant="body1">
               <strong>Username:</strong> {createdAdmin.username}
@@ -291,10 +291,10 @@ const CreateAdmin: React.FC = () => {
                   label="First Name"
                   onBlur={handleBlur}
                   onChange={handleChange}
-                  value={values.firstName}
-                  name="firstName"
-                  error={Boolean(touched.firstName && errors.firstName)}
-                  helperText={touched.firstName && errors.firstName}
+                  value={values.first_name}
+                  name="first_name"
+                  error={Boolean(touched.first_name && errors.first_name)}
+                  helperText={touched.first_name && errors.first_name}
                   sx={{ gridColumn: "span 2" }}
                   disabled={loading}
                   InputProps={{
@@ -308,10 +308,10 @@ const CreateAdmin: React.FC = () => {
                   label="Last Name"
                   onBlur={handleBlur}
                   onChange={handleChange}
-                  value={values.lastName}
-                  name="lastName"
-                  error={Boolean(touched.lastName && errors.lastName)}
-                  helperText={touched.lastName && errors.lastName}
+                  value={values.last_name}
+                  name="last_name"
+                  error={Boolean(touched.last_name && errors.last_name)}
+                  helperText={touched.last_name && errors.last_name}
                   sx={{ gridColumn: "span 2" }}
                   disabled={loading}
                   InputProps={{

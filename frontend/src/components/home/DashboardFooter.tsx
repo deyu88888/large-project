@@ -13,7 +13,7 @@ export const DashboardFooter = () => {
     <Box
       component="footer"
       sx={{
-        backgroundColor: "secondary.main",
+        backgroundColor: theme.palette.mode === "dark" ? "secondary.dark" : "secondary.light",
         color: "white",
         pt: 8,
         pb: 4,
@@ -26,7 +26,7 @@ export const DashboardFooter = () => {
           left: 0,
           right: 0,
           height: 4,
-          background: `linear-gradient(to right, ${theme.palette.primary.main}, ${theme.palette.info.main})`,
+          background: `linear-gradient(to right, ${theme.palette.primary.main}, ${theme.palette.secondary.light})`,
         }
       }}
     >

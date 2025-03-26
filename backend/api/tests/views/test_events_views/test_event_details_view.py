@@ -10,7 +10,7 @@ class EventDetailsViewTestCase(TestCase):
     def setUp(self):
         self.event = Event.objects.create(
             title="Test Event",
-            description="This is a test event",
+            main_description="This is a test event",
             location="Online",
             status="Approved"
         )

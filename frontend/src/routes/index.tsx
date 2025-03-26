@@ -124,7 +124,7 @@ const routes = [
           { path: "news-approval", element: <PageWithTitle title="News Publication Approval"><NewsApprovalDashboard /></PageWithTitle> },
           { path: "view-student/:student_id", element: <PageWithTitle title="View Student"><AdminViewStudentPage /></PageWithTitle> },
           { path: "view-society/:society_id", element: <PageWithTitle title="View Society"><AdminViewSocietyPage /></PageWithTitle> },
-          { path: "view-event/:event_id", element: <PageWithTitle title="View Event"><AdminViewEventPage /></PageWithTitle> },
+          // { path: "view-event/:event_id", element: <PageWithTitle title="View Event"><AdminViewEventPage /></PageWithTitle> },
           { path: "view-admin/:admin_id", element: <PageWithTitle title="Admin Details"><AdminViewAdminPage /></PageWithTitle> },
           { path: "activity-log", element: <PageWithTitle title="Activity Log"><ActivityLogPage /></PageWithTitle> },
           { path: "my-team", element: <PageWithTitle title="My Team"><AdminListPage /></PageWithTitle> },
@@ -169,94 +169,16 @@ const routes = [
         ),
         children: [
           { index: true, element: <PageWithTitle title="Society Management"><PresidentPage /></PageWithTitle> },
-          { path: "manage-society-details", element: <PageWithTitle title="Society Details"><ManageSocietyDetails /></PageWithTitle> },
+          { path: "manage-society-details/", element: <PageWithTitle title="Manage Society Details"><ManageSocietyDetails /></PageWithTitle> },
           { path: "manage-society-events/:filter?", element: <PageWithTitle title="Society Events"><ManageSocietyEvents /></PageWithTitle> },
-          // { path: "pending-members", element: <PageWithTitle title="Pending Members"><PendingMembers /></PageWithTitle> },
+          { path: "pending-members", element: <PageWithTitle title="Pending Members"><PendingMembers /></PageWithTitle> },
           { path: "view-society-members", element: <PageWithTitle title="Society Members"><ViewSocietyMembers /></PageWithTitle> },
           { path: "create-event", element: <PageWithTitle title="Create Event"><CreateEventPage /></PageWithTitle> },
           { path: "edit-event/:eventId", element: <PageWithTitle title="Edit Event"><EditEventDetails /></PageWithTitle> },
           { path: "give-award-page/:memberId", element: <PageWithTitle title="Give Award to Member"><GiveAwardPage /></PageWithTitle> },
           { path: "assign-role/:memberId", element: <PageWithTitle title="Assign Society Role"><AssignRolePage /></PageWithTitle> },
           { path: "manage-society-news", element: <PageWithTitle title="Manage Society News"><SocietyNewsManager /></PageWithTitle> },
-        ],
-      },
-      {
-        path: "manage-society-details/:societyId",
-        element: (
-          <PrivateGuard requiredRole="student">
-            <Suspense fallback={<LoadingView />}>
-              <Layout />
-            </Suspense>
-          </PrivateGuard>
-        ),
-        children: [
-          { index: true, element: <PageWithTitle title="Manage Society Details"><ManageSocietyDetails /></PageWithTitle> },
-        ],
-      },
-      // New route for managing society news
-      {
-        path: "manage-society-events/:societyId",
-        element: (
-          <PrivateGuard requiredRole="student">
-            <Suspense fallback={<LoadingView />}>
-              <Layout />
-            </Suspense>
-          </PrivateGuard>
-        ),
-        children: [
-          { index: true, element: <PageWithTitle title="Manage Society events"><ManageSocietyEvents /></PageWithTitle> },
-        ],
-      },
-      {
-        path: "manage-society-news/:societyId",
-        element: (
-          <PrivateGuard requiredRole="student">
-            <Suspense fallback={<LoadingView />}>
-              <Layout />
-            </Suspense>
-          </PrivateGuard>
-        ),
-        children: [
-          { index: true, element: <PageWithTitle title="Manage Society News"><SocietyNewsManager /></PageWithTitle> },
-        ],
-      },
-      {
-        path: "pending-members/:societyId",
-        element: (
-          <PrivateGuard requiredRole="student">
-            <Suspense fallback={<LoadingView />}>
-              <Layout />
-            </Suspense>
-          </PrivateGuard>
-        ),
-        children: [
-          { index: true, element: <PageWithTitle title="Pending Members"><PendingMembers /></PageWithTitle> },
-        ],
-      },
-      {
-        path: "report-to-admin/:societyId",
-        element: (
-          <PrivateGuard requiredRole="student">
-            <Suspense fallback={<LoadingView />}>
-              <Layout />
-            </Suspense>
-          </PrivateGuard>
-        ),
-        children: [
-          { index: true, element: <PageWithTitle title="Report to Admin"><ReportToAdmin /></PageWithTitle> },
-        ],
-      },
-      {
-        path: "view-society-members/:societyId",
-        element: (
-          <PrivateGuard requiredRole="student">
-            <Suspense fallback={<LoadingView />}>
-              <Layout />
-            </Suspense>
-          </PrivateGuard>
-        ),
-        children: [
-          { index: true, element: <PageWithTitle title="Society Members"><ViewSocietyMembers /></PageWithTitle> },
+          { path: "report-to-admin", element: <PageWithTitle title="Report to Admin"><ReportToAdmin /></PageWithTitle> },
         ],
       },
       {
@@ -295,7 +217,6 @@ const routes = [
       { path: "all-societies", element: <PageWithTitle title="All Societies"><AllSocietiesPage /></PageWithTitle> },
       { path: "event/:event_id", element: <PageWithTitle title="Event Details"><EventDetailPage /></PageWithTitle> },
       { path: "view-society/:society_id", element: <PageWithTitle title="Society Details"><ViewSocietyPage /></PageWithTitle> },
-      { path: "profile/:student_id", element: <PageWithTitle title="Student Progile"><ProfilePage /></PageWithTitle> },
       { path: "search", element: <PageWithTitle title="Search"><SearchResultsPage /></PageWithTitle> },
       { path: "calendar", element: <PageWithTitle title="Calendar"><PublicCalendarPage /></PageWithTitle> },
       { path: "support", element: <PageWithTitle title="Support"><SupportPage /></PageWithTitle> },

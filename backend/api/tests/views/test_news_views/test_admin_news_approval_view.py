@@ -76,15 +76,10 @@ class AdminNewsApprovalViewTest(APITestCase):
             requested_by=self.student_user,
             status="Pending"
         )
-        
-        
         self.client = APIClient()
-        
-        
-        
         self.get_url = '/api/news/publication-request/'
-        self.put_url = lambda request_id: f'/api/news/publication-request/{request_id}/'
-
+        self.put_url = lambda request_id: reverse('admin_news_approval', kwargs={'request_id': request_id})
+    
     def test_get_pending_requests_as_admin(self):
         self.client.force_authenticate(user=self.admin_user)
         response = self.client.get(self.get_url)

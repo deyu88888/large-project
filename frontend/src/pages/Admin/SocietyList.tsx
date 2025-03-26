@@ -274,19 +274,19 @@ const SocietyList: React.FC = () => {
         <DialogContent>
           <DialogContentText>
             You may undo this action in the Activity Log. <br />
-            <strong>Compulsory:</strong> Provide a reason for deleting this student.
+            <strong>Compulsory:</strong> Provide a reason for deleting this society.
           </DialogContentText>
           <TextField
             autoFocus
-            label="Reason for Deletion"
             fullWidth
             variant="standard"
             value={reason}
             onChange={handleReasonChange}
+            color="white"
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog} color="primary">
+          <Button onClick={handleCloseDialog} color="white">
             Cancel
           </Button>
           <Button 

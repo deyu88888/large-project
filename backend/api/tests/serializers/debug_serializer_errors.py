@@ -1,6 +1,5 @@
-from api.recommendation_feedback_serializers import (
-    RecommendationFeedbackSerializer,
-    RecommendationFeedbackCreateSerializer
+from api.serializers_files.recommendation_feedback_serializers import (
+    RecommendationFeedbackSerializer
 )
 def print_test_case(self):
     

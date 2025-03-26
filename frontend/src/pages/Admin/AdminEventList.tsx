@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useContext, useRef, useCallback } from "react";
 import {
   Box,
-  Typography,
   useTheme,
   Button,
   DialogTitle,
@@ -13,14 +12,34 @@ import {
 } from "@mui/material";
 import { DataGrid, GridColDef, GridToolbar } from "@mui/x-data-grid";
 import { apiClient, apiPaths } from "../../api";
-import { useNavigate } from "react-router-dom";
 import { tokens } from "../../theme/theme";
 import { useSettingsStore } from "../../stores/settings-store";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { Event } from '../../types';
+import { EventPreview } from "../../components/EventPreview";
+import type { EventData } from "../../components/EventDetailLayout";
 
 const WEBSOCKET_URL = "ws://127.0.0.1:8000/ws/admin/event/";
 const RECONNECT_TIMEOUT = 5000;
+
+function mapToEventData(raw: any): EventData {
+  return {
+    title: raw.title || "",
+    mainDescription: raw.main_description || "",
+    date: raw.date || "",
+    startTime: raw.start_time || "",
+    duration: raw.duration || "",
+    location: raw.location || "",
+    maxCapacity: raw.max_capacity || 0,
+    hostedBy: raw.hosted_by || 0,
+    eventId: raw.id,
+    coverImageUrl: raw.cover_image || "",
+    extraModules: raw.extra_modules || [],
+    participantModules: raw.participant_modules || [],
+    isParticipant: false,
+    isMember: false,
+  };
+}
 
 /**
  * EventList component displays a list of approved events with filtering and actions
@@ -28,7 +47,6 @@ const RECONNECT_TIMEOUT = 5000;
 const EventList: React.FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
-  const navigate = useNavigate();
   const { drawer } = useSettingsStore();
   const { searchTerm } = useContext(SearchContext);
 
@@ -38,6 +56,9 @@ const EventList: React.FC = () => {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [reason, setReason] = useState('');
   const [loading, setLoading] = useState(true);
+  const [previewEvent, setPreviewEvent] = useState<EventData | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+
 
   // WebSocket reference
   const ws = useRef<WebSocket | null>(null);
@@ -105,9 +126,12 @@ const EventList: React.FC = () => {
   /**
    * Navigate to view event details
    */
-  const handleViewEvent = (eventId: string) => {
-    navigate(`/admin/view-event/${eventId}`);
+  const handleViewEvent = (event: Event) => {
+    const data = mapToEventData(event);
+    setPreviewEvent(data);
+    setPreviewOpen(true);
   };
+
 
   /**
    * Open confirmation dialog for event deletion
@@ -192,13 +216,12 @@ const EventList: React.FC = () => {
       sortable: false,
       filterable: false,
       renderCell: (params) => {
-        const eventId = params.row.id;
         return (
-          <Box>
+            <Box>
             <Button
               variant="contained"
               color="primary"
-              onClick={() => handleViewEvent(eventId)}
+              onClick={() => handleViewEvent(params.row)}
               sx={{ marginRight: "8px" }}
             >
               View
@@ -272,17 +295,15 @@ const EventList: React.FC = () => {
           </DialogContentText>
           <TextField
             autoFocus
-            margin="dense"
-            label="Reason for Deletion"
             fullWidth
             variant="standard"
             value={reason}
             onChange={handleReasonChange}
-            required
+            color="white"
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog} color="primary">
+          <Button onClick={handleCloseDialog} color="white">
             Cancel
           </Button>
           <Button 
@@ -294,6 +315,14 @@ const EventList: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {previewEvent && (
+        <EventPreview
+          open={previewOpen}
+          onClose={() => setPreviewOpen(false)}
+          eventData={previewEvent}
+        />
+      )}
     </Box>
   );
 };

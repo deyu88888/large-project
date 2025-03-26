@@ -71,7 +71,7 @@ export default function PublicLayout({
   const path = location.pathname as HeroPath;
 
   const currentHero = heroContent[path] ?? {
-    title: "Welcome!",
+    title: "Discover",
     subtitle: "Explore our platform.",
     showCarousel: false,
     breadcrumbs: [
