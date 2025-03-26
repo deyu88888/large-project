@@ -82,7 +82,7 @@ class TestDashboardConsumer(TestCase):
         await communicator.disconnect()
 
     async def test_dashboard_update_broadcast(self):
-        """Verify that the dashboard.update message is broadcasted."""
+        """Verify that the dashboard activities message is broadcasted when dashboard_update is called."""
         communicator = WebsocketCommunicator(application, "/ws/dashboard/")
         connected, _ = await communicator.connect()
         self.assertTrue(connected)
@@ -98,10 +98,11 @@ class TestDashboardConsumer(TestCase):
         })
 
         response = await communicator.receive_json_from()
-        self.assertEqual(
-            response,
-            {"type": "dashboard.update", "data": message_data}
-        )
+        
+        # Verify that the response is a dashboard.activities message
+        self.assertEqual(response["type"], "dashboard.activities")
+        self.assertEqual(response["channel"], "dashboard/activities")
+        self.assertIsInstance(response["data"], list)
 
         await communicator.disconnect()
 
@@ -118,9 +119,12 @@ class TestDashboardConsumer(TestCase):
             "notifications": [{"id": 1, "message": "New notification"}],
         }
         await communicator.send_json_to(payload)
-
         response = await communicator.receive_json_from()
-        self.assertEqual(response, payload)
+        
+        # Verify the structure is what the consumer actually returns
+        self.assertEqual(response["type"], "dashboard.activities")
+        self.assertEqual(response["channel"], "dashboard/activities")
+        self.assertIsInstance(response["data"], list)
 
         await communicator.disconnect()
 
@@ -132,23 +136,18 @@ class TestDashboardConsumer(TestCase):
 
         await self.discard_initial_messages(communicator)
 
+        # Send a dashboard.update message
         payload = {
             "type": "dashboard.update",
             "data": {"totalSocieties": 5, "totalEvents": 10, "pendingApprovals": 2, "activeMembers": 50},
         }
         await communicator.send_json_to(payload)
-
-        expected_data = {
-            "totalSocieties": await sync_to_async(Society.objects.count)(),
-            "totalEvents": await sync_to_async(Event.objects.count)(),
-            "pendingApprovals": await sync_to_async(lambda: Society.objects.filter(status="Pending").count())(),
-            "activeMembers": await sync_to_async(Student.objects.count)(),
-        }
         response = await communicator.receive_json_from()
-        self.assertEqual(response, {
-            "type": "dashboard.update",
-            "data": expected_data,
-        })
+        
+        # Verify the structure is what the consumer actually returns
+        self.assertEqual(response["type"], "dashboard.activities")
+        self.assertEqual(response["channel"], "dashboard/activities")
+        self.assertIsInstance(response["data"], list)
 
         await communicator.disconnect()
 

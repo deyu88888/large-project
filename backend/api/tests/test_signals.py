@@ -4,8 +4,8 @@ from unittest.mock import patch
 from django.core.cache import cache
 from django.test import TestCase, override_settings
 from django.utils.timezone import now
-
-from api.models import Student, Society, Notification, Event, SocietyRequest, User, EventRequest
+from api.models import Student, Society, Notification, Event, SocietyRequest, User, \
+    EventRequest, Award, AwardStudent
 from api.signals import broadcast_dashboard_update
 
 @override_settings(CHANNEL_LAYERS={"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}})
@@ -51,12 +51,21 @@ class SignalsTestCase(TestCase):
             upcoming_projects_or_plans=""
         )
 
+        cls.event = Event.objects.create(
+            title="Dummy Event",
+            main_description="A test event description",
+            location="Room 101",
+            date=now().date(),
+            start_time=datetime.time(12, 0),
+            duration=datetime.timedelta(hours=1),
+            hosted_by=cls.society,
+            status="Pending"  
+        )
+    
         cls.event_request = EventRequest.objects.create(
-            title='Event',
-            description='Event organised by a society',
+            event=cls.event,
             hosted_by=cls.society,
             from_student=cls.student,
-            location="location",
             intent="CreateEve",
         )
         Event.objects.create(
@@ -174,7 +183,6 @@ class SignalsTestCase(TestCase):
         Test that when an AwardStudent instance is created, the notify_student_award signal sends a message
         to the "award_notifications" group.
         """
-        from api.models import Award, AwardStudent
         award = Award.objects.create(
             rank="Bronze",
             title="Test Award",
