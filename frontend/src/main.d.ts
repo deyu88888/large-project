@@ -1,1 +1,0 @@
-import "./theme/globals.css";
