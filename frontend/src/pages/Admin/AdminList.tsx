@@ -21,7 +21,7 @@ import { useAuthStore } from "../../stores/auth-store";
 
 
 interface AdminUser {
-  id: string;
+  id: number;
   username: string;
   first_name: string;
   last_name: string;
@@ -29,11 +29,6 @@ interface AdminUser {
   is_active: boolean;
   role: string;
   is_super_admin: boolean;
-  [key: string]: any;
-}
-
-interface User {
-  is_super_admin?: boolean;
   [key: string]: any;
 }
 
@@ -225,17 +220,14 @@ const AdminList: FC = () => {
   const { drawer } = useSettingsStore();
   const { user, setUser } = useAuthStore();
 
-  
   const [admins, setAdmins] = useState<AdminUser[]>([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedAdmin, setSelectedAdmin] = useState<AdminUser | null>(null);
   const [reason, setReason] = useState('');
-
   
   const isSuperAdmin = user?.is_super_admin === true;
   const actionsColumnWidth = isSuperAdmin ? 170 : 85;
 
-  
   const fetchAdmins = async () => {
     try {
       const res = await apiClient.get(apiPaths.USER.ADMIN);
@@ -245,7 +237,6 @@ const AdminList: FC = () => {
       console.error("Error fetching admins:", error);
     }
   };
-
   
   const fetchCurrentUser = async () => {
     try {
@@ -256,13 +247,11 @@ const AdminList: FC = () => {
     }
   };
 
-  
   useEffect(() => {
     fetchAdmins();
     fetchCurrentUser();
   }, []);
 
-  
   const getFilteredAdmins = () => {
     return admins.filter((admin) =>
       Object.values(admin)
@@ -271,7 +260,6 @@ const AdminList: FC = () => {
         .includes(searchTerm.toLowerCase())
     );
   };
-
   
   const handleViewAdmin = (adminId: string) => {
     navigate(`/admin/view-admin/${adminId}`);
@@ -307,7 +295,6 @@ const AdminList: FC = () => {
     }
     handleCloseDialog();
   };
-
   
   const getColumns = (): GridColDef[] => [
     { field: "id", headerName: "ID", flex: 0.3 },
@@ -346,7 +333,6 @@ const AdminList: FC = () => {
       ),
     },
   ];
-
   
   const filteredAdmins = getFilteredAdmins();
   const columns = getColumns();

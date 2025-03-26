@@ -1,30 +1,16 @@
-import { apiClient, apiPaths } from "../../api";
+import { apiClient } from "../../api";
 import { ReportReply } from '../../types';
+import { Report, ReportThread } from "../../types/president/report";
 
-
-interface Report {
-  id: string;
-  
-}
 
 interface ReportDetails {
   id: string;
-  
-}
-
-interface ReportThread {
-  id: string;
-  
 }
 
 interface ReportReplyRequest {
   report: string | number;
   parent_reply?: number | null;
   content: string;
-}
-
-interface ApiResponse<T> {
-  data: T;
 }
 
 
@@ -42,6 +28,7 @@ const makeGetRequest = async <T>(endpoint: string, errorMessage: string): Promis
     throw error;
   }
 };
+
 
 const makePostRequest = async <T, R>(endpoint: string, data: T, errorMessage: string): Promise<R> => {
   try {
@@ -64,6 +51,7 @@ const fetchReports = async (): Promise<Report[]> => {
   return data;
 };
 
+
 const fetchReportDetails = async (reportId: string): Promise<ReportDetails> => {
   
   return await makeGetRequest<ReportDetails>(
@@ -71,6 +59,7 @@ const fetchReportDetails = async (reportId: string): Promise<ReportDetails> => {
     "Error fetching report details:"
   );
 };
+
 
 const fetchReportThread = async (reportId: string): Promise<ReportThread> => {
   
@@ -80,14 +69,15 @@ const fetchReportThread = async (reportId: string): Promise<ReportThread> => {
   );
 };
 
+
 const submitReply = async (data: ReportReplyRequest): Promise<ReportReply> => {
-  
   return await makePostRequest<ReportReplyRequest, ReportReply>(
     "/api/admin/report-replies",
     data,
     "Error submitting reply:"
   );
 };
+
 
 const fetchMyReports = async (): Promise<Report[]> => {
   
@@ -97,6 +87,7 @@ const fetchMyReports = async (): Promise<Report[]> => {
   );
 };
 
+
 const fetchMyReportsWithReplies = async (): Promise<Report[]> => {
   
   return await makeGetRequest<Report[]>(
@@ -105,6 +96,7 @@ const fetchMyReportsWithReplies = async (): Promise<Report[]> => {
   );
 };
 
+
 const fetchReportsWithReplies = async (): Promise<Report[]> => {
   
   return await makeGetRequest<Report[]>(
@@ -112,6 +104,7 @@ const fetchReportsWithReplies = async (): Promise<Report[]> => {
     "Error fetching reports with replies:"
   );
 };
+
 
 const fetchReportReplies = async (): Promise<ReportReply[]> => {
   

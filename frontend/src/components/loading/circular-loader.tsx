@@ -2,6 +2,7 @@ import { cn } from "../../utils/cn";
 
 interface Props {
   className?: string;
+  size?: number;
 }
 
 const CircularLoader = ({ className }: Props) => {

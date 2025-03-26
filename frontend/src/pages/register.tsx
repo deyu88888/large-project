@@ -398,7 +398,6 @@ export default function RegisterPage() {
                     label="One-time Password"
                     value={values.otp}
                     onChange={handleChange}
-                    // @ts-expect-error: ignore it fine
                     className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                   />
                   <ErrorMessage
@@ -566,7 +565,7 @@ export default function RegisterPage() {
         onClose={handleSnackbarClose}
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
-        {/* @ts-expect-error: ignore it */}
+  
         <Alert onClose={handleSnackbarClose} severity={snackbarData.severity}>
           {snackbarData.message}
         </Alert>

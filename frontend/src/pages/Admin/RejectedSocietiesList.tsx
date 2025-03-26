@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useContext, useMemo, useCallback } from "react";
-import { Box, useTheme, Typography } from "@mui/material";
+import { Box, useTheme } from "@mui/material";
 import { DataGrid, GridColDef, GridToolbar } from "@mui/x-data-grid";
 import { apiClient, apiPaths } from "../../api";
 import { tokens } from "../../theme/theme";
@@ -19,7 +19,7 @@ const SocietyListRejected: React.FC = () => {
   const ws = useRef<WebSocket | null>(null);
   const { drawer } = useSettingsStore();
   const { searchTerm } = useContext(SearchContext);
-  const WEBSOCKET_URL = "ws:
+  const WEBSOCKET_URL = "ws:"
   const RECONNECT_TIMEOUT = 5000;
   
   /**
