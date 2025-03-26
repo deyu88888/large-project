@@ -4,8 +4,8 @@ from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
 
-from ..models import Society, Student, User
-from ..recommendation_service import SocietyRecommender
+from api.models import Society, Student, User
+from api.recommendation_service import SocietyRecommender
 
 User = get_user_model()
 
