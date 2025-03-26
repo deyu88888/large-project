@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useTheme } from "@mui/material/styles";
 import { tokens } from "../../theme/theme";
 import { News } from "../../types"; 
-
+import axios from "axios";
 
 const ViewNews: React.FC = () => {
     const theme = useTheme();
@@ -10,7 +10,7 @@ const ViewNews: React.FC = () => {
     const isLight = theme.palette.mode === "light";
 
     const [news, setNews] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [loading] = useState(true);
 
     useEffect(() => {
         const fetchNews = async () => {
@@ -40,6 +40,19 @@ const ViewNews: React.FC = () => {
         fetchNews();
     }, []);
 
+    const markNewsAsRead = async (id: number) => {
+        try {
+          await axios.post(`/api/news/${id}/mark-read`);
+          setNews(prevNews =>
+            prevNews.map(item =>
+              item.id === id ? { ...item, is_read: true } : item
+            )
+          );
+        } catch (error) {
+          console.error("Failed to mark news as read:", error);
+        }
+      };
+
     return (
         <div
             style={{
@@ -61,7 +74,7 @@ const ViewNews: React.FC = () => {
                 >
                     <h1
                         style={{
-                            color: isLight ? colours.grey[100] : colours.grey[100],
+                            color: colours.grey[100],
                             fontSize: "2.25rem",
                             fontWeight: 700,
                             marginBottom: "0.5rem",
@@ -71,7 +84,7 @@ const ViewNews: React.FC = () => {
                     </h1>
                     <p
                         style={{
-                            color: isLight ? colours.grey[300] : colours.grey[300],
+                            color: colours.grey[300],
                             fontSize: "1.125rem",
                             margin: 0,
                         }}
@@ -108,19 +121,13 @@ const ViewNews: React.FC = () => {
                                 className="p-5 rounded-lg shadow-md hover:shadow-lg transition-all border"
                                 style={{
                                     backgroundColor: item.is_read
-                                        ? isLight
-                                            ? colours.primary[400]
-                                            : colours.primary[400]
-                                        : isLight
-                                            ? colours.blueAccent[700]
-                                            : colours.blueAccent[700],
+                                        ? colours.primary[400]
+                                        : colours.blueAccent[700],
                                     borderColor: item.is_read
                                         ? isLight
                                             ? colours.grey[300]
                                             : colours.grey[700]
-                                        : isLight
-                                            ? colours.blueAccent[400]
-                                            : colours.blueAccent[400],
+                                        : colours.blueAccent[400],
                                 }}
                             >
                                 <div
@@ -130,7 +137,7 @@ const ViewNews: React.FC = () => {
                                         alignItems: "center",
                                     }}
                                 >
-                                    <div style={{ color: isLight ? colours.grey[100] : colours.grey[100] }}>
+                                    <div style={{ color: colours.grey[100] }}>
                                         <b>{item.title}</b>
                                         <p>{item.brief}</p>
                                     </div>
