@@ -28,6 +28,7 @@ export interface SocietyDetailRequest {
   approved_by?: number | null;
   status: "Pending" | "Approved" | "Rejected"; 
   preview_requested?: boolean;
+  from_
 }
 
 interface AlertState {
