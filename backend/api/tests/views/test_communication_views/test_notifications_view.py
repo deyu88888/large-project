@@ -33,7 +33,7 @@ class TestNotificationsView(APITestCase):
             body="Notification 2",
         )
 
-        self.url = "/api/dashboard/notifications"
+        self.url = "/api/dashboard/notifications/"
 
     def test_notifications_authenticated_student(self):
         """A logged-in student can view their notifications."""
