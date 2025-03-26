@@ -8,10 +8,7 @@ import { PrivateGuard } from "../components/guards/private-guard";
 import CircularLoader from "../components/loading/circular-loader";
 import Layout from "../components/layout";
 import PageWithTitle from "../components/PageWithTitle";
-import ViewSocietyEvents from "../pages/view-society-events";
 import ManageReports from "../pages/Admin/ManageReports";
-import ViewReports from "../pages/President/ViewReports";
-import {Search} from "@mui/icons-material";
 import PublicLayout from "../components/home/PublicLayout";
 
 // Lazy-loaded pages
@@ -71,7 +68,6 @@ const ReportRepliedList = lazy(() => import("../pages/Admin/ReportRepliedList"))
 const AdminViewSocietyPage = lazy(() => import("../pages/Admin/ViewSociety"));
 const PendingSocietyDetailRequestPage = lazy(() => import("../pages/Admin/PendingSocietyDetailRequest"));
 const AdminViewStudentPage = lazy(() => import("../pages/Admin/ViewStudent"));
-const AdminViewEventPage = lazy(() => import("../pages/Admin/ViewEvent"));
 const AdminViewAdminPage = lazy(() => import("../pages/Admin/ViewAdmin"));
 const ActivityLogPage = lazy(() => import("../pages/Admin/ActivityLog"));
 
