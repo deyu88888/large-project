@@ -1,32 +1,26 @@
-from random import choice, randint, random
-from datetime import date
-from io import BytesIO
-from PIL import Image
-from django.core.files.uploadedfile import SimpleUploadedFile
+from random import choice, random
 from django.contrib.auth.hashers import make_password
 from django.core.management.base import BaseCommand
 
 from api.signals import broadcast_dashboard_update
-from api.management.commands.data.generators import (
-    RandomCommentDataGenerator,
+from api.management.commands.seeding.generators import (
     RandomEventDataGenerator,
     RandomSocietyDataGenerator,
     RandomStudentDataGenerator,
+    AdminGenerator,
+)
+from api.management.commands.seeding.seeding_utility import (
+    get_active_students,
+    get_model_entries_as_list,
+    get_comment_data,
+    like_dislike_comments,
+    assign_comment_parent,
 )
 from api.models import (
     Student,
     Society,
-    SocietyShowreel,
-    Event,
-    SocietyRequest,
-    EventRequest,
-    User,
-    UserRequest,
     Award,
     AwardStudent,
-    AdminReportRequest,
-    ReportReply,
-    Comment,
     SocietyNews,
     NewsComment,
 )
@@ -38,11 +32,43 @@ class Command(BaseCommand):
     def __init__(self):
         self.event_generator = RandomEventDataGenerator()
         self.student_generator = RandomStudentDataGenerator()
-        self.society_generator = RandomSocietyDataGenerator()
+        self.admin_generator = AdminGenerator()
+        self.society_generator = RandomSocietyDataGenerator(
+            self.admin_generator,
+            self.event_generator,
+        )
         super().__init__()
 
     def handle(self, *args, **kwargs):
         """Handles database seeding"""
+        # Create/Get Admin using create_admin, to avoid code duplication
+        self.admin_generator.create_admin(5)
+        self.admin_generator.create_super_admins()
+
+        self.student_generator.create_student(100)
+
+        self.create_default_students()
+        self.society_generator.create_society(50)
+        self.event_generator.create_event(35, past=False)
+        self.event_generator.create_event(5, past=True)
+
+        self.pre_define_awards()
+        self.randomly_assign_awards(200)
+
+        self.admin_generator.create_admin_reports(10)
+        self.create_society_news(15)
+
+        self.broadcast_updates()
+
+        self.stdout.write(self.style.SUCCESS("Seeding complete!"))
+
+    def broadcast_updates(self):
+        """Broadcast updates to the WebSocket"""
+        # print("Broadcasting updates to WebSocket...") # Debugging statement
+        broadcast_dashboard_update()
+
+    def create_default_students(self):
+        """Seeds all the default example students"""
         def get_or_create_user(model, username, email, first_name, last_name, defaults):
             user, created = model.objects.get_or_create(
                 email=email,
@@ -54,16 +80,10 @@ class Command(BaseCommand):
                 },
             )
             if created:
-                self.stdout.write(self.style.SUCCESS(f"{model.__name__} created: {user.username}"))
+                print(self.style.SUCCESS(f"{model.__name__} created: {user.username}"))
             else:
-                self.stdout.write(f"{model.__name__} already exists: {user.username}")
+                print(f"{model.__name__} already exists: {user.username}")
             return user, created
-
-        # Create/Get Admin using create_admin, to avoid code duplication
-        self.create_admin(5)
-        self.create_super_admins()
-
-        self.create_student(100)
 
         student, _ = get_or_create_user(
             Student,
@@ -120,102 +140,6 @@ class Command(BaseCommand):
             event_manager=event_manager,
         )
 
-        self.create_society(50)
-        self.create_event(35, past=False)
-        self.create_event(5, past=True)
-
-        self.pre_define_awards()
-        self.randomly_assign_awards(200)
-
-        self.create_admin_reports(10)
-        self.create_society_news(15)
-
-        self.broadcast_updates()
-
-        self.stdout.write(self.style.SUCCESS("Seeding complete!"))
-
-    def get_model_entries_as_list(self, model):
-        """Get all the entries from a model as a single list"""
-        return list(model.objects.all())
-
-    def get_active_students(self):
-        """Get all students marked as active"""
-        return Student.objects.filter(is_active=True)
-
-    def create_student(self, n):
-        """Create n different students"""
-        created_count = 0
-
-        while created_count < n:
-            created_count += 1
-            print(f"Seeding student {created_count}/{n}", end='\r', flush=True)
-
-            data = self.student_generator.generate()
-
-            email = f"{data['username']}@kcl.ac.uk"
-
-            student = Student.objects.create(
-                email=email,
-                username=data["username"],
-                first_name=data["first_name"],
-                last_name=data["last_name"],
-                major=data["major"],
-                password=make_password("studentpassword"),
-            )
-            self.handle_user_status(student)
-            student.save()
-
-        print(self.style.SUCCESS(f"Seeding student {created_count}/{n}"), flush=True)
-        return created_count
-
-    def handle_user_status(self, user):
-        """Creates user requests if pending"""
-        update_request = choice((True, False))
-
-        if update_request:
-            UserRequest.objects.create(
-                major="CompSci",
-                from_student=user,
-                intent="UpdateUse",
-            )
-        return update_request
-
-    def create_admin(self, n):
-        """Create n different admins"""
-        for i in range(1, n+1):
-            print(f"Seeding admin {i}/{n}", end='\r', flush=True)
-            User.objects.get_or_create(
-                username=f"admin{i}",
-                email=f"admin{i}@example.com",
-                first_name=f"admin{i}",
-                last_name="User",
-                role="admin",
-                is_staff=True,
-                defaults={"password": make_password("adminpassword")},
-            )
-        print(self.style.SUCCESS(f"Seeding admin {n}/{n}"), flush=True)
-
-    def create_super_admins(self):
-        """Creates a pre-defined number of super-admins"""
-        super_admins = [
-            {"username": "superadmin1", "email": "superadmin1@example.com", "first_name": "Alice", "last_name": "Smith"},
-            {"username": "superadmin2", "email": "superadmin2@example.com", "first_name": "Bob", "last_name": "Johnson"},
-        ]
-
-        for admin in super_admins:
-            _, created = User.objects.get_or_create(
-                username=admin["username"],
-                email=admin["email"],  # Required field - must be passed directly
-                first_name=admin["first_name"],  # Required field - must be passed directly
-                last_name=admin["last_name"],  # Required field - must be passed directly
-                defaults={"password": make_password("superadminpassword"), "is_super_admin": True,  "role": "admin", "is_staff": True},  # Only optional fields in defaults
-            )
-
-            if created:
-                self.stdout.write(self.style.SUCCESS(f"Super Admin '{admin['username']}' created."))
-            else:
-                self.stdout.write(self.style.WARNING(f"Super Admin '{admin['username']}' already exists."))
-
     def create_robotics_society(self, president, student, vice_president, event_manager):
         """Seeds the example society, Robotics Society"""
         if president.is_event_manager or president.is_vice_president:
@@ -223,12 +147,15 @@ class Command(BaseCommand):
             president.is_vice_president = False
             president.save()
 
-        self.create_society(name="Robotics Club", president_force=president)
+        self.society_generator.create_society(
+            name="Robotics Club",
+            president_force=president
+        )
 
         society = Society.objects.filter(name="Robotics Club").first()
         president.president_of = society
-        self.seed_society_showreel(society, n=10)
-        self.generate_random_event(society)
+        self.society_generator.seed_society_showreel(society, n=10)
+        self.event_generator.generate_random_event(society)
 
         society.vice_president = vice_president
         society.event_manager = event_manager
@@ -242,253 +169,6 @@ class Command(BaseCommand):
         vice_president.save()
         event_manager.save()
         society.save()
-
-    def create_society(self, n=1, name=None, president_force=None):
-        """
-        Create n different societies owned by random students
-        or creates a society with the name 'name'
-        """
-        for i in range(1, n+1):
-            print(f"Seeding society {i}/{n}", end='\r', flush=True)
-
-            available_students = self.get_active_students().order_by("?")
-            if not available_students.exists():
-                print(self.style.WARNING("No available students."))
-                break
-
-            # Get an admin for the required approved_by field
-            admin = User.get_admins().order_by('?').first()
-            if not admin:
-                print(self.style.WARNING("No admin users found. Creating one."))
-                self.create_admin(1)
-                admin = User.get_admins().first()
-
-            data = self.society_generator.generate()
-            approved = True
-            society = None
-            president = president_force
-            viable_presidents = (
-                available_students
-                .filter(president_of=None)
-                .filter(is_vice_president=False)
-                .filter(is_event_manager=False)
-            )
-            if not president_force:
-                president = viable_presidents.first()
-            if not name:
-                approved = self.handle_society_status(
-                    president,
-                    data["name"],
-                )
-            else:
-                data["name"] = name
-            if approved:
-                if "social_media_links" not in data or not data["social_media_links"]:
-                    data["social_media_links"] = {"Email": f"{data['name'].lower().replace(' ', '')}@example.com"}
-
-                society, created = Society.objects.get_or_create(
-                    name=data["name"],
-                    president=president,
-                    category=data["category"],
-                    status="Approved",
-                    description=data["description"],
-                    tags=data["tags"],
-                    icon=data["icon"],
-                    approved_by=admin,
-                    social_media_links=data["social_media_links"]
-                )
-                if created:
-                    self.finalize_society_creation(society)
-
-                    num_events = randint(2, 5)
-                    for _ in range(num_events):
-                        self.generate_random_event(society)
-
-        print(self.style.SUCCESS(f"Seeding society {n}/{n}"), flush=True)
-
-    def set_society_socials(self, society : Society):
-        """Assigns socials to a society (placeholder kclsu)"""
-        socials_dict = {
-            "Facebook": "https://www.facebook.com/kclsupage/",
-            "Instagram": "https://www.instagram.com/kclsu/",
-            "X": "https://x.com/kclsu",
-        }
-        society.social_media_links = socials_dict
-
-    def finalize_society_creation(self, society):
-        """Finishes society creation with proper members and roles"""
-        society.president.president_of = society
-        society.president.is_president = True
-
-        # Ensure at least 5 members
-        all_students = list(Student.objects.exclude(id=society.president.id).order_by("?").filter(is_active=True))
-        members_num = 5
-        while members_num < self.get_active_students().count()-1 and random() <= 0.912:
-            members_num += 1
-        selected_members = all_students[:members_num-2]
-        request_members = all_students[members_num-2:members_num]
-
-        # Ensure the president is always a member
-        society.society_members.add(society.president)
-        society.society_members.add(*selected_members)
-        society.save()
-
-        for member in request_members:
-            SocietyRequest.objects.create(
-                intent="JoinSoc",
-                from_student=member,
-                society=society,
-            )
-
-        selected_members = list(
-            society.society_members
-            .filter(is_vice_president=False)
-            .filter(is_event_manager=False)
-            .filter(is_president=False)
-        )
-        # Assign roles (ensure at least 2 for vp and event manager)
-        if len(selected_members) >= 2:
-            society.vice_president = selected_members[0]
-            society.vice_president.is_vice_president = True
-            society.vice_president.save()
-
-            society.event_manager = selected_members[1]
-            society.event_manager.is_event_manager = True
-            society.event_manager.save()
-
-        society.approved_by = User.get_admins().order_by('?').first()
-
-        self.set_society_socials(society)
-        self.seed_society_showreel(society)
-
-        society.save()
-        society.president.save()
-
-    def handle_society_status(self, president, name):
-        """Creates society requests if pending, else assigns an admin to approved_by"""
-        # At least half of the societies should be approved
-        random_status = choice(["Approved", "Approved", "Pending", "Rejected"])
-
-        if random_status == "Approved":
-            society_request, _ = SocietyRequest.objects.get_or_create(
-                name=name,
-                president=president,
-                category="Tech",
-                from_student=president,
-                intent="CreateSoc",
-            )
-
-            society_request.approved = True
-            society_request.save()
-            return True
-        elif random_status == "Pending":
-            SocietyRequest.objects.get_or_create(
-                name=name,
-                president=president,
-                category="Tech",
-                from_student=president,
-                intent="CreateSoc",
-            )
-        else:
-            SocietyRequest.objects.get_or_create(
-                name=name,
-                president=president,
-                from_student=president,
-                category="Tech",
-                intent="CreateSoc",
-                approved=False,
-            )
-        return False
-
-    def create_event(self, n, past=False):
-        """Create n different events"""
-        societies = self.get_model_entries_as_list(Society)
-        if not societies:
-            print(self.style.WARNING("No societies found. Skipping event creation."))
-            return
-
-        for i in range(1, n + 1):
-            print(f"Seeding event {i}/{n}", end='\r')
-            society = choice(societies)
-
-            event, _ = self.generate_random_event(society, status="Pending", past=past)
-
-            approved = self.handle_event_status(event)
-            if approved and past:
-                self.handle_attendance(event)
-            if approved:
-                self.create_event_comments(event, past)
-
-        print(self.style.SUCCESS(
-            f"Seeding {'past' if past else ''} event {n}/{n}"
-        ), flush=True)
-
-    def handle_attendance(self, event):
-        """Records seeded attendance for event attendees"""
-        attendees = event.current_attendees.all()
-        for attendee in attendees:
-            attended = choice((True, False))
-            if attended:
-                attendee.attended_events.add(event)
-
-    def generate_random_event(self, society, data=None, status="Approved", past=False):
-        """Generate a random event and ensure attendees are added."""
-        if not data:
-            data = self.event_generator.generate(society.name, past)
-        event, created = Event.objects.get_or_create(
-            title=data["name"],
-            main_description=data["description"],
-            date=data["event_date"],
-            start_time=data["event_time"],
-            duration=data["duration"],
-            hosted_by=society,
-            location=data["location"],
-            status=status,
-        )
-
-        if created and status=="Approved":
-            self.create_event_comments(event, past)
-        if created:
-            all_students = list(society.society_members.order_by("?"))
-            num_attendees = min(randint(5, 20), len(all_students))
-            selected_attendees = all_students[:num_attendees]
-
-            event.current_attendees.add(*selected_attendees)
-            event.save()
-            print(self.style.SUCCESS(f"Event Created: {event.title} ({event.date})"))
-
-        return event, created
-
-    def handle_event_status(self, event):
-        """Creates requests for event creation"""
-        random_status = choice(["Pending", "Approved", "Rejected"])
-
-        if event.date < date.today():
-            random_status = "Approved" if random_status == "Pending" else random_status
-
-        default_student = event.hosted_by.president or self.get_active_students().first()
-        if not default_student:
-            print("No student available to assign from_student.")
-            return False
-
-        EventRequest.objects.create(
-            event=event,
-            hosted_by=event.hosted_by,
-            from_student=default_student,
-            intent="CreateEve",
-            approved=(True if random_status == "Approved" else False if random_status == "Rejected" else None),
-        )
-
-        if random_status == "Approved":
-            event.status = "Approved"
-            event.save()
-
-        return random_status == "Approved"
-
-    def broadcast_updates(self):
-        """Broadcast updates to the WebSocket"""
-        # print("Broadcasting updates to WebSocket...") # Debugging statement
-        broadcast_dashboard_update()
 
     def pre_define_awards(self):
         """Pre-define automatic awards"""
@@ -562,8 +242,8 @@ class Command(BaseCommand):
 
     def randomly_assign_awards(self, n):
         """Give out n random awards to random students"""
-        students = list(self.get_active_students())
-        awards = self.get_model_entries_as_list(Award)
+        students = list(get_active_students())
+        awards = get_model_entries_as_list(Award)
         for i in range(1, n+1):
             print(f"Seeding awards {i}/{n}", end='\r')
             random_student = choice(students)
@@ -571,91 +251,9 @@ class Command(BaseCommand):
             self.enforce_award_validity(random_award, random_student)
         print(self.style.SUCCESS(f"Seeding awards {n}/{n}"))
 
-    def seed_society_showreel(self, society, caption="A sample caption", n=randint(1, 10)):
-        """
-        Adds up to 'n' new SocietyShowreel entries (max 10) for a society.
-        Before creating new showreels, we get the current number of entries
-        ensuring we don't surpass the limit
-        """
-        current_entries = SocietyShowreel.objects.filter(society=society).count()
-        new_entries = n - current_entries
-
-        # Create up to 'n' new showreel entries, but never more than 10
-        for _ in range(new_entries):
-            colour = (randint(0, 255), randint(0, 255), randint(0,255))
-            size = (100, 100)
-            image = Image.new('RGB', size=size, color=colour)
-            buffer = BytesIO()
-            image.save(buffer, format='JPEG')
-            buffer.seek(0)
-
-            uploaded_file = SimpleUploadedFile(
-                f"showreel_{society.id}.jpeg",
-                buffer.read(),
-                content_type='image/jpeg'
-            )
-
-            SocietyShowreel.objects.create(
-                society=society,
-                photo=uploaded_file,
-                caption=caption
-            )
-
-    def create_admin_reports(self, n):
-        """Seeds the db with entries for AdminReportRequest & ReportReply"""
-        types = ["Misconduct", "System Issue", "Society Issue", "Event Issue", "Other"]
-
-        societies = self.get_model_entries_as_list(Society)
-        if not societies:
-            print("No society found to report within")
-        else:
-            for i in range(n):
-                society = choice(societies)
-                student = choice(list(society.society_members.all()))
-                report_type = choice(types)
-                report = self.create_report(society, student, report_type, i)
-                self.create_report_responses(report)
-                print(f"Created report: {report}")
-
-
-    def create_report(self, society, student, report_type, i):
-        """Creates an individual report"""
-        is_from_society_officer = True if student==society.president else False
-        email = student.email
-        from_student = student
-
-        report = AdminReportRequest.objects.create(
-            report_type=report_type,
-            subject=f"Sample Report {i+1}",
-            details=f"This is the detailed description for report {i+1}.",
-            is_from_society_officer=is_from_society_officer,
-            email=email,
-            from_student=from_student,
-        )
-        return report
-
-    def create_report_responses(self, report_request: AdminReportRequest):
-        """Seed repsonses to a report request"""
-        prev_reply = None
-        responder = None
-        admins = list(User.get_admins())
-        while random() < 0.8:
-            if prev_reply is None or not prev_reply.is_admin_reply:
-                responder = choice(admins)
-            else:
-                responder = report_request.from_student
-            rep_reply = ReportReply.objects.create(
-                report=report_request,
-                parent_reply = prev_reply,
-                content = "This is content for a report reply",
-                replied_by = responder,
-                is_admin_reply = True if responder in admins else False,
-            )
-            prev_reply = rep_reply
-
     def create_society_news(self, n: int):
         """Create news randomly for societies"""
-        societies = self.get_model_entries_as_list(Society)
+        societies = get_model_entries_as_list(Society)
         for i in range(1,n+1):
             society = choice(societies)
             members = list(society.society_members.all())
@@ -670,25 +268,9 @@ class Command(BaseCommand):
             self.create_news_comments(soc_news)
             print(self.style.SUCCESS(f"News Created: {soc_news}"))
 
-    def create_event_comments(self, event: Event, past: bool=False, parent: Comment=None):
-        """Seeds comments on events"""
-        content = self.get_comment_data(parent, past)
-        society_members = list(event.hosted_by.society_members.all())
-
-        comment = Comment.objects.create(
-            event=event,
-            user=choice(society_members),
-            content=content,
-        )
-        self.like_dislike_comments(comment, society_members)
-        self.assign_comment_parent(comment, parent)
-
-        if random() < 0.60:
-            self.create_event_comments(event, past, choice((comment, parent)))
-
     def create_news_comments(self, news: SocietyNews, parent: NewsComment=None):
         """Seeds comments on news"""
-        content = self.get_comment_data(parent)
+        content = get_comment_data(parent)
         society_members = list(news.society.society_members.all())
 
         comment = NewsComment.objects.create(
@@ -696,32 +278,8 @@ class Command(BaseCommand):
             user=choice(society_members),
             content=content,
         )
-        self.like_dislike_comments(comment, society_members)
-        self.assign_comment_parent(comment, parent)
+        like_dislike_comments(comment, society_members)
+        assign_comment_parent(comment, parent)
 
         if random() < 0.60:
             self.create_news_comments(news, choice((comment, parent)))
-
-    def assign_comment_parent(self, comment, parent):
-        """Assigns a parent comment to a comment"""
-        if parent:
-            comment.parent_comment = parent
-            comment.save()
-
-    def get_comment_data(self, parent, past=False):
-        """Gets the content for a comment"""
-        generator = RandomCommentDataGenerator()
-        if parent:
-            data = generator.generate_reply()
-        else:
-            data = generator.generate_comment(past)
-        return data["content"]
-
-    def like_dislike_comments(self, comment, society_members):
-        """Applies likes and dislike to a comment"""
-        like_num = randint(0, 5)
-        comment.likes.add(*society_members[:min(like_num, len(society_members))])
-        if like_num < len(society_members):
-            dislike_num = like_num + randint(0, 5)
-            comment.dislikes.add(*society_members[like_num:min(dislike_num, len(society_members))])
-        comment.save()
