@@ -10,11 +10,16 @@ our system.
 
 \subsection{Overall System Architecture}
 
-We implemented a modern client-server architecture using a clear separation between frontend and backend components. This separation follows the principles of the Model-View-Controller (MVC) pattern, which promotes modularity and maintainability by isolating different aspects of the application. Our system architecture consists of:
+We implemented a modern client-server architecture using a clear separation between
+frontend and backend components. This separation follows the principles of the 
+Model-View-Controller (MVC) pattern, which promotes modularity and maintainability
+by isolating different aspects of the application. Our system architecture consists of:
 
 \begin{itemize}
-    \item \textbf{Frontend Layer}: A React-based single-page application that handles user interface rendering and client-side logic
-    \item \textbf{Backend Layer}: A Django-based REST API that provides data services, business logic, and database interactions
+    \item \textbf{Frontend Layer}: A React-based single-page application that handles
+    user interface rendering and client-side logic
+    \item \textbf{Backend Layer}: A Django-based REST API that provides data services,
+    business logic, and database interactions
     \item \textbf{Database Layer}: Persistent storage for all application data
 \end{itemize}
 
@@ -41,7 +46,9 @@ Our backend follows Django's recommended project structure with significant cust
 This organization is evident in our project structure:
 
 \begin{itemize}
-    \item \texttt{models\_files/}: Contains domain-specific model definitions (\texttt{user\_models.py}, \texttt{society\_models.py}, \texttt{event\_models.py}, etc.)
+    \item \texttt{models\_files/}: Contains domain-specific model definitions (\texttt{user\_models.py}, 
+    
+    \texttt{society\_models.py}, \texttt{event\_models.py}, etc.)
     \item \texttt{views\_files/}: Contains endpoint implementations categorized by functionality (\texttt{admin\_views.py}, \texttt{president\_views.py}, \texttt{event\_views.py}, etc.)
     \item \texttt{serializers\_files/}: Contains domain-specific serializers for API data transformation
     \item \texttt{tests/}: Contains hierarchically organized test files mirroring the application structure

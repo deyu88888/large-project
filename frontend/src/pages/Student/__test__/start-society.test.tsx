@@ -4,7 +4,10 @@ import { vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import StartSociety from '../StartSociety';
-import axios from 'axios';
+jest.mock('axios')
+import axios from 'axios'
+const mockedAxios = axios as jest.Mocked<typeof axios>
+
 
 vi.mock('axios', () => ({
   default: {

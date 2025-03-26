@@ -10,16 +10,16 @@ import {
   useTheme, 
   InputBase, 
   IconButton,
-  Button,
   Paper,
   Tabs,
   Tab,
   CircularProgress,
-  Alpha
 } from '@mui/material';
 import { tokens } from '../theme/theme';
 import { FaCalendarAlt, FaSearch } from 'react-icons/fa';
-import axios from 'axios';
+jest.mock('axios')
+import axios from 'axios'
+const mockedAxios = axios as jest.Mocked<typeof axios>
 import useAuthCheck from "../hooks/useAuthCheck";
 
 const SearchResultsPage = () => {

@@ -1,11 +1,11 @@
 import datetime
-from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
+from django.contrib.auth import get_user_model
+from django.urls import reverse
 from django.utils.timezone import now
 from api.models import User, Event, Society, Student
 from api.serializers import EventSerializer
-from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import AccessToken
 
 User = get_user_model()
@@ -50,7 +50,7 @@ class ManageEventListViewTest(APITestCase):
         
         if hasattr(self.student_president, 'president_of'):
             self.student_president.president_of = self.society
-            self.student_president.save()
+        self.student_president.save()
         
         self.url = "/api/events/list/"
         self.today = now().date()
@@ -77,7 +77,7 @@ class ManageEventListViewTest(APITestCase):
         self.pending_event = Event.objects.create(
             title="Pending Event",
             date=self.today,
-            start_time="12:00:00",
+            start_time="23:59:59",
             status="Pending",
             hosted_by=self.society
         )
@@ -142,6 +142,7 @@ class ManageEventListViewTest(APITestCase):
             format="json"
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(self.pending_event.status, "Pending")
         expected_data = EventSerializer([self.pending_event], many=True).data
         self.assertEqual(response.data, expected_data)
 

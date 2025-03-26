@@ -10,7 +10,6 @@ interface DescriptionRequest {
   
 }
 
-
 const handleApiError = (error: unknown, context: string): void => {
   console.error(`Error ${context}:`, error);
 };
@@ -33,6 +32,5 @@ const fetchPendingDescriptions = async (): Promise<DescriptionRequest[] | undefi
 
 
 export { fetchPendingDescriptions };
-
 
 export type { DescriptionRequest };

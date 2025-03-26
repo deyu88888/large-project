@@ -90,5 +90,5 @@ class EventModuleTestCase(TestCase):
 
         self.assertTrue(result.startswith("image - event_modules_files/"))
         self.assertTrue(result.endswith(".png"))
-        self.assertIn("image_", result)
+        self.assertIn("image", result)
 

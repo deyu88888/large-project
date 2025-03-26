@@ -50,7 +50,7 @@ class CurrentUserViewTestCase(APITestCase):
         self.assertIn("detail", response.data)
         self.assertEqual(response.data["detail"], "Authentication credentials were not provided.")
 
-    @patch("api.views.UserSerializer")
+    @patch("api.views_files.user_views.UserSerializer")
     def test_get_current_user_with_serializer_error(self, MockUserSerializer):
         """
         Test scenario where the user serializer does not return valid data.
@@ -60,10 +60,10 @@ class CurrentUserViewTestCase(APITestCase):
         MockUserSerializer.return_value = mock_serializer
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.access_token}")
         response = self.client.get(self.current_user_url)
-        self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+        self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR, (response, response.data))
         self.assertIn("error", response.data)
         self.assertEqual(response.data["error"], "User data could not be retrieved. Please try again later.")
-        
+
     def test_put_update_current_user(self):
         """
         Test updating the current user details.

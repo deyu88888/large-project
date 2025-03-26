@@ -8,7 +8,9 @@
   "compilerOptions": {
 
     "types": ["vitest/globals"],
+    "composite": true,
+    "noEmit": false
   },
 
-  "include": ["src"]
+  "exclude": ["node_modules", "coverage", "**/*.test.ts", "**/*.test.tsx"]
 }

@@ -88,6 +88,7 @@ export default function ProfilePage() {
         .then((res) => {
           setProfile(res.data);
           setIsFollowing(res.data.is_following || false);
+          fetchAwards(res.data.id)
         })
         .catch(() => setProfile(null));
     }

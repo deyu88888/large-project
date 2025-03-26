@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext, useCallback, FC } from 'react';
+import { useEffect, useState, useContext, useCallback, FC } from 'react';
 import { Box, Button, useTheme } from "@mui/material";
 import { DataGrid, GridColDef, GridRenderCellParams, GridToolbar } from "@mui/x-data-grid";
 import { tokens } from "../../theme/theme";
@@ -24,11 +24,9 @@ interface ActionButtonProps {
   onReply: (id: string) => void;
 }
 
-
 const formatDate = (dateString: string): string => {
   return new Date(dateString).toLocaleString();
 };
-
 
 const createMailtoUrl = (email: string, subject: string): string => {
   const emailSubject = encodeURIComponent(`Response to your report: "${subject}"`);
@@ -151,7 +149,7 @@ const AdminReportList: FC = () => {
   
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [, setError] = useState<string | null>(null);
 
   
   const loadReports = useCallback(async () => {

@@ -24,28 +24,30 @@ import EmailIcon from "@mui/icons-material/Email";
 import ReportProblemIcon from "@mui/icons-material/ReportProblem";
 import { tokens } from "../theme/theme";
 import axios from "axios";
-import { sub } from "date-fns";
 
 const Support = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const isLight = theme.palette.mode === "light";
-  
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState<string | false>(false);
+
   const [reportType, setReportType] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [subject, setSubject] = useState("");
-
-  
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [snackbar, setSnackbar] = useState({
+
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: 'success' | 'error' | 'info' | 'warning';
+  }>({
     open: false,
     message: "",
     severity: "success"
   });
 
-  const handleChange = (panel) => (event, isExpanded) => {
+  const handleChange = (panel: string) => (_: React.SyntheticEvent, isExpanded: boolean) => {
     setExpanded(isExpanded ? panel : false);
   };
 
@@ -53,7 +55,7 @@ const Support = () => {
     setSnackbar({ ...snackbar, open: false });
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
     

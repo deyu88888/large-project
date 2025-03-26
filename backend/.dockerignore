@@ -1,0 +1,35 @@
+# Python artifacts
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+venv/
+
+# Django stuff
+*.log
+*.sqlite3
+db.sqlite3
+media/
+staticfiles/
+
+# Env and secrets
+.env
+*.env
+.env.*
+
+# Docker files
+Dockerfile
+.dockerignore
+
+# VCS
+.git/
+.gitignore
+
+# OS files
+.DS_Store
+Thumbs.db
