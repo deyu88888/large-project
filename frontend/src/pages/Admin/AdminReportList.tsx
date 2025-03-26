@@ -5,7 +5,7 @@ import { tokens } from "../../theme/theme";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { useSettingsStore } from "../../stores/settings-store";
 import { fetchReports } from './fetchReports';
-import { Report } from '../../types';
+import { Report } from '../../types/president/report';
 import { useNavigate } from 'react-router-dom';
 
 

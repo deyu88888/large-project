@@ -1,6 +1,6 @@
 // TODO: separate all the styles into a separate file if time permits
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, JSX } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiClient, apiPaths } from "../api";
 import { useTheme } from "@mui/material/styles";

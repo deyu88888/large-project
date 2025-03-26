@@ -13,6 +13,7 @@ export interface User {
     is_vice_president?: boolean;
     is_event_manager?: boolean;
     president_of?: number;
+    vice_president_of?: number;
     vice_president_of_society?: number;
     event_manager_of_society?: number;
     isStaff: boolean;

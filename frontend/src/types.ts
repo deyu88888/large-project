@@ -45,15 +45,15 @@ export type SocietyEvent = {        // avoid naming conflicts with JavaScript's 
 export type Student = {
     id: number;
     username: string;
-    firstName: string;
-    lastName: string;
+    first_name: string;
+    last_name: string;
     email: string;
-    isActive: boolean;
+    is_active: boolean;
     role: string;
     major: string;
     societies: string[];
-    presidentOf: number[];
-    isPresident: boolean;
+    president_of: number[];
+    is_president: boolean;
   };
 
   export type News = {

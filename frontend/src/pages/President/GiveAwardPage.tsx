@@ -35,7 +35,7 @@ const GiveAwardPage: React.FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const navigate = useNavigate();
-  const params = useParams<StudentIdParam>();
+  const params = useParams();
   const [awards, setAwards] = useState<Award[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);

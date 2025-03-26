@@ -20,7 +20,7 @@ import { EventPreview } from "../../components/EventPreview";
 import type { EventData } from "../../components/EventDetailLayout";
 
 
-const WEBSOCKET_URL = "ws:";
+const WEBSOCKET_URL = "ws:localhost:8000";
 const RECONNECT_TIMEOUT = 5000;
 
 interface DeleteDialogProps {
@@ -49,20 +49,20 @@ interface DataGridContainerProps {
 function mapToEventData(raw: any): EventData {
   return {
     title: raw.title || "",
-    mainDescription: raw.main_description || "",
+    main_description: raw.main_description || "",
     date: raw.date || "",
-    startTime: raw.start_time || "",
+    start_time: raw.start_time || "",
     duration: raw.duration || "",
     location: raw.location || "",
-    maxCapacity: raw.max_capacity || 0,
-    hostedBy: raw.hosted_by || 0,
-    eventId: raw.id,
+    max_capacity: raw.max_capacity || 0,
+    hosted_by: raw.hosted_by || 0,
+    event_id: raw.id,
     current_attendees: raw.any,
-    coverImageUrl: raw.cover_image || "",
-    extraModules: raw.extra_modules || [],
-    participantModules: raw.participant_modules || [],
-    isParticipant: false,
-    isMember: false,
+    cover_image_url: raw.cover_image || "",
+    extra_modules: raw.extra_modules || [],
+    participant_modules: raw.participant_modules || [],
+    is_participant: false,
+    is_member: false,
   };
 }
 
@@ -186,9 +186,9 @@ const DataGridContainer: FC<DataGridContainerProps> = ({
   );
 };
 
-const handleSocketError = useCallback((event: Event) => {
-  console.error("WebSocket Error:", event);
-}, []);
+// const handleSocketError = useCallback((event: Event) => {
+//   console.error("WebSocket Error:", event);
+// }, []);
 
 const createWebSocket = (
   url: string,
@@ -273,7 +273,7 @@ const EventList: FC = () => {
       WEBSOCKET_URL,
       handleSocketOpen,
       handleSocketMessage,
-      handleSocketError,
+      handleSocketError as any,
       handleSocketClose
     );
   }, [handleSocketOpen, handleSocketMessage, handleSocketError, handleSocketClose]);

@@ -1,8 +1,7 @@
 import { styled, Theme } from "@mui/material/styles";
-import { CSSObject, StyledComponent } from "@mui/system";
+import { CSSObject } from "@mui/system";
 import MuiAppBar, { AppBarProps as MuiAppBarProps } from "@mui/material/AppBar";
 import MuiDrawer from "@mui/material/Drawer";
-import React from "react";
 
 const drawerWidth = 240;
 
@@ -32,11 +31,7 @@ const closedMixin = (theme: Theme): CSSObject => ({
 });
 
 // Custom Drawer Header
-export const CustomDrawerHeader: StyledComponent<
-  React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement>,
-  object,
-  Theme
-> = styled("div")(({ theme }) => ({
+export const CustomDrawerHeader: any = styled("div")(({ theme }) => ({
   display: "flex",
   alignItems: "center",
   justifyContent: "flex-end",
@@ -49,11 +44,7 @@ interface AppBarProps extends MuiAppBarProps {
   open?: boolean;
 }
 
-export const CustomAppBar: StyledComponent<
-  AppBarProps,
-  object,
-  Theme
-> = styled(MuiAppBar, {
+export const CustomAppBar: any = styled(MuiAppBar, {
   shouldForwardProp: (prop) => prop !== "open",
 })<AppBarProps>(({ theme, open }) => ({
   zIndex: theme.zIndex.drawer + 1,
@@ -68,11 +59,7 @@ export const CustomAppBar: StyledComponent<
 }));
 
 // Custom Drawer with optional `open` prop
-export const CustomDrawer: StyledComponent<
-  { open?: boolean },
-  object,
-  Theme
-> = styled(MuiDrawer, {
+export const CustomDrawer: any= styled(MuiDrawer, {
   shouldForwardProp: (prop) => prop !== "open",
 })<{ open?: boolean }>(({ theme, open }) => ({
   width: drawerWidth,

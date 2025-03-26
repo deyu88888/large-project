@@ -1,4 +1,10 @@
-import React, { useState, useEffect, ChangeEvent, FormEvent, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  ChangeEvent,
+  FormEvent,
+  useCallback,
+} from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   Box,
@@ -15,7 +21,6 @@ import { useTheme } from "@mui/material/styles";
 import { apiClient, apiPaths } from "../../api";
 import { tokens } from "../../theme/theme";
 import { Event } from "../../types";
-
 
 interface FormErrors {
   title?: string;
@@ -87,7 +92,6 @@ interface EventFormProps {
   onReset: () => void;
 }
 
-
 const createField = (
   formData: Event | null,
   name: string,
@@ -96,7 +100,6 @@ const createField = (
   if (!formData) return defaultValue;
   return formData[name as keyof Event]?.toString() || defaultValue;
 };
-
 
 const fetchEventData = async (eventId: number): Promise<Event> => {
   const response = await apiClient.get(apiPaths.USER.ADMINEVENTVIEW(eventId));
@@ -107,8 +110,10 @@ const updateEventData = async (eventId: number, data: Event): Promise<void> => {
   await apiClient.patch(`/api/admin/manage-event/${eventId}`, data);
 };
 
-
-const validateRequiredField = (value: string | undefined, fieldName: string): string | undefined => {
+const validateRequiredField = (
+  value: string | undefined,
+  fieldName: string
+): string | undefined => {
   if (!value?.trim()) {
     return `${fieldName} is required`;
   }
@@ -117,30 +122,34 @@ const validateRequiredField = (value: string | undefined, fieldName: string): st
 
 const validateEventForm = (formData: Event | null): FormErrors => {
   if (!formData) return {};
-  
+
   const errors: FormErrors = {};
-  
+
   errors.title = validateRequiredField(formData.title, "Title");
-  errors.main_description = validateRequiredField(formData.main_description, "Description");
+  errors.main_description = validateRequiredField(
+    formData.description,
+    "Description"
+  );
   errors.date = validateRequiredField(formData.date, "Date");
   errors.start_time = validateRequiredField(formData.start_time, "Start time");
   errors.location = validateRequiredField(formData.location, "Location");
-  errors.hosted_by = validateRequiredField(formData.hosted_by?.toString(), "Host information");
-  
-  
-  Object.keys(errors).forEach(key => {
+  errors.hosted_by = validateRequiredField(
+    formData.hosted_by?.toString(),
+    "Host information"
+  );
+
+  Object.keys(errors).forEach((key) => {
     if (errors[key] === undefined) {
       delete errors[key];
     }
   });
-  
+
   return errors;
 };
 
 const isFormValid = (errors: FormErrors): boolean => {
   return Object.keys(errors).length === 0;
 };
-
 
 const FormTextField: React.FC<TextFieldProps> = ({
   label,
@@ -155,7 +164,7 @@ const FormTextField: React.FC<TextFieldProps> = ({
   type,
   InputLabelProps,
   placeholder,
-  fullWidth = true
+  fullWidth = true,
 }) => (
   <TextField
     fullWidth={fullWidth}
@@ -176,35 +185,37 @@ const FormTextField: React.FC<TextFieldProps> = ({
 
 const ActionButtons: React.FC<ActionButtonsProps> = ({ onReset, saving }) => (
   <Box mt={3} display="flex" justifyContent="center" gap={2}>
-    <Button 
-      type="button" 
-      variant="outlined" 
+    <Button
+      type="button"
+      variant="outlined"
       onClick={onReset}
       disabled={saving}
     >
       Reset
     </Button>
-    <Button 
-      type="submit" 
-      variant="contained" 
-      color="primary"
-      disabled={saving}
-    >
+    <Button type="submit" variant="contained" color="primary" disabled={saving}>
       {saving ? <CircularProgress size={24} /> : "Save Changes"}
     </Button>
   </Box>
 );
 
-const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ color = "secondary" }) => (
-  <Box display="flex" alignItems="center" justifyContent="center" minHeight="100vh">
+const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
+  color = "secondary",
+}) => (
+  <Box
+    display="flex"
+    alignItems="center"
+    justifyContent="center"
+    minHeight="100vh"
+  >
     <CircularProgress color={color} />
   </Box>
 );
 
 const BackButton: React.FC<BackButtonProps> = ({ onClick }) => (
-  <Button 
-    variant="contained" 
-    onClick={onClick} 
+  <Button
+    variant="contained"
+    onClick={onClick}
     sx={{ mb: 2 }}
     startIcon={<span>←</span>}
   >
@@ -212,15 +223,18 @@ const BackButton: React.FC<BackButtonProps> = ({ onClick }) => (
   </Button>
 );
 
-const NotificationAlert: React.FC<NotificationProps> = ({ notification, onClose }) => (
+const NotificationAlert: React.FC<NotificationProps> = ({
+  notification,
+  onClose,
+}) => (
   <Snackbar
     open={notification.open}
     autoHideDuration={6000}
     onClose={onClose}
     anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
   >
-    <Alert 
-      onClose={onClose} 
+    <Alert
+      onClose={onClose}
       severity={notification.severity}
       sx={{ width: "100%" }}
     >
@@ -235,11 +249,11 @@ const EventForm: React.FC<EventFormProps> = ({
   saving,
   onChange,
   onSubmit,
-  onReset
+  onReset,
 }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
-  
+
   return (
     <Paper
       sx={{
@@ -253,7 +267,7 @@ const EventForm: React.FC<EventFormProps> = ({
     >
       <form onSubmit={onSubmit}>
         <Grid container spacing={2}>
-          <Grid item xs={12}>
+          <Grid size={{ xs: 12 }}>
             <FormTextField
               label="Event Title"
               name="title"
@@ -265,7 +279,7 @@ const EventForm: React.FC<EventFormProps> = ({
             />
           </Grid>
 
-          <Grid item xs={12}>
+          <Grid size={{ xs: 12 }}>
             <FormTextField
               label="Description"
               name="main_description"
@@ -279,7 +293,12 @@ const EventForm: React.FC<EventFormProps> = ({
             />
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          <Grid
+            size={{
+              md: 6,
+              xs: 12,
+            }}
+          >
             <FormTextField
               label="Date"
               name="date"
@@ -293,7 +312,12 @@ const EventForm: React.FC<EventFormProps> = ({
             />
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          <Grid
+            size={{
+              md: 6,
+              xs: 12,
+            }}
+          >
             <FormTextField
               label="Start Time"
               name="start_time"
@@ -307,7 +331,12 @@ const EventForm: React.FC<EventFormProps> = ({
             />
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          <Grid
+            size={{
+              md: 6,
+              xs: 12,
+            }}
+          >
             <FormTextField
               label="Duration"
               name="duration"
@@ -319,7 +348,12 @@ const EventForm: React.FC<EventFormProps> = ({
             />
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          <Grid
+            size={{
+              md: 6,
+              xs: 12,
+            }}
+          >
             <FormTextField
               label="Location"
               name="location"
@@ -331,7 +365,7 @@ const EventForm: React.FC<EventFormProps> = ({
             />
           </Grid>
 
-          <Grid item xs={12}>
+          <Grid size={{ xs: 12 }}>
             <FormTextField
               label="Hosted By"
               name="hosted_by"
@@ -344,10 +378,7 @@ const EventForm: React.FC<EventFormProps> = ({
           </Grid>
         </Grid>
 
-        <ActionButtons 
-          onReset={onReset}
-          saving={saving}
-        />
+        <ActionButtons onReset={onReset} saving={saving} />
       </form>
     </Paper>
   );
@@ -361,94 +392,95 @@ const ViewEvent: React.FC = () => {
   const { event_id } = useParams<{ event_id: string }>();
   const eventId = Number(event_id);
 
-  
   const [formState, setFormState] = useState<EventFormState>({
     event: null,
     formData: null,
     loading: true,
     saving: false,
-    errors: {}
+    errors: {},
   });
-  
+
   const [notification, setNotification] = useState<Notification>({
     open: false,
     message: "",
     severity: "info",
   });
 
-  
-  const handleChange = useCallback((e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    
-    setFormState(prev => {
-      
-      const updatedFormData = prev.formData 
-        ? { ...prev.formData, [name]: value } 
-        : null;
-      
-      
-      const updatedErrors = { ...prev.errors };
-      if (updatedErrors[name]) {
-        delete updatedErrors[name];
-      }
-      
-      return {
-        ...prev,
-        formData: updatedFormData,
-        errors: updatedErrors
-      };
-    });
-  }, []);
+  const handleChange = useCallback(
+    (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      const { name, value } = e.target;
+
+      setFormState((prev) => {
+        const updatedFormData = prev.formData
+          ? { ...prev.formData, [name]: value }
+          : null;
+
+        const updatedErrors = { ...prev.errors };
+        if (updatedErrors[name]) {
+          delete updatedErrors[name];
+        }
+
+        return {
+          ...prev,
+          formData: updatedFormData,
+          errors: updatedErrors,
+        };
+      });
+    },
+    []
+  );
 
   const handleGoBack = useCallback(() => {
     navigate(-1);
   }, [navigate]);
 
   const handleReset = useCallback(() => {
-    setFormState(prev => ({
+    setFormState((prev) => ({
       ...prev,
       formData: prev.event,
-      errors: {}
+      errors: {},
     }));
   }, []);
 
   const handleNotificationClose = useCallback(() => {
-    setNotification(prev => ({ ...prev, open: false }));
+    setNotification((prev) => ({ ...prev, open: false }));
   }, []);
 
-  const showNotificationMessage = useCallback((
-    message: string, 
-    severity: "success" | "error" | "info" | "warning" = "info"
-  ) => {
-    setNotification({
-      open: true,
-      message,
-      severity,
-    });
-  }, []);
+  const showNotificationMessage = useCallback(
+    (
+      message: string,
+      severity: "success" | "error" | "info" | "warning" = "info"
+    ) => {
+      setNotification({
+        open: true,
+        message,
+        severity,
+      });
+    },
+    []
+  );
 
-  
   const loadEventData = useCallback(async () => {
     try {
-      setFormState(prev => ({ ...prev, loading: true }));
-      
+      setFormState((prev) => ({ ...prev, loading: true }));
+
       const data = await fetchEventData(eventId);
-      
-      setFormState(prev => ({
+
+      setFormState((prev) => ({
         ...prev,
         event: data,
         formData: data,
-        loading: false
+        loading: false,
       }));
-      
+
       showNotificationMessage("Event loaded successfully!", "success");
     } catch (error) {
       console.error("Error fetching event details", error);
       showNotificationMessage("Failed to load event details", "error");
-      
-      setFormState(prev => ({
+
+      setFormState((prev) => ({
         ...prev,
-        loading: false
+        loading: false,
       }));
     }
   }, [eventId, showNotificationMessage]);
@@ -457,50 +489,56 @@ const ViewEvent: React.FC = () => {
     loadEventData();
   }, [loadEventData]);
 
-  
   const validateAndSetErrors = useCallback(() => {
     const newErrors = validateEventForm(formState.formData);
-    
-    setFormState(prev => ({
+
+    setFormState((prev) => ({
       ...prev,
-      errors: newErrors
+      errors: newErrors,
     }));
-    
+
     return isFormValid(newErrors);
   }, [formState.formData]);
 
-  const handleSubmit = useCallback(async (e: FormEvent) => {
-    e.preventDefault();
-    
-    if (!formState.formData || !formState.event) return;
-    
-    const isValid = validateAndSetErrors();
-    if (!isValid) return;
-    
-    try {
-      setFormState(prev => ({ ...prev, saving: true }));
-      
-      await updateEventData(eventId, formState.formData);
-      
-      showNotificationMessage("Event updated successfully!", "success");
-    } catch (error) {
-      console.error("Error updating event", error);
-      showNotificationMessage("Failed to update event", "error");
-    } finally {
-      setFormState(prev => ({ ...prev, saving: false }));
-    }
-  }, [formState.formData, formState.event, eventId, validateAndSetErrors, showNotificationMessage]);
+  const handleSubmit = useCallback(
+    async (e: FormEvent) => {
+      e.preventDefault();
 
-  
+      if (!formState.formData || !formState.event) return;
+
+      const isValid = validateAndSetErrors();
+      if (!isValid) return;
+
+      try {
+        setFormState((prev) => ({ ...prev, saving: true }));
+
+        await updateEventData(eventId, formState.formData);
+
+        showNotificationMessage("Event updated successfully!", "success");
+      } catch (error) {
+        console.error("Error updating event", error);
+        showNotificationMessage("Failed to update event", "error");
+      } finally {
+        setFormState((prev) => ({ ...prev, saving: false }));
+      }
+    },
+    [
+      formState.formData,
+      formState.event,
+      eventId,
+      validateAndSetErrors,
+      showNotificationMessage,
+    ]
+  );
+
   if (formState.loading || !formState.formData) {
     return <LoadingSpinner />;
   }
 
-  
   return (
     <Box minHeight="100vh" p={4}>
       <BackButton onClick={handleGoBack} />
-      
+
       <Typography variant="h2" textAlign="center" mb={4}>
         View Event Details
       </Typography>

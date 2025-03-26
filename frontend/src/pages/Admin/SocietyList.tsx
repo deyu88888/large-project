@@ -87,7 +87,7 @@ const fetchSocietyList = async (): Promise<Society[]> => {
 const deleteSociety = async (societyId: number | string, reason: string): Promise<void> => {
   await apiClient.request({
     method: "DELETE",
-    url: apiPaths.USER.DELETE("Society", societyId),
+    url: apiPaths.USER.DELETE("Society", Number(societyId)),
     data: { reason },
   });
 };

@@ -7,7 +7,7 @@ import {
   Paper,
   Button,
   CircularProgress,
-  Grid
+  Grid,
 } from "@mui/material";
 import { tokens } from "../../theme/theme";
 import { apiClient } from "../../api";
@@ -37,11 +37,13 @@ const ViewSocietyEvents: React.FC = () => {
 
     setLoading(true);
     setError(null);
-    
+
     try {
       // First fetch society info to get the name
       try {
-        const societyResponse = await apiClient.get(`/api/societies/${society_id}`);
+        const societyResponse = await apiClient.get(
+          `/api/societies/${society_id}`
+        );
         if (societyResponse.data && societyResponse.data.name) {
           setSocietyName(societyResponse.data.name);
         }
@@ -49,7 +51,7 @@ const ViewSocietyEvents: React.FC = () => {
         console.error("Error fetching society info:", error);
         // Continue anyway as this is not critical
       }
-      
+
       // Main events request
       let endpoint = `/api/events?society_id=${society_id}`;
 
@@ -63,27 +65,35 @@ const ViewSocietyEvents: React.FC = () => {
       }
 
       const response = await apiClient.get(endpoint);
-      
+
       // If we got data back but it's empty
-      if (response.data && Array.isArray(response.data) && response.data.length === 0) {
+      if (
+        response.data &&
+        Array.isArray(response.data) &&
+        response.data.length === 0
+      ) {
         setEvents([]);
-      } 
+      }
       // If we got actual event data
       else if (response.data && Array.isArray(response.data)) {
         setEvents(response.data);
-      } 
+      }
       // Fallback to the getAllEvents approach used in the dashboard
       else {
         const allEventsResponse = await apiClient.get("/api/events/");
         if (allEventsResponse.data) {
-          const filteredEvents = allEventsResponse.data.filter((event: EventData) => 
-            event.hosted_by === parseInt(society_id) &&
-            (
-              (event_type === "pending-events" && event.status === "Pending") ||
-              (event_type === "upcoming-events" && event.status === "Approved" && isUpcoming(event.date)) ||
-              (event_type === "previous-events" && event.status === "Approved" && !isUpcoming(event.date)) ||
-              (!event_type)
-            )
+          const filteredEvents = allEventsResponse.data.filter(
+            (event: EventData) =>
+              event.hosted_by === parseInt(society_id) &&
+              ((event_type === "pending-events" &&
+                event.status === "Pending") ||
+                (event_type === "upcoming-events" &&
+                  event.status === "Approved" &&
+                  isUpcoming(event.date)) ||
+                (event_type === "previous-events" &&
+                  event.status === "Approved" &&
+                  !isUpcoming(event.date)) ||
+                !event_type)
           );
           setEvents(filteredEvents);
         }
@@ -108,9 +118,11 @@ const ViewSocietyEvents: React.FC = () => {
       if (isAttending) {
         await apiClient.post("/api/events/rsvp", { event_id: eventId });
       } else {
-        await apiClient.delete("/api/events/rsvp", { data: { event_id: eventId } });
+        await apiClient.delete("/api/events/rsvp", {
+          data: { event_id: eventId },
+        });
       }
-      
+
       // Refresh events after RSVP change
       fetchEvents();
     } catch (error) {
@@ -124,7 +136,7 @@ const ViewSocietyEvents: React.FC = () => {
     else if (event_type === "previous-events") title = "Previous Events";
     else if (event_type === "pending-events") title = "Pending Approval Events";
     else title = "All Events";
-    
+
     if (societyName) {
       return `${societyName} - ${title}`;
     }
@@ -134,7 +146,12 @@ const ViewSocietyEvents: React.FC = () => {
   return (
     <Box minHeight="100vh" bgcolor={colours.primary[500]} py={8}>
       <Box maxWidth="1920px" mx="auto" px={4}>
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
+        <Box
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
+          mb={4}
+        >
           <Typography variant="h4" sx={{ color: colours.grey[100] }}>
             {getPageTitle()}
           </Typography>
@@ -151,7 +168,12 @@ const ViewSocietyEvents: React.FC = () => {
         </Box>
 
         {loading ? (
-          <Box display="flex" justifyContent="center" alignItems="center" py={8}>
+          <Box
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+            py={8}
+          >
             <CircularProgress size={48} style={{ color: colours.grey[100] }} />
           </Box>
         ) : error ? (
@@ -163,7 +185,10 @@ const ViewSocietyEvents: React.FC = () => {
               p: 3,
             }}
           >
-            <Typography variant="h6" sx={{ color: colours.redAccent[500], textAlign: "center" }}>
+            <Typography
+              variant="h6"
+              sx={{ color: colours.redAccent[500], textAlign: "center" }}
+            >
               {error}
             </Typography>
           </Paper>
@@ -176,14 +201,17 @@ const ViewSocietyEvents: React.FC = () => {
               p: 3,
             }}
           >
-            <Typography variant="h6" sx={{ color: colours.grey[300], textAlign: "center" }}>
+            <Typography
+              variant="h6"
+              sx={{ color: colours.grey[300], textAlign: "center" }}
+            >
               No events found.
             </Typography>
           </Paper>
         ) : (
           <Grid container spacing={3}>
             {events.map((event) => (
-              <Grid item xs={12} md={6} lg={4} key={event.id}>
+              <Grid size={{ xs: 12, md: 6, lg: 4 }} key={event.id}>
                 <Paper
                   elevation={2}
                   sx={{
@@ -196,8 +224,16 @@ const ViewSocietyEvents: React.FC = () => {
                   }}
                 >
                   <Box flex="1">
-                    <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                      <Typography variant="h6" sx={{ color: colours.grey[100] }}>
+                    <Box
+                      display="flex"
+                      justifyContent="space-between"
+                      alignItems="center"
+                      mb={2}
+                    >
+                      <Typography
+                        variant="h6"
+                        sx={{ color: colours.grey[100] }}
+                      >
                         {event.title}
                       </Typography>
                       <Box
@@ -213,15 +249,17 @@ const ViewSocietyEvents: React.FC = () => {
                         }
                         color={colours.primary[500]}
                       >
-                        <Typography variant="caption">{event.status}</Typography>
+                        <Typography variant="caption">
+                          {event.status}
+                        </Typography>
                       </Box>
                     </Box>
-                    
+
                     {event.description && (
-                      <Typography 
-                        variant="body2" 
-                        sx={{ 
-                          color: colours.grey[300], 
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color: colours.grey[300],
                           mb: 2,
                           overflow: "hidden",
                           textOverflow: "ellipsis",
@@ -233,41 +271,54 @@ const ViewSocietyEvents: React.FC = () => {
                         {event.description}
                       </Typography>
                     )}
-                    
+
                     <Box display="flex" alignItems="center" mt={1}>
-                      <FaRegClock style={{ marginRight: 8, color: colours.grey[300] }} />
-                      <Typography variant="body2" sx={{ color: colours.grey[300] }}>
-                        {event.date} {event.start_time && `at ${event.start_time}`}
+                      <FaRegClock
+                        style={{ marginRight: 8, color: colours.grey[300] }}
+                      />
+                      <Typography
+                        variant="body2"
+                        sx={{ color: colours.grey[300] }}
+                      >
+                        {event.date}{" "}
+                        {event.start_time && `at ${event.start_time}`}
                         {event.duration && ` (${event.duration})`}
                       </Typography>
                     </Box>
-                    
+
                     {event.location && (
                       <Box display="flex" alignItems="center" mt={1}>
-                        <FaMapMarkerAlt style={{ marginRight: 8, color: colours.grey[300] }} />
-                        <Typography variant="body2" sx={{ color: colours.grey[300] }}>
+                        <FaMapMarkerAlt
+                          style={{ marginRight: 8, color: colours.grey[300] }}
+                        />
+                        <Typography
+                          variant="body2"
+                          sx={{ color: colours.grey[300] }}
+                        >
                           {event.location}
                         </Typography>
                       </Box>
                     )}
                   </Box>
-                  
-                  {event.status === "Approved" && event.rsvp !== undefined && isUpcoming(event.date) && (
-                    <Button
-                      fullWidth
-                      variant="contained"
-                      onClick={() => handleRSVP(event.id, !event.rsvp)}
-                      sx={{
-                        mt: 2,
-                        backgroundColor: event.rsvp
-                          ? colours.grey[700]
-                          : colours.blueAccent[500],
-                        color: colours.grey[100],
-                      }}
-                    >
-                      {event.rsvp ? "Cancel RSVP" : "RSVP Now"}
-                    </Button>
-                  )}
+
+                  {event.status === "Approved" &&
+                    event.rsvp !== undefined &&
+                    isUpcoming(event.date) && (
+                      <Button
+                        fullWidth
+                        variant="contained"
+                        onClick={() => handleRSVP(event.id, !event.rsvp)}
+                        sx={{
+                          mt: 2,
+                          backgroundColor: event.rsvp
+                            ? colours.grey[700]
+                            : colours.blueAccent[500],
+                          color: colours.grey[100],
+                        }}
+                      >
+                        {event.rsvp ? "Cancel RSVP" : "RSVP Now"}
+                      </Button>
+                    )}
                 </Paper>
               </Grid>
             ))}

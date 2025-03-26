@@ -1,7 +1,14 @@
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
 import {
-  Grid, TextField, Button, InputAdornment, IconButton, Box, Typography, Divider
+  Grid,
+  TextField,
+  Button,
+  InputAdornment,
+  IconButton,
+  Box,
+  Typography,
+  Divider,
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { apiClient } from "../../api";
@@ -20,14 +27,18 @@ interface PasswordFormProps {
   setSnackbarData: (data: SnackbarData) => void;
 }
 
-export default function PasswordForm({ isDark, colors, setSnackbarData }: PasswordFormProps) {
+export default function PasswordForm({
+  isDark,
+  colors,
+  setSnackbarData,
+}: PasswordFormProps) {
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  const toggleCurrent = () => setShowCurrent(prev => !prev);
-  const toggleNew = () => setShowNew(prev => !prev);
-  const toggleConfirm = () => setShowConfirm(prev => !prev);
+  const toggleCurrent = () => setShowCurrent((prev) => !prev);
+  const toggleNew = () => setShowNew((prev) => !prev);
+  const toggleConfirm = () => setShowConfirm((prev) => !prev);
 
   return (
     <Formik
@@ -70,7 +81,14 @@ export default function PasswordForm({ isDark, colors, setSnackbarData }: Passwo
         }
       }}
     >
-      {({ values, handleChange, handleBlur, isSubmitting, errors, touched }) => (
+      {({
+        values,
+        handleChange,
+        handleBlur,
+        isSubmitting,
+        errors,
+        touched,
+      }) => (
         <Form>
           <Divider
             sx={{
@@ -84,7 +102,11 @@ export default function PasswordForm({ isDark, colors, setSnackbarData }: Passwo
 
           <Grid container spacing={3}>
             {/* Current Password */}
-            <Grid item xs={12}>
+            <Grid
+              size={{
+                xs: 12,
+              }}
+            >
               <TextField
                 fullWidth
                 name="currentPassword"
@@ -94,13 +116,17 @@ export default function PasswordForm({ isDark, colors, setSnackbarData }: Passwo
                 value={values.currentPassword}
                 onChange={handleChange}
                 onBlur={handleBlur}
-                error={touched.currentPassword && Boolean(errors.currentPassword)}
+                error={
+                  touched.currentPassword && Boolean(errors.currentPassword)
+                }
                 helperText={touched.currentPassword && errors.currentPassword}
                 InputLabelProps={{ style: { color: colors.grey[300] } }}
                 InputProps={{
                   style: {
                     color: colors.grey[100],
-                    backgroundColor: isDark ? colors.primary[600] : colors.primary[0],
+                    backgroundColor: isDark
+                      ? colors.primary[600]
+                      : colors.primary[0],
                   },
                   endAdornment: (
                     <InputAdornment position="end">
@@ -114,7 +140,7 @@ export default function PasswordForm({ isDark, colors, setSnackbarData }: Passwo
             </Grid>
 
             {/* New Password */}
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <TextField
                 fullWidth
                 name="newPassword"
@@ -130,7 +156,9 @@ export default function PasswordForm({ isDark, colors, setSnackbarData }: Passwo
                 InputProps={{
                   style: {
                     color: colors.grey[100],
-                    backgroundColor: isDark ? colors.primary[600] : colors.primary[0],
+                    backgroundColor: isDark
+                      ? colors.primary[600]
+                      : colors.primary[0],
                   },
                   endAdornment: (
                     <InputAdornment position="end">
@@ -144,7 +172,7 @@ export default function PasswordForm({ isDark, colors, setSnackbarData }: Passwo
             </Grid>
 
             {/* Confirm Password */}
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <TextField
                 fullWidth
                 name="confirmPassword"
@@ -154,13 +182,17 @@ export default function PasswordForm({ isDark, colors, setSnackbarData }: Passwo
                 value={values.confirmPassword}
                 onChange={handleChange}
                 onBlur={handleBlur}
-                error={touched.confirmPassword && Boolean(errors.confirmPassword)}
+                error={
+                  touched.confirmPassword && Boolean(errors.confirmPassword)
+                }
                 helperText={touched.confirmPassword && errors.confirmPassword}
                 InputLabelProps={{ style: { color: colors.grey[300] } }}
                 InputProps={{
                   style: {
                     color: colors.grey[100],
-                    backgroundColor: isDark ? colors.primary[600] : colors.primary[0],
+                    backgroundColor: isDark
+                      ? colors.primary[600]
+                      : colors.primary[0],
                   },
                   endAdornment: (
                     <InputAdornment position="end">
@@ -174,7 +206,7 @@ export default function PasswordForm({ isDark, colors, setSnackbarData }: Passwo
             </Grid>
 
             {/* Submit */}
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
                 <Button
                   type="submit"

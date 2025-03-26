@@ -285,7 +285,7 @@ const PendingSocietyRequest: React.FC = () => {
   const fetchedSocieties = useFetchWebSocket<Society[]>(
     () => fetchPendingRequests(apiPaths.USER.PENDINGSOCIETYREQUEST), 
     'society'
-  );
+  ).flatMap;
   
   
   const handleCloseNotification = useCallback(() => {

@@ -37,7 +37,7 @@ const StudentDrawer: React.FC<StudentDrawerProps> = ({
   location,
 }) => {
   const [selected, setSelected] = useState("Dashboard");
-  const [student, setStudent] = useState<any[]>([]);
+  const [student, setStudent] = useState<any>();
   const navigate = useNavigate();
 
   useEffect(() => {

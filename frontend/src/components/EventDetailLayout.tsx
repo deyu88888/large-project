@@ -47,7 +47,6 @@ export function EventDetailLayout({ eventData }: { eventData: EventData }) {
     current_attendees,
   } = eventData;
 
-  console.log(eventData.current_attendees);
   const theme = useTheme();
   const navigate = useNavigate();
   const colours = tokens(theme.palette.mode);
@@ -316,7 +315,7 @@ export function EventDetailLayout({ eventData }: { eventData: EventData }) {
             {main_description || "No description provided."}
           </Typography>
   
-          {extra_modules.map(renderModule)}
+          {extra_modules?.map(renderModule)}
   
           {participant_modules.length > 0 && (
             is_participant ? (
@@ -324,7 +323,7 @@ export function EventDetailLayout({ eventData }: { eventData: EventData }) {
                 <Typography variant="h3" sx={{ mb: 2, fontWeight: "bold" }}>
                   Participants Only Content
                 </Typography>
-                {participant_modules.map(renderModule)}
+                {participant_modules?.map(renderModule)}
               </>
             ) : (
               <>

@@ -1,4 +1,10 @@
-import React, { useState, useEffect, ChangeEvent, FormEvent } from "react";
+import React, {
+  useState,
+  useEffect,
+  ChangeEvent,
+  FormEvent,
+  useCallback,
+} from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   Box,
@@ -18,7 +24,6 @@ import { apiClient, apiPaths } from "../../api.ts";
 import { useAuthStore } from "../../stores/auth-store.ts";
 import { tokens } from "../../theme/theme.ts";
 import { Admin } from "../../types.ts";
-
 
 interface AdminFormData {
   username: string;
@@ -80,24 +85,37 @@ interface AdminDetailFormProps {
   canEdit: boolean;
   saving: boolean;
   onChange: (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
-  onSwitchChange: (name: string) => (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onSwitchChange: (
+    name: string
+  ) => (e: React.ChangeEvent<HTMLInputElement>) => void;
   onSubmit: (e: FormEvent) => void;
 }
-
 
 const fetchAdminData = async (adminId: number): Promise<Admin> => {
   const response = await apiClient.get(`${apiPaths.USER.ADMINVIEW(adminId)}`);
   return response.data;
 };
 
-const updateAdminData = async (adminId: number, data: Partial<AdminFormData>): Promise<Admin> => {
-  const response = await apiClient.patch(`/api/admin/manage-admin/${adminId}`, data);
+const updateAdminData = async (
+  adminId: number,
+  data: Partial<AdminFormData>
+): Promise<Admin> => {
+  const response = await apiClient.patch(
+    `/api/admin/manage-admin/${adminId}`,
+    data
+  );
   return response.data.data || response.data;
 };
 
-
-const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ color = "secondary" }) => (
-  <Box display="flex" alignItems="center" justifyContent="center" minHeight="100vh">
+const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
+  color = "secondary",
+}) => (
+  <Box
+    display="flex"
+    alignItems="center"
+    justifyContent="center"
+    minHeight="100vh"
+  >
     <CircularProgress color={color} />
   </Box>
 );
@@ -114,13 +132,13 @@ const InfoAlert: React.FC<InfoAlertProps> = ({ message }) => (
   </Alert>
 );
 
-const FormTextField: React.FC<TextFieldProps> = ({ 
-  label, 
-  name, 
-  value, 
-  onChange, 
+const FormTextField: React.FC<TextFieldProps> = ({
+  label,
+  name,
+  value,
+  onChange,
   disabled,
-  fullWidth = true
+  fullWidth = true,
 }) => (
   <TextField
     fullWidth={fullWidth}
@@ -130,7 +148,7 @@ const FormTextField: React.FC<TextFieldProps> = ({
     onChange={onChange}
     disabled={disabled}
     inputProps={{
-      readOnly: disabled
+      readOnly: disabled,
     }}
   />
 );
@@ -140,7 +158,7 @@ const SwitchField: React.FC<SwitchFieldProps> = ({
   label,
   checked,
   onChange,
-  disabled
+  disabled,
 }) => (
   <FormControlLabel
     control={
@@ -155,16 +173,15 @@ const SwitchField: React.FC<SwitchFieldProps> = ({
   />
 );
 
-const FormSubmitButton: React.FC<FormSubmitButtonProps> = ({ saving, canEdit }) => {
+const FormSubmitButton: React.FC<FormSubmitButtonProps> = ({
+  saving,
+  canEdit,
+}) => {
   if (!canEdit) return null;
-  
+
   return (
     <Box mt={3} textAlign="center">
-      <Button 
-        type="submit" 
-        variant="contained" 
-        disabled={saving}
-      >
+      <Button type="submit" variant="contained" disabled={saving}>
         {saving ? "Saving..." : "Save Changes"}
       </Button>
     </Box>
@@ -172,17 +189,13 @@ const FormSubmitButton: React.FC<FormSubmitButtonProps> = ({ saving, canEdit }) 
 };
 
 const SnackbarAlert: React.FC<SnackbarAlertProps> = ({ state, onClose }) => (
-  <Snackbar 
-    open={state.open} 
-    autoHideDuration={6000} 
+  <Snackbar
+    open={state.open}
+    autoHideDuration={6000}
     onClose={onClose}
-    anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+    anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
   >
-    <Alert 
-      onClose={onClose} 
-      severity={state.severity}
-      sx={{ width: '100%' }}
-    >
+    <Alert onClose={onClose} severity={state.severity} sx={{ width: "100%" }}>
       {state.message}
     </Alert>
   </Snackbar>
@@ -194,12 +207,20 @@ const AdminDetailForm: React.FC<AdminDetailFormProps> = ({
   saving,
   onChange,
   onSwitchChange,
-  onSubmit
+  onSubmit,
 }) => (
-  <Paper sx={{ maxWidth: "800px", mx: "auto", p: 4, borderRadius: "8px", boxShadow: 3 }}>
+  <Paper
+    sx={{
+      maxWidth: "800px",
+      mx: "auto",
+      p: 4,
+      borderRadius: "8px",
+      boxShadow: 3,
+    }}
+  >
     <form onSubmit={onSubmit}>
       <Grid container spacing={2}>
-        <Grid item xs={12}>
+        <Grid size={{ xs: 12 }}>
           <FormTextField
             label="Username"
             name="username"
@@ -209,7 +230,7 @@ const AdminDetailForm: React.FC<AdminDetailFormProps> = ({
           />
         </Grid>
 
-        <Grid item xs={6}>
+        <Grid size={{ xs: 6 }}>
           <FormTextField
             label="First Name"
             name="first_name"
@@ -219,7 +240,7 @@ const AdminDetailForm: React.FC<AdminDetailFormProps> = ({
           />
         </Grid>
 
-        <Grid item xs={6}>
+        <Grid size={{ xs: 6 }}>
           <FormTextField
             label="Last Name"
             name="last_name"
@@ -229,7 +250,7 @@ const AdminDetailForm: React.FC<AdminDetailFormProps> = ({
           />
         </Grid>
 
-        <Grid item xs={6}>
+        <Grid size={{ xs: 6 }}>
           <FormTextField
             label="Email"
             name="email"
@@ -239,7 +260,7 @@ const AdminDetailForm: React.FC<AdminDetailFormProps> = ({
           />
         </Grid>
 
-        <Grid item xs={6}>
+        <Grid size={{ xs: 6 }}>
           <FormTextField
             label="Role"
             name="role"
@@ -249,7 +270,7 @@ const AdminDetailForm: React.FC<AdminDetailFormProps> = ({
           />
         </Grid>
 
-        <Grid item xs={6}>
+        <Grid size={{ xs: 6 }}>
           <SwitchField
             name="is_active"
             label="Active"
@@ -259,7 +280,7 @@ const AdminDetailForm: React.FC<AdminDetailFormProps> = ({
           />
         </Grid>
 
-        <Grid item xs={6}>
+        <Grid size={{ xs: 6 }}>
           <SwitchField
             name="is_super_admin"
             label="Super Admin"
@@ -275,7 +296,6 @@ const AdminDetailForm: React.FC<AdminDetailFormProps> = ({
   </Paper>
 );
 
-
 const ViewAdmin: React.FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
@@ -283,8 +303,7 @@ const ViewAdmin: React.FC = () => {
   const navigate = useNavigate();
   const { admin_id } = useParams<{ admin_id: string }>();
   const adminId = Number(admin_id);
-  
-  
+
   const [admin, setAdmin] = useState<Admin | null>(null);
   const [formData, setFormData] = useState<AdminFormData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -292,18 +311,16 @@ const ViewAdmin: React.FC = () => {
   const [snackbar, setSnackbar] = useState<SnackbarState>({
     open: false,
     message: "",
-    severity: "success"
+    severity: "success",
   });
-  
-  
+
   const isCurrentUserSuperAdmin = user?.is_super_admin || false;
   const canEdit = isCurrentUserSuperAdmin;
 
-  
   const handleChange = useCallback(
     (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       if (!canEdit) return;
-      
+
       const { name, value } = e.target;
       setFormData((prevFormData) =>
         prevFormData ? { ...prevFormData, [name]: value } : null
@@ -315,8 +332,8 @@ const ViewAdmin: React.FC = () => {
   const handleSwitchChange = useCallback(
     (name: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
       if (!canEdit) return;
-      
-      setFormData((prev) => 
+
+      setFormData((prev) =>
         prev ? { ...prev, [name]: e.target.checked } : null
       );
     },
@@ -331,20 +348,22 @@ const ViewAdmin: React.FC = () => {
     setSnackbar((prev) => ({ ...prev, open: false }));
   }, []);
 
-  const showSnackbar = useCallback((message: string, severity: "success" | "error") => {
-    setSnackbar({
-      open: true,
-      message,
-      severity
-    });
-  }, []);
+  const showSnackbar = useCallback(
+    (message: string, severity: "success" | "error") => {
+      setSnackbar({
+        open: true,
+        message,
+        severity,
+      });
+    },
+    []
+  );
 
-  
   const loadAdminData = useCallback(async () => {
     try {
       setLoading(true);
       const data = await fetchAdminData(adminId);
-      console.log('Fetched admin data:', data);
+      console.log("Fetched admin data:", data);
       setAdmin(data);
       setFormData(data);
     } catch (error) {
@@ -359,15 +378,14 @@ const ViewAdmin: React.FC = () => {
     loadAdminData();
   }, [loadAdminData]);
 
-  
   const handleSubmit = useCallback(
     async (e: FormEvent) => {
       e.preventDefault();
       if (!formData || !admin || !canEdit) return;
-      
+
       try {
         setSaving(true);
-        
+
         const dataToSend = {
           first_name: formData.first_name,
           last_name: formData.last_name,
@@ -375,16 +393,16 @@ const ViewAdmin: React.FC = () => {
           email: formData.email,
           is_active: formData.is_active,
           role: formData.role,
-          is_super_admin: formData.is_super_admin
+          is_super_admin: formData.is_super_admin,
         };
 
         console.log("Sending data to backend:", dataToSend);
-        
+
         const updatedAdmin = await updateAdminData(adminId, dataToSend);
-        
+
         setAdmin(updatedAdmin);
         setFormData(updatedAdmin);
-        
+
         showSnackbar("Admin updated successfully!", "success");
       } catch (error) {
         console.error("Error updating admin", error);
@@ -396,16 +414,14 @@ const ViewAdmin: React.FC = () => {
     [formData, admin, canEdit, adminId, showSnackbar]
   );
 
-  
   if (loading || !formData) {
     return <LoadingSpinner />;
   }
 
-  
   return (
     <Box minHeight="100vh" p={4}>
       <BackButton onClick={handleGoBack} />
-      
+
       <Typography variant="h2" textAlign="center" mb={4}>
         Admin Details
       </Typography>
@@ -422,11 +438,8 @@ const ViewAdmin: React.FC = () => {
         onSwitchChange={handleSwitchChange}
         onSubmit={handleSubmit}
       />
-      
-      <SnackbarAlert 
-        state={snackbar}
-        onClose={handleCloseSnackbar}
-      />
+
+      <SnackbarAlert state={snackbar} onClose={handleCloseSnackbar} />
     </Box>
   );
 };
