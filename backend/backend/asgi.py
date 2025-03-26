@@ -28,7 +28,7 @@ django_asgi_app = get_asgi_application()
 # Wrap the ASGI app with Starlette's CORSMiddleware
 django_asgi_app = CORSMiddleware(
     django_asgi_app,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -41,6 +41,6 @@ application = ProtocolTypeRouter({
         AuthMiddlewareStack(
             URLRouter(websocket_urlpatterns)
         ),
-        ["http://localhost:3000"]  # Explicitly allow your frontend origin
+        ["*"]  # Explicitly allow your frontend origin
     ),
 })
