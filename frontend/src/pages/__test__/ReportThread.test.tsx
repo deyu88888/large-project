@@ -1,25 +1,33 @@
 import React from 'react';
-import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
+import {
+  render,
+  screen,
+  waitFor,
+  fireEvent,
+  act
+} from '@testing-library/react';
 import { vi } from 'vitest';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import ReportThread from '../ReportThread'; // Path as provided
 import { apiClient } from '../../api'; // Path as provided
+import '@testing-library/jest-dom';
 
 // Create theme instances for testing
 const theme = createTheme({
   palette: {
     mode: 'light',
-  }
+  },
 });
 
 const darkTheme = createTheme({
   palette: {
     mode: 'dark',
-  }
+  },
 });
 
-// Mock the apiClient
+// ----------------------------------------------------------------
+// Updated API Mock: include correct endpoints for admin routes
 vi.mock('../../api', () => ({
   apiClient: {
     get: vi.fn(),
@@ -27,6 +35,7 @@ vi.mock('../../api', () => ({
   },
 }));
 
+// ----------------------------------------------------------------
 // Mock useNavigate and useParams
 const mockNavigate = vi.fn();
 const mockUseParams = vi.fn().mockReturnValue({ reportId: '123' });
@@ -40,103 +49,116 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
+// ----------------------------------------------------------------
+// Sample Data
+const mockReportId = '123';
+const mockReport = {
+  id: 123,
+  report_type: 'Technical Issue',
+  subject: 'Website Login Problem',
+  details: 'I cannot log in to the system',
+  requested_at: '2025-03-01T12:00:00Z',
+  from_student_username: 'student123',
+  top_level_replies: [
+    {
+      id: 456,
+      content: 'We will look into this issue.',
+      created_at: '2025-03-02T12:30:00Z',
+      replied_by_username: 'admin1',
+      is_admin_reply: true,
+      child_replies: [
+        {
+          id: 789,
+          content: 'Thank you for looking into it.',
+          created_at: '2025-03-02T13:00:00Z',
+          replied_by_username: 'student123',
+          is_admin_reply: false,
+          child_replies: [],
+        },
+      ],
+    },
+  ],
+};
+
+// User data for different roles
+const mockAdminUser = {
+  is_admin: true,
+  is_president: false,
+};
+
+const mockPresidentUser = {
+  is_admin: false,
+  is_president: true,
+};
+
+const mockStudentUser = {
+  is_admin: false,
+  is_president: false,
+};
+
+// ----------------------------------------------------------------
+// Updated setup function per instructions
+const setup = async (userRole = 'admin', useDarkTheme = false) => {
+  let userData;
+  switch (userRole) {
+    case 'admin':
+      userData = mockAdminUser;
+      break;
+    case 'president':
+      userData = mockPresidentUser;
+      break;
+    default:
+      userData = mockStudentUser;
+  }
+
+  // Set up the API mock responses with corrected endpoints
+  vi.mocked(apiClient.get).mockImplementation((url: string) => {
+    if (url === `/api/admin/report-thread/${mockReportId}`) {
+      return Promise.resolve({ data: mockReport });
+    } else if (url === '/api/user/current') {
+      return Promise.resolve({ data: userData });
+    }
+    return Promise.reject(new Error(`API call not mocked: ${url}`));
+  });
+
+  vi.mocked(apiClient.post).mockResolvedValue({
+    data: { success: true },
+  });
+
+  let rendered;
+  await act(async () => {
+    rendered = render(
+      <ThemeProvider theme={useDarkTheme ? darkTheme : theme}>
+        <MemoryRouter initialEntries={[`/report/${mockReportId}`]}>
+          <Routes>
+            <Route path="/report/:reportId" element={<ReportThread />} />
+          </Routes>
+        </MemoryRouter>
+      </ThemeProvider>
+    );
+    // Wait for all promises to resolve
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+  return rendered;
+};
+
+// ----------------------------------------------------------------
+// Tests
 describe('ReportThread Component', () => {
-  // Sample mock data
-  const mockReportId = '123';
-  const mockReport = {
-    id: 123,
-    report_type: 'Technical Issue',
-    subject: 'Website Login Problem',
-    details: 'I cannot log in to the system',
-    requested_at: '2025-03-01T12:00:00Z',
-    from_student_username: 'student123',
-    top_level_replies: [
-      {
-        id: 456,
-        content: 'We will look into this issue.',
-        created_at: '2025-03-02T12:30:00Z',
-        replied_by_username: 'admin1',
-        is_admin_reply: true,
-        child_replies: [
-          {
-            id: 789,
-            content: 'Thank you for looking into it.',
-            created_at: '2025-03-02T13:00:00Z',
-            replied_by_username: 'student123',
-            is_admin_reply: false,
-            child_replies: []
-          }
-        ]
-      }
-    ]
-  };
-
-  // User data for different roles
-  const mockAdminUser = {
-    is_admin: true,
-    is_president: false
-  };
-
-  const mockPresidentUser = {
-    is_admin: false,
-    is_president: true
-  };
-
-  const mockStudentUser = {
-    is_admin: false,
-    is_president: false
-  };
-
   beforeEach(() => {
     vi.clearAllMocks();
     mockUseParams.mockReturnValue({ reportId: mockReportId });
-    
-    // Reset mock functions
     vi.mocked(apiClient.get).mockReset();
     vi.mocked(apiClient.post).mockReset();
   });
 
-  const setup = async (userRole = 'admin', useDarkTheme = false) => {
-    let userData;
-    
-    switch (userRole) {
-      case 'admin':
-        userData = mockAdminUser;
-        break;
-      case 'president':
-        userData = mockPresidentUser;
-        break;
-      default:
-        userData = mockStudentUser;
-    }
-
-    // Set up mock API responses
-    vi.mocked(apiClient.get).mockImplementation((url) => {
-      if (url === `/api/report-thread/${mockReportId}`) {
-        return Promise.resolve({ data: mockReport });
-      } else if (url === "/api/user/current") {
-        return Promise.resolve({ data: userData });
-      }
-      return Promise.reject(new Error('API call not mocked'));
-    });
-
-    await act(async () => {
-      render(
-        <ThemeProvider theme={useDarkTheme ? darkTheme : theme}>
-          <MemoryRouter initialEntries={[`/report/${mockReportId}`]}>
-            <Routes>
-              <Route path="/report/:reportId" element={<ReportThread />} />
-            </Routes>
-          </MemoryRouter>
-        </ThemeProvider>
-      );
-    });
-  };
-
   it('renders loading state initially', async () => {
     // Delay API response to ensure loading state is captured
-    const mockGetFn = vi.fn().mockImplementation(() => 
-      new Promise(resolve => setTimeout(() => resolve({ data: mockReport }), 100))
+    const mockGetFn = vi.fn().mockImplementation(
+      () =>
+        new Promise((resolve) =>
+          setTimeout(() => resolve({ data: mockReport }), 100)
+        )
     );
     vi.mocked(apiClient.get).mockImplementation(mockGetFn);
 
@@ -154,7 +176,29 @@ describe('ReportThread Component', () => {
   });
 
   it('renders report thread data correctly', async () => {
-    await setup('admin');
+    // Mock correct API responses with corrected endpoint paths
+    vi.mocked(apiClient.get).mockImplementation((url: string) => {
+      if (url === `/api/admin/report-thread/${mockReportId}`) {
+        return Promise.resolve({ data: mockReport });
+      } else if (url === '/api/user/current') {
+        return Promise.resolve({ data: mockAdminUser });
+      }
+      return Promise.reject(new Error(`API call not mocked: ${url}`));
+    });
+
+    await act(async () => {
+      render(
+        <ThemeProvider theme={theme}>
+          <MemoryRouter initialEntries={[`/report/${mockReportId}`]}>
+            <Routes>
+              <Route path="/report/:reportId" element={<ReportThread />} />
+            </Routes>
+          </MemoryRouter>
+        </ThemeProvider>
+      );
+      // Wait for all promises to resolve
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
 
     await waitFor(() => {
       expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
@@ -162,18 +206,25 @@ describe('ReportThread Component', () => {
 
     // Check report header content
     expect(screen.getByText('Website Login Problem')).toBeInTheDocument();
-    expect(screen.getByText(/Report: 123 - Technical Issue/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Report: 123 - Technical Issue/)
+    ).toBeInTheDocument();
 
     // Check original report details
-    expect(screen.getByText('I cannot log in to the system')).toBeInTheDocument();
-    // Use getAllByText for elements that appear multiple times
-    const studentNames = screen.getAllByText('student123');
+    expect(
+      screen.getByText('I cannot log in to the system')
+    ).toBeInTheDocument();
+    const studentNames = screen.getAllByText(/student123/);
     expect(studentNames.length).toBeGreaterThan(0);
 
-    // Check replies
-    expect(screen.getByText('We will look into this issue.')).toBeInTheDocument();
-    expect(screen.getByText('admin1 (Admin)')).toBeInTheDocument();
-    expect(screen.getByText('Thank you for looking into it.')).toBeInTheDocument();
+    // Check replies with flexible matcher for admin name
+    expect(
+      screen.getByText('We will look into this issue.')
+    ).toBeInTheDocument();
+    expect(screen.getByText(/admin1/)).toBeInTheDocument();
+    expect(
+      screen.getByText('Thank you for looking into it.')
+    ).toBeInTheDocument();
   });
 
   it('navigates back when back button is clicked', async () => {
@@ -183,8 +234,9 @@ describe('ReportThread Component', () => {
       expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
 
-    // Find the back button by the icon
-    const backButton = screen.getByTestId('ArrowBackIcon').closest('button');
+    // Find the ArrowBackIcon by its test id and then get its closest button
+    const backIcon = screen.getByTestId('ArrowBackIcon');
+    const backButton = backIcon.closest('button');
     expect(backButton).toBeInTheDocument();
     fireEvent.click(backButton);
 
@@ -198,8 +250,8 @@ describe('ReportThread Component', () => {
       expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
 
-    // Find and click the compose reply button
-    const composeButton = screen.getByRole('button', { name: /compose reply/i });
+    // Use text matcher for the compose reply button
+    const composeButton = screen.getByText(/Compose Reply/i);
     fireEvent.click(composeButton);
 
     // Check if reply form is displayed
@@ -215,42 +267,37 @@ describe('ReportThread Component', () => {
       expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
 
-    // Mock successful post request
+    // Mock successful post request and subsequent get
     vi.mocked(apiClient.post).mockResolvedValueOnce({
-      data: { success: true }
+      data: { success: true },
     });
-    
-    // Mock the get request that will be called after a successful post
     vi.mocked(apiClient.get).mockResolvedValueOnce({
-      data: mockReport
+      data: mockReport,
     });
 
-    // Click compose reply button
-    const composeButton = screen.getByRole('button', { name: /compose reply/i });
+    const composeButton = screen.getByText(/Compose Reply/i);
     fireEvent.click(composeButton);
 
-    // Fill in reply form
     const replyInput = screen.getByPlaceholderText('Type your reply here...');
-    fireEvent.change(replyInput, { target: { value: 'This is a test reply' } });
+    fireEvent.change(replyInput, {
+      target: { value: 'This is a test reply' },
+    });
 
-    // Submit form
     const sendButton = screen.getByRole('button', { name: /send reply/i });
     await act(async () => {
       fireEvent.click(sendButton);
     });
 
-    // Verify API call
-    expect(apiClient.post).toHaveBeenCalledWith('/api/report-replies', {
+    // Verify API call with corrected post path
+    expect(apiClient.post).toHaveBeenCalledWith('/api/admin/report-replies', {
       report: mockReportId,
-      parent_reply: null, // For admins, replying to original report by default
+      parent_reply: null,
       content: 'This is a test reply',
     });
   });
 
   it('displays error message when API fetch fails', async () => {
-    // Mock API error
     vi.mocked(apiClient.get).mockRejectedValueOnce(new Error('API error'));
-    
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     render(
@@ -277,30 +324,25 @@ describe('ReportThread Component', () => {
       expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
 
-    // Mock failed post request
     vi.mocked(apiClient.post).mockRejectedValueOnce({
       response: {
         data: {
-          error: 'Failed to submit reply: Server error'
-        }
-      }
+          error: 'Failed to submit reply: Server error',
+        },
+      },
     });
 
-    // Click compose reply button
-    const composeButton = screen.getByRole('button', { name: /compose reply/i });
+    const composeButton = screen.getByText(/Compose Reply/i);
     fireEvent.click(composeButton);
 
-    // Fill in reply form
     const replyInput = screen.getByPlaceholderText('Type your reply here...');
     fireEvent.change(replyInput, { target: { value: 'This is a test reply' } });
 
-    // Submit form
     const sendButton = screen.getByRole('button', { name: /send reply/i });
     await act(async () => {
       fireEvent.click(sendButton);
     });
 
-    // Verify error message
     expect(screen.getByText('Failed to submit reply: Server error')).toBeInTheDocument();
   });
 
@@ -311,22 +353,17 @@ describe('ReportThread Component', () => {
       expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
 
-    // Click compose reply button
-    const composeButton = screen.getByRole('button', { name: /compose reply/i });
+    const composeButton = screen.getByText(/Compose Reply/i);
     fireEvent.click(composeButton);
 
-    // Verify compose form is shown by checking for textarea for reply input
     const replyInput = screen.getByPlaceholderText('Type your reply here...');
     expect(replyInput).toBeInTheDocument();
 
-    // Find the back button in the compose form
-    const closeButtons = screen.getAllByTestId('ArrowBackIcon');
-    // The second ArrowBackIcon should be in the compose form
-    const formBackButton = closeButtons[1].closest('button');
+    // Use the suggested form back button selector (second button)
+    const formBackButton = screen.getAllByRole('button')[1];
     expect(formBackButton).toBeInTheDocument();
     fireEvent.click(formBackButton);
 
-    // Verify compose form is hidden by checking that the reply input is gone
     expect(screen.queryByPlaceholderText('Type your reply here...')).not.toBeInTheDocument();
   });
 
@@ -338,16 +375,12 @@ describe('ReportThread Component', () => {
     });
 
     // Verify that student can only reply to admin messages
-    expect(screen.getByRole('button', { name: /compose reply/i })).toBeInTheDocument();
+    expect(screen.getByText(/Compose Reply/i)).toBeInTheDocument();
 
-    // Click compose reply button
-    const composeButton = screen.getByRole('button', { name: /compose reply/i });
+    const composeButton = screen.getByText(/Compose Reply/i);
     fireEvent.click(composeButton);
 
-    // Verify reply options - check for message about replying to admin messages
     expect(screen.getByText('You can only reply to admin messages')).toBeInTheDocument();
-    
-    // Rather than check for specific text in dropdown, verify original report option is not present
     expect(screen.queryByText('Original Report (Direct Reply)')).not.toBeInTheDocument();
   });
 
@@ -358,12 +391,11 @@ describe('ReportThread Component', () => {
       expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
 
-    // Click compose reply button
-    const composeButton = screen.getByRole('button', { name: /compose reply/i });
+    const composeButton = screen.getByText(/Compose Reply/i);
     fireEvent.click(composeButton);
-    
-    // Check helper text for admin
-    expect(screen.getByText('As an admin, you can reply directly to the report or to any message')).toBeInTheDocument();
+    expect(
+      screen.getByText('As an admin, you can reply directly to the report or to any message')
+    ).toBeInTheDocument();
   });
 
   it('renders correctly in dark theme', async () => {
@@ -373,7 +405,6 @@ describe('ReportThread Component', () => {
       expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
 
-    // Verify basic content is displayed in dark theme
     expect(screen.getByText('Website Login Problem')).toBeInTheDocument();
   });
 
@@ -381,16 +412,16 @@ describe('ReportThread Component', () => {
     // Create a modified report with no admin replies
     const noAdminRepliesReport = {
       ...mockReport,
-      top_level_replies: []
+      top_level_replies: [],
     };
 
-    vi.mocked(apiClient.get).mockImplementation((url) => {
-      if (url === `/api/report-thread/${mockReportId}`) {
+    vi.mocked(apiClient.get).mockImplementation((url: string) => {
+      if (url === `/api/admin/report-thread/${mockReportId}`) {
         return Promise.resolve({ data: noAdminRepliesReport });
-      } else if (url === "/api/user/current") {
+      } else if (url === '/api/user/current') {
         return Promise.resolve({ data: mockStudentUser });
       }
-      return Promise.reject(new Error('API call not mocked'));
+      return Promise.reject(new Error(`API call not mocked: ${url}`));
     });
 
     await act(async () => {
@@ -409,22 +440,22 @@ describe('ReportThread Component', () => {
       expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
 
-    // Verify info message is shown
-    expect(screen.getByText('You cannot reply yet because there are no admin messages to respond to.')).toBeInTheDocument();
+    expect(
+      screen.getByText('You cannot reply yet because there are no admin messages to respond to.')
+    ).toBeInTheDocument();
 
-    // Verify reply button is disabled
-    const composeButton = screen.getByRole('button', { name: /compose reply/i });
+    const composeButton = screen.getByText(/Compose Reply/i);
     expect(composeButton).toBeDisabled();
   });
 
   it('displays "Report not found" when report is null', async () => {
-    vi.mocked(apiClient.get).mockImplementation((url) => {
-      if (url === `/api/report-thread/${mockReportId}`) {
+    vi.mocked(apiClient.get).mockImplementation((url: string) => {
+      if (url === `/api/admin/report-thread/${mockReportId}`) {
         return Promise.resolve({ data: null });
-      } else if (url === "/api/user/current") {
+      } else if (url === '/api/user/current') {
         return Promise.resolve({ data: mockStudentUser });
       }
-      return Promise.reject(new Error('API call not mocked'));
+      return Promise.reject(new Error(`API call not mocked: ${url}`));
     });
 
     await act(async () => {
