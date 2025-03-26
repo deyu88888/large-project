@@ -1,5 +1,10 @@
 from datetime import date, datetime, time, timedelta
-from random import choice, randint
+from random import choice, randint, random
+from api.models import Event, EventRequest, Comment, Society
+from api.management.commands.seeding.seeding_utility import assign_comment_parent, \
+    get_comment_data, like_dislike_comments, get_model_entries_as_list, get_active_students
+from django.core.management import color_style
+
 
 class RandomEventDataGenerator():
     """Class encompassing tools to generate event data"""
@@ -117,6 +122,8 @@ class RandomEventDataGenerator():
             "to learn, network, or simply have a good time, you're in the right place!",
         ]
 
+        self.style = color_style()
+
     def generate(self, society_name, past=False) -> dict:
         """Generates artificial data for a event and returns in a dict"""
         return_dict = {}
@@ -214,3 +221,109 @@ class RandomEventDataGenerator():
             'Music Hall'
         ]
         return choice(locations)
+
+    def create_event(self, n, past=False):
+        """Create n different events"""
+        societies = get_model_entries_as_list(Society)
+        if not societies:
+            print(self.style.WARNING("No societies found. Skipping event creation."))
+            return
+
+        for i in range(1, n + 1):
+            print(f"Seeding event {i}/{n}", end='\r')
+            society = choice(societies)
+
+            event, _ = self.generate_random_event(society, status="Pending", past=past)
+
+            approved = self.handle_event_status(event)
+            if approved and past:
+                self.handle_attendance(event)
+            if approved:
+                self.create_event_comments(event, past)
+
+        print(self.style.SUCCESS(
+            f"Seeding {'past' if past else ''} event {n}/{n}"
+        ), flush=True)
+
+    def handle_attendance(self, event):
+        """Records seeded attendance for event attendees"""
+        attendees = event.current_attendees.all()
+        for attendee in attendees:
+            attended = choice((True, False))
+            if attended:
+                attendee.attended_events.add(event)
+
+    def generate_random_event(self, society, data=None, status="Approved", past=False):
+        """Generate a random event and ensure attendees are added."""
+        if not data:
+            data = self.generate(society.name, past)
+        event, created = Event.objects.get_or_create(
+            title=data["name"],
+            main_description=data["description"],
+            date=data["event_date"],
+            start_time=data["event_time"],
+            duration=data["duration"],
+            hosted_by=society,
+            location=data["location"],
+            status=status,
+        )
+
+        if created and status=="Approved":
+            self.create_event_comments(event, past)
+        if created:
+            all_students = list(society.society_members.order_by("?"))
+            num_attendees = min(randint(5, 20), len(all_students))
+            selected_attendees = all_students[:num_attendees]
+
+            event.current_attendees.add(*selected_attendees)
+            event.save()
+            print(self.style.SUCCESS(f"Event Created: {event.title} ({event.date})"))
+
+        return event, created
+
+    def handle_event_status(self, event):
+        """Creates requests for event creation"""
+        random_status = choice(["Pending", "Approved", "Rejected"])
+
+        if event.date < date.today():
+            random_status = "Approved" if random_status == "Pending" else random_status
+
+        default_student = event.hosted_by.president or get_active_students().first()
+        if not default_student:
+            print("No student available to assign from_student.")
+            return False
+
+        EventRequest.objects.create(
+            event=event,
+            hosted_by=event.hosted_by,
+            from_student=default_student,
+            intent="CreateEve",
+            approved=(
+                True if random_status == "Approved"
+                else False if random_status == "Rejected"
+                else None
+            ),
+        )
+
+        if random_status == "Approved":
+            event.status = "Approved"
+            event.save()
+
+        return random_status == "Approved"
+
+    def create_event_comments(self, event: Event, past: bool=False, parent: Comment=None):
+        """Seeds comments on events"""
+        content = get_comment_data(parent, past)
+        society_members = list(event.hosted_by.society_members.all())
+
+        comment = Comment.objects.create(
+            event=event,
+            user=choice(society_members),
+            content=content,
+        )
+        like_dislike_comments(comment, society_members)
+        assign_comment_parent(comment, parent)
+
+        if random() < 0.60:
+            self.create_event_comments(event, past, choice((comment, parent)))
+

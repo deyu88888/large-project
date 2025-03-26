@@ -6,7 +6,6 @@ from api.models import (
     Student,
     Society,
     Event,
-    Notification,
     EventRequest,
     SocietyRequest,
     Award,
@@ -104,25 +103,27 @@ class SeedingTestCase(TransactionTestCase):
     @patch("builtins.print")  # Avoids printing while testing
     def test_student_creation(self, mock_print):
         """Test that seed create_student works"""
+        generator = self.command_instance.student_generator
         initial_count = Student.objects.count()
-        self.command_instance.create_student(1)
+        generator.create_student(1)
         self.assertEqual(Student.objects.count(), initial_count + 1)
 
     @patch("builtins.print")  # Avoids printing while testing
     def test_admin_creation(self, mock_print):
         """Test that seed create_admin works"""
+        generator = self.command_instance.admin_generator
         initial_count = User.get_admins().count()
-        self.command_instance.create_admin(1)
+        generator.create_admin(1)
         self.assertTrue(User.get_admins().filter(username="admin1").exists())
         self.assertEqual(User.get_admins().count(), initial_count + 1)
 
     @patch("builtins.print")  # Avoids printing while testing
     def test_society_creation(self, mock_print):
         """Test that seed create_society works"""
-        # Before creating a new society, count existing Society and SocietyRequest objects.
+        generator = self.command_instance.society_generator
         initial_requests = SocietyRequest.objects.count()
         initial_objects = Society.objects.count()
-        self.command_instance.create_society(1)
+        generator.create_society(1)
         self.assertEqual(SocietyRequest.objects.count(), initial_requests + 1)
         try:
             self.assertEqual(Society.objects.count(), initial_objects)
@@ -132,9 +133,10 @@ class SeedingTestCase(TransactionTestCase):
     @patch("builtins.print")  # Avoids printing while testing
     def test_event_creation(self, mock_print):
         """Test that seed create_event works"""
+        generator = self.command_instance.event_generator
         initial_requests = EventRequest.objects.count()
         initial_objects = Event.objects.count()
-        self.command_instance.create_event(1)
+        generator.create_event(1)
         self.assertEqual(EventRequest.objects.count(), initial_requests + 1)
         self.assertEqual(Event.objects.count(), initial_objects + 1)
 
@@ -156,54 +158,59 @@ class SeedingTestCase(TransactionTestCase):
         self.assertEqual(AwardStudent.objects.count(), initial_count + 1)
 
 
-    @patch("api.management.commands.seed.choice")
+    @patch("api.management.commands.seeding.society_generator.choice")
     def test_handle_society_status_approved(self, mock_choice):
         """Test handle_society_status returns True for 'Approved' status."""
+        generator = self.command_instance.society_generator
         mock_choice.return_value = "Approved"
-        result = self.command_instance.handle_society_status(self.president, "Test Society")
+        result = generator.handle_society_status(self.president, "Test Society")
         self.assertTrue(result)
         # SocietyRequest should be created when approved, sends approval notif
         self.assertTrue(SocietyRequest.objects.filter(name="Test Society").exists())
 
-    @patch("api.management.commands.seed.choice")
+    @patch("api.management.commands.seeding.society_generator.choice")
     def test_handle_society_status_pending(self, mock_choice):
         """Test handle_society_status creates a SocietyRequest for 'Pending' status."""
+        generator = self.command_instance.society_generator
         mock_choice.return_value = "Pending"
-        result = self.command_instance.handle_society_status(self.president, "Test Society")
+        result = generator.handle_society_status(self.president, "Test Society")
         self.assertFalse(result)
         sr = SocietyRequest.objects.get(name="Test Society")
         self.assertEqual(sr.intent, "CreateSoc")
         self.assertEqual(sr.from_student, self.president)
         self.assertIsNone(sr.approved)
 
-    @patch("api.management.commands.seed.choice")
+    @patch("api.management.commands.seeding.society_generator.choice")
     def test_handle_society_status_rejected(self, mock_choice):
         """Test handle_society_status creates a SocietyRequest with approved True for 'Rejected' status."""
+        generator = self.command_instance.society_generator
         mock_choice.return_value = "Rejected"
-        result = self.command_instance.handle_society_status(self.president, "Test Society")
+        result = generator.handle_society_status(self.president, "Test Society")
         self.assertFalse(result)
         sr = SocietyRequest.objects.get(name="Test Society")
         self.assertEqual(sr.intent, "CreateSoc")
         self.assertFalse(sr.approved)
 
-    @patch("api.management.commands.seed.choice")
+    @patch("api.management.commands.seeding.event_generator.choice")
     def test_handle_event_status_approved(self, mock_choice):
         """Test handle_event_status returns True for 'Approved' status."""
+        generator = self.command_instance.event_generator
         def side_effect(seq):
             if seq == ["Pending", "Approved", "Rejected"]:
                 return "Approved"
             return seq[0]  # For valid_hours and valid_minutes
         mock_choice.side_effect = side_effect
 
-        result = self.command_instance.handle_event_status(self.event)
+        result = generator.handle_event_status(self.event)
         self.assertTrue(result)
         # Does now exist for notification reasons
         self.assertTrue(EventRequest.objects.filter(hosted_by=self.society).exists())
 
 
-    @patch("api.management.commands.seed.choice")
+    @patch("api.management.commands.seeding.event_generator.choice")
     def test_handle_event_status_pending(self, mock_choice):
         """Test handle_event_status creates an EventRequest for 'Pending' status."""
+        generator = self.command_instance.event_generator
         def side_effect(seq):
             if seq == ["Pending", "Approved", "Rejected"]:
                 return "Pending"
@@ -211,16 +218,17 @@ class SeedingTestCase(TransactionTestCase):
             return seq[0]
         mock_choice.side_effect = side_effect
 
-        result = self.command_instance.handle_event_status(self.event)
+        result = generator.handle_event_status(self.event)
         self.assertFalse(result)
         er = EventRequest.objects.get(hosted_by=self.society)
         self.assertEqual(er.intent, "CreateEve")
         self.assertIsNone(er.approved)
 
 
-    @patch("api.management.commands.seed.choice")
+    @patch("api.management.commands.seeding.event_generator.choice")
     def test_handle_event_status_rejected(self, mock_choice):
         """Test handle_event_status creates an EventRequest with approved True for 'Rejected' status."""
+        generator = self.command_instance.event_generator
         # Define a side effect that returns "Rejected" when the sequence is the status list,
         # and for other lists (like valid_hours or valid_minutes), return the first element.
         def side_effect(seq):
@@ -229,7 +237,7 @@ class SeedingTestCase(TransactionTestCase):
             return seq[0]
         mock_choice.side_effect = side_effect
 
-        result = self.command_instance.handle_event_status(self.event)
+        result = generator.handle_event_status(self.event)
         self.assertFalse(result)
         er = EventRequest.objects.get(hosted_by=self.society)
         self.assertEqual(er.intent, "CreateEve")
