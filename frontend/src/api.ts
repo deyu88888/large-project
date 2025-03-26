@@ -77,8 +77,8 @@ export const apiPaths = {
     ADMINEVENTVIEW: (eventId: number) => `/api/admin/manage-event/${eventId}`,
     DELETE: (targetType: string, targetId: number) => `/api/admin/delete/${targetType}/${targetId}`,
     UNDO_DELETE: (logId: number) => `/api/undo-delete/${logId}`,
-    ACTIVITYLOG: "/api/activity-log",
-    DELETEACTIVITYLOG: (logId: number) => `/api/delete-activity-log/${logId}`,
+    ACTIVITYLOG: "/api/admin/activity-log",
+    DELETEACTIVITYLOG: (logId: number) => `/api/admin/delete-activity-log/${logId}`,
   },
   SOCIETY: {
     All: "/api/dashboard/all-societies",
