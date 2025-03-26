@@ -150,11 +150,11 @@ describe('PresidentPage Component', () => {
     });
     
     const navigationTests = [
-      { buttonName: 'Society Details', expectedPath: '/manage-society-details/123' },
-      { buttonName: 'Society Events', expectedPath: '/manage-society-events/123' },
-      { buttonName: 'Pending Members', expectedPath: '/pending-members/123' },
-      { buttonName: 'Report to Admin', expectedPath: '/report-to-admin/123' },
-      { buttonName: 'All Members', expectedPath: '/view-society-members/123' },
+      { buttonName: 'Society Details', expectedPath: '/president-page/123/manage-society-details' },
+      { buttonName: 'Society Events', expectedPath: '/president-page/123/manage-society-events' },
+      { buttonName: 'Pending Members', expectedPath: '/president-page/123/pending-members' },
+      { buttonName: 'Report to Admin', expectedPath: '/president-page/123/report-to-admin' },
+      { buttonName: 'All Members', expectedPath: '/president-page/123/view-society-members' },
     ];
     
     for (const { buttonName, expectedPath } of navigationTests) {
