@@ -112,7 +112,7 @@ describe('Dashboard Component', () => {
 
   it('renders section headings correctly', () => {
     renderDashboard();
-    expect(screen.getByText('Check Out Upcoming Events!')).toBeInTheDocument();
+    expect(screen.getByText('Check Our Upcoming Events!')).toBeInTheDocument();
     expect(screen.getByText('Latest Trending Societies!')).toBeInTheDocument();
   });
 
