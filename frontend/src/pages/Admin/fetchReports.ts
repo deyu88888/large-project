@@ -1,13 +1,12 @@
 import { apiClient } from "../../api";
-import { ReportReply } from '../../types';
-import { Report, ReportThread } from "../../types/president/report";
+import { Report, ReportThread, Reply } from "../../types/president/report";
 
 
 interface ReportDetails {
   id: string;
 }
 
-interface ReportReplyRequest {
+interface ReplyRequest {
   report: string | number;
   parent_reply?: number | null;
   content: string;
@@ -70,8 +69,8 @@ const fetchReportThread = async (reportId: string): Promise<ReportThread> => {
 };
 
 
-const submitReply = async (data: ReportReplyRequest): Promise<ReportReply> => {
-  return await makePostRequest<ReportReplyRequest, ReportReply>(
+const submitReply = async (data: ReplyRequest): Promise<Reply> => {
+  return await makePostRequest<ReplyRequest, Reply>(
     "/api/admin/report-replies",
     data,
     "Error submitting reply:"
@@ -106,9 +105,9 @@ const fetchReportsWithReplies = async (): Promise<Report[]> => {
 };
 
 
-const fetchReportReplies = async (): Promise<ReportReply[]> => {
+const fetchReportReplies = async (): Promise<Reply[]> => {
   
-  return await makeGetRequest<ReportReply[]>(
+  return await makeGetRequest<Reply[]>(
     '/api/admin/reports-replied',
     'Error fetching report replies:'
   );
@@ -130,5 +129,5 @@ export type {
   Report,
   ReportDetails,
   ReportThread,
-  ReportReplyRequest
+  ReplyRequest
 };

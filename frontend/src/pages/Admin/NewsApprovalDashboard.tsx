@@ -5,10 +5,8 @@ import {
   Paper,
   Button,
   Divider,
-  Grid,
   Card,
   CardContent,
-  CardActions,
   Chip,
   TextField,
   CircularProgress,
@@ -133,8 +131,6 @@ const formatDateTime = (dateString: string): string => {
 
 
 const PageHeader: React.FC<{ onBack: () => void }> = ({ onBack }) => {
-  const theme = useTheme();
-  const colors = tokens(theme.palette.mode);
   
   return (
     <Box display="flex" alignItems="center" mb={3}>
@@ -500,11 +496,8 @@ const ActionDialog: React.FC<{
 
 
 const NewsApprovalDashboard: React.FC = () => {
-  const theme = useTheme();
-  const colors = tokens(theme.palette.mode);
   const navigate = useNavigate();
 
-  
   const [requestsState, setRequestsState] = useState<RequestsState>({
     items: [],
     loading: true,
@@ -594,7 +587,7 @@ const NewsApprovalDashboard: React.FC = () => {
   };
 
   
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number): void => {
+  const handleTabChange = (_: React.SyntheticEvent, newValue: number): void => {
     setTabValue(newValue);
     setExpandedRequestId(null); 
   };
@@ -635,18 +628,18 @@ const NewsApprovalDashboard: React.FC = () => {
     setDialogState(prev => ({ ...prev, notes }));
   };
 
-  const optimisticallyUpdateRequest = (request: PublicationRequest, newStatus: string): void => {
+  const optimisticallyUpdateRequest = (request: PublicationRequest, newStatus: string): PublicationRequest => {
     const updatedRequest = { ...request, status: newStatus };
-    
-    
+  
     setRequests(
       requestsState.items.map(req => 
         req.id === request.id ? updatedRequest : req
       )
     );
-    
+
     return updatedRequest;
   };
+  
 
   const handleProcessRequest = async (): Promise<void> => {
     const { currentRequest, action, notes } = dialogState;
