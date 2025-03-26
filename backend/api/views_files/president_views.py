@@ -132,7 +132,7 @@ class PendingMembersView(APIView):
         # Get all pending membership requests
         pending_requests = SocietyRequest.objects.filter(
             intent="JoinSoc",
-            approved=False,
+            approved=None,
             society=society
         )
 
@@ -160,7 +160,7 @@ class PendingMembersView(APIView):
         pending_request = SocietyRequest.objects.filter(
             id=request_id,
             intent="JoinSoc",
-            approved=False,
+            approved=None,
             society=society
         ).first()
         if not pending_request:
@@ -181,6 +181,8 @@ class PendingMembersView(APIView):
 
         elif action == "reject":
             # Delete the request
+            pending_request.approved = True
+            pending_request.save()
             pending_request.delete()
             return Response({"message": "Request has been rejected."}, status=status.HTTP_200_OK)
 
