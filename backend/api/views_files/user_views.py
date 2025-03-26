@@ -81,7 +81,7 @@ class CurrentUserView(APIView):
             except Student.DoesNotExist:
                 serializer = UserSerializer(user)
 
-            if serializer.data is None:
+            if not serializer.data:
                 return Response(
                     {"error": "User data could not be retrieved. Please try again later."},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR

@@ -47,11 +47,10 @@ class PendingMembersViewTest(APITestCase):
             is_president=False,
             major="Test Major"
         )
-        
+
         # Create a pending membership request for the applicant.
         self.pending_request = SocietyRequest.objects.create(
             intent="JoinSoc",
-            approved=False,
             from_student=self.applicant_student,
             society=self.society
         )
@@ -75,31 +74,30 @@ class PendingMembersViewTest(APITestCase):
         """
         self.pending_request.approved = False
         self.pending_request.save()
-        
+
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.applicant_token}")
-        
+
         was_approved_before = self.pending_request.approved
-        
+
         response = self.client.post(self.post_url, {"action": "approve"}, format="json")
-        
+
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.pending_request.refresh_from_db()
         self.assertEqual(self.pending_request.approved, was_approved_before,
                         "Non-president should not be able to change approval status")
-    
+
     def test_post_by_other_president(self):
         """
         POST by another president should return 403 Forbidden.
         """
         new_request = SocietyRequest.objects.create(
             intent="JoinSoc",
-            approved=False,
             from_student=self.applicant_student,
             society=self.society
         )
-        
+
         new_url = f"/api/society/{self.society.id}/pending-members/{new_request.id}/"
-        
+
         other_president = Student.objects.create_user(
             username="other_post_president",
             password="test1234",
@@ -173,19 +171,18 @@ class PendingMembersViewTest(APITestCase):
         """
         approve_request = SocietyRequest.objects.create(
             intent="JoinSoc",
-            approved=False,
             from_student=self.applicant_student,
             society=self.society
         )
-        
+
         approve_url = f"/api/society/{self.society.id}/pending-members/{approve_request.id}/"
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.president_token}")
-        
-        response = self.client.post(approve_url, {"action": "approve"}, format="json")        
+
+        response = self.client.post(approve_url, {"action": "approve"}, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn("approved", str(response.data).lower())     
+        self.assertIn("approved", str(response.data).lower())
         self.applicant_student.refresh_from_db()
-        self.assertIn(self.applicant_student, self.society.society_members.all())       
+        self.assertIn(self.applicant_student, self.society.society_members.all())
         approve_request.refresh_from_db()
         self.assertTrue(approve_request.approved)
 
@@ -195,16 +192,15 @@ class PendingMembersViewTest(APITestCase):
         """
         reject_request = SocietyRequest.objects.create(
             intent="JoinSoc",
-            approved=False,
             from_student=self.applicant_student,
             society=self.society
         )
-        
-        reject_url = f"/api/society/{self.society.id}/pending-members/{reject_request.id}/"  
+
+        reject_url = f"/api/society/{self.society.id}/pending-members/{reject_request.id}/"
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.president_token}")
-        response = self.client.post(reject_url, {"action": "reject"}, format="json")     
+        response = self.client.post(reject_url, {"action": "reject"}, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn("rejected", str(response.data).lower())      
+        self.assertIn("rejected", str(response.data).lower())
         with self.assertRaises(SocietyRequest.DoesNotExist):
             SocietyRequest.objects.get(id=reject_request.id)
 
