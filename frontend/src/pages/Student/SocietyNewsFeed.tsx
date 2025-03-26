@@ -212,7 +212,7 @@ const SocietyNewsFeed: React.FC<SocietyNewsFeedProps> = ({ societyId }) => {
     try {
       const endpoint = societyId 
         ? `/api/society/${societyId}/news/` 
-        : '/api/my-news-feed/';
+        : '/api/news/feed/';
       
       const response = await apiClient.get(endpoint);
       setNewsPosts(response.data);

@@ -94,7 +94,7 @@ const fetchAllRequests = async (): Promise<PublicationRequest[]> => {
 };
 
 const fetchNewsContent = async (newsPostId: number): Promise<NewsContent> => {
-  const response = await apiClient.get(`/api/news/${newsPostId}/`);
+  const response = await apiClient.get(`/api/news/${newsPostId}/detail/`);
   return response.data;
 };
 
@@ -103,7 +103,7 @@ const updateRequestStatus = async (
   status: string, 
   notes: string
 ): Promise<void> => {
-  await apiClient.put(`/api/news/publication-request/${requestId}/`, {
+  await apiClient.put(`/api/admin/news/publication-request/${requestId}/`, {
     status,
     admin_notes: notes
   });

@@ -145,8 +145,8 @@ society_patterns = [
     path("<int:society_id>/pending-members/<int:request_id>/", PendingMembersView.as_view(), name="process-pending-member"),
     path("<int:society_id>/members/", SocietyMembersListView.as_view(), name="society-members"),
     path("<int:society_id>/roles/", SocietyRoleManagementView.as_view(), name="society-roles"),
-    path('join/<int:society_id>/', RequestJoinSocietyView.as_view(), name='join_society'),
     path('join/', RequestJoinSocietyView.as_view(), name='join_society'),
+    path('join/<int:society_id>/', RequestJoinSocietyView.as_view(), name='join_society'),
     path("popular", get_popular_societies, name="popular_societies"),
     path("<int:society_id>/news/", SocietyNewsListView.as_view(), name="society_news_list"),
 ]
