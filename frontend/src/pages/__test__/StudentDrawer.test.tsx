@@ -74,7 +74,7 @@ describe('StudentDrawer Component', () => {
 
   it('renders without crashing', async () => {
     await setup();
-    expect(screen.getByText('Student Dashboard')).toBeInTheDocument();
+    expect(screen.getByText('Dashboard')).toBeInTheDocument();
   });
 
   it('fetches student data on mount', async () => {
@@ -91,7 +91,7 @@ describe('StudentDrawer Component', () => {
     
     await waitFor(() => {
       expect(screen.getByText('Test User')).toBeInTheDocument();
-      expect(screen.getByText('Student Dashboard')).toBeInTheDocument();
+      expect(screen.getByText('Dashboard')).toBeInTheDocument();
     });
     
     const userIcon = screen.getByAltText('testuser icon');
@@ -120,14 +120,10 @@ describe('StudentDrawer Component', () => {
     
     expect(screen.getByText('Dashboard')).toBeInTheDocument();
     expect(screen.getByText('My Societies')).toBeInTheDocument();
-    expect(screen.getByText('Start Society')).toBeInTheDocument();
-    expect(screen.getByText('View Events')).toBeInTheDocument();
+    expect(screen.getByText('Start A Society')).toBeInTheDocument();
+    expect(screen.getByText('My Events')).toBeInTheDocument();
     expect(screen.getByText('News')).toBeInTheDocument();
     expect(screen.getByText('Notifications')).toBeInTheDocument();
-    
-    // We need to use getAllByText because "Join Societies" appears twice in the document
-    // Once in the section header and once in the menu item
-    expect(screen.getAllByText('Join Societies')[0]).toBeInTheDocument();
   });
 
   it('renders the logout button', async () => {
@@ -192,16 +188,10 @@ describe('StudentDrawer Component', () => {
   it('navigates to correct routes when menu items are clicked', async () => {
     await setup();
     
-    const startSocietyLink = screen.getByText('Start Society').closest('a');
+    const startSocietyLink = screen.getByText('Start A Society').closest('a');
     expect(startSocietyLink).toHaveAttribute('href', '/student/start-society');
     
-    // We need to use getAllByText because "Join Societies" appears twice
-    // Then we need to find the one that's inside an <a> element
-    const joinSocietiesElements = screen.getAllByText('Join Societies');
-    const joinSocietiesLink = joinSocietiesElements.find(element => 
-      element.closest('a') !== null
-    ).closest('a');
-    
-    expect(joinSocietiesLink).toHaveAttribute('href', '/student/join-society');
+    const discoverSocietiesLink = screen.getByText('Discover Societies').closest('a');
+    expect(discoverSocietiesLink).toHaveAttribute('href', '/student/join-society');
   });
 });
