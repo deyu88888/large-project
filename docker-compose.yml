@@ -11,7 +11,7 @@ services:
       - ./backend/db.sqlite3:/app/db.sqlite3
     environment:
       - DJANGO_SECRET_KEY=some-very-secret-key
-      - DJANGO_DEBUG=True
+      - DJANGO_DEBUG=False
 
   # React Frontend
   frontend:
