@@ -157,12 +157,28 @@ export const themeSettings = (mode: ThemeMode) => {
     typography: {
       fontFamily: ["Source Sans Pro", "sans-serif"].join(","),
       fontSize: 12,
-      h1: { fontSize: 40 },
-      h2: { fontSize: 32 },
-      h3: { fontSize: 24 },
-      h4: { fontSize: 20 },
-      h5: { fontSize: 16 },
-      h6: { fontSize: 14 },
+      h1: { 
+        fontSize: 40, 
+        fontFamily: "Monaco, monospace",
+        fontWeight: "bold",
+      },
+      h2: { 
+        fontSize: 32, 
+        fontFamily: "Monaco, monospace",
+      },
+      h3: { 
+        fontSize: 24, 
+        fontFamily: "Monaco, monospace",
+      },
+      h4: { 
+        fontSize: 20, 
+      },
+      h5: { 
+        fontSize: 16, 
+      },
+      h6: { 
+        fontSize: 14, 
+      },
     },
   };
 };

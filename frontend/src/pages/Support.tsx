@@ -193,7 +193,7 @@ const Support = () => {
               marginBottom: "1rem"
             }}
           >
-            Support Center
+            Support Centre
           </Typography>
           <Typography 
             variant="h5"
