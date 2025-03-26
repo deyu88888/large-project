@@ -8,6 +8,8 @@
   "compilerOptions": {
 
     "types": ["vitest/globals"],
+    "composite": true,
+    "noEmit": false
   },
 
   "include": ["src"]

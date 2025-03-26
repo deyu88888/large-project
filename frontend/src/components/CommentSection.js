@@ -1,0 +1,101 @@
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import { useEffect, useRef, useState } from "react";
+import { CommentItem } from "./CommentItem";
+import { apiClient } from "../api";
+import { Box, Button, Pagination, Typography } from "@mui/material";
+import { TextToggle } from "./TextToggle";
+// Main comment section component
+export function CommentSection({ eventId }) {
+    const [comments, setComments] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [newComment, setNewComment] = useState("");
+    const [sortOption, setSortOption] = useState("time");
+    const [page, setPage] = useState(1);
+    const [commentsPerPage, setCommentsPerPage] = useState(10);
+    const textAreaRef = useRef(null);
+    useEffect(() => {
+        apiClient
+            .get(`/api/comments/?event_id=${eventId}`)
+            .then((res) => {
+            console.log("Fetched comments:", res.data);
+            setComments(res.data);
+        })
+            .catch((err) => console.error("Error fetching comments:", err))
+            .finally(() => setLoading(false));
+    }, [eventId]);
+    // Handle submitting a new comment
+    const handleSubmitComment = () => {
+        if (!newComment.trim())
+            return;
+        apiClient
+            .post(`/api/comments/?event_id=${eventId}`, {
+            event: eventId,
+            content: newComment,
+        })
+            .then((res) => {
+            setComments((prev) => [...prev, res.data]);
+            setNewComment("");
+            // Reset textarea height after submission
+            if (textAreaRef.current) {
+                textAreaRef.current.style.height = "auto";
+            }
+        })
+            .catch((err) => console.error("Error creating comment:", err));
+    };
+    // Handle submitting a reply to a comment
+    const handleReply = (parentId, content) => {
+        apiClient
+            .post(`/api/comments/?event_id=${eventId}`, {
+            event: eventId,
+            content,
+            parent_comment: parentId,
+        })
+            .then((res) => {
+            const newReply = res.data;
+            const updatedComments = addReplyToTree(comments, parentId, newReply);
+            setComments(updatedComments);
+        })
+            .catch((err) => console.error("Error replying to comment:", err));
+    };
+    // Recursively add a reply to the correct position in the comment tree
+    function addReplyToTree(list, parentId, newReply) {
+        return list.map((c) => {
+            if (c.id === parentId) {
+                return { ...c, replies: [...c.replies, newReply] };
+            }
+            else if (c.replies && c.replies.length > 0) {
+                return { ...c, replies: addReplyToTree(c.replies, parentId, newReply) };
+            }
+            else {
+                return c;
+            }
+        });
+    }
+    const sortedComments = [...comments];
+    if (sortOption === "popularity") {
+        sortedComments.sort((a, b) => (b.likes - b.dislikes) - (a.likes - a.dislikes));
+    }
+    const totalComments = sortedComments.length;
+    const totalPages = Math.ceil(totalComments / commentsPerPage);
+    const displayedComments = sortedComments.slice((page - 1) * commentsPerPage, page * commentsPerPage);
+    // Display loading state
+    if (loading) {
+        return _jsx("p", { children: "Loading comments..." });
+    }
+    return (_jsxs("div", { children: [_jsx(Typography, { variant: "h4", align: "center", marginTop: "20px", marginBottom: "20px", children: "Comments" }), _jsxs("div", { style: { marginBottom: "20px" }, children: [_jsx("textarea", { ref: textAreaRef, rows: 1, value: newComment, onChange: (e) => {
+                            setNewComment(e.target.value);
+                            e.target.style.height = "auto";
+                            e.target.style.height = e.target.scrollHeight + "px";
+                        }, style: {
+                            width: "100%",
+                            border: "2px solid black",
+                            borderRadius: "4px",
+                            padding: "8px",
+                            marginBottom: "8px",
+                            resize: "none",
+                            overflow: "hidden",
+                        } }), _jsx(Button, { onClick: handleSubmitComment, variant: "contained", color: "secondary", sx: {
+                            display: "block",
+                            margin: "auto",
+                        }, children: "Post the Comment" })] }), _jsx(TextToggle, { sortOption: sortOption, setSortOption: setSortOption, commentsPerPage: commentsPerPage, setCommentsPerPage: setCommentsPerPage, setPage: setPage }), displayedComments.length === 0 ? (_jsx("p", { children: "There is no comment now" })) : (displayedComments.map((comment, index) => (_jsxs("div", { children: [_jsx(CommentItem, { comment: comment, onReply: handleReply }), index !== displayedComments.length - 1 && (_jsx("hr", { style: { margin: "10px 0" } }))] }, comment.id)))), totalPages > 1 && (_jsx(Box, { sx: { display: "flex", justifyContent: "center", mt: 2 }, children: _jsx(Pagination, { count: totalPages, page: page, onChange: (_, value) => setPage(value), color: "primary" }) }))] }));
+}

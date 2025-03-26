@@ -1,0 +1,50 @@
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import { describe, it, expect } from 'vitest';
+import { renderWithRouter } from '../../utils/test-utils';
+import { screen, fireEvent } from '@testing-library/react';
+import { Link, Route, Routes } from 'react-router-dom';
+import '@testing-library/jest-dom';
+// Mock components for testing
+const HomePage = () => _jsx("div", { "data-testid": "home-page", children: "Home Page" });
+const AboutPage = () => _jsx("div", { "data-testid": "about-page", children: "About Page" });
+const TestComponent = () => {
+    return (_jsxs("div", { children: [_jsxs("nav", { children: [_jsx(Link, { to: "/", "data-testid": "home-link", children: "Home" }), _jsx(Link, { to: "/about", "data-testid": "about-link", children: "About" })] }), _jsxs(Routes, { children: [_jsx(Route, { path: "/", element: _jsx(HomePage, {}) }), _jsx(Route, { path: "/about", element: _jsx(AboutPage, {}) })] })] }));
+};
+describe('renderWithRouter', () => {
+    it('should render a component with router context', () => {
+        renderWithRouter(_jsx(TestComponent, {}));
+        // Check that the component renders with default route (/)
+        expect(screen.getByTestId('home-page')).toBeInTheDocument();
+        expect(screen.queryByTestId('about-page')).not.toBeInTheDocument();
+        // Check that navigation links are rendered
+        expect(screen.getByTestId('home-link')).toBeInTheDocument();
+        expect(screen.getByTestId('about-link')).toBeInTheDocument();
+    });
+    it('should properly handle navigation', () => {
+        // Setup
+        renderWithRouter(_jsx(TestComponent, {}));
+        // Initial state check - we should be on the home page
+        expect(screen.getByTestId('home-page')).toBeInTheDocument();
+        // Click on the about link
+        fireEvent.click(screen.getByTestId('about-link'));
+        // We should now be on the about page
+        expect(screen.getByTestId('about-page')).toBeInTheDocument();
+        expect(screen.queryByTestId('home-page')).not.toBeInTheDocument();
+        // Go back to home
+        fireEvent.click(screen.getByTestId('home-link'));
+        // We should be back on the home page
+        expect(screen.getByTestId('home-page')).toBeInTheDocument();
+        expect(screen.queryByTestId('about-page')).not.toBeInTheDocument();
+    });
+    it('should maintain router context for nested components', () => {
+        // A component that uses router context
+        const NestedRouterConsumer = () => {
+            return _jsx("div", { "data-testid": "nested-component", children: "Nested Component" });
+        };
+        // Wrap it in our utility
+        renderWithRouter(_jsxs("div", { children: [_jsx(TestComponent, {}), _jsx(NestedRouterConsumer, {})] }));
+        // Both components should render properly
+        expect(screen.getByTestId('home-page')).toBeInTheDocument();
+        expect(screen.getByTestId('nested-component')).toBeInTheDocument();
+    });
+});
