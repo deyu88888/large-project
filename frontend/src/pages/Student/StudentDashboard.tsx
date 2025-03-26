@@ -135,7 +135,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = () => {
           location: ev.location || "",
           hostedBy: ev.hosted_by,
           societyName: ev.societyName || "",
-          rsvp: ev.rsvp,
+          current_attendees: ev.current_attendees,
           status: ev.status,
         }));
       setEvents(transformed);
@@ -256,7 +256,11 @@ const StudentDashboard: React.FC<StudentDashboardProps> = () => {
 
   function getMyEventsCount() {
     const mySocietyIds = allSocieties.map((s) => s.id);
-    return events.filter((e) => mySocietyIds.includes(e.hostedBy)).length;
+    return events.filter((e) => mySocietiesIncludes(e.hostedBy, mySocietyIds)).length;
+  }
+
+  function mySocietiesIncludes(hostedBy: number, mySocietyIds: number[]) {
+    return mySocietyIds.includes(hostedBy);
   }
 
   if (loading) {
@@ -469,70 +473,83 @@ const StudentDashboard: React.FC<StudentDashboardProps> = () => {
                 gap={3}
               >
                 {events
-                  .filter((e) => allSocieties.some((s) => s.id === e.hostedBy))
-                  .map((event) => (
-                    <Paper
-                      key={event.id}
-                      elevation={2}
-                      sx={{
-                        backgroundColor: colours.primary[400],
-                        border: `1px solid ${colours.grey[800]}`,
-                        p: 2,
-                      }}
-                    >
-                      <Box
-                        display="flex"
-                        justifyContent="space-between"
-                        alignItems="center"
-                        mb={2}
+                  .filter((e) =>
+                    allSocieties.some((s) => s.id === e.hostedBy)
+                  )
+                  .filter((e) =>
+                    !e.current_attendees?.some(
+                      (attendee) => attendee.id === user?.id
+                    )
+                  )
+                  .map((event) => {
+                    return (
+                      <Paper
+                        key={event.id}
+                        elevation={2}
+                        sx={{
+                          backgroundColor: colours.primary[400],
+                          border: `1px solid ${colours.grey[800]}`,
+                          p: 2,
+                        }}
                       >
-                        <Box>
-                          <Typography variant="h6" sx={{ color: colours.grey[100] }}>
-                            {event.title}
-                          </Typography>
-                          <Box display="flex" alignItems="center" mt={1}>
-                            <FaRegClock
-                              style={{ marginRight: 8, color: colours.grey[300] }}
-                            />
-                            <Typography variant="body2" sx={{ color: colours.grey[300] }}>
-                              {event.date}{" "}
-                              {event.startTime && `at ${event.startTime}`}
+                        <Box
+                          display="flex"
+                          justifyContent="space-between"
+                          alignItems="center"
+                          mb={2}
+                        >
+                          <Box>
+                            <Typography variant="h6" sx={{ color: colours.grey[100] }}>
+                              {event.title}
                             </Typography>
-                          </Box>
-                          {event.location && (
+                            <Box display="flex" alignItems="center" mt={1}>
+                              <FaRegClock
+                                style={{ marginRight: 8, color: colours.grey[300] }}
+                              />
+                              <Typography variant="body2" sx={{ color: colours.grey[300] }}>
+                                {event.date} {event.startTime && `at ${event.startTime}`}
+                              </Typography>
+                            </Box>
+                            {event.location && (
+                              <Typography
+                                variant="body2"
+                                sx={{ color: colours.grey[300], mt: 1 }}
+                              >
+                                Location: {event.location}
+                              </Typography>
+                            )}
                             <Typography
                               variant="body2"
                               sx={{ color: colours.grey[300], mt: 1 }}
                             >
-                              Location: {event.location}
+                              Hosted by:{" "}
+                              {allSocieties.find((s) => s.id === event.hostedBy)?.name ||
+                                event.societyName ||
+                                `Society ${event.hostedBy}`}
                             </Typography>
-                          )}
-                          <Typography variant="body2" sx={{ color: colours.grey[300], mt: 1 }}>
-                            Hosted by:{" "}
-                            {allSocieties.find((s) => s.id === event.hostedBy)?.name ||
-                              event.societyName ||
-                              `Society ${event.hostedBy}`}
-                          </Typography>
+                          </Box>
                         </Box>
-                      </Box>
-                      <Button
-                        fullWidth
-                        variant="contained"
-                        onClick={() => handleRSVP(event.id, !event.rsvp)}
-                        sx={{
-                          backgroundColor: event.rsvp
-                            ? colours.grey[700]
-                            : colours.blueAccent[500],
-                          color: colours.grey[100],
-                        }}
-                      >
-                        {event.rsvp ? "Cancel RSVP" : "RSVP Now"}
-                      </Button>
-                    </Paper>
-                  ))}
-                {events.filter((e) =>
-                  allSocieties.some((s) => s.id === e.hostedBy)
-                ).length === 0 && (
+                        <Button
+                          fullWidth
+                          variant="contained"
+                          onClick={() => handleRSVP(event.id, true)}
+                          sx={{
+                            backgroundColor: colours.blueAccent[500],
+                            color: colours.grey[100],
+                          }}
+                        >
+                          RSVP Now
+                        </Button>
+                      </Paper>
+                    );
+                  })}
+                {events
+                  .filter((e) => allSocieties.some((s) => s.id === e.hostedBy))
+                  .filter((e) =>
+                    !e.current_attendees?.some(
+                      (attendee) => attendee.id === user?.id
+                    )
+                  ).length === 0 && (
                   <Box
                     gridColumn={{ xs: "1", md: "1 / span 2", lg: "1 / span 3" }}
                     p={4}
@@ -545,6 +562,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = () => {
                 )}
               </Box>
             )}
+
 
             {activeTab === 2 && (
               <Box>
@@ -696,8 +714,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = () => {
                 </Typography>
               </Box>
               <Typography variant="body2" sx={{ color: colours.grey[300], mb: 2 }}>
-                Have an idea for a new society? Share your passion and bring others
-                together!
+                Have an idea for a new society? Share your passion and bring others together!
               </Typography>
               <Button
                 variant="contained"
@@ -791,7 +808,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = () => {
         open={snackbarOpen}
         autoHideDuration={6000}
         onClose={handleSnackbarClose}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
         <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: "100%" }}>
           {snackbarMessage}

@@ -164,6 +164,7 @@ const EventDetailPage: React.FC = () => {
     isMember,
     eventId: event.id,
     hostedBy: event.hosted_by,
+    current_attendees: event.current_attendees
   };
 
   console.log("userId:", userId);

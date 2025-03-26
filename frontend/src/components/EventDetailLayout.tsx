@@ -24,6 +24,7 @@ export interface EventData {
   isMember: boolean;
   eventId: number;
   hostedBy: number;
+  current_attendees: any[];
 }
 
 export function EventDetailLayout({ eventData }: { eventData: EventData }) {
@@ -43,8 +44,10 @@ export function EventDetailLayout({ eventData }: { eventData: EventData }) {
     isMember,
     eventId,
     hostedBy,
+    current_attendees,
   } = eventData;
 
+  console.log(eventData.current_attendees);
   const theme = useTheme();
   const navigate = useNavigate();
   const colours = tokens(theme.palette.mode);
@@ -262,7 +265,10 @@ export function EventDetailLayout({ eventData }: { eventData: EventData }) {
               <strong>Location:</strong> {location}
             </Typography>
             <Typography variant="body1" sx={{ mb: 1 }}>
-              <strong>Max Capacity:</strong> {maxCapacity}
+              <strong>Max Capacity:</strong> {maxCapacity === 0 ? "No Limit" : maxCapacity}
+            </Typography>
+            <Typography variant="body1" sx={{ mb: 1 }}>
+              <strong>Participants:</strong> {current_attendees?.length || 0}
             </Typography>
   
             <Box sx={{ mt: 2 }}>

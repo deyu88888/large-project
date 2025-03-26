@@ -30,6 +30,6 @@ export interface TransformedEvent {
   location: string;
   hostedBy: number;
   societyName?: string;
-  rsvp: boolean;
   status: string;
+  current_attendees?: Attendee[];
 }
