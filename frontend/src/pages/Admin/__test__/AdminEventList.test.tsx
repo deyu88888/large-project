@@ -1,22 +1,26 @@
 import React from 'react';
 import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
 import { vi } from 'vitest';
-import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import { MemoryRouter } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import EventList from '../AdminEventList'; 
 import { apiClient } from '../../../api';
 import { SearchContext } from '../../../components/layout/SearchContext';
 
+// Mock EventPreview component
+vi.mock('../../../components/EventPreview', () => ({
+  EventPreview: ({ open, onClose, eventData }) => (
+    open ? <div data-testid="event-preview">
+      <div>Event Preview: {eventData.title}</div>
+      <button onClick={onClose}>Close Preview</button>
+    </div> : null
+  )
+}));
+
 // Create mock themes
 const theme = createTheme({
   palette: {
     mode: 'light',
-  }
-});
-
-const darkTheme = createTheme({
-  palette: {
-    mode: 'dark',
   }
 });
 
@@ -78,24 +82,26 @@ vi.mock('../../../stores/settings-store', () => {
 describe('EventList Component', () => {
   const mockEvents = [
     {
-      id: '1',
+      id: 1,
       title: 'Test Event 1',
       main_description: 'Description for test event 1',
       date: '2025-03-20',
       start_time: '14:00',
       duration: '2 hours',
       hosted_by: 'Test Society',
-      location: 'Main Hall'
+      location: 'Main Hall',
+      cover_image: 'image1.jpg'
     },
     {
-      id: '2',
+      id: 2,
       title: 'Test Event 2',
       main_description: 'Description for test event 2',
       date: '2025-03-21',
       start_time: '16:00',
       duration: '1 hour',
       hosted_by: 'Another Society',
-      location: 'Room 101'
+      location: 'Room 101',
+      cover_image: 'image2.jpg'
     }
   ];
 
@@ -164,7 +170,7 @@ describe('EventList Component', () => {
     });
   });
 
-  it('navigates to event details when View button is clicked', async () => {
+  it('opens event preview dialog when View button is clicked', async () => {
     await renderEventList();
     
     const viewButtons = screen.getAllByText('View');
@@ -173,7 +179,18 @@ describe('EventList Component', () => {
       fireEvent.click(viewButtons[0]);
     });
     
-    expect(mockNavigate).toHaveBeenCalledWith('/admin/view-event/1');
+    expect(screen.getByTestId('event-preview')).toBeInTheDocument();
+    expect(screen.getByText('Event Preview: Test Event 1')).toBeInTheDocument();
+    
+    // Verify close button works
+    const closeButton = screen.getByText('Close Preview');
+    await act(async () => {
+      fireEvent.click(closeButton);
+    });
+    
+    await waitFor(() => {
+      expect(screen.queryByTestId('event-preview')).not.toBeInTheDocument();
+    });
   });
 
   it('opens delete dialog when Delete button is clicked', async () => {
