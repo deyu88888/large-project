@@ -1,12 +1,12 @@
-import { styled } from "@mui/material/styles";  
-import { Theme } from "@mui/material/styles";  
-import { CSSObject } from "@mui/system"; 
-import type { StyledComponent } from "@mui/system";
+import { styled, Theme } from "@mui/material/styles";
+import { CSSObject, StyledComponent } from "@mui/system";
 import MuiAppBar, { AppBarProps as MuiAppBarProps } from "@mui/material/AppBar";
 import MuiDrawer from "@mui/material/Drawer";
+import React from "react";
 
 const drawerWidth = 240;
 
+// Drawer open style
 const openedMixin = (theme: Theme): CSSObject => ({
   width: drawerWidth,
   transition: theme.transitions.create("width", {
@@ -17,6 +17,7 @@ const openedMixin = (theme: Theme): CSSObject => ({
   backgroundColor: theme.palette.background.default,
 });
 
+// Drawer closed style
 const closedMixin = (theme: Theme): CSSObject => ({
   transition: theme.transitions.create("width", {
     easing: theme.transitions.easing.sharp,
@@ -30,9 +31,11 @@ const closedMixin = (theme: Theme): CSSObject => ({
   backgroundColor: theme.palette.background.default,
 });
 
+// Custom Drawer Header
 export const CustomDrawerHeader: StyledComponent<
-  { theme: Theme },
-  React.HTMLAttributes<HTMLDivElement>
+  React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement>,
+  object,
+  Theme
 > = styled("div")(({ theme }) => ({
   display: "flex",
   alignItems: "center",
@@ -41,40 +44,18 @@ export const CustomDrawerHeader: StyledComponent<
   ...theme.mixins.toolbar,
 }));
 
-
-// export const CustomDrawerHeader = styled("div")(({ theme }: { theme: Theme }) => ({
-//   display: "flex",
-//   alignItems: "center",
-//   justifyContent: "flex-end",
-//   padding: theme.spacing(0, 1),
-//   ...theme.mixins.toolbar,
-// }));
-
+// Custom AppBar with optional `open` prop
 interface AppBarProps extends MuiAppBarProps {
   open?: boolean;
 }
 
-// export const CustomAppBar = styled(MuiAppBar, {
-//   shouldForwardProp: (prop) => prop !== "open",
-// })<AppBarProps>(({ theme, open }: { theme: Theme; open?: boolean }) => ({
-//   zIndex: theme.zIndex.drawer + 1,
-//   marginLeft: open ? drawerWidth : 0,
-//   width: open ? `calc(100% - ${drawerWidth}px)` : "100%",
-//   transition: theme.transitions.create(["width", "margin"], {
-//     easing: theme.transitions.easing.sharp,
-//     duration: open
-//       ? theme.transitions.duration.enteringScreen
-//       : theme.transitions.duration.leavingScreen,
-//   }),
-// }));
-
 export const CustomAppBar: StyledComponent<
   AppBarProps,
-  {},
-  AppBarProps
+  object,
+  Theme
 > = styled(MuiAppBar, {
   shouldForwardProp: (prop) => prop !== "open",
-})<AppBarProps>(({ theme, open }: { theme: Theme; open?: boolean }) => ({
+})<AppBarProps>(({ theme, open }) => ({
   zIndex: theme.zIndex.drawer + 1,
   marginLeft: open ? drawerWidth : 0,
   width: open ? `calc(100% - ${drawerWidth}px)` : "100%",
@@ -86,32 +67,14 @@ export const CustomAppBar: StyledComponent<
   }),
 }));
 
-
-// export const CustomDrawer = styled(MuiDrawer, {
-//   shouldForwardProp: (prop) => prop !== "open",
-// })(({ theme, open }: { theme: Theme; open?: boolean }) => ({
-//   width: drawerWidth,
-//   flexShrink: 0,
-//   whiteSpace: "nowrap",
-//   boxSizing: "border-box",
-//   ...(open
-//     ? {
-//         ...openedMixin(theme),
-//         "& .MuiDrawer-paper": openedMixin(theme),
-//       }
-//     : {
-//         ...closedMixin(theme),
-//         "& .MuiDrawer-paper": closedMixin(theme),
-//       }),
-// }));
-
+// Custom Drawer with optional `open` prop
 export const CustomDrawer: StyledComponent<
   { open?: boolean },
-  {},
-  {}
+  object,
+  Theme
 > = styled(MuiDrawer, {
   shouldForwardProp: (prop) => prop !== "open",
-})(({ theme, open }: { theme: Theme; open?: boolean }) => ({
+})<{ open?: boolean }>(({ theme, open }) => ({
   width: drawerWidth,
   flexShrink: 0,
   whiteSpace: "nowrap",
@@ -126,3 +89,8 @@ export const CustomDrawer: StyledComponent<
         "& .MuiDrawer-paper": closedMixin(theme),
       }),
 }));
+
+// Optional: Add display names for debugging
+CustomDrawerHeader.displayName = "CustomDrawerHeader";
+CustomAppBar.displayName = "CustomAppBar";
+CustomDrawer.displayName = "CustomDrawer";

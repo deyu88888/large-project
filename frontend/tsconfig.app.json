@@ -13,6 +13,7 @@
     "allowImportingTsExtensions": true,
     "isolatedModules": true,
     "moduleDetection": "force",
+    "outDir": "./dist/app",
     "composite": true,
     "noEmit": false,
     "jsx": "react-jsx",
@@ -23,5 +24,7 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": ["node_modules", "coverage", "**/*.test.ts", "**/*.test.tsx"]
+
 }

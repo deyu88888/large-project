@@ -9,7 +9,9 @@
     "test": "vitest --environment jsdom",
     "test:coverage": "vitest run --coverage --environment jsdom",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "clean": "rm -rf dist",
+  "rebuild": "npm run clean && npm run build"
   },
   "engines": {
     "node": ">=20.0.0"
