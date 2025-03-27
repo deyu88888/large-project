@@ -3,8 +3,6 @@ from datetime import timedelta
 from dotenv import load_dotenv
 import os
 
-# from fakeredis.aioredis import FakeRedis
-from fakeredis import FakeRedis
 # Load environment variables
 load_dotenv()
 
@@ -17,7 +15,7 @@ SECRET_KEY = os.getenv(
 
 DEBUG = os.getenv("DJANGO_DEBUG", "True") == "True"
 
-ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
+ALLOWED_HOSTS = ["*"]
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
@@ -56,6 +54,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "api.middleware.OptionsAuthExemptMiddleware",
 ]
 
 ROOT_URLCONF = "backend.urls"
@@ -101,12 +100,10 @@ USE_TZ = True
 STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-]
+CORS_ALLOW_ALL_ORIGINS = True
 
 CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:3000",
+    "*",
 ]
 
 CORS_ALLOW_CREDENTIALS = True

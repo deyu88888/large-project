@@ -1,301 +1,430 @@
-// TODO: to refactor once this is working
-
-import { useState, useEffect } from "react";
-import { Calendar, momentLocalizer, Event as BigCalendarEvent } from "react-big-calendar";
+import { useState, useEffect, memo, useCallback } from "react";
+import { Calendar, momentLocalizer } from "react-big-calendar";
 import moment from "moment";
-import { Box, CircularProgress, Typography, useTheme, Dialog, DialogTitle, DialogContent, DialogActions, Button, Alert } from "@mui/material";
-
+import {
+  Box,
+  CircularProgress,
+  Typography,
+  useTheme,
+  Dialog,
+  DialogContent,
+  DialogActions,
+  Button,
+  Alert,
+  Tooltip,
+} from "@mui/material";
 import Header from "../../components/Header";
 import { tokens } from "../../theme/theme";
 import { getAllEvents } from "../../api";
-import { Event as EventType } from "../../types";
 import "react-big-calendar/lib/css/react-big-calendar.css";
-import { CalendarEvent } from '../../types/admin/calendar';
 
-
-// Initialize the localizer
+const EVENT_COLORS = [
+  "#6c5ce7",
+  "#00cec9",
+  "#fd79a8",
+  "#fdcb6e",
+  "#e17055",
+  "#0984e3",
+  "#00b894",
+];
 const localizer = momentLocalizer(moment);
 
+const CustomEvent = memo(({ event }: any) => (
+  <div className="p-1 overflow-hidden text-ellipsis">
+    <strong className="block text-sm whitespace-nowrap overflow-hidden text-ellipsis">
+      {event.title}
+    </strong>
+    <span className="block text-xs whitespace-nowrap">
+      {moment(event.start).format("LT")} - {moment(event.end).format("LT")}
+    </span>
+  </div>
+));
+
+const formatEvents = (data: any) => {
+  if (!Array.isArray(data)) return [];
+
+  return data
+    .map((event) => {
+      try {
+        let start = event.start
+          ? new Date(event.start)
+          : event.date && event.startTime
+          ? new Date(`${event.date}T${event.startTime}`)
+          : event.startDate
+          ? new Date(event.startDate)
+          : event.start_date
+          ? new Date(event.start_date)
+          : event.event_date
+          ? new Date(event.event_date)
+          : event.created_at
+          ? new Date(event.created_at)
+          : event.updated_at
+          ? new Date(event.updated_at)
+          : new Date();
+
+        if (isNaN(start.getTime())) start = new Date();
+
+        let end = event.end
+          ? new Date(event.end)
+          : event.endDate
+          ? new Date(event.endDate)
+          : event.end_date
+          ? new Date(event.end_date)
+          : new Date(start.getTime() + 3600000);
+
+        return {
+          id: event.id || Math.random().toString(36).slice(2, 9),
+          title: event.title || event.name || "Untitled Event",
+          start,
+          end,
+          description: event.description || "",
+          location: event.location || event.venue || "",
+          hostedBy: event.hostedBy || event.society_id || event.organizer || "",
+        };
+      } catch {
+        return null;
+      }
+    })
+    .filter(Boolean);
+};
 
 const AdminCalendar = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
-  
-  const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
-  const [openDialog, setOpenDialog] = useState<boolean>(false);
 
-  // Fetch all events on component mount
+  const [events, setEvents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<any>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [moreEvents, setMoreEvents] = useState<{
+    open: boolean;
+    data: any[];
+  }>({ open: false, data: [] });
+
   useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        setLoading(true);
+        const data = await getAllEvents();
+        setEvents(formatEvents(data || []));
+      } catch (err) {
+        setError("Failed to load events. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchEvents();
   }, []);
 
-  const fetchEvents = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      // Fetch events from API
-      const eventsData = await getAllEvents();
-      
-      // Transform API event data into CalendarEvent format
-      const formattedEvents: CalendarEvent[] = eventsData.map((event: EventType) => {
-        // Parse the date and time
-        const startDate = parseDateTime(event.date, event.startTime);
-        const endDate = calculateEndTime(startDate, event.duration);
-        
-        return {
-          id: event.id,
-          title: event.title,
-          start: startDate,
-          end: endDate,
-          description: event.description,
-          location: event.location,
-          hostedBy: event.hostedBy
-        };
-      });
-      
-      setEvents(formattedEvents);
-    } catch (err: any) {
-      console.error("Error fetching events:", err);
-      setError("Failed to load events. Please try again.");
-    } finally {
-      setLoading(false);
-    }
+  const handleSelectEvent = useCallback((event: any) => {
+    setSelectedEvent(event);
+    setDialogOpen(true);
+  }, []);
+
+  const handleCloseDialog = useCallback(() => {
+    setDialogOpen(false);
+    setSelectedEvent(null);
+  }, []);
+
+  const handleShowMore = useCallback((events: any) => {
+    setMoreEvents({ open: true, data: events });
+  }, []);
+
+  const handleCloseMoreEvents = useCallback(() => {
+    setMoreEvents((prev) => ({ ...prev, open: false }));
+  }, []);
+
+  const eventStyleGetter = useCallback(
+    (event: any) => ({
+      style: {
+        backgroundColor: EVENT_COLORS[Number(event.id) % EVENT_COLORS.length],
+        borderRadius: "8px",
+        color: "white",
+        border: "none",
+        boxShadow: "0 2px 4px rgba(0,0,0,0.25)",
+      },
+    }),
+    []
+  );
+
+  const components = {
+    event: CustomEvent,
+    eventWrapper: ({ event, children }: any) => (
+      <Tooltip
+        title={`${event.title}: ${moment(event.start).format("LT")} - ${moment(
+          event.end
+        ).format("LT")}`}
+        placement="top"
+      >
+        <div>{children}</div>
+      </Tooltip>
+    ),
+    showMore: ({ events }: any) => (
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          handleShowMore(events);
+        }}
+        className="text-xs text-blue-600 bg-blue-100 hover:bg-blue-200 px-2 py-1 rounded-full w-full text-center"
+      >
+        +{events.length} more
+      </button>
+    ),
   };
 
-  // Helper functions for date handling
-  const parseDateTime = (dateStr: string, timeStr: string): Date => {
-    // Assuming dateStr format is YYYY-MM-DD and timeStr is HH:MM
-    return new Date(`${dateStr}T${timeStr}`);
-  };
+  const renderMoreEventsModal = () => {
+    if (!moreEvents.data.length) return null;
 
-  const calculateEndTime = (startDate: Date, durationStr: string): Date => {
-    // Parse the duration (assuming format like "2 hours" or "30 minutes" or "1.5 hours")
-    const durationParts = durationStr.split(' ');
-    const durationValue = parseFloat(durationParts[0]);
-    const durationUnit = durationParts[1].toLowerCase();
-    
-    const endDate = new Date(startDate);
-    
-    if (durationUnit.includes('hour')) {
-      endDate.setHours(endDate.getHours() + durationValue);
-    } else if (durationUnit.includes('minute')) {
-      endDate.setMinutes(endDate.getMinutes() + durationValue);
-    }
-    
-    return endDate;
-  };
+    const sorted = [...moreEvents.data].sort(
+      (a: any, b: any) => a.start.getTime() - b.start.getTime()
+    );
+    const date = moreEvents.data[0]?.start
+      ? moment(moreEvents.data[0].start).format("MMM D, YYYY")
+      : "";
 
-  // Custom style getter for events
-  const eventStyleGetter = (
-    event: CalendarEvent,
-    start: Date,
-    end: Date,
-    // isSelected: boolean    // TODO: delete as its not used
-  ) => {
-    // Generate a deterministic color based on the event ID
-    const colorOptions = [
-      "#6c5ce7", // Purple
-      "#00cec9", // Teal
-      "#fd79a8", // Pink
-      "#fdcb6e", // Yellow
-      "#e17055", // Orange
-      "#0984e3", // Blue
-      "#00b894", // Green
+    const timeGroups = [
+      {
+        title: "MORNING",
+        items: sorted.filter((e) => e.start.getHours() < 12),
+      },
+      {
+        title: "AFTERNOON",
+        items: sorted.filter(
+          (e) => e.start.getHours() >= 12 && e.start.getHours() < 17
+        ),
+      },
+      {
+        title: "EVENING",
+        items: sorted.filter((e) => e.start.getHours() >= 17),
+      },
     ];
-    
-    // Use the event ID to pick a color (ensures same event always has same color)
-    const backgroundColor = colorOptions[Number(event.id) % colorOptions.length];
-    
-    // Calculate the duration in minutes
-    const duration = (end.getTime() - start.getTime()) / 60000;
-    
-    const style = {
-      backgroundColor,
-      borderRadius: "8px",
-      opacity: 0.9,
-      color: "white",
-      border: "1px solid #fff",
-      padding: "2px 4px",
-      boxShadow: "0 2px 4px rgba(0,0,0,0.25)",
-      // For very short events, enforce a minimum height
-      minHeight: duration <= 0 ? 30 : undefined,
-    };
-    
-    return { style };
-  };
 
-  // Custom event component
-  const CustomEvent = ({ event }: { event: CalendarEvent }) => {
-    const start = moment(event.start);
-    const end = moment(event.end);
-    
     return (
-      <div className="p-1">
-        <strong className="block text-sm">{event.title}</strong>
-        <span className="block text-xs">
-          {start.format("LT")} - {end.format("LT")}
-        </span>
-      </div>
+      <Dialog
+        open={moreEvents.open}
+        onClose={handleCloseMoreEvents}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ style: { borderRadius: "12px" } }}
+      >
+        <div className="p-3 border-b">
+          <Typography variant="h6">
+            {moreEvents.data.length} Events on {date}
+          </Typography>
+        </div>
+        <DialogContent>
+          <div className="max-h-96 overflow-y-auto">
+            {timeGroups.map((group, i) =>
+              group.items.length ? (
+                <div key={i} className="mb-3">
+                  <Typography className="text-xs font-medium opacity-75 mb-1">
+                    {group.title}
+                  </Typography>
+                  <div className="space-y-1">
+                    {group.items.map((event, idx) => {
+                      const bgColor =
+                        EVENT_COLORS[Number(event.id) % EVENT_COLORS.length];
+                      return (
+                        <div
+                          key={idx}
+                          onClick={() => {
+                            handleSelectEvent(event);
+                            handleCloseMoreEvents();
+                          }}
+                          className="p-2 rounded-md cursor-pointer hover:bg-opacity-70 flex items-center"
+                          style={{ backgroundColor: `${bgColor}15` }}
+                        >
+                          <div
+                            className="w-2 h-full min-h-8 rounded-sm mr-2"
+                            style={{ backgroundColor: bgColor }}
+                          ></div>
+                          <div className="flex-1 overflow-hidden">
+                            <Typography variant="subtitle2" noWrap>
+                              {event.title}
+                            </Typography>
+                            <Typography
+                              variant="caption"
+                              className="block opacity-75"
+                            >
+                              {moment(event.start).format("h:mm A")} -{" "}
+                              {moment(event.end).format("h:mm A")}
+                            </Typography>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null
+            )}
+          </div>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseMoreEvents}>Close</Button>
+        </DialogActions>
+      </Dialog>
     );
   };
 
-  // Handle event selection
-  const handleSelectEvent = (event: CalendarEvent) => {
-    setSelectedEvent(event);
-    setOpenDialog(true);
-  };
+  const renderEventDetailsModal = () => {
+    if (!selectedEvent) return null;
 
-  // Handle dialog close
-  const handleCloseDialog = () => {
-    setOpenDialog(false);
-    setSelectedEvent(null);
-  };
-
-  // Define the visible time range for the day view
-  const minTime = new Date();
-  minTime.setHours(6, 0, 0); // Start at 6 AM
-  const maxTime = new Date();
-  maxTime.setHours(23, 0, 0); // End at 11 PM
-
-  return (
-    <Box m="20px">
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Header title="Admin Calendar" subtitle="View All Events: Past, Present, and Future" />
-        <Button 
-          variant="contained" 
-          color="secondary"
-          onClick={fetchEvents}
-          disabled={loading}
-        >
-          Refresh Events
-        </Button>
-      </Box>
-
-      {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {error}
-        </Alert>
-      )}
-
-      {loading ? (
-        <Box display="flex" justifyContent="center" alignItems="center" height="70vh">
-          <CircularProgress />
-        </Box>
-      ) : (
-        <div className="relative p-1 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-400 rounded-3xl shadow-2xl transition-transform duration-500 hover:scale-105 hover:shadow-3xl">
-          <div className="bg-white/90 backdrop-blur-sm rounded-3xl p-6" style={{ backgroundColor: colors.primary[400] }}>
-            <Calendar
-              localizer={localizer}
-              events={events}
-              startAccessor="start"
-              endAccessor="end"
-              style={{ height: 600 }}
-              // className="rounded-lg"
-              eventPropGetter={eventStyleGetter}
-              components={{
-                event: CustomEvent,
-                agenda: { event: CustomEvent },
-              }}
-              views={["month", "week", "day", "agenda"]}
-              dayLayoutAlgorithm="no-overlap"
-              min={minTime}
-              max={maxTime}
-              messages={{ agenda: "Agenda" }}
-              formats={{
-                eventTimeRangeFormat: () => "",
-              }}
-              onSelectEvent={handleSelectEvent}
-              popup={true}
-              // Customize the appearance to match your theme
-              // These styles can be adjusted to match your app's theme better
-              className={`rounded-lg calendar-container ${theme.palette.mode}`}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Event Details Dialog */}
+    return (
       <Dialog
-        open={openDialog}
+        open={dialogOpen}
         onClose={handleCloseDialog}
         maxWidth="sm"
         fullWidth
         PaperProps={{
           style: {
             backgroundColor: colors.primary[400],
-            color: colors.grey[100]
-          }
+            color: colors.grey[100],
+            borderRadius: "16px",
+          },
         }}
       >
-        {selectedEvent && (
-          <>
-            <DialogTitle
-              style={{
-                backgroundColor: eventStyleGetter(selectedEvent, selectedEvent.start, selectedEvent.end, false).style.backgroundColor,
-                color: "#ffffff"
-              }}
-            >
-              {selectedEvent.title}
-            </DialogTitle>
-            <DialogContent dividers>
-              <Box mb={2}>
+        <div
+          className="p-4 text-white"
+          style={{
+            backgroundColor:
+              EVENT_COLORS[Number(selectedEvent.id) % EVENT_COLORS.length],
+          }}
+        >
+          <Typography variant="h6">{selectedEvent.title}</Typography>
+        </div>
+        <DialogContent className="p-4">
+          <div className="space-y-3">
+            <div className="bg-gray-100/10 p-3 rounded-lg">
+              <Typography variant="subtitle1" fontWeight="bold">
+                Date & Time:
+              </Typography>
+              <Typography variant="body1">
+                {moment(selectedEvent.start).format("ddd, MMM D, YYYY")} ·
+                {moment(selectedEvent.start).format("h:mm A")} -
+                {moment(selectedEvent.end).format("h:mm A")}
+              </Typography>
+            </div>
+
+            {selectedEvent.location && (
+              <div className="bg-gray-100/10 p-3 rounded-lg">
                 <Typography variant="subtitle1" fontWeight="bold">
-                  Date & Time:
+                  Location:
                 </Typography>
                 <Typography variant="body1">
-                  {moment(selectedEvent.start).format('dddd, MMMM Do YYYY')}
-                  {' at '}
-                  {moment(selectedEvent.start).format('h:mm A')}
-                  {' - '}
-                  {moment(selectedEvent.end).format('h:mm A')}
+                  {selectedEvent.location}
                 </Typography>
-              </Box>
+              </div>
+            )}
 
-              {selectedEvent.location && (
-                <Box mb={2}>
-                  <Typography variant="subtitle1" fontWeight="bold">
-                    Location:
-                  </Typography>
-                  <Typography variant="body1">
-                    {selectedEvent.location}
-                  </Typography>
-                </Box>
-              )}
+            {selectedEvent.description && (
+              <div className="bg-gray-100/10 p-3 rounded-lg">
+                <Typography variant="subtitle1" fontWeight="bold">
+                  Description:
+                </Typography>
+                <Typography variant="body1">
+                  {selectedEvent.description}
+                </Typography>
+              </div>
+            )}
 
-              {selectedEvent.description && (
-                <Box mb={2}>
-                  <Typography variant="subtitle1" fontWeight="bold">
-                    Description:
-                  </Typography>
-                  <Typography variant="body1">
-                    {selectedEvent.description}
-                  </Typography>
-                </Box>
-              )}
-
-              {selectedEvent.hostedBy && (
-                <Box mb={2}>
-                  <Typography variant="subtitle1" fontWeight="bold">
-                    Hosted By:
-                  </Typography>
-                  <Typography variant="body1">
-                    Society ID: {selectedEvent.hostedBy}
-                  </Typography>
-                </Box>
-              )}
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={handleCloseDialog} color="secondary">
-                Close
-              </Button>
-            </DialogActions>
-          </>
-        )}
+            {selectedEvent.hostedBy && (
+              <div className="bg-gray-100/10 p-3 rounded-lg">
+                <Typography variant="subtitle1" fontWeight="bold">
+                  Hosted By:
+                </Typography>
+                <Typography variant="body1">
+                  Society ID: {selectedEvent.hostedBy}
+                </Typography>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+        <DialogActions className="p-3">
+          <Button onClick={handleCloseDialog} variant="contained">
+            Close
+          </Button>
+        </DialogActions>
       </Dialog>
+    );
+  };
+
+  if (loading) {
+    return (
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        height="70vh"
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  return (
+    <Box m="20px">
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        mb={3}
+      >
+        <Header title="Admin Calendar" subtitle="View All Events" />
+        <Button
+          variant="contained"
+          color="secondary"
+          onClick={() => window.location.reload()}
+          sx={{ borderRadius: "8px" }}
+        >
+          Refresh
+        </Button>
+      </Box>
+
+      {error && (
+        <Alert severity="error" sx={{ mb: 3, borderRadius: "8px" }}>
+          {error}
+        </Alert>
+      )}
+
+      <div
+        className="bg-white/90 rounded-xl p-6"
+        style={{ backgroundColor: colors.primary[400] }}
+      >
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `
+          .rbc-event { padding: 2px 5px; border-radius: 6px; border: none; }
+          .rbc-event:hover { transform: translateY(-1px); box-shadow: 0 3px 5px rgba(0,0,0,0.2); }
+          .rbc-month-view { border-radius: 10px; overflow: hidden; }
+          .rbc-day-bg:hover { background-color: rgba(0,0,0,0.03); }
+          .rbc-today { background-color: rgba(66, 153, 225, 0.08); }
+        `,
+          }}
+        />
+
+        <Calendar
+          localizer={localizer}
+          events={events}
+          startAccessor="start"
+          endAccessor="end"
+          style={{ height: 600 }}
+          eventPropGetter={eventStyleGetter}
+          components={components}
+          views={["month", "week", "day", "agenda"]}
+          min={new Date()}
+          max={new Date()}
+          onSelectEvent={handleSelectEvent}
+          // eventLimit={5}
+          popup={false}
+          drilldownView="day"
+        />
+      </div>
+
+      {renderEventDetailsModal()}
+      {renderMoreEventsModal()}
     </Box>
   );
 };

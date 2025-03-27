@@ -5,6 +5,7 @@ import { apiClient, apiPaths } from "../../api";
 import { useAuthStore } from "../../stores/auth-store";
 import { jwtDecode } from "jwt-decode";
 import { LoadingView } from "../loading/loading-view";
+import { User } from "../../types/user/user";
 
 type UserRole = "admin" | "student";
 
@@ -67,11 +68,11 @@ export function PrivateGuard({ children, requiredRole }: PrivateGuardProps) {
         console.error("PrivateGuard: Failed to fetch user data", error);
         // Create a minimal user object to prevent crashes
         const fallbackUser = { 
-          firstName: "User", 
+          first_name: "User",
           role: requiredRole || "student" 
         };
         console.log("PrivateGuard: Using fallback user", fallbackUser);
-        setUser(fallbackUser);
+        setUser(fallbackUser as User);
         // Still consider authorized if we have a valid token
         setAuthState({ isAuthorized: true, loading: false });
       }
@@ -140,7 +141,7 @@ export function PrivateGuard({ children, requiredRole }: PrivateGuardProps) {
               const decoded = jwtDecode(token);
               console.log("PrivateGuard: Created minimal user from token", decoded);
               return {
-                id: decoded.user_id,
+                id: decoded.sub,
                 firstName: "User",
                 role: requiredRole || "student"
               };

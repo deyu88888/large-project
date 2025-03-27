@@ -77,9 +77,9 @@ describe('Type definitions', () => {
         title: 'Campus-wide Career Fair',
         description: 'Annual career fair for all students',
         date: '2025-05-20',
-        startTime: '10:00',
+        start_time: '10:00',
         duration: '6 hours',
-        hostedBy: 5,
+        hosted_by: 5,
         location: 'Student Union'
       };
 
@@ -87,7 +87,7 @@ describe('Type definitions', () => {
       expect(event.id).toBe(1);
       expect(event.title).toBe('Campus-wide Career Fair');
       expect(event.date).toBe('2025-05-20');
-      expect(event.hostedBy).toBe(5);
+      expect(event.hosted_by).toBe(5);
     });
   });
 
@@ -263,15 +263,15 @@ describe('Type definitions', () => {
   describe('Admin', () => {
     it('should create a valid Admin object', () => {
       const admin: Admin = {
-        firstName: 'Admin',
-        lastName: 'User',
+        first_name: 'Admin',
+        last_name: 'User',
         username: 'admin123',
         email: 'admin@university.edu'
       };
 
       expect(admin).toBeDefined();
-      expect(admin.firstName).toBe('Admin');
-      expect(admin.lastName).toBe('User');
+      expect(admin.first_name).toBe('Admin');
+      expect(admin.last_name).toBe('User');
       expect(admin.username).toBe('admin123');
       expect(admin.email).toBe('admin@university.edu');
     });

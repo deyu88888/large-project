@@ -1,83 +1,133 @@
-import { apiClient, apiPaths } from "../../api";
-import { ReportReply } from '../../types';
+import { apiClient } from "../../api";
+import { Report, ReportThread, Reply } from "../../types/president/report";
 
-export const fetchReports = async (): Promise<Report[]> => {
-  try {
-    const res = await apiClient.get(apiPaths.USER.REPORT);
-    console.log(res.data); 
-    return res.data;
-  } catch (error) {
-    console.error("Error fetching reports:", error);
-    throw error;
-  }
+
+interface ReportDetails {
+  id: string;
+}
+
+interface ReplyRequest {
+  report: string | number;
+  parent_reply?: number | null;
+  content: string;
+}
+
+
+const logError = (message: string, error: unknown): void => {
+  console.error(message, error);
 };
 
-export const fetchReportDetails = async (reportId: string) => {
-  try {
-    const res = await apiClient.get(`/api/report-to-admin/${reportId}`);
-    return res.data;
-  } catch (error) {
-    console.error("Error fetching report details:", error);
-    throw error;
-  }
-};
 
-export const fetchReportThread = async (reportId: string) => {
+const makeGetRequest = async <T>(endpoint: string, errorMessage: string): Promise<T> => {
   try {
-    const res = await apiClient.get(`/api/report-thread/${reportId}`);
-    return res.data;
-  } catch (error) {
-    console.error("Error fetching report thread:", error);
-    throw error;
-  }
-};
-
-export const submitReply = async (data: { report: string | number; parent_reply?: number | null; content: string }) => {
-  try {
-    const res = await apiClient.post("/api/report-replies", data);
-    return res.data;
-  } catch (error) {
-    console.error("Error submitting reply:", error);
-    throw error;
-  }
-};
-
-export const fetchMyReports = async () => {
-  try {
-    const res = await apiClient.get("/api/my-reports");
-    return res.data;
-  } catch (error) {
-    console.error("Error fetching my reports:", error);
-    throw error;
-  }
-};
-
-export const fetchMyReportsWithReplies = async () => {
-  try {
-    const res = await apiClient.get("/api/my-reports-with-replies");
-    return res.data;
-  } catch (error) {
-    console.error("Error fetching my reports with replies:", error);
-    throw error;
-  }
-};
-
-export const fetchReportsWithReplies = async () => {
-  try {
-    const res = await apiClient.get("/api/reports-with-replies");
-    return res.data;
-  } catch (error) {
-    console.error("Error fetching reports with replies:", error);
-    throw error;
-  }
-};
-
-export const fetchReportReplies = async (): Promise<ReportReply[]> => {
-  try {
-    const response = await apiClient.get('/api/reports-replied');
+    const response = await apiClient.get(endpoint);
     return response.data;
   } catch (error) {
-    console.error('Error fetching report replies:', error);
+    logError(errorMessage, error);
     throw error;
   }
+};
+
+
+const makePostRequest = async <T, R>(endpoint: string, data: T, errorMessage: string): Promise<R> => {
+  try {
+    const response = await apiClient.post(endpoint, data);
+    return response.data;
+  } catch (error) {
+    logError(errorMessage, error);
+    throw error;
+  }
+};
+
+
+const fetchReports = async (): Promise<Report[]> => {
+  
+  const data = await makeGetRequest<Report[]>(
+    "/api/admin/report-to-admin",
+    "Error fetching reports:"
+  );
+  console.log(data);
+  return data;
+};
+
+
+const fetchReportDetails = async (reportId: string): Promise<ReportDetails> => {
+  
+  return await makeGetRequest<ReportDetails>(
+    `/api/admin/report-to-admin/${reportId}`,
+    "Error fetching report details:"
+  );
+};
+
+
+const fetchReportThread = async (reportId: string): Promise<ReportThread> => {
+  
+  return await makeGetRequest<ReportThread>(
+    `/api/admin/report-thread/${reportId}`,
+    "Error fetching report thread:"
+  );
+};
+
+
+const submitReply = async (data: ReplyRequest): Promise<Reply> => {
+  return await makePostRequest<ReplyRequest, Reply>(
+    "/api/admin/report-replies",
+    data,
+    "Error submitting reply:"
+  );
+};
+
+
+const fetchMyReports = async (): Promise<Report[]> => {
+  
+  return await makeGetRequest<Report[]>(
+    "/api/admin/my-reports",
+    "Error fetching my reports:"
+  );
+};
+
+
+const fetchMyReportsWithReplies = async (): Promise<Report[]> => {
+  
+  return await makeGetRequest<Report[]>(
+    "/api/admin/my-reports-with-replies",
+    "Error fetching my reports with replies:"
+  );
+};
+
+
+const fetchReportsWithReplies = async (): Promise<Report[]> => {
+  
+  return await makeGetRequest<Report[]>(
+    "/api/admin/reports-with-replies",
+    "Error fetching reports with replies:"
+  );
+};
+
+
+const fetchReportReplies = async (): Promise<Reply[]> => {
+  
+  return await makeGetRequest<Reply[]>(
+    '/api/admin/reports-replied',
+    'Error fetching report replies:'
+  );
+};
+
+
+export {
+  fetchReports,
+  fetchReportDetails,
+  fetchReportThread,
+  submitReply,
+  fetchMyReports,
+  fetchMyReportsWithReplies,
+  fetchReportsWithReplies,
+  fetchReportReplies
+};
+
+export type {
+  Report,
+  ReportDetails,
+  ReportThread,
+  ReplyRequest
 };

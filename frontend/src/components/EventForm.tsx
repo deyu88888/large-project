@@ -519,11 +519,11 @@ export const EventForm: React.FC<EventFormProps> = ({
           onClose={handleClosePreview}
           eventData={{
             ...previewData,
-            isParticipant: true,
-            isMember: true,
-            eventId: 0,
-            hostedBy: 0,
-          }}
+            is_participant: true,
+            is_member: true,
+            event_id: 0,
+            hosted_by: 0,
+          } as any}
         />
       )}
 

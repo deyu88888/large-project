@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { submitRecommendationFeedback, getRecommendationFeedback } from "../api";
 
+const feedbackCache = new Map();
+
 interface RecommendationFeedbackProps {
   societyId: number;
   isLight: boolean;
@@ -33,8 +35,26 @@ const RecommendationFeedback: React.FC<RecommendationFeedbackProps> = ({
   // Check if the user has already provided feedback for this society
   useEffect(() => {
     const checkExistingFeedback = async () => {
+      // Check if we already have a cached result for this society
+      if (feedbackCache.has(societyId)) {
+        const cachedFeedback = feedbackCache.get(societyId);
+        if (cachedFeedback && cachedFeedback.rating) {
+          // If user already submitted feedback, hide everything immediately
+          setExistingFeedback(cachedFeedback);
+          setRating(cachedFeedback.rating);
+          setRelevance(cachedFeedback.relevance);
+          setComment(cachedFeedback.comment || "");
+          setFeedbackSubmitted(true);
+          setIsVisible(false); // Hide the component right away
+        }
+        return; // Don't make the request if we've already checked
+      }
+      
       try {
         const feedback = await getRecommendationFeedback(societyId);
+        // Store in cache to avoid future requests
+        feedbackCache.set(societyId, feedback);
+        
         if (feedback && feedback.rating) {
           // If user already submitted feedback, hide everything immediately
           setExistingFeedback(feedback);
@@ -45,7 +65,8 @@ const RecommendationFeedback: React.FC<RecommendationFeedbackProps> = ({
           setIsVisible(false); // Hide the component right away
         }
       } catch (error) {
-        // No existing feedback - do nothing
+        // No existing feedback - store null in cache to avoid future requests
+        feedbackCache.set(societyId, null);
       }
     };
 
@@ -81,7 +102,7 @@ const RecommendationFeedback: React.FC<RecommendationFeedbackProps> = ({
     setIsSubmitting(true);
 
     try {
-      await submitRecommendationFeedback(societyId, {
+      const response = await submitRecommendationFeedback(societyId, {
         society_id: societyId,
         rating,
         relevance,
@@ -89,6 +110,9 @@ const RecommendationFeedback: React.FC<RecommendationFeedbackProps> = ({
         is_joined: false
       });
 
+      // Update the cache with the new feedback
+      feedbackCache.set(societyId, response);
+      
       setFeedbackSubmitted(true);
       if (onFeedbackSubmitted) {
         onFeedbackSubmitted();

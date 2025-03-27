@@ -20,7 +20,7 @@ class EventDetailsViewTestCase(TestCase):
         response = self.client.get(reverse("event_detail", kwargs={"event_id": self.event.id}))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["title"], "Test Event")
-        self.assertEqual(response.data["description"], "This is a test event")
+        self.assertEqual(response.data["main_description"], "This is a test event")
         self.assertEqual(response.data["location"], "Online")
 
     def test_get_event_detail_not_found(self):
@@ -32,7 +32,7 @@ class EventDetailsViewTestCase(TestCase):
         """Test retrieving an unapproved event should return 404."""
         unapproved_event = Event.objects.create(
             title="Unapproved Event",
-            description="This event is not approved",
+            main_description="This event is not approved",
             location="Offline",
             status="Pending"
         )

@@ -4,457 +4,7 @@
       "student_id": 2,
       "society_id": 2,
       "feedback_type": "view_details",
-      "timestamp": "2025-03-15T15:09:23.300469",
-      "value": null,
-      "metadata": {
-        "explanation_request": true
-      }
-    },
-    {
-      "student_id": 2,
-      "society_id": 2,
-      "feedback_type": "view_details",
-      "timestamp": "2025-03-15T21:22:42.045740",
-      "value": null,
-      "metadata": {
-        "explanation_request": true
-      }
-    },
-    {
-      "student_id": 2,
-      "society_id": 2,
-      "feedback_type": "view_details",
-      "timestamp": "2025-03-16T20:03:31.729069",
-      "value": null,
-      "metadata": {
-        "explanation_request": true
-      }
-    },
-    {
-      "student_id": 2,
-      "society_id": 2,
-      "feedback_type": "view_details",
-      "timestamp": "2025-03-16T20:16:36.081480",
-      "value": null,
-      "metadata": {
-        "explanation_request": true
-      }
-    },
-    {
-      "student_id": 2,
-      "society_id": 2,
-      "feedback_type": "view_details",
-      "timestamp": "2025-03-16T20:21:09.019499",
-      "value": null,
-      "metadata": {
-        "explanation_request": true
-      }
-    },
-    {
-      "student_id": 2,
-      "society_id": 2,
-      "feedback_type": "view_details",
-      "timestamp": "2025-03-16T20:27:06.891103",
-      "value": null,
-      "metadata": {
-        "explanation_request": true
-      }
-    },
-    {
-      "student_id": 2,
-      "society_id": 2,
-      "feedback_type": "view_details",
-      "timestamp": "2025-03-16T20:31:45.184315",
-      "value": null,
-      "metadata": {
-        "explanation_request": true
-      }
-    },
-    {
-      "student_id": 2,
-      "society_id": 2,
-      "feedback_type": "view_details",
-      "timestamp": "2025-03-16T20:36:36.553427",
-      "value": null,
-      "metadata": {
-        "explanation_request": true
-      }
-    },
-    {
-      "student_id": 2,
-      "society_id": 2,
-      "feedback_type": "view_details",
-      "timestamp": "2025-03-16T20:42:28.259218",
-      "value": null,
-      "metadata": {
-        "explanation_request": true
-      }
-    },
-    {
-      "student_id": 2,
-      "society_id": 2,
-      "feedback_type": "view_details",
-      "timestamp": "2025-03-16T20:47:47.403582",
-      "value": null,
-      "metadata": {
-        "explanation_request": true
-      }
-    },
-    {
-      "student_id": 2,
-      "society_id": 2,
-      "feedback_type": "view_details",
-      "timestamp": "2025-03-16T20:53:56.687158",
-      "value": null,
-      "metadata": {
-        "explanation_request": true
-      }
-    },
-    {
-      "student_id": 2,
-      "society_id": 2,
-      "feedback_type": "view_details",
-      "timestamp": "2025-03-16T21:04:50.044296",
-      "value": null,
-      "metadata": {
-        "explanation_request": true
-      }
-    },
-    {
-      "student_id": 2,
-      "society_id": 2,
-      "feedback_type": "view_details",
-      "timestamp": "2025-03-16T21:10:06.286921",
-      "value": null,
-      "metadata": {
-        "explanation_request": true
-      }
-    },
-    {
-      "student_id": 2,
-      "society_id": 2,
-      "feedback_type": "view_details",
-      "timestamp": "2025-03-16T21:18:11.602980",
-      "value": null,
-      "metadata": {
-        "explanation_request": true
-      }
-    },
-    {
-      "student_id": 2,
-      "society_id": 2,
-      "feedback_type": "view_details",
-      "timestamp": "2025-03-16T21:23:05.217975",
-      "value": null,
-      "metadata": {
-        "explanation_request": true
-      }
-    },
-    {
-      "student_id": 2,
-      "society_id": 2,
-      "feedback_type": "view_details",
-      "timestamp": "2025-03-16T21:30:41.821910",
-      "value": null,
-      "metadata": {
-        "explanation_request": true
-      }
-    },
-    {
-      "student_id": 2,
-      "society_id": 2,
-      "feedback_type": "view_details",
-      "timestamp": "2025-03-16T21:44:14.888705",
-      "value": null,
-      "metadata": {
-        "explanation_request": true
-      }
-    },
-    {
-      "student_id": 2,
-      "society_id": 2,
-      "feedback_type": "view_details",
-      "timestamp": "2025-03-16T21:50:23.467259",
-      "value": null,
-      "metadata": {
-        "explanation_request": true
-      }
-    },
-    {
-      "student_id": 2,
-      "society_id": 2,
-      "feedback_type": "view_details",
-      "timestamp": "2025-03-16T21:53:48.650037",
-      "value": null,
-      "metadata": {
-        "explanation_request": true
-      }
-    },
-    {
-      "student_id": 2,
-      "society_id": 2,
-      "feedback_type": "view_details",
-      "timestamp": "2025-03-16T21:58:36.563203",
-      "value": null,
-      "metadata": {
-        "explanation_request": true
-      }
-    },
-    {
-      "student_id": 2,
-      "society_id": 2,
-      "feedback_type": "view_details",
-      "timestamp": "2025-03-16T22:03:49.598684",
-      "value": null,
-      "metadata": {
-        "explanation_request": true
-      }
-    },
-    {
-      "student_id": 2,
-      "society_id": 2,
-      "feedback_type": "view_details",
-      "timestamp": "2025-03-16T22:16:27.383843",
-      "value": null,
-      "metadata": {
-        "explanation_request": true
-      }
-    },
-    {
-      "student_id": 2,
-      "society_id": 2,
-      "feedback_type": "view_details",
-      "timestamp": "2025-03-16T22:23:57.616779",
-      "value": null,
-      "metadata": {
-        "explanation_request": true
-      }
-    },
-    {
-      "student_id": 2,
-      "society_id": 2,
-      "feedback_type": "view_details",
-      "timestamp": "2025-03-17T14:16:11.105519",
-      "value": null,
-      "metadata": {
-        "explanation_request": true
-      }
-    },
-    {
-      "student_id": 2,
-      "society_id": 2,
-      "feedback_type": "view_details",
-      "timestamp": "2025-03-17T14:25:48.355432",
-      "value": null,
-      "metadata": {
-        "explanation_request": true
-      }
-    },
-    {
-      "student_id": 2,
-      "society_id": 2,
-      "feedback_type": "view_details",
-      "timestamp": "2025-03-17T14:34:40.842196",
-      "value": null,
-      "metadata": {
-        "explanation_request": true
-      }
-    },
-    {
-      "student_id": 2,
-      "society_id": 2,
-      "feedback_type": "view_details",
-      "timestamp": "2025-03-17T14:48:08.476328",
-      "value": null,
-      "metadata": {
-        "explanation_request": true
-      }
-    },
-    {
-      "student_id": 2,
-      "society_id": 2,
-      "feedback_type": "view_details",
-      "timestamp": "2025-03-17T14:56:46.404977",
-      "value": null,
-      "metadata": {
-        "explanation_request": true
-      }
-    },
-    {
-      "student_id": 2,
-      "society_id": 2,
-      "feedback_type": "view_details",
-      "timestamp": "2025-03-17T18:29:56.328017",
-      "value": null,
-      "metadata": {
-        "explanation_request": true
-      }
-    },
-    {
-      "student_id": 2,
-      "society_id": 2,
-      "feedback_type": "view_details",
-      "timestamp": "2025-03-17T18:55:46.412639",
-      "value": null,
-      "metadata": {
-        "explanation_request": true
-      }
-    },
-    {
-      "student_id": 2,
-      "society_id": 2,
-      "feedback_type": "view_details",
-      "timestamp": "2025-03-17T19:06:15.891863",
-      "value": null,
-      "metadata": {
-        "explanation_request": true
-      }
-    },
-    {
-      "student_id": 2,
-      "society_id": 2,
-      "feedback_type": "view_details",
-      "timestamp": "2025-03-17T21:45:22.743561",
-      "value": null,
-      "metadata": {
-        "explanation_request": true
-      }
-    },
-    {
-      "student_id": 2,
-      "society_id": 2,
-      "feedback_type": "view_details",
-      "timestamp": "2025-03-17T21:51:12.568001",
-      "value": null,
-      "metadata": {
-        "explanation_request": true
-      }
-    },
-    {
-      "student_id": 2,
-      "society_id": 2,
-      "feedback_type": "view_details",
-      "timestamp": "2025-03-17T21:57:52.015766",
-      "value": null,
-      "metadata": {
-        "explanation_request": true
-      }
-    },
-    {
-      "student_id": 2,
-      "society_id": 2,
-      "feedback_type": "view_details",
-      "timestamp": "2025-03-17T22:10:45.904243",
-      "value": null,
-      "metadata": {
-        "explanation_request": true
-      }
-    },
-    {
-      "student_id": 2,
-      "society_id": 2,
-      "feedback_type": "view_details",
-      "timestamp": "2025-03-17T22:19:05.528528",
-      "value": null,
-      "metadata": {
-        "explanation_request": true
-      }
-    },
-    {
-      "student_id": 2,
-      "society_id": 2,
-      "feedback_type": "view_details",
-      "timestamp": "2025-03-17T22:25:26.210300",
-      "value": null,
-      "metadata": {
-        "explanation_request": true
-      }
-    },
-    {
-      "student_id": 2,
-      "society_id": 2,
-      "feedback_type": "view_details",
-      "timestamp": "2025-03-17T22:36:38.994441",
-      "value": null,
-      "metadata": {
-        "explanation_request": true
-      }
-    },
-    {
-      "student_id": 2,
-      "society_id": 2,
-      "feedback_type": "view_details",
-      "timestamp": "2025-03-17T22:49:31.063564",
-      "value": null,
-      "metadata": {
-        "explanation_request": true
-      }
-    },
-    {
-      "student_id": 2,
-      "society_id": 2,
-      "feedback_type": "view_details",
-      "timestamp": "2025-03-18T13:05:58.657255",
-      "value": null,
-      "metadata": {
-        "explanation_request": true
-      }
-    },
-    {
-      "student_id": 2,
-      "society_id": 2,
-      "feedback_type": "view_details",
-      "timestamp": "2025-03-18T13:10:27.743480",
-      "value": null,
-      "metadata": {
-        "explanation_request": true
-      }
-    },
-    {
-      "student_id": 2,
-      "society_id": 2,
-      "feedback_type": "view_details",
-      "timestamp": "2025-03-18T13:17:16.497385",
-      "value": null,
-      "metadata": {
-        "explanation_request": true
-      }
-    },
-    {
-      "student_id": 2,
-      "society_id": 2,
-      "feedback_type": "view_details",
-      "timestamp": "2025-03-18T13:24:06.271086",
-      "value": null,
-      "metadata": {
-        "explanation_request": true
-      }
-    },
-    {
-      "student_id": 2,
-      "society_id": 2,
-      "feedback_type": "view_details",
-      "timestamp": "2025-03-18T13:28:10.788421",
-      "value": null,
-      "metadata": {
-        "explanation_request": true
-      }
-    },
-    {
-      "student_id": 2,
-      "society_id": 2,
-      "feedback_type": "view_details",
-      "timestamp": "2025-03-18T13:39:20.808438",
-      "value": null,
-      "metadata": {
-        "explanation_request": true
-      }
-    },
-    {
-      "student_id": 2,
-      "society_id": 2,
-      "feedback_type": "view_details",
-      "timestamp": "2025-03-25T17:00:49.458509",
+      "timestamp": "2025-03-26T18:55:16.296719",
       "value": null,
       "metadata": {
         "explanation_request": true
@@ -464,7 +14,7 @@
       "student_id": 2,
       "society_id": 2,
       "feedback_type": "rating",
-      "timestamp": "2025-03-25T17:00:53.820752",
+      "timestamp": "2025-03-26T18:55:17.879038",
       "value": 4,
       "metadata": {
         "comment": "This is a great recommendation!",
@@ -476,7 +26,7 @@
       "student_id": 2,
       "society_id": 2,
       "feedback_type": "relevance",
-      "timestamp": "2025-03-25T17:00:53.827859",
+      "timestamp": "2025-03-26T18:55:17.879287",
       "value": 5,
       "metadata": {
         "comment": "This is a great recommendation!",
@@ -488,60 +38,62 @@
       "student_id": 2,
       "society_id": 2,
       "feedback_type": "join",
-      "timestamp": "2025-03-25T17:00:53.830516",
+      "timestamp": "2025-03-26T18:55:17.880176",
       "value": null,
       "metadata": {
-        "timestamp": "2025-03-25T17:00:53.830516+00:00",
+        "timestamp": "2025-03-26T18:55:17.880165+00:00",
         "source": "recommendation",
         "feedback_id": null
       }
     },
     {
-      "student_id": 2,
-      "society_id": 2,
-      "feedback_type": "view_details",
-      "timestamp": "2025-03-25T18:59:05.282716",
-      "value": null,
-      "metadata": {
-        "explanation_request": true
-      }
-    },
-    {
-      "student_id": 2,
-      "society_id": 2,
+      "student_id": 109,
+      "society_id": 36,
       "feedback_type": "rating",
-      "timestamp": "2025-03-25T18:59:09.534218",
-      "value": 4,
-      "metadata": {
-        "comment": "This is a great recommendation!",
-        "source": "recommendation",
-        "feedback_id": null
-      }
-    },
-    {
-      "student_id": 2,
-      "society_id": 2,
-      "feedback_type": "relevance",
-      "timestamp": "2025-03-25T18:59:09.541852",
+      "timestamp": "2025-03-26T20:01:01.098740",
       "value": 5,
       "metadata": {
-        "comment": "This is a great recommendation!",
+        "comment": "",
         "source": "recommendation",
         "feedback_id": null
       }
     },
     {
-      "student_id": 2,
-      "society_id": 2,
-      "feedback_type": "join",
-      "timestamp": "2025-03-25T18:59:09.544337",
-      "value": null,
+      "student_id": 109,
+      "society_id": 36,
+      "feedback_type": "relevance",
+      "timestamp": "2025-03-26T20:01:01.100010",
+      "value": 3,
       "metadata": {
-        "timestamp": "2025-03-25T18:59:09.544337+00:00",
+        "comment": "",
+        "source": "recommendation",
+        "feedback_id": null
+      }
+    },
+    {
+      "student_id": 109,
+      "society_id": 45,
+      "feedback_type": "rating",
+      "timestamp": "2025-03-26T20:20:38.824646",
+      "value": 5,
+      "metadata": {
+        "comment": "",
+        "source": "recommendation",
+        "feedback_id": null
+      }
+    },
+    {
+      "student_id": 109,
+      "society_id": 45,
+      "feedback_type": "relevance",
+      "timestamp": "2025-03-26T20:20:38.829962",
+      "value": 3,
+      "metadata": {
+        "comment": "",
         "source": "recommendation",
         "feedback_id": null
       }
     }
   ],
-  "last_updated": "2025-03-25T18:59:09.544337"
+  "last_updated": "2025-03-26T20:20:38.830016"
 }

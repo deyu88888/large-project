@@ -18,7 +18,6 @@ from nltk.tokenize import word_tokenize
 
 from .semantic_enhancer import semantic_enhancer
 
-# Add sentence-transformers import - you'll need to pip install this
 try:
     from sentence_transformers import SentenceTransformer
     SENTENCE_TRANSFORMERS_AVAILABLE = True
@@ -26,7 +25,6 @@ except ImportError:
     print("WARNING: sentence-transformers not available. Falling back to TF-IDF only.")
     SENTENCE_TRANSFORMERS_AVAILABLE = False
 
-# Ensure NLTK resources are downloaded
 try:
     nltk.data.find('tokenizers/punkt')
     nltk.data.find('corpora/stopwords')

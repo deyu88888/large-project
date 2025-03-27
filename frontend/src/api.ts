@@ -85,14 +85,15 @@ export const apiPaths = {
   SOCIETY: {
     All: "/api/dashboard/all-societies",
     POPULAR_SOCIETIES: "/api/dashboard/popular-societies/",  // TODO: DONT ADD BACKSLASH
-    RECOMMENDED_SOCIETIES: "/api/recommended-societies", // New endpoint for recommendations
-    RECOMMENDATION_EXPLANATION: (id: number) =>
-      `/api/society-recommendation/${id}/explanation/`,
+    RECOMMENDED_SOCIETIES: "/api/recommendations/", // Endpoint for recommendations
     RECOMMENDATION_FEEDBACK: (id: number) =>
-      `/api/society-recommendation/${id}/feedback/`,
-    RECOMMENDATION_FEEDBACK_LIST: "/api/society-recommendation/feedback/",
-    RECOMMENDATION_FEEDBACK_ANALYTICS: "/api/recommendation-feedback/analytics/",
+      `/api/recommendations/${id}/feedback/`,
+    RECOMMENDATION_EXPLANATION: (id: number) =>
+      `/api/recommendations/${id}/explanation/`,
+    RECOMMENDATION_FEEDBACK_LIST: "/api/recommendations/feedback/",
+    RECOMMENDATION_FEEDBACK_ANALYTICS: "/api/recommendations/feedback/analytics/",
     MANAGE_DETAILS: (id: number) => `/api/society/manage/${id}/`,
+    DETAIL_REQUEST: `/api/admin/society-detail-request/`,
   },
   EVENTS: {
     ALL: "/api/events", // TODO: DONT ADD BACKSLASH
@@ -213,6 +214,28 @@ export const getRecommendedSocieties = async (limit: number = 5) => {
     );
     return response.data as SocietyRecommendation[];
   } catch (error: any) {
+    // For 404/405 errors (no recommendations available)
+    if (error.response && (error.response.status === 404 || error.response.status === 405)) {
+      console.log("No specific recommendations available - showing default societies instead.");
+      
+      // Try to fetch fallback societies immediately
+      try {
+        const fallbackResponse = await apiClient.get("/api/society/join");
+        return fallbackResponse.data.map((society: any) => ({
+          society,
+          explanation: {
+            type: "popular",
+            message: "Suggested society for new members",
+          },
+        }));
+      } catch (fallbackErr) {
+        console.error("Fallback fetch failed:", fallbackErr);
+        // Return empty array if fallback fails
+        return [];
+      }
+    }
+    
+    // For other errors, log and throw as before
     console.error(
       "Error fetching recommended societies:",
       error.response?.data || error.message
@@ -275,17 +298,88 @@ export const updateRecommendationFeedback = async (
 };
 
 export const getRecommendationFeedback = async (societyId: number) => {
+  // Create a debug log object to track what's happening
+  const debugLog = {
+    societyId,
+    timeStarted: new Date().toISOString(),
+    endpoint: apiPaths.SOCIETY.RECOMMENDATION_FEEDBACK(societyId),
+    timeEnded: null,
+    optionsStatus: null,
+    status: null,
+    statusText: null,
+    error: null,
+  };
+
   try {
-    const response = await apiClient.get(
-      apiPaths.SOCIETY.RECOMMENDATION_FEEDBACK(societyId)
-    );
-    return response.data as RecommendationFeedback;
+    console.log(`🔍 DEBUG: Starting feedback request for society ${societyId}`);
+    
+    // First try the OPTIONS request to see if that works
+    const optionsResult = await fetch(apiUrl + debugLog.endpoint, {
+      method: 'OPTIONS',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    debugLog.optionsStatus = optionsResult.status;
+    console.log(`🔍 DEBUG: OPTIONS request result: ${optionsResult.status} ${optionsResult.statusText}`);
+    
+    // Try a different approach - using fetch directly
+    const token = localStorage.getItem(ACCESS_TOKEN);
+    console.log(`🔍 DEBUG: Using token: ${token ? 'Yes (length: ' + token.length + ')' : 'No'}`);
+    
+    const response = await fetch(apiUrl + debugLog.endpoint, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': token ? `Bearer ${token}` : '',
+        'X-Debug-Info': 'Testing-Direct-Fetch'
+      }
+    });
+    
+    debugLog.status = response.status;
+    debugLog.statusText = response.statusText;
+    console.log(`🔍 DEBUG: GET request result: ${response.status} ${response.statusText}`);
+    
+    // If successful, parse the response
+    if (response.ok) {
+      const data = await response.json();
+      console.log(`🔍 DEBUG: Got successful response:`, data);
+      return data;
+    } else {
+      // If not successful, try to get error details
+      try {
+        const errorText = await response.text();
+        console.log(`🔍 DEBUG: Error response body:`, errorText);
+      } catch (e) {
+        console.log(`🔍 DEBUG: Couldn't read error response`);
+      }
+      
+      // For 405 errors, let's try a different method as a test
+      if (response.status === 405) {
+        console.log(`🔍 DEBUG: Got 405, trying POST instead to see if endpoint exists`);
+        const postCheckResponse = await fetch(apiUrl + debugLog.endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': token ? `Bearer ${token}` : ''
+          },
+          body: JSON.stringify({ debug_check: true })
+        });
+        
+        console.log(`🔍 DEBUG: POST check result: ${postCheckResponse.status}`);
+      }
+    }
+    
+    // Always return null for now to avoid UI issues
+    return null;
   } catch (error: any) {
-    console.error(
-      "Error fetching recommendation feedback:",
-      error.response?.data || error.message
-    );
-    throw error;
+    console.log(`🔍 DEBUG: Exception during feedback request:`, error);
+    debugLog.error = error.message;
+    return null;
+  } finally {
+    debugLog.timeEnded = new Date().toISOString();
+    console.log(`🔍 DEBUG: Complete debug log:`, debugLog);
   }
 };
 

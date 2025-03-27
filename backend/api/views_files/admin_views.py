@@ -7,11 +7,13 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from api.models import AdminReportRequest, Event, Society, Student, User,\
-    DescriptionRequest, ActivityLog, ReportReply
+    ActivityLog, ReportReply, SocietyRequest
 from api.serializers import AdminReportRequestSerializer, EventSerializer, \
-    SocietySerializer, StudentSerializer, UserSerializer, DescriptionRequestSerializer,\
-    ActivityLogSerializer, ReportReplySerializer, AdminSerializer
+    SocietySerializer, StudentSerializer, UserSerializer, AdminSerializer,\
+    ActivityLogSerializer, ReportReplySerializer, SocietyRequestSerializer
 from api.views_files.view_utility import get_admin_if_user_is_admin
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 class AdminEventView(APIView):
     """
@@ -479,62 +481,85 @@ class AdminRepliesListView(APIView):
         return Response(reports_needing_attention, status=status.HTTP_200_OK)
 
 
-class SocietyDescriptionRequestAdminView(APIView):
+class AdminSocietyDetailRequestView(APIView):
     """
-    Description request view for admins to approve/reject descriptions
+    Detail request view for admins to approve/reject society detail change requests
     """
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        """Get all pending description requests (Admins only)."""
+        """Get all pending society detail requests (Admins only)."""
         _, error = get_admin_if_user_is_admin(
             request.user,
-            "view pending description requests"
+            "view pending society detail requests"
         )
         if error:
             return error
 
-        pending_requests = DescriptionRequest.objects.filter(status="Pending")
-        serializer = DescriptionRequestSerializer(pending_requests, many=True)
+        pending_requests = SocietyRequest.objects.filter(
+            intent="UpdateSoc", 
+            approved=False
+        )
+        serializer = SocietyRequestSerializer(pending_requests, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, request_id):
-        """Approve or reject a pending description request."""
+        """Approve or reject a pending society detail request."""
         user, error = get_admin_if_user_is_admin(
             request.user,
-            "approve or reject description requests")
+            "approve or reject society detail requests")
         if error:
             return error
 
-        description_request = get_object_or_404(DescriptionRequest, id=request_id)
+        society_request = get_object_or_404(SocietyRequest, id=request_id)
 
         status_update = request.data.get("status")
         if status_update not in ["Approved", "Rejected"]:
             return Response({"error": "Invalid status update."}, status=status.HTTP_400_BAD_REQUEST)
 
         if status_update == "Approved":
-            society = description_request.society
-            society.description = description_request.new_description
+            society = society_request.society
+            
+            if society_request.name:
+                society.name = society_request.name
+            
+            if society_request.description:
+                society.description = society_request.description
+            
+            if society_request.category:
+                society.category = society_request.category
+            
+            if society_request.social_media_links:
+                society.social_media_links = society_request.social_media_links
+            
+            if society_request.membership_requirements:
+                society.membership_requirements = society_request.membership_requirements
+            
+            if society_request.upcoming_projects_or_plans:
+                society.upcoming_projects_or_plans = society_request.upcoming_projects_or_plans
+            
+            if society_request.icon:
+                society.icon = society_request.icon
+            
             society.save()
 
-        description_request.status = status_update
-        description_request.reviewed_by = user.admin
-        description_request.save()
+            society_request.approved = True
+
+        society_request.save()
 
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)(
             "society_updates",
             {
                 "type": "society_list_update",
-                "message": "Description request for "
-                    f"{description_request.society.name} has been {status_update.lower()}.",
-                "data": DescriptionRequestSerializer(description_request).data,
+                "message": f"Society detail request for {society_request.society.name} has been {status_update.lower()}.",
+                "data": SocietyRequestSerializer(society_request).data,
                 "status": status_update
             }
         )
 
         return Response(
-            {"message": f"Description request {status_update.lower()} successfully."},
+            {"message": f"Society detail request {status_update.lower()} successfully."},
             status=status.HTTP_200_OK
         )
 

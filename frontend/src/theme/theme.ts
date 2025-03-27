@@ -1,11 +1,14 @@
 type ThemeMode = "light" | "dark";
 
-type ColorTokens = {
+export type ColorTokens = {
   grey: Record<number, string>;
   primary: Record<number, string>;
   greenAccent: Record<number, string>;
   redAccent: Record<number, string>;
   blueAccent: Record<number, string>;
+  yellowAccent: Record<number, string>;
+  purpleAccent: Record<number, string>;
+  orangeAccent: Record<number, string>;
 };
 
 // color design tokens
@@ -67,6 +70,35 @@ export const tokens = (mode: ThemeMode): ColorTokens => ({
           800: "#2a2d64",
           900: "#151632",
         },
+        yellowAccent: {
+          100: "#f9f9a0",
+          200: "#f7f56a",
+          300: "#f5f433",
+          400: "#f3f000",
+          500: "#f2e000",
+        },
+        purpleAccent: {
+          100: "#f4e7ff",
+          200: "#d9beff",
+          300: "#b894ff",
+          400: "#9a6dff",
+          500: "#8047FF",
+          600: "#6635cc",
+          700: "#4d2599",
+          800: "#331766",
+          900: "#1a0833",
+        },
+        orangeAccent: {
+          100: "#fff2e6",
+          200: "#ffe0cc",
+          300: "#ffcdb3",
+          400: "#ffb999",
+          500: "#FF8C52",
+          600: "#cc7042",
+          700: "#995431",
+          800: "#663821",
+          900: "#331c10",
+        },        
       }
     : {
         grey: {
@@ -124,6 +156,36 @@ export const tokens = (mode: ThemeMode): ColorTokens => ({
           800: "#c3c6fd",
           900: "#e1e2fe",
         },
+        yellowAccent: {
+          100: "#f9f9a0",
+          200: "#f7f56a",
+          300: "#f5f433",
+          400: "#f3f000",
+          500: "#f2e000",
+        },
+        purpleAccent: {
+          100: "#f4e7ff",
+          200: "#d9beff",
+          300: "#b894ff",
+          400: "#9a6dff",
+          500: "#8047FF",
+          600: "#6635cc",
+          700: "#4d2599",
+          800: "#331766",
+          900: "#1a0833",
+        },
+        orangeAccent: {
+          100: "#fff2e6",
+          200: "#ffe0cc",
+          300: "#ffcdb3",
+          400: "#ffb999",
+          500: "#FF8C52",
+          600: "#cc7042",
+          700: "#995431",
+          800: "#663821",
+          900: "#331c10",
+        },
+        
       }),
 });
 

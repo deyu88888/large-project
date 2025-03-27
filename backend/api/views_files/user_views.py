@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from api.models import Student, User
-from api.serializers import StudentSerializer, UserSerializer
+from api.serializers import StudentSerializer, UserSerializer, PasswordUpdateSerializer
 
 
 def get_user_if_authenticated(request):
@@ -126,3 +126,21 @@ class MyProfileView(APIView):
         student = get_object_or_404(Student, id=user_id)
         serializer = StudentSerializer(student, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+class UpdatePasswordView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, *args, **kwargs):
+        serializer = PasswordUpdateSerializer(data=request.data)
+        if serializer.is_valid():
+            user = request.user
+            current_password = serializer.validated_data["current_password"]
+
+            if not user.check_password(current_password):
+                return Response({"message": "Current password do not correct"}, status=status.HTTP_400_BAD_REQUEST)
+
+            new_password = serializer.validated_data["new_password"]
+            user.set_password(new_password)
+            user.save()
+            return Response({"message": "Password updated"}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -35,7 +35,7 @@ import { Notification } from "../../types/student/notification";
 import { AwardAssignment } from "../../types/student/award";
 import AwardCard from "../../components/AwardCard";
 
-const CustomTabs = styled(Tabs)(({ theme, activecolor }) => ({
+const CustomTabs = styled(Tabs)<{ activecolor: string }>(({ activecolor }) => ({
   "& .MuiTabs-indicator": {
     backgroundColor: activecolor,
   },
@@ -63,16 +63,16 @@ const StudentDashboard: React.FC<StudentDashboardProps> = () => {
   const [snackbarSeverity, setSnackbarSeverity] =
     useState<"error" | "warning" | "info" | "success">("error");
 
-  // 2) Add a color for Awards (purpleAccent) and shift the existing color array
   const tabColors = [
-    colours.greenAccent?.[500] || "#4CAF50",
-    colours.blueAccent?.[500] || "#2196F3",
-    colours.redAccent?.[500] || "#F44336",
-    colours.purpleAccent?.[500] || "#9C27B0", // New color for Awards tab
-    colours.orangeAccent?.[500] || "#FF9800",
+    colours.greenAccent?.[500],
+    colours.blueAccent?.[500],
+    colours.redAccent?.[500],
+    colours.purpleAccent?.[500],
+    colours.orangeAccent?.[500],
   ];
 
   const allSocieties = useMemo(() => {
+
     const allSocs = [...societies];
     if (
       student?.president_of &&
@@ -91,9 +91,8 @@ const StudentDashboard: React.FC<StudentDashboardProps> = () => {
     ) {
       allSocs.push({
         id: student.vice_president_of_society,
-        name:
-          student?.vice_president_of_society_name ||
-          `Society ${student.vice_president_of_society}`,
+        name: student?.vice_president_of_society_name || `Society ${student.vice_president_of_society}`,
+        is_president: false,
         is_vice_president: true,
       });
     }
@@ -107,7 +106,6 @@ const StudentDashboard: React.FC<StudentDashboardProps> = () => {
     callFetchData();
   }, [user?.id]);
 
-  // Handle snackbar close
   const handleSnackbarClose = () => {
     setSnackbarOpen(false);
   };
@@ -130,12 +128,12 @@ const StudentDashboard: React.FC<StudentDashboardProps> = () => {
           title: ev.title,
           description: ev.description || "",
           date: ev.date,
-          startTime: ev.start_time,
+          start_time: ev.start_time,
           duration: ev.duration,
           location: ev.location || "",
-          hostedBy: ev.hosted_by,
-          societyName: ev.societyName || "",
-          rsvp: ev.rsvp,
+          hosted_by: ev.hosted_by,
+          society_name: ev.society_name || "",
+          current_attendees: ev.current_attendees,
           status: ev.status,
         }));
       setEvents(transformed);
@@ -156,24 +154,6 @@ const StudentDashboard: React.FC<StudentDashboardProps> = () => {
       setLoading(false);
     }
   }
-
-  const joinSociety = async (societyId: number) => {
-    try {
-      await apiClient.post(`/api/society/join/${societyId}`);
-      setSnackbarMessage("Successfully joined the society");
-      setSnackbarSeverity("success");
-      setSnackbarOpen(true);
-      fetchData();
-    } catch (error: any) {
-      console.error("Error joining society:", error);
-      const errorMessage =
-        error.response?.data?.error ||
-        "An error occurred while trying to join the society.";
-      setSnackbarMessage(errorMessage);
-      setSnackbarSeverity("error");
-      setSnackbarOpen(true);
-    }
-  };
 
   const handleLeaveSociety = async (societyId: number) => {
     try {
@@ -246,7 +226,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = () => {
     }
   }
 
-  function handleTabChange(event: React.SyntheticEvent, newValue: number) {
+  function handleTabChange(_: React.SyntheticEvent, newValue: number) {
     setActiveTab(newValue);
   }
 
@@ -256,7 +236,11 @@ const StudentDashboard: React.FC<StudentDashboardProps> = () => {
 
   function getMyEventsCount() {
     const mySocietyIds = allSocieties.map((s) => s.id);
-    return events.filter((e) => mySocietyIds.includes(e.hostedBy)).length;
+    return events.filter((e) => mySocietiesIncludes(e.hosted_by, mySocietyIds)).length;
+  }
+
+  function mySocietiesIncludes(hosted_by: number, mySocietyIds: number[]) {
+    return mySocietyIds.includes(hosted_by);
   }
 
   if (loading) {
@@ -338,7 +322,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = () => {
             icon={<FaTrophy size={24} />}
             title="My Awards"
             value={awards.length}
-            color={colours.purpleAccent?.[500] || "#9C27B0"}
+            color={colours.purpleAccent?.[500]}
           />
         </Box>
 
@@ -469,70 +453,83 @@ const StudentDashboard: React.FC<StudentDashboardProps> = () => {
                 gap={3}
               >
                 {events
-                  .filter((e) => allSocieties.some((s) => s.id === e.hostedBy))
-                  .map((event) => (
-                    <Paper
-                      key={event.id}
-                      elevation={2}
-                      sx={{
-                        backgroundColor: colours.primary[400],
-                        border: `1px solid ${colours.grey[800]}`,
-                        p: 2,
-                      }}
-                    >
-                      <Box
-                        display="flex"
-                        justifyContent="space-between"
-                        alignItems="center"
-                        mb={2}
+                  .filter((e) =>
+                    allSocieties.some((s) => s.id === e.hosted_by)
+                  )
+                  .filter((e) =>
+                    !e.current_attendees?.some(
+                      (attendee) => attendee.id === user?.id
+                    )
+                  )
+                  .map((event) => {
+                    return (
+                      <Paper
+                        key={event.id}
+                        elevation={2}
+                        sx={{
+                          backgroundColor: colours.primary[400],
+                          border: `1px solid ${colours.grey[800]}`,
+                          p: 2,
+                        }}
                       >
-                        <Box>
-                          <Typography variant="h6" sx={{ color: colours.grey[100] }}>
-                            {event.title}
-                          </Typography>
-                          <Box display="flex" alignItems="center" mt={1}>
-                            <FaRegClock
-                              style={{ marginRight: 8, color: colours.grey[300] }}
-                            />
-                            <Typography variant="body2" sx={{ color: colours.grey[300] }}>
-                              {event.date}{" "}
-                              {event.startTime && `at ${event.startTime}`}
+                        <Box
+                          display="flex"
+                          justifyContent="space-between"
+                          alignItems="center"
+                          mb={2}
+                        >
+                          <Box>
+                            <Typography variant="h6" sx={{ color: colours.grey[100] }}>
+                              {event.title}
                             </Typography>
-                          </Box>
-                          {event.location && (
+                            <Box display="flex" alignItems="center" mt={1}>
+                              <FaRegClock
+                                style={{ marginRight: 8, color: colours.grey[300] }}
+                              />
+                              <Typography variant="body2" sx={{ color: colours.grey[300] }}>
+                                {event.date} {event.start_time && `at ${event.start_time}`}
+                              </Typography>
+                            </Box>
+                            {event.location && (
+                              <Typography
+                                variant="body2"
+                                sx={{ color: colours.grey[300], mt: 1 }}
+                              >
+                                Location: {event.location}
+                              </Typography>
+                            )}
                             <Typography
                               variant="body2"
                               sx={{ color: colours.grey[300], mt: 1 }}
                             >
-                              Location: {event.location}
+                              Hosted by:{" "}
+                              {allSocieties.find((s) => s.id === event.hosted_by)?.name ||
+                                event.society_name ||
+                                `Society ${event.hosted_by}`}
                             </Typography>
-                          )}
-                          <Typography variant="body2" sx={{ color: colours.grey[300], mt: 1 }}>
-                            Hosted by:{" "}
-                            {allSocieties.find((s) => s.id === event.hostedBy)?.name ||
-                              event.societyName ||
-                              `Society ${event.hostedBy}`}
-                          </Typography>
+                          </Box>
                         </Box>
-                      </Box>
-                      <Button
-                        fullWidth
-                        variant="contained"
-                        onClick={() => handleRSVP(event.id, !event.rsvp)}
-                        sx={{
-                          backgroundColor: event.rsvp
-                            ? colours.grey[700]
-                            : colours.blueAccent[500],
-                          color: colours.grey[100],
-                        }}
-                      >
-                        {event.rsvp ? "Cancel RSVP" : "RSVP Now"}
-                      </Button>
-                    </Paper>
-                  ))}
-                {events.filter((e) =>
-                  allSocieties.some((s) => s.id === e.hostedBy)
-                ).length === 0 && (
+                        <Button
+                          fullWidth
+                          variant="contained"
+                          onClick={() => handleRSVP(event.id, true)}
+                          sx={{
+                            backgroundColor: colours.blueAccent[500],
+                            color: colours.grey[100],
+                          }}
+                        >
+                          RSVP Now
+                        </Button>
+                      </Paper>
+                    );
+                  })}
+                {events
+                  .filter((e) => allSocieties.some((s) => s.id === e.hosted_by))
+                  .filter((e) =>
+                    !e.current_attendees?.some(
+                      (attendee) => attendee.id === user?.id
+                    )
+                  ).length === 0 && (
                   <Box
                     gridColumn={{ xs: "1", md: "1 / span 2", lg: "1 / span 3" }}
                     p={4}
@@ -545,6 +542,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = () => {
                 )}
               </Box>
             )}
+
 
             {activeTab === 2 && (
               <Box>
@@ -696,8 +694,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = () => {
                 </Typography>
               </Box>
               <Typography variant="body2" sx={{ color: colours.grey[300], mb: 2 }}>
-                Have an idea for a new society? Share your passion and bring others
-                together!
+                Have an idea for a new society? Share your passion and bring others together!
               </Typography>
               <Button
                 variant="contained"
@@ -791,7 +788,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = () => {
         open={snackbarOpen}
         autoHideDuration={6000}
         onClose={handleSnackbarClose}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
         <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: "100%" }}>
           {snackbarMessage}

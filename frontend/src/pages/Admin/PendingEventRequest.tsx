@@ -16,17 +16,20 @@ import { apiPaths } from "../../api";
 import { updateRequestStatus } from "../../api/requestApi";
 import { EventPreview } from "../../components/EventPreview";
 import type { EventData } from "../../components/EventDetailLayout";
+import { Attendee } from "../../types/student/event";
 
 interface Event {
   id: number;
   title: string;
+  description: string;
   main_description: string;
   date: string;
   start_time: string;
   duration: string;
-  hosted_by: string;
+  hosted_by: number;
   location: string;
-  [key: string]: any; // Allow for additional properties
+  current_attendees: Attendee[];
+  [key: string]: any;
 }
 
 interface AlertState {
@@ -35,100 +38,210 @@ interface AlertState {
   severity: 'success' | 'error';
 }
 
-/**
- * PendingEventRequest Component
- * Displays and manages pending event requests that need approval or rejection
- */
+interface ActionButtonsProps {
+  id: number;
+  event: Event;
+  onStatusChange: (id: number, status: "Approved" | "Rejected") => void;
+  onView: (event: Event) => void;
+}
+
+interface EventNotificationProps {
+  alert: AlertState;
+  onClose: () => void;
+}
+
+interface DataGridCustomProps {
+  events: Event[];
+  columns: GridColDef[];
+  drawer: boolean;
+  colors: ReturnType<typeof tokens>;
+}
+
+
+const filterEventsBySearchTerm = (events: Event[], searchTerm: string): Event[] => {
+  if (!searchTerm) return events;
+  
+  const normalizedSearchTerm = searchTerm.toLowerCase();
+  
+  return events.filter((event) =>
+    Object.values(event)
+      .join(" ")
+      .toLowerCase()
+      .includes(normalizedSearchTerm)
+  );
+};
+
+const createSuccessAlert = (message: string): AlertState => {
+  return {
+    open: true,
+    message,
+    severity: 'success'
+  };
+};
+
+const createErrorAlert = (message: string): AlertState => {
+  return {
+    open: true,
+    message,
+    severity: 'error'
+  };
+};
+
+const mapToEventData = (event: Event): EventData => {
+  return {
+    title: event.title || "",
+    main_description: event.main_description || "",
+    date: event.date || "",
+    start_time: event.start_time || "",
+    duration: event.duration || "",
+    location: event.location || "",
+    max_capacity: event.max_capacity || 0,
+    hosted_by: event.hosted_by || 0,
+    event_id: event.id,
+    cover_image_url: event.cover_image || "",
+    extra_modules: event.extra_modules || [],
+    participant_modules: event.participant_modules || [],
+    is_participant: true,
+    is_member: false,
+    current_attendees: event.current_attendees,
+  };
+};
+
+
+const ActionButtons: React.FC<ActionButtonsProps> = ({ id, event, onStatusChange, onView }) => {
+  return (
+    <Box>
+      <Button
+        variant="contained"
+        color="primary"
+        onClick={() => onView(event)}
+        sx={{ marginRight: "8px" }}
+      >
+        View
+      </Button>
+      <Button
+        variant="contained"
+        color="success"
+        onClick={() => onStatusChange(id, "Approved")}
+        sx={{ marginRight: "8px" }}
+      >
+        Accept
+      </Button>
+      <Button 
+        variant="contained" 
+        color="error" 
+        onClick={() => onStatusChange(id, "Rejected")}
+      >
+        Reject
+      </Button>
+    </Box>
+  );
+};
+
+const EventNotification: React.FC<EventNotificationProps> = ({ alert, onClose }) => {
+  return (
+    <Snackbar 
+      open={alert.open} 
+      autoHideDuration={6000} 
+      onClose={onClose}
+      anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+    >
+      <Alert 
+        onClose={onClose} 
+        severity={alert.severity} 
+        variant="filled"
+        sx={{ width: '100%' }}
+      >
+        {alert.message}
+      </Alert>
+    </Snackbar>
+  );
+};
+
+const EventsDataGrid: React.FC<DataGridCustomProps> = ({ events, columns, colors }) => {
+  return (
+    <Box
+      sx={{
+        height: "78vh",
+        "& .MuiDataGrid-root": { border: "none" },
+        "& .MuiDataGrid-cell": { borderBottom: "none" },
+        "& .MuiDataGrid-columnHeaders": {
+          backgroundColor: colors.blueAccent[700],
+          borderBottom: "none",
+        },
+        "& .MuiDataGrid-columnHeader": { 
+          whiteSpace: "normal", 
+          wordBreak: "break-word" 
+        },
+        "& .MuiDataGrid-virtualScroller": { 
+          backgroundColor: colors.primary[400] 
+        },
+        "& .MuiDataGrid-footerContainer": {
+          borderTop: "none",
+          backgroundColor: colors.blueAccent[700],
+        },
+        "& .MuiDataGrid-toolbarContainer .MuiButton-text": {
+          color: `${colors.blueAccent[500]} !important`,
+        },
+      }}
+    >
+      <DataGrid
+        rows={events}
+        columns={columns}
+        slots={{ toolbar: GridToolbar }}
+        resizeThrottleMs={0}
+        autoHeight
+        disableRowSelectionOnClick
+        initialState={{
+          pagination: { paginationModel: { pageSize: 100 } },
+        }}
+      />
+    </Box>
+  );
+};
+
 const PendingEventRequest: React.FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const { searchTerm } = useContext(SearchContext);
   const { drawer } = useSettingsStore();
+  
   const [previewOpen, setPreviewOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<EventData | null>(null);
-
-  
-  // State for alerts/notifications
   const [alert, setAlert] = useState<AlertState>({
     open: false,
     message: '',
     severity: 'success'
   });
 
-  // Fetch pending event requests using WebSocket
   const events = useFetchWebSocket<Event[]>(
     () => fetchPendingRequests(apiPaths.EVENTS.PENDINGEVENTREQUEST),
     'event'
   );
+  
+  const handleViewEvent = useCallback((event: Event) => {
+    const mappedEvent = mapToEventData(event);
+    setSelectedEvent(mappedEvent);
+    setPreviewOpen(true);
+  }, []);
 
-  // Filter events based on search term - memoized for performance
-  const filteredEvents = useMemo(() => 
-    events.filter((event) =>
-      Object.values(event)
-        .join(" ")
-        .toLowerCase()
-        .includes((searchTerm || '').toLowerCase())
-    ),
-    [events, searchTerm]
-  );
-
-  // Handle status change (approve/reject)
   const handleStatusChange = useCallback(async (id: number, status: "Approved" | "Rejected") => {
     try {
       await updateRequestStatus(id, status, apiPaths.EVENTS.UPDATEENEVENTREQUEST);
       const successMessage = `Event ${status.toLowerCase()} successfully.`;
-      setAlert({
-        open: true,
-        message: successMessage,
-        severity: 'success'
-      });
+      setAlert(createSuccessAlert(successMessage));
     } catch (error) {
       console.error(`Error updating event status:`, error);
-      // Simplify the error message for consistency
-      const errorMessage = `Failed to ${status === "Approved" ? "approve" : "reject"} event.`;
-      
-      // Use window.alert to make the test pass
-      window.alert(errorMessage);
-      
-      setAlert({
-        open: true,
-        message: errorMessage,
-        severity: 'error'
-      });
+      const errorMessage = `Failed to ${status.toLowerCase()} event.`;
+      setAlert(createErrorAlert(errorMessage));
     }
   }, []);
 
-  const handleViewEvent = useCallback((event: any) => {
-    const mapped = {
-      title: event.title || "",
-      mainDescription: event.main_description || "",
-      date: event.date || "",
-      startTime: event.start_time || "",
-      duration: event.duration || "",
-      location: event.location || "",
-      maxCapacity: event.max_capacity || 0,
-      hostedBy: event.hosted_by || 0,
-      eventId: event.id,
-      coverImageUrl: event.cover_image || "",
-      extraModules: event.extra_modules || [],
-      participantModules: event.participant_modules || [],
-      isParticipant: true,
-      isMember: false
-    };
-
-    setSelectedEvent(mapped);
-    setPreviewOpen(true);
-  }, []);
-
-
-
-  // Close alert handler
   const handleCloseAlert = useCallback(() => {
     setAlert(prev => ({ ...prev, open: false }));
   }, []);
 
-  // Column definitions
-  const columns: GridColDef[] = [
+  const createColumns = useCallback((): GridColDef[] => [
     { field: "id", headerName: "ID", flex: 0.3 },
     { field: "title", headerName: "Title", flex: 1 },
     { field: "date", headerName: "Date", flex: 1 },
@@ -140,39 +253,30 @@ const PendingEventRequest: React.FC = () => {
       field: "actions",
       headerName: "Actions",
       flex: 1.6,
-      width: 190,
-      minWidth: 190,
+      width: 250,
+      minWidth: 250,
       sortable: false,
       filterable: false,
       renderCell: (params: GridRenderCellParams<any, Event>) => (
-        <Box>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={() => handleViewEvent(params.row)}
-            sx={{ marginRight: "8px" }}
-          >
-            View
-          </Button>
-          <Button
-            variant="contained"
-            color="success"
-            onClick={() => handleStatusChange(params.row.id, "Approved")}
-            sx={{ marginRight: "8px" }}
-          >
-            Accept
-          </Button>
-          <Button 
-            variant="contained" 
-            color="error" 
-            onClick={() => handleStatusChange(params.row.id, "Rejected")}
-          >
-            Reject
-          </Button>
-        </Box>
+        <ActionButtons 
+          id={params.row.id}
+          event={params.row}
+          onStatusChange={handleStatusChange}
+          onView={handleViewEvent}
+        />
       ),
     },
-  ];
+  ], [handleStatusChange, handleViewEvent]);
+  
+  const filteredEvents = useMemo(() => 
+    filterEventsBySearchTerm(events.flat(), searchTerm || ''),
+    [events, searchTerm]
+  );  
+
+  const columns = useMemo(() => 
+    createColumns(),
+    [createColumns]
+  );
 
   return (
     <Box
@@ -181,61 +285,17 @@ const PendingEventRequest: React.FC = () => {
         maxWidth: drawer ? `calc(100% - 3px)` : "100%",
       }}
     >      
-      <Box
-        sx={{
-          height: "78vh",
-          "& .MuiDataGrid-root": { border: "none" },
-          "& .MuiDataGrid-cell": { borderBottom: "none" },
-          "& .MuiDataGrid-columnHeaders": {
-            backgroundColor: colors.blueAccent[700],
-            borderBottom: "none",
-          },
-          "& .MuiDataGrid-columnHeader": { 
-            whiteSpace: "normal", 
-            wordBreak: "break-word" 
-          },
-          "& .MuiDataGrid-virtualScroller": { 
-            backgroundColor: colors.primary[400] 
-          },
-          "& .MuiDataGrid-footerContainer": {
-            borderTop: "none",
-            backgroundColor: colors.blueAccent[700],
-          },
-          "& .MuiDataGrid-toolbarContainer .MuiButton-text": {
-            color: `${colors.blueAccent[500]} !important`,
-          },
-        }}
-      >
-        <DataGrid
-          rows={filteredEvents}
-          columns={columns}
-          slots={{ toolbar: GridToolbar }}
-          resizeThrottleMs={0}
-          autoHeight
-          disableRowSelectionOnClick
-          initialState={{
-            pagination: { paginationModel: { pageSize: 100 } },
-          }}
-        />
-      </Box>
+      <EventsDataGrid 
+        events={filteredEvents}
+        columns={columns}
+        drawer={drawer}
+        colors={colors}
+      />
       
-      {/* Alert for success/failure messages */}
-      <Snackbar 
-        open={alert.open} 
-        autoHideDuration={6000} 
+      <EventNotification 
+        alert={alert}
         onClose={handleCloseAlert}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-      >
-        <Alert 
-          onClose={handleCloseAlert} 
-          severity={alert.severity} 
-          variant="filled"
-          sx={{ width: '100%' }}
-          data-testid="alert-message"
-        >
-          {alert.message}
-        </Alert>
-      </Snackbar>
+      />
 
       {selectedEvent && (
         <EventPreview

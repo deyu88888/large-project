@@ -10,39 +10,41 @@ import { tokens } from "../theme/theme";
 
 export interface EventData {
   title: string;
-  mainDescription: string;
+  main_description: string;
   date: string;
-  startTime: string;
+  start_time: string;
   duration: string;
   location: string;
-  maxCapacity: number;
-  coverImageUrl?: string;
-  coverImageFile?: File | null;
-  extraModules: ExtraModule[];
-  participantModules: ExtraModule[];
-  isParticipant: boolean;
-  isMember: boolean;
-  eventId: number;
-  hostedBy: number;
+  max_capacity: number;
+  cover_image_url?: string;
+  cover_image_file?: File | null;
+  extra_modules: ExtraModule[];
+  participant_modules: ExtraModule[];
+  is_participant: boolean;
+  is_member: boolean;
+  event_id: number;
+  hosted_by: number;
+  current_attendees: any[];
 }
 
 export function EventDetailLayout({ eventData }: { eventData: EventData }) {
   const {
     title,
-    mainDescription,
+    main_description,
     date,
-    startTime,
+    start_time,
     duration,
     location,
-    maxCapacity,
-    coverImageFile,
-    coverImageUrl,
-    extraModules,
-    participantModules,
-    isParticipant,
-    isMember,
-    eventId,
-    hostedBy,
+    max_capacity,
+    cover_image_file,
+    cover_image_url,
+    extra_modules,
+    participant_modules,
+    is_participant,
+    is_member,
+    event_id,
+    hosted_by,
+    current_attendees,
   } = eventData;
 
   const theme = useTheme();
@@ -53,13 +55,13 @@ export function EventDetailLayout({ eventData }: { eventData: EventData }) {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMsg, setSnackbarMsg] = useState("");
 
-  const coverImageSrc = coverImageFile
-    ? URL.createObjectURL(coverImageFile)
-    : coverImageUrl;
+  const coverImageSrc = cover_image_file
+    ? URL.createObjectURL(cover_image_file)
+    : cover_image_url;
 
   const handleJoinEvent = async () => {
     try {
-      await apiClient.post("/api/events/rsvp/", { event_id: eventId });
+      await apiClient.post("/api/events/rsvp/", { event_id: event_id });
       setSnackbarMsg("Successfully joined the event!");
       setSnackbarOpen(true);
       setTimeout(() => window.location.reload(), 1000);
@@ -71,7 +73,7 @@ export function EventDetailLayout({ eventData }: { eventData: EventData }) {
 
   const handleCancelRSVP = async () => {
     try {
-      await apiClient.delete("/api/events/rsvp/", { data: { event_id: eventId } });
+      await apiClient.delete("/api/events/rsvp/", { data: { event_id: event_id } });
       setSnackbarMsg("Canceled RSVP.");
       setSnackbarOpen(true);
       setTimeout(() => window.location.reload(), 1000);
@@ -85,7 +87,7 @@ export function EventDetailLayout({ eventData }: { eventData: EventData }) {
     setSnackbarMsg("Please join the society to RSVP.");
     setSnackbarOpen(true);
     setTimeout(() => {
-      navigate(`/student/view-society/${hostedBy}`);
+      navigate(`/student/view-society/${hosted_by}`);
     }, 1500);
   };
 
@@ -253,7 +255,7 @@ export function EventDetailLayout({ eventData }: { eventData: EventData }) {
               <strong>Date:</strong> {date}
             </Typography>
             <Typography variant="body1" sx={{ mb: 1 }}>
-              <strong>Time:</strong> {startTime}
+              <strong>Time:</strong> {start_time}
             </Typography>
             <Typography variant="body1" sx={{ mb: 1 }}>
               <strong>Duration:</strong> {duration}
@@ -262,11 +264,14 @@ export function EventDetailLayout({ eventData }: { eventData: EventData }) {
               <strong>Location:</strong> {location}
             </Typography>
             <Typography variant="body1" sx={{ mb: 1 }}>
-              <strong>Max Capacity:</strong> {maxCapacity}
+              <strong>Max Capacity:</strong> {max_capacity === 0 ? "No Limit" : max_capacity}
+            </Typography>
+            <Typography variant="body1" sx={{ mb: 1 }}>
+              <strong>Participants:</strong> {current_attendees?.length || 0}
             </Typography>
   
             <Box sx={{ mt: 2 }}>
-              {!isMember ? (
+              {!is_member ? (
                 <Button variant="outlined"
                         onClick={handleJoinSociety}
                         sx={{
@@ -277,7 +282,7 @@ export function EventDetailLayout({ eventData }: { eventData: EventData }) {
                 >
                   Join Society to RSVP
                 </Button>
-              ) : isParticipant ? (
+              ) : is_participant ? (
                 <Button variant="contained" color="error" onClick={handleCancelRSVP}>
                   Cancel RSVP
                 </Button>
@@ -307,18 +312,18 @@ export function EventDetailLayout({ eventData }: { eventData: EventData }) {
             Overview
           </Typography>
           <Typography variant="body1" sx={{ whiteSpace: "pre-wrap", mb: 3 }}>
-            {mainDescription || "No description provided."}
+            {main_description || "No description provided."}
           </Typography>
   
-          {extraModules.map(renderModule)}
+          {extra_modules?.map(renderModule)}
   
-          {participantModules.length > 0 && (
-            isParticipant ? (
+          {participant_modules.length > 0 && (
+            is_participant ? (
               <>
                 <Typography variant="h3" sx={{ mb: 2, fontWeight: "bold" }}>
                   Participants Only Content
                 </Typography>
-                {participantModules.map(renderModule)}
+                {participant_modules?.map(renderModule)}
               </>
             ) : (
               <>

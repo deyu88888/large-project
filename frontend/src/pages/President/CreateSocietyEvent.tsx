@@ -1,15 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import {
-  Box,
-  Typography,
-  Paper,
-  CircularProgress,
-  Button,
-  Snackbar,
-  Alert,
-  useTheme
-} from "@mui/material";
+import { useTheme } from "@mui/material";
 import { tokens } from "../../theme/theme";
 import { EventForm } from "../../components/EventForm";
 import { apiClient } from "../../api";
@@ -26,7 +17,7 @@ const createStyleTag = (isDarkMode: boolean) => {
 
   const style = document.createElement("style");
   style.id = "event-form-styles";
-  
+
   style.innerHTML = `
     .event-form-wrapper .MuiTypography-root,
     .event-form-wrapper .MuiButton-root,
@@ -42,13 +33,12 @@ const createStyleTag = (isDarkMode: boolean) => {
       border-color: ${isDarkMode ? "#fff !important" : "#141b2d !important"};
     }
   `;
-  
+
   document.head.appendChild(style);
 };
 
 const CreateEvent: React.FC = () => {
   const theme = useTheme();
-  const colors = tokens(theme.palette.mode);
   const { societyId } = useParams<{ societyId: string }>();
   const navigate = useNavigate();
   
@@ -66,7 +56,7 @@ const CreateEvent: React.FC = () => {
   React.useEffect(() => {
     const isDarkMode = theme.palette.mode === "dark";
     createStyleTag(isDarkMode);
-    
+
     return () => {
       const styleTag = document.getElementById("event-form-styles");
       if (styleTag) {
@@ -89,7 +79,10 @@ const CreateEvent: React.FC = () => {
 
   const handleSubmit = async (formData: FormData): Promise<void> => {
     try {
-      const response = await apiClient.post(`/api/events/requests/${societyId}/`, formData);
+      const response = await apiClient.post(
+        `/api/events/requests/${societyId}/`,
+        formData
+      );
 
       if (isSuccessful(response.status)) {
         showSuccessAndNavigateBack();
@@ -103,4 +96,6 @@ const CreateEvent: React.FC = () => {
   };
 
   return <EventForm onSubmit={handleSubmit} />;
-}
+};
+
+export default CreateEvent;

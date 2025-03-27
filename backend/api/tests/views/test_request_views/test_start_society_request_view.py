@@ -8,7 +8,7 @@ class StartSocietyRequestViewTest(APITestCase):
         self.regular_student = Student.objects.create_user(
             username="regular_user",
             password="test1234",
-            email="regular@example.com",  # unique email
+            email="regular@example.com",
             is_president=False,
             president_of=None,
             major="Test Major"
@@ -32,7 +32,6 @@ class StartSocietyRequestViewTest(APITestCase):
             role="admin",
         )
         
-        # Explicitly set the ID of the society with a president
         self.society = Society.objects.create(
             id=1,
             name="Test Society",
@@ -40,26 +39,17 @@ class StartSocietyRequestViewTest(APITestCase):
             status="Approved",
             category="General",
             social_media_links={},
-            president=self.president_student  # Add the president field
+            president=self.president_student
         )
         
-        # Update the president's president_of field to point to this society
         self.president_student.president_of = self.society
         self.president_student.save()
         
-        # Refresh from DB to ensure persistence
         self.society.refresh_from_db()
         
-        # Base URL for society requests
-        self.base_url = "/api/society/request/pending"
-
-        # Generate tokens for authentication. 'same as access token on postman'
+        self.base_url = "/api/admin/society/request/pending"
         self.regular_user_token = str(AccessToken.for_user(self.regular_student))
-        
-        # Create token for president user
         self.president_user_token = str(AccessToken.for_user(self.president_student))
-
-        # generate a token for admin_user_token
         self.admin_user_token = str(AccessToken.for_user(self.admin))
 
     def test_society_request_by_student_user(self):
@@ -79,7 +69,6 @@ class StartSocietyRequestViewTest(APITestCase):
         print("xxx", response.data)
         self.assertEqual(response.status_code, 200)
     
-    # test for put method
     def test_society_request_put_method_by_student_user(self):
         """
         Test that the PUT method is not allowed on the society request endpoint.
@@ -95,28 +84,17 @@ class StartSocietyRequestViewTest(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.admin_user_token}")
         response = self.client.put(self.base_url+"/9999999")
         self.assertEqual(response.status_code, 404)
-
-    # def test_society_request_put_200_by_admin_user(self):
-    #     """
-    #     Test that the PUT method is not allowed on the society request endpoint.
-    #     """
-    #     self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.admin_user_token}")
-    #     # update_data = {
-    #     #     "status": "Pending"
-    #     # }
-    #     # response = self.client.put(self.base_url+"/2", update_data, format="json")
-    #     # response = self.client.put(self.base_url+"/2",  {"status": "Pending"}, format="json")
-    #     response = self.client.put(f"{self.base_url}/6",  {"status": "Pending"}, format="json")
-    #     print("xxxxx", response.data)
-    #     self.assertEqual(response.status_code, 200)
     
     def test_society_request_put_200(self):
         """
         Test that the PUT method is not allowed on the society request endpoint.
         """
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.admin_user_token}")
-        # import json
-        response = self.client.put(f"{self.base_url}/1",  {"status": "Pending"}, format="json")
-        print()
-        print("xxxxx", response.data)
+        response = self.client.put(f"{self.base_url}/1", {"status": "Pending"}, format="json")
+        
+        if hasattr(response, 'data'):
+            print("Response data:", response.data)
+        else:
+            print("Response content:", response.content.decode('utf-8'))
+        
         self.assertEqual(response.status_code, 200)

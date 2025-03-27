@@ -64,7 +64,7 @@ const SocietyCard: React.FC<SocietyCardProps> = ({
       >
         {society.icon ? (
           <img
-          src={society.icon || undefined}
+          src={typeof society.icon !== "string" ? society.icon.name : society.icon}
           alt={`${society.name} icon`}
           style={{
             width: "50px",

@@ -32,10 +32,21 @@ def get_management_error(student, society, **kwargs):
     return None
 
 def get_society_and_management_error(society_id, student):
+    """
+    Gets a society by ID and checks if the student has management permissions.
+    """
     society = Society.objects.filter(id=society_id).first()
     if not society:
         error_response = Response({"error": "Society not found."}, status=404)
         return None, error_response
+    
+    if not has_society_management_permission(student, society):
+        error_response = Response(
+            {"error": "Only the society president or vice president can manage members."},
+            status=status.HTTP_403_FORBIDDEN
+        )
+        return None, error_response
+        
     return society, None
 
 
@@ -121,7 +132,7 @@ class PendingMembersView(APIView):
         # Get all pending membership requests
         pending_requests = SocietyRequest.objects.filter(
             intent="JoinSoc",
-            approved=False,
+            approved=None,
             society=society
         )
 
@@ -149,7 +160,7 @@ class PendingMembersView(APIView):
         pending_request = SocietyRequest.objects.filter(
             id=request_id,
             intent="JoinSoc",
-            approved=False,
+            approved=None,
             society=society
         ).first()
         if not pending_request:
@@ -170,6 +181,8 @@ class PendingMembersView(APIView):
 
         elif action == "reject":
             # Delete the request
+            pending_request.approved = True
+            pending_request.save()
             pending_request.delete()
             return Response({"message": "Request has been rejected."}, status=status.HTTP_200_OK)
 

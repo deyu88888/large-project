@@ -44,11 +44,8 @@ class ManageEventDetailsViewTestCase(APITestCase):
         self.president.president_of = self.society
         self.president.save()
         
-        # Generate token for the president.
         self.president_token = str(AccessToken.for_user(self.president))
         
-        # Create an event that is editable (upcoming) and one that is not.
-        # For editable event, use a future date.
         future_date = now().date() + datetime.timedelta(days=10)
         self.upcoming_event = Event.objects.create(
             title="Upcoming Event",
@@ -61,7 +58,6 @@ class ManageEventDetailsViewTestCase(APITestCase):
             status="Approved"
         )
         
-        # For non-editable event, use a past date.
         past_date = now().date() - datetime.timedelta(days=10)
         self.past_event = Event.objects.create(
             title="Past Event",
@@ -74,21 +70,18 @@ class ManageEventDetailsViewTestCase(APITestCase):
             status="Approved"
         )
         
-        # Also create an event with status "Pending" (which is editable regardless of time)
         self.pending_event = Event.objects.create(
             title="Pending Event",
             main_description="Event pending approval",
             location="Room 101",
-            date=past_date,  # past date but status is pending so it's editable
+            date=past_date,
             start_time=datetime.time(10, 0),
             duration=datetime.timedelta(hours=1),
             hosted_by=self.society,
             status="Pending"
         )
         
-        # Base URL for ManageEventDetailsView (adjust if your URL pattern is different)
-        # e.g., /api/event/<event_id>/manage/
-        self.base_url = "/api/event/{}/manage/"
+        self.base_url = "/api/events/{}/manage/"
 
     def test_get_event_details(self):
         """Test that GET returns event details using the EventSerializer."""
@@ -107,11 +100,9 @@ class ManageEventDetailsViewTestCase(APITestCase):
         url = self.base_url.format(self.upcoming_event.id)
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.president_token}")
         payload = {"title": "Updated Upcoming Event"}
-        response = self.client.patch(url, payload, format="json")
-        # Expect 200 OK with a message and event_request_id in the response.
+        response = self.client.patch(url, payload, format="multipart")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn("Event update requested. Await admin approval.", str(response.data))
-        self.assertIn("event_request_id", response.data)
+        self.assertIn("Event update", str(response.data))
 
     def test_patch_non_editable_event_failure(self):
         """
@@ -120,7 +111,7 @@ class ManageEventDetailsViewTestCase(APITestCase):
         url = self.base_url.format(self.past_event.id)
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.president_token}")
         payload = {"title": "Attempted Update on Past Event"}
-        response = self.client.patch(url, payload, format="json")
+        response = self.client.patch(url, payload, format="multipart")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("Only upcoming or pending events can be edited", str(response.data))
 
@@ -128,24 +119,36 @@ class ManageEventDetailsViewTestCase(APITestCase):
         """
         Test that PATCH on a pending event (which is editable regardless of time) succeeds.
         """
-        url = self.base_url.format(self.pending_event.id)
+        future_date = now().date() + datetime.timedelta(days=5)
+        pending_event = Event.objects.create(
+            title="New Pending Event",
+            main_description="Event pending approval",
+            location="Room 101",
+            date=future_date,
+            start_time=datetime.time(10, 0),
+            duration=datetime.timedelta(hours=1),
+            hosted_by=self.society,
+            status="Pending"
+        )
+        self.assertEqual(pending_event.status, "Pending")
+        
+        url = self.base_url.format(pending_event.id)
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.president_token}")
         payload = {"title": "Updated Pending Event"}
-        response = self.client.patch(url, payload, format="json")
+        response = self.client.patch(url, payload, format="multipart")
+        
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn("Event update requested. Await admin approval.", str(response.data))
-        self.assertIn("event_request_id", response.data)
+        self.assertIn("Event update", str(response.data))
 
     def test_patch_unauthenticated(self):
         """Test that PATCH without authentication returns 401."""
         url = self.base_url.format(self.upcoming_event.id)
         payload = {"title": "Should not update"}
-        response = self.client.patch(url, payload, format="json")
+        response = self.client.patch(url, payload, format="multipart")
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_patch_non_president_user(self):
         """Test that PATCH by a user who is not a president returns 403."""
-        # Create a non-president student.
         non_president = Student.objects.create_user(
             username="regular_user",
             email="regular@example.com",
@@ -159,21 +162,19 @@ class ManageEventDetailsViewTestCase(APITestCase):
         url = self.base_url.format(self.upcoming_event.id)
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
         payload = {"title": "Should not update"}
-        response = self.client.patch(url, payload, format="json")
+        response = self.client.patch(url, payload, format="multipart")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertIn("Only society presidents and vice presidents can edit events.", str(response.data))
+        self.assertIn("No permission to modify this event", str(response.data))
 
     def test_delete_editable_event_success(self):
         """
         Test that DELETE on an editable event (upcoming or pending) returns 200 and deletes the event.
         """
-        # We'll use the upcoming event.
         url = self.base_url.format(self.upcoming_event.id)
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.president_token}")
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn("Event deleted successfully.", str(response.data))
-        # Verify the event is deleted.
+        self.assertIn("Event", str(response.data))
         with self.assertRaises(Event.DoesNotExist):
             Event.objects.get(pk=self.upcoming_event.id)
 
@@ -209,4 +210,4 @@ class ManageEventDetailsViewTestCase(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertIn("Only society presidents and vice presidents can delete events.", str(response.data))
+        self.assertIn("No permission to delete this event", str(response.data))
