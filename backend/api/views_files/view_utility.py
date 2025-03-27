@@ -1,6 +1,5 @@
-from datetime import datetime, timedelta
-import time
-from api.models import Event, Society, Student
+from datetime import datetime, timedelta, time
+from api.models import Society
 from rest_framework import status
 from rest_framework.response import Response
 
@@ -11,7 +10,7 @@ def student_has_no_role(student, start=False, society_id=None):
     action = "leave"
     if start:
         action = "start another society"
-    
+
     # If society_id is provided, check roles only for that society
     if society_id is not None:
         # Check if student is president of this specific society
@@ -20,24 +19,26 @@ def student_has_no_role(student, start=False, society_id=None):
                 {"error": f"As president, you can't {action} before you transfer presidency."},
                 status=status.HTTP_403_FORBIDDEN
             )
-        
+
         # Check if student is vice president of this specific society
         if student.is_vice_president:
             try:
-                society = Society.objects.get(id=society_id, vice_president=student)
+                Society.objects.get(id=society_id, vice_president=student)
                 return Response(
-                    {"error": f"As vice president, you can't {action} before resigning your position."},
+                    {"error": f"As vice president, you can't {action} "
+                    "before resigning your position."},
                     status=status.HTTP_403_FORBIDDEN
                 )
             except Society.DoesNotExist:
                 pass
-        
+
         # Check if student is event manager of this specific society
         if student.is_event_manager:
             try:
-                society = Society.objects.get(id=society_id, event_manager=student)
+                Society.objects.get(id=society_id, event_manager=student)
                 return Response(
-                    {"error": f"As event manager, you can't {action} before resigning your position."},
+                    {"error": f"As event manager, you can't {action} "
+                    "before resigning your position."},
                     status=status.HTTP_403_FORBIDDEN
                 )
             except Society.DoesNotExist:
@@ -46,22 +47,25 @@ def student_has_no_role(student, start=False, society_id=None):
         # Original checks for any society role (used when starting a new society)
         if student.is_president and student.president_of:
             return Response(
-                {"error": f"As president, you can't {action} before you transfer presidency."},
+                {"error": f"As president, you can't {action} before "
+                "you transfer presidency."},
                 status=status.HTTP_403_FORBIDDEN
             )
-        
+
         if student.is_vice_president:
             return Response(
-                {"error": f"As vice president, you can't {action} before resigning your position."},
+                {"error": f"As vice president, you can't {action} before "
+                "resigning your position."},
                 status=status.HTTP_403_FORBIDDEN
             )
-        
+
         if student.is_event_manager:
             return Response(
-                {"error": f"As event manager, you can't {action} before resigning your position."},
+                {"error": f"As event manager, you can't {action} before "
+                "resigning your position."},
                 status=status.HTTP_403_FORBIDDEN
             )
-    
+
     return None
 
 def get_student_if_user_is_student(user, action):
@@ -163,7 +167,7 @@ def set_foreign_key_relationship(obj, field_name, id_value, model_class):
     """Set a foreign key relationship from an ID value."""
     if not id_value:
         return
-        
+
     try:
         # Convert to int to handle both string and integer IDs
         item = model_class.objects.get(id=int(id_value))
