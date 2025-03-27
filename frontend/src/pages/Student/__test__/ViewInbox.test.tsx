@@ -4,6 +4,7 @@ import ViewInbox from "../ViewInbox";
 import { apiClient } from "../../../api";
 import { vi } from "vitest";
 import { MemoryRouter } from "react-router-dom";
+import React from "react";
 
 // Mock the navigation function
 const mockNavigate = vi.fn();

@@ -62,7 +62,7 @@ export default function EditEventDetails() {
   };
 
   const mapModule = (mod: any): ExtraModule => {
-    if (!mod) return { id: '0', type: 'text', textValue: '' };
+    if (!mod) return { id: '0', type: 'text' as any, textValue: '' };
     
     const fileUrl = mod.file_value || mod.text_value || "";
     return {
