@@ -1,4 +1,4 @@
-from tests.nltk_setup import ensure_punkt_downloaded
+from .nltk_setup import ensure_punkt_downloaded
 ensure_punkt_downloaded()
 
 from django.test import TestCase
