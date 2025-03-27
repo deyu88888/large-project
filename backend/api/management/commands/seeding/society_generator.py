@@ -177,9 +177,8 @@ class RandomSocietyDataGenerator():
         return_dict["category"] = choice(self.categories)
         return_dict["tags"] = self.generate_tags(return_dict["name"].split()[0])
 
-        # icon_name = f'{return_dict["name"].split()[0].lower()}.jpg'
-        icon_name = f'https://picsum.photos/id/${randint(0,100)}/200/300'
-        return_dict["icon"] = icon_name
+        icon_name = f'{return_dict["name"].split()[0].lower()}.jpg'
+        return_dict["icon"] = os.path.join('pre-seed-icons', icon_name)
 
         return return_dict
 

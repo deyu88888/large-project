@@ -2,7 +2,13 @@ from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
 from django.urls import reverse
 from django.utils import timezone
+import sys
+from unittest.mock import MagicMock
+sys.modules['transformers'] = MagicMock()
+sys.modules['transformers.utils.import_utils'] = MagicMock()
+sys.modules['transformers.models.bert.tokenization_bert_tf'] = MagicMock()
 from freezegun import freeze_time
+
 from api.models import (
     User, Student, Society, SocietyNews, NewsPublicationRequest, Notification
 )
@@ -13,7 +19,7 @@ class TestAdminNewsApprovalView(APITestCase):
     def setUp(self):
         self.client = APIClient()
         
-        
+        # Create admin user
         self.admin_user = User.objects.create_user(
             username="admin_user",
             email="admin@example.com",
@@ -23,7 +29,7 @@ class TestAdminNewsApprovalView(APITestCase):
             last_name="User"
         )
         
-        
+        # Create second admin user
         self.admin_user2 = User.objects.create_user(
             username="admin_user2",
             email="admin2@example.com",
@@ -33,7 +39,7 @@ class TestAdminNewsApprovalView(APITestCase):
             last_name="User"
         )
         
-        
+        # Create regular user
         self.regular_user = User.objects.create_user(
             username="regular_user",
             email="regular@example.com",
@@ -43,7 +49,7 @@ class TestAdminNewsApprovalView(APITestCase):
             last_name="User"
         )
         
-        
+        # Create student user
         self.student = Student.objects.create_user(
             username="student_user",
             email="student@example.com",
@@ -53,7 +59,7 @@ class TestAdminNewsApprovalView(APITestCase):
             major="Computer Science"
         )
         
-        
+        # Create society
         self.society = Society.objects.create(
             name="Test Society",
             description="A test society",
@@ -62,11 +68,10 @@ class TestAdminNewsApprovalView(APITestCase):
             social_media_links={"Email": "society@example.com"}
         )
         
-        
         self.student.president_of = self.society
         self.student.save()
         
-        
+        # Create news posts
         self.news_post = SocietyNews.objects.create(
             title="Test News",
             content="This is test news content",
@@ -83,7 +88,7 @@ class TestAdminNewsApprovalView(APITestCase):
             status="Draft"
         )
         
-        
+        # Create publication requests
         self.pending_request = NewsPublicationRequest.objects.create(
             news_post=self.news_post,
             requested_by=self.student,
@@ -97,7 +102,6 @@ class TestAdminNewsApprovalView(APITestCase):
             reviewed_by=self.admin_user2,
             admin_notes="Looks good!"
         )
-        
         
         self.get_detail_url = lambda request_id: reverse('admin_news_approval', args=[request_id])
     
@@ -157,89 +161,95 @@ class TestAdminNewsApprovalView(APITestCase):
             "error": "Invalid action. Must be 'Approved' or 'Rejected'"
         })
     
-    @freeze_time("2025-03-27 12:00:00")
     def test_approve_publication_request(self):
         """Test successful approval of a publication request"""
         self.client.force_authenticate(user=self.admin_user)
         
+        fixed_time = datetime.datetime(2025, 3, 27, 12, 0, 0, tzinfo=timezone.utc)
+        original_now = timezone.now
         
-        self.assertEqual(self.pending_request.status, "Pending")
-        self.assertEqual(self.news_post.status, "Draft")
-        
-        response = self.client.put(
-            self.get_detail_url(self.pending_request.id),
-            {
-                'status': 'Approved',
-                'admin_notes': 'Excellent news post!'
-            },
-            format='json'
-        )
-        
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        
-        
-        self.pending_request.refresh_from_db()
-        self.news_post.refresh_from_db()
-        
-        
-        self.assertEqual(self.pending_request.status, "Approved")
-        self.assertEqual(self.pending_request.reviewed_by, self.admin_user)
-        self.assertEqual(self.pending_request.admin_notes, "Excellent news post!")
-        self.assertIsNotNone(self.pending_request.reviewed_at)
-        
-        
-        self.assertEqual(self.news_post.status, "Published")
-        self.assertIsNotNone(self.news_post.published_at)
-        
-        
-        notification = Notification.objects.filter(
-            header="News Publication Approved",
-            for_user=self.student
-        ).first()
-        
-        self.assertIsNotNone(notification)
-        self.assertTrue(notification.is_important)
-        expected_body = f"Your news publication request for '{self.news_post.title}' has been approved."
-        self.assertEqual(notification.body, expected_body)
+        try:
+            timezone.now = lambda: fixed_time
+            
+            self.assertEqual(self.pending_request.status, "Pending")
+            self.assertEqual(self.news_post.status, "Draft")
+            
+            response = self.client.put(
+                self.get_detail_url(self.pending_request.id),
+                {
+                    'status': 'Approved',
+                    'admin_notes': 'Excellent news post!'
+                },
+                format='json'
+            )
+            
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            
+            self.pending_request.refresh_from_db()
+            self.news_post.refresh_from_db()
+            
+            self.assertEqual(self.pending_request.status, "Approved")
+            self.assertEqual(self.pending_request.reviewed_by, self.admin_user)
+            self.assertEqual(self.pending_request.admin_notes, "Excellent news post!")
+            self.assertIsNotNone(self.pending_request.reviewed_at)
+            
+            self.assertEqual(self.news_post.status, "Published")
+            self.assertIsNotNone(self.news_post.published_at)
+            
+            notification = Notification.objects.filter(
+                header="News Publication Approved",
+                for_user=self.student
+            ).first()
+            
+            self.assertIsNotNone(notification)
+            self.assertTrue(notification.is_important)
+            expected_body = f"Your news publication request for '{self.news_post.title}' has been approved."
+            self.assertEqual(notification.body, expected_body)
+            
+        finally:
+            timezone.now = original_now
     
-    @freeze_time("2025-03-27 12:00:00")
     def test_reject_publication_request(self):
-        """Test successful rejection of a publication request"""
         self.client.force_authenticate(user=self.admin_user)
         
-        response = self.client.put(
-            self.get_detail_url(self.pending_request.id),
-            {
-                'status': 'Rejected',
-                'admin_notes': 'Needs more details'
-            },
-            format='json'
-        )
+        fixed_time = datetime.datetime(2025, 3, 27, 12, 0, 0, tzinfo=timezone.utc)
+        original_now = timezone.now
         
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        
-        
-        self.pending_request.refresh_from_db()
-        self.news_post.refresh_from_db()
-        
-        
-        self.assertEqual(self.pending_request.status, "Rejected")
-        self.assertEqual(self.pending_request.reviewed_by, self.admin_user)
-        self.assertEqual(self.pending_request.admin_notes, "Needs more details")
-        
-        
-        self.assertEqual(self.news_post.status, "Rejected")
-        
-        
-        notification = Notification.objects.filter(
-            header="News Publication Rejected",
-            for_user=self.student
-        ).first()
-        
-        self.assertIsNotNone(notification)
-        self.assertTrue(notification.is_important)
-        expected_body = f"Your news publication request for '{self.news_post.title}' has been rejected. Admin notes: Needs more details"
-        self.assertEqual(notification.body, expected_body)
+        try:
+            timezone.now = lambda: fixed_time
+            
+            response = self.client.put(
+                self.get_detail_url(self.pending_request.id),
+                {
+                    'status': 'Rejected',
+                    'admin_notes': 'Needs more details'
+                },
+                format='json'
+            )
+            
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            
+            self.pending_request.refresh_from_db()
+            self.news_post.refresh_from_db()
+            
+            self.assertEqual(self.pending_request.status, "Rejected")
+            self.assertEqual(self.pending_request.reviewed_by, self.admin_user)
+            self.assertEqual(self.pending_request.admin_notes, "Needs more details")
+            
+            self.assertEqual(self.news_post.status, "Rejected")
+            
+            notification = Notification.objects.filter(
+                header="News Publication Rejected",
+                for_user=self.student
+            ).first()
+            
+            self.assertIsNotNone(notification)
+            self.assertTrue(notification.is_important)
+            expected_body = f"Your news publication request for '{self.news_post.title}' has been rejected. Admin notes: Needs more details"
+            self.assertEqual(notification.body, expected_body)
+            
+        finally:
+            timezone.now = original_now
     
     def test_reject_without_admin_notes(self):
         """Test rejection without admin notes"""
@@ -253,7 +263,6 @@ class TestAdminNewsApprovalView(APITestCase):
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         
-        
         notification = Notification.objects.filter(
             header="News Publication Rejected",
             for_user=self.student
@@ -264,7 +273,7 @@ class TestAdminNewsApprovalView(APITestCase):
         self.assertEqual(notification.body, expected_body)
 
     def tearDown(self):
-        
+        # Clean up files
         for society in Society.objects.all():
             if society.icon:
                 try:

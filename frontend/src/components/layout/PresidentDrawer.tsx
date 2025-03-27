@@ -42,19 +42,20 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
   location,
 }) => {
   const [selected, setSelected] = useState("Dashboard");
-  const [student, setStudent] = useState<any>({});
+  const [student, setStudent] = useState<any>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchStudentData = async () => {
-      try {
-        const response = await apiClient.get("/api/user/current");
-        setStudent(response.data);
-      } catch (error) {
-        console.error("Error retrieving student:", error);
-        alert("Failed to retrieve student. Please contact an administrator.");
-      }
-    };  
+      const fetchStudentData = async () => {
+        try {
+          const response = await apiClient.get("/api/user/current");
+          setStudent(response.data);
+          console.log(response.data);
+        } catch (error) {
+          console.error("Error retrieving student:", error);
+          alert("Failed to retrieve student. Please contact an administrator.");
+        }
+      };  
     fetchStudentData();
   }, []);
 
@@ -95,14 +96,14 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
           <Box sx={{ textAlign: "center" }}>
             <Link to="/student/profile" style={{ textDecoration: "none", color: "inherit" }}>
               <img
-                src={student?.icon}
-                alt={`${student?.username || 'User'} icon`}
-                style={{
-                  width: "72px",
-                  height: "72px",
-                  borderRadius: "50%",
-                  margin: "0 auto"
-                }}
+              src={student?.icon}
+              alt={`${student?.username || 'User'} icon`}
+              style={{
+                width: "72px",
+                height: "72px",
+                borderRadius: "50%",
+                margin: "0 auto"
+              }}
               />
               <Typography variant="h6" fontWeight="bold" sx={{ mt: "10px" }}>
                 {student?.first_name} {student?.last_name}
@@ -187,14 +188,12 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
           </Typography>
         </Box>
       )}
-      
-      {/* Only render this section if student.president_of exists */}
-      {student?.president_of && (
-        <List>
+      <List>
+        {student && student.president_of ? (
           <ListItem disablePadding>
             <ListItemButton
               component={Link}
-              to={`/president-page/${student.president_of}`}
+              to={"/president-page/" + student.president_of}
               selected={selected === "Manage My Societies"}
               onClick={() => setSelected("Manage My Societies")}
               sx={{ justifyContent: drawer ? "initial" : "center", px: 2.5 }}
@@ -211,8 +210,8 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
               {drawer && <ListItemText primary="Manage My Societies" />}
             </ListItemButton>
           </ListItem>
-        </List>
-      )}
+        ) : null}
+      </List>
       <Divider />
 
       {/* Logout Item */}
