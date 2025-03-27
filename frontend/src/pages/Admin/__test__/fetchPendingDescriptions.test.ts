@@ -52,7 +52,10 @@ describe("fetchPendingDescriptions", () => {
     
     // Assert expectations
     expect(apiClient.get).toHaveBeenCalledWith(apiPaths.USER.PENDINGDESCRIPTIONREQUEST);
-    expect(console.error).toHaveBeenCalledWith("Error fetching pending descriptions:", mockError);
+    expect(console.error).toHaveBeenCalledWith(
+      "Error making GET request to /api/pending-descriptions:", 
+      mockError
+    );
     expect(result).toBeUndefined();
   });
 });
