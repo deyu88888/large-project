@@ -15,7 +15,7 @@ import { Formik, Form, FormikHelpers, FormikProps } from "formik";
 import * as yup from "yup";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import Header from "../../components/Header";
-import CircularLoader from "../../components/loading/circular-loader";
+import CircularLoader from "../../components/loading/CircularLoader";
 import { apiClient, apiPaths } from "../../api";
 import { useSettingsStore } from "../../stores/settings-store";
 import { useAuthStore } from "../../stores/auth-store";

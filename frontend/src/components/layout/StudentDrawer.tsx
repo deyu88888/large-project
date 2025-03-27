@@ -21,7 +21,7 @@ import InboxIcon from "@mui/icons-material/MoveToInbox";
 import GroupAddOutlinedIcon from "@mui/icons-material/GroupAddOutlined";
 import LogoutIcon from '@mui/icons-material/Logout';
 import NewspaperIcon from '@mui/icons-material/Newspaper';
-import { CustomDrawer, CustomDrawerHeader } from "./drawer/CustomDrawer";
+import { CustomDrawer, CustomDrawerHeader } from "./CustomDrawer";
 import ReportProblemOutlinedIcon from "@mui/icons-material/ReportProblemOutlined";
 import Groups2Icon from '@mui/icons-material/Groups2';
 

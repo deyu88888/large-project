@@ -210,7 +210,6 @@ class SocietyShowreelModelTestCase(TestCase):
         self.assertEqual(self.society.showreel_images.count(), 9)
         
         # Now create one more image. Since the society will have 10 images, this should be allowed for an existing instance?
-        # Note: The max images check only applies to new instances (i.e., without a primary key).
         new_showreel = SocietyShowreel(
             society=self.society,
             caption="Tenth Image",
