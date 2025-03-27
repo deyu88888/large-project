@@ -28,6 +28,7 @@ society_showreel/
 # Env
 .env
 .env.local
+.env.prod
 
 # Created by https://www.toptal.com/developers/gitignore/api/django,react,macos,windows
 # Edit at https://www.toptal.com/developers/gitignore?templates=django,react,macos,windows
