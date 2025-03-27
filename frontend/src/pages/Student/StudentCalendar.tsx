@@ -678,9 +678,6 @@ const useRsvpHandler = (
     try {
       setRsvpLoading(true);
 
-      // Add logging to help debug the request
-      console.log("Sending RSVP request with:", { event_id: eventId });
-
       if (isAttending) {
         await apiClient.post("/api/events/rsvp/", { event_id: eventId });
       } else {

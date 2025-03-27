@@ -77,7 +77,6 @@ export const CustomDrawer: any= styled(MuiDrawer, {
       }),
 }));
 
-// Optional: Add display names for debugging
 CustomDrawerHeader.displayName = "CustomDrawerHeader";
 CustomAppBar.displayName = "CustomAppBar";
 CustomDrawer.displayName = "CustomDrawer";

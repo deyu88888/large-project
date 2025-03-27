@@ -1,4 +1,4 @@
-import CircularLoader from "./circular-loader";
+import CircularLoader from "./CircularLoader";
 
 export function LoadingView() {
   return (

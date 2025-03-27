@@ -54,22 +54,22 @@ apiClient.interceptors.request.use(
 // ---------------------------------------------------------------------------
 export const apiPaths = {
   USER: {
-    LOGIN: "/api/user/login", // TODO: DONT ADD BACKSLASH
-    REGISTER: "/api/user/register", // TODO: DONT ADD BACKSLASH
+    LOGIN: "/api/user/login",
+    REGISTER: "/api/user/register",
     REQUEST_OTP: "/api/verification/request-otp",
     VERIFY_OTP: "/api/verification/verify-otp",
-    REFRESH: "/api/user/token/refresh", // TODO: DONT ADD BACKSLASH
-    CURRENT: "/api/user/current/", // TODO: DONT ADD BACKSLASH
-    USERSTATS: "/api/admin/user-stats/", // TODO: DONT REMOVE BACKSLASH
-    SOCIETY: "/api/admin/society/request/approved", // TODO: DONT ADD BACKSLASH
-    REJECTEDSOCIETY: "/api/admin/society/request/rejected", // TODO: DONT ADD BACKSLASH
-    STUDENTS: "/api/admin/student", // student list for admins
-    ADMIN: "/api/admin/admin", // admin list for admins
-    PENDINGSOCIETYREQUEST: "/api/admin/society/request/pending", // TODO: DONT ADD BACKSLASH
-    PROFILE: "/api/user/profile", // TODO: DONT ADD BACKSLASH
-    REPORT: "/api/admin/report-to-admin", // TODO: DONT ADD BACKSLASH
-    PENDINGEVENTREQUEST: "/api/event/request/pending", // TODO: DONT ADD BACKSLASH
-    REJECTEDEVENT: "/api/admin-panel/rejected-event", // TODO: DONT ADD BACKSLASH
+    REFRESH: "/api/user/token/refresh",
+    CURRENT: "/api/user/current/",
+    USERSTATS: "/api/admin/user-stats/",
+    SOCIETY: "/api/admin/society/request/approved",
+    REJECTEDSOCIETY: "/api/admin/society/request/rejected",
+    STUDENTS: "/api/admin/student",
+    ADMIN: "/api/admin/admin",
+    PENDINGSOCIETYREQUEST: "/api/admin/society/request/pending",
+    PROFILE: "/api/user/profile",
+    REPORT: "/api/admin/report-to-admin",
+    PENDINGEVENTREQUEST: "/api/event/request/pending",
+    REJECTEDEVENT: "/api/admin-panel/rejected-event",
     PENDINGDESCRIPTIONREQUEST: "/api/admin/description/request/pending",
     BASE: "/api/users",
 
@@ -78,7 +78,7 @@ export const apiPaths = {
     ADMINSTUDENTVIEW: (studentId: number) =>
       `/api/admin/manage-student/${studentId}`,
     ADMINSOCIETYVIEW: (societyId: number) =>
-      `/api/admin/manage-society/${societyId}`, // admin society view
+      `/api/admin/manage-society/${societyId}`,
     ADMINEVENTVIEW: (eventId: number) => `/api/admin/manage-event/${eventId}`,
     DELETE: (targetType: string, targetId: number) =>
       `/api/admin/delete/${targetType}/${targetId}`,
@@ -89,8 +89,8 @@ export const apiPaths = {
   },
   SOCIETY: {
     All: "/api/dashboard/all-societies",
-    POPULAR_SOCIETIES: "/api/dashboard/popular-societies/", // TODO: DONT ADD BACKSLASH
-    RECOMMENDED_SOCIETIES: "/api/recommendations/", // Endpoint for recommendations
+    POPULAR_SOCIETIES: "/api/dashboard/popular-societies/",
+    RECOMMENDED_SOCIETIES: "/api/recommendations/",
     RECOMMENDATION_FEEDBACK: (id: number) =>
       `/api/recommendations/${id}/feedback/`,
     RECOMMENDATION_EXPLANATION: (id: number) =>
@@ -102,15 +102,14 @@ export const apiPaths = {
     DETAIL_REQUEST: `/api/admin/society-detail-request/`,
   },
   EVENTS: {
-    ALL: "/api/events", // TODO: DONT ADD BACKSLASH
-    PENDINGEVENTREQUEST: "api/admin/society/event/pending", // TODO: DONT ADD BACKSLASH
-    UPDATEENEVENTREQUEST: "api/admin/society/event/request", // TODO: DONT ADD BACKSLASH
-    APPROVEDEVENTLIST: "api/admin/society/event/approved", // TODO: DONT ADD BACKSLASH
-    REJECTEDEVENTLIST: "api/admin/society/event/rejected", // TODO: DONT ADD BACKSLASH
+    ALL: "/api/events",
+    PENDINGEVENTREQUEST: "api/admin/society/event/pending",
+    UPDATEENEVENTREQUEST: "api/admin/society/event/request",
+    APPROVEDEVENTLIST: "api/admin/society/event/approved",
+    REJECTEDEVENTLIST: "api/admin/society/event/rejected",
   },
 };
 
-// Enhanced Society interface
 export interface Society {
   id: number;
   name: string;
