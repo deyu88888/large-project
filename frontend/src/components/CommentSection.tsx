@@ -37,7 +37,6 @@ export function CommentSection({ eventId }: { eventId: number }) {
     apiClient
       .get(`/api/comments/?event_id=${eventId}`)
       .then((res) => {
-        console.log("Fetched comments:", res.data);
         setComments(res.data);
       })
       .catch((err) => console.error("Error fetching comments:", err))

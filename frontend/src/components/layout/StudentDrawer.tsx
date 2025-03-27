@@ -34,7 +34,6 @@ interface StudentDrawerProps {
 const StudentDrawer: React.FC<StudentDrawerProps> = ({
   drawer,
   toggleDrawer,
-  location,
 }) => {
   const [selected, setSelected] = useState("Dashboard");
   const [student, setStudent] = useState<any>();

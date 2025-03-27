@@ -1,7 +1,6 @@
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
 import {
-  Grid,
   TextField,
   Button,
   Typography,
@@ -11,6 +10,7 @@ import {
 import { apiClient, apiPaths } from "../../api";
 import { User } from "../../types/user/user";
 import { tokens } from "../../theme/theme";
+import React from "react";
 
 interface SnackbarData {
   open: boolean;
@@ -161,111 +161,106 @@ export default function ProfileForm({
               <Typography variant="h5">Update Profile</Typography>
             </Divider>
 
-            <Grid container spacing={3}>
+            <Box
+              display="flex"
+              flexDirection="column"
+              gap={3}
+              sx={{ maxWidth: 1000, mx: "auto", mt: 2 }}
+            >
               {/* First Name */}
-              <Grid
-                size={{
-                  xs: 12,
+              <TextField
+                fullWidth
+                name="first_name"
+                label="First Name"
+                variant="filled"
+                value={values.first_name}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                error={touched.first_name && Boolean(errors.first_name)}
+                helperText={touched.first_name && errors.first_name}
+                InputLabelProps={{ style: { color: colors.grey[300] } }}
+                InputProps={{
+                  style: {
+                    color: colors.grey[100],
+                    backgroundColor: isDark
+                      ? colors.primary[600]
+                      : colors.primary[0],
+                  },
                 }}
-              >
-                <TextField
-                  fullWidth
-                  name="first_name"
-                  label="First Name"
-                  variant="filled"
-                  value={values.first_name}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  error={touched.first_name && Boolean(errors.first_name)}
-                  helperText={touched.first_name && errors.first_name}
-                  InputLabelProps={{ style: { color: colors.grey[300] } }}
-                  InputProps={{
-                    style: {
-                      color: colors.grey[100],
-                      backgroundColor: isDark
-                        ? colors.primary[600]
-                        : colors.primary[0],
-                    },
-                  }}
-                />
-              </Grid>
+              />
 
               {/* Last Name */}
-              <Grid size={{ xs: 12 }}>
-                <TextField
-                  fullWidth
-                  name="last_name"
-                  label="Last Name"
-                  variant="filled"
-                  value={values.last_name}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  error={touched.last_name && Boolean(errors.last_name)}
-                  helperText={touched.last_name && errors.last_name}
-                  InputLabelProps={{ style: { color: colors.grey[300] } }}
-                  InputProps={{
-                    style: {
-                      color: colors.grey[100],
-                      backgroundColor: isDark
-                        ? colors.primary[600]
-                        : colors.primary[0],
-                    },
-                  }}
-                />
-              </Grid>
+              <TextField
+                fullWidth
+                name="last_name"
+                label="Last Name"
+                variant="filled"
+                value={values.last_name}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                error={touched.last_name && Boolean(errors.last_name)}
+                helperText={touched.last_name && errors.last_name}
+                InputLabelProps={{ style: { color: colors.grey[300] } }}
+                InputProps={{
+                  style: {
+                    color: colors.grey[100],
+                    backgroundColor: isDark
+                      ? colors.primary[600]
+                      : colors.primary[0],
+                  },
+                }}
+              />
 
               {/* Email */}
-              <Grid size={{ xs: 12 }}>
-                <TextField
-                  fullWidth
-                  name="email"
-                  label="Email"
-                  variant="filled"
-                  value={values.email}
-                  onChange={(e) => {
-                    handleChange(e);
-                    setOtpSent(false);
-                    setOtpMessage("");
-                    setEmailVerified(false);
-                  }}
-                  onBlur={async (e) => {
-                    handleBlur(e);
-                    const newEmail = e.target.value;
-                    if (newEmail.toLowerCase() !== user.email.toLowerCase()) {
-                      try {
-                        const res = await apiClient.post(
-                          "/api/verification/check-email",
-                          { email: newEmail }
+              <TextField
+                fullWidth
+                name="email"
+                label="Email"
+                variant="filled"
+                value={values.email}
+                onChange={(e) => {
+                  handleChange(e);
+                  setOtpSent(false);
+                  setOtpMessage("");
+                  setEmailVerified(false);
+                }}
+                onBlur={async (e) => {
+                  handleBlur(e);
+                  const newEmail = e.target.value;
+                  if (newEmail.toLowerCase() !== user.email.toLowerCase()) {
+                    try {
+                      const res = await apiClient.post(
+                        "/api/verification/check-email",
+                        { email: newEmail }
+                      );
+                      if (res.data.inUse) {
+                        setFieldError(
+                          "email",
+                          "This email is already in use."
                         );
-                        if (res.data.inUse) {
-                          setFieldError(
-                            "email",
-                            "This email is already in use."
-                          );
-                        }
-                      } catch (err) {
-                        setFieldError("email", "Unable to verify email.");
-                        console.error(err);
                       }
+                    } catch (err) {
+                      setFieldError("email", "Unable to verify email.");
+                      console.error(err);
                     }
-                  }}
-                  error={touched.email && Boolean(errors.email)}
-                  helperText={touched.email && errors.email}
-                  InputLabelProps={{ style: { color: colors.grey[300] } }}
-                  InputProps={{
-                    style: {
-                      color: colors.grey[100],
-                      backgroundColor: isDark
-                        ? colors.primary[600]
-                        : colors.primary[0],
-                    },
-                  }}
-                />
-              </Grid>
+                  }
+                }}
+                error={touched.email && Boolean(errors.email)}
+                helperText={touched.email && errors.email}
+                InputLabelProps={{ style: { color: colors.grey[300] } }}
+                InputProps={{
+                  style: {
+                    color: colors.grey[100],
+                    backgroundColor: isDark
+                      ? colors.primary[600]
+                      : colors.primary[0],
+                  },
+                }}
+              />
 
               {/* OTP */}
               {values.email.toLowerCase() !== user.email.toLowerCase() && (
-                <Grid size={{ xs: 12 }}>
+                <>
                   {!otpSent ? (
                     <Button
                       variant="outlined"
@@ -308,37 +303,35 @@ export default function ProfileForm({
                       </Button>
                     </>
                   )}
-                </Grid>
+                </>
               )}
 
               {/* Submit */}
-              <Grid size={{ xs: 12 }}>
-                <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    disabled={
-                      isSubmitting ||
-                      (values.email.toLowerCase() !==
-                        user.email.toLowerCase() &&
-                        !emailVerified)
-                    }
-                    sx={{
-                      backgroundColor: colors.blueAccent[600],
-                      color: colors.grey[100],
-                      fontSize: "14px",
-                      fontWeight: "bold",
-                      padding: "10px 20px",
-                      "&:hover": {
-                        backgroundColor: colors.blueAccent[500],
-                      },
-                    }}
-                  >
-                    Update Profile
-                  </Button>
-                </Box>
-              </Grid>
-            </Grid>
+              <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  disabled={
+                    isSubmitting ||
+                    (values.email.toLowerCase() !==
+                      user.email.toLowerCase() &&
+                      !emailVerified)
+                  }
+                  sx={{
+                    backgroundColor: colors.blueAccent[600],
+                    color: colors.grey[100],
+                    fontSize: "14px",
+                    fontWeight: "bold",
+                    padding: "10px 20px",
+                    "&:hover": {
+                      backgroundColor: colors.blueAccent[500],
+                    },
+                  }}
+                >
+                  Update Profile
+                </Button>
+              </Box>
+            </Box>
           </Form>
         );
       }}
