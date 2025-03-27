@@ -59,7 +59,7 @@ class RequestTestCase(TestCase):
         self.request.save()
         self.assertEqual(now.hour, self.request.requested_at.hour)
         self.assertEqual(now.minute, self.request.requested_at.minute)
-        self.assertEqual(now.second, self.request.requested_at.second)
+        self.assertAlmostEqual(now.second, self.request.requested_at.second)
 
     def test_approved_defaults_false(self):
         """Test Request.approved defaults to False"""
