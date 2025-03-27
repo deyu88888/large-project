@@ -25,7 +25,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     environment:
-      - VITE_API_BASE_URL=https://infiniteloop.space
+      - VITE_BACKEND_API_URL=infiniteloop.space
     container_name: frontend
     expose:
       - "80"

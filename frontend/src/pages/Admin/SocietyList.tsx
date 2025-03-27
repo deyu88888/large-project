@@ -16,9 +16,10 @@ import { useSettingsStore } from "../../stores/settings-store";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { Society } from '../../types';
 import { useNavigate } from "react-router-dom";
+import { getWebSocketUrl } from "../../utils/websocket";
 
 
-const WS_URL = "ws:";
+const WS_URL = getWebSocketUrl()
 const RECONNECT_DELAY = 5000;
 
 

@@ -24,6 +24,7 @@ import EmailIcon from "@mui/icons-material/Email";
 import ReportProblemIcon from "@mui/icons-material/ReportProblem";
 import { tokens } from "../theme/theme";
 import axios from "axios";
+import { apiClient } from "../api";
 
 const Support = () => {
   const theme = useTheme();
@@ -66,7 +67,7 @@ const Support = () => {
         subject: subject,
         details: message
       };
-      await axios.post("/api/dashboard/public-report", reportData);      
+      await apiClient.post("/api/dashboard/public-report", reportData);      
       setReportType("");
       setEmail("");
       setSubject("");

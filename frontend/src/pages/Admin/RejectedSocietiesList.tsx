@@ -6,6 +6,7 @@ import { tokens } from "../../theme/theme";
 import { useSettingsStore } from "../../stores/settings-store";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { Society } from '../../types';
+import { getWebSocketUrl } from "../../utils/websocket";
 
 /**
  * SocietyListRejected Component
@@ -19,7 +20,7 @@ const SocietyListRejected: React.FC = () => {
   const ws = useRef<WebSocket | null>(null);
   const { drawer } = useSettingsStore();
   const { searchTerm } = useContext(SearchContext);
-  const WEBSOCKET_URL = "ws:"
+  const WEBSOCKET_URL = getWebSocketUrl()
   const RECONNECT_TIMEOUT = 5000;
   
   /**

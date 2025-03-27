@@ -17,9 +17,9 @@ import {
 } from '@mui/material';
 import { tokens } from '../theme/theme';
 import { FaCalendarAlt, FaSearch } from 'react-icons/fa';
-jest.mock('axios')
 import axios from 'axios'
 import useAuthCheck from "../hooks/useAuthCheck";
+import { apiClient } from '../api';
 
 const SearchResultsPage = () => {
   const theme = useTheme();
@@ -43,7 +43,7 @@ const SearchResultsPage = () => {
     const fetchResults = async () => {
       setLoading(true);
       try {
-        const res = await axios.get(`/api/search/?q=${encodeURIComponent(queryParam)}`);
+        const res = await apiClient.get(`/api/search/?q=${encodeURIComponent(queryParam)}`);
         setResults(res.data);
       } catch (err) {
         console.error("Search failed", err);
@@ -225,9 +225,9 @@ const SearchResultsPage = () => {
   const renderTabContent = () => {
     if (!results) return null;
 
-    const hasUsers = results.students.length > 0;
-    const hasEvents = results.events.length > 0;
-    const hasSocieties = results.societies.length > 0;
+    const hasUsers = results.students?.length > 0;
+    const hasEvents = results.events?.length > 0;
+    const hasSocieties = results.societies?.length > 0;
 
     switch (activeTab) {
       case 'all':

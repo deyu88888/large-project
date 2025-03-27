@@ -7,9 +7,10 @@
 
 import axios from "axios";
 import { ACCESS_TOKEN } from "./constants";
+import { getApiUrl } from "./utils/websocket";
 function isTokenValid(token: string): boolean {
   try {
-    const payload = JSON.parse(atob(token.split('.')[1]));
+    const payload = JSON.parse(atob(token.split(".")[1]));
     return payload.exp * 1000 > Date.now();
   } catch (err) {
     console.warn("Invalid token format", err);
@@ -20,7 +21,7 @@ function isTokenValid(token: string): boolean {
 // ---------------------------------------------------------------------------
 // 1) BASE API CONFIGURATION
 // ---------------------------------------------------------------------------
-const apiUrl = import.meta.env.VITE_API_BASE_URL || "https://infiniteloop.space";
+const apiUrl = getApiUrl();
 
 export const apiClient = axios.create({
   baseURL: apiUrl,
@@ -53,52 +54,57 @@ apiClient.interceptors.request.use(
 // ---------------------------------------------------------------------------
 export const apiPaths = {
   USER: {
-    LOGIN: "/api/user/login",  // TODO: DONT ADD BACKSLASH
-    REGISTER: "/api/user/register",   // TODO: DONT ADD BACKSLASH
+    LOGIN: "/api/user/login", // TODO: DONT ADD BACKSLASH
+    REGISTER: "/api/user/register", // TODO: DONT ADD BACKSLASH
     REQUEST_OTP: "/api/verification/request-otp",
     VERIFY_OTP: "/api/verification/verify-otp",
     REFRESH: "/api/user/token/refresh", // TODO: DONT ADD BACKSLASH
     CURRENT: "/api/user/current/", // TODO: DONT ADD BACKSLASH
     USERSTATS: "/api/admin/user-stats/", // TODO: DONT REMOVE BACKSLASH
-    SOCIETY: "/api/admin/society/request/approved",  // TODO: DONT ADD BACKSLASH
+    SOCIETY: "/api/admin/society/request/approved", // TODO: DONT ADD BACKSLASH
     REJECTEDSOCIETY: "/api/admin/society/request/rejected", // TODO: DONT ADD BACKSLASH
-    STUDENTS: "/api/admin/student",  // student list for admins
+    STUDENTS: "/api/admin/student", // student list for admins
     ADMIN: "/api/admin/admin", // admin list for admins
-    PENDINGSOCIETYREQUEST: "/api/admin/society/request/pending",  // TODO: DONT ADD BACKSLASH
+    PENDINGSOCIETYREQUEST: "/api/admin/society/request/pending", // TODO: DONT ADD BACKSLASH
     PROFILE: "/api/user/profile", // TODO: DONT ADD BACKSLASH
     REPORT: "/api/admin/report-to-admin", // TODO: DONT ADD BACKSLASH
-    PENDINGEVENTREQUEST: "/api/event/request/pending",  // TODO: DONT ADD BACKSLASH
+    PENDINGEVENTREQUEST: "/api/event/request/pending", // TODO: DONT ADD BACKSLASH
     REJECTEDEVENT: "/api/admin-panel/rejected-event", // TODO: DONT ADD BACKSLASH
     PENDINGDESCRIPTIONREQUEST: "/api/admin/description/request/pending",
     BASE: "/api/users",
 
     ADMINVIEW: (adminId: number) => `/api/admin/manage-admin/${adminId}`,
 
-    ADMINSTUDENTVIEW: (studentId: number) => `/api/admin/manage-student/${studentId}`,
-    ADMINSOCIETYVIEW: (societyId: number) => `/api/admin/manage-society/${societyId}`, // admin society view
+    ADMINSTUDENTVIEW: (studentId: number) =>
+      `/api/admin/manage-student/${studentId}`,
+    ADMINSOCIETYVIEW: (societyId: number) =>
+      `/api/admin/manage-society/${societyId}`, // admin society view
     ADMINEVENTVIEW: (eventId: number) => `/api/admin/manage-event/${eventId}`,
-    DELETE: (targetType: string, targetId: number) => `/api/admin/delete/${targetType}/${targetId}`,
+    DELETE: (targetType: string, targetId: number) =>
+      `/api/admin/delete/${targetType}/${targetId}`,
     UNDO_DELETE: (logId: number) => `/api/undo-delete/${logId}`,
     ACTIVITYLOG: "/api/admin/activity-log",
-    DELETEACTIVITYLOG: (logId: number) => `/api/admin/delete-activity-log/${logId}`,
+    DELETEACTIVITYLOG: (logId: number) =>
+      `/api/admin/delete-activity-log/${logId}`,
   },
   SOCIETY: {
     All: "/api/dashboard/all-societies",
-    POPULAR_SOCIETIES: "/api/dashboard/popular-societies/",  // TODO: DONT ADD BACKSLASH
+    POPULAR_SOCIETIES: "/api/dashboard/popular-societies/", // TODO: DONT ADD BACKSLASH
     RECOMMENDED_SOCIETIES: "/api/recommendations/", // Endpoint for recommendations
     RECOMMENDATION_FEEDBACK: (id: number) =>
       `/api/recommendations/${id}/feedback/`,
     RECOMMENDATION_EXPLANATION: (id: number) =>
       `/api/recommendations/${id}/explanation/`,
     RECOMMENDATION_FEEDBACK_LIST: "/api/recommendations/feedback/",
-    RECOMMENDATION_FEEDBACK_ANALYTICS: "/api/recommendations/feedback/analytics/",
+    RECOMMENDATION_FEEDBACK_ANALYTICS:
+      "/api/recommendations/feedback/analytics/",
     MANAGE_DETAILS: (id: number) => `/api/society/manage/${id}/`,
     DETAIL_REQUEST: `/api/admin/society-detail-request/`,
   },
   EVENTS: {
     ALL: "/api/events", // TODO: DONT ADD BACKSLASH
-    PENDINGEVENTREQUEST: "api/admin/society/event/pending",  // TODO: DONT ADD BACKSLASH
-    UPDATEENEVENTREQUEST: "api/admin/society/event/request",  // TODO: DONT ADD BACKSLASH
+    PENDINGEVENTREQUEST: "api/admin/society/event/pending", // TODO: DONT ADD BACKSLASH
+    UPDATEENEVENTREQUEST: "api/admin/society/event/request", // TODO: DONT ADD BACKSLASH
     APPROVEDEVENTLIST: "api/admin/society/event/approved", // TODO: DONT ADD BACKSLASH
     REJECTEDEVENTLIST: "api/admin/society/event/rejected", // TODO: DONT ADD BACKSLASH
   },
@@ -215,9 +221,14 @@ export const getRecommendedSocieties = async (limit: number = 5) => {
     return response.data as SocietyRecommendation[];
   } catch (error: any) {
     // For 404/405 errors (no recommendations available)
-    if (error.response && (error.response.status === 404 || error.response.status === 405)) {
-      console.log("No specific recommendations available - showing default societies instead.");
-      
+    if (
+      error.response &&
+      (error.response.status === 404 || error.response.status === 405)
+    ) {
+      console.log(
+        "No specific recommendations available - showing default societies instead."
+      );
+
       // Try to fetch fallback societies immediately
       try {
         const fallbackResponse = await apiClient.get("/api/society/join");
@@ -234,7 +245,7 @@ export const getRecommendedSocieties = async (limit: number = 5) => {
         return [];
       }
     }
-    
+
     // For other errors, log and throw as before
     console.error(
       "Error fetching recommended societies:",
@@ -312,35 +323,43 @@ export const getRecommendationFeedback = async (societyId: number) => {
 
   try {
     console.log(`🔍 DEBUG: Starting feedback request for society ${societyId}`);
-    
+
     // First try the OPTIONS request to see if that works
     const optionsResult = await fetch(apiUrl + debugLog.endpoint, {
-      method: 'OPTIONS',
+      method: "OPTIONS",
       headers: {
-        'Content-Type': 'application/json'
-      }
+        "Content-Type": "application/json",
+      },
     });
-    
+
     debugLog.optionsStatus = optionsResult.status;
-    console.log(`🔍 DEBUG: OPTIONS request result: ${optionsResult.status} ${optionsResult.statusText}`);
-    
+    console.log(
+      `🔍 DEBUG: OPTIONS request result: ${optionsResult.status} ${optionsResult.statusText}`
+    );
+
     // Try a different approach - using fetch directly
     const token = localStorage.getItem(ACCESS_TOKEN);
-    console.log(`🔍 DEBUG: Using token: ${token ? 'Yes (length: ' + token.length + ')' : 'No'}`);
-    
+    console.log(
+      `🔍 DEBUG: Using token: ${
+        token ? "Yes (length: " + token.length + ")" : "No"
+      }`
+    );
+
     const response = await fetch(apiUrl + debugLog.endpoint, {
-      method: 'GET',
+      method: "GET",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': token ? `Bearer ${token}` : '',
-        'X-Debug-Info': 'Testing-Direct-Fetch'
-      }
+        "Content-Type": "application/json",
+        Authorization: token ? `Bearer ${token}` : "",
+        "X-Debug-Info": "Testing-Direct-Fetch",
+      },
     });
-    
+
     debugLog.status = response.status;
     debugLog.statusText = response.statusText;
-    console.log(`🔍 DEBUG: GET request result: ${response.status} ${response.statusText}`);
-    
+    console.log(
+      `🔍 DEBUG: GET request result: ${response.status} ${response.statusText}`
+    );
+
     // If successful, parse the response
     if (response.ok) {
       const data = await response.json();
@@ -354,23 +373,25 @@ export const getRecommendationFeedback = async (societyId: number) => {
       } catch (e) {
         console.log(`🔍 DEBUG: Couldn't read error response`);
       }
-      
+
       // For 405 errors, let's try a different method as a test
       if (response.status === 405) {
-        console.log(`🔍 DEBUG: Got 405, trying POST instead to see if endpoint exists`);
+        console.log(
+          `🔍 DEBUG: Got 405, trying POST instead to see if endpoint exists`
+        );
         const postCheckResponse = await fetch(apiUrl + debugLog.endpoint, {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': token ? `Bearer ${token}` : ''
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : "",
           },
-          body: JSON.stringify({ debug_check: true })
+          body: JSON.stringify({ debug_check: true }),
         });
-        
+
         console.log(`🔍 DEBUG: POST check result: ${postCheckResponse.status}`);
       }
     }
-    
+
     // Always return null for now to avoid UI issues
     return null;
   } catch (error: any) {
@@ -421,7 +442,10 @@ export const getAllEvents = async () => {
     const response = await apiClient.get("/api/events/all");
     return response.data;
   } catch (error: any) {
-    console.error("Error fetching events:", error.response?.data || error.message);
+    console.error(
+      "Error fetching events:",
+      error.response?.data || error.message
+    );
     throw error;
   }
 };
@@ -444,7 +468,9 @@ export const getUpcomingEvents = async () => {
  * Fetch detail of a single news post by ID.
  * According to your backend, this also increments view count automatically.
  */
-export async function getNewsPostDetail(newsId: number): Promise<NewsPostDetail> {
+export async function getNewsPostDetail(
+  newsId: number
+): Promise<NewsPostDetail> {
   const response = await apiClient.get<NewsPostDetail>(`/api/news/${newsId}/`);
   return response.data;
 }
@@ -452,8 +478,12 @@ export async function getNewsPostDetail(newsId: number): Promise<NewsPostDetail>
 /**
  * Fetch top-level (and nested) comments for a specific news post.
  */
-export async function getNewsComments(newsId: number): Promise<NewsCommentData[]> {
-  const response = await apiClient.get<NewsCommentData[]>(`/api/news/${newsId}/comments/`);
+export async function getNewsComments(
+  newsId: number
+): Promise<NewsCommentData[]> {
+  const response = await apiClient.get<NewsCommentData[]>(
+    `/api/news/${newsId}/comments/`
+  );
   return response.data;
 }
 

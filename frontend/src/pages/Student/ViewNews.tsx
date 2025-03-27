@@ -3,6 +3,7 @@ import { useTheme } from "@mui/material/styles";
 import { tokens } from "../../theme/theme";
 import { News } from "../../types"; 
 import axios from "axios";
+import { apiClient } from "../../api";
 
 const ViewNews: React.FC = () => {
     const theme = useTheme();
@@ -42,7 +43,7 @@ const ViewNews: React.FC = () => {
 
     const markNewsAsRead = async (id: number) => {
         try {
-          await axios.post(`/api/news/${id}/mark-read`);
+          await apiClient.post(`/api/news/${id}/mark-read`);
           setNews(prevNews =>
             prevNews.map(item =>
               item.id === id ? { ...item, is_read: true } : item
