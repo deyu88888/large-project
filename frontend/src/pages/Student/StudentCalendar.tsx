@@ -137,33 +137,6 @@ const transformEvent = (event: EventData, societies: StudentCalendarProps['socie
   };
 };
 
-// Updated getEventStyle function with better error handling
-const getEventStyle = (societyId: number, isRsvp: boolean = false): React.CSSProperties => {
-  const colorOptions = [
-    "#6c5ce7",
-    "#00cec9",
-    "#fd79a8",
-    "#fdcb6e",
-    "#e17055",
-    "#0984e3",
-    "#00b894",
-  ];
-  // Ensure societyId is a valid number
-  const validSocietyId = typeof societyId === 'number' ? societyId : 0;
-  const colorIndex = Math.abs(validSocietyId % colorOptions.length);
-  const backgroundColor = colorOptions[colorIndex];
-  
-  return {
-    backgroundColor,
-    borderRadius: "8px",
-    opacity: 0.9,
-    color: "white",
-    border: isRsvp ? "2px solid #00ff00" : "1px solid #fff",
-    padding: "2px 4px",
-    boxShadow: "0 2px 4px rgba(0,0,0,0.25)",
-  };
-};
-
 // Component Functions
 const CustomEvent: React.FC<CustomEventProps> = ({ event }) => {
   const start = moment(event.start);
@@ -185,35 +158,21 @@ const CustomEvent: React.FC<CustomEventProps> = ({ event }) => {
   );
 };
 
-// Updated EventStyleGetter with null/undefined check
-const EventStyleGetter = ({ event }: EventStyleProps) => {
-  // Check if event is defined before accessing properties
-  if (!event || typeof event.societyId === 'undefined') {
-    // Return a default style if event or societyId is undefined
-    return {
-      style: {
-        backgroundColor: "#808080", // Default gray color
-        borderRadius: "8px",
-        opacity: 0.9,
-        color: "white",
-        border: "1px solid #fff",
-        padding: "2px 4px",
-        boxShadow: "0 2px 4px rgba(0,0,0,0.25)",
-      }
-    };
-  }
-  
-  return {
-    style: getEventStyle(event.societyId, event.rsvp),
-  };
-};
-
 const EventDialogTitle: React.FC<{
   selectedEvent: CalendarEvent;
-  style: React.CSSProperties;
-}> = ({ selectedEvent, style }) => {
+  eventStyleGetter: (event: CalendarEvent) => { style: React.CSSProperties };
+}> = ({ selectedEvent, eventStyleGetter }) => {
+  const backgroundColor = eventStyleGetter(selectedEvent).style.backgroundColor;
+  
   return (
-    <DialogTitle style={style}>
+    <DialogTitle
+      style={{
+        backgroundColor,
+        color: "#ffffff",
+        borderTopLeftRadius: "12px",
+        borderTopRightRadius: "12px",
+      }}
+    >
       {selectedEvent.title}
       {selectedEvent.rsvp && (
         <Chip
@@ -463,25 +422,30 @@ const EventDialog: React.FC<EventDialogProps> = ({
   
   if (!selectedEvent) return null;
   
-  // Add safety check for selectedEvent.societyId
-  const safeEventStyle = () => {
-    if (typeof selectedEvent.societyId === 'undefined') {
-      return {
-        backgroundColor: "#808080",
-        color: "#ffffff",
-        borderTopLeftRadius: "12px",
-        borderTopRightRadius: "12px",
-      };
-    }
+  const eventStyleGetter = (event: CalendarEvent) => {
+    const colorOptions = [
+      "#6c5ce7",
+      "#00cec9",
+      "#fd79a8",
+      "#fdcb6e",
+      "#e17055",
+      "#0984e3",
+      "#00b894",
+    ];
+    const colorIndex = Math.abs(event.societyId % colorOptions.length);
+    const backgroundColor = colorOptions[colorIndex];
     return {
-      backgroundColor: getEventStyle(selectedEvent.societyId, selectedEvent.rsvp).backgroundColor,
-      color: "#ffffff",
-      borderTopLeftRadius: "12px",
-      borderTopRightRadius: "12px",
+      style: {
+        backgroundColor,
+        borderRadius: "8px",
+        opacity: 0.9,
+        color: "white",
+        border: event.rsvp ? "2px solid #00ff00" : "1px solid #fff",
+        padding: "2px 4px",
+        boxShadow: "0 2px 4px rgba(0,0,0,0.25)",
+      },
     };
   };
-  
-  const titleStyle = safeEventStyle();
   
   return (
     <Dialog
@@ -497,7 +461,7 @@ const EventDialog: React.FC<EventDialogProps> = ({
         },
       }}
     >
-      <EventDialogTitle selectedEvent={selectedEvent} style={titleStyle} />
+      <EventDialogTitle selectedEvent={selectedEvent} eventStyleGetter={eventStyleGetter} />
       <EventDialogContent selectedEvent={selectedEvent} timezone={timezone} />
       <EventDialogActions
         selectedEvent={selectedEvent}
@@ -520,7 +484,7 @@ const useCalendarEvents = (
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   
-  const societyIds = useMemo(() => societies.map(s => s.id), [societies]);
+  const societyIds = useMemo(() => societies?.map(s => s.id) || [], [societies]);
   
   const transformEvents = (eventsData: EventData[]) => {
     try {
@@ -607,10 +571,10 @@ const useRsvpHandler = (setEvents: React.Dispatch<React.SetStateAction<CalendarE
       console.log("Sending RSVP request with:", { event_id: eventId });
       
       if (isAttending) {
-        // Try with the correct format the server expects
+        // Use URL with trailing slash as requested
         await apiClient.post("/api/events/rsvp/", { event_id: eventId });
       } else {
-        // Same for delete
+        // Use URL with trailing slash as requested
         await apiClient.delete("/api/events/rsvp/", { data: { event_id: eventId } });
       }
       
@@ -668,6 +632,32 @@ function StudentCalendar({
     handleRSVP 
   } = useRsvpHandler(setEvents, setSelectedEvent);
   
+  // Event styling function - directly copied from your working code
+  function eventStyleGetter(event: CalendarEvent) {
+    const colorOptions = [
+      "#6c5ce7",
+      "#00cec9",
+      "#fd79a8",
+      "#fdcb6e",
+      "#e17055",
+      "#0984e3",
+      "#00b894",
+    ];
+    const colorIndex = Math.abs(event.societyId % colorOptions.length);
+    const backgroundColor = colorOptions[colorIndex];
+    return {
+      style: {
+        backgroundColor,
+        borderRadius: "8px",
+        opacity: 0.9,
+        color: "white",
+        border: event.rsvp ? "2px solid #00ff00" : "1px solid #fff",
+        padding: "2px 4px",
+        boxShadow: "0 2px 4px rgba(0,0,0,0.25)",
+      },
+    };
+  }
+  
   // Memoized values
   const memoizedEvents = useMemo(() => events, [events]);
   const combinedError = error || rsvpError;
@@ -702,7 +692,7 @@ function StudentCalendar({
                 <CalendarContainer 
                   events={memoizedEvents}
                   handleSelectEvent={handleSelectEvent}
-                  eventStyleGetter={EventStyleGetter}
+                  eventStyleGetter={eventStyleGetter}
                   CustomEvent={CustomEvent}
                 />
               </div>
