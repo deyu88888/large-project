@@ -1,7 +1,13 @@
+import nltk
 from django.test import TestCase
 from api.nlp_similarity import text_similarity_analyzer
 from api.models import Society
 from api.recommendation_service import SocietyRecommender
+
+try:
+    nltk.data.find('tokenizers/punkt')
+except LookupError:
+    nltk.download('punkt')
 
 class TestRecommendationSystem(TestCase):
 
