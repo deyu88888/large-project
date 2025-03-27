@@ -4,11 +4,9 @@ import { vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import StartSociety from '../StartSociety';
-jest.mock('axios')
-import axios from 'axios'
-const mockedAxios = axios as jest.Mocked<typeof axios>
+import axios from 'axios';
 
-
+// Replace jest.mock with vi.mock
 vi.mock('axios', () => ({
   default: {
     post: vi.fn(),
@@ -87,7 +85,7 @@ describe('StartSociety', () => {
   });
 
   it('submits the form successfully and clears fields on a 201 response', async () => {
-    (axios.post as vi.Mock).mockResolvedValueOnce({ status: 201 });
+    (axios.post as unknown as vi.Mock).mockResolvedValueOnce({ status: 201 });
     renderComponent();
     const nameInput = screen.getByLabelText(/Society Name/i) as HTMLInputElement;
     const descriptionInput = screen.getByLabelText(/Description/i) as HTMLTextAreaElement;
@@ -108,7 +106,7 @@ describe('StartSociety', () => {
   });
 
   it('shows an error message when submission returns a non-201 response', async () => {
-    (axios.post as vi.Mock).mockResolvedValueOnce({ status: 400 });
+    (axios.post as unknown as vi.Mock).mockResolvedValueOnce({ status: 400 });
     renderComponent();
     const nameInput = screen.getByLabelText(/Society Name/i) as HTMLInputElement;
     const descriptionInput = screen.getByLabelText(/Description/i) as HTMLTextAreaElement;
@@ -125,7 +123,7 @@ describe('StartSociety', () => {
   });
 
   it('shows an error message when axios.post fails', async () => {
-    (axios.post as vi.Mock).mockRejectedValueOnce(new Error('Network error'));
+    (axios.post as unknown as vi.Mock).mockRejectedValueOnce(new Error('Network error'));
     renderComponent();
     const nameInput = screen.getByLabelText(/Society Name/i) as HTMLInputElement;
     const descriptionInput = screen.getByLabelText(/Description/i) as HTMLTextAreaElement;
@@ -149,7 +147,7 @@ describe('StartSociety', () => {
   });
 
   it('allows submitting a new request after success', async () => {
-    (axios.post as vi.Mock).mockResolvedValueOnce({ status: 201 });
+    (axios.post as unknown as vi.Mock).mockResolvedValueOnce({ status: 201 });
     renderComponent();
     const nameInput = screen.getByLabelText(/Society Name/i) as HTMLInputElement;
     const descriptionInput = screen.getByLabelText(/Description/i) as HTMLTextAreaElement;
@@ -163,7 +161,7 @@ describe('StartSociety', () => {
         screen.getByText(/Society creation request submitted successfully!/i)
       ).toBeInTheDocument()
     );
-    (axios.post as vi.Mock).mockResolvedValueOnce({ status: 201 });
+    (axios.post as unknown as vi.Mock).mockResolvedValueOnce({ status: 201 });
     await act(async () => {
       fireEvent.change(nameInput, { target: { value: 'Second Society' } });
       fireEvent.change(descriptionInput, { target: { value: 'Second description' } });
@@ -187,7 +185,7 @@ describe('StartSociety', () => {
       fireEvent.submit(screen.getByRole('button', { name: /Submit Request/i }));
     });
     expect(screen.getByText(/Please fill out all fields./i)).toBeInTheDocument();
-    (axios.post as vi.Mock).mockResolvedValueOnce({ status: 201 });
+    (axios.post as unknown as vi.Mock).mockResolvedValueOnce({ status: 201 });
     const nameInput = screen.getByLabelText(/Society Name/i) as HTMLInputElement;
     const descriptionInput = screen.getByLabelText(/Description/i) as HTMLTextAreaElement;
     await act(async () => {
@@ -204,7 +202,7 @@ describe('StartSociety', () => {
   });
 
   it('clears success message when form submission fails after a success', async () => {
-    (axios.post as vi.Mock).mockResolvedValueOnce({ status: 201 });
+    (axios.post as unknown as vi.Mock).mockResolvedValueOnce({ status: 201 });
     renderComponent();
     const nameInput = screen.getByLabelText(/Society Name/i) as HTMLInputElement;
     const descriptionInput = screen.getByLabelText(/Description/i) as HTMLTextAreaElement;
@@ -218,7 +216,7 @@ describe('StartSociety', () => {
         screen.getByText(/Society creation request submitted successfully!/i)
       ).toBeInTheDocument()
     );
-    (axios.post as vi.Mock).mockResolvedValueOnce({ status: 400 });
+    (axios.post as unknown as vi.Mock).mockResolvedValueOnce({ status: 400 });
     await act(async () => {
       fireEvent.change(nameInput, { target: { value: 'Another Society' } });
       fireEvent.change(descriptionInput, { target: { value: 'Another description' } });
@@ -239,7 +237,7 @@ describe('StartSociety', () => {
         data: { message: 'Society name already exists' },
       },
     };
-    (axios.post as vi.Mock).mockRejectedValueOnce(errorWithResponse);
+    (axios.post as unknown as vi.Mock).mockRejectedValueOnce(errorWithResponse);
     renderComponent();
     const nameInput = screen.getByLabelText(/Society Name/i) as HTMLInputElement;
     const descriptionInput = screen.getByLabelText(/Description/i) as HTMLTextAreaElement;
@@ -265,7 +263,7 @@ describe('StartSociety', () => {
       },
     };
     const consoleSpy = vi.spyOn(console, 'error');
-    (axios.post as vi.Mock).mockRejectedValueOnce(errorWithStatusCode);
+    (axios.post as unknown as vi.Mock).mockRejectedValueOnce(errorWithStatusCode);
     renderComponent();
     const nameInput = screen.getByLabelText(/Society Name/i) as HTMLInputElement;
     const descriptionInput = screen.getByLabelText(/Description/i) as HTMLTextAreaElement;
