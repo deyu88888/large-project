@@ -500,7 +500,8 @@ const useCalendarEvents = (
     setLoading(true);
     setError(null);
     try {
-      const response = await apiClient.get<EventData[]>("/api/events/");
+      // Updated API endpoint from "/api/events/" to "/events/all/"
+      const response = await apiClient.get<EventData[]>("/api/events/all/");
       if (!response.data) {
         throw new Error("No data received from API");
       }
@@ -571,11 +572,11 @@ const useRsvpHandler = (setEvents: React.Dispatch<React.SetStateAction<CalendarE
       console.log("Sending RSVP request with:", { event_id: eventId });
       
       if (isAttending) {
-        // Use URL with trailing slash as requested
-        await apiClient.post("/api/events/rsvp/", { event_id: eventId });
+        // Updated API endpoint from "/api/events/rsvp/" to "/events/rsvp/"
+        await apiClient.post("/events/rsvp/", { event_id: eventId });
       } else {
-        // Use URL with trailing slash as requested
-        await apiClient.delete("/api/events/rsvp/", { data: { event_id: eventId } });
+        // Updated API endpoint from "/api/events/rsvp/" to "/events/rsvp/"
+        await apiClient.delete("/events/rsvp/", { data: { event_id: eventId } });
       }
       
       setEvents(prev => prev.map(e => (e.id === eventId ? { ...e, rsvp: isAttending } : e)));
