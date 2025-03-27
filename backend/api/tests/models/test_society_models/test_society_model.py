@@ -3,7 +3,7 @@ from PIL import Image
 from django.core.files.base import ContentFile
 from django.core.exceptions import ValidationError
 from django.test import TestCase
-from api.models import Society, User, Student
+from api.models import Society, User, Student, validate_social_media_links
 from django.core.files.uploadedfile import SimpleUploadedFile
 from api.tests.file_deletion import delete_file
 
@@ -41,7 +41,7 @@ class SocietyModelTestCase(TestCase):
         )
         self.student2.save()
 
-        self.society = Society(
+        self.society = Society.objects.create(
             name='Tech',
             president=self.student1,
             approved_by=self.admin,
@@ -50,8 +50,8 @@ class SocietyModelTestCase(TestCase):
             membership_requirements="Members must attend at least 3 events per semester",
             upcoming_projects_or_plans="Plan to host a Tech Fest in May",
         )
-        self.society.save()
         self.society.society_members.add(self.student2)  # pylint: disable=no-member
+        self.society.save()
 
     def test_valid_society(self):
         """ Test to ensure valid societies are accepted """
@@ -235,3 +235,27 @@ class SocietyModelTestCase(TestCase):
         self.society.social_media_links = new_links
         self.society.save()
         self.assertEqual(self.society.social_media_links, new_links)
+
+    def test_social_media_links_not_dict(self):
+        """Test error when social_media_links is passed as a list"""
+        self.society.social_media_links = ["Email", "techsociety@example.com"]
+        with self.assertRaises(ValidationError):
+            self.society.save()
+
+    def test_invalid_social_media_links(self):
+        """Test error when invalid social_media_links are passed"""
+        self.society.social_media_links = {
+            "Email": "techsociety@example.com",
+            "Tiktok": "example.com",
+        }
+        with self.assertRaises(ValidationError):
+            self.society.save()
+
+    def test_validate_valid_social_media_links(self):
+        """Test valid social media links are validated"""
+        socials_dict = {
+            "Facebook": "https://www.facebook.com/kclsupage/",
+            "Instagram": "https://www.instagram.com/kclsu/",
+            "X": "https://x.com/kclsu",
+        }
+        validate_social_media_links(socials_dict)
