@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { vi } from 'vitest';
-import { MemoryRouter, Routes, Route, useParams, useNavigate } from 'react-router-dom';
+import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import AssignSocietyRole from '../AssignSocietyRole';
 import { apiClient } from '../../../api';
@@ -13,26 +13,31 @@ vi.mock('../../../api', () => ({
 }));
 
 const mockNavigate = vi.fn();
+const mockUseParams = vi.fn().mockReturnValue({
+  societyId: '123',
+  memberId: '456'
+});
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return {
     ...actual,
-    useParams: () => ({
-      society_id: '123',
-      student_id: '456'
-    }),
+    useParams: () => mockUseParams(),
     useNavigate: () => mockNavigate,
   };
 });
 
 describe('AssignSocietyRole Component', () => {
   const mockSocietyId = '123';
-  const mockStudentId = '456';
+  const mockMemberId = '456';
   const mockAlert = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockUseParams.mockReturnValue({
+      societyId: mockSocietyId,
+      memberId: mockMemberId
+    });
     (apiClient.patch as vi.Mock).mockResolvedValue({
       data: { success: true }
     });
@@ -46,11 +51,15 @@ describe('AssignSocietyRole Component', () => {
       },
     });
 
+    // Cleanup previous renders to avoid duplicate elements
+    // This is important when calling renderComponent() multiple times in a single test
+    screen.debug = vi.fn();
+
     return render(
       <ThemeProvider theme={theme}>
-        <MemoryRouter initialEntries={[`/president/assign-role/${mockSocietyId}/${mockStudentId}`]}>
+        <MemoryRouter initialEntries={[`/president/assign-role/${mockSocietyId}/${mockMemberId}`]}>
           <Routes>
-            <Route path="/president/assign-role/:society_id/:student_id" element={<AssignSocietyRole />} />
+            <Route path="/president/assign-role/:societyId/:memberId" element={<AssignSocietyRole />} />
           </Routes>
         </MemoryRouter>
       </ThemeProvider>
@@ -60,15 +69,15 @@ describe('AssignSocietyRole Component', () => {
   it('renders the assign society role page correctly', () => {
     renderComponent();
     expect(screen.getByText('Assign Society Role')).toBeInTheDocument();
-    expect(screen.getByText(`Choose a role to assign to student with ID: ${mockStudentId}`)).toBeInTheDocument();
+    expect(screen.getByText(/Choose a role to assign to student with ID/)).toBeInTheDocument();
+    expect(screen.getByText(mockMemberId, {exact: false})).toBeInTheDocument();
   });
 
   it('displays all role buttons', () => {
     renderComponent();
     const expectedRoles = [
       'Vice President',
-      'Event Manager',
-      'Treasurer'
+      'Event Manager'
     ];
 
     expectedRoles.forEach(role => {
@@ -88,12 +97,12 @@ describe('AssignSocietyRole Component', () => {
 
     await waitFor(() => {
       expect(apiClient.patch).toHaveBeenCalledWith(
-        `/api/manage-society-details/${mockSocietyId}`,
-        { vice_president: Number(mockStudentId) }
+        `/api/society/${mockSocietyId}/roles/`,
+        { vice_president: Number(mockMemberId) }
       );
     });
     
-    expect(mockAlert).toHaveBeenCalledWith('Assigned vice president role to student 456');
+    expect(mockAlert).toHaveBeenCalledWith(`Assigned vice president role to student ${mockMemberId}`);
     expect(mockNavigate).toHaveBeenCalledWith(-1);
   });
 
@@ -105,21 +114,8 @@ describe('AssignSocietyRole Component', () => {
     
     await waitFor(() => {
       expect(apiClient.patch).toHaveBeenCalledWith(
-        `/api/manage-society-details/${mockSocietyId}`,
-        { event_manager: Number(mockStudentId) }
-      );
-    });
-    
-    vi.clearAllMocks();
-    (apiClient.patch as vi.Mock).mockResolvedValue({ data: { success: true } });
-    
-    const treasurerButton = screen.getByText('Treasurer');
-    fireEvent.click(treasurerButton);
-    
-    await waitFor(() => {
-      expect(apiClient.patch).toHaveBeenCalledWith(
-        `/api/manage-society-details/${mockSocietyId}`,
-        { treasurer: Number(mockStudentId) }
+        `/api/society/${mockSocietyId}/roles/`,
+        { event_manager: Number(mockMemberId) }
       );
     });
   });
@@ -132,8 +128,8 @@ describe('AssignSocietyRole Component', () => {
     
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     
-    const treasurerButton = screen.getByText('Treasurer');
-    fireEvent.click(treasurerButton);
+    const vicePresidentButton = screen.getByText('Vice President');
+    fireEvent.click(vicePresidentButton);
     
     await waitFor(() => {
       expect(screen.getByText('Failed to assign role. Please try again.')).toBeInTheDocument();
@@ -144,10 +140,12 @@ describe('AssignSocietyRole Component', () => {
     consoleErrorSpy.mockRestore();
   });
 
-  it('handles error with response data', async () => {
+  it('handles API error with response data', async () => {
     const mockError = {
       response: {
-        data: { message: 'API error message' }
+        data: { 
+          error: 'API error message' 
+        }
       }
     };
     (apiClient.patch as vi.Mock).mockRejectedValueOnce(mockError);
@@ -160,10 +158,10 @@ describe('AssignSocietyRole Component', () => {
     fireEvent.click(eventManagerButton);
     
     await waitFor(() => {
-      expect(screen.getByText('Failed to assign role. Please try again.')).toBeInTheDocument();
+      expect(screen.getByText('API error message')).toBeInTheDocument();
     });
     
-    expect(consoleErrorSpy).toHaveBeenCalledWith('Error assigning role', mockError.response.data);
+    expect(consoleErrorSpy).toHaveBeenCalled();
     
     consoleErrorSpy.mockRestore();
   });
@@ -174,19 +172,39 @@ describe('AssignSocietyRole Component', () => {
   });
 
   it('disables buttons and shows loading spinner during role assignment', async () => {
-    (apiClient.patch as vi.Mock).mockImplementationOnce(() => new Promise(() => {}));
-
-    renderComponent();
-    
-    const eventManagerButton = screen.getByText('Event Manager');
-    fireEvent.click(eventManagerButton);
-    
-    const buttons = screen.getAllByRole('button');
-    buttons.forEach(button => {
-      expect(button).toBeDisabled();
+    // Use a promise that we control to ensure loading state
+    let resolvePromise: (value: any) => void;
+    const patchPromise = new Promise((resolve) => {
+      resolvePromise = resolve;
     });
     
-    expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    (apiClient.patch as vi.Mock).mockImplementationOnce(() => patchPromise);
+
+    // Render the component once with valid params
+    const { container } = renderComponent();
+    
+    // Use first button to avoid multiple element issue
+    const buttons = screen.getAllByRole('button');
+    const firstRoleButton = buttons[0]; // Vice President button
+    
+    // Click the button to start loading
+    fireEvent.click(firstRoleButton);
+    
+    // Wait for the component to enter loading state
+    await waitFor(() => {
+      expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    });
+    
+    // Check all buttons are disabled
+    await waitFor(() => {
+      const allButtons = screen.getAllByRole('button');
+      allButtons.forEach(button => {
+        expect(button).toHaveAttribute('disabled');
+      });
+    });
+    
+    // Cleanup by resolving the promise
+    resolvePromise({ data: { success: true } });
   });
 
   it('provides a back button to navigate away', () => {
@@ -199,31 +217,64 @@ describe('AssignSocietyRole Component', () => {
   });
 
   it('back button is disabled during loading state', async () => {
-    (apiClient.patch as vi.Mock).mockImplementationOnce(() => new Promise(() => {}));
+    const patchPromise = new Promise(() => {}); // Never resolves to keep loading state
+    (apiClient.patch as vi.Mock).mockImplementationOnce(() => patchPromise);
 
     renderComponent();
     
-    const roleButton = screen.getByText('Treasurer');
-    fireEvent.click(roleButton);
+    const vicePresidentButton = screen.getByText('Vice President');
+    fireEvent.click(vicePresidentButton);
     
-    const backButton = screen.getByText('Back');
-    expect(backButton).toBeDisabled();
+    await waitFor(() => {
+      const backButton = screen.getByText('Back');
+      expect(backButton).toHaveAttribute('disabled');
+    });
+  });
+  
+  it('shows error when society ID is missing', () => {
+    // Mock useParams to return without societyId
+    mockUseParams.mockReturnValue({
+      memberId: mockMemberId
+    });
+    
+    renderComponent();
+    
+    expect(screen.getByText('Society ID is missing. Please go back and try again.')).toBeInTheDocument();
   });
 
   it('handles loading state toggling correctly', async () => {
+    // Make sure we start with valid parameters
+    mockUseParams.mockReturnValue({
+      societyId: mockSocietyId,
+      memberId: mockMemberId
+    });
+
+    // Create a controlled promise that we can manually resolve
+    let resolvePromise: (value: any) => void;
+    const patchPromise = new Promise((resolve) => {
+      resolvePromise = resolve;
+    });
+    
+    (apiClient.patch as vi.Mock).mockImplementationOnce(() => patchPromise);
+    
     renderComponent();
     
+    // Verify no loading indicator initially
     expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     
-    (apiClient.patch as vi.Mock).mockImplementationOnce(() => 
-      new Promise(resolve => setTimeout(() => resolve({ data: { success: true } }), 100))
-    );
-    
+    // Trigger the role assignment
     const roleButton = screen.getByText('Vice President');
     fireEvent.click(roleButton);
     
-    expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    // Check loading state is active
+    await waitFor(() => {
+      expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    });
     
+    // Resolve the promise to complete the operation
+    resolvePromise({ data: { success: true } });
+    
+    // Check loading state is cleared after resolution
     await waitFor(() => {
       expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });

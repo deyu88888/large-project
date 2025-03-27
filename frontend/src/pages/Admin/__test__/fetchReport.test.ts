@@ -2,7 +2,7 @@ import { vi } from 'vitest';
 import { 
   fetchReports, 
   fetchReportDetails, 
-  fetchReportThread, 
+  fetchReportThread,
   submitReply, 
   fetchMyReports, 
   fetchMyReportsWithReplies, 
@@ -69,7 +69,7 @@ describe('Report API Functions', () => {
 
       const result = await fetchReports();
 
-      expect(apiClient.get).toHaveBeenCalledWith('/api/reports');
+      expect(apiClient.get).toHaveBeenCalledWith('/api/admin/report-to-admin');
       expect(result).toEqual(mockReports);
     });
 
@@ -82,7 +82,7 @@ describe('Report API Functions', () => {
 
       await expect(fetchReports()).rejects.toThrow('Network error');
       
-      expect(apiClient.get).toHaveBeenCalledWith('/api/reports');
+      expect(apiClient.get).toHaveBeenCalledWith('/api/admin/report-to-admin');
       expect(consoleErrorSpy).toHaveBeenCalledWith('Error fetching reports:', mockError);
       
       consoleErrorSpy.mockRestore();
@@ -96,7 +96,7 @@ describe('Report API Functions', () => {
 
       const result = await fetchReportDetails('1');
 
-      expect(apiClient.get).toHaveBeenCalledWith('/api/report-to-admin/1');
+      expect(apiClient.get).toHaveBeenCalledWith('/api/admin/report-to-admin/1');
       expect(result).toEqual(mockReportDetails);
     });
 
@@ -109,7 +109,7 @@ describe('Report API Functions', () => {
 
       await expect(fetchReportDetails('999')).rejects.toThrow('Not found');
       
-      expect(apiClient.get).toHaveBeenCalledWith('/api/report-to-admin/999');
+      expect(apiClient.get).toHaveBeenCalledWith('/api/admin/report-to-admin/999');
       expect(consoleErrorSpy).toHaveBeenCalledWith('Error fetching report details:', mockError);
       
       consoleErrorSpy.mockRestore();
@@ -123,7 +123,7 @@ describe('Report API Functions', () => {
 
       const result = await fetchReportThread('1');
 
-      expect(apiClient.get).toHaveBeenCalledWith('/api/report-thread/1');
+      expect(apiClient.get).toHaveBeenCalledWith('/api/admin/report-thread/1');
       expect(result).toEqual(mockReportThread);
     });
 
@@ -136,7 +136,7 @@ describe('Report API Functions', () => {
 
       await expect(fetchReportThread('999')).rejects.toThrow('Thread not found');
       
-      expect(apiClient.get).toHaveBeenCalledWith('/api/report-thread/999');
+      expect(apiClient.get).toHaveBeenCalledWith('/api/admin/report-thread/999');
       expect(consoleErrorSpy).toHaveBeenCalledWith('Error fetching report thread:', mockError);
       
       consoleErrorSpy.mockRestore();
@@ -150,7 +150,7 @@ describe('Report API Functions', () => {
 
       const result = await submitReply(mockReplyData);
 
-      expect(apiClient.post).toHaveBeenCalledWith('/api/report-replies', mockReplyData);
+      expect(apiClient.post).toHaveBeenCalledWith('/api/admin/report-replies', mockReplyData);
       expect(result).toEqual(mockReplyResponse);
     });
 
@@ -163,7 +163,7 @@ describe('Report API Functions', () => {
 
       await expect(submitReply(mockReplyData)).rejects.toThrow('Validation error');
       
-      expect(apiClient.post).toHaveBeenCalledWith('/api/report-replies', mockReplyData);
+      expect(apiClient.post).toHaveBeenCalledWith('/api/admin/report-replies', mockReplyData);
       expect(consoleErrorSpy).toHaveBeenCalledWith('Error submitting reply:', mockError);
       
       consoleErrorSpy.mockRestore();
@@ -177,7 +177,7 @@ describe('Report API Functions', () => {
 
       const result = await fetchMyReports();
 
-      expect(apiClient.get).toHaveBeenCalledWith('/api/my-reports');
+      expect(apiClient.get).toHaveBeenCalledWith('/api/admin/my-reports');
       expect(result).toEqual(mockReports);
     });
 
@@ -190,7 +190,7 @@ describe('Report API Functions', () => {
 
       await expect(fetchMyReports()).rejects.toThrow('Unauthorized');
       
-      expect(apiClient.get).toHaveBeenCalledWith('/api/my-reports');
+      expect(apiClient.get).toHaveBeenCalledWith('/api/admin/my-reports');
       expect(consoleErrorSpy).toHaveBeenCalledWith('Error fetching my reports:', mockError);
       
       consoleErrorSpy.mockRestore();
@@ -208,7 +208,7 @@ describe('Report API Functions', () => {
 
       const result = await fetchMyReportsWithReplies();
 
-      expect(apiClient.get).toHaveBeenCalledWith('/api/my-reports-with-replies');
+      expect(apiClient.get).toHaveBeenCalledWith('/api/admin/my-reports-with-replies');
       expect(result).toEqual(mockReportsWithReplies);
     });
 
@@ -221,7 +221,7 @@ describe('Report API Functions', () => {
 
       await expect(fetchMyReportsWithReplies()).rejects.toThrow('Server error');
       
-      expect(apiClient.get).toHaveBeenCalledWith('/api/my-reports-with-replies');
+      expect(apiClient.get).toHaveBeenCalledWith('/api/admin/my-reports-with-replies');
       expect(consoleErrorSpy).toHaveBeenCalledWith('Error fetching my reports with replies:', mockError);
       
       consoleErrorSpy.mockRestore();
@@ -239,7 +239,7 @@ describe('Report API Functions', () => {
 
       const result = await fetchReportsWithReplies();
 
-      expect(apiClient.get).toHaveBeenCalledWith('/api/reports-with-replies');
+      expect(apiClient.get).toHaveBeenCalledWith('/api/admin/reports-with-replies');
       expect(result).toEqual(mockReportsWithReplies);
     });
 
@@ -252,7 +252,7 @@ describe('Report API Functions', () => {
 
       await expect(fetchReportsWithReplies()).rejects.toThrow('Server error');
       
-      expect(apiClient.get).toHaveBeenCalledWith('/api/reports-with-replies');
+      expect(apiClient.get).toHaveBeenCalledWith('/api/admin/reports-with-replies');
       expect(consoleErrorSpy).toHaveBeenCalledWith('Error fetching reports with replies:', mockError);
       
       consoleErrorSpy.mockRestore();
@@ -271,7 +271,7 @@ describe('Report API Functions', () => {
 
       const result = await fetchReportReplies();
 
-      expect(apiClient.get).toHaveBeenCalledWith('/api/reports-replied');
+      expect(apiClient.get).toHaveBeenCalledWith('/api/admin/reports-replied');
       expect(result).toEqual(mockReplies);
     });
 
@@ -284,7 +284,7 @@ describe('Report API Functions', () => {
 
       await expect(fetchReportReplies()).rejects.toThrow('Server error');
       
-      expect(apiClient.get).toHaveBeenCalledWith('/api/reports-replied');
+      expect(apiClient.get).toHaveBeenCalledWith('/api/admin/reports-replied');
       expect(consoleErrorSpy).toHaveBeenCalledWith('Error fetching report replies:', mockError);
       
       consoleErrorSpy.mockRestore();

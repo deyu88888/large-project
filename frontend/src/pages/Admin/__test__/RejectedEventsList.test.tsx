@@ -7,6 +7,11 @@ import EventListRejected from '../RejectedEventsList';
 import { apiClient } from '../../../api';
 import { SearchContext } from '../../../components/layout/SearchContext';
 
+// Mock the getWebSocketUrl function
+vi.mock('../../../utils/websocket', () => ({
+  getWebSocketUrl: () => 'ws://127.0.0.1:8000/ws/admin/event/'
+}));
+
 const theme = createTheme({
   palette: {
     mode: 'light',

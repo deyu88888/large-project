@@ -39,12 +39,14 @@ describe("ViewInbox Component", () => {
       header: "Important Notice",
       body: "This is an important notification",
       is_read: false,
+      type: "notification"
     },
     {
       id: 2,
       header: "System Update",
       body: "The system will be updated tonight",
       is_read: true,
+      type: "notification"
     },
   ];
 
@@ -61,11 +63,12 @@ describe("ViewInbox Component", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    // Set up default mock responses
+    
+    // Set up default mock responses with the correct endpoints
     apiClient.get.mockImplementation((url) => {
-      if (url === "/api/inbox") {
+      if (url === "/api/notifications/inbox/") {
         return Promise.resolve({ data: mockNotifications });
-      } else if (url === "/api/report-reply-notifications") {
+      } else if (url === "/api/reports/reply-notifications") {
         return Promise.resolve({ data: mockReplyNotifications });
       }
       return Promise.resolve({ data: [] });
@@ -110,21 +113,28 @@ describe("ViewInbox Component", () => {
     renderWithRouter();
 
     await waitFor(() => {
-      expect(screen.getByText("Important Notice")).toBeInTheDocument();
-      expect(screen.getByText("This is an important notification")).toBeInTheDocument();
-      expect(screen.getByText("System Update")).toBeInTheDocument();
-      expect(screen.getByText("The system will be updated tonight")).toBeInTheDocument();
-      expect(screen.getByText("New Reply")).toBeInTheDocument();
+      // Check if notifications are rendered in the DOM
+      expect(screen.getByText(/Important Notice/)).toBeInTheDocument();
+      expect(screen.getByText(/This is an important notification/)).toBeInTheDocument();
+      expect(screen.getByText(/System Update/)).toBeInTheDocument();
+      expect(screen.getByText(/The system will be updated tonight/)).toBeInTheDocument();
+      expect(screen.getByText(/New Reply/)).toBeInTheDocument();
     });
 
     expect(screen.getByText("Read")).toBeInTheDocument();
-    expect(screen.getAllByText("Mark as Read").length).toBe(2);
+    
+    // Find all buttons with Mark as Read functionality
+    const markAsReadButtons = screen.getAllByRole("button", { 
+      name: (content) => content.includes("Mark as Read") 
+    });
+    expect(markAsReadButtons.length).toBe(2);
   });
 
   it("handles API error when fetching notifications", async () => {
     const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     
-    // Make the first get call fail
+    // Make the API calls fail
+    apiClient.get.mockRejectedValueOnce(new Error("API error"));
     apiClient.get.mockRejectedValueOnce(new Error("API error"));
 
     renderWithRouter();
@@ -140,11 +150,18 @@ describe("ViewInbox Component", () => {
   it("marks notification as read when clicking 'Mark as Read' button", async () => {
     renderWithRouter();
 
+    // Wait for component to render with data
     await waitFor(() => {
-      expect(screen.getAllByText("Mark as Read").length).toBe(2);
+      expect(screen.getByText(/Important Notice/)).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getAllByText("Mark as Read")[0]);
+    // Find a Mark as Read button by role and click it
+    const markAsReadButtons = screen.getAllByRole("button", { 
+      name: (content) => content.includes("Mark as Read") 
+    });
+    expect(markAsReadButtons.length).toBe(2);
+    
+    fireEvent.click(markAsReadButtons[0]);
 
     await waitFor(() => {
       expect(apiClient.patch).toHaveBeenCalledWith("/api/notifications/1", { is_read: true });
@@ -159,11 +176,18 @@ describe("ViewInbox Component", () => {
 
     renderWithRouter();
 
+    // Wait for component to render with data
     await waitFor(() => {
-      expect(screen.getAllByText("Mark as Read").length).toBe(2);
+      expect(screen.getByText(/Important Notice/)).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getAllByText("Mark as Read")[0]);
+    // Find a Mark as Read button by role and click it
+    const markAsReadButtons = screen.getAllByRole("button", { 
+      name: (content) => content.includes("Mark as Read") 
+    });
+    expect(markAsReadButtons.length).toBe(2);
+    
+    fireEvent.click(markAsReadButtons[0]);
 
     await waitFor(() => {
       expect(consoleErrorSpy).toHaveBeenCalled();
@@ -175,17 +199,28 @@ describe("ViewInbox Component", () => {
   it("updates UI after marking notification as read", async () => {
     renderWithRouter();
 
+    // Wait for component to render with data
     await waitFor(() => {
-      expect(screen.getAllByText("Mark as Read").length).toBe(2);
+      expect(screen.getByText(/Important Notice/)).toBeInTheDocument();
     });
 
-    // Simulate successful marking as read
-    fireEvent.click(screen.getAllByText("Mark as Read")[0]);
+    // Find a Mark as Read button by role and click it
+    const markAsReadButtons = screen.getAllByRole("button", { 
+      name: (content) => content.includes("Mark as Read") 
+    });
+    expect(markAsReadButtons.length).toBe(2);
+    
+    fireEvent.click(markAsReadButtons[0]);
 
     await waitFor(() => {
       // After the update, we should have one more "Read" text
       expect(screen.getAllByText("Read").length).toBe(2);
-      expect(screen.getAllByText("Mark as Read").length).toBe(1);
+      
+      // And one less "Mark as Read" button
+      const updatedMarkAsReadButtons = screen.getAllByRole("button", { 
+        name: (content) => content.includes("Mark as Read") 
+      });
+      expect(updatedMarkAsReadButtons.length).toBe(1);
     });
   });
 
@@ -193,7 +228,7 @@ describe("ViewInbox Component", () => {
     renderWithRouter();
 
     await waitFor(() => {
-      expect(screen.getByText("Important Notice")).toBeInTheDocument();
+      expect(screen.getByText(/Important Notice/)).toBeInTheDocument();
     });
 
     // Find and click the delete button for the first notification
@@ -201,7 +236,7 @@ describe("ViewInbox Component", () => {
     fireEvent.click(deleteButtons[0]);
 
     await waitFor(() => {
-      expect(apiClient.delete).toHaveBeenCalledWith("/api/inbox/1");
+      expect(apiClient.delete).toHaveBeenCalledWith("/api/notifications/inbox/1");
     });
   });
 
@@ -209,7 +244,7 @@ describe("ViewInbox Component", () => {
     renderWithRouter();
 
     await waitFor(() => {
-      expect(screen.getByText("New Reply")).toBeInTheDocument();
+      expect(screen.getByText(/New Reply/)).toBeInTheDocument();
     });
 
     // Find and click the "View Reply" button

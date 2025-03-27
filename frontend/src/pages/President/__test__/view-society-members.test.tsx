@@ -1,16 +1,16 @@
 import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { vi } from 'vitest';
-import { MemoryRouter, Routes, Route, useParams } from 'react-router-dom';
+import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import ViewSocietyMembers from '../ViewSocietyMembers';
-import { apiClient } from '../../../api';
 import { useAuthStore } from '../../../stores/auth-store';
-import { act } from 'react';
+import { apiClient } from '../../../api';
 
 const mockNavigate = vi.fn();
 let mockSocietyId = '456';
 
+// Mock the router
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return {
@@ -20,12 +20,22 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
-vi.mock('../../../api', () => ({
-  apiClient: {
-    get: vi.fn(),
-  },
-}));
+// Mock the API module including apiPaths
+vi.mock('../../../api', () => {
+  return {
+    apiClient: {
+      get: vi.fn(),
+      patch: vi.fn(),
+    },
+    apiPaths: {
+      SOCIETY: {
+        MANAGE_DETAILS: (id) => `/api/society/${id}/details/`
+      }
+    }
+  };
+});
 
+// Mock auth store
 vi.mock('../../../stores/auth-store', () => ({
   useAuthStore: vi.fn(),
 }));
@@ -33,6 +43,14 @@ vi.mock('../../../stores/auth-store', () => ({
 const theme = createTheme();
 
 describe('ViewSocietyMembers Component', () => {
+  const mockSociety = {
+    id: 456,
+    name: 'Test Society',
+    president: { id: 100 },
+    vice_president: { id: 101 },
+    event_manager: { id: 102 }
+  };
+
   const mockMembers = [
     {
       id: 1,
@@ -55,8 +73,16 @@ describe('ViewSocietyMembers Component', () => {
     mockNavigate.mockReset();
     mockSocietyId = '456';
     (useAuthStore as vi.Mock).mockReturnValue({ user: mockUser });
-    (apiClient.get as vi.Mock).mockResolvedValue({
-      data: mockMembers,
+    
+    // Set up default mocks for API calls
+    (apiClient.get as vi.Mock).mockImplementation((url: string) => {
+      if (url.includes('/members/')) {
+        return Promise.resolve({ data: mockMembers });
+      }
+      if (url.includes('/details/')) {
+        return Promise.resolve({ data: mockSociety });
+      }
+      return Promise.resolve({ data: [] });
     });
   });
 
@@ -67,18 +93,18 @@ describe('ViewSocietyMembers Component', () => {
 
     const routes = [
       {
-        path: '/president/view-society-members/:societyId',
+        path: '/president-page/:societyId/members',
         element: <ViewSocietyMembers />,
       },
       {
-        path: '/president/view-society-members',
+        path: '/president-page/members',
         element: <ViewSocietyMembers />,
       },
     ];
     
     const initialEntry = societyId
-      ? `/president/view-society-members/${societyId}`
-      : '/president/view-society-members';
+      ? `/president-page/${societyId}/members`
+      : '/president-page/members';
 
     return render(
       <ThemeProvider theme={theme}>
@@ -94,39 +120,43 @@ describe('ViewSocietyMembers Component', () => {
   }
 
   it('renders loading state initially', async () => {
-    let apiResolve: (value: any) => void;
-    const apiPromise = new Promise((resolve) => {
-      apiResolve = resolve;
-    });
-    
-    (apiClient.get as vi.Mock).mockReturnValue(apiPromise);
+    // Mock API delay
+    const originalGet = apiClient.get;
+    (apiClient.get as vi.Mock).mockImplementationOnce(() => 
+      new Promise(resolve => setTimeout(() => resolve({ data: mockMembers }), 100))
+    );
     
     renderComponent();
     
-    // Check for CircularProgress in loading state
-    expect(document.querySelector('.MuiCircularProgress-root')).toBeInTheDocument();
+    // Check for loading state
     expect(screen.getByRole('progressbar')).toBeInTheDocument();
     
-    // Now resolve the API call
-    apiResolve({ data: mockMembers });
-    
-    // Wait for loading state to finish and content to appear
+    // Wait for loading to finish
     await waitFor(() => {
-      expect(document.querySelector('.MuiCircularProgress-root')).not.toBeInTheDocument();
-      expect(screen.getByText('Society Members')).toBeInTheDocument();
-    });
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    }, { timeout: 200 });
   });
 
   it('fetches and renders society members', async () => {
-    await act(async () => {
-      renderComponent();
+    renderComponent();
+    
+    // Wait for loading to finish and content to appear
+    await waitFor(() => {
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
     
+    // Check that society name is rendered
+    expect(screen.getByText(/Test Society Members/i, { exact: false })).toBeInTheDocument();
+    
+    // Check for member names - using a more flexible approach for finding text
     await waitFor(() => {
-      expect(screen.getByText('John Doe')).toBeInTheDocument();
-      expect(screen.getByText('Jane Smith')).toBeInTheDocument();
+      expect(screen.getByText(/John Doe/i, { exact: false })).toBeInTheDocument();
+      expect(screen.getByText(/Jane Smith/i, { exact: false })).toBeInTheDocument();
     });
-    expect(apiClient.get).toHaveBeenCalledWith('/api/society/456/members/');
+    
+    // Verify API calls
+    expect(apiClient.get).toHaveBeenCalledWith(`/api/society/${mockSocietyId}/details/`);
+    expect(apiClient.get).toHaveBeenCalledWith(`/api/society/${mockSocietyId}/members/`);
   });
 
   it('handles the case when no society id is available', async () => {
@@ -135,119 +165,131 @@ describe('ViewSocietyMembers Component', () => {
     
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     
-    await act(async () => {
-      renderComponent('');
-    });
+    renderComponent('');
     
     await waitFor(() => {
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'Error fetching society members:',
+        'Error fetching data:',
         expect.objectContaining({ message: 'No society id available' })
       );
     });
     
     await waitFor(() => {
-      expect(document.querySelector('.MuiCircularProgress-root')).not.toBeInTheDocument();
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
     
     consoleErrorSpy.mockRestore();
   });
 
   it('navigates to view profile when "View Profile" button is clicked', async () => {
-    await act(async () => {
-      renderComponent();
-    });
+    renderComponent();
     
+    // Wait for loading to finish
     await waitFor(() => {
-      expect(screen.getByText('John Doe')).toBeInTheDocument();
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
     
+    // Find and click the View Profile button
     const viewProfileButtons = screen.getAllByText('View Profile');
     fireEvent.click(viewProfileButtons[0]);
-    expect(mockNavigate).toHaveBeenCalledWith('/profile/1');
+    
+    expect(mockNavigate).toHaveBeenCalledWith(`/student/profile/1`);
   });
 
   it('navigates to give award page when "Give Award" button is clicked', async () => {
-    await act(async () => {
-      renderComponent();
-    });
+    renderComponent();
     
+    // Wait for loading to finish
     await waitFor(() => {
-      expect(screen.getByText('John Doe')).toBeInTheDocument();
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
     
+    // Find and click the Give Award button
     const giveAwardButtons = screen.getAllByText('Give Award');
     fireEvent.click(giveAwardButtons[0]);
-    expect(mockNavigate).toHaveBeenCalledWith('../give-award-page/1');
+    
+    expect(mockNavigate).toHaveBeenCalledWith(`/president-page/${mockSocietyId}/give-award-page/1`);
   });
 
   it('navigates to assign role page when "Assign Role" button is clicked', async () => {
-    await act(async () => {
-      renderComponent();
-    });
+    renderComponent();
     
+    // Wait for loading to finish
     await waitFor(() => {
-      expect(screen.getByText('John Doe')).toBeInTheDocument();
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
     
+    // Find and click the Assign Role button
     const assignRoleButtons = screen.getAllByText('Assign Role');
     fireEvent.click(assignRoleButtons[0]);
-    expect(mockNavigate).toHaveBeenCalledWith('../assign-society-role/1');
+    
+    expect(mockNavigate).toHaveBeenCalledWith(`/president-page/${mockSocietyId}/assign-role/1`);
   });
 
   it('renders "No members found" when members list is empty', async () => {
-    (apiClient.get as vi.Mock).mockResolvedValueOnce({ data: [] });
-    
-    await act(async () => {
-      renderComponent();
+    // Mock empty members list
+    (apiClient.get as vi.Mock).mockImplementation((url: string) => {
+      if (url.includes('/members/')) {
+        return Promise.resolve({ data: [] });
+      }
+      if (url.includes('/details/')) {
+        return Promise.resolve({ data: mockSociety });
+      }
+      return Promise.resolve({ data: [] });
     });
+    
+    renderComponent();
     
     await waitFor(() => {
-      expect(screen.getByText('No members found.')).toBeInTheDocument();
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
+    
+    expect(screen.getByText('No members found.')).toBeInTheDocument();
   });
 
   it('handles API error when fetching members', async () => {
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    
+    // Mock API error
     (apiClient.get as vi.Mock).mockRejectedValueOnce(new Error('Fetch error'));
     
-    await act(async () => {
-      renderComponent();
-    });
+    renderComponent();
     
     await waitFor(() => {
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'Error fetching society members:',
+        'Error fetching data:',
         expect.any(Error)
       );
+    });
+    
+    await waitFor(() => {
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
     
     consoleErrorSpy.mockRestore();
   });
 
   it('navigates back to previous page when "Back to Dashboard" is clicked', async () => {
-    await act(async () => {
-      renderComponent();
-    });
+    renderComponent();
     
+    // Wait for loading to finish
     await waitFor(() => {
-      expect(screen.getByText('John Doe')).toBeInTheDocument();
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
     
+    // Find and click the Back button
     const backButton = screen.getByText('Back to Dashboard');
     fireEvent.click(backButton);
+    
     expect(mockNavigate).toHaveBeenCalledWith(-1);
   });
 
   it('can fetch members using provided society ID in URL', async () => {
-    mockSocietyId = '456';
-    
-    await act(async () => {
-      renderComponent('456');
-    });
+    const specificSocietyId = '789';
+    renderComponent(specificSocietyId);
     
     await waitFor(() => {
-      expect(apiClient.get).toHaveBeenCalledWith('/api/society/456/members/');
+      expect(apiClient.get).toHaveBeenCalledWith(`/api/society/${specificSocietyId}/members/`);
     });
   });
 });

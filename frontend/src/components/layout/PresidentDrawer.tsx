@@ -12,7 +12,6 @@ import {
   ListItemIcon,
   ListItemText,
   Typography,
-
 } from "@mui/material";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
@@ -58,7 +57,7 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
         }
       };  
     fetchStudentData();
-    }, []);
+  }, []);
 
   const topMenuItems = [
     { title: "Dashboard", icon: <HomeOutlinedIcon />, to: "/student" },
@@ -129,57 +128,57 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
       <Divider />
 
       {/* Main Menu Items */}
-        <List>
-          {topMenuItems.map((item) => (
-            <ListItem key={item.title} disablePadding>
-              <ListItemButton
-                component={Link}
-                to={item.to}
-                selected={selected === item.title}
-                onClick={() => setSelected(item.title)}
-                sx={{ justifyContent: drawer ? "initial" : "center", px: 2.5 }}
+      <List>
+        {topMenuItems.map((item) => (
+          <ListItem key={item.title} disablePadding>
+            <ListItemButton
+              component={Link}
+              to={item.to}
+              selected={selected === item.title}
+              onClick={() => setSelected(item.title)}
+              sx={{ justifyContent: drawer ? "initial" : "center", px: 2.5 }}
+            >
+              <ListItemIcon
+                sx={{
+                  minWidth: 0,
+                  mr: drawer ? 3 : "auto",
+                  justifyContent: "center",
+                }}
               >
-                <ListItemIcon
-                  sx={{
-                    minWidth: 0,
-                    mr: drawer ? 3 : "auto",
-                    justifyContent: "center",
-                  }}
-                >
-                  {item.icon}
-                </ListItemIcon>
-                {drawer && <ListItemText primary={item.title} />}
-              </ListItemButton>
-            </ListItem>
-          ))}
-        </List>
-        <Divider />
+                {item.icon}
+              </ListItemIcon>
+              {drawer && <ListItemText primary={item.title} />}
+            </ListItemButton>
+          </ListItem>
+        ))}
+      </List>
+      <Divider />
 
-        <List>
-          {bottomMenuItems.map((item) => (
-            <ListItem key={item.title} disablePadding>
-              <ListItemButton
-                component={Link}
-                to={item.to}
-                selected={selected === item.title}
-                onClick={() => setSelected(item.title)}
-                sx={{ justifyContent: drawer ? "initial" : "center", px: 2.5 }}
+      <List>
+        {bottomMenuItems.map((item) => (
+          <ListItem key={item.title} disablePadding>
+            <ListItemButton
+              component={Link}
+              to={item.to}
+              selected={selected === item.title}
+              onClick={() => setSelected(item.title)}
+              sx={{ justifyContent: drawer ? "initial" : "center", px: 2.5 }}
+            >
+              <ListItemIcon
+                sx={{
+                  minWidth: 0,
+                  mr: drawer ? 3 : "auto",
+                  justifyContent: "center",
+                }}
               >
-                <ListItemIcon
-                  sx={{
-                    minWidth: 0,
-                    mr: drawer ? 3 : "auto",
-                    justifyContent: "center",
-                  }}
-                >
-                  {item.icon}
-                </ListItemIcon>
-                {drawer && <ListItemText primary={item.title} />}
-              </ListItemButton>
-            </ListItem>
-          ))}
-        </List>
-        <Divider />
+                {item.icon}
+              </ListItemIcon>
+              {drawer && <ListItemText primary={item.title} />}
+            </ListItemButton>
+          </ListItem>
+        ))}
+      </List>
+      <Divider />
 
       {/* Manage My Societies Section */}
       {drawer && (
@@ -214,7 +213,6 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
         ) : null}
       </List>
       <Divider />
-
 
       {/* Logout Item */}
       <List>

@@ -131,10 +131,7 @@ describe('Layout Component', () => {
 
   it('displays student drawer for student routes', async () => {
     // Override the location for this test
-    const originalUseLocation = reactRouter.useLocation;
     const mockUseLocation = vi.fn().mockReturnValue({ pathname: '/student/dashboard' });
-    
-    // Replace the useLocation implementation temporarily
     vi.spyOn(reactRouter, 'useLocation').mockImplementation(mockUseLocation);
     
     renderWithProviders('/student/dashboard');
@@ -152,7 +149,6 @@ describe('Layout Component', () => {
   it('displays president drawer for president users regardless of route', async () => {
     // Mock the auth store to return a president user
     const authStore = await import('../../stores/auth-store');
-    const originalUseAuthStore = authStore.useAuthStore;
     
     vi.spyOn(authStore, 'useAuthStore').mockImplementation(() => ({
       user: { id: 1, name: 'Test President', is_president: true }
@@ -202,7 +198,6 @@ describe('Layout Component', () => {
     
     renderWithProviders();
     
-    // Find the theme button by its data-testid
     const themeButton = screen.getByTestId('LightModeOutlinedIcon').closest('button');
     fireEvent.click(themeButton);
     
@@ -214,17 +209,24 @@ describe('Layout Component', () => {
   it('navigates to profile page when profile icon is clicked', () => {
     // Create a fresh mock for the navigate function for this test
     const localMockNavigate = vi.fn();
+    
+    // Set up the location mock to return an admin route path
+    const mockUseLocation = vi.fn().mockReturnValue({ pathname: '/admin/dashboard' });
+    
+    // Apply both mocks
     vi.spyOn(reactRouter, 'useNavigate').mockImplementation(() => localMockNavigate);
+    vi.spyOn(reactRouter, 'useLocation').mockImplementation(mockUseLocation);
     
     renderWithProviders('/admin/dashboard');
     
-    // Find the profile button by its data-testid
     const profileButton = screen.getByTestId('PersonOutlinedIcon').closest('button');
     fireEvent.click(profileButton);
     
     expect(localMockNavigate).toHaveBeenCalledWith('/admin/profile');
     
+    // Restore the mocks
     vi.spyOn(reactRouter, 'useNavigate').mockRestore();
+    vi.spyOn(reactRouter, 'useLocation').mockRestore();
   });
 
   it('navigates to student profile when on student routes', async () => {
@@ -239,7 +241,6 @@ describe('Layout Component', () => {
     
     renderWithProviders('/student/dashboard');
     
-    // Find the profile button by its data-testid
     const profileButton = screen.getByTestId('PersonOutlinedIcon').closest('button');
     fireEvent.click(profileButton);
     

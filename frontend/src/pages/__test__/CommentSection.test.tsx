@@ -197,7 +197,7 @@ describe('CommentSection Component', () => {
     });
     
     expect(apiClient.post).toHaveBeenCalledWith(
-      "/api/comments/?event_id=${eventId}",
+      `/api/comments/?event_id=${mockEventId}`,
       expect.objectContaining({
         event: mockEventId,
         content: 'A new comment'
@@ -246,7 +246,7 @@ describe('CommentSection Component', () => {
     });
     
     expect(apiClient.post).toHaveBeenCalledWith(
-      "/api/comments/?event_id=${eventId}",
+      `/api/comments/?event_id=${mockEventId}`,
       expect.objectContaining({
         event: mockEventId,
         content: 'Test reply',
@@ -334,7 +334,7 @@ describe('CommentSection Component', () => {
     });
     
     expect(consoleErrorSpy).toHaveBeenCalledWith(
-      'Error replying comment:',
+      'Error replying to comment:',
       expect.any(Error)
     );
     

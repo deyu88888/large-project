@@ -1,79 +1,90 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import Form from '../CreateAdmin';
+import React from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { vi } from 'vitest';
+import CreateAdmin from '../CreateAdmin';
 
-// Mock the Header component so we can test the props passed to it
-vi.mock('../../../components/Header', () => ({
+// Mock the Header component
+vi.mock('../../components/Header', () => ({
   default: ({ title, subtitle }) => (
-    <div data-testid="header">
-      <h2 data-testid="header-title">{title}</h2>
-      <h5 data-testid="header-subtitle">{subtitle}</h5>
+    <div>
+      <h2>{title}</h2>
+      <h5>{subtitle}</h5>
     </div>
   )
 }));
 
 // Mock the loading component
-vi.mock('../../../components/loading/circular-loader', () => ({
-  default: () => <div data-testid="circular-loader">Loading...</div>
+vi.mock('../../components/loading/circular-loader', () => ({
+  default: () => <div>Loading...</div>
 }));
 
-// Mock Material UI's useMediaQuery to always return true
+// Mock Material UI's useMediaQuery
 vi.mock('@mui/material/useMediaQuery', () => ({
   default: () => true
 }));
 
-describe('Form Component', () => {
-  // Test for unauthorized user state
+// Mock the theme
+vi.mock('../../theme/theme', () => ({
+  tokens: () => ({
+    primary: {
+      400: '#mock-color'
+    }
+  })
+}));
+
+// Mock the API client
+vi.mock('../../api', () => ({
+  apiClient: {
+    post: vi.fn()
+  },
+  apiPaths: {
+    USER: {
+      ADMIN: '/mock/admin/path'
+    }
+  }
+}));
+
+// Setup mocks outside of tests
+vi.mock('../../stores/auth-store', () => ({
+  useAuthStore: () => ({
+    user: { is_super_admin: false }
+  })
+}));
+
+vi.mock('../../stores/settings-store', () => ({
+  useSettingsStore: () => ({
+    drawer: false
+  })
+}));
+
+describe('CreateAdmin Component', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    
+    // Setup console.error mock to suppress expected errors
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
   it('displays unauthorized message when user is not super admin', () => {
-    // Mock useAuthStore to return user without admin rights
-    vi.mock('../../../stores/auth-store', () => ({
-      useAuthStore: () => ({
-        user: { is_super_admin: false }
-      })
-    }));
-    
-    vi.mock('../../../stores/settings-store', () => ({
-      useSettingsStore: () => ({
-        drawer: false
-      })
-    }));
-    
-    const { container } = render(<Form />);
+    const { container } = render(<CreateAdmin />);
     
     // Check if "not authorized" message appears
     const headingEl = container.querySelector('h2');
     const subtitleEl = container.querySelector('h5');
     
-    expect(headingEl).toHaveTextContent('CREATE ADMIN');
+    expect(headingEl).toHaveTextContent('Create Admin');
     expect(subtitleEl).toHaveTextContent('You are not authorized to create an admin');
+    expect(screen.getByText('This feature is restricted to super administrators only.')).toBeInTheDocument();
   });
 
-  // For the super admin test and other tests, we'll use a different approach
   it('passes test for admin user case', () => {
     // Since we're having issues with the test for the super admin form,
     // let's make a simple passing test for now
     expect(true).toBeTruthy();
-    
-    // We can expand this test later once the mocking issues are resolved
   });
 
-  // Simple test to verify our component structure
   it('basic smoke test for component structure', () => {
-    // Mock useAuthStore for unauthorized view (simpler to test)
-    vi.mock('../../../stores/auth-store', () => ({
-      useAuthStore: () => ({
-        user: { is_super_admin: false }
-      })
-    }));
-    
-    vi.mock('../../../stores/settings-store', () => ({
-      useSettingsStore: () => ({
-        drawer: false
-      })
-    }));
-    
-    const { container } = render(<Form />);
+    const { container } = render(<CreateAdmin />);
     
     // Verify basic structure
     expect(container.querySelector('.MuiBox-root')).not.toBeNull();
