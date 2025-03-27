@@ -6,6 +6,7 @@ import { tokens } from "../../theme/theme";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { useSettingsStore } from "../../stores/settings-store";
 import { Event } from '../../types';
+import { getWebSocketUrl } from "../../utils/websocket";
 
 
 interface WebSocketRef {
@@ -23,7 +24,7 @@ interface DataGridProps {
 }
 
 
-const WS_URL = "ws://127.0.0.1:8000/ws/admin/event/";
+const WS_URL = getWebSocketUrl()
 const RECONNECT_DELAY = 5000;
 
 

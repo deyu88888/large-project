@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ACCESS_TOKEN } from "../constants";
 import { useWebSocketManager, CONNECTION_STATES, WebSocketMessage } from "./useWebSocketManager";
+import { getWebSocketUrl } from "../utils/websocket";
 
 // Cache of failed WebSocket routes to avoid repeated attempts
 const failedWebSocketRoutes = new Set<string>();
@@ -155,9 +156,7 @@ export const connectWebSocket = <T> (
     }
     
     // Construct WebSocket URL with proper path
-    const socketUrl = import.meta.env.VITE_WEBSOCKET_ADMIN_BASE_URL 
-      ? `${import.meta.env.VITE_WEBSOCKET_ADMIN_BASE_URL}/${cleanSourceURL}/`
-      : `ws://127.0.0.1:8000/ws/${cleanSourceURL}/`;
+    const socketUrl = getWebSocketUrl()
     
     console.log(`Connecting WebSocket to: ${socketUrl}`);
     
