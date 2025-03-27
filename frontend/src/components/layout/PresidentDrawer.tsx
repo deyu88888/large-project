@@ -43,7 +43,7 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
   location,
 }) => {
   const [selected, setSelected] = useState("Dashboard");
-  const [student, setStudent] = useState<any>();
+  const [student, setStudent] = useState<any>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -51,7 +51,7 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
         try {
           const response = await apiClient.get("/api/user/current");
           setStudent(response.data);
-          console.log(student);
+          console.log(response.data);
         } catch (error) {
           console.error("Error retrieving student:", error);
           alert("Failed to retrieve student. Please contact an administrator.");
@@ -98,7 +98,7 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
             <Link to="/student/profile" style={{ textDecoration: "none", color: "inherit" }}>
               <img
               src={student?.icon}
-              alt={`${student?.username} icon`}
+              alt={`${student?.username || 'User'} icon`}
               style={{
                 width: "72px",
                 height: "72px",
@@ -117,7 +117,7 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
         ) : (
           <img
             src={student?.icon}
-            alt={`${student?.username} icon`}
+            alt={`${student?.username || 'User'} icon`}
             style={{
               width: "25px",
               height: "25px",
@@ -190,26 +190,28 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
         </Box>
       )}
       <List>
-        <ListItem disablePadding>
-          <ListItemButton
-            component={Link}
-            to={"/president-page/"+student.president_of}
-            selected={selected === "Manage My Societies"}
-            onClick={() => setSelected("Manage My Societies")}
-            sx={{ justifyContent: drawer ? "initial" : "center", px: 2.5 }}
-          >
-            <ListItemIcon
-              sx={{
-                minWidth: 0,
-                mr: drawer ? 3 : "auto",
-                justifyContent: "center",
-              }}
+        {student && student.president_of ? (
+          <ListItem disablePadding>
+            <ListItemButton
+              component={Link}
+              to={"/president-page/" + student.president_of}
+              selected={selected === "Manage My Societies"}
+              onClick={() => setSelected("Manage My Societies")}
+              sx={{ justifyContent: drawer ? "initial" : "center", px: 2.5 }}
             >
-              <ManageAccountsOutlinedIcon />
-            </ListItemIcon>
-            {drawer && <ListItemText primary="Manage My Societies" />}
-          </ListItemButton>
-        </ListItem>
+              <ListItemIcon
+                sx={{
+                  minWidth: 0,
+                  mr: drawer ? 3 : "auto",
+                  justifyContent: "center",
+                }}
+              >
+                <ManageAccountsOutlinedIcon />
+              </ListItemIcon>
+              {drawer && <ListItemText primary="Manage My Societies" />}
+            </ListItemButton>
+          </ListItem>
+        ) : null}
       </List>
       <Divider />
 
