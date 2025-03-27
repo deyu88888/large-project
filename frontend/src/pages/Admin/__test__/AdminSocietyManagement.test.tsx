@@ -38,8 +38,8 @@ vi.mock('../AdminSocietyManagement/SocietyCreationRequests', () => ({
   default: () => <div data-testid="pending-societies">Pending Societies Component</div>
 }));
 
-vi.mock('../AdminSocietyManagement/SocietyDesChangeRequest', () => ({
-  default: () => <div data-testid="description-requests">Description Requests Component</div>
+vi.mock('../AdminSocietyManagement/PendingSocietyDetailRequest', () => ({
+  default: () => <div data-testid="detail-requests">Description Requests Component</div>
 }));
 
 // Mock the theme tokens
@@ -111,7 +111,7 @@ describe('ManageSocieties', () => {
     expect(screen.getByText('Current societies')).toBeInTheDocument();
     expect(screen.getByText('Pending societies')).toBeInTheDocument();
     expect(screen.getByText('Rejected societies')).toBeInTheDocument();
-    expect(screen.getByText('Description requests')).toBeInTheDocument();
+    expect(screen.getByText('Society detail requests')).toBeInTheDocument();
   });
 
   it('shows the first tab content by default when no localStorage value', () => {
@@ -171,10 +171,10 @@ describe('ManageSocieties', () => {
     expect(rejectedTab.closest('button')).toHaveAttribute('aria-selected', 'true');
     expect(localStorageMock.setItem).toHaveBeenCalledWith('activeTab', '2');
     
-    // Click and check Description requests tab
-    const descTab = screen.getByText('Description requests');
-    fireEvent.click(descTab);
-    expect(descTab.closest('button')).toHaveAttribute('aria-selected', 'true');
+    // Click and check Society detail requests tab
+    const detailTab = screen.getByText('Society detail requests');
+    fireEvent.click(detailTab);
+    expect(detailTab.closest('button')).toHaveAttribute('aria-selected', 'true');
     expect(localStorageMock.setItem).toHaveBeenCalledWith('activeTab', '3');
     
     // Go back to first tab
