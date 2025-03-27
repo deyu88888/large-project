@@ -41,14 +41,14 @@ export const DashboardFooter = () => {
       }}
     >
       <Container maxWidth="xl">
-        <Grid container spacing={15}>
+        <Grid container spacing={4}>
           {/* Brand Section */}
           <Grid
             size={{
               xs: 12,
-              md: 3,
+              md: 6,
+              lg: 3,
             }}
-            sx={{ ml: 6 }}
           >
             <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
               {/* Infinity Logo */}
@@ -159,7 +159,8 @@ export const DashboardFooter = () => {
           <Grid
             size={{
               xs: 12,
-              md: 3,
+              md: 6,
+              lg: 3,
             }}
           >
             <Typography
@@ -212,7 +213,8 @@ export const DashboardFooter = () => {
           <Grid
             size={{
               xs: 12,
-              md: 3,
+              md: 6,
+              lg: 3,
             }}
           >
             <Typography
@@ -266,7 +268,8 @@ export const DashboardFooter = () => {
           <Grid
             size={{
               xs: 12,
-              md: 3,
+              md: 6,
+              lg: 3,
             }}
           >
             <Typography

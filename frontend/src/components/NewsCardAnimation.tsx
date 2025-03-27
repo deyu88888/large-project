@@ -10,7 +10,6 @@ export const NewsCardAnimation = () => {
     const [flipping, setFlipping] = useState(false);
 
     useEffect(() => {
-        // TODO: replace response with actual API call after backend is ready
         const response: News[] = [
             {
                 id: 1,

@@ -198,8 +198,6 @@ class RecommendationFeedbackView(APIView):
             )
             feedback_recorded = True
             
-            # Note: This doesn't actually join the student to the society
-            # That would typically be handled by another endpoint
         
         if not feedback_recorded:
             return Response(

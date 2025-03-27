@@ -148,7 +148,6 @@ class JoinSocietySerializerTest(TestCase):
     def test_save_returns_society(self):
         """
         Test that the save() method returns the Society instance.
-        (Note: In your flow, the view creates a SocietyRequest instead.)
         """
         
         self.society.society_members.remove(self.student)

@@ -20,7 +20,7 @@ import PersonAddAltIcon from "@mui/icons-material/PersonAddAlt";
 import InboxIcon from "@mui/icons-material/MoveToInbox";
 import LogoutIcon from "@mui/icons-material/Logout";
 import SportsFootballIcon from '@mui/icons-material/SportsFootball';
-import { CustomDrawer, CustomDrawerHeader } from "./drawer/CustomDrawer";
+import { CustomDrawer, CustomDrawerHeader } from "./CustomDrawer";
 import GroupsIcon from '@mui/icons-material/Groups';
 import ManageHistoryIcon from '@mui/icons-material/ManageHistory';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';

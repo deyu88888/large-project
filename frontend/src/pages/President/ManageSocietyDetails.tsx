@@ -1,5 +1,3 @@
-// TODO: refactor after this page is fixed, id 1 is not loading
-
 import React, { useState, useEffect, ChangeEvent, FormEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {

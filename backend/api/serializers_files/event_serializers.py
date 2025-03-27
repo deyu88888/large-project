@@ -126,28 +126,21 @@ class RSVPEventSerializer(serializers.ModelSerializer):
         event = self.instance
         student = request.user.student
 
-        print(f"[DEBUG] Validating RSVP: student={student}, event={event}")
-
         if self.context.get('action') == 'RSVP':
             if not event.hosted_by.society_members.filter(id=student.id).exists():
-                print("[DEBUG] Student is not a member of the hosting society")
                 raise serializers.ValidationError("You must be a member of the hosting society to RSVP for this event.")
 
             if student in event.current_attendees.all():
-                print("[DEBUG] Student already RSVP’d")
                 raise serializers.ValidationError("You have already RSVP'd for this event.")
 
             if event.has_started():
-                print("[DEBUG] Event has already started")
                 raise serializers.ValidationError("You cannot RSVP for an event that has already started.")
 
             if event.is_full():
-                print("[DEBUG] Event is full")
                 raise serializers.ValidationError("This event is full and cannot accept more RSVPs.")
 
         elif self.context.get('action') == 'CANCEL':
             if student not in event.current_attendees.all():
-                print("[DEBUG] Student is not in current attendees")
                 raise serializers.ValidationError("You have not RSVP'd for this event.")
 
         return attrs

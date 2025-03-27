@@ -24,7 +24,7 @@ import ManageAccountsOutlinedIcon from "@mui/icons-material/ManageAccountsOutlin
 import ReportProblemOutlinedIcon from "@mui/icons-material/ReportProblemOutlined";
 import GroupAddOutlinedIcon from "@mui/icons-material/GroupAddOutlined";
 
-import { CustomDrawer, CustomDrawerHeader } from "./drawer/CustomDrawer";
+import { CustomDrawer, CustomDrawerHeader } from "./CustomDrawer";
 import Groups2Icon from "@mui/icons-material/Groups2";
 import NewspaperIcon from "@mui/icons-material/Newspaper";
 import InboxIcon from "@mui/icons-material/MoveToInbox";
