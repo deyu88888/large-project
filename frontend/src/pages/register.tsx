@@ -1,7 +1,7 @@
 import { apiClient, apiPaths } from "../api";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import CircularLoader from "../components/loading/circular-loader";
+import CircularLoader from "../components/loading/CircularLoader";
 import { Formik, Form, ErrorMessage } from "formik";
 import Stepper from "@mui/material/Stepper";
 import Step from "@mui/material/Step";

@@ -20,7 +20,7 @@ import { SearchContext } from "./layout/SearchContext";
 import AdminDrawer from "./layout/AdminDrawer";
 import StudentDrawer from "./layout/StudentDrawer";
 import PresidentDrawer from "./layout/PresidentDrawer";
-import { CustomAppBar } from "./layout/drawer/CustomDrawer";
+import { CustomAppBar } from "./layout/CustomDrawer";
 
 const Layout: React.FC = () => {
   const theme = useTheme();

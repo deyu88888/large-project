@@ -4,7 +4,7 @@ import { ACCESS_TOKEN, REFRESH_TOKEN } from "../../constants";
 import { apiClient, apiPaths } from "../../api";
 import { useAuthStore } from "../../stores/auth-store";
 import { jwtDecode } from "jwt-decode";
-import { LoadingView } from "../loading/loading-view";
+import { LoadingView } from "../loading/LoadingView";
 import { User } from "../../types/user/user";
 
 type UserRole = "admin" | "student";

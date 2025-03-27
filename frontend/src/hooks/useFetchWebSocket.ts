@@ -4,7 +4,7 @@ import { useWebSocketManager, CONNECTION_STATES, WebSocketMessage } from "./useW
 import { getWebSocketUrl } from "../utils/websocket";
 
 // Cache of failed WebSocket routes to avoid repeated attempts
-const failedWebSocketRoutes = new Set<string>();
+export const failedWebSocketRoutes = new Set<string>();
 
 /**
  * Helper function to fetch data and update state
@@ -34,7 +34,8 @@ export const handleMessage = async <T>(
   try {
     await fetchData(setData, fetchDataFunction);
   } catch (error) {
-    console.error("Error parsing WebSocket message:", error); // TODO: keep this, need to know the error
+    console.error("Error parsing WebSocket message:", error);
+    console.error("Error parsing WebSocket message:", error); 
   }
 };
 

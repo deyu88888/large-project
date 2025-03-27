@@ -2,20 +2,20 @@ import { lazy, Suspense } from "react";
 import { Outlet, Navigate, useRoutes } from "react-router-dom";
 
 import NotFound from "../pages/404";
-import { LoadingView } from "../components/loading/loading-view";
+import { LoadingView } from "../components/loading/LoadingView";
 import { PublicGuard } from "../components/guards/public-guard";
 import { PrivateGuard } from "../components/guards/private-guard";
-import CircularLoader from "../components/loading/circular-loader";
+import CircularLoader from "../components/loading/CircularLoader";
 import Layout from "../components/layout";
 import PageWithTitle from "../components/PageWithTitle";
 import ManageReports from "../pages/Admin/ManageReports";
 import PublicLayout from "../components/home/PublicLayout";
 
 // Lazy-loaded pages
-const LoginPage = lazy(() => import("../pages/login"));
-const RegisterPage = lazy(() => import("../pages/register"));
+const LoginPage = lazy(() => import("../pages/Login"));
+const RegisterPage = lazy(() => import("../pages/Register"));
 const SearchResultsPage = lazy(() => import("../pages/SearchResultsPage"))
-const ProfilePage = lazy(() => import("../pages/profile"));
+const ProfilePage = lazy(() => import("../pages/Profile"));
 const StudentDashboard = lazy(() => import("../pages/Student/StudentDashboard"));
 const MySocieties = lazy(() => import("../pages/Student/MyJoinedSocieties"));
 const ViewEvents = lazy(() => import("../pages/Student/MyJoinedEvents"));

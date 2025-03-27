@@ -6,7 +6,6 @@ def print_test_case(self):
     serializer = RecommendationFeedbackSerializer(data=self.valid_data)
     valid = serializer.is_valid()
     
-    print("\n=== DEBUG SERIALIZER VALIDATION ===")
     print(f"Valid: {valid}")
     if not valid:
         print("Errors:")

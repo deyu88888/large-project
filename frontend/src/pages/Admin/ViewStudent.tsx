@@ -312,7 +312,7 @@ const StudentForm: React.FC<StudentFormProps> = ({
 
           <Grid size={{ xs: 6 }}>
             <SocietiesField
-            // @ts-expect-error: TODO: update type
+            // @ts-expect-error:
               value={formData.societies}
               onChange={onSocietiesChange}
             />

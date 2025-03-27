@@ -1,7 +1,7 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { ACCESS_TOKEN } from "../../constants";
 import { useEffect, useState } from "react";
-import { LoadingView } from "../loading/loading-view";
+import { LoadingView } from "../loading/LoadingView";
 import { useAuthStore } from "../../stores/auth-store";
 import { jwtDecode } from "jwt-decode";
 import { User } from "../../types/user/user";

@@ -87,10 +87,26 @@ export default function HeroSection({ showCarousel = false, title, subtitle, bre
               }}
             >
               <Container maxWidth="xl">
-                {i === 0 
-                  ? renderContent("Welcome to Infinite Loop Innovators", "Discover societies, events, and latest news all in one place")
-                  : renderContent(`Featured Content ${i}`, "Explore our selection of highlighted events and societies")
-                }
+              {i === 0 &&
+                renderContent(
+                  "Welcome to Infinite Loop Innovators",
+                  "Explore a hub of vibrant student societies, exciting events, and real-time campus happenings."
+                )}
+              {i === 1 &&
+                renderContent(
+                  "Find Your People, Join Their Societies",
+                  "See what your friends are part of and jump into the events and communities they love!"
+                )}
+              {i === 2 &&
+                renderContent(
+                  "Upcoming Events You Can’t Miss",
+                  "Mark your calendar! Keynotes, hackathons, and game nights are just around the corner."
+                )}
+              {i === 3 &&
+                renderContent(
+                  "Start Your Own Society",
+                  "Got an idea? Launch your own student society in just a few clicks. We’ll help you grow it."
+                )}
               </Container>
             </Box>
           ))}
