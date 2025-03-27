@@ -34,6 +34,7 @@ export type SocietyEvent = {        // avoid naming conflicts with JavaScript's 
     id: number;
     title: string;
     description?: string;
+    main_description?: string;
     date: string;
     start_time: string;
     duration: string;

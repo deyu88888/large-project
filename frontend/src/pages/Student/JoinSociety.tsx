@@ -152,7 +152,7 @@ const SocietyCard: React.FC<SocietyCardProps> = ({
     <div
       id={`society-card-${recommendation.society.id}`}
       key={recommendation.society.id}
-      style={baseStyle}
+      style={baseStyle as any}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >

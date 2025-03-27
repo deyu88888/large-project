@@ -35,6 +35,7 @@ interface EventFormProps {
   onSubmit: (formData: FormData) => Promise<void>;
   submitButtonText?: string;
   isEditMode?: boolean;
+  onCancel?: VoidFunction;
 }
 
 export const EventForm: React.FC<EventFormProps> = ({

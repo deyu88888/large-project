@@ -34,6 +34,7 @@ import { EventData, TransformedEvent } from "../../types/student/event";
 import { Notification } from "../../types/student/notification";
 import { AwardAssignment } from "../../types/student/award";
 import AwardCard from "../../components/AwardCard";
+import { User } from "../../types/user/user";
 
 // Styled Components
 const CustomTabs = styled(Tabs)<{ activecolor: string }>(({ activecolor }) => ({
@@ -139,31 +140,45 @@ interface CalendarSectionProps {
 }
 
 // Utility Functions
-const getSocietyName = (event: TransformedEvent, societies: Society[]): string => {
-  return societies.find((s) => s.id === event.hosted_by)?.name || 
-         event.society_name || 
-         `Society ${event.hosted_by}`;
+const getSocietyName = (
+  event: TransformedEvent,
+  societies: Society[]
+): string => {
+  return (
+    societies.find((s) => s.id === event.hosted_by)?.name ||
+    event.society_name ||
+    `Society ${event.hosted_by}`
+  );
 };
 
-const isUserAttendingEvent = (event: TransformedEvent, userId?: number): boolean => {
+const isUserAttendingEvent = (
+  event: TransformedEvent,
+  userId?: number
+): boolean => {
   if (!userId || !event.current_attendees) return false;
-  return event.current_attendees.some(attendee => attendee.id === userId);
+  return event.current_attendees.some((attendee) => attendee.id === userId);
 };
 
-const filterEventsBySocieties = (events: TransformedEvent[], societies: Society[]): TransformedEvent[] => {
-  const societyIds = societies.map(s => s.id);
-  return events.filter(e => societyIds.includes(e.hosted_by));
+const filterEventsBySocieties = (
+  events: TransformedEvent[],
+  societies: Society[]
+): TransformedEvent[] => {
+  const societyIds = societies.map((s) => s.id);
+  return events.filter((e) => societyIds.includes(e.hosted_by));
 };
 
-const filterEventsUserNotAttending = (events: TransformedEvent[], userId?: number): TransformedEvent[] => {
-  return events.filter(e => !isUserAttendingEvent(e, userId));
+const filterEventsUserNotAttending = (
+  events: TransformedEvent[],
+  userId?: number
+): TransformedEvent[] => {
+  return events.filter((e) => !isUserAttendingEvent(e, userId));
 };
 
 // Component Functions
 const StatCard: React.FC<StatCardProps> = ({ icon, title, value, color }) => {
   const theme = useTheme();
   const colours = tokens(theme.palette.mode);
-  
+
   return (
     <Paper
       elevation={3}
@@ -173,7 +188,12 @@ const StatCard: React.FC<StatCardProps> = ({ icon, title, value, color }) => {
         p: 2,
       }}
     >
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        mb={2}
+      >
         <Typography variant="subtitle1" sx={{ color: colours.grey[300] }}>
           {title}
         </Typography>
@@ -186,12 +206,17 @@ const StatCard: React.FC<StatCardProps> = ({ icon, title, value, color }) => {
   );
 };
 
-const DashboardHeader: React.FC<HeaderProps> = ({ student, navigate, styleProps }) => {
+const DashboardHeader: React.FC<HeaderProps> = ({
+  student,
+  navigate,
+  styleProps,
+}) => {
   const { colours } = styleProps;
-  const shouldShowManageButton = student?.is_president === true || 
-                               student?.is_vice_president === true ||
-                               student?.is_event_manager === true;
-  
+  const shouldShowManageButton =
+    student?.is_president === true ||
+    student?.is_vice_president === true ||
+    student?.is_event_manager === true;
+
   const getManageButtonDestination = (): string => {
     if (student?.is_president) {
       return `/president-page/${student.president_of}`;
@@ -202,13 +227,20 @@ const DashboardHeader: React.FC<HeaderProps> = ({ student, navigate, styleProps 
     }
     return "";
   };
-  
+
   const getButtonText = (): string => {
-    return student?.is_event_manager ? "Manage Society Events" : "Manage My Society";
+    return student?.is_event_manager
+      ? "Manage Society Events"
+      : "Manage My Society";
   };
-  
+
   return (
-    <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
+    <Box
+      display="flex"
+      justifyContent="space-between"
+      alignItems="center"
+      mb={4}
+    >
       <Typography variant="h4" sx={{ color: colours.grey[100] }}>
         Dashboard
       </Typography>
@@ -231,18 +263,20 @@ const DashboardHeader: React.FC<HeaderProps> = ({ student, navigate, styleProps 
   );
 };
 
-const StatCards: React.FC<StatCardsProps> = ({ 
-  societies, 
-  events, 
-  notifications, 
-  awards, 
+const StatCards: React.FC<StatCardsProps> = ({
+  societies,
+  events,
+  notifications,
+  awards,
   styleProps,
-  getMyEventsCount
+  getMyEventsCount,
 }) => {
   const { colours } = styleProps;
-  
-  const unreadNotificationsCount = notifications.filter(n => !n.is_read).length;
-  
+
+  const unreadNotificationsCount = notifications.filter(
+    (n) => !n.is_read
+  ).length;
+
   return (
     <Box
       display="grid"
@@ -278,9 +312,14 @@ const StatCards: React.FC<StatCardsProps> = ({
   );
 };
 
-const SocietyTab: React.FC<SocietyTabProps> = ({ societies, handleLeaveSociety, styleProps }) => {
+const SocietyTab: React.FC<SocietyTabProps> = ({
+  societies,
+  handleLeaveSociety,
+  styleProps,
+}) => {
   const { colours } = styleProps;
-  
+  const { user } = useAuthStore();
+
   if (societies.length === 0) {
     return (
       <Box
@@ -294,7 +333,7 @@ const SocietyTab: React.FC<SocietyTabProps> = ({ societies, handleLeaveSociety, 
       </Box>
     );
   }
-  
+
   return (
     <Box
       display="grid"
@@ -324,17 +363,21 @@ const SocietyTab: React.FC<SocietyTabProps> = ({ societies, handleLeaveSociety, 
             <Typography variant="h6" sx={{ color: colours.grey[100] }}>
               {society.name}
             </Typography>
-            {renderSocietyRoleBadge(society, colours)}
+            {renderSocietyRoleBadge(society, colours, user)}
           </Box>
-          {renderLeaveButton(society, handleLeaveSociety, colours)}
+          {renderLeaveButton(society, handleLeaveSociety, colours, user)}
         </Paper>
       ))}
     </Box>
   );
 };
 
-const renderSocietyRoleBadge = (society: Society, colours: ReturnType<typeof tokens>) => {
-  if (society.is_president) {
+const renderSocietyRoleBadge = (
+  society: Society,
+  colours: ReturnType<typeof tokens>,
+  currentUser: User
+) => {
+  if (society.president?.username === currentUser?.username) {
     return (
       <Box
         px={1}
@@ -347,8 +390,8 @@ const renderSocietyRoleBadge = (society: Society, colours: ReturnType<typeof tok
       </Box>
     );
   }
-  
-  if (society.is_vice_president) {
+
+  if (society.president?.username === currentUser?.username) {
     return (
       <Box
         px={1}
@@ -361,8 +404,8 @@ const renderSocietyRoleBadge = (society: Society, colours: ReturnType<typeof tok
       </Box>
     );
   }
-  
-  if (society.is_event_manager) {
+
+  if (society.event_manager?.username === currentUser?.username) {
     return (
       <Box
         px={1}
@@ -375,19 +418,23 @@ const renderSocietyRoleBadge = (society: Society, colours: ReturnType<typeof tok
       </Box>
     );
   }
-  
+
   return null;
 };
 
 const renderLeaveButton = (
-  society: Society, 
+  society: Society,
   handleLeaveSociety: (societyId: number) => Promise<void>,
-  colours: ReturnType<typeof tokens>
+  colours: ReturnType<typeof tokens>,
+  currentUser: User
 ) => {
-  if (society.is_president || society.is_vice_president) {
+  if (
+    currentUser?.username === society.president?.username ||
+    society.vice_president?.username
+  ) {
     return null;
   }
-  
+
   return (
     <Button
       fullWidth
@@ -403,15 +450,16 @@ const renderLeaveButton = (
   );
 };
 
-const EventDate: React.FC<{ date: string; startTime?: string }> = ({ date, startTime }) => {
+const EventDate: React.FC<{ date: string; startTime?: string }> = ({
+  date,
+  startTime,
+}) => {
   const theme = useTheme();
   const colours = tokens(theme.palette.mode);
-  
+
   return (
     <Box display="flex" alignItems="center" mt={1}>
-      <FaRegClock
-        style={{ marginRight: 8, color: colours.grey[300] }}
-      />
+      <FaRegClock style={{ marginRight: 8, color: colours.grey[300] }} />
       <Typography variant="body2" sx={{ color: colours.grey[300] }}>
         {date} {startTime && `at ${startTime}`}
       </Typography>
@@ -421,15 +469,12 @@ const EventDate: React.FC<{ date: string; startTime?: string }> = ({ date, start
 
 const EventLocation: React.FC<{ location?: string }> = ({ location }) => {
   if (!location) return null;
-  
+
   const theme = useTheme();
   const colours = tokens(theme.palette.mode);
-  
+
   return (
-    <Typography
-      variant="body2"
-      sx={{ color: colours.grey[300], mt: 1 }}
-    >
+    <Typography variant="body2" sx={{ color: colours.grey[300], mt: 1 }}>
       Location: {location}
     </Typography>
   );
@@ -438,12 +483,9 @@ const EventLocation: React.FC<{ location?: string }> = ({ location }) => {
 const EventHost: React.FC<{ hostName: string }> = ({ hostName }) => {
   const theme = useTheme();
   const colours = tokens(theme.palette.mode);
-  
+
   return (
-    <Typography
-      variant="body2"
-      sx={{ color: colours.grey[300], mt: 1 }}
-    >
+    <Typography variant="body2" sx={{ color: colours.grey[300], mt: 1 }}>
       Hosted by: {hostName}
     </Typography>
   );
@@ -456,7 +498,7 @@ const EventCard: React.FC<{
   styleProps: StyleProps;
 }> = ({ event, hostName, onRSVP, styleProps }) => {
   const { colours } = styleProps;
-  
+
   return (
     <Paper
       elevation={2}
@@ -496,18 +538,21 @@ const EventCard: React.FC<{
   );
 };
 
-const EventsTab: React.FC<EventTabProps> = ({ 
-  events, 
-  societies, 
+const EventsTab: React.FC<EventTabProps> = ({
+  events,
+  societies,
   userId,
-  handleRSVP, 
-  styleProps 
+  handleRSVP,
+  styleProps,
 }) => {
   const { colours } = styleProps;
-  
+
   const filteredEvents = filterEventsBySocieties(events, societies);
-  const eventsUserNotAttending = filterEventsUserNotAttending(filteredEvents, userId);
-  
+  const eventsUserNotAttending = filterEventsUserNotAttending(
+    filteredEvents,
+    userId
+  );
+
   if (eventsUserNotAttending.length === 0) {
     return (
       <Box
@@ -521,7 +566,7 @@ const EventsTab: React.FC<EventTabProps> = ({
       </Box>
     );
   }
-  
+
   return (
     <Box
       display="grid"
@@ -554,7 +599,7 @@ const NotificationItem: React.FC<{
   styleProps: StyleProps;
 }> = ({ notification, onMarkAsRead, styleProps }) => {
   const { colours } = styleProps;
-  
+
   return (
     <Paper
       elevation={2}
@@ -563,19 +608,13 @@ const NotificationItem: React.FC<{
           ? colours.primary[400]
           : colours.blueAccent[700],
         border: `1px solid ${
-          notification.is_read
-            ? colours.grey[300]
-            : colours.blueAccent[400]
+          notification.is_read ? colours.grey[300] : colours.blueAccent[400]
         }`,
         p: 2,
         mb: 2,
       }}
     >
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-      >
+      <Box display="flex" justifyContent="space-between" alignItems="center">
         <Typography
           variant="body1"
           sx={{
@@ -620,13 +659,13 @@ const NotificationItem: React.FC<{
   );
 };
 
-const NotificationsTab: React.FC<NotificationTabProps> = ({ 
-  notifications, 
-  markNotificationAsRead, 
-  styleProps 
+const NotificationsTab: React.FC<NotificationTabProps> = ({
+  notifications,
+  markNotificationAsRead,
+  styleProps,
 }) => {
   const { colours } = styleProps;
-  
+
   if (notifications.length === 0) {
     return (
       <Typography
@@ -638,14 +677,14 @@ const NotificationsTab: React.FC<NotificationTabProps> = ({
       </Typography>
     );
   }
-  
+
   return (
     <div className="space-y-6">
       {notifications.map((notification) => (
         <NotificationItem
           key={notification.id}
           notification={notification}
-          onMarkAsRead={() => markNotificationAsRead(notification.id)}
+          onMarkAsRead={() => markNotificationAsRead(notification.id, )}
           styleProps={styleProps}
         />
       ))}
@@ -655,7 +694,7 @@ const NotificationsTab: React.FC<NotificationTabProps> = ({
 
 const AwardsTab: React.FC<AwardTabProps> = ({ awards, styleProps }) => {
   const { colours } = styleProps;
-  
+
   if (awards.length === 0) {
     return (
       <Typography
@@ -667,7 +706,7 @@ const AwardsTab: React.FC<AwardTabProps> = ({ awards, styleProps }) => {
       </Typography>
     );
   }
-  
+
   return (
     <Box
       display="grid"
@@ -685,20 +724,21 @@ const AwardsTab: React.FC<AwardTabProps> = ({ awards, styleProps }) => {
   );
 };
 
-const StartSocietySection: React.FC<StartSocietySectionProps> = ({ 
-  navigate, 
-  student, 
-  styleProps 
+const StartSocietySection: React.FC<StartSocietySectionProps> = ({
+  navigate,
+  student,
+  styleProps,
 }) => {
   const { colours } = styleProps;
-  const isLeadershipRole = student?.is_president === true ||
-                          student?.is_vice_president === true ||
-                          student?.is_event_manager === true;
-  
+  const isLeadershipRole =
+    student?.is_president === true ||
+    student?.is_vice_president === true ||
+    student?.is_event_manager === true;
+
   if (isLeadershipRole) {
     return null;
   }
-  
+
   return (
     <Box
       display="grid"
@@ -724,7 +764,8 @@ const StartSocietySection: React.FC<StartSocietySectionProps> = ({
           </Typography>
         </Box>
         <Typography variant="body2" sx={{ color: colours.grey[300], mb: 2 }}>
-          Have an idea for a new society? Share your passion and bring others together!
+          Have an idea for a new society? Share your passion and bring others
+          together!
         </Typography>
         <Button
           variant="contained"
@@ -748,11 +789,11 @@ const EventManagerButton: React.FC<{
   styleProps: StyleProps;
 }> = ({ student, navigate, styleProps }) => {
   const { colours } = styleProps;
-  
+
   if (!student?.is_event_manager) {
     return null;
   }
-  
+
   const handleClick = () => {
     if (student?.event_manager_of_society) {
       navigate(
@@ -762,7 +803,7 @@ const EventManagerButton: React.FC<{
       console.error("No society ID found for event manager");
     }
   };
-  
+
   return (
     <Button
       variant="contained"
@@ -779,17 +820,17 @@ const EventManagerButton: React.FC<{
   );
 };
 
-const CalendarSection: React.FC<CalendarSectionProps> = ({ 
-  showCalendar, 
-  toggleCalendar, 
-  student, 
+const CalendarSection: React.FC<CalendarSectionProps> = ({
+  showCalendar,
+  toggleCalendar,
+  student,
   navigate,
   societies,
   events,
-  styleProps
+  styleProps,
 }) => {
   const { colours } = styleProps;
-  
+
   return (
     <Box mt={4}>
       <Paper
@@ -801,7 +842,12 @@ const CalendarSection: React.FC<CalendarSectionProps> = ({
           mb: 4,
         }}
       >
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+        <Box
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
+          mb={2}
+        >
           <Box display="flex" alignItems="center">
             <FaCalendarAlt
               size={24}
@@ -822,11 +868,11 @@ const CalendarSection: React.FC<CalendarSectionProps> = ({
             {showCalendar ? "Hide Calendar" : "Show Calendar"}
           </Button>
         </Box>
-        
-        <EventManagerButton 
-          student={student} 
-          navigate={navigate} 
-          styleProps={styleProps} 
+
+        <EventManagerButton
+          student={student}
+          navigate={navigate}
+          styleProps={styleProps}
         />
 
         {showCalendar ? (
@@ -860,8 +906,8 @@ const TabsContainer: React.FC<{
     <Paper
       elevation={3}
       sx={{
-        backgroundColor: theme => tokens(theme.palette.mode).primary[400],
-        border: theme => `1px solid ${tokens(theme.palette.mode).grey[800]}`,
+        backgroundColor: (theme) => tokens(theme.palette.mode).primary[400],
+        border: (theme) => `1px solid ${tokens(theme.palette.mode).grey[800]}`,
       }}
     >
       <CustomTabs
@@ -877,9 +923,7 @@ const TabsContainer: React.FC<{
         <Tab label="Awards" icon={<FaTrophy />} iconPosition="start" />
         <Tab label="Society News" icon={<FaNewspaper />} iconPosition="start" />
       </CustomTabs>
-      <Box p={3}>
-        {children}
-      </Box>
+      <Box p={3}>{children}</Box>
     </Paper>
   );
 };
@@ -895,25 +939,25 @@ const useDashboardData = () => {
   });
   const [loading, setLoading] = useState<boolean>(true);
   const { user } = useAuthStore();
-  
+
   const fetchData = async () => {
     setLoading(true);
     try {
       const studentResponse = await apiClient.get("api/user/current");
       const student = studentResponse.data;
-      
+
       const societiesResponse = await apiClient.get("/api/society/joined");
       const societies = societiesResponse.data || [];
-      
+
       const allEvents: EventData[] = await getAllEvents();
       const transformedEvents = transformEvents(allEvents);
-      
+
       const notificationsResponse = await apiClient.get("/api/notifications/");
       const notifications = notificationsResponse.data || [];
-      
+
       const awardsResponse = await apiClient.get("/api/awards/students/");
       const awards = awardsResponse.data || [];
-      
+
       setDashboardData({
         societies,
         events: transformedEvents,
@@ -928,13 +972,13 @@ const useDashboardData = () => {
       setLoading(false);
     }
   };
-  
+
   useEffect(() => {
     if (user?.id) {
       fetchData();
     }
   }, [user?.id]);
-  
+
   return { dashboardData, loading, fetchData };
 };
 
@@ -944,19 +988,22 @@ const useSnackbar = () => {
     message: "",
     severity: "error",
   });
-  
-  const showSnackbar = (message: string, severity: SnackbarState["severity"]) => {
+
+  const showSnackbar = (
+    message: string,
+    severity: SnackbarState["severity"]
+  ) => {
     setSnackbarState({
       open: true,
       message,
       severity,
     });
   };
-  
+
   const handleSnackbarClose = () => {
-    setSnackbarState(prev => ({ ...prev, open: false }));
+    setSnackbarState((prev) => ({ ...prev, open: false }));
   };
-  
+
   return { snackbarState, showSnackbar, handleSnackbarClose };
 };
 
@@ -985,13 +1032,13 @@ const StudentDashboard: React.FC<StudentDashboardProps> = () => {
   const colours = tokens(theme.palette.mode);
   const styleProps = { colours };
   const { user } = useAuthStore();
-  
+
   // State
   const [activeTab, setActiveTab] = useState<number>(0);
   const [showCalendar, setShowCalendar] = useState<boolean>(false);
   const { dashboardData, loading, fetchData } = useDashboardData();
   const { snackbarState, showSnackbar, handleSnackbarClose } = useSnackbar();
-  
+
   // Derived state
   const tabColors = [
     colours.greenAccent?.[500],
@@ -1000,13 +1047,20 @@ const StudentDashboard: React.FC<StudentDashboardProps> = () => {
     colours.purpleAccent?.[500],
     colours.orangeAccent?.[500],
   ];
-  
+
   const allSocieties = useMemo(() => {
     if (!dashboardData.student) return dashboardData.societies;
-    
-    const allSocs = [...dashboardData.societies];
+
+    const allSocs: any = [
+      ...dashboardData.societies.map((s) => ({
+        id: s.id,
+        name: s.name,
+        is_president: false,
+        is_vice_president: false,
+      })),
+    ];
     const student = dashboardData.student;
-    
+
     if (
       student?.president_of &&
       !allSocs.some((s) => s.id === student.president_of)
@@ -1014,40 +1068,45 @@ const StudentDashboard: React.FC<StudentDashboardProps> = () => {
       allSocs.push({
         id: student.president_of,
         name:
-          student?.president_of_society_name || `Society ${student.president_of}`,
-        is_president: true,
+          student?.president_of_society_name ||
+          `Society ${student.president_of}`,
+        is_president: student.is_president,
       });
     }
-    
+
     if (
       student?.vice_president_of_society &&
       !allSocs.some((s) => s.id === student.vice_president_of_society)
     ) {
       allSocs.push({
         id: student.vice_president_of_society,
-        name: student?.vice_president_of_society_name || `Society ${student.vice_president_of_society}`,
+        name:
+          student?.vice_president_of_society_name ||
+          `Society ${student.vice_president_of_society}`,
         is_president: false,
         is_vice_president: true,
       });
     }
-    
+
     return allSocs;
   }, [dashboardData.societies, dashboardData.student]);
-  
+
   // Handlers
   const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
   };
-  
+
   const toggleCalendar = () => {
-    setShowCalendar(prev => !prev);
+    setShowCalendar((prev) => !prev);
   };
-  
+
   const getMyEventsCount = () => {
     const mySocietyIds = allSocieties.map((s) => s.id);
-    return dashboardData.events.filter((e) => mySocietyIds.includes(e.hosted_by)).length;
+    return dashboardData.events.filter((e) =>
+      mySocietyIds.includes(e.hosted_by)
+    ).length;
   };
-  
+
   const handleLeaveSociety = async (societyId: number) => {
     try {
       await apiClient.delete(`/api/society/leave/${societyId}/`);
@@ -1055,12 +1114,13 @@ const StudentDashboard: React.FC<StudentDashboardProps> = () => {
       fetchData();
     } catch (error: any) {
       console.error("Error leaving society:", error);
-      const errorMessage = error.response?.data?.error || 
-                         "An error occurred while trying to leave the society.";
+      const errorMessage =
+        error.response?.data?.error ||
+        "An error occurred while trying to leave the society.";
       showSnackbar(errorMessage, "error");
     }
   };
-  
+
   const handleRSVP = async (eventId: number, isAttending: boolean) => {
     try {
       if (isAttending) {
@@ -1075,37 +1135,39 @@ const StudentDashboard: React.FC<StudentDashboardProps> = () => {
       fetchData();
     } catch (error: any) {
       console.error("Error updating RSVP:", error);
-      const errorMessage = error.response?.data?.error ||
-                         "An error occurred while updating your RSVP.";
+      const errorMessage =
+        error.response?.data?.error ||
+        "An error occurred while updating your RSVP.";
       showSnackbar(errorMessage, "error");
     }
   };
-  
+
   const markNotificationAsRead = async (id: number) => {
     try {
       const response = await apiClient.patch(`/api/notifications/${id}`, {
         is_read: true,
       });
-      
+
       if (response.status === 200) {
-        setDashboardData(prev => ({
-          ...prev,
-          notifications: prev.notifications.map(n => 
-            n.id === id ? { ...n, is_read: true } : n
-          )
-        }));
+        // setDashboardData((prev) => ({
+        //   ...prev,
+        //   notifications: prev.notifications.map((n) =>
+        //     n.id === id ? { ...n, is_read: true } : n
+        //   ),
+        // }));
         showSnackbar("Notification marked as read", "success");
       } else {
         showSnackbar("Failed to mark notification as read", "error");
       }
     } catch (error: any) {
       console.error("Error marking notification as read:", error);
-      const errorMessage = error.response?.data?.error ||
-                         "An error occurred while marking the notification as read.";
+      const errorMessage =
+        error.response?.data?.error ||
+        "An error occurred while marking the notification as read.";
       showSnackbar(errorMessage, "error");
     }
   };
-  
+
   // Render loading state
   if (loading) {
     return (
@@ -1120,42 +1182,39 @@ const StudentDashboard: React.FC<StudentDashboardProps> = () => {
       </Box>
     );
   }
-  
+
   // Render tabs content
   const renderTabContent = () => {
     switch (activeTab) {
       case 0:
         return (
-          <SocietyTab 
-            societies={allSocieties} 
-            handleLeaveSociety={handleLeaveSociety} 
-            styleProps={styleProps} 
+          <SocietyTab
+            societies={allSocieties}
+            handleLeaveSociety={handleLeaveSociety}
+            styleProps={styleProps}
           />
         );
       case 1:
         return (
-          <EventsTab 
-            events={dashboardData.events} 
+          <EventsTab
+            events={dashboardData.events}
             societies={allSocieties}
             userId={user?.id}
-            handleRSVP={handleRSVP} 
-            styleProps={styleProps} 
+            handleRSVP={handleRSVP}
+            styleProps={styleProps}
           />
         );
       case 2:
         return (
-          <NotificationsTab 
-            notifications={dashboardData.notifications} 
-            markNotificationAsRead={markNotificationAsRead} 
-            styleProps={styleProps} 
+          <NotificationsTab
+            notifications={dashboardData.notifications}
+            markNotificationAsRead={markNotificationAsRead}
+            styleProps={styleProps}
           />
         );
       case 3:
         return (
-          <AwardsTab 
-            awards={dashboardData.awards} 
-            styleProps={styleProps} 
-          />
+          <AwardsTab awards={dashboardData.awards} styleProps={styleProps} />
         );
       case 4:
         return (
@@ -1167,17 +1226,17 @@ const StudentDashboard: React.FC<StudentDashboardProps> = () => {
         return null;
     }
   };
-  
+
   return (
     <Box minHeight="100vh" bgcolor={colours.primary[500]} py={8}>
       <Box maxWidth="1920px" mx="auto" px={4}>
-        <DashboardHeader 
-          student={dashboardData.student} 
-          navigate={navigate} 
-          styleProps={styleProps} 
+        <DashboardHeader
+          student={dashboardData.student}
+          navigate={navigate}
+          styleProps={styleProps}
         />
-        
-        <StatCards 
+
+        <StatCards
           societies={allSocieties}
           events={dashboardData.events}
           notifications={dashboardData.notifications}
@@ -1185,7 +1244,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = () => {
           styleProps={styleProps}
           getMyEventsCount={getMyEventsCount}
         />
-        
+
         <TabsContainer
           activeTab={activeTab}
           handleTabChange={handleTabChange}
@@ -1193,13 +1252,13 @@ const StudentDashboard: React.FC<StudentDashboardProps> = () => {
         >
           {renderTabContent()}
         </TabsContainer>
-        
+
         <StartSocietySection
           navigate={navigate}
           student={dashboardData.student}
           styleProps={styleProps}
         />
-        
+
         <CalendarSection
           showCalendar={showCalendar}
           toggleCalendar={toggleCalendar}
@@ -1210,14 +1269,18 @@ const StudentDashboard: React.FC<StudentDashboardProps> = () => {
           styleProps={styleProps}
         />
       </Box>
-      
+
       <Snackbar
         open={snackbarState.open}
         autoHideDuration={6000}
         onClose={handleSnackbarClose}
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
-        <Alert onClose={handleSnackbarClose} severity={snackbarState.severity} sx={{ width: "100%" }}>
+        <Alert
+          onClose={handleSnackbarClose}
+          severity={snackbarState.severity}
+          sx={{ width: "100%" }}
+        >
           {snackbarState.message}
         </Alert>
       </Snackbar>
