@@ -93,7 +93,53 @@
         "source": "recommendation",
         "feedback_id": null
       }
+    },
+    {
+      "student_id": 2,
+      "society_id": 2,
+      "feedback_type": "view_details",
+      "timestamp": "2025-03-27T03:41:57.988840",
+      "value": null,
+      "metadata": {
+        "explanation_request": true
+      }
+    },
+    {
+      "student_id": 2,
+      "society_id": 2,
+      "feedback_type": "rating",
+      "timestamp": "2025-03-27T03:42:00.857262",
+      "value": 4,
+      "metadata": {
+        "comment": "This is a great recommendation!",
+        "source": "recommendation",
+        "feedback_id": null
+      }
+    },
+    {
+      "student_id": 2,
+      "society_id": 2,
+      "feedback_type": "relevance",
+      "timestamp": "2025-03-27T03:42:00.859224",
+      "value": 5,
+      "metadata": {
+        "comment": "This is a great recommendation!",
+        "source": "recommendation",
+        "feedback_id": null
+      }
+    },
+    {
+      "student_id": 2,
+      "society_id": 2,
+      "feedback_type": "join",
+      "timestamp": "2025-03-27T03:42:00.861184",
+      "value": null,
+      "metadata": {
+        "timestamp": "2025-03-27T03:42:00.861184+00:00",
+        "source": "recommendation",
+        "feedback_id": null
+      }
     }
   ],
-  "last_updated": "2025-03-26T20:20:38.830016"
+  "last_updated": "2025-03-27T03:42:00.861184"
 }
