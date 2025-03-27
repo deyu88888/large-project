@@ -1,12 +1,11 @@
 import json
 from unittest.mock import patch, Mock
+from django.contrib.auth import get_user_model
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.test import APITestCase, APIClient
-from django.contrib.auth import get_user_model
 from api.models import Award, Student
-from api.serializers import AwardStudentSerializer
 
 User = get_user_model()
 
