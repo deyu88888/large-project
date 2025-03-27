@@ -20,7 +20,7 @@ function isTokenValid(token: string): boolean {
 // ---------------------------------------------------------------------------
 // 1) BASE API CONFIGURATION
 // ---------------------------------------------------------------------------
-const apiUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+const apiUrl = import.meta.env.VITE_API_BASE_URL || "https://infiniteloop.space";
 
 export const apiClient = axios.create({
   baseURL: apiUrl,

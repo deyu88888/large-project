@@ -317,7 +317,7 @@ export function EventDetailLayout({ eventData }: { eventData: EventData }) {
   
           {extra_modules?.map(renderModule)}
   
-          {participant_modules.length > 0 && (
+          {participant_modules?.length > 0 && (
             is_participant ? (
               <>
                 <Typography variant="h3" sx={{ mb: 2, fontWeight: "bold" }}>

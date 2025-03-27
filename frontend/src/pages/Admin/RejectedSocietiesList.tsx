@@ -19,7 +19,7 @@ const SocietyListRejected: React.FC = () => {
   const ws = useRef<WebSocket | null>(null);
   const { drawer } = useSettingsStore();
   const { searchTerm } = useContext(SearchContext);
-  const WEBSOCKET_URL = "ws:localhost:8000"
+  const WEBSOCKET_URL = "ws:"
   const RECONNECT_TIMEOUT = 5000;
   
   /**
