@@ -308,99 +308,32 @@ export const updateRecommendationFeedback = async (
   }
 };
 
+
 export const getRecommendationFeedback = async (societyId: number) => {
-  // Create a debug log object to track what's happening
-  const debugLog = {
-    societyId,
-    timeStarted: new Date().toISOString(),
-    endpoint: apiPaths.SOCIETY.RECOMMENDATION_FEEDBACK(societyId),
-    timeEnded: null,
-    optionsStatus: null,
-    status: null,
-    statusText: null,
-    error: null,
-  };
-
   try {
-    console.log(`🔍 DEBUG: Starting feedback request for society ${societyId}`);
-
-    // First try the OPTIONS request to see if that works
-    const optionsResult = await fetch(apiUrl + debugLog.endpoint, {
-      method: "OPTIONS",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-
-    debugLog.optionsStatus = optionsResult.status;
-    console.log(
-      `🔍 DEBUG: OPTIONS request result: ${optionsResult.status} ${optionsResult.statusText}`
+    // Instead of trying to access the individual feedback endpoint,
+    // let's use the feedback list endpoint which might be more permissive
+    const response = await apiClient.get(
+      apiPaths.SOCIETY.RECOMMENDATION_FEEDBACK_LIST
     );
-
-    // Try a different approach - using fetch directly
-    const token = localStorage.getItem(ACCESS_TOKEN);
-    console.log(
-      `🔍 DEBUG: Using token: ${
-        token ? "Yes (length: " + token.length + ")" : "No"
-      }`
-    );
-
-    const response = await fetch(apiUrl + debugLog.endpoint, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: token ? `Bearer ${token}` : "",
-        "X-Debug-Info": "Testing-Direct-Fetch",
-      },
-    });
-
-    debugLog.status = response.status;
-    debugLog.statusText = response.statusText;
-    console.log(
-      `🔍 DEBUG: GET request result: ${response.status} ${response.statusText}`
-    );
-
-    // If successful, parse the response
-    if (response.ok) {
-      const data = await response.json();
-      console.log(`🔍 DEBUG: Got successful response:`, data);
-      return data;
-    } else {
-      // If not successful, try to get error details
-      try {
-        const errorText = await response.text();
-        console.log(`🔍 DEBUG: Error response body:`, errorText);
-      } catch (e) {
-        console.log(`🔍 DEBUG: Couldn't read error response`);
-      }
-
-      // For 405 errors, let's try a different method as a test
-      if (response.status === 405) {
-        console.log(
-          `🔍 DEBUG: Got 405, trying POST instead to see if endpoint exists`
-        );
-        const postCheckResponse = await fetch(apiUrl + debugLog.endpoint, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: token ? `Bearer ${token}` : "",
-          },
-          body: JSON.stringify({ debug_check: true }),
-        });
-
-        console.log(`🔍 DEBUG: POST check result: ${postCheckResponse.status}`);
+    
+    if (response.data && Array.isArray(response.data)) {
+      // Find the feedback for this specific society in the list
+      const feedback = response.data.find(item => item.society_id === societyId);
+      
+      if (feedback) {
+        console.log(`Found existing feedback for society ${societyId} in the list`);
+        return feedback;
       }
     }
-
-    // Always return null for now to avoid UI issues
+    
+    // No feedback found for this society
+    console.log(`No existing feedback found for society ${societyId}`);
     return null;
   } catch (error: any) {
-    console.log(`🔍 DEBUG: Exception during feedback request:`, error);
-    debugLog.error = error.message;
+    // If even the list endpoint fails, we'll assume no feedback exists
+    console.log(`Could not check for feedback for society ${societyId}: ${error.message}`);
     return null;
-  } finally {
-    debugLog.timeEnded = new Date().toISOString();
-    console.log(`🔍 DEBUG: Complete debug log:`, debugLog);
   }
 };
 

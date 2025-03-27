@@ -22,7 +22,6 @@ try:
     from sentence_transformers import SentenceTransformer
     SENTENCE_TRANSFORMERS_AVAILABLE = True
 except ImportError:
-    print("WARNING: sentence-transformers not available. Falling back to TF-IDF only.")
     SENTENCE_TRANSFORMERS_AVAILABLE = False
 
 try:
@@ -99,9 +98,7 @@ class TextSimilarityAnalyzer:
             # Use a small but effective model for sentence embeddings
             # 'all-MiniLM-L6-v2' is a good balance between speed and accuracy
             self.sentence_model = SentenceTransformer('all-MiniLM-L6-v2')
-            print("Initialized sentence embedding model: all-MiniLM-L6-v2")
-        except Exception as e:
-            print(f"Error initializing sentence model: {e}")
+        except Exception:
             self.sentence_model = None
 
     def _load_or_create_vectorizers(self):
@@ -114,9 +111,7 @@ class TextSimilarityAnalyzer:
             try:
                 with open(self.model_path, 'rb') as f:
                     self.tfidf_vectorizer = pickle.load(f)
-                print("Loaded existing TF-IDF vectorizer")
-            except Exception as e:
-                print(f"Error loading TF-IDF vectorizer: {e}")
+            except Exception:
                 self._create_new_tfidf_vectorizer()
         else:
             self._create_new_tfidf_vectorizer()
@@ -126,9 +121,7 @@ class TextSimilarityAnalyzer:
             try:
                 with open(self.count_model_path, 'rb') as f:
                     self.count_vectorizer = pickle.load(f)
-                print("Loaded existing Count vectorizer")
-            except Exception as e:
-                print(f"Error loading Count vectorizer: {e}")
+            except Exception:
                 self._create_new_count_vectorizer()
         else:
             self._create_new_count_vectorizer()
@@ -142,7 +135,6 @@ class TextSimilarityAnalyzer:
             stop_words='english',
             ngram_range=(1, 3)
         )
-        print("Created new TF-IDF vectorizer")
 
     def _create_new_count_vectorizer(self):
         """
@@ -155,7 +147,6 @@ class TextSimilarityAnalyzer:
             max_features=500,
             stop_words='english'
         )
-        print("Created new Count vectorizer with min_df=0.0 and max_df=1.0")
 
     def preprocess_text(self, text):
         """
@@ -187,12 +178,6 @@ class TextSimilarityAnalyzer:
         # Remove extra whitespace
         processed_text = re.sub(r'\s+', ' ', processed_text).strip()
 
-        # Debug print
-        if len(processed_text) > 100:
-            print(f"Preprocessed text sample: {processed_text[:100]}...")
-        else:
-            print(f"Preprocessed text: {processed_text}")
-
         return processed_text
 
     @functools.lru_cache(maxsize=128)
@@ -208,8 +193,7 @@ class TextSimilarityAnalyzer:
             # Get embedding from model
             embedding = self.sentence_model.encode(text, convert_to_numpy=True)
             return embedding
-        except Exception as e:
-            print(f"Error generating embedding: {e}")
+        except Exception:
             return None
 
     def _calculate_embedding_similarity(self, text1, text2):
@@ -233,8 +217,7 @@ class TextSimilarityAnalyzer:
             )[0][0]
             
             return similarity
-        except Exception as e:
-            print(f"Error in embedding similarity: {e}")
+        except Exception:
             return 0
 
     def extract_keywords(self, text, top_n=10):
@@ -271,31 +254,19 @@ class TextSimilarityAnalyzer:
             self.preprocess_text(desc) for desc in unique_descriptions if desc
         ]
 
-        print(f"Corpus length after removing duplicates: {len(self.corpus)}")
-
-        if self.corpus:
-            print("First 3 corpus documents:")
-            for doc in self.corpus[:3]:
-                snippet = doc[:200] + ("..." if len(doc) > 200 else "")
-                print(f" - {snippet}")
-
         # If corpus is empty or too small, add sample descriptions
         if len(self.corpus) < 3:
-            print("Corpus too small, adding sample descriptions for training...")
             self.corpus.extend([
                 "This is a placeholder description about a student society.",
                 "Our society organizes various activities, discussions, and events for students.",
                 "A group of passionate individuals coming together to share knowledge and experiences."
             ])
-            print(f"New corpus size after adding samples: {len(self.corpus)}")
 
         # Fit vectorizers
         try:
             self.tfidf_vectorizer.fit(self.corpus)
             self.count_vectorizer.fit(self.corpus)
-        except ValueError as e:
-            print(f"Error fitting vectorizers: {e}")
-            print("Try adjusting min_df/max_df or ensuring your corpus has variety.")
+        except ValueError:
             return
 
         # Transform the corpus
@@ -306,17 +277,14 @@ class TextSimilarityAnalyzer:
         try:
             with open(self.model_path, 'wb') as f:
                 pickle.dump(self.tfidf_vectorizer, f)
-            print(f"TF-IDF vectorizer saved to {self.model_path}")
 
             with open(self.count_model_path, 'wb') as f:
                 pickle.dump(self.count_vectorizer, f)
-            print(f"Count vectorizer saved to {self.count_model_path}")
-        except Exception as e:
-            print(f"Error saving vectorizers: {e}")
+        except Exception:
+            pass
             
         # Pre-compute and cache embeddings for the original descriptions
         if self.sentence_model is not None:
-            print("Pre-computing embeddings for corpus...")
             for desc in unique_descriptions:
                 if desc:
                     self.get_embedding(desc)
@@ -351,7 +319,6 @@ class TextSimilarityAnalyzer:
         # If vectorizers aren't fit, attempt to fit them with these texts
         if (not hasattr(self.tfidf_vectorizer, 'vocabulary_') or
             not hasattr(self.count_vectorizer, 'vocabulary_')):
-            print("Vectorizers not fit yet, fitting with current texts...")
             all_texts = [text] + comparison_texts
             self.tfidf_vectorizer.fit(all_texts)
             self.count_vectorizer.fit(all_texts)
@@ -392,17 +359,6 @@ class TextSimilarityAnalyzer:
                     self.weights[key] * similarity_components.get(key, 0)
                     for key in self.weights
                 )
-
-                # Log component scores
-                component_scores = ", ".join([
-                    f"{key}: {similarity_components.get(key, 0):.4f}"
-                    for key in sorted(similarity_components.keys())
-                ])
-                print(f"Similarity components: {component_scores}")
-                print(
-                    f"Weighted similarity: {weighted_similarity:.4f} "
-                    f"between '{original_text[:30]}...' and '{orig_comp_text[:30]}...'"
-                )
                 
                 similarities.append(weighted_similarity)
 
@@ -414,12 +370,10 @@ class TextSimilarityAnalyzer:
 
             # Scale to 0-5
             result = round(transformed_similarity * 5, 2)
-            print(f"Final similarity score: {result}/5.00")
 
             return result
 
-        except Exception as e:
-            print(f"Error calculating similarity: {e}")
+        except Exception:
             # Fallback to Jaccard
             return self._calculate_jaccard_similarity(text, comparison_texts)
 
@@ -430,8 +384,7 @@ class TextSimilarityAnalyzer:
             vector2 = self.tfidf_vectorizer.transform([text2])
             similarity = cosine_similarity(vector1, vector2)[0][0]
             return similarity
-        except Exception as e:
-            print(f"Error in TF-IDF similarity: {e}")
+        except Exception:
             return 0
 
     def _calculate_keyword_overlap(self, text1, text2):
@@ -447,11 +400,9 @@ class TextSimilarityAnalyzer:
             union = len(keywords1.union(keywords2))
             similarity = intersection / union if union else 0
 
-            print(f"Keyword overlap: {intersection}/{union} = {similarity:.4f}")
             return similarity
 
-        except Exception as e:
-            print(f"Error in keyword overlap: {e}")
+        except Exception:
             return 0
 
     def _calculate_jaccard_similarity_single(self, text1, text2):
@@ -498,10 +449,6 @@ class TextSimilarityAnalyzer:
                 intersection = len(words_main.intersection(words_comp))
                 union = len(words_main.union(words_comp))
                 similarity = intersection / union if union else 0
-                print(
-                    f"Jaccard similarity: {similarity} "
-                    f"(Intersection: {intersection}, Union: {union})"
-                )
             max_similarity = max(max_similarity, similarity)
 
         # Non-linear transform
@@ -509,7 +456,6 @@ class TextSimilarityAnalyzer:
 
         # Scale to 0-5
         result = round(max_similarity * 5, 2)
-        print(f"Jaccard result: {result}")
         return result
 
 

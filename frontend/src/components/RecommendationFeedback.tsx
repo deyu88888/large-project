@@ -42,7 +42,7 @@ const RecommendationFeedback: React.FC<RecommendationFeedbackProps> = ({
           // If user already submitted feedback, hide everything immediately
           setExistingFeedback(cachedFeedback);
           setRating(cachedFeedback.rating);
-          setRelevance(cachedFeedback.relevance);
+          setRelevance(cachedFeedback.relevance || 3);
           setComment(cachedFeedback.comment || "");
           setFeedbackSubmitted(true);
           setIsVisible(false); // Hide the component right away
@@ -52,20 +52,21 @@ const RecommendationFeedback: React.FC<RecommendationFeedbackProps> = ({
       
       try {
         const feedback = await getRecommendationFeedback(societyId);
-        // Store in cache to avoid future requests
+        // Store in cache to avoid future requests (even if null)
         feedbackCache.set(societyId, feedback);
         
         if (feedback && feedback.rating) {
           // If user already submitted feedback, hide everything immediately
           setExistingFeedback(feedback);
           setRating(feedback.rating);
-          setRelevance(feedback.relevance);
+          setRelevance(feedback.relevance || 3);
           setComment(feedback.comment || "");
           setFeedbackSubmitted(true);
           setIsVisible(false); // Hide the component right away
         }
       } catch (error) {
-        // No existing feedback - store null in cache to avoid future requests
+        console.error(`Error checking feedback for society ${societyId}:`, error);
+        // Still store null in cache to avoid future requests
         feedbackCache.set(societyId, null);
       }
     };

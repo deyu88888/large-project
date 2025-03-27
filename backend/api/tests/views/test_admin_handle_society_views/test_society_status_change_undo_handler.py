@@ -59,7 +59,7 @@ class TestSocietyStatusChangeUndoHandler(TestCase):
         finally:
             Society.save = original_save  
 
-        print("✅ Response:", response.data)
+        print("Response:", response.data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         self.society.refresh_from_db()

@@ -1,4 +1,3 @@
-# api/consumer/dashboard_consumer.py
 import json
 import logging
 import traceback
@@ -18,10 +17,8 @@ def sanitize_channel_name(channel: str) -> str:
     """
     return re.sub(r'[^\w\.-]', '_', channel)
 
-# Set up enhanced logger
 logger = logging.getLogger(__name__)
 
-# Add a dedicated stream handler for immediate console output
 console_handler = logging.StreamHandler(sys.stdout)
 console_handler.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(levelname)s] %(asctime)s - %(name)s - %(message)s')
@@ -41,7 +38,7 @@ class DashboardConsumer(AsyncWebsocketConsumer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.user = None
-        self.is_authenticated = True  # Default to True for public access
+        self.is_authenticated = True  
         self.group_name = "dashboard"
         self.channel_name = None
         self.subscribed_channels = set()
@@ -56,7 +53,6 @@ class DashboardConsumer(AsyncWebsocketConsumer):
         Handles WebSocket connection.
         Accepts the connection and allows public access by default.
         """
-        # Extract client information
         self.client_info = {
             'client_addr': self.scope.get('client', ['Unknown'])[0] if self.scope.get('client') else 'Unknown',
             'headers': dict(self.scope.get('headers', [])),
@@ -69,16 +65,13 @@ class DashboardConsumer(AsyncWebsocketConsumer):
         logger.debug(f"[WebSocket Debug] Path: {self.client_info['path']}")
         
         try:
-            # Create a unique channel name
             self.channel_name = f"dashboard_{self.connection_id}"
             logger.debug(f"[WebSocket Debug] Channel name: {self.channel_name}")
 
-            # Accept the connection immediately
             logger.debug(f"[WebSocket Debug] Accepting connection {self.connection_id}")
             await self.accept()
             logger.debug(f"[WebSocket Debug] Connection {self.connection_id} accepted")
             
-            # Initially join the main dashboard group
             try:
                 logger.debug(f"[WebSocket Debug] Adding {self.channel_name} to group: {self.group_name}")
                 await self.channel_layer.group_add(self.group_name, self.channel_name)
@@ -88,7 +81,6 @@ class DashboardConsumer(AsyncWebsocketConsumer):
                 logger.error(f"[WebSocket Debug] Traceback: {traceback.format_exc()}")
                 raise
 
-            # Let the client know we're connected with public access
             try:
                 initial_message = {
                     'type': 'connection_established',
@@ -108,7 +100,6 @@ class DashboardConsumer(AsyncWebsocketConsumer):
                 logger.error(f"[WebSocket Debug] Traceback: {traceback.format_exc()}")
                 raise
             
-            # Immediately send initial data since this is public access
             try:
                 logger.debug(f"[WebSocket Debug] Sending initial dashboard stats")
                 await self.send_dashboard_stats()
@@ -131,7 +122,6 @@ class DashboardConsumer(AsyncWebsocketConsumer):
             logger.error(f"[WebSocket Debug] Connection error in connect(): {e}")
             logger.error(f"[WebSocket Debug] Traceback: {traceback.format_exc()}")
             try:
-                # Try to send a diagnostic message to the client before closing
                 await self.send(text_data=json.dumps({
                     'type': 'error',
                     'message': f"Connection failed: {str(e)}"
@@ -145,12 +135,10 @@ class DashboardConsumer(AsyncWebsocketConsumer):
         logger.debug(f"[WebSocket Debug] Disconnect called for {self.connection_id} with code {close_code}")
         
         try:
-            # Remove from the main dashboard group
             logger.debug(f"[WebSocket Debug] Removing {self.channel_name} from group {self.group_name}")
             await self.channel_layer.group_discard(self.group_name, self.channel_name)
             logger.debug(f"[WebSocket Debug] Removed from group {self.group_name}")
             
-            # Remove from all subscribed channel groups
             for channel in self.subscribed_channels:
                 channel_group = f"channel_{sanitize_channel_name(channel)}"
                 logger.debug(f"[WebSocket Debug] Removing from channel group {channel_group}")
@@ -170,12 +158,10 @@ class DashboardConsumer(AsyncWebsocketConsumer):
             data = json.loads(text_data)
             message_type = data.get("type", "")
             
-            # Log the received message
             self.message_log.append(('received', data))
             
             logger.debug(f"[WebSocket Debug] Parsed message type: {message_type}")
 
-            # Handle authentication (optional for additional permissions)
             if message_type == "authenticate":
                 logger.debug(f"[WebSocket Debug] Authentication request received")
                 token = data.get("token", "")
@@ -183,13 +169,12 @@ class DashboardConsumer(AsyncWebsocketConsumer):
                 
                 if mode == "public":
                     logger.debug(f"[WebSocket Debug] Public mode authentication requested")
-                    await self.authenticate(None)  # Authenticate with no token
+                    await self.authenticate(None)  
                 else:
                     logger.debug(f"[WebSocket Debug] Token authentication requested")
                     await self.authenticate(token)
                 return
 
-            # Handle subscription requests - allow for all
             if message_type == "subscribe":
                 channel = data.get("channel", "")
                 logger.debug(f"[WebSocket Debug] Subscription request for channel: {channel}")
@@ -200,7 +185,6 @@ class DashboardConsumer(AsyncWebsocketConsumer):
                     logger.warning(f"[WebSocket Debug] Subscription request with no channel specified")
                 return
                 
-            # Handle unsubscription requests
             if message_type == "unsubscribe":
                 channel = data.get("channel", "")
                 logger.debug(f"[WebSocket Debug] Unsubscription request for channel: {channel}")
@@ -211,7 +195,6 @@ class DashboardConsumer(AsyncWebsocketConsumer):
                     logger.warning(f"[WebSocket Debug] Unsubscription request with no channel specified")
                 return
 
-            # Handle data requests - allow for all
             if message_type == "request_data":
                 channel = data.get("channel", "")
                 logger.debug(f"[WebSocket Debug] Data request for channel: {channel}")
@@ -227,7 +210,6 @@ class DashboardConsumer(AsyncWebsocketConsumer):
                     await self.send_error(f"Unknown channel: {channel}")
                 return
 
-            # Unknown message type
             logger.warning(f"[WebSocket Debug] Unknown message type received: {message_type}")
             await self.send_error(f"Unknown message type: {message_type}")
             
@@ -244,7 +226,6 @@ class DashboardConsumer(AsyncWebsocketConsumer):
         Authenticates the WebSocket connection using a JWT token.
         Optional for dashboard - enhances with user-specific data if available.
         """
-        # Already authenticated for public access, token is optional
         if not token:
             logger.debug(f"[WebSocket Debug] No token provided, using public access mode")
             auth_response = {
@@ -264,7 +245,6 @@ class DashboardConsumer(AsyncWebsocketConsumer):
             return
 
         try:
-            # Validate the token and get the user
             logger.debug(f"[WebSocket Debug] Validating token")
             user = await self.get_user_from_token(token)
             
@@ -287,11 +267,9 @@ class DashboardConsumer(AsyncWebsocketConsumer):
                 await self.send(text_data=json.dumps(auth_response))
                 self.message_log.append(('sent', auth_response))
                 
-                # Send user-specific data after authentication
                 logger.debug(f"[WebSocket Debug] Sending user-specific notifications after auth")
                 await self.send_notifications()
             else:
-                # Keep public access if token is invalid
                 logger.warning(f"[WebSocket Debug] Invalid token provided, falling back to public access")
                 auth_response = {
                     'type': 'auth_response',
@@ -311,10 +289,9 @@ class DashboardConsumer(AsyncWebsocketConsumer):
             logger.error(f"[WebSocket Debug] Authentication error: {e}")
             logger.error(f"[WebSocket Debug] Traceback: {traceback.format_exc()}")
             
-            # Even on error, maintain public access
             auth_response = {
                 'type': 'auth_response',
-                'status': 'success',  # Still success for public access
+                'status': 'success',  
                 'message': 'Public access mode',
                 'available_channels': [
                     'dashboard/stats',
@@ -331,7 +308,6 @@ class DashboardConsumer(AsyncWebsocketConsumer):
     def get_user_from_token(self, token):
         """Validates JWT token and returns the corresponding user."""
         try:
-            # Validate the token
             logger.debug(f"[WebSocket Debug] Validating JWT token")
             access_token = AccessToken(token)
             user_id = access_token.payload.get('user_id')
@@ -340,7 +316,6 @@ class DashboardConsumer(AsyncWebsocketConsumer):
                 logger.warning(f"[WebSocket Debug] No user_id in token payload")
                 return AnonymousUser()
                 
-            # Get the user from the database
             logger.debug(f"[WebSocket Debug] Looking up user with id: {user_id}")
             user = User.objects.get(id=user_id)
             logger.debug(f"[WebSocket Debug] User found: {user.username}")
@@ -367,7 +342,6 @@ class DashboardConsumer(AsyncWebsocketConsumer):
             
         channel_group = f"channel_{sanitize_channel_name(channel)}"
         
-        # Add to channel group
         try:
             logger.debug(f"[WebSocket Debug] Adding to channel group: {channel_group}")
             await self.channel_layer.group_add(channel_group, self.channel_name)
@@ -379,7 +353,6 @@ class DashboardConsumer(AsyncWebsocketConsumer):
             await self.send_error(f"Error subscribing to channel: {str(e)}")
             return
         
-        # Send confirmation
         subscription_response = {
             'type': 'subscription_update',
             'channel': channel,
@@ -390,7 +363,6 @@ class DashboardConsumer(AsyncWebsocketConsumer):
         await self.send(text_data=json.dumps(subscription_response))
         self.message_log.append(('sent', subscription_response))
         
-        # Send initial data for the channel
         logger.debug(f"[WebSocket Debug] Sending initial data for channel: {channel}")
         if channel == 'dashboard/stats':
             await self.send_dashboard_stats()
@@ -405,7 +377,6 @@ class DashboardConsumer(AsyncWebsocketConsumer):
         
         channel_group = f"channel_{sanitize_channel_name(channel)}"
         
-        # Remove from channel group
         try:
             logger.debug(f"[WebSocket Debug] Removing from channel group: {channel_group}")
             await self.channel_layer.group_discard(channel_group, self.channel_name)
@@ -420,7 +391,6 @@ class DashboardConsumer(AsyncWebsocketConsumer):
             await self.send_error(f"Error unsubscribing from channel: {str(e)}")
             return
         
-        # Send confirmation
         unsubscription_response = {
             'type': 'subscription_update',
             'channel': channel,
@@ -512,8 +482,6 @@ class DashboardConsumer(AsyncWebsocketConsumer):
             logger.error(f"[WebSocket Debug] Traceback: {traceback.format_exc()}")
             await self.send_error(f"Error fetching notifications: {str(e)}")
 
-    # ---- Group message handlers ----
-
     async def dashboard_stats_update(self, event):
         """Broadcast handler for dashboard statistics updates."""
         logger.debug(f"[WebSocket Debug] Received dashboard stats update from channel layer")
@@ -565,8 +533,6 @@ class DashboardConsumer(AsyncWebsocketConsumer):
         except Exception as e:
             logger.error(f"[WebSocket Debug] Error forwarding notifications update: {e}")
 
-    # ---- Data retrieval methods ----
-
     @sync_to_async
     def get_dashboard_stats(self):
         """Fetches dashboard statistics from the database."""
@@ -575,7 +541,6 @@ class DashboardConsumer(AsyncWebsocketConsumer):
         try:
             from api.models import Society, Event, Student
             
-            # Count database entries
             society_count = Society.objects.count()
             event_count = Event.objects.count()
             pending_count = Society.objects.filter(status="Pending").count()
@@ -593,7 +558,6 @@ class DashboardConsumer(AsyncWebsocketConsumer):
             logger.error(f"[WebSocket Debug] Error fetching dashboard stats from database: {e}")
             logger.error(f"[WebSocket Debug] Traceback: {traceback.format_exc()}")
             
-            # Return defaults to avoid breaking the UI
             return {"totalSocieties": 0, "totalEvents": 0, "pendingApprovals": 0, "activeMembers": 0}
 
     @sync_to_async
@@ -604,10 +568,8 @@ class DashboardConsumer(AsyncWebsocketConsumer):
         try:
             from ..models import Activity
             
-            # Check if Activity model is available and has the expected fields
             logger.debug(f"[WebSocket Debug] Activity model fields: {[f.name for f in Activity._meta.get_fields()]}")
             
-            # Fetch activities
             activities = Activity.objects.order_by('-created_at')[:10]
             logger.debug(f"[WebSocket Debug] Found {len(activities)} recent activities")
             
@@ -617,7 +579,6 @@ class DashboardConsumer(AsyncWebsocketConsumer):
             logger.error(f"[WebSocket Debug] Error fetching recent activities from database: {e}")
             logger.error(f"[WebSocket Debug] Traceback: {traceback.format_exc()}")
             
-            # Return an empty list to avoid breaking the UI
             return []
 
     @sync_to_async
@@ -628,18 +589,14 @@ class DashboardConsumer(AsyncWebsocketConsumer):
         try:
             from api.models import Notification
             
-            # Check if Notification model is available and has the expected fields
             logger.debug(f"[WebSocket Debug] Notification model fields: {[f.name for f in Notification._meta.get_fields()]}")
             
-            # Different query strategy based on authentication
             if self.user:
-                # For authenticated users, show their notifications
                 logger.debug(f"[WebSocket Debug] Fetching user-specific notifications for {self.user.username}")
                 notifications = Notification.objects.filter(for_user=self.user).order_by('-send_time')[:10]
                 logger.debug(f"[WebSocket Debug] Found {len(notifications)} user-specific notifications")
                 return [{"message": f"{n.header}: {n.body}"} for n in notifications]
             else:
-                # For public access, show public notifications
                 logger.debug(f"[WebSocket Debug] Fetching public notifications")
                 try:
                     if hasattr(Notification, 'is_public'):
@@ -668,10 +625,8 @@ class DashboardConsumer(AsyncWebsocketConsumer):
         try:
             from api.models import SiteSettings
             
-            # Check if SiteSettings model is available
             logger.debug(f"[WebSocket Debug] SiteSettings model fields: {[f.name for f in SiteSettings._meta.get_fields()]}")
             
-            # Fetch settings
             settings = SiteSettings.load()
             logger.debug(f"[WebSocket Debug] Site settings loaded successfully")
             return settings
@@ -679,7 +634,6 @@ class DashboardConsumer(AsyncWebsocketConsumer):
             logger.error(f"[WebSocket Debug] Error fetching site settings from database: {e}")
             logger.error(f"[WebSocket Debug] Traceback: {traceback.format_exc()}")
             
-            # Return defaults
             class DefaultSettings:
                 introduction_title = "Welcome to Student Societies Dashboard"
                 introduction_content = "This dashboard provides an overview of all student societies and their activities."
