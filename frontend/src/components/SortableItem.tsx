@@ -42,6 +42,7 @@ export function SortableItem({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // If the module is "image", compute a preview src
   const imageSrc: string | null | undefined =
     mod.type === "image"
       ? mod.fileValue instanceof File
@@ -51,7 +52,7 @@ export function SortableItem({
         : mod.textValue
       : null;
 
-
+  // If the module is "file", extract a nice filename
   let fileName: string | null = null;
   if (mod.type === "file") {
     if (mod.fileValue instanceof File) {
@@ -65,6 +66,7 @@ export function SortableItem({
 
   return (
     <div ref={setNodeRef} style={style} {...attributes}>
+      {/* Drag handle */}
       <div
         style={{
           cursor: "grab",
@@ -79,6 +81,7 @@ export function SortableItem({
         Drag
       </div>
 
+      {/* Description */}
       {mod.type === "description" && (
         <>
           <Typography variant="subtitle1" gutterBottom>
@@ -104,6 +107,7 @@ export function SortableItem({
         </>
       )}
 
+      {/* Subtitle */}
       {mod.type === "subtitle" && (
         <>
           <Typography variant="subtitle1" gutterBottom>
@@ -119,6 +123,7 @@ export function SortableItem({
         </>
       )}
 
+      {/* Image Upload */}
       {mod.type === "image" && (
         <>
           <Typography variant="subtitle1" gutterBottom>
@@ -157,6 +162,7 @@ export function SortableItem({
         </>
       )}
 
+      {/* File Upload */}
       {mod.type === "file" && (
         <>
           <Typography variant="subtitle1" gutterBottom>
@@ -192,7 +198,9 @@ export function SortableItem({
         </>
       )}
 
+      {/* Delete button with accessible label */}
       <IconButton
+        aria-label="delete"
         onClick={() => onDelete(mod.id)}
         sx={{ position: "absolute", top: 8, right: 8 }}
         size="small"

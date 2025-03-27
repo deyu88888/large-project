@@ -41,7 +41,7 @@ export function SocietyPreview({
     >
       <AppBar sx={{ position: "relative" }}>
         <Toolbar>
-          <IconButton edge="start" color="inherit" onClick={onClose}>
+        <IconButton edge="start" color="inherit" onClick={onClose} aria-label="close">
             <CloseIcon />
           </IconButton>
           <Typography sx={{ ml: 2, flex: 1 }} variant="h6">

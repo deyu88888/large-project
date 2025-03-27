@@ -1,0 +1,51 @@
+
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import AvatarCropperModal from "../AvatarCropperModal";
+import { vi, describe, it, expect, beforeEach } from "vitest";
+
+
+const mockOnClose = vi.fn();
+const mockOnConfirm = vi.fn();
+
+const defaultProps = {
+  open: true,
+  imageSrc: "https:
+  onClose: mockOnClose,
+  onConfirm: mockOnConfirm,
+};
+
+describe("AvatarCropperModal", () => {
+  beforeEach(() => {
+    mockOnClose.mockClear();
+    mockOnConfirm.mockClear();
+  });
+
+  it("renders modal with cropper and buttons", () => {
+    render(<AvatarCropperModal {...defaultProps} />);
+    expect(screen.getByText("Crop your avatar")).toBeInTheDocument();
+    expect(screen.getByText("Cancel")).toBeInTheDocument();
+    expect(screen.getByText("Confirm")).toBeInTheDocument();
+  });
+
+  it("calls onClose when Cancel is clicked", () => {
+    render(<AvatarCropperModal {...defaultProps} />);
+    fireEvent.click(screen.getByText("Cancel"));
+    expect(mockOnClose).toHaveBeenCalled();
+  });
+
+  it("calls onConfirm and onClose when Confirm is clicked", async () => {
+    global.fetch = vi.fn(() =>
+      Promise.resolve({
+        blob: () => Promise.resolve(new Blob(["dummy content"], { type: "image/jpeg" })),
+      } as Response)
+    );
+
+    render(<AvatarCropperModal {...defaultProps} />);
+    fireEvent.click(screen.getByText("Confirm"));
+
+    await waitFor(() => {
+      expect(mockOnConfirm).toHaveBeenCalled();
+      expect(mockOnClose).toHaveBeenCalled();
+    });
+  });
+});

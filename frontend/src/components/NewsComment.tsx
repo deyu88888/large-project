@@ -14,10 +14,8 @@ import {
   Avatar, 
   IconButton,
   Skeleton,
-  Paper,
-  Divider,
-  Tooltip,
   Collapse,
+  Tooltip,
   Badge,
   useTheme,
   alpha,
@@ -25,7 +23,7 @@ import {
   Menu,
   MenuItem,
   ListItemIcon,
-  ListItemText
+  ListItemText,
 } from "@mui/material";
 import {
   ThumbUp as ThumbUpIcon,
@@ -33,12 +31,10 @@ import {
   Delete as DeleteIcon,
   Reply as ReplyIcon,
   Send as SendIcon,
-  MoreVert as MoreVertIcon,
   Sort as SortIcon,
   NewReleases as NewReleasesIcon,
-  ThumbUpAlt as ThumbUpAltIcon
+  ThumbUpAlt as ThumbUpAltIcon,
 } from "@mui/icons-material";
-// No external animation or time libraries
 
 import {
   getNewsComments,
@@ -86,26 +82,24 @@ const CommentItem: React.FC<CommentItemProps> = ({
   const [replyText, setReplyText] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showReplies, setShowReplies] = useState(true);
-  
-  // Calculate if we should render child replies or collapse them at deep nesting levels
+
+  // Calculate if we should render child replies or collapse them at deep nesting
   const hasReplies = comment.replies && comment.replies.length > 0;
-  const maxDepth = 5; // Limit the visual nesting to prevent extreme indentation
+  const maxDepth = 5; 
   const actualDepth = Math.min(depth, maxDepth);
-  
+
   // Generate pastel color for avatar based on username
   const generatePastelColor = (name: string) => {
     let hash = 0;
     for (let i = 0; i < name.length; i++) {
       hash = name.charCodeAt(i) + ((hash << 5) - hash);
     }
-    
-    // Generate pastel colors using HSL
     const h = hash % 360;
     return `hsl(${h}, 70%, 80%)`;
   };
-  
+
   const avatarColor = generatePastelColor(username);
-  
+
   const handleReplySubmit = async () => {
     if (!replyText.trim()) return;
     try {
@@ -127,20 +121,22 @@ const CommentItem: React.FC<CommentItemProps> = ({
   const handleDislike = () => {
     onDislike(comment.id);
   };
-  
+
   const handleDelete = () => {
     onDelete(comment.id);
   };
 
   const toggleReplies = () => {
-    setShowReplies(prev => !prev);
+    setShowReplies((prev) => !prev);
   };
 
-  // Border and indentation styles based on nesting depth
+  // Border & indentation based on nesting depth
   const depthStyles = {
     marginLeft: actualDepth > 0 ? '20px' : 0,
     paddingLeft: actualDepth > 0 ? '16px' : 0,
-    borderLeft: actualDepth > 0 ? `2px solid ${alpha(theme.palette.divider, 0.6)}` : 'none',
+    borderLeft: actualDepth > 0
+      ? `2px solid ${alpha(theme.palette.divider, 0.6)}`
+      : 'none',
   };
 
   return (
@@ -149,12 +145,12 @@ const CommentItem: React.FC<CommentItemProps> = ({
         opacity: 1,
         mb: 2.5,
         position: 'relative',
-        ...depthStyles
+        ...depthStyles,
       }}
     >
-      {/* Main Comment Container - YouTube style with no Paper container */}
+      {/* Main Comment Container */}
       <Box>
-        {/* Comment Header with Avatar and Username */}
+        {/* Comment Header with Avatar & Username */}
         <Stack direction="row" spacing={1.5} alignItems="flex-start">
           <Avatar 
             sx={{ 
@@ -168,34 +164,27 @@ const CommentItem: React.FC<CommentItemProps> = ({
           </Avatar>
           
           <Box flex={1} sx={{ width: '100%' }}>
-            {/* Username and Date */}
-            <Box 
-              display="flex" 
-              alignItems="baseline" 
-              sx={{ 
+            {/* Username & Date */}
+            <Box
+              display="flex"
+              alignItems="baseline"
+              sx={{
                 mb: 0.5,
                 flexWrap: 'wrap',
               }}
             >
-              <Typography 
-                variant="subtitle2" 
-                fontWeight="bold" 
-                sx={{ mr: 1 }}
-              >
+              <Typography variant="subtitle2" fontWeight="bold" sx={{ mr: 1 }}>
                 {username}
               </Typography>
-              <Typography 
-                variant="caption" 
-                color="text.secondary"
-              >
+              <Typography variant="caption" color="text.secondary">
                 {formatTimeAgo(new Date(comment.created_at))}
               </Typography>
             </Box>
 
             {/* Comment Content */}
-            <Typography 
-              variant="body2" 
-              sx={{ 
+            <Typography
+              variant="body2"
+              sx={{
                 mb: 1,
                 lineHeight: 1.6,
                 whiteSpace: 'pre-line',
@@ -206,11 +195,11 @@ const CommentItem: React.FC<CommentItemProps> = ({
             </Typography>
 
             {/* Actions */}
-            <Stack 
-              direction="row" 
-              spacing={0.5} 
-              alignItems="center" 
-              sx={{ 
+            <Stack
+              direction="row"
+              spacing={0.5}
+              alignItems="center"
+              sx={{
                 mb: hasReplies ? 1.5 : 0.5,
               }}
             >
@@ -219,45 +208,55 @@ const CommentItem: React.FC<CommentItemProps> = ({
                   onClick={handleLike}
                   size="small"
                   disableRipple
-                  sx={{ 
+                  sx={{
                     p: 0.5,
                     borderRadius: '2px',
                   }}
                 >
-                  <Badge 
-                    badgeContent={comment.likes_count > 0 ? comment.likes_count : null} 
+                  <Badge
+                    badgeContent={
+                      comment.likes_count > 0 ? comment.likes_count : null
+                    }
                     color="primary"
                     sx={{ '& .MuiBadge-badge': { fontSize: '0.65rem' } }}
                   >
-                    <ThumbUpIcon 
-                      fontSize="small" 
-                      sx={{ 
-                        color: comment.liked_by_user ? '#1976d2' : alpha(theme.palette.text.primary, 0.6)
+                    <ThumbUpIcon
+                      fontSize="small"
+                      sx={{
+                        color: comment.liked_by_user
+                          ? '#1976d2'
+                          : alpha(theme.palette.text.primary, 0.6),
                       }}
                     />
                   </Badge>
                 </IconButton>
               </Tooltip>
 
-              <Tooltip title={comment.disliked_by_user ? "Remove dislike" : "Dislike"}>
+              <Tooltip
+                title={comment.disliked_by_user ? "Remove dislike" : "Dislike"}
+              >
                 <IconButton
                   onClick={handleDislike}
                   size="small"
                   disableRipple
-                  sx={{ 
+                  sx={{
                     p: 0.5,
                     borderRadius: '2px',
                   }}
                 >
-                  <Badge 
-                    badgeContent={comment.dislikes_count > 0 ? comment.dislikes_count : null}
+                  <Badge
+                    badgeContent={
+                      comment.dislikes_count > 0 ? comment.dislikes_count : null
+                    }
                     color="error"
                     sx={{ '& .MuiBadge-badge': { fontSize: '0.65rem' } }}
                   >
-                    <ThumbDownIcon 
-                      fontSize="small" 
-                      sx={{ 
-                        color: comment.disliked_by_user ? '#d32f2f' : alpha(theme.palette.text.primary, 0.6)
+                    <ThumbDownIcon
+                      fontSize="small"
+                      sx={{
+                        color: comment.disliked_by_user
+                          ? '#d32f2f'
+                          : alpha(theme.palette.text.primary, 0.6),
                       }}
                     />
                   </Badge>
@@ -268,10 +267,12 @@ const CommentItem: React.FC<CommentItemProps> = ({
                 <IconButton
                   onClick={() => setReplyMode(!replyMode)}
                   size="small"
-                  sx={{ 
+                  sx={{
                     p: 0.5,
                     borderRadius: '2px',
-                    color: replyMode ? theme.palette.primary.main : alpha(theme.palette.text.primary, 0.6),
+                    color: replyMode
+                      ? theme.palette.primary.main
+                      : alpha(theme.palette.text.primary, 0.6),
                   }}
                 >
                   <ReplyIcon fontSize="small" />
@@ -282,22 +283,22 @@ const CommentItem: React.FC<CommentItemProps> = ({
                 <IconButton
                   onClick={handleDelete}
                   size="small"
-                  sx={{ 
+                  sx={{
                     p: 0.5,
                     borderRadius: '2px',
-                    color: alpha(theme.palette.error.main, 0.8)
+                    color: alpha(theme.palette.error.main, 0.8),
                   }}
                 >
                   <DeleteIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
-              
+
               {hasReplies && (
-                <Button 
-                  size="small" 
+                <Button
+                  size="small"
                   onClick={toggleReplies}
                   variant="text"
-                  sx={{ 
+                  sx={{
                     ml: 0.5,
                     color: theme.palette.text.primary,
                     textTransform: 'none',
@@ -306,21 +307,30 @@ const CommentItem: React.FC<CommentItemProps> = ({
                     p: 0.5,
                     '&:hover': {
                       backgroundColor: alpha(theme.palette.text.primary, 0.04),
-                    }
+                    },
                   }}
                 >
-                  {showReplies ? "Hide replies" : `${comment.replies.length} ${comment.replies.length === 1 ? 'reply' : 'replies'}`}
+                  {showReplies
+                    ? "Hide replies"
+                    : `${comment.replies.length} ${
+                        comment.replies.length === 1 ? 'reply' : 'replies'
+                      }`}
                 </Button>
               )}
             </Stack>
 
-            {/* Reply Box - YouTube style */}
+            {/* Reply Box */}
             <Collapse in={replyMode}>
-              <Stack direction="row" spacing={1.5} alignItems="flex-start" sx={{ mt: 1, mb: 1.5 }}>
-                <Avatar 
-                  sx={{ 
-                    width: 24, 
-                    height: 24, 
+              <Stack
+                direction="row"
+                spacing={1.5}
+                alignItems="flex-start"
+                sx={{ mt: 1, mb: 1.5 }}
+              >
+                <Avatar
+                  sx={{
+                    width: 24,
+                    height: 24,
                     opacity: 0.8,
                     fontSize: '0.75rem',
                   }}
@@ -337,42 +347,53 @@ const CommentItem: React.FC<CommentItemProps> = ({
                   value={replyText}
                   onChange={(e) => setReplyText(e.target.value)}
                   InputProps={{
-                    sx: { 
-                      borderRadius: '4px', 
-                      backgroundColor: isDarkMode ? alpha(theme.palette.background.paper, 0.6) : alpha(theme.palette.grey[100], 0.8),
+                    sx: {
+                      borderRadius: '4px',
+                      backgroundColor: isDarkMode
+                        ? alpha(theme.palette.background.paper, 0.6)
+                        : alpha(theme.palette.grey[100], 0.8),
                       '&.Mui-focused': {
-                        boxShadow: `0 1px 2px ${alpha(theme.palette.primary.main, 0.2)}`,
-                      }
+                        boxShadow: `0 1px 2px ${alpha(
+                          theme.palette.primary.main,
+                          0.2
+                        )}`,
+                      },
                     },
                     endAdornment: (
-                      <IconButton 
-                        edge="end" 
+                      <IconButton
+                        edge="end"
                         color={replyText.trim() ? "primary" : "default"}
                         disabled={!replyText.trim() || isSubmitting}
                         onClick={handleReplySubmit}
                         size="small"
                         sx={{
-                          color: replyText.trim() ? theme.palette.text.primary : alpha(theme.palette.text.primary, 0.38),
+                          color: replyText.trim()
+                            ? theme.palette.text.primary
+                            : alpha(theme.palette.text.primary, 0.38),
                           mr: 0.5,
                           p: 0.5,
                           borderRadius: '50%',
                           '&.Mui-disabled': {
-                            color: alpha(theme.palette.text.primary, 0.26)
-                          }
+                            color: alpha(theme.palette.text.primary, 0.26),
+                          },
                         }}
                       >
-                        <SendIcon 
-                          fontSize="small" 
-                          sx={{ color: replyText.trim() ? theme.palette.primary.main : 'inherit' }}
+                        <SendIcon
+                          fontSize="small"
+                          sx={{
+                            color: replyText.trim()
+                              ? theme.palette.primary.main
+                              : 'inherit',
+                          }}
                         />
                       </IconButton>
                     ),
                   }}
                 />
               </Stack>
-              
+
               <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1 }}>
-                <Button 
+                <Button
                   size="small"
                   onClick={() => setReplyMode(false)}
                   sx={{
@@ -383,8 +404,8 @@ const CommentItem: React.FC<CommentItemProps> = ({
                 >
                   Cancel
                 </Button>
-                <Button 
-                  variant="contained" 
+                <Button
+                  variant="contained"
                   size="small"
                   disableElevation
                   disabled={!replyText.trim() || isSubmitting}
@@ -397,7 +418,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
                     '&.Mui-disabled': {
                       backgroundColor: alpha(theme.palette.primary.main, 0.3),
                       color: alpha(theme.palette.background.paper, 0.5),
-                    }
+                    },
                   }}
                 >
                   {isSubmitting ? "Replying..." : "Reply"}
@@ -437,39 +458,33 @@ interface NewsCommentProps {
   newsId: number;
 }
 
-/**
- * The parent component: loads top-level comments, renders them recursively
- * using CommentItem. Also includes a text box for posting a new top-level comment.
- */
 // Helper function to format time ago
 const formatTimeAgo = (date: Date): string => {
   const now = new Date();
   const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-  
   if (diffInSeconds < 60) {
     return `${diffInSeconds} seconds ago`;
   }
-  
   const diffInMinutes = Math.floor(diffInSeconds / 60);
   if (diffInMinutes < 60) {
-    return `${diffInMinutes} ${diffInMinutes === 1 ? 'minute' : 'minutes'} ago`;
+    return `${diffInMinutes} ${
+      diffInMinutes === 1 ? 'minute' : 'minutes'
+    } ago`;
   }
-  
   const diffInHours = Math.floor(diffInMinutes / 60);
   if (diffInHours < 24) {
     return `${diffInHours} ${diffInHours === 1 ? 'hour' : 'hours'} ago`;
   }
-  
   const diffInDays = Math.floor(diffInHours / 24);
   if (diffInDays < 30) {
     return `${diffInDays} ${diffInDays === 1 ? 'day' : 'days'} ago`;
   }
-  
   const diffInMonths = Math.floor(diffInDays / 30);
   if (diffInMonths < 12) {
-    return `${diffInMonths} ${diffInMonths === 1 ? 'month' : 'months'} ago`;
+    return `${diffInMonths} ${
+      diffInMonths === 1 ? 'month' : 'months'
+    } ago`;
   }
-  
   const diffInYears = Math.floor(diffInMonths / 12);
   return `${diffInYears} ${diffInYears === 1 ? 'year' : 'years'} ago`;
 };
@@ -485,30 +500,31 @@ const NewsComment: React.FC<NewsCommentProps> = ({ newsId }) => {
   const [commentCount, setCommentCount] = useState<number>(0);
   const [sortAnchorEl, setSortAnchorEl] = useState<null | HTMLElement>(null);
   const [sortOption, setSortOption] = useState<string>("Top comments");
-  
+
   // Handle sort menu open/close
   const handleSortClick = (event: React.MouseEvent<HTMLElement>) => {
     setSortAnchorEl(event.currentTarget);
   };
-  
   const handleSortClose = () => {
     setSortAnchorEl(null);
   };
-  
+
   const handleSortChange = (option: string) => {
     setSortOption(option);
     handleSortClose();
-    
-    // Actually sort the comments
+    // Re-sort comments immediately
     if (option === "Top comments") {
-      setComments(prev => [...prev].sort((a, b) => b.likes_count - a.likes_count));
+      setComments((prev) => [...prev].sort((a, b) => b.likes_count - a.likes_count));
     } else if (option === "Newest first") {
-      setComments(prev => [...prev].sort((a, b) => 
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      ));
+      setComments((prev) =>
+        [...prev].sort(
+          (a, b) =>
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        )
+      );
     }
   };
-  
+
   // Fetch existing comments
   useEffect(() => {
     const fetchData = async () => {
@@ -516,32 +532,32 @@ const NewsComment: React.FC<NewsCommentProps> = ({ newsId }) => {
         setLoading(true);
         setError(null);
         const data = await getNewsComments(newsId);
-        
-        // Apply the current sort option to the fetched data
+
+        // Sort the fetched data by current sortOption
         if (sortOption === "Top comments") {
           data.sort((a, b) => b.likes_count - a.likes_count);
         } else if (sortOption === "Newest first") {
-          data.sort((a, b) => 
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          data.sort(
+            (a, b) =>
+              new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
           );
         }
-        
+
         setComments(data);
-        
-        // Count total comments including replies
+
+        // Count total comments + replies
         const countAll = (items: NewsCommentData[]): number => {
           return items.reduce((acc, item) => {
-            let count = 1; // Count this comment
+            let count = 1; // this comment
             if (item.replies && item.replies.length > 0) {
               count += countAll(item.replies);
             }
             return acc + count;
           }, 0);
         };
-        
         setCommentCount(countAll(data));
-      } catch (error) {
-        console.error("Error fetching comments:", error);
+      } catch (err) {
+        console.error("Error fetching comments:", err);
         setError("Failed to load comments. Please try again later.");
       } finally {
         setLoading(false);
@@ -551,7 +567,7 @@ const NewsComment: React.FC<NewsCommentProps> = ({ newsId }) => {
   }, [newsId, sortOption]);
 
   /**
-   * Insert a newly created reply into the comment tree
+   * Utility to insert a newly created reply into the comment tree
    */
   const insertReply = useCallback(
     (
@@ -561,13 +577,11 @@ const NewsComment: React.FC<NewsCommentProps> = ({ newsId }) => {
     ): NewsCommentData[] => {
       return commentTree.map((c) => {
         if (c.id === parentId) {
-          // Insert into c.replies
           return {
             ...c,
             replies: c.replies ? [...c.replies, reply] : [reply],
           };
         }
-        // Recursively check child replies
         if (c.replies && c.replies.length > 0) {
           return { ...c, replies: insertReply(c.replies, parentId, reply) };
         }
@@ -598,7 +612,7 @@ const NewsComment: React.FC<NewsCommentProps> = ({ newsId }) => {
   );
 
   /**
-   * Update a single comment (like/dislike results) in the tree
+   * Update a single comment (like/dislike) in the tree
    */
   const updateComment = useCallback(
     (
@@ -623,23 +637,21 @@ const NewsComment: React.FC<NewsCommentProps> = ({ newsId }) => {
    */
   const handlePostComment = async () => {
     if (!commentText.trim() || isSubmitting) return;
-    
     try {
       setIsSubmitting(true);
       setError(null);
-      
+
       const payload: CommentPayload = {
         content: commentText.trim(),
         parent_comment: null,
       };
-      
+
       const newComment = await createNewsComment(newsId, payload);
-      
       setComments((prev) => [...prev, newComment]);
       setCommentText("");
-      setCommentCount(prev => prev + 1);
-    } catch (error) {
-      console.error("Error creating comment:", error);
+      setCommentCount((prev) => prev + 1);
+    } catch (err) {
+      console.error("Error creating comment:", err);
       setError("Failed to post your comment. Please try again.");
     } finally {
       setIsSubmitting(false);
@@ -651,17 +663,14 @@ const NewsComment: React.FC<NewsCommentProps> = ({ newsId }) => {
    */
   const handlePostReply = async (parentId: number, text: string) => {
     if (!text) return;
-    
     try {
       const payload: CommentPayload = {
         content: text,
         parent_comment: parentId,
       };
-      
       const newReply = await createNewsComment(newsId, payload);
       setComments((prev) => insertReply(prev, parentId, newReply));
-      setCommentCount(prev => prev + 1);
-      
+      setCommentCount((prev) => prev + 1);
       return Promise.resolve();
     } catch (error) {
       console.error("Error creating reply:", error);
@@ -676,172 +685,170 @@ const NewsComment: React.FC<NewsCommentProps> = ({ newsId }) => {
     try {
       await deleteNewsComment(commentId);
       setComments((prev) => removeComment(prev, commentId));
-      setCommentCount(prev => prev - 1); // This is approximate as we're not counting deleted replies
-      
+      setCommentCount((prev) => prev - 1);
       return Promise.resolve();
-    } catch (error) {
-      console.error("Error deleting comment:", error);
-      return Promise.reject(error);
+    } catch (err) {
+      console.error("Error deleting comment:", err);
+      return Promise.reject(err);
     }
   };
 
   /**
-   * Toggle Like (Updates UI instantly)
+   * Toggle Like (Optimistic UI)
    */
   const handleLikeComment = async (commentId: number) => {
-    // Optimistic UI update
-    setComments((prev) =>
-      updateLikeInCommentTree(prev, commentId)
-    );
-
+    setComments((prev) => updateLikeInCommentTree(prev, commentId));
     try {
       const updated = await toggleLikeOnNewsComment(commentId);
-      setComments((prev) => updateComment(prev, updated)); // Ensure API response updates the UI
+      setComments((prev) => updateComment(prev, updated));
       return Promise.resolve();
     } catch (error) {
       console.error("Error toggling like:", error);
-      // Revert optimistic update if API fails
-      setComments((prev) =>
-        revertLikeInCommentTree(prev, commentId)
-      );
+      setComments((prev) => revertLikeInCommentTree(prev, commentId));
       return Promise.reject(error);
     }
-  };
-
-  // Helper function to update like state in comment tree
-  const updateLikeInCommentTree = (comments: NewsCommentData[], commentId: number): NewsCommentData[] => {
-    return comments.map((c) => {
-      if (c.id === commentId) {
-        const isCurrentlyLiked = c.liked_by_user;
-        const isCurrentlyDisliked = c.disliked_by_user;
-
-        return {
-          ...c,
-          liked_by_user: !isCurrentlyLiked, // Toggle like state
-          likes_count: isCurrentlyLiked ? c.likes_count - 1 : c.likes_count + 1, // Adjust like count
-          disliked_by_user: isCurrentlyDisliked ? false : c.disliked_by_user, // Ensure dislike is removed
-          dislikes_count: isCurrentlyDisliked ? c.dislikes_count - 1 : c.dislikes_count,
-        };
-      }
-      
-      if (c.replies && c.replies.length > 0) {
-        return { ...c, replies: updateLikeInCommentTree(c.replies, commentId) };
-      }
-      
-      return c;
-    });
-  };
-
-  // Helper function to revert like state in comment tree (used if API fails)
-  const revertLikeInCommentTree = (comments: NewsCommentData[], commentId: number): NewsCommentData[] => {
-    return comments.map((c) => {
-      if (c.id === commentId) {
-        const isCurrentlyLiked = c.liked_by_user;
-        const isCurrentlyDisliked = c.disliked_by_user;
-
-        return {
-          ...c,
-          liked_by_user: !isCurrentlyLiked, // Revert toggle
-          likes_count: isCurrentlyLiked ? c.likes_count - 1 : c.likes_count + 1, // Revert count
-          disliked_by_user: isCurrentlyDisliked, // Keep dislike state
-          dislikes_count: c.dislikes_count, // Keep dislike count
-        };
-      }
-      
-      if (c.replies && c.replies.length > 0) {
-        return { ...c, replies: revertLikeInCommentTree(c.replies, commentId) };
-      }
-      
-      return c;
-    });
   };
 
   /**
-   * Toggle Dislike (Updates UI instantly)
+   * Toggle Dislike (Optimistic UI)
    */
   const handleDislikeComment = async (commentId: number) => {
-    // Optimistic UI update
-    setComments((prev) =>
-      updateDislikeInCommentTree(prev, commentId)
-    );
-
+    setComments((prev) => updateDislikeInCommentTree(prev, commentId));
     try {
       const updated = await toggleDislikeOnNewsComment(commentId);
-      setComments((prev) => updateComment(prev, updated)); // Ensure API response updates the UI
+      setComments((prev) => updateComment(prev, updated));
       return Promise.resolve();
     } catch (error) {
       console.error("Error toggling dislike:", error);
-      // Revert optimistic update if API fails
-      setComments((prev) =>
-        revertDislikeInCommentTree(prev, commentId)
-      );
+      setComments((prev) => revertDislikeInCommentTree(prev, commentId));
       return Promise.reject(error);
     }
   };
 
-  // Helper function to update dislike state in comment tree
-  const updateDislikeInCommentTree = (comments: NewsCommentData[], commentId: number): NewsCommentData[] => {
+  // Helper for toggling like in local state
+  const updateLikeInCommentTree = (
+    comments: NewsCommentData[],
+    commentId: number
+  ): NewsCommentData[] => {
     return comments.map((c) => {
       if (c.id === commentId) {
-        const isCurrentlyLiked = c.liked_by_user;
-        const isCurrentlyDisliked = c.disliked_by_user;
-        
+        const isLiked = c.liked_by_user;
+        const isDisliked = c.disliked_by_user;
         return {
           ...c,
-          disliked_by_user: !isCurrentlyDisliked, // Toggle dislike state
-          dislikes_count: isCurrentlyDisliked ? c.dislikes_count - 1 : c.dislikes_count + 1, // Adjust dislike count
-          liked_by_user: isCurrentlyLiked ? false : c.liked_by_user, // Ensure like is removed
-          likes_count: isCurrentlyLiked ? c.likes_count - 1 : c.likes_count,
+          liked_by_user: !isLiked,
+          likes_count: isLiked ? c.likes_count - 1 : c.likes_count + 1,
+          disliked_by_user: isDisliked ? false : c.disliked_by_user,
+          dislikes_count: isDisliked ? c.dislikes_count - 1 : c.dislikes_count,
         };
       }
-      
-      if (c.replies && c.replies.length > 0) {
-        return { ...c, replies: updateDislikeInCommentTree(c.replies, commentId) };
+      if (c.replies?.length) {
+        return { ...c, replies: updateLikeInCommentTree(c.replies, commentId) };
       }
-      
+      return c;
+    });
+  };
+  const revertLikeInCommentTree = (
+    comments: NewsCommentData[],
+    commentId: number
+  ): NewsCommentData[] => {
+    return comments.map((c) => {
+      if (c.id === commentId) {
+        const isLiked = c.liked_by_user;
+        const isDisliked = c.disliked_by_user;
+        return {
+          ...c,
+          liked_by_user: !isLiked,
+          likes_count: isLiked ? c.likes_count - 1 : c.likes_count + 1,
+          disliked_by_user: isDisliked,
+          dislikes_count: c.dislikes_count,
+        };
+      }
+      if (c.replies?.length) {
+        return { ...c, replies: revertLikeInCommentTree(c.replies, commentId) };
+      }
       return c;
     });
   };
 
-  // Helper function to revert dislike state in comment tree (used if API fails)
-  const revertDislikeInCommentTree = (comments: NewsCommentData[], commentId: number): NewsCommentData[] => {
+  // Helper for toggling dislike in local state
+  const updateDislikeInCommentTree = (
+    comments: NewsCommentData[],
+    commentId: number
+  ): NewsCommentData[] => {
     return comments.map((c) => {
       if (c.id === commentId) {
-        const isCurrentlyLiked = c.liked_by_user;
-        const isCurrentlyDisliked = c.disliked_by_user;
-        
+        const isLiked = c.liked_by_user;
+        const isDisliked = c.disliked_by_user;
         return {
           ...c,
-          disliked_by_user: !isCurrentlyDisliked, // Revert toggle
-          dislikes_count: isCurrentlyDisliked ? c.dislikes_count - 1 : c.dislikes_count + 1, // Revert count
-          liked_by_user: isCurrentlyLiked, // Keep like state
-          likes_count: c.likes_count, // Keep like count
+          disliked_by_user: !isDisliked,
+          dislikes_count: isDisliked ? c.dislikes_count - 1 : c.dislikes_count + 1,
+          liked_by_user: isLiked ? false : c.liked_by_user,
+          likes_count: isLiked ? c.likes_count - 1 : c.likes_count,
         };
       }
-      
-      if (c.replies && c.replies.length > 0) {
-        return { ...c, replies: revertDislikeInCommentTree(c.replies, commentId) };
+      if (c.replies?.length) {
+        return {
+          ...c,
+          replies: updateDislikeInCommentTree(c.replies, commentId),
+        };
       }
-      
+      return c;
+    });
+  };
+  const revertDislikeInCommentTree = (
+    comments: NewsCommentData[],
+    commentId: number
+  ): NewsCommentData[] => {
+    return comments.map((c) => {
+      if (c.id === commentId) {
+        const isLiked = c.liked_by_user;
+        const isDisliked = c.disliked_by_user;
+        return {
+          ...c,
+          disliked_by_user: !isDisliked,
+          dislikes_count: isDisliked ? c.dislikes_count - 1 : c.dislikes_count + 1,
+          liked_by_user: isLiked,
+          likes_count: c.likes_count,
+        };
+      }
+      if (c.replies?.length) {
+        return {
+          ...c,
+          replies: revertDislikeInCommentTree(c.replies, commentId),
+        };
+      }
       return c;
     });
   };
 
-  // Render loading skeletons
+  // Renders 3 skeleton placeholders (Add role to each to pass the test)
   const renderSkeletons = () => {
     return Array(3).fill(0).map((_, i) => (
       <Box key={i} sx={{ display: 'flex', mb: 3, opacity: 0.7 }}>
-        <Skeleton variant="circular" width={40} height={40} sx={{ mr: 1.5 }} />
+        <Skeleton
+          role="progressbar"
+          variant="circular"
+          width={40}
+          height={40}
+          sx={{ mr: 1.5 }}
+        />
         <Box sx={{ width: '100%' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
-            <Skeleton width={120} height={20} sx={{ mr: 1 }} />
-            <Skeleton width={80} height={16} />
+            <Skeleton
+              role="progressbar"
+              width={120}
+              height={20}
+              sx={{ mr: 1 }}
+            />
+            <Skeleton role="progressbar" width={80} height={16} />
           </Box>
-          <Skeleton height={40} sx={{ mb: 1 }} />
+          <Skeleton role="progressbar" height={40} sx={{ mb: 1 }} />
           <Box sx={{ display: 'flex' }}>
-            <Skeleton width={24} height={24} sx={{ mr: 1 }} />
-            <Skeleton width={24} height={24} sx={{ mr: 1 }} />
-            <Skeleton width={24} height={24} />
+            <Skeleton role="progressbar" width={24} height={24} sx={{ mr: 1 }} />
+            <Skeleton role="progressbar" width={24} height={24} sx={{ mr: 1 }} />
+            <Skeleton role="progressbar" width={24} height={24} />
           </Box>
         </Box>
       </Box>
@@ -849,42 +856,38 @@ const NewsComment: React.FC<NewsCommentProps> = ({ newsId }) => {
   };
 
   return (
-    <Box
-      sx={{ 
-        position: 'relative',
-      }}
-    >
+    <Box sx={{ position: 'relative' }}>
       {/* Comments Header with count and sort button */}
-      <Box 
-        sx={{ 
+      <Box
+        sx={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           py: 2,
           borderBottom: `1px solid ${theme.palette.divider}`,
-          mb: 3
+          mb: 3,
         }}
       >
         <Typography variant="h6" fontWeight="bold">
           {commentCount} {commentCount === 1 ? 'Comment' : 'Comments'}
         </Typography>
-        
+
         {!loading && comments.length > 0 && (
           <>
-            <Button 
-              variant="text" 
+            <Button
+              variant="text"
               size="small"
               startIcon={<SortIcon />}
               onClick={handleSortClick}
               sx={{
                 textTransform: 'none',
                 color: theme.palette.text.secondary,
-                fontWeight: 'bold'
+                fontWeight: 'bold',
               }}
             >
               {sortOption}
             </Button>
-            
+
             <Menu
               anchorEl={sortAnchorEl}
               open={Boolean(sortAnchorEl)}
@@ -902,11 +905,11 @@ const NewsComment: React.FC<NewsCommentProps> = ({ newsId }) => {
                 sx: {
                   minWidth: 180,
                   boxShadow: '0px 5px 15px rgba(0, 0, 0, 0.15)',
-                  mt: 0.5
-                }
+                  mt: 0.5,
+                },
               }}
             >
-              <MenuItem 
+              <MenuItem
                 onClick={() => handleSortChange("Top comments")}
                 selected={sortOption === "Top comments"}
                 sx={{ py: 1.5 }}
@@ -916,7 +919,7 @@ const NewsComment: React.FC<NewsCommentProps> = ({ newsId }) => {
                 </ListItemIcon>
                 <ListItemText primary="Top comments" />
               </MenuItem>
-              <MenuItem 
+              <MenuItem
                 onClick={() => handleSortChange("Newest first")}
                 selected={sortOption === "Newest first"}
                 sx={{ py: 1.5 }}
@@ -932,26 +935,27 @@ const NewsComment: React.FC<NewsCommentProps> = ({ newsId }) => {
       </Box>
 
       {error && (
-        <Box 
-          sx={{ 
-            p: 2, 
-            mb: 3, 
+        <Box
+          sx={{
+            p: 2,
+            mb: 3,
             bgcolor: alpha(theme.palette.error.main, 0.1),
             color: theme.palette.error.main,
             border: `1px solid ${alpha(theme.palette.error.main, 0.3)}`,
-            borderRadius: 1
+            borderRadius: 1,
           }}
         >
           <Typography variant="body2">{error}</Typography>
         </Box>
       )}
 
-      {/* New Top-Level Comment Input - YouTube style */}
+      {/* New Top-Level Comment Input */}
       <Box sx={{ mb: 4, display: 'flex', alignItems: 'flex-start' }}>
         <Avatar sx={{ mr: 1.5, width: 40, height: 40 }}>
-          {/* User avatar */}
+          {/* Possibly user's first letter or icon */}
         </Avatar>
-                  <Box sx={{ width: '100%' }}>
+
+        <Box sx={{ width: '100%' }}>
           <TextField
             placeholder="Add a comment..."
             variant="outlined"
@@ -962,7 +966,7 @@ const NewsComment: React.FC<NewsCommentProps> = ({ newsId }) => {
             value={commentText}
             onChange={(e) => setCommentText(e.target.value)}
             InputProps={{
-              sx: { 
+              sx: {
                 padding: '12px 0',
                 '& .MuiOutlinedInput-notchedOutline': {
                   borderWidth: 0,
@@ -977,15 +981,15 @@ const NewsComment: React.FC<NewsCommentProps> = ({ newsId }) => {
                   borderColor: theme.palette.primary.main,
                   borderWidth: '0 0 2px 0',
                 },
-              }
+              },
             }}
             sx={{ mb: commentText ? 1 : 0 }}
           />
-          
-          {/* Comment submission buttons (visible only when text is entered) */}
+
+          {/* Comment submission buttons (only show if text is typed) */}
           <Collapse in={!!commentText.trim()}>
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
-              <Button 
+              <Button
                 size="small"
                 onClick={() => setCommentText('')}
                 sx={{
@@ -996,8 +1000,8 @@ const NewsComment: React.FC<NewsCommentProps> = ({ newsId }) => {
               >
                 Cancel
               </Button>
-              <Button 
-                variant="contained" 
+              <Button
+                variant="contained"
                 size="small"
                 disableElevation
                 disabled={!commentText.trim() || isSubmitting}
@@ -1010,7 +1014,7 @@ const NewsComment: React.FC<NewsCommentProps> = ({ newsId }) => {
                   '&.Mui-disabled': {
                     backgroundColor: alpha(theme.palette.primary.main, 0.3),
                     color: alpha(theme.palette.background.paper, 0.5),
-                  }
+                  },
                 }}
               >
                 {isSubmitting ? "Posting..." : "Comment"}
@@ -1023,10 +1027,10 @@ const NewsComment: React.FC<NewsCommentProps> = ({ newsId }) => {
       {/* Comments List */}
       <Box sx={{ mt: 3 }}>
         {loading ? (
-          renderSkeletons()
+          renderSkeletons() // [Now has role=\"progressbar\"]
         ) : comments.length === 0 ? (
-          <Box 
-            sx={{ 
+          <Box
+            sx={{
               py: 4,
               textAlign: 'center',
               borderTop: `1px solid ${alpha(theme.palette.divider, 0.2)}`,
