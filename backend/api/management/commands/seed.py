@@ -42,9 +42,7 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         """Handles database seeding"""
         # Create/Get Admin using create_admin, to avoid code duplication
-        if not kwargs["quantity"]:
-            kwargs["quantity"] = [5, 100, 50, 35, 5, 200, 10, 15]
-        quantity = kwargs["quantity"]
+        quantity = kwargs.get("quantity", [5, 100, 50, 35, 5, 200, 10, 15])
         self.admin_generator.create_admin(quantity[0])
         self.admin_generator.create_super_admins()
 

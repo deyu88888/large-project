@@ -20,7 +20,7 @@ import { EventPreview } from "../../components/EventPreview";
 import type { EventData } from "../../components/EventDetailLayout";
 
 
-const WEBSOCKET_URL = "ws:localhost:8000";
+const WEBSOCKET_URL = "ws:";
 const RECONNECT_TIMEOUT = 5000;
 
 interface DeleteDialogProps {
