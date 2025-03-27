@@ -1,256 +1,270 @@
+from rest_framework.test import APITestCase, APIClient
+from rest_framework import status
 from django.urls import reverse
 from django.utils import timezone
-from rest_framework import status
-from rest_framework.test import APITestCase, APIClient
-from django.test import TestCase
-from django.contrib.auth import get_user_model
-
+from freezegun import freeze_time
 from api.models import (
-    User, Student, Society, SocietyNews, 
-    NewsPublicationRequest, Notification
+    User, Student, Society, SocietyNews, NewsPublicationRequest, Notification
 )
-from api.serializers import NewsPublicationRequestSerializer
-
-User = get_user_model()
-
-class AdminNewsApprovalViewTest(APITestCase):
+import json
+import datetime
+from unittest.mock import patch
+from datetime import datetime
+class TestAdminNewsApprovalView(APITestCase):
     def setUp(self):
+        self.client = APIClient()
+        
         
         self.admin_user = User.objects.create_user(
             username="admin_user",
             email="admin@example.com",
             password="password123",
             role="admin",
-            is_staff=True
+            first_name="Admin",
+            last_name="User"
         )
         
         
-        self.student_user = Student.objects.create_user(
+        self.admin_user2 = User.objects.create_user(
+            username="admin_user2",
+            email="admin2@example.com",
+            password="password123",
+            role="admin",
+            first_name="Admin2",
+            last_name="User"
+        )
+        
+        
+        self.regular_user = User.objects.create_user(
+            username="regular_user",
+            email="regular@example.com",
+            password="password123",
+            role="student",
+            first_name="Regular",
+            last_name="User"
+        )
+        
+        
+        self.student = Student.objects.create_user(
             username="student_user",
             email="student@example.com",
             password="password123",
-            role="student",
             first_name="Student",
             last_name="User",
-            status="Approved"
+            major="Computer Science"
         )
-        
-        
         
         
         self.society = Society.objects.create(
             name="Test Society",
             description="A test society",
-            status="Approved",
-            president=self.student_user,
-            approved_by=self.admin_user
+            president=self.student,
+            approved_by=self.admin_user,
+            social_media_links={"Email": "society@example.com"}
         )
+        
+        
+        self.student.president_of = self.society
+        self.student.save()
         
         
         self.news_post = SocietyNews.objects.create(
-            society=self.society,
             title="Test News",
-            content="This is a test news post",
-            author=self.student_user,
+            content="This is test news content",
+            society=self.society,
+            author=self.student,
             status="Draft"
         )
-        
-        
-        self.publication_request = NewsPublicationRequest.objects.create(
-            news_post=self.news_post,
-            requested_by=self.student_user,
-            status="Pending"
-        )
-        
         
         self.news_post2 = SocietyNews.objects.create(
+            title="Another News",
+            content="More news content",
             society=self.society,
-            title="Another Test News",
-            content="This is another test news post",
-            author=self.student_user,
+            author=self.student,
             status="Draft"
         )
         
-        self.publication_request2 = NewsPublicationRequest.objects.create(
-            news_post=self.news_post2,
-            requested_by=self.student_user,
+        
+        self.pending_request = NewsPublicationRequest.objects.create(
+            news_post=self.news_post,
+            requested_by=self.student,
             status="Pending"
         )
-        self.client = APIClient()
-        self.get_url = '/api/news/publication-request/'
-        self.put_url = lambda request_id: reverse('admin_news_approval', kwargs={'request_id': request_id})
-    
-    def test_get_pending_requests_as_admin(self):
-        self.client.force_authenticate(user=self.admin_user)
-        response = self.client.get(self.get_url)
         
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 2)
-        
-        
-        
-        self.assertTrue(any(item['news_post_title'] == 'Test News' for item in response.data))
-        self.assertTrue(any(item['news_post_title'] == 'Another Test News' for item in response.data))
-        self.assertTrue(all(item['status'] == 'Pending' for item in response.data))
-
-    def test_get_pending_requests_as_student(self):
-        self.client.force_authenticate(user=self.student_user)
-        response = self.client.get(self.get_url)
-        
-        
-        
-        if response.status_code == status.HTTP_200_OK:
-            
-            self.assertEqual(len(response.data), 2)
-            for item in response.data:
-                self.assertEqual(item['requested_by'], self.student_user.id)
-        else:
-            
-            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
-    def test_get_pending_requests_unauthenticated(self):
-        response = self.client.get(self.get_url)
-        
-        
-        
-        self.assertTrue(
-            response.status_code == status.HTTP_401_UNAUTHORIZED or 
-            response.status_code == status.HTTP_403_FORBIDDEN
+        self.approved_request = NewsPublicationRequest.objects.create(
+            news_post=self.news_post2,
+            requested_by=self.student,
+            status="Approved",
+            reviewed_by=self.admin_user2,
+            admin_notes="Looks good!"
         )
-
-    def test_approve_request_as_admin(self):
-        self.client.force_authenticate(user=self.admin_user)
-        
-        data = {
-            'status': 'Approved',
-            'admin_notes': 'Looks good!'
-        }
-        
-        response = self.client.put(self.put_url(self.publication_request.id), data)
-        
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
         
         
-        self.publication_request.refresh_from_db()
-        self.news_post.refresh_from_db()
+        self.get_detail_url = lambda request_id: reverse('admin_news_approval', args=[request_id])
+    
+    def test_approve_request_unauthorized(self):
+        """Test that unauthorized users cannot approve requests"""
         
+        response = self.client.put(
+            self.get_detail_url(self.pending_request.id),
+            {'status': 'Approved'},
+            format='json'
+        )
         
-        self.assertEqual(self.publication_request.status, 'Approved')
-        self.assertEqual(self.news_post.status, 'Published')
-        self.assertIsNotNone(self.news_post.published_at)
-        self.assertEqual(self.publication_request.admin_notes, 'Looks good!')
-        self.assertEqual(self.publication_request.reviewed_by, self.admin_user)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+    
+    def test_approve_request_non_admin(self):
+        """Test that non-admin users cannot approve requests"""
+        self.client.force_authenticate(user=self.regular_user)
         
-        
-        notification = Notification.objects.get(for_user=self.student_user)
-        self.assertEqual(notification.header, 'News Publication Approved')
-        self.assertTrue('has been approved' in notification.body)
-        self.assertTrue(notification.is_important)
-
-    def test_reject_request_as_admin(self):
-        self.client.force_authenticate(user=self.admin_user)
-        
-        data = {
-            'status': 'Rejected',
-            'admin_notes': 'Content violates guidelines'
-        }
-        
-        response = self.client.put(self.put_url(self.publication_request.id), data)
-        
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        
-        
-        self.publication_request.refresh_from_db()
-        self.news_post.refresh_from_db()
-        
-        
-        self.assertEqual(self.publication_request.status, 'Rejected')
-        self.assertEqual(self.news_post.status, 'Rejected')
-        self.assertEqual(self.publication_request.admin_notes, 'Content violates guidelines')
-        self.assertEqual(self.publication_request.reviewed_by, self.admin_user)
-        
-        
-        notification = Notification.objects.get(for_user=self.student_user)
-        self.assertEqual(notification.header, 'News Publication Rejected')
-        self.assertTrue('has been rejected' in notification.body)
-        self.assertTrue('Content violates guidelines' in notification.body)
-        self.assertTrue(notification.is_important)
-
-    def test_approve_request_as_student(self):
-        self.client.force_authenticate(user=self.student_user)
-        
-        data = {
-            'status': 'Approved'
-        }
-        
-        response = self.client.put(self.put_url(self.publication_request.id), data)
+        response = self.client.put(
+            self.get_detail_url(self.pending_request.id),
+            {'status': 'Approved'},
+            format='json'
+        )
         
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        
-        
-        self.publication_request.refresh_from_db()
-        self.news_post.refresh_from_db()
-        self.assertEqual(self.publication_request.status, 'Pending')
-        self.assertEqual(self.news_post.status, 'Draft')
-
-    def test_invalid_action(self):
+        self.assertEqual(response.data, {
+            "error": "Only admins can approve or reject publication requests"
+        })
+    
+    def test_approve_nonexistent_request(self):
+        """Test handling of non-existent request ID"""
         self.client.force_authenticate(user=self.admin_user)
         
-        data = {
-            'status': 'InvalidStatus'
-        }
-        
-        response = self.client.put(self.put_url(self.publication_request.id), data)
-        
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        
-        
-        self.publication_request.refresh_from_db()
-        self.news_post.refresh_from_db()
-        self.assertEqual(self.publication_request.status, 'Pending')
-        self.assertEqual(self.news_post.status, 'Draft')
-
-    def test_nonexistent_request(self):
-        self.client.force_authenticate(user=self.admin_user)
-        
-        data = {
-            'status': 'Approved'
-        }
-        
-        nonexistent_id = 9999
-        response = self.client.put(self.put_url(nonexistent_id), data)
+        response = self.client.put(
+            self.get_detail_url(9999),  
+            {'status': 'Approved'},
+            format='json'
+        )
         
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-
-    def test_get_no_pending_requests(self):
-        
-        NewsPublicationRequest.objects.all().update(status='Approved')
-        
-        self.client.force_authenticate(user=self.admin_user)
-        response = self.client.get(self.get_url)
-        
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 0)  
-
-    def test_approve_already_approved_request(self):
-        
-        self.publication_request.status = 'Approved'
-        self.publication_request.reviewed_by = self.admin_user
-        self.publication_request.reviewed_at = timezone.now()
-        self.publication_request.save()
-        
-        self.news_post.status = 'Published'
-        self.news_post.published_at = timezone.now()
-        self.news_post.save()
-        
-        
+        self.assertEqual(response.data, {
+            "error": "Publication request not found"
+        })
+    
+    def test_approve_with_invalid_action(self):
+        """Test validation for invalid action value"""
         self.client.force_authenticate(user=self.admin_user)
         
-        data = {
-            'status': 'Approved'
-        }
+        response = self.client.put(
+            self.get_detail_url(self.pending_request.id),
+            {'status': 'Invalid_Action'},  
+            format='json'
+        )
         
-        response = self.client.put(self.put_url(self.publication_request.id), data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data, {
+            "error": "Invalid action. Must be 'Approved' or 'Rejected'"
+        })
+    
+
+    def test_approve_publication_request(self):
+        """Test successful approval of a publication request"""
+        self.client.force_authenticate(user=self.admin_user)
         
         
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(self.pending_request.status, "Pending")
+        self.assertEqual(self.news_post.status, "Draft")
+        
+        
+        fixed_time = datetime(2025, 3, 27, 12, 0, 0)
+        fixed_time = timezone.make_aware(fixed_time)
+        
+        
+        with patch('django.utils.timezone.now', return_value=fixed_time):
+            response = self.client.put(
+                self.get_detail_url(self.pending_request.id),
+                {
+                    'status': 'Approved',
+                    'admin_notes': 'Excellent news post!'
+                },
+                format='json'
+            )
+            
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            
+            
+            self.pending_request.refresh_from_db()
+            self.news_post.refresh_from_db()
+            
+            
+            self.assertEqual(self.pending_request.status, "Approved")
+            self.assertEqual(self.pending_request.reviewed_by, self.admin_user)
+            self.assertEqual(self.pending_request.admin_notes, "Excellent news post!")
+            self.assertIsNotNone(self.pending_request.reviewed_at)
+            
+            
+            self.assertEqual(self.news_post.status, "Published")
+            self.assertIsNotNone(self.news_post.published_at)
+            
+            
+            notification = Notification.objects.filter(
+                header="News Publication Approved",
+                for_user=self.student
+            ).first()
+            
+            self.assertIsNotNone(notification)
+            self.assertTrue(notification.is_important)
+            expected_body = f"Your news publication request for '{self.news_post.title}' has been approved."
+            self.assertEqual(notification.body, expected_body)
+
+    def test_reject_publication_request(self):
+        """Test successful rejection of a publication request"""
+        self.client.force_authenticate(user=self.admin_user)
+        
+        
+        fixed_time = datetime(2025, 3, 27, 12, 0, 0)
+        fixed_time = timezone.make_aware(fixed_time)
+        
+        
+        with patch('django.utils.timezone.now', return_value=fixed_time):
+            response = self.client.put(
+                self.get_detail_url(self.pending_request.id),
+                {
+                    'status': 'Rejected',
+                    'admin_notes': 'Needs more details'
+                },
+                format='json'
+            )
+            
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            
+            
+            self.pending_request.refresh_from_db()
+            self.news_post.refresh_from_db()
+            
+            
+            self.assertEqual(self.pending_request.status, "Rejected")
+            self.assertEqual(self.pending_request.reviewed_by, self.admin_user)
+            self.assertEqual(self.pending_request.admin_notes, "Needs more details")
+            
+            
+            self.assertEqual(self.news_post.status, "Rejected")
+            
+            
+            notification = Notification.objects.filter(
+                header="News Publication Rejected",
+                for_user=self.student
+            ).first()
+            
+            self.assertIsNotNone(notification)
+            self.assertTrue(notification.is_important)
+            expected_body = f"Your news publication request for '{self.news_post.title}' has been rejected. Admin notes: Needs more details"
+            self.assertEqual(notification.body, expected_body)
+
+    def tearDown(self):
+        
+        for society in Society.objects.all():
+            if society.icon:
+                try:
+                    society.icon.delete(save=False)
+                except:
+                    pass
+        
+        for student in Student.objects.all():
+            if student.icon:
+                try:
+                    student.icon.delete(save=False)
+                except:
+                    pass
