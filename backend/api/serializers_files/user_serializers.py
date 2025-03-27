@@ -98,8 +98,9 @@ class StudentSerializer(UserSerializer):
             elif hasattr(obj, 'event_manager_of_society') and obj.event_manager_of_society:
                 if hasattr(obj.event_manager_of_society, 'pk'):
                     return obj.event_manager_of_society.pk
-        except Exception as e:
+        except Exception:
             pass
+
         return None
 
     def get_vice_president_of_society(self, obj):
@@ -115,7 +116,7 @@ class StudentSerializer(UserSerializer):
             elif hasattr(obj, 'vice_president_of_society') and obj.vice_president_of_society:
                 if hasattr(obj.vice_president_of_society, 'pk'):
                     return obj.vice_president_of_society.pk
-        except Exception as e:
+        except Exception:
             pass
 
         return None

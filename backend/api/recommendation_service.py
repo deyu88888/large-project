@@ -1,4 +1,3 @@
-# backend/api/recommendation_service.py
 from django.db.models import Count, Sum, Q, Case, When, Value, IntegerField, F
 from collections import Counter, defaultdict
 from django.db.models.signals import post_save
@@ -19,14 +18,11 @@ class SocietyRecommender:
     """
     
     def __init__(self):
-        # MMR parameters
-        self.mmr_lambda = 0.7  # Balance between relevance and diversity (higher means more relevance)
-        self.max_category_boost = 1.5  # Maximum category boost multiplier
+        self.mmr_lambda = 0.7  
+        self.max_category_boost = 1.5  
         
-        # Temporal decay parameters
-        self.activity_half_life = 90  # Days after which activity weight is halved
+        self.activity_half_life = 90  
         
-        # Cached society similarity matrix
         self.society_similarities = {}
     
     def get_popular_societies(self, limit=5, with_recent_boost=True):
@@ -36,7 +32,6 @@ class SocietyRecommender:
         """
         base_query = Society.objects.filter(status="Approved")
         
-        # Base popularity metrics
         societies = base_query.annotate(
             total_members=Count("society_members"),
             total_events=Count("events"),
@@ -44,7 +39,6 @@ class SocietyRecommender:
         )
         
         if with_recent_boost:
-            # Calculate recent activity (events in the last 30 days)
             thirty_days_ago = timezone.now() - datetime.timedelta(days=30)
             societies = societies.annotate(
                 recent_events=Count(
@@ -57,18 +51,16 @@ class SocietyRecommender:
                 )
             )
             
-            # Calculate popularity score with recent activity boost
             popular_societies = societies.annotate(
                 popularity_score=(
                     (2 * F('total_members')) +
                     (3 * F('total_events')) +
                     (4 * F('total_event_attendance')) +
-                    (5 * F('recent_events')) +  # Higher weight for recent events
-                    (3 * F('recent_members'))   # Boost for recent members
+                    (5 * F('recent_events')) +  
+                    (3 * F('recent_members'))   
                 )
             )
         else:
-            # Original popularity calculation
             popular_societies = societies.annotate(
                 popularity_score=(
                     (2 * F('total_members')) +
@@ -92,40 +84,32 @@ class SocietyRecommender:
         try:
             student = Student.objects.get(id=student_id)
             
-            # Set diversity parameters based on requested level
             if diversity_level == 'low':
-                self.mmr_lambda = 0.9  # More relevance, less diversity
+                self.mmr_lambda = 0.9  
             elif diversity_level == 'high':
-                self.mmr_lambda = 0.5  # More diversity, less relevance
-            else:  # 'balanced'
-                self.mmr_lambda = 0.7  # Default balance
+                self.mmr_lambda = 0.5  
+            else:  
+                self.mmr_lambda = 0.7  
             
-            # If student hasn't joined any societies, return popular ones
             if not student.societies.exists():
                 return self.get_popular_societies(limit)
             
-            # Get societies the student has already joined
             joined_societies = student.societies.all()
             
-            # Extract categories the student is interested in
             joined_categories = set(joined_societies.values_list('category', flat=True))
             
-            # Get all approved societies the student has not joined yet
             available_societies = Society.objects.filter(
                 status="Approved"
             ).exclude(
                 id__in=joined_societies.values_list('id', flat=True)
             )
             
-            # If no available societies, return empty list
             if not available_societies.exists():
                 return []
             
-            # Calculate similarity scores for each available society
             society_scores = []
             
             for society in available_societies:
-                # Calculate similarity score based on multiple factors
                 score = self._calculate_similarity_score(society, joined_societies, student)
                 society_scores.append({
                     'society': society,
@@ -133,10 +117,8 @@ class SocietyRecommender:
                     'category': society.category
                 })
             
-            # First approach: Category-aware MMR for balanced recommendations
             selected_societies = self._mmr_selection(society_scores, joined_societies, limit)
             
-            # Generate explanations for the selected recommendations
             for item in selected_societies:
                 explanation = self._get_recommendation_explanation_details(
                     item['society'], joined_societies
@@ -147,7 +129,6 @@ class SocietyRecommender:
             return [item['society'] for item in selected_societies]
             
         except Student.DoesNotExist:
-            # If student doesn't exist, return popular societies
             return self.get_popular_societies(limit)
     
     def _mmr_selection(self, society_scores, joined_societies, limit):
@@ -158,61 +139,47 @@ class SocietyRecommender:
         if not society_scores:
             return []
             
-        # Sort by initial score
         society_scores = sorted(society_scores, key=lambda x: x['score'], reverse=True)
         
-        # Extract categories the student is interested in
         joined_categories = set(s.category for s in joined_societies)
         
-        # Dynamic category weights: less represented categories get higher weights
         category_counts = Counter(s.category for s in joined_societies)
         total_societies = len(joined_societies)
         
-        # Normalize category weights (inverse of frequency)
         category_weights = {}
         for category in joined_categories:
             count = category_counts.get(category, 0)
             if count > 0:
-                # Less common categories get higher weight (up to max_category_boost)
                 weight = 1 + (self.max_category_boost - 1) * (1 - (count / total_societies))
                 category_weights[category] = weight
             else:
                 category_weights[category] = 1.0
-                
         
-        # Initialize MMR
         selected = []
         remaining = society_scores.copy()
         
-        # Helper function to compute similarity between two societies
         def compute_society_similarity(society1, society2):
-            # Use cached similarity if available
             pair_key = tuple(sorted([society1.id, society2.id]))
             if pair_key in self.society_similarities:
                 return self.society_similarities[pair_key]
                 
-            # Calculate description similarity if both have descriptions
             if (hasattr(society1, 'description') and society1.description and 
                 hasattr(society2, 'description') and society2.description):
                 
                 similarity = text_similarity_analyzer.calculate_similarity(
                     society1.description, [society2.description]
-                ) / 5.0  # Normalize to 0-1
+                ) / 5.0  
             else:
-                # Fallback to tag and category similarity
                 s1_tags = set(society1.tags or [])
                 s2_tags = set(society2.tags or [])
                 tag_sim = len(s1_tags.intersection(s2_tags)) / max(1, len(s1_tags.union(s2_tags)))
                 cat_sim = 1.0 if society1.category == society2.category else 0.0
                 similarity = 0.6 * cat_sim + 0.4 * tag_sim
                 
-            # Cache for future use
             self.society_similarities[pair_key] = similarity
             return similarity
         
-        # MMR algorithm
         while len(selected) < limit and remaining:
-            # Find society with highest MMR score
             max_mmr = -1
             max_idx = -1
             
@@ -220,24 +187,19 @@ class SocietyRecommender:
                 society = item['society']
                 score = item['score']
                 
-                # Apply category weight if it's a category the student is interested in
                 if society.category in category_weights:
                     score *= category_weights[society.category]
                 
-                # Relevance component
                 relevance = score
                 
                 if not selected:
-                    # First selection is based only on relevance
                     mmr_score = relevance
                 else:
-                    # Calculate diversity penalty
                     max_similarity = max(
                         compute_society_similarity(society, sel['society'])
                         for sel in selected
                     )
                     
-                    # MMR formula: λ * relevance - (1-λ) * max_similarity_to_selected
                     mmr_score = (self.mmr_lambda * relevance) - ((1 - self.mmr_lambda) * max_similarity)
                 
                 if mmr_score > max_mmr:
@@ -247,7 +209,6 @@ class SocietyRecommender:
             if max_idx >= 0:
                 selected.append(remaining.pop(max_idx))
             else:
-                # Fallback (shouldn't happen)
                 break
         
         return selected
@@ -260,73 +221,57 @@ class SocietyRecommender:
         """
         total_score = 0
         
-        # Extract features from joined societies
         joined_categories = [s.category for s in joined_societies]
         joined_tags = []
         for s in joined_societies:
             if s.tags:
                 joined_tags.extend(s.tags)
         
-        # 1. Category similarity (exact match)
         if society.category in joined_categories:
             total_score += 3
         
-        # 2. Tag similarity (count matching tags)
         society_tags = society.tags or []
         matching_tags = sum(1 for tag in society_tags if tag in joined_tags)
         total_score += matching_tags * 2
         
-        # 3. Text similarity in society description - using advanced NLP
         if hasattr(society, 'description') and society.description:
             joined_descriptions = [s.description for s in joined_societies if hasattr(s, 'description') and s.description]
             
             if joined_descriptions:
-                # Get advanced NLP similarity score (0-5 scale)
                 desc_similarity = text_similarity_analyzer.calculate_similarity(
                     society.description, 
                     joined_descriptions
                 )
                 
-                # Add to total score with a higher weight for NLP-based similarity
                 total_score += desc_similarity * 1.5
                 
-                # Check for semantic categories even when descriptions are identical
                 if all(d == joined_descriptions[0] for d in joined_descriptions):
-                    # If all descriptions are identical, rely more on semantic categories
                     for joined_society in joined_societies:
                         semantic_boost = semantic_enhancer.calculate_semantic_boost(
                             society.name + " " + (society.category or ""),
                             joined_society.name + " " + (joined_society.category or "")
                         )
-                        # Add semantic boost to compensate for identical descriptions
                         total_score += semantic_boost * 3
         
-        # 4. Event attendance pattern matching (if student is provided)
         if student and hasattr(student, 'attended_events') and student.attended_events.exists():
-            # Get categories of events the student has attended
             attended_event_categories = set()
             for event in student.attended_events.all():
                 if event.hosted_by and event.hosted_by.category:
                     attended_event_categories.add(event.hosted_by.category)
                     
-            # Boost score if society's category matches event attendance patterns
             if society.category in attended_event_categories:
                 total_score += 2
                 
-        # 5. Activity recency weighting
         recent_activities = 0
         society_age_boost = 1.0
         
-        # Check for recent events
         thirty_days_ago = timezone.now() - datetime.timedelta(days=30)
         recent_events = society.events.filter(date__gte=thirty_days_ago).count()
         recent_activities += recent_events
             
-        # Apply a recency boost (newer societies with activity get a boost)
         if recent_activities > 0:
-            society_age_boost = 1.2  # 20% boost for active societies
+            society_age_boost = 1.2  
         
-        # Apply recency boost to total score
         total_score *= society_age_boost
         
         return total_score
@@ -344,7 +289,6 @@ class SocietyRecommender:
             "match_reason": None
         }
         
-        # Check for category match
         joined_categories = [s.category for s in joined_societies]
         if society.category in joined_categories:
             category_matches = [s for s in joined_societies if s.category == society.category]
@@ -356,7 +300,6 @@ class SocietyRecommender:
                 explanation["message"] = f"Similar to {category_matches[0].name} (same category: {society.category})"
                 return explanation
         
-        # Check for tag matches
         society_tags = society.tags or []
         if society_tags:
             for joined_society in joined_societies:
@@ -370,7 +313,6 @@ class SocietyRecommender:
                     explanation["message"] = f"Similar to {joined_society.name} (shared interests: {', '.join(matching_tags)})"
                     return explanation
         
-        # For text similarity, find the most similar society
         max_similarity = 0
         most_similar_society = None
         
@@ -385,7 +327,6 @@ class SocietyRecommender:
                     max_similarity = similarity
                     most_similar_society = joined_society
         
-        # If we found a society with significant text similarity
         if max_similarity > 1.5 and most_similar_society:
             explanation["type"] = "content"
             explanation["matched_society"] = most_similar_society.name
@@ -394,7 +335,6 @@ class SocietyRecommender:
             explanation["message"] = f"Similar content to {most_similar_society.name}"
             return explanation
         
-        # Check if the society offers diversity from existing memberships
         if all(society.category != s.category for s in joined_societies):
             explanation["type"] = "diversity"
             explanation["match_reason"] = "something different"
@@ -402,7 +342,6 @@ class SocietyRecommender:
             explanation["message"] = f"Try something new in {society.category}"
             return explanation
         
-        # Default explanation with the first joined society
         if joined_societies:
             explanation["matched_society"] = joined_societies[0].name
             explanation["message"] = f"Based on your membership in {joined_societies[0].name}"
@@ -418,7 +357,6 @@ class SocietyRecommender:
             student = Student.objects.get(id=student_id)
             society = Society.objects.get(id=society_id)
             
-            # Check if we've cached the explanation from the recommendation process
             if hasattr(society, '_recommendation_explanation'):
                 return {
                     "type": society._recommendation_explanation["type"],
@@ -433,10 +371,8 @@ class SocietyRecommender:
             
             joined_societies = student.societies.all()
             
-            # Generate a detailed explanation
             explanation_data = self._get_recommendation_explanation_details(society, joined_societies)
             
-            # Return the simplified version for the API
             return {
                 "type": explanation_data["type"],
                 "message": explanation_data["message"]
@@ -453,14 +389,10 @@ class SocietyRecommender:
         Update the text similarity model with all society descriptions.
         This should be called periodically to keep the model up-to-date.
         """
-        # Get all society descriptions
         all_descriptions = Society.objects.filter(status="Approved").values_list('description', flat=True)
         
-        # Check for duplicate descriptions
         unique_descriptions = set(all_descriptions)
         
-        
-        # If most descriptions are identical, add sample varied descriptions
         if len(unique_descriptions) < 3:
             all_descriptions = list(all_descriptions) + [
                 "Programming Society for coding enthusiasts. We organize hackathons, workshops, and networking events.",
@@ -468,10 +400,8 @@ class SocietyRecommender:
                 "Hiking Club for outdoor enthusiasts who enjoy exploring nature and staying active."
             ]
         
-        # Update the analyzer's corpus with these descriptions
         text_similarity_analyzer.update_corpus(all_descriptions)
         
-        # Clear similarity cache when model is updated
         self.society_similarities = {}
         
         return len(all_descriptions)

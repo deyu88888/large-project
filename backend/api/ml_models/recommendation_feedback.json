@@ -98,7 +98,7 @@
       "student_id": 2,
       "society_id": 2,
       "feedback_type": "view_details",
-      "timestamp": "2025-03-27T03:41:57.988840",
+      "timestamp": "2025-03-27T03:22:25.935515",
       "value": null,
       "metadata": {
         "explanation_request": true
@@ -108,7 +108,7 @@
       "student_id": 2,
       "society_id": 2,
       "feedback_type": "rating",
-      "timestamp": "2025-03-27T03:42:00.857262",
+      "timestamp": "2025-03-27T03:22:27.243363",
       "value": 4,
       "metadata": {
         "comment": "This is a great recommendation!",
@@ -120,7 +120,7 @@
       "student_id": 2,
       "society_id": 2,
       "feedback_type": "relevance",
-      "timestamp": "2025-03-27T03:42:00.859224",
+      "timestamp": "2025-03-27T03:22:27.243770",
       "value": 5,
       "metadata": {
         "comment": "This is a great recommendation!",
@@ -132,14 +132,38 @@
       "student_id": 2,
       "society_id": 2,
       "feedback_type": "join",
-      "timestamp": "2025-03-27T03:42:00.861184",
+      "timestamp": "2025-03-27T03:22:27.243946",
       "value": null,
       "metadata": {
-        "timestamp": "2025-03-27T03:42:00.861184+00:00",
+        "timestamp": "2025-03-27T03:22:27.243942+00:00",
+        "source": "recommendation",
+        "feedback_id": null
+      }
+    },
+    {
+      "student_id": 109,
+      "society_id": 32,
+      "feedback_type": "rating",
+      "timestamp": "2025-03-27T04:31:29.240633",
+      "value": 5,
+      "metadata": {
+        "comment": "",
+        "source": "recommendation",
+        "feedback_id": null
+      }
+    },
+    {
+      "student_id": 109,
+      "society_id": 32,
+      "feedback_type": "relevance",
+      "timestamp": "2025-03-27T04:31:29.241610",
+      "value": 5,
+      "metadata": {
+        "comment": "",
         "source": "recommendation",
         "feedback_id": null
       }
     }
   ],
-  "last_updated": "2025-03-27T03:42:00.861184"
+  "last_updated": "2025-03-27T04:31:29.241640"
 }

@@ -1,4 +1,3 @@
-# api/consumer/dashboard_consumer.py
 import json
 import logging
 import traceback
@@ -18,10 +17,8 @@ def sanitize_channel_name(channel: str) -> str:
     """
     return re.sub(r'[^\w\.-]', '_', channel)
 
-# Set up enhanced logger
 logger = logging.getLogger(__name__)
 
-# Add a dedicated stream handler for immediate console output
 console_handler = logging.StreamHandler(sys.stdout)
 console_handler.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(levelname)s] %(asctime)s - %(name)s - %(message)s')
@@ -40,7 +37,7 @@ class DashboardConsumer(AsyncWebsocketConsumer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.user = None
-        self.is_authenticated = True  # Default to True for public access
+        self.is_authenticated = True  
         self.group_name = "dashboard"
         self.channel_name = None
         self.subscribed_channels = set()
@@ -54,7 +51,6 @@ class DashboardConsumer(AsyncWebsocketConsumer):
         Handles WebSocket connection establishment for the dashboard.
         Accepts the connection, adds it to the dashboard group, and sends initial public data.
         """
-        # Extract client information
         self.client_info = {
             'client_addr': self.scope.get('client', ['Unknown'])[0] if self.scope.get('client') else 'Unknown',
             'headers': dict(self.scope.get('headers', [])),
@@ -63,16 +59,12 @@ class DashboardConsumer(AsyncWebsocketConsumer):
         }
         
         try:
-            # Create a unique channel name
             self.channel_name = f"dashboard_{self.connection_id}"
 
-            # Accept the connection immediately
             await self.accept()
             
-            # Join the main dashboard group
             await self.channel_layer.group_add(self.group_name, self.channel_name)
 
-            # Let the client know we're connected with public access
             initial_message = {
                 'type': 'connection_established',
                 'message': 'Connected to dashboard websocket. Public access enabled.',
@@ -91,7 +83,6 @@ class DashboardConsumer(AsyncWebsocketConsumer):
             
         except Exception as e:
             try:
-                # Try to send a diagnostic message to the client before closing
                 await self.send(text_data=json.dumps({
                     'type': 'error',
                     'message': f"Connection failed: {str(e)}"
@@ -106,10 +97,8 @@ class DashboardConsumer(AsyncWebsocketConsumer):
         Removes the connection from the main dashboard group and all subscribed channels.
         """
         try:
-            # Remove from the main dashboard group
             await self.channel_layer.group_discard(self.group_name, self.channel_name)
             
-            # Remove from all subscribed channel groups
             for channel in self.subscribed_channels:
                 channel_group = f"channel_{sanitize_channel_name(channel)}"
                 await self.channel_layer.group_discard(channel_group, self.channel_name)
@@ -125,35 +114,30 @@ class DashboardConsumer(AsyncWebsocketConsumer):
             data = json.loads(text_data)
             message_type = data.get("type", "")
             
-            # Log the received message
             self.message_log.append(('received', data))
 
-            # Handle authentication (optional for additional permissions)
             if message_type == "authenticate":
                 token = data.get("token", "")
                 mode = data.get("mode", "")
                 
                 if mode == "public":
-                    await self.authenticate(None)  # Authenticate with no token
+                    await self.authenticate(None)  
                 else:
                     await self.authenticate(token)
                 return
 
-            # Handle subscription requests - allow for all
             if message_type == "subscribe":
                 channel = data.get("channel", "")
                 if channel:
                     await self.subscribe_to_channel(channel)
                 return
                 
-            # Handle unsubscription requests
             if message_type == "unsubscribe":
                 channel = data.get("channel", "")
                 if channel:
                     await self.unsubscribe_from_channel(channel)
                 return
 
-            # Handle data requests - allow for all
             if message_type == "request_data":
                 channel = data.get("channel", "")
                 
@@ -167,7 +151,6 @@ class DashboardConsumer(AsyncWebsocketConsumer):
                     await self.send_error(f"Unknown channel: {channel}")
                 return
 
-            # Unknown message type
             await self.send_error(f"Unknown message type: {message_type}")
             
         except json.JSONDecodeError:
@@ -181,7 +164,6 @@ class DashboardConsumer(AsyncWebsocketConsumer):
         Optional for dashboard - enhances with user-specific data if available.
         Public access is maintained even if authentication fails.
         """
-        # Already authenticated for public access, token is optional
         if not token:
             auth_response = {
                 'type': 'auth_response',
@@ -199,7 +181,6 @@ class DashboardConsumer(AsyncWebsocketConsumer):
             return
 
         try:
-            # Validate the token and get the user
             user = await self.get_user_from_token(token)
             
             if user and not isinstance(user, AnonymousUser):
@@ -219,10 +200,8 @@ class DashboardConsumer(AsyncWebsocketConsumer):
                 await self.send(text_data=json.dumps(auth_response))
                 self.message_log.append(('sent', auth_response))
                 
-                # Send user-specific data after authentication
                 await self.send_notifications()
             else:
-                # Keep public access if token is invalid
                 auth_response = {
                     'type': 'auth_response',
                     'status': 'success',
@@ -237,10 +216,9 @@ class DashboardConsumer(AsyncWebsocketConsumer):
                 await self.send(text_data=json.dumps(auth_response))
                 self.message_log.append(('sent', auth_response))
         except Exception:
-            # Even on error, maintain public access
             auth_response = {
                 'type': 'auth_response',
-                'status': 'success',  # Still success for public access
+                'status': 'success',  
                 'message': 'Public access mode',
                 'available_channels': [
                     'dashboard/stats',
@@ -259,14 +237,12 @@ class DashboardConsumer(AsyncWebsocketConsumer):
         Returns AnonymousUser if token is invalid or user doesn't exist.
         """
         try:
-            # Validate the token
             access_token = AccessToken(token)
             user_id = access_token.payload.get('user_id')
             
             if not user_id:
                 return AnonymousUser()
                 
-            # Get the user from the database
             user = User.objects.get(id=user_id)
             return user
         except (TokenError, User.DoesNotExist, Exception):
@@ -283,7 +259,6 @@ class DashboardConsumer(AsyncWebsocketConsumer):
             
         channel_group = f"channel_{sanitize_channel_name(channel)}"
         
-        # Add to channel group
         try:
             await self.channel_layer.group_add(channel_group, self.channel_name)
             self.subscribed_channels.add(channel)
@@ -291,7 +266,6 @@ class DashboardConsumer(AsyncWebsocketConsumer):
             await self.send_error(f"Error subscribing to channel: {str(e)}")
             return
         
-        # Send confirmation
         subscription_response = {
             'type': 'subscription_update',
             'channel': channel,
@@ -301,7 +275,6 @@ class DashboardConsumer(AsyncWebsocketConsumer):
         await self.send(text_data=json.dumps(subscription_response))
         self.message_log.append(('sent', subscription_response))
         
-        # Send initial data for the channel
         if channel == 'dashboard/stats':
             await self.send_dashboard_stats()
         elif channel == 'dashboard/activities':
@@ -316,7 +289,6 @@ class DashboardConsumer(AsyncWebsocketConsumer):
         """
         channel_group = f"channel_{sanitize_channel_name(channel)}"
         
-        # Remove from channel group
         try:
             await self.channel_layer.group_discard(channel_group, self.channel_name)
             
@@ -326,7 +298,6 @@ class DashboardConsumer(AsyncWebsocketConsumer):
             await self.send_error(f"Error unsubscribing from channel: {str(e)}")
             return
         
-        # Send confirmation
         unsubscription_response = {
             'type': 'subscription_update',
             'channel': channel,
@@ -404,8 +375,6 @@ class DashboardConsumer(AsyncWebsocketConsumer):
         except Exception as e:
             await self.send_error(f"Error fetching notifications: {str(e)}")
 
-    # ---- Group message handlers ----
-
     async def dashboard_stats_update(self, event):
         """
         Broadcast handler for dashboard statistics updates.
@@ -456,7 +425,6 @@ class DashboardConsumer(AsyncWebsocketConsumer):
             self.message_log.append(('sent', response))
         except Exception:
             pass
-    # ---- Data retrieval methods ----
 
     @sync_to_async
     def get_dashboard_stats(self):
@@ -467,7 +435,6 @@ class DashboardConsumer(AsyncWebsocketConsumer):
         try:
             from api.models import Society, Event, Student
             
-            # Count database entries
             society_count = Society.objects.count()
             event_count = Event.objects.count()
             pending_count = Society.objects.filter(status="Pending").count()
@@ -480,7 +447,6 @@ class DashboardConsumer(AsyncWebsocketConsumer):
                 "activeMembers": student_count,
             }
         except Exception:
-            # Return defaults to avoid breaking the UI
             return {"totalSocieties": 0, "totalEvents": 0, "pendingApprovals": 0, "activeMembers": 0}
 
     @sync_to_async
@@ -492,13 +458,11 @@ class DashboardConsumer(AsyncWebsocketConsumer):
         try:
             from ..models import Activity
             
-            # Fetch activities
             activities = Activity.objects.order_by('-created_at')[:10]
             
             result = [{"description": activity.description} for activity in activities]
             return result
         except Exception:
-            # Return an empty list to avoid breaking the UI
             return []
 
     @sync_to_async
@@ -511,13 +475,10 @@ class DashboardConsumer(AsyncWebsocketConsumer):
         try:
             from api.models import Notification
             
-            # Different query strategy based on authentication
             if self.user:
-                # For authenticated users, show their notifications
                 notifications = Notification.objects.filter(for_user=self.user).order_by('-send_time')[:10]
                 return [{"message": f"{n.header}: {n.body}"} for n in notifications]
             else:
-                # For public access, show public notifications
                 try:
                     if hasattr(Notification, 'is_public'):
                         notifications = Notification.objects.filter(is_public=True).order_by('-send_time')[:10]
@@ -539,11 +500,9 @@ class DashboardConsumer(AsyncWebsocketConsumer):
         try:
             from api.models import SiteSettings
             
-            # Fetch settings
             settings = SiteSettings.load()
             return settings
         except Exception:
-            # Return defaults
             class DefaultSettings:
                 introduction_title = "Welcome to Student Societies Dashboard"
                 introduction_content = "This dashboard provides an overview of all student societies and their activities."

@@ -9,36 +9,29 @@ from .models import AwardStudent, Student, Society, Notification, EventRequest, 
 
 @receiver(post_save, sender=Student)
 def update_is_president_on_save(sender, instance, created, **kwargs):
-    # Determine the correct value for is_president based on president_of
     new_value = instance.president_of is not None
-    # If the value has changed, update it without causing recursion
     if instance.is_president != new_value:
         Student.objects.filter(pk=instance.pk).update(is_president=new_value)
-        
         broadcast_dashboard_update()
 
 @receiver(pre_save, sender=Society)
 def update_vice_president_status(sender, instance, **kwargs):
     """Update is_vice_president flag when vice_president changes"""
-    if instance.pk:  # Only for existing societies
+    if instance.pk:
         try:
-            # Try to get the previous vice president
             old_instance = Society.objects.get(pk=instance.pk)
             old_vice_president = old_instance.vice_president
 
-            # If the vice president has changed
             if old_vice_president != instance.vice_president:
-                # Reset old vice president's flag if exists
                 if old_vice_president:
                     old_vice_president.is_vice_president = False
                     old_vice_president.save()
 
-                # Set new vice president's flag if exists
                 if instance.vice_president:
                     instance.vice_president.is_vice_president = True
                     instance.vice_president.save()
         except Society.DoesNotExist:
-            pass  # This is a new society
+            pass
 
 @receiver(post_save, sender=Society)
 def update_new_vice_president_status(sender, instance, created, **kwargs):
@@ -50,26 +43,21 @@ def update_new_vice_president_status(sender, instance, created, **kwargs):
 @receiver(pre_save, sender=Society)
 def update_event_manager_status(sender, instance, **kwargs):
     """Update student's is_event_manager status when event_manager field changes"""
-    # Only run if we have an existing instance to compare against
     if instance.pk:
         try:
-            # Get the society instance before changes
             before_changes = Society.objects.get(pk=instance.pk)
             before_event_manager = before_changes.event_manager
             
-            # If event manager has changed
             if instance.event_manager != before_event_manager:
-                # If new event manager exists, set flag to True
                 if instance.event_manager:
                     instance.event_manager.is_event_manager = True
                     instance.event_manager.save()
                 
-                # If previous event manager exists, set their flag to False
                 if before_event_manager:
                     before_event_manager.is_event_manager = False
                     before_event_manager.save()
         except Society.DoesNotExist:
-            pass  # This is a new society being created
+            pass
 
 def broadcast_dashboard_update():
     """
@@ -78,7 +66,6 @@ def broadcast_dashboard_update():
     from .models import Society, Event, Student
 
     try:
-        # Calculate the statistics
         stats = {
             "totalSocieties": Society.objects.count(),
             "totalEvents": Event.objects.count(),
@@ -86,16 +73,17 @@ def broadcast_dashboard_update():
             "activeMembers": Student.objects.count(),
         }
 
-        # Send the data through WebSocket
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)(
-            "dashboard",  # Group name
+            "dashboard",
             {
-                "type": "dashboard.update",  # Event type
-                "data": stats,               # Data payload
+                "type": "dashboard.update",
+                "data": stats,
             }
         )
     except ChannelFull:
+        pass
+    except Exception:
         pass
 
 @receiver(post_save, sender=EventRequest)
@@ -114,7 +102,7 @@ def notify_on_event_requested(sender, instance, created, **kwargs):
                 f"the scheduling of an event, '{instance.event.title}' on {instance.event.date}",
                 for_user=admin,
             )
-    except Exception as e:
+    except Exception:
         pass
 
 @receiver(post_save, sender=EventRequest)
@@ -143,7 +131,7 @@ def notify_on_event_status_update(sender, instance, created, **kwargs):
                      "was rejected. Please contact the admin for details.",
                 is_important=True,
             )
-    except Exception as e:
+    except Exception:
         pass
 
 @receiver(post_save, sender=SocietyRequest)
@@ -162,7 +150,7 @@ def notify_on_society_requested(sender, instance, created, **kwargs):
                 f" new society, '{instance.name}'",
                 for_user=admin,
             )
-    except Exception as e:
+    except Exception:
         pass
 
 @receiver(post_save, sender=SocietyRequest)
@@ -188,7 +176,7 @@ def notify_on_society_creation_update(sender, instance, created, **kwargs):
                 " was rejected. Please contact the admin for details.",
                 is_important=True,
             )
-    except Exception as e:
+    except Exception:
         pass
 
     broadcast_dashboard_update()
@@ -222,7 +210,7 @@ def notify_on_society_join_request(sender, instance, created, **kwargs):
                 body=f"Your request to join the society "
                 f"'{instance.society.name}' has been rejected.",
             )
-    except Exception as e:
+    except Exception:
         pass
 
 @receiver(post_save, sender=Event)
@@ -241,7 +229,7 @@ def notify_society_members_of_event(sender, instance, created, **kwargs):
                 f" '{instance.title}'!",
                 for_user=member,
             )
-    except Exception as e:
+    except Exception:
         pass
 
 @receiver(m2m_changed, sender=Event.current_attendees.through)
@@ -263,7 +251,7 @@ def notify_society_members_of_event_time(sender, instance, action, pk_set, **kwa
                     for_user=student,
                     send_time=send_time,
                 )
-    except Exception as e:
+    except Exception:
         pass
 
 @receiver(post_save, sender=AwardStudent)

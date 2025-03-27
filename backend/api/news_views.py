@@ -8,7 +8,6 @@ from django.db.models import Manager
 from api.models import Society, SocietyNews, NewsComment, Student, NewsPublicationRequest
 from api.serializers import SocietyNewsSerializer, NewsCommentSerializer, NewsPublicationRequestSerializer
 from api.views_files.view_utility import has_society_management_permission
-import traceback
 
 
 class SocietyNewsListView(APIView):
@@ -65,6 +64,7 @@ class SocietyNewsListView(APIView):
                     
                     return Response(serializer.data, status=status.HTTP_200_OK)
                 except Exception:
+                    import traceback
                     traceback.print_exc()
                     return Response({"error": "An error occurred processing news posts."}, 
                                     status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -72,6 +72,7 @@ class SocietyNewsListView(APIView):
                 return Response({"error": "You must be a member of this society to view its news."}, 
                                 status=status.HTTP_403_FORBIDDEN)
         except Exception:
+            import traceback
             traceback.print_exc()
             return Response({"error": "An unexpected error occurred."}, 
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -162,10 +163,12 @@ class SocietyNewsDetailView(APIView):
         data = request.data.copy() if hasattr(request.data, 'copy') else dict(request.data)
         
         current_status = news_post.status
-        
+        requested_status = data.get('status', None)
+
         if 'status' in data:
             if request.user.is_admin():
                 pass
+            
             elif current_status == "Draft" and data['status'] == "Published":
                 data['status'] = "Draft"
                 return Response({
@@ -306,16 +309,15 @@ class NewsCommentLikeView(APIView):
     def post(self, request, comment_id):
         try:
             comment = get_object_or_404(NewsComment, id=comment_id)
-        except Exception:
+        except Exception as e:
             return Response({"error": "Comment not found."}, status=status.HTTP_404_NOT_FOUND)
 
         try:
             news_post = comment.news_post
             society = news_post.society
-        except Exception:
+        except Exception as e:
             return Response({"error": "News post or society not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Check membership
         is_member = False
         if hasattr(request.user, 'student'):
             student = request.user.student
@@ -329,11 +331,12 @@ class NewsCommentLikeView(APIView):
         if not is_member:
             return Response({"error": "You must be a member of this society to like comments."}, status=status.HTTP_403_FORBIDDEN)
 
-        # Remove from dislikes if present
+        initial_likes = comment.likes.count()
+        initial_dislikes = comment.dislikes.count()
+
         if comment.dislikes.filter(id=request.user.id).exists():
             comment.dislikes.remove(request.user)
 
-        # Toggle like
         if comment.likes.filter(id=request.user.id).exists():
             comment.likes.remove(request.user)
             action = "unliked"
@@ -367,7 +370,6 @@ class NewsCommentDislikeView(APIView):
         except Exception:
             return Response({"error": "News post or society not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Check membership
         is_member = False
         if hasattr(request.user, 'student'):
             student = request.user.student
@@ -381,11 +383,12 @@ class NewsCommentDislikeView(APIView):
         if not is_member:
             return Response({"error": "You must be a member of this society to dislike comments."}, status=status.HTTP_403_FORBIDDEN)
 
-        # Remove from likes if present
+        initial_likes = comment.likes.count()
+        initial_dislikes = comment.dislikes.count()
+
         if comment.likes.filter(id=request.user.id).exists():
             comment.likes.remove(request.user)
 
-        # Toggle dislike
         if comment.dislikes.filter(id=request.user.id).exists():
             comment.dislikes.remove(request.user)
             action = "undisliked"
@@ -415,18 +418,31 @@ class MemberNewsView(APIView):
             return Response({"error": "Only students can access this view."}, status=status.HTTP_403_FORBIDDEN)
 
         student = request.user.student
+
+        student_attrs = {}
+        for attr in dir(student):
+            if attr.startswith('_'):
+                continue
+            try:
+                value = getattr(student, attr)
+                if callable(value) or isinstance(value, Manager):
+                    continue
+                student_attrs[attr] = value
+            except Exception as e:
+                student_attrs[attr] = f"Error accessing attribute: {e}"
+
         student_societies = student.societies.all()
         
         if not student_societies.exists():
             student_societies = student.societies_belongs_to.all()
 
+        society_ids = list(student_societies.values_list("id", flat=True))
         if not student_societies.exists():
             return Response([], status=status.HTTP_200_OK)
 
-        news_posts = SocietyNews.objects.filter(
-            society__in=student_societies, 
-            status="Published"
-        ).order_by('-is_pinned', '-created_at')
+        news_posts = SocietyNews.objects.filter(society__in=student_societies, status="Published").order_by('-is_pinned', '-created_at')
+
+        count_posts = news_posts.count()
 
         serializer = SocietyNewsSerializer(news_posts, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)

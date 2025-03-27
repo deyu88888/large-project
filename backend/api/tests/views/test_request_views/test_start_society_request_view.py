@@ -4,7 +4,6 @@ from rest_framework_simplejwt.tokens import AccessToken
 
 class StartSocietyRequestViewTest(APITestCase):
     def setUp(self):
-        # Create a regular (non-president) student user using create_user
         self.regular_student = Student.objects.create_user(
             username="regular_user",
             password="test1234",
@@ -14,7 +13,6 @@ class StartSocietyRequestViewTest(APITestCase):
             major="Test Major"
         )
         
-        # Create a president student for the president field
         self.president_student = Student.objects.create_user(
             username="president_user",
             password="test1234",
@@ -22,7 +20,6 @@ class StartSocietyRequestViewTest(APITestCase):
             is_president=True,
             major="Test Major"
         )
-
         self.admin = User.objects.create_user(
             username="existing_admin",
             password="Password123",
@@ -90,5 +87,4 @@ class StartSocietyRequestViewTest(APITestCase):
         """
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.admin_user_token}")
         response = self.client.put(f"{self.base_url}/1", {"status": "Pending"}, format="json")
-        
         self.assertEqual(response.status_code, 200)

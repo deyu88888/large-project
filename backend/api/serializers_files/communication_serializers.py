@@ -1,4 +1,3 @@
-import traceback
 from json import loads
 from api.models import BroadcastMessage, Notification, ReportReply, NewsComment,\
     NewsPublicationRequest, SocietyNews, AdminReportRequest
@@ -38,15 +37,8 @@ class SocietyNewsSerializer(serializers.ModelSerializer):
             'society': {'write_only': True},
         }
 
-    def to_internal_value(self, data):
-        """Convert input data to internal representation before validation."""
-        try:
-            return super().to_internal_value(data)
-        except Exception:
-            raise
-
     def get_author_data(self, obj):
-        """Get basic author information."""
+        """Get basic author information"""
         if not obj.author:
             return None
 
@@ -59,7 +51,7 @@ class SocietyNewsSerializer(serializers.ModelSerializer):
         }
 
     def get_society_data(self, obj):
-        """Get basic society information."""
+        """Get basic society information"""
         try:
             request = self.context.get('request')
             icon_url = None
@@ -81,7 +73,8 @@ class SocietyNewsSerializer(serializers.ModelSerializer):
     def get_comment_count(self, obj):
         """Get total comment count including replies."""
         try:
-            return NewsComment.objects.filter(news_post=obj).count()
+            count = NewsComment.objects.filter(news_post=obj).count()
+            return count
         except NewsComment.DoesNotExist:
             return 0
 
@@ -90,7 +83,8 @@ class SocietyNewsSerializer(serializers.ModelSerializer):
         try:
             request = self.context.get("request", None)
             if request and request.user.is_authenticated and hasattr(request.user, 'student'):
-                return (obj.author and obj.author.id == request.user.student.id)
+                is_author = (obj.author and obj.author.id == request.user.student.id)
+                return is_author
             return False
         except Exception:
             return False
@@ -100,7 +94,8 @@ class SocietyNewsSerializer(serializers.ModelSerializer):
         try:
             request = self.context.get("request")
             if obj.image:
-                return request.build_absolute_uri(obj.image.url) if request else obj.image.url
+                url = request.build_absolute_uri(obj.image.url) if request else obj.image.url
+                return url
             return None
         except Exception:
             return None
@@ -109,7 +104,8 @@ class SocietyNewsSerializer(serializers.ModelSerializer):
         """Get the attachment filename."""
         try:
             if obj.attachment:
-                return obj.attachment.name.split('/')[-1]
+                name = obj.attachment.name.split('/')[-1]
+                return name
             return None
         except Exception:
             return None
@@ -125,7 +121,9 @@ class SocietyNewsSerializer(serializers.ModelSerializer):
             return []
 
     def get_admin_notes(self, obj):
-        """Return the admin_notes from the latest Rejected NewsPublicationRequest, if status=Rejected."""
+        """
+        Return the admin_notes from the latest Rejected NewsPublicationRequest, if status=Rejected
+        """
         if obj.status != "Rejected":
             return None
 
@@ -143,8 +141,7 @@ class SocietyNewsSerializer(serializers.ModelSerializer):
             return None
 
     def validate(self, data):
-        """Validate the news post data."""
-        # Check for required fields
+        """Validate the news post data"""
         if data.get('status') == 'Published' and not data.get('title'):
             raise serializers.ValidationError({"title": "Published news must have a title."})
 
@@ -165,31 +162,26 @@ class SocietyNewsSerializer(serializers.ModelSerializer):
 
         return data
 
-    def is_valid(self, raise_exception=False):
-        """Validate the serializer data."""
-        result = super().is_valid(raise_exception=False)
-
-        if raise_exception and not result:
-            raise serializers.ValidationError(self.errors)
-
-        return result
-
     def create(self, validated_data):
-        """Create a new news post."""
+        """
+        Create a new news post
+        """
         request = self.context.get("request")
 
         if not validated_data.get('author') and request and hasattr(request.user, 'student'):
             validated_data['author'] = request.user.student
 
         try:
-            return super().create(validated_data)
+            instance = super().create(validated_data)
+            return instance
         except Exception:
             raise
 
     def get_published_at(self, obj):
         """Return a formatted timestamp of when the news was published (YYYY-MM-DD HH:MM:SS)."""
         if obj.published_at:
-            return django_format(localtime(obj.published_at), "Y-m-d H:i:s")
+            formatted_time = django_format(localtime(obj.published_at), "Y-m-d H:i:s")
+            return formatted_time
         return None
 
 
@@ -254,7 +246,7 @@ class NewsCommentSerializer(serializers.ModelSerializer):
         """Get the number of dislikes for a comment"""
         try:
             return obj.dislikes.count()
-        except Exception as _:
+        except Exception:
             # Fallback to 0 if the dislikes table is not available
             return 0
 
@@ -265,7 +257,7 @@ class NewsCommentSerializer(serializers.ModelSerializer):
             if request and request.user and request.user.is_authenticated:
                 return obj.dislikes.filter(id=request.user.id).exists()
             return False
-        except Exception as _:
+        except Exception:
             return False
 
 

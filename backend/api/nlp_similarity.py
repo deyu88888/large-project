@@ -96,7 +96,7 @@ class TextSimilarityAnalyzer:
             
         try:
             self.sentence_model = SentenceTransformer('all-MiniLM-L6-v2')
-        except Exception as e:
+        except Exception:
             self.sentence_model = None
 
     def _load_or_create_vectorizers(self):
@@ -109,7 +109,7 @@ class TextSimilarityAnalyzer:
             try:
                 with open(self.model_path, 'rb') as f:
                     self.tfidf_vectorizer = pickle.load(f)
-            except Exception as e:
+            except Exception:
                 self._create_new_tfidf_vectorizer()
         else:
             self._create_new_tfidf_vectorizer()
@@ -119,7 +119,7 @@ class TextSimilarityAnalyzer:
             try:
                 with open(self.count_model_path, 'rb') as f:
                     self.count_vectorizer = pickle.load(f)
-            except Exception as e:
+            except Exception:
                 self._create_new_count_vectorizer()
         else:
             self._create_new_count_vectorizer()
@@ -191,7 +191,7 @@ class TextSimilarityAnalyzer:
             # Get embedding from model
             embedding = self.sentence_model.encode(text, convert_to_numpy=True)
             return embedding
-        except Exception as e:
+        except Exception:
             return None
 
     def _calculate_embedding_similarity(self, text1, text2):
@@ -215,7 +215,7 @@ class TextSimilarityAnalyzer:
             )[0][0]
             
             return similarity
-        except Exception as e:
+        except Exception:
             return 0
 
     def extract_keywords(self, text, top_n=10):
@@ -277,7 +277,7 @@ class TextSimilarityAnalyzer:
 
             with open(self.count_model_path, 'wb') as f:
                 pickle.dump(self.count_vectorizer, f)
-        except Exception as e:
+        except Exception:
             pass
             
         # Pre-compute and cache embeddings for the original descriptions
@@ -356,12 +356,6 @@ class TextSimilarityAnalyzer:
                     self.weights[key] * similarity_components.get(key, 0)
                     for key in self.weights
                 )
-
-                # Log component scores
-                component_scores = ", ".join([
-                    f"{key}: {similarity_components.get(key, 0):.4f}"
-                    for key in sorted(similarity_components.keys())
-                ])
                 
                 similarities.append(weighted_similarity)
 
@@ -376,7 +370,7 @@ class TextSimilarityAnalyzer:
 
             return result
 
-        except Exception as e:
+        except Exception:
             # Fallback to Jaccard
             return self._calculate_jaccard_similarity(text, comparison_texts)
 
@@ -387,7 +381,7 @@ class TextSimilarityAnalyzer:
             vector2 = self.tfidf_vectorizer.transform([text2])
             similarity = cosine_similarity(vector1, vector2)[0][0]
             return similarity
-        except Exception as e:
+        except Exception:
             return 0
 
     def _calculate_keyword_overlap(self, text1, text2):
@@ -405,7 +399,7 @@ class TextSimilarityAnalyzer:
 
             return similarity
 
-        except Exception as e:
+        except Exception:
             return 0
 
     def _calculate_jaccard_similarity_single(self, text1, text2):
@@ -452,7 +446,6 @@ class TextSimilarityAnalyzer:
                 intersection = len(words_main.intersection(words_comp))
                 union = len(words_main.union(words_comp))
                 similarity = intersection / union if union else 0
-                
             max_similarity = max(max_similarity, similarity)
 
         # Non-linear transform

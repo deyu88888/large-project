@@ -1,4 +1,3 @@
-# backend/api/semantic_enhancer.py
 import re
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -11,7 +10,6 @@ class SemanticDomainEnhancer:
     """
     
     def __init__(self):
-        # Define domain categories with related terms
         self.domain_categories = {
             "academic": [
                 "study", "academic", "education", "learning", "research", "knowledge", 
@@ -95,7 +93,6 @@ class SemanticDomainEnhancer:
             ]
         }
         
-        # Define related activity types
         self.related_activities = {
             "competition": ["tournament", "contest", "championship", "match", "game", "challenge"],
             "learning": ["workshop", "class", "lecture", "seminar", "tutorial", "training", "lesson"],
@@ -105,20 +102,16 @@ class SemanticDomainEnhancer:
             "collaboration": ["team", "group", "partner", "together", "collective", "joint", "cooperative"]
         }
         
-        # Create a mapping from terms to their categories
         self.term_to_category = {}
         for category, terms in self.domain_categories.items():
             for term in terms:
                 self.term_to_category[term] = category
                 
-        # Create a mapping from activity terms to their type
         self.term_to_activity = {}
         for activity_type, terms in self.related_activities.items():
             for term in terms:
                 self.term_to_activity[term] = activity_type
                 
-        # Define category relationships (how related different categories are)
-        # Higher value means more related
         self.category_relationships = {
             ("academic", "science"): 0.8,
             ("academic", "debate"): 0.6,
@@ -158,7 +151,7 @@ class SemanticDomainEnhancer:
         elif reverse_key in self.category_relationships:
             return self.category_relationships[reverse_key]
         else:
-            return 0.2  # Default low relationship for unspecified pairs
+            return 0.2  
     
     def extract_categories(self, text):
         """Extract domain categories from text."""
@@ -168,18 +161,15 @@ class SemanticDomainEnhancer:
         text = text.lower()
         words = re.findall(r'\b\w+\b', text)
         
-        # Get categories for individual words
         categories = []
         for word in words:
             if word in self.term_to_category:
                 categories.append(self.term_to_category[word])
                 
-        # Look for multi-word terms
         for term in self.term_to_category:
             if ' ' in term and term in text:
                 categories.append(self.term_to_category[term])
                 
-        # Return unique categories
         return list(set(categories))
     
     def extract_activities(self, text):
@@ -190,18 +180,15 @@ class SemanticDomainEnhancer:
         text = text.lower()
         words = re.findall(r'\b\w+\b', text)
         
-        # Get activity types for individual words
         activities = []
         for word in words:
             if word in self.term_to_activity:
                 activities.append(self.term_to_activity[word])
                 
-        # Look for multi-word terms
         for term in self.term_to_activity:
             if ' ' in term and term in text:
                 activities.append(self.term_to_activity[term])
                 
-        # Return unique activity types
         return list(set(activities))
     
     def calculate_semantic_boost(self, text1, text2):
@@ -209,32 +196,26 @@ class SemanticDomainEnhancer:
         Calculate a semantic similarity boost based on domain knowledge.
         Returns a value between 0 and 1 to enhance base similarity.
         """
-        # Extract categories
         categories1 = self.extract_categories(text1)
         categories2 = self.extract_categories(text2)
         
-        # Extract activities
         activities1 = self.extract_activities(text1)
         activities2 = self.extract_activities(text2)
         
-        # If no categories or activities found, return 0
         if not categories1 or not categories2:
             return 0
             
-        # Calculate category relationship score
         category_scores = []
         for cat1 in categories1:
             for cat2 in categories2:
                 category_scores.append(self.get_related_score(cat1, cat2))
                 
-        # Take the average of the top 3 relationships or all if fewer than 3
         if category_scores:
             category_scores.sort(reverse=True)
             top_category_score = sum(category_scores[:min(3, len(category_scores))]) / min(3, len(category_scores))
         else:
             top_category_score = 0
             
-        # Calculate activity similarity
         activity_similarity = 0
         if activities1 and activities2:
             common_activities = set(activities1).intersection(set(activities2))
@@ -243,11 +224,8 @@ class SemanticDomainEnhancer:
             if all_activities:
                 activity_similarity = len(common_activities) / len(all_activities)
         
-        # Combine scores with weights (categories matter more)
         boost = (0.7 * top_category_score) + (0.3 * activity_similarity)
-        
         
         return boost
 
-# Create a singleton instance for reuse
 semantic_enhancer = SemanticDomainEnhancer()
