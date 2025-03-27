@@ -10,11 +10,11 @@ interface RecommendationFeedbackProps {
   onFeedbackSubmitted?: () => void;
 }
 
-const RecommendationFeedback: React.FC<RecommendationFeedbackProps> = ({ 
-  societyId, 
+const RecommendationFeedback: React.FC<RecommendationFeedbackProps> = ({
+  societyId,
   isLight,
   colours,
-  onFeedbackSubmitted 
+  onFeedbackSubmitted
 }) => {
   const [rating, setRating] = useState<number>(0);
   const [showFeedbackForm, setShowFeedbackForm] = useState<boolean>(false);
@@ -32,41 +32,37 @@ const RecommendationFeedback: React.FC<RecommendationFeedbackProps> = ({
   const starsRef = useRef<HTMLDivElement>(null);
   const thanksRef = useRef<HTMLDivElement>(null);
 
-  // Check if the user has already provided feedback for this society
+  // Check if the user has already provided feedback
   useEffect(() => {
     const checkExistingFeedback = async () => {
-      // Check if we already have a cached result for this society
+      // Use the feedbackCache to skip repeated calls
       if (feedbackCache.has(societyId)) {
-        const cachedFeedback = feedbackCache.get(societyId);
-        if (cachedFeedback && cachedFeedback.rating) {
-          // If user already submitted feedback, hide everything immediately
-          setExistingFeedback(cachedFeedback);
-          setRating(cachedFeedback.rating);
-          setRelevance(cachedFeedback.relevance || 3);
-          setComment(cachedFeedback.comment || "");
+        const cached = feedbackCache.get(societyId);
+        if (cached && cached.rating) {
+          setExistingFeedback(cached);
+          setRating(cached.rating);
+          setRelevance(cached.relevance || 3);
+          setComment(cached.comment || "");
           setFeedbackSubmitted(true);
-          setIsVisible(false); // Hide the component right away
+          setIsVisible(false);
         }
-        return; // Don't make the request if we've already checked
+        return;
       }
-      
+
       try {
         const feedback = await getRecommendationFeedback(societyId);
-        // Store in cache to avoid future requests (even if null)
         feedbackCache.set(societyId, feedback);
-        
+
         if (feedback && feedback.rating) {
-          // If user already submitted feedback, hide everything immediately
           setExistingFeedback(feedback);
           setRating(feedback.rating);
           setRelevance(feedback.relevance || 3);
           setComment(feedback.comment || "");
           setFeedbackSubmitted(true);
-          setIsVisible(false); // Hide the component right away
+          setIsVisible(false);
         }
       } catch (error) {
         console.error(`Error checking feedback for society ${societyId}:`, error);
-        // Still store null in cache to avoid future requests
         feedbackCache.set(societyId, null);
       }
     };
@@ -78,12 +74,12 @@ const RecommendationFeedback: React.FC<RecommendationFeedbackProps> = ({
     // 1) Fade the stars
     setAnimationStage(1);
 
-    // 2) Slide the "thanks" text
+    // 2) Slide up the "thanks" text
     setTimeout(() => {
       setAnimationStage(2);
     }, 400);
 
-    // 3) Collapse container
+    // 3) Collapse the container
     setTimeout(() => {
       setAnimationStage(3);
     }, 800);
@@ -111,15 +107,14 @@ const RecommendationFeedback: React.FC<RecommendationFeedbackProps> = ({
         is_joined: false
       });
 
-      // Update the cache with the new feedback
       feedbackCache.set(societyId, response);
-      
+
       setFeedbackSubmitted(true);
       if (onFeedbackSubmitted) {
         onFeedbackSubmitted();
       }
 
-      // Trigger disappearance after 3s
+      // Disappear after 3s
       setTimeout(() => {
         startDisappearAnimation();
       }, 3000);
@@ -130,19 +125,18 @@ const RecommendationFeedback: React.FC<RecommendationFeedbackProps> = ({
     }
   };
 
-  // If the component is no longer visible, render nothing
+  // If hidden => render nothing
   if (!isVisible) {
     return null;
   }
 
-  // If feedback was just submitted OR we detected existing feedback
-  // (but haven't hidden it yet), show "thank you" animation
+  // If feedback was just submitted or found existing => "thank you" animation
   if (feedbackSubmitted || (existingFeedback && !showFeedbackForm)) {
     return (
-      <div 
+      <div
         ref={feedbackRef}
         style={{
-          marginTop: "1rem", 
+          marginTop: "1rem",
           textAlign: "center",
           borderTop: `1px solid ${isLight ? colours.grey[300] : colours.grey[700]}`,
           paddingTop: animationStage >= 3 ? "0" : "0.75rem",
@@ -150,14 +144,15 @@ const RecommendationFeedback: React.FC<RecommendationFeedbackProps> = ({
           overflow: "hidden",
           height: animationStage >= 3 ? "0" : "auto",
           opacity: animationStage >= 3 ? 0 : 1,
-          transition: "height 0.4s cubic-bezier(0.16, 1, 0.3, 1), padding 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
-          transform: `perspective(1000px) rotateX(${animationStage >= 3 ? '-10deg' : '0'})`,
+          transition:
+            "height 0.4s cubic-bezier(0.16, 1, 0.3, 1), padding 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
+          transform: `perspective(1000px) rotateX(${animationStage >= 3 ? "-10deg" : "0"})`,
           transformOrigin: "top center",
           position: "relative",
-          marginBottom: animationStage >= 3 ? "0" : undefined,
+          marginBottom: animationStage >= 3 ? "0" : undefined
         }}
       >
-        <div 
+        <div
           ref={thanksRef}
           style={{
             fontSize: "0.875rem",
@@ -169,13 +164,13 @@ const RecommendationFeedback: React.FC<RecommendationFeedbackProps> = ({
             justifyContent: "center",
             transform: animationStage >= 2 ? "translateY(-20px)" : "translateY(0)",
             opacity: animationStage >= 2 ? 0 : 1,
-            transition: "transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s ease-out",
+            transition: "transform 0.4s, opacity 0.4s"
           }}
         >
-          <span 
-            role="img" 
-            aria-label="Thumbs up" 
-            style={{ 
+          <span
+            role="img"
+            aria-label="Thumbs up"
+            style={{
               marginRight: "0.5rem",
               display: "inline-block",
               animation: "thumbPulse 1.5s ease-in-out"
@@ -183,109 +178,144 @@ const RecommendationFeedback: React.FC<RecommendationFeedbackProps> = ({
           >
             👍
           </span>
-          <span style={{ 
-            background: `linear-gradient(90deg, ${colours.greenAccent[500]}, ${colours.blueAccent[500]})`,
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            animation: "gradientShift 3s ease infinite"
-          }}>
+          <span
+            style={{
+              background: `linear-gradient(90deg, ${colours.greenAccent[500]}, ${colours.blueAccent[500]})`,
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              animation: "gradientShift 3s ease infinite"
+            }}
+          >
             {existingFeedback ? "Thanks for your feedback!" : "Feedback submitted!"}
           </span>
         </div>
-        <div 
+        <div
           ref={starsRef}
           style={{
-            display: "flex", 
-            justifyContent: "center", 
+            display: "flex",
+            justifyContent: "center",
             marginTop: "0.5rem",
             transform: animationStage >= 1 ? "translateY(20px)" : "translateY(0)",
             opacity: animationStage >= 1 ? 0 : 1,
-            transition: "transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s ease-out",
+            transition: "transform 0.4s, opacity 0.4s"
           }}
         >
           {[1, 2, 3, 4, 5].map((star, index) => (
-            <span 
+            <span
               key={star}
-              style={{ 
-                fontSize: "1.25rem", 
+              style={{
+                fontSize: "1.25rem",
                 margin: "0 0.25rem",
-                color: star <= rating ? "#FFD700" : isLight ? colours.grey[300] : colours.grey[700],
-                filter: star <= rating ? "drop-shadow(0 0 3px rgba(255, 215, 0, 0.7))" : "none",
-                animation: star <= rating ? `starEntrance 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) ${index * 0.08}s both` : "",
+                color:
+                  star <= rating
+                    ? "#FFD700"
+                    : isLight
+                    ? colours.grey[300]
+                    : colours.grey[700],
+                filter:
+                  star <= rating
+                    ? "drop-shadow(0 0 3px rgba(255, 215, 0, 0.7))"
+                    : "none",
+                animation:
+                  star <= rating
+                    ? `starEntrance 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) ${index *
+                        0.08}s both`
+                    : "",
                 display: "inline-block",
-                transform: `scale(${star <= rating ? 1 : 0.9})`,
-                transformOrigin: "center center",
+                transform: `scale(${star <= rating ? 1 : 0.9})`
               }}
             >
               ★
             </span>
           ))}
         </div>
-        {/* Decorative particles */}
-        {!animationStage && [1, 2, 3, 4, 5].map((_, i) => (
-          <div
-            key={i}
-            style={{
-              position: "absolute",
-              left: `${10 + i * 20}%`,
-              top: "50%",
-              width: "5px",
-              height: "5px",
-              borderRadius: "50%",
-              backgroundColor: i % 2 === 0 ? colours.greenAccent[400] : colours.blueAccent[400],
-              animation: `particle 1s ease-out ${i * 0.1}s`,
-              opacity: 0,
-              pointerEvents: "none"
-            }}
-          />
-        ))}
+        {/* Particles for flair */}
+        {!animationStage &&
+          [1, 2, 3, 4, 5].map((_, i) => (
+            <div
+              key={i}
+              style={{
+                position: "absolute",
+                left: `${10 + i * 20}%`,
+                top: "50%",
+                width: "5px",
+                height: "5px",
+                borderRadius: "50%",
+                backgroundColor:
+                  i % 2 === 0
+                    ? colours.greenAccent[400]
+                    : colours.blueAccent[400],
+                animation: `particle 1s ease-out ${i * 0.1}s`,
+                opacity: 0,
+                pointerEvents: "none"
+              }}
+            />
+          ))}
       </div>
     );
   }
 
-  // Otherwise, show the rating/feedback form
+  // Show rating / feedback form
   return (
-    <div 
+    <div
       style={{
         marginTop: "1rem",
-        borderTop: `1px solid ${isLight ? colours.grey[300] : colours.grey[700]}`,
+        borderTop: `1px solid ${
+          isLight ? colours.grey[300] : colours.grey[700]
+        }`,
         paddingTop: "0.75rem",
-        transition: 'all 0.3s ease'
+        transition: "all 0.3s ease"
       }}
     >
       {!showFeedbackForm ? (
         <div>
-          <p style={{
-            fontSize: "0.875rem", 
-            marginBottom: "0.5rem",
-            color: isLight ? colours.grey[200] : colours.grey[200],
-            textAlign: "center"
-          }}>
+          <p
+            style={{
+              fontSize: "0.875rem",
+              marginBottom: "0.5rem",
+              color: isLight ? colours.grey[200] : colours.grey[200],
+              textAlign: "center"
+            }}
+          >
             Was this recommendation helpful?
           </p>
-          <div style={{display: "flex", justifyContent: "center"}}>
+          <div style={{ display: "flex", justifyContent: "center" }}>
             {[1, 2, 3, 4, 5].map((star) => (
               <button
                 key={star}
                 onClick={() => handleRatingClick(star)}
+                aria-label={`Rate ${star} star${star > 1 ? "s" : ""}`}
                 style={{
                   margin: "0 0.25rem",
                   fontSize: "1.25rem",
                   background: "none",
                   border: "none",
                   cursor: "pointer",
-                  color: star <= rating ? "#FFD700" : isLight ? colours.grey[300] : colours.grey[700],
-                  transition: "transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.2s ease, filter 0.3s ease",
+                  color:
+                    star <= rating
+                      ? "#FFD700"
+                      : isLight
+                      ? colours.grey[300]
+                      : colours.grey[700],
+                  transition:
+                    "transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.2s, filter 0.3s",
                   transform: `scale(${star <= rating ? 1.1 : 1})`,
-                  filter: star <= rating ? "drop-shadow(0 0 2px rgba(255, 215, 0, 0.5))" : "none",
+                  filter:
+                    star <= rating
+                      ? "drop-shadow(0 0 2px rgba(255, 215, 0, 0.5))"
+                      : "none"
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.transform = "scale(1.3) rotate(5deg)";
-                  e.currentTarget.style.filter = "drop-shadow(0 0 5px rgba(255, 215, 0, 0.7))";
+                  e.currentTarget.style.filter =
+                    "drop-shadow(0 0 5px rgba(255, 215, 0, 0.7))";
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.transform = star <= rating ? "scale(1.1)" : "scale(1)";
-                  e.currentTarget.style.filter = star <= rating ? "drop-shadow(0 0 2px rgba(255, 215, 0, 0.5))" : "none";
+                  e.currentTarget.style.filter =
+                    star <= rating
+                      ? "drop-shadow(0 0 2px rgba(255, 215, 0, 0.5))"
+                      : "none";
                 }}
               >
                 ★
@@ -295,39 +325,56 @@ const RecommendationFeedback: React.FC<RecommendationFeedbackProps> = ({
         </div>
       ) : (
         <div>
-          <div style={{marginBottom: "0.75rem"}}>
-            <label style={{
-              display: "block", 
-              fontSize: "0.875rem", 
-              fontWeight: 500,
-              marginBottom: "0.25rem",
-              color: isLight ? colours.grey[200] : colours.grey[200]
-            }}>
+          <div style={{ marginBottom: "0.75rem" }}>
+            <label
+              style={{
+                display: "block",
+                fontSize: "0.875rem",
+                fontWeight: 500,
+                marginBottom: "0.25rem",
+                color: isLight ? colours.grey[200] : colours.grey[200]
+              }}
+            >
               Rating:
             </label>
-            <div style={{display: "flex", justifyContent: "center"}}>
+            <div style={{ display: "flex", justifyContent: "center" }}>
               {[1, 2, 3, 4, 5].map((star) => (
                 <button
                   key={star}
                   onClick={() => setRating(star)}
+                  aria-label={`Rate ${star} star${star > 1 ? "s" : ""}`}
                   style={{
                     margin: "0 0.25rem",
                     fontSize: "1.25rem",
                     background: "none",
                     border: "none",
                     cursor: "pointer",
-                    color: star <= rating ? "#FFD700" : isLight ? colours.grey[300] : colours.grey[700],
-                    transition: "transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.2s ease, filter 0.3s ease",
+                    color:
+                      star <= rating
+                        ? "#FFD700"
+                        : isLight
+                        ? colours.grey[300]
+                        : colours.grey[700],
+                    transition:
+                      "transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.2s, filter 0.3s",
                     transform: `scale(${star <= rating ? 1.1 : 1})`,
-                    filter: star <= rating ? "drop-shadow(0 0 2px rgba(255, 215, 0, 0.5))" : "none",
+                    filter:
+                      star <= rating
+                        ? "drop-shadow(0 0 2px rgba(255, 215, 0, 0.5))"
+                        : "none"
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.transform = "scale(1.3) rotate(5deg)";
-                    e.currentTarget.style.filter = "drop-shadow(0 0 5px rgba(255, 215, 0, 0.7))";
+                    e.currentTarget.style.filter =
+                      "drop-shadow(0 0 5px rgba(255, 215, 0, 0.7))";
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = star <= rating ? "scale(1.1)" : "scale(1)";
-                    e.currentTarget.style.filter = star <= rating ? "drop-shadow(0 0 2px rgba(255, 215, 0, 0.5))" : "none";
+                    e.currentTarget.style.transform =
+                      star <= rating ? "scale(1.1)" : "scale(1)";
+                    e.currentTarget.style.filter =
+                      star <= rating
+                        ? "drop-shadow(0 0 2px rgba(255, 215, 0, 0.5))"
+                        : "none";
                   }}
                 >
                   ★
@@ -336,14 +383,16 @@ const RecommendationFeedback: React.FC<RecommendationFeedbackProps> = ({
             </div>
           </div>
 
-          <div style={{marginBottom: "0.75rem"}}>
-            <label style={{
-              display: "block", 
-              fontSize: "0.875rem", 
-              fontWeight: 500,
-              marginBottom: "0.25rem",
-              color: isLight ? colours.grey[200] : colours.grey[200]
-            }}>
+          <div style={{ marginBottom: "0.75rem" }}>
+            <label
+              style={{
+                display: "block",
+                fontSize: "0.875rem",
+                fontWeight: 500,
+                marginBottom: "0.25rem",
+                color: isLight ? colours.grey[200] : colours.grey[200]
+              }}
+            >
               How relevant was this recommendation?
             </label>
             <select
@@ -352,23 +401,14 @@ const RecommendationFeedback: React.FC<RecommendationFeedbackProps> = ({
               style={{
                 width: "100%",
                 padding: "0.5rem",
-                border: `1px solid ${isLight ? colours.grey[300] : colours.grey[700]}`,
+                border: `1px solid ${
+                  isLight ? colours.grey[300] : colours.grey[700]
+                }`,
                 borderRadius: "0.25rem",
                 backgroundColor: isLight ? "#ffffff" : colours.primary[600],
                 color: isLight ? "#000000" : colours.grey[100],
-                transition: "box-shadow 0.3s ease, transform 0.3s ease",
                 boxShadow: "0 2px 5px rgba(0,0,0,0.08)",
-                outline: "none",
-              }}
-              onFocus={(e) => {
-                e.currentTarget.style.boxShadow = isLight 
-                  ? `0 0 0 2px ${colours.blueAccent[200]}, 0 3px 10px rgba(0,0,0,0.1)` 
-                  : `0 0 0 2px ${colours.blueAccent[700]}, 0 3px 10px rgba(0,0,0,0.2)`;
-                e.currentTarget.style.transform = "translateY(-2px)";
-              }}
-              onBlur={(e) => {
-                e.currentTarget.style.boxShadow = "0 2px 5px rgba(0,0,0,0.08)";
-                e.currentTarget.style.transform = "translateY(0)";
+                outline: "none"
               }}
               disabled={isSubmitting}
             >
@@ -380,14 +420,16 @@ const RecommendationFeedback: React.FC<RecommendationFeedbackProps> = ({
             </select>
           </div>
 
-          <div style={{marginBottom: "0.75rem"}}>
-            <label style={{
-              display: "block", 
-              fontSize: "0.875rem", 
-              fontWeight: 500,
-              marginBottom: "0.25rem",
-              color: isLight ? colours.grey[200] : colours.grey[200]
-            }}>
+          <div style={{ marginBottom: "0.75rem" }}>
+            <label
+              style={{
+                display: "block",
+                fontSize: "0.875rem",
+                fontWeight: 500,
+                marginBottom: "0.25rem",
+                color: isLight ? colours.grey[200] : colours.grey[200]
+              }}
+            >
               Comments (optional):
             </label>
             <textarea
@@ -396,56 +438,39 @@ const RecommendationFeedback: React.FC<RecommendationFeedbackProps> = ({
               style={{
                 width: "100%",
                 padding: "0.5rem",
-                border: `1px solid ${isLight ? colours.grey[300] : colours.grey[700]}`,
+                border: `1px solid ${
+                  isLight ? colours.grey[300] : colours.grey[700]
+                }`,
                 borderRadius: "0.25rem",
                 backgroundColor: isLight ? "#ffffff" : colours.primary[600],
                 color: isLight ? "#000000" : colours.grey[100],
                 resize: "vertical",
                 minHeight: "4rem",
-                transition: "box-shadow 0.3s ease, transform 0.3s ease",
                 boxShadow: "0 2px 5px rgba(0,0,0,0.08)",
-                outline: "none",
-              }}
-              onFocus={(e) => {
-                e.currentTarget.style.boxShadow = isLight 
-                  ? `0 0 0 2px ${colours.blueAccent[200]}, 0 3px 10px rgba(0,0,0,0.1)` 
-                  : `0 0 0 2px ${colours.blueAccent[700]}, 0 3px 10px rgba(0,0,0,0.2)`;
-                e.currentTarget.style.transform = "translateY(-2px)";
-              }}
-              onBlur={(e) => {
-                e.currentTarget.style.boxShadow = "0 2px 5px rgba(0,0,0,0.08)";
-                e.currentTarget.style.transform = "translateY(0)";
+                outline: "none"
               }}
               disabled={isSubmitting}
             />
           </div>
 
-          <div style={{display: "flex", justifyContent: "flex-end"}}>
+          <div style={{ display: "flex", justifyContent: "flex-end" }}>
             <button
               onClick={() => setShowFeedbackForm(false)}
               style={{
                 padding: "0.375rem 0.75rem",
                 marginRight: "0.5rem",
                 fontSize: "0.875rem",
-                backgroundColor: isLight ? colours.grey[300] : colours.grey[700],
+                backgroundColor: isLight
+                  ? colours.grey[300]
+                  : colours.grey[700],
                 color: isLight ? colours.grey[900] : colours.grey[100],
                 border: "none",
                 borderRadius: "0.25rem",
                 cursor: "pointer",
-                transition: "all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
                 boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
-                position: "relative",
-                overflow: "hidden",
+                position: "relative"
               }}
               disabled={isSubmitting}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = "translateY(-3px)";
-                e.currentTarget.style.boxShadow = "0 5px 15px rgba(0,0,0,0.15)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow = "0 2px 5px rgba(0,0,0,0.1)";
-              }}
             >
               Cancel
             </button>
@@ -454,63 +479,37 @@ const RecommendationFeedback: React.FC<RecommendationFeedbackProps> = ({
               style={{
                 padding: "0.375rem 0.75rem",
                 fontSize: "0.875rem",
-                backgroundColor: isLight ? colours.blueAccent[400] : colours.blueAccent[500],
+                backgroundColor: isLight
+                  ? colours.blueAccent[400]
+                  : colours.blueAccent[500],
                 color: isLight ? "#ffffff" : colours.grey[100],
                 border: "none",
                 borderRadius: "0.25rem",
                 cursor: "pointer",
-                transition: "all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
                 boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
-                position: "relative",
-                overflow: "hidden",
+                position: "relative"
               }}
               disabled={isSubmitting}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = "translateY(-3px)";
-                e.currentTarget.style.boxShadow = "0 5px 15px rgba(0,0,0,0.15)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow = "0 2px 5px rgba(0,0,0,0.1)";
-              }}
             >
               {isSubmitting ? (
                 <>
                   <span>Submitting...</span>
-                  <div 
+                  <div
                     style={{
                       position: "absolute",
                       top: 0,
                       right: 0,
                       bottom: 0,
                       left: 0,
-                      background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)",
-                      animation: "shimmer 1.5s infinite",
+                      background:
+                        "linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)",
+                      animation: "shimmer 1.5s infinite"
                     }}
                   />
                 </>
               ) : (
-                <span 
-                  style={{
-                    display: "inline-block",
-                    position: "relative",
-                    zIndex: 1
-                  }}
-                >
+                <span style={{ display: "inline-block", position: "relative" }}>
                   Submit Feedback
-                  <span 
-                    style={{
-                      position: "absolute",
-                      bottom: "-3px",
-                      left: "0",
-                      width: "100%",
-                      height: "2px",
-                      background: `linear-gradient(90deg, transparent, ${isLight ? 'white' : 'rgba(255,255,255,0.7)'}, transparent)`,
-                      transformOrigin: "center",
-                      transform: "scaleX(0.7)",
-                      opacity: 0.6,
-                    }}
-                  />
                 </span>
               )}
             </button>
@@ -541,7 +540,11 @@ const RecommendationFeedback: React.FC<RecommendationFeedbackProps> = ({
           @keyframes particle {
             0% { transform: translate(0, 0) scale(0); opacity: 0; }
             30% { opacity: 1; }
-            100% { transform: translate(${Math.random() > 0.5 ? '-' : ''}${20 + Math.random() * 30}px, ${Math.random() > 0.5 ? '-' : ''}${20 + Math.random() * 30}px) scale(1); opacity: 0; }
+            100% { transform: translate(${
+              Math.random() > 0.5 ? "-" : ""
+            }${20 + Math.random() * 30}px, ${
+              Math.random() > 0.5 ? "-" : ""
+            }${20 + Math.random() * 30}px) scale(1); opacity: 0; }
           }
         `}
       </style>

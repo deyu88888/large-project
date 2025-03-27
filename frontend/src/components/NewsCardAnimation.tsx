@@ -1,3 +1,4 @@
+// src/components/NewsCardAnimation.tsx
 import { useEffect, useState } from "react";
 import { NewsCard } from "./NewsCard";
 import { News } from "../types";
@@ -44,7 +45,11 @@ export const NewsCardAnimation = () => {
     };
 
     return (
-        <div className={`card-container ${flipping ? "flip" : ""}`} onClick={handleNextNewsCard}>
+        <div
+            data-testid="card-container"
+            className={`card-container ${flipping ? "flip" : ""}`}
+            onClick={handleNextNewsCard}
+        >
             {news.length > 0 && <NewsCard news={news[index]} />}
         </div>
     );

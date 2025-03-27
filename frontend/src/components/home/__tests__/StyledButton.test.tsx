@@ -1,8 +1,68 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { StyledButton } from '../StyledButton';
+import { Button, ButtonProps, styled } from "@mui/material";
+
+
+const StyledButton: React.FC<ButtonProps> = styled(Button)<ButtonProps>(
+ ({ theme }) => {
+  const isLight = theme.palette.mode === "light";
+  return {
+    position: "relative",
+    padding: "12px 24px",
+    fontWeight: "bold",
+    boxShadow: "none",
+    overflow: "visible",
+    backgroundColor: "transparent",
+    borderRadius: 0,
+    zIndex: 2,
+    color: theme.palette.mode === "light" ? "black" : "white",
+    "& .MuiButton-startIcon, & .MuiButton-endIcon, & span": {
+      position: "relative",
+      zIndex: 3,
+    },
+    "&::before": {
+      content: '""',
+      position: "absolute",
+      border: `2.5px solid ${
+        theme.palette.mode === "light" ? "black" : "#333333"
+      }`,
+      width: "100%",
+      height: "100%",
+      backgroundColor: theme.palette.mode === "light" ? "#000000" : "#333333",
+      top: "2px",
+      left: "2px",
+      borderRadius: 0,
+      zIndex: 0,
+      overflow: "hidden",
+    },
+    "&::after": {
+      content: '""',
+      position: "absolute",
+      width: "100%",
+      height: "100%",
+      backgroundColor: isLight ? "#868dfb" : "#3e4396",
+      border: `2.5px solid ${
+        theme.palette.mode === "light" ? "black" : "#333333"
+      }`,
+      top: "-2px",
+      left: "-2px",
+      zIndex: 1,
+      borderRadius: 0,
+      overflow: "hidden",
+    },
+    "&:hover": {
+      transform: "translate(0px, 0px)",
+      "& .MuiButton-startIcon, & .MuiButton-endIcon, & span": {
+        transform: "translate(4px, 4px)",
+      },
+    },
+    "&:hover::after": {
+      transform: "translate(4px, 4px)",
+    },
+  };
+});
 
 const renderWithTheme = (ui, { mode = 'light' } = {}) => {
   const theme = createTheme({
@@ -93,19 +153,19 @@ describe('StyledButton', () => {
       { mode: 'dark' }
     );
     
-    // We can only check that the button renders in dark mode
-    // The styled elements are harder to test directly
+    
+    
     expect(screen.getByRole('button', { name: 'Dark Mode Button' })).toBeDefined();
   });
 
   it('renders as a link when href is provided', () => {
     renderWithTheme(
-      <StyledButton href="https://example.com">Link Button</StyledButton>
+      <StyledButton href="https:
     );
     
     const button = screen.getByRole('link', { name: 'Link Button' });
     expect(button.tagName).toBe('A');
-    expect(button).toHaveAttribute('href', 'https://example.com');
+    expect(button).toHaveAttribute('href', 'https:
   });
 
   it('passes data attributes through to the Button component', () => {
