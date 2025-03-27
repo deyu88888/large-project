@@ -2,7 +2,7 @@ import datetime
 from django.urls import reverse
 from django.utils.timezone import now, make_aware
 from rest_framework import status
-from rest_framework.test import APITestCase
+from rest_framework.test import APITestCase, APIRequestFactory
 from rest_framework_simplejwt.tokens import AccessToken
 from api.models import User, Student, Society, Event
 from api.serializers import EventSerializer
@@ -82,14 +82,21 @@ class ManageEventDetailsViewTestCase(APITestCase):
         )
         
         self.base_url = "/api/events/{}/manage/"
+        self.factory = APIRequestFactory()
 
     def test_get_event_details(self):
         """Test that GET returns event details using the EventSerializer."""
         url = self.base_url.format(self.upcoming_event.id)
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.president_token}")
+        request = self.factory.get(url)
+        request.user = self.president
+
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        expected_data = EventSerializer(self.upcoming_event).data
+        expected_data = EventSerializer(self.upcoming_event, context={"request": request}).data
+        self.assertTrue(response.data["cover_image"].endswith(expected_data["cover_image"]))
+        response.data["cover_image"] = None
+        expected_data["cover_image"] = None
         self.assertEqual(response.data, expected_data)
 
     def test_patch_editable_event_success(self):

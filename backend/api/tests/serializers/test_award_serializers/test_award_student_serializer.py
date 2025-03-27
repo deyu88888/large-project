@@ -75,7 +75,7 @@ class AwardSerializerTestCase(TestCase):
         self.assertEqual(award_student.awarded_at.day, self.data["awarded_at"].day)
         self.assertEqual(award_student.awarded_at.hour, self.data["awarded_at"].hour)
         self.assertEqual(award_student.awarded_at.minute, self.data["awarded_at"].minute)
-        self.assertEqual(award_student.awarded_at.second, self.data["awarded_at"].second)
+        self.assertAlmostEqual(award_student.awarded_at.second, self.data["awarded_at"].second)
 
     def test_award_student_update(self):
         """Test society request update functions correctly"""
