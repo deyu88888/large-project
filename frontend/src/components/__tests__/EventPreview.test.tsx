@@ -1,0 +1,52 @@
+import { render, screen, fireEvent } from "@testing-library/react";
+import { describe, it, expect, vi } from "vitest";
+import { EventPreview } from "../EventPreview";
+import { BrowserRouter } from "react-router-dom";
+
+const mockEventData = {
+  title: "Test Event",
+  main_description: "Test description",
+  date: "2025-04-01",
+  start_time: "12:00",
+  duration: "2 hours",
+  location: "Test Location",
+  max_capacity: 50,
+  cover_image_url: "https:
+  extra_modules: [],
+  participant_modules: [],
+  is_participant: false,
+  is_member: true,
+  event_id: 101,
+  hosted_by: 10,
+  current_attendees: [],
+};
+
+const renderWithRouter = (ui: React.ReactElement) => {
+  return render(<BrowserRouter>{ui}</BrowserRouter>);
+};
+
+describe("EventPreview", () => {
+  it("renders the event preview dialog when open", () => {
+    renderWithRouter(
+      <EventPreview open={true} onClose={() => {}} eventData={mockEventData} />
+    );
+
+    expect(screen.getByText("Event Preview")).toBeInTheDocument();
+    expect(screen.getByText("Test Event")).toBeInTheDocument();
+    expect(screen.getByText("Test description")).toBeInTheDocument();
+  });
+
+  it("calls onClose when the close icon is clicked", () => {
+    const onCloseMock = vi.fn();
+
+    renderWithRouter(
+      <EventPreview open={true} onClose={onCloseMock} eventData={mockEventData} />
+    );
+
+    const buttons = screen.getAllByRole("button");
+    const closeButton = buttons[0]; 
+    fireEvent.click(closeButton);
+
+    expect(onCloseMock).toHaveBeenCalled();
+  });
+});

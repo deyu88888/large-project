@@ -1,0 +1,54 @@
+import { render, screen, fireEvent } from "@testing-library/react";
+import { describe, it, expect, vi } from "vitest";
+import EventCard from "../EventCard";
+
+const mockEvent = {
+  id: 1,
+  title: "Tech Talk",
+  cover_image: "",
+  date: "2025-04-01T10:00:00Z",
+  location: "London",
+  main_description: "This is a short tech event description for developers.",
+};
+
+const mockColors = {
+  primary: { 400: "#eee", 700: "#333", 600: "#222" },
+  grey: { 100: "#fff", 200: "#ddd", 300: "#ccc", 800: "#111" },
+  blueAccent: { 400: "#2196f3", 700: "#1565c0" },
+  greenAccent: { 400: "#4caf50", 700: "#2e7d32" },
+};
+
+describe("EventCard", () => {
+  it("renders title, location, and date", () => {
+    render(
+      <EventCard
+        event={mockEvent}
+        isLight={true}
+        colors={mockColors}
+        onViewEvent={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText("Tech Talk")).toBeInTheDocument();
+    expect(screen.getByText("London")).toBeInTheDocument();
+    expect(screen.getByText("4/1/2025")).toBeInTheDocument(); 
+  });
+
+  it("calls onViewEvent when button is clicked", () => {
+    const mockHandler = vi.fn();
+
+    render(
+      <EventCard
+        event={mockEvent}
+        isLight={true}
+        colors={mockColors}
+        onViewEvent={mockHandler}
+      />
+    );
+
+    const button = screen.getByText("View Event");
+    fireEvent.click(button);
+
+    expect(mockHandler).toHaveBeenCalledWith(1);
+  });
+});
