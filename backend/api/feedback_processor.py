@@ -47,7 +47,6 @@ class FeedbackProcessor:
                     data = json.load(f)
                 return data
             except (json.JSONDecodeError, IOError) as e:
-                print(f"Error loading feedback data: {e}")
                 return {'user_feedback': [], 'last_updated': None}
         else:
             # Initialize empty feedback store
@@ -64,9 +63,8 @@ class FeedbackProcessor:
             
             with open(self.feedback_file, 'w') as f:
                 json.dump(self.feedback_data, f, indent=2)
-            print(f"Feedback data saved to {self.feedback_file}")
-        except Exception as e:
-            print(f"Error saving feedback data: {e}")
+        except Exception:
+            pass
     
     def record_feedback(self, student_id, society_id, feedback_type, value=None, metadata=None):
         """
@@ -83,7 +81,6 @@ class FeedbackProcessor:
             True if feedback was recorded successfully, False otherwise
         """
         if feedback_type not in self.weights:
-            print(f"Unknown feedback type: {feedback_type}")
             return False
         
         # Create feedback entry

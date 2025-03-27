@@ -246,12 +246,6 @@ class SemanticDomainEnhancer:
         # Combine scores with weights (categories matter more)
         boost = (0.7 * top_category_score) + (0.3 * activity_similarity)
         
-        print(f"Categories 1: {categories1}")
-        print(f"Categories 2: {categories2}")
-        print(f"Activities 1: {activities1}")
-        print(f"Activities 2: {activities2}")
-        print(f"Category score: {top_category_score:.4f}, Activity similarity: {activity_similarity:.4f}")
-        print(f"Semantic boost: {boost:.4f}")
         
         return boost
 

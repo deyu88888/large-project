@@ -59,7 +59,6 @@ class TestSocietyStatusChangeUndoHandler(TestCase):
         finally:
             Society.save = original_save  
 
-        print("✅ Response:", response.data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         self.society.refresh_from_db()
@@ -72,5 +71,4 @@ class TestSocietyStatusChangeUndoHandler(TestCase):
         handler = SocietyStatusChangeUndoHandler()
         response = handler.handle({}, self.log_entry)
 
-        print("Error Response:", response.data)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)

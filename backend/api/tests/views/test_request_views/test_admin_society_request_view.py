@@ -60,8 +60,6 @@ class TestAdminSocietyRequestView(APITestCase):
             format="json"
         )
 
-        print("DEBUG - PUT Approve Society response Status:", response.status_code)
-        print("DEBUG - PUT Approve Society response Data:", response.data)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["data"]["status"], "Approved")
@@ -87,8 +85,6 @@ class TestAdminSocietyRequestView(APITestCase):
             format="json"
         )
 
-        print("DEBUG - PUT Reject Society response Status:", response.status_code)
-        print("DEBUG - PUT Reject Society response Data:", response.data)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["data"]["status"], "Rejected")

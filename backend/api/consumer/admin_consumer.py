@@ -10,16 +10,10 @@ class SocietyRequestConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         """ Handle WebSocket connection """
         user = self.scope["user"]
-        print("Checking if user is an admin: ", user)
 
         # Async-safe query to check user role
         user = await sync_to_async(User.objects.get)(username="admin_user")
 
-        #   TODO: Uncomment when the admin dashboard is linked
-        # if isinstance(user, AnonymousUser) or not hasattr(user, "admin"):
-        #     print("User is not an admin, closing WebSocket.")
-        #     await self.close()
-        # else:
         await self.accept()
         await self.send_pending_requests()
 
@@ -69,7 +63,6 @@ class SocietyRequestConsumer(AsyncWebsocketConsumer):
         """ Send WebSocket update to clients """
         await self.send(text_data=json.dumps({"message": event["message"]}))
 
-# # TODO: separate into a new file if this works
 
 class SocietyConsumer(AsyncWebsocketConsumer):
     async def connect(self):

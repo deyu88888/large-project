@@ -68,17 +68,10 @@ class TestReportThreadView(APITestCase):
 
         
         self.president_user.refresh_from_db()
-        print(f"President User ID: {self.president_user.id}")
-        print(f"President User is_president: {self.president_user.is_president}")
-        print(f"President of Society: {self.president_user.president_of.name if self.president_user.president_of else 'None'}")
 
         associated_societies = Society.objects.filter(president=self.president_user)
-        print(f"Societies where user is president: {[soc.name for soc in associated_societies]}")
 
         response = self.client.get(f"/api/reports/thread/{self.report.id}/")
-
-        print("Response Status Code:", response.status_code)
-        print("Response Data:", response.data)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('replies', response.data)

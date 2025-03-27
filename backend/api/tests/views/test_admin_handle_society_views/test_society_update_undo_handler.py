@@ -96,7 +96,5 @@ class TestSocietyUpdateUndoHandler(TestCase):
 
         response = handler.handle(data, self.log_entry)
 
-        print("Error Response:", response.data)
-
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertIn("Society not found", response.data["error"])

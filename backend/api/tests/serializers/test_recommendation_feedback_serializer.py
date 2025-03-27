@@ -86,9 +86,7 @@ class TestRecommendationFeedbackSerializer(TestCase):
         with self.assertRaises(ValidationError) as context:
             serializer.validate(invalid_data)
         
-        
-        print(f"\nActual validation error for rating 6: {context.exception.detail}")
-        
+                
         
         self.assertIn('rating', context.exception.detail)
     

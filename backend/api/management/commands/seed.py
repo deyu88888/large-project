@@ -65,7 +65,6 @@ class Command(BaseCommand):
 
     def broadcast_updates(self):
         """Broadcast updates to the WebSocket"""
-        # print("Broadcasting updates to WebSocket...") # Debugging statement
         broadcast_dashboard_update()
 
     def create_default_students(self):

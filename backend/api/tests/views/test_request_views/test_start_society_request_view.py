@@ -66,7 +66,6 @@ class StartSocietyRequestViewTest(APITestCase):
         """
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.admin_user_token}")
         response = self.client.get(self.base_url)
-        print("xxx", response.data)
         self.assertEqual(response.status_code, 200)
     
     def test_society_request_put_method_by_student_user(self):
@@ -91,10 +90,5 @@ class StartSocietyRequestViewTest(APITestCase):
         """
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.admin_user_token}")
         response = self.client.put(f"{self.base_url}/1", {"status": "Pending"}, format="json")
-        
-        if hasattr(response, 'data'):
-            print("Response data:", response.data)
-        else:
-            print("Response content:", response.content.decode('utf-8'))
         
         self.assertEqual(response.status_code, 200)

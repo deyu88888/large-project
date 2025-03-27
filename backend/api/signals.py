@@ -14,8 +14,7 @@ def update_is_president_on_save(sender, instance, created, **kwargs):
     # If the value has changed, update it without causing recursion
     if instance.is_president != new_value:
         Student.objects.filter(pk=instance.pk).update(is_president=new_value)
-        print(f"Updated 'is_president' for {instance.username} to {new_value}")
-        # Optionally, broadcast the dashboard update
+        
         broadcast_dashboard_update()
 
 @receiver(pre_save, sender=Society)
@@ -76,7 +75,6 @@ def broadcast_dashboard_update():
     """
     Fetch updated dashboard statistics and send them to the WebSocket group.
     """
-    # print("[broadcast_dashboard_update] Broadcasting updates...") # Debug statement
     from .models import Society, Event, Student
 
     try:
@@ -87,7 +85,6 @@ def broadcast_dashboard_update():
             "pendingApprovals": Society.objects.filter(status="Pending").count(),
             "activeMembers": Student.objects.count(),
         }
-        # print(f"Calculated stats: {stats}") # Debug statement
 
         # Send the data through WebSocket
         channel_layer = get_channel_layer()
@@ -98,12 +95,7 @@ def broadcast_dashboard_update():
                 "data": stats,               # Data payload
             }
         )
-        # print("[broadcast_dashboard_update] Successfully sent updates to WebSocket.") # Debug statement
     except ChannelFull:
-        # print("[broadcast_dashboard_update] Error: Channel is full, unable to send the message.") # Debug statement
-        pass
-    except Exception as e:
-        # print(f"[broadcast_dashboard_update] Error broadcasting updates: {e}") # Debug statement
         pass
 
 @receiver(post_save, sender=EventRequest)
@@ -123,7 +115,7 @@ def notify_on_event_requested(sender, instance, created, **kwargs):
                 for_user=admin,
             )
     except Exception as e:
-        print(f"Error creating notification: {e}")
+        pass
 
 @receiver(post_save, sender=EventRequest)
 def notify_on_event_status_update(sender, instance, created, **kwargs):
@@ -152,7 +144,7 @@ def notify_on_event_status_update(sender, instance, created, **kwargs):
                 is_important=True,
             )
     except Exception as e:
-        print(f"Error creating notification: {e}")
+        pass
 
 @receiver(post_save, sender=SocietyRequest)
 def notify_on_society_requested(sender, instance, created, **kwargs):
@@ -171,7 +163,7 @@ def notify_on_society_requested(sender, instance, created, **kwargs):
                 for_user=admin,
             )
     except Exception as e:
-        print(f"Error creating notification: {e}")
+        pass
 
 @receiver(post_save, sender=SocietyRequest)
 def notify_on_society_creation_update(sender, instance, created, **kwargs):
@@ -197,7 +189,7 @@ def notify_on_society_creation_update(sender, instance, created, **kwargs):
                 is_important=True,
             )
     except Exception as e:
-        print(f"Error creating notification: {e}")
+        pass
 
     broadcast_dashboard_update()
 
@@ -231,7 +223,7 @@ def notify_on_society_join_request(sender, instance, created, **kwargs):
                 f"'{instance.society.name}' has been rejected.",
             )
     except Exception as e:
-        print(f"Error creating notification: {e}")
+        pass
 
 @receiver(post_save, sender=Event)
 def notify_society_members_of_event(sender, instance, created, **kwargs):
@@ -250,7 +242,7 @@ def notify_society_members_of_event(sender, instance, created, **kwargs):
                 for_user=member,
             )
     except Exception as e:
-        print(f"Error creating notification: {e}")
+        pass
 
 @receiver(m2m_changed, sender=Event.current_attendees.through)
 def notify_society_members_of_event_time(sender, instance, action, pk_set, **kwargs):
@@ -272,7 +264,7 @@ def notify_society_members_of_event_time(sender, instance, action, pk_set, **kwa
                     send_time=send_time,
                 )
     except Exception as e:
-        print(f"Error creating notification: {e}")
+        pass
 
 @receiver(post_save, sender=AwardStudent)
 def notify_student_award(sender, instance, created, **kwargs):

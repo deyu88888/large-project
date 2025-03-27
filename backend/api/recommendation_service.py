@@ -109,7 +109,6 @@ class SocietyRecommender:
             
             # Extract categories the student is interested in
             joined_categories = set(joined_societies.values_list('category', flat=True))
-            print(f"User is interested in these categories: {joined_categories}")
             
             # Get all approved societies the student has not joined yet
             available_societies = Society.objects.filter(
@@ -145,7 +144,6 @@ class SocietyRecommender:
                 item['explanation'] = explanation
                 setattr(item['society'], '_recommendation_explanation', explanation)
             
-            print(f"Final recommendations using MMR: {[item['society'].name for item in selected_societies]}")
             return [item['society'] for item in selected_societies]
             
         except Student.DoesNotExist:
@@ -181,7 +179,6 @@ class SocietyRecommender:
             else:
                 category_weights[category] = 1.0
                 
-        print(f"Category weights: {category_weights}")
         
         # Initialize MMR
         selected = []
@@ -461,16 +458,10 @@ class SocietyRecommender:
         
         # Check for duplicate descriptions
         unique_descriptions = set(all_descriptions)
-        print(f"Corpus length after removing duplicates: {len(unique_descriptions)}")
         
-        if unique_descriptions:
-            print("First 3 corpus documents:")
-            for desc in list(unique_descriptions)[:3]:
-                print(f" - {desc[:200]}..." if len(desc) > 200 else f" - {desc}")
         
         # If most descriptions are identical, add sample varied descriptions
         if len(unique_descriptions) < 3:
-            print("Corpus too small, adding sample descriptions for training...")
             all_descriptions = list(all_descriptions) + [
                 "Programming Society for coding enthusiasts. We organize hackathons, workshops, and networking events.",
                 "Film Club for cinema lovers. We watch and analyze classic and contemporary films together.",

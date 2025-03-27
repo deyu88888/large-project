@@ -14,8 +14,6 @@ class TestPublicReportView(APITestCase):
 
         response = self.client.post("/api/dashboard/public-report", payload, format='json')
 
-        print("Response Status Code:", response.status_code)
-        print("Response Data:", response.data)
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(
@@ -29,7 +27,6 @@ class TestPublicReportView(APITestCase):
             email="publicuser@example.com"
         ).exists()
 
-        print("Report Created:", report_exists)
         self.assertTrue(report_exists)
 
     def test_public_report_submission_invalid_data(self):
@@ -40,8 +37,6 @@ class TestPublicReportView(APITestCase):
 
         response = self.client.post("/api/dashboard/public-report", payload, format='json')
 
-        print("Response Status Code:", response.status_code)
-        print("Response Errors:", response.data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -58,9 +53,6 @@ class TestPublicReportView(APITestCase):
 
         response = self.client.post("/api/dashboard/public-report", payload, format='json')
 
-        print("Response Status Code:", response.status_code)
-        print("Response Data:", response.data)
-
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         report_exists = AdminReportRequest.objects.filter(
@@ -69,5 +61,4 @@ class TestPublicReportView(APITestCase):
             email__isnull=True
         ).exists()
 
-        print("Report Created without email:", report_exists)
         self.assertTrue(report_exists)
