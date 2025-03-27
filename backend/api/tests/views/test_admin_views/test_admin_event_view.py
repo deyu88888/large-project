@@ -82,7 +82,7 @@ class AdminEventViewTests(APITestCase):
         url = reverse('event', kwargs={'event_status': 'approved'})
         response = self.client.get(url)
         events = Event.objects.filter(status="Approved").order_by("date", "start_time")
-        expected_data = EventSerializer(events, many=True).data
+        expected_data = EventSerializer(events, many=True, context={'request': response.wsgi_request}).data
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, expected_data)
 
@@ -90,7 +90,7 @@ class AdminEventViewTests(APITestCase):
         url = reverse('event', kwargs={'event_status': 'pending'})
         response = self.client.get(url)
         events = Event.objects.filter(status="Pending").order_by("date", "start_time")
-        expected_data = EventSerializer(events, many=True).data
+        expected_data = EventSerializer(events, many=True, context={'request': response.wsgi_request}).data
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, expected_data)
 

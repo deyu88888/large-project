@@ -11,7 +11,6 @@ sys.modules['transformers.models.bert.tokenization_bert_tf'] = MagicMock()
 from api.models import (
     User, Student, Society, SocietyNews, NewsPublicationRequest, Notification
 )
-import json
 import datetime
 
 class TestAdminNewsApprovalView(APITestCase):
@@ -164,7 +163,7 @@ class TestAdminNewsApprovalView(APITestCase):
         """Test successful approval of a publication request"""
         self.client.force_authenticate(user=self.admin_user)
         
-        fixed_time = datetime.datetime(2025, 3, 27, 12, 0, 0, tzinfo=timezone.utc)
+        fixed_time = datetime.datetime(2025, 3, 27, 12, 0, 0, tzinfo=datetime.timezone.utc)
         original_now = timezone.now
         
         try:
@@ -211,7 +210,7 @@ class TestAdminNewsApprovalView(APITestCase):
     def test_reject_publication_request(self):
         self.client.force_authenticate(user=self.admin_user)
         
-        fixed_time = datetime.datetime(2025, 3, 27, 12, 0, 0, tzinfo=timezone.utc)
+        fixed_time = datetime.datetime(2025, 3, 27, 12, 0, 0, tzinfo=datetime.timezone.utc)
         original_now = timezone.now
         
         try:

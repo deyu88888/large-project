@@ -34,6 +34,18 @@ migrate: ## Run the migrations
 
 ########################################################################################################################
 
-.PHONY: dockerc
-dockerc: ## Docker compose and run fe and be containers
-	@docker-compose up --build
+.PHONY: docker-up-local
+docker-up-local: ## Run containers in development mode (with .env.local)
+	@docker compose -f docker/compose.base.yml -f docker/compose.local.yml --env-file .env.local up --build
+
+.PHONY: docker-up-prod
+docker-up-prod: ## Run containers in production mode (with .env.prod)
+	@docker compose -f docker/compose.base.yml -f docker/compose.prod.yml --env-file .env.prod up --build -d
+
+.PHONY: docker-down-local
+docker-down-local: ## Stop local containers
+	@docker compose -f docker/compose.base.yml -f docker/compose.local.yml --env-file .env.local down
+
+.PHONY: docker-down-prod
+docker-down-prod: ## Stop prod containers
+	@docker compose -f docker/compose.base.yml -f docker/compose.prod.yml --env-file .env.prod down

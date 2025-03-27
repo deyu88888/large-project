@@ -1,0 +1,17 @@
+services:
+  backend:
+    environment:
+      - DJANGO_SECRET_KEY=dev-key
+      - DJANGO_DEBUG=True
+    ports:
+      - "8000:8000"
+
+  frontend:
+    environment:
+      - VITE_API_URL=localhost:8000
+    ports:
+      - "5173:80"
+
+  traefik:
+    command:
+      - "--log.level=DEBUG"

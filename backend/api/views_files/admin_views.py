@@ -26,7 +26,7 @@ class AdminEventView(APIView):
         """
         event_status = event_status.capitalize()
         events = Event.objects.filter(status=event_status).order_by("date", "start_time")
-        serializer = EventSerializer(events, many=True)
+        serializer = EventSerializer(events, many=True, context={"request": request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
