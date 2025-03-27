@@ -184,6 +184,9 @@ describe('ActivityLogList Component', () => {
     await waitFor(() => {
       expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
+
+    // Reset the mock counts after initial rendering is complete
+    fetchPendingRequests.mockClear();
     
     // Click delete button for the first item visible in the UI
     const deleteButtons = screen.getAllByText('Delete');
@@ -254,7 +257,7 @@ describe('ActivityLogList Component', () => {
     // Click undo button for the first item visible in the UI
     const undoButtons = screen.getAllByText('Undo');
     await act(async () => {
-      fireEvent.click(firstUndoButton);
+      fireEvent.click(undoButtons[0]);
     });
     
     // Check that the API was called (without checking the specific ID)
@@ -339,9 +342,9 @@ describe('ActivityLogList Component', () => {
     });
     
     // Click undo button for the first item specifically
-    const firstUndoButton = screen.getAllByText('Undo')[0];
+    const undoButtons = screen.getAllByText('Undo');
     await act(async () => {
-      fireEvent.click(firstUndoButton);
+      fireEvent.click(undoButtons[0]);
     });
     
     // Check if error was logged
