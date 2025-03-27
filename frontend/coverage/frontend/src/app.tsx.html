@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/41</span>
+                <span class='fraction'>0/30</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/41</span>
+                <span class='fraction'>0/30</span>
             </div>
         
             
@@ -111,6 +111,29 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -119,31 +142,8 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" >import { ThemeProvider, CssBaseline, createTheme } from "@mui/material";</span></span></span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" >import { ThemeProvider, CssBaseline, createTheme } from "@mui/material";<span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" ></span></span></span>
 <span class="cstat-no" title="statement not covered" >import { SearchProvider } from "./components/layout/SearchContext";</span>
 <span class="cstat-no" title="statement not covered" >import { WebSocketProvider } from "./hooks/useWebSocketManager";</span>
 <span class="cstat-no" title="statement not covered" >import { useSettingsStore } from "./stores/settings-store";</span>
@@ -151,29 +151,29 @@
 <span class="cstat-no" title="statement not covered" >import { themeSettings } from "./theme/theme";</span>
 <span class="cstat-no" title="statement not covered" >import { Routes } from "./routes";</span>
 <span class="cstat-no" title="statement not covered" >import { useRef } from "react";</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >// Create a persistent WebSocket connection manager</span>
+&nbsp;
+// Create a persistent WebSocket connection manager
 <span class="cstat-no" title="statement not covered" >export const PersistentWebSocket = () =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >  // Use useRef to maintain instance between renders</span>
+  // Use useRef to maintain instance between renders
 <span class="cstat-no" title="statement not covered" >  const initialized = useRef(false);</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >  // Only render the WebSocketProvider once</span>
+&nbsp;
+  // Only render the WebSocketProvider once
 <span class="cstat-no" title="statement not covered" >  if (!initialized.current) {</span>
 <span class="cstat-no" title="statement not covered" >    initialized.current = true;</span>
 <span class="cstat-no" title="statement not covered" >    return &lt;WebSocketProvider children={""} /&gt;;</span>
 <span class="cstat-no" title="statement not covered" >  }</span>
-<span class="cstat-no" title="statement not covered" >  </span>
-<span class="cstat-no" title="statement not covered" >  // On subsequent renders, just render children</span>
+  
+  // On subsequent renders, just render children
 <span class="cstat-no" title="statement not covered" >  return null;</span>
 <span class="cstat-no" title="statement not covered" >};</span>
-<span class="cstat-no" title="statement not covered" ></span>
+&nbsp;
 <span class="cstat-no" title="statement not covered" >export function App() {</span>
 <span class="cstat-no" title="statement not covered" >  const { themeMode } = useSettingsStore();</span>
-<span class="cstat-no" title="statement not covered" ></span>
+&nbsp;
 <span class="cstat-no" title="statement not covered" >  return (</span>
 <span class="cstat-no" title="statement not covered" >    &lt;ThemeProvider theme={createTheme(themeSettings(themeMode))}&gt;</span>
 <span class="cstat-no" title="statement not covered" >      &lt;CssBaseline /&gt;</span>
-<span class="cstat-no" title="statement not covered" >      {/* Move WebSocketProvider outside BrowserRouter */}</span>
+      {/* Move WebSocketProvider outside BrowserRouter */}
 <span class="cstat-no" title="statement not covered" >      &lt;WebSocketProvider&gt;</span>
 <span class="cstat-no" title="statement not covered" >        &lt;SearchProvider&gt;</span>
 <span class="cstat-no" title="statement not covered" >          &lt;BrowserRouter&gt;</span>
@@ -182,7 +182,7 @@
 <span class="cstat-no" title="statement not covered" >        &lt;/SearchProvider&gt;</span>
 <span class="cstat-no" title="statement not covered" >      &lt;/WebSocketProvider&gt;</span>
 <span class="cstat-no" title="statement not covered" >    &lt;/ThemeProvider&gt;</span>
-<span class="cstat-no" title="statement not covered" >  );</span>
+  );
 <span class="cstat-no" title="statement not covered" >}</span></pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
@@ -190,7 +190,7 @@
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-03-27T03:29:05.879Z
+                at 2025-03-27T11:18:01.596Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

@@ -1,5 +1,3 @@
-// TODO: separate all the styles into a separate file if time permits
-
 import React, { useState, useEffect, JSX } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiClient, apiPaths } from "../api";
