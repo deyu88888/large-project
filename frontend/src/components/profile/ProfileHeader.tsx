@@ -95,11 +95,7 @@ export default function ProfileHeader({
         headers: { "Content-Type": "multipart/form-data" },
       });
       if (onAvatarUpdated) onAvatarUpdated(response.data.icon);
-      setSnackbarData({
-        open: true,
-        message: "Avatar upload successfully!",
-        severity: "success",
-      });
+      window.location.reload();
     } catch (error) {
       console.error("Avatar upload failed", error);
     } finally {
