@@ -61,7 +61,7 @@ class Command(BaseCommand):
 
         self.broadcast_updates()
 
-        self.stdout.write(self.style.SUCCESS("Seeding complete!"))
+        print(self.style.SUCCESS("Seeding complete!"))
 
     def broadcast_updates(self):
         """Broadcast updates to the WebSocket"""
