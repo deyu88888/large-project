@@ -9,9 +9,7 @@ from django.utils.timezone import localtime
 
 
 class SocietyNewsSerializer(serializers.ModelSerializer):
-    """
-    Serializer for the SocietyNews model
-    """
+    """Serializer for the SocietyNews model with related data and calculated fields."""
     author_data = serializers.SerializerMethodField()
     society_data = serializers.SerializerMethodField()
     comment_count = serializers.SerializerMethodField()
@@ -19,7 +17,6 @@ class SocietyNewsSerializer(serializers.ModelSerializer):
     image_url = serializers.SerializerMethodField()
     attachment_name = serializers.SerializerMethodField()
     comments = serializers.SerializerMethodField(read_only=True)
-
     admin_notes = serializers.SerializerMethodField()
 
     class Meta:
@@ -30,8 +27,7 @@ class SocietyNewsSerializer(serializers.ModelSerializer):
             'attachment', 'attachment_name', 'author', 'author_data',
             'society_data', 'created_at', 'updated_at', 'published_at',
             'status', 'is_featured', 'is_pinned', 'tags', 'view_count',
-            'comment_count', 'is_author', 'comments',
-            'admin_notes',  # <-- Include the new field in your JSON output
+            'comment_count', 'is_author', 'comments', 'admin_notes',
         ]
         read_only_fields = ['created_at', 'updated_at', 'published_at', 'view_count']
         extra_kwargs = {
@@ -46,14 +42,13 @@ class SocietyNewsSerializer(serializers.ModelSerializer):
         if not obj.author:
             return None
 
-        author_data = {
+        return {
             "id": obj.author.id,
             "username": obj.author.username,
             "first_name": obj.author.first_name,
             "last_name": obj.author.last_name,
             "full_name": obj.author.full_name,
         }
-        return author_data
 
     def get_society_data(self, obj):
         """Get basic society information"""
@@ -63,12 +58,11 @@ class SocietyNewsSerializer(serializers.ModelSerializer):
             if obj.society.icon:
                 icon_url = request.build_absolute_uri(obj.society.icon.url) if request else obj.society.icon.url
 
-            society_data = {
+            return {
                 "id": obj.society.id,
                 "name": obj.society.name,
                 "icon": icon_url,
             }
-            return society_data
         except Exception:
             return {
                 "id": getattr(obj.society, 'id', None),
@@ -77,7 +71,7 @@ class SocietyNewsSerializer(serializers.ModelSerializer):
             }
 
     def get_comment_count(self, obj):
-        """Get total comment count including replies"""
+        """Get total comment count including replies."""
         try:
             count = NewsComment.objects.filter(news_post=obj).count()
             return count
@@ -85,7 +79,7 @@ class SocietyNewsSerializer(serializers.ModelSerializer):
             return 0
 
     def get_is_author(self, obj):
-        """Check if the current user is the author of this post"""
+        """Check if the current user is the author of this post."""
         try:
             request = self.context.get("request", None)
             if request and request.user.is_authenticated and hasattr(request.user, 'student'):
@@ -96,7 +90,7 @@ class SocietyNewsSerializer(serializers.ModelSerializer):
             return False
 
     def get_image_url(self, obj):
-        """Get full image URL"""
+        """Get full image URL."""
         try:
             request = self.context.get("request")
             if obj.image:
@@ -107,7 +101,7 @@ class SocietyNewsSerializer(serializers.ModelSerializer):
             return None
 
     def get_attachment_name(self, obj):
-        """Get the attachment filename"""
+        """Get the attachment filename."""
         try:
             if obj.attachment:
                 name = obj.attachment.name.split('/')[-1]
@@ -117,7 +111,7 @@ class SocietyNewsSerializer(serializers.ModelSerializer):
             return None
 
     def get_comments(self, obj):
-        """Get top-level comments"""
+        """Get top-level comments."""
         try:
             request = self.context.get("request", None)
             comments = NewsComment.objects.filter(news_post=obj, parent_comment=None).order_by("created_at")
@@ -184,10 +178,7 @@ class SocietyNewsSerializer(serializers.ModelSerializer):
             raise
 
     def get_published_at(self, obj):
-        """
-        Return a formatted timestamp of when the news was published.
-        Format: YYYY-MM-DD HH:MM:SS
-        """
+        """Return a formatted timestamp of when the news was published (YYYY-MM-DD HH:MM:SS)."""
         if obj.published_at:
             formatted_time = django_format(localtime(obj.published_at), "Y-m-d H:i:s")
             return formatted_time

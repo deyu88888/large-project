@@ -20,7 +20,6 @@ class StartSocietyRequestViewTest(APITestCase):
             is_president=True,
             major="Test Major"
         )
-
         self.admin = User.objects.create_user(
             username="existing_admin",
             password="Password123",

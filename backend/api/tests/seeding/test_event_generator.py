@@ -1,5 +1,5 @@
 from datetime import date, time, timedelta
-from api.management.commands.data.event_generator import RandomEventDataGenerator
+from api.management.commands.seeding.event_generator import RandomEventDataGenerator
 from django.test import TestCase
 
 class SeedingTestCase(TestCase):

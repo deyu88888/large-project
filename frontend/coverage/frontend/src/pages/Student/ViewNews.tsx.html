@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">54.96% </span>
+                <span class="strong">53.79% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>83/151</span>
+                <span class='fraction'>85/158</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">37.5% </span>
+                <span class="strong">50% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>3/8</span>
+                <span class='fraction'>3/6</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">66.66% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>2/2</span>
+                <span class='fraction'>2/3</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">54.96% </span>
+                <span class="strong">53.79% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>83/151</span>
+                <span class='fraction'>85/158</span>
             </div>
         
             
@@ -238,11 +238,20 @@
 <a name='L173'></a><a href='#L173'>173</a>
 <a name='L174'></a><a href='#L174'>174</a>
 <a name='L175'></a><a href='#L175'>175</a>
-<a name='L176'></a><a href='#L176'>176</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<a name='L176'></a><a href='#L176'>176</a>
+<a name='L177'></a><a href='#L177'>177</a>
+<a name='L178'></a><a href='#L178'>178</a>
+<a name='L179'></a><a href='#L179'>179</a>
+<a name='L180'></a><a href='#L180'>180</a>
+<a name='L181'></a><a href='#L181'>181</a>
+<a name='L182'></a><a href='#L182'>182</a>
+<a name='L183'></a><a href='#L183'>183</a>
+<a name='L184'></a><a href='#L184'>184</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">2x</span>
@@ -281,6 +290,19 @@
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
@@ -341,12 +363,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -417,7 +433,8 @@
 import { useTheme } from "@mui/material/styles";
 import { tokens } from "../../theme/theme";
 import { News } from "../../types"; 
-&nbsp;
+import axios from "axios";
+import { apiClient } from "../../api";
 &nbsp;
 const ViewNews: React.FC = () =&gt; {
     const theme = useTheme();
@@ -425,7 +442,7 @@ const ViewNews: React.FC = () =&gt; {
     const isLight = theme.palette.mode === "light";
 &nbsp;
     const [news, setNews] = useState&lt;any[]&gt;([]);
-    const [loading, setLoading] = useState(true);
+    const [loading] = useState(true);
 &nbsp;
     useEffect(() =&gt; {
         const fetchNews = async () =&gt; {
@@ -455,6 +472,19 @@ const ViewNews: React.FC = () =&gt; {
         fetchNews();
     }, []);
 &nbsp;
+    const markNewsAsRead = <span class="fstat-no" title="function not covered" >async (id: number) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >        try {</span>
+<span class="cstat-no" title="statement not covered" >          await apiClient.post(`/api/news/${id}/mark-read`);</span>
+<span class="cstat-no" title="statement not covered" >          setNews(prevNews =&gt;</span>
+<span class="cstat-no" title="statement not covered" >            prevNews.map(item =&gt;</span>
+<span class="cstat-no" title="statement not covered" >              item.id === id ? { ...item, is_read: true } : item</span>
+<span class="cstat-no" title="statement not covered" >            )</span>
+<span class="cstat-no" title="statement not covered" >          );</span>
+<span class="cstat-no" title="statement not covered" >        } catch (error) {</span>
+<span class="cstat-no" title="statement not covered" >          console.error("Failed to mark news as read:", error);</span>
+<span class="cstat-no" title="statement not covered" >        }</span>
+<span class="cstat-no" title="statement not covered" >      };</span>
+&nbsp;
     return (
         &lt;div
             style={{
@@ -476,7 +506,7 @@ const ViewNews: React.FC = () =&gt; {
                 &gt;
                     &lt;h1
                         style={{
-                            color: isLight ? colours.grey[100<span class="branch-0 cbranch-no" title="branch not covered" >] : colours.grey[100],</span>
+                            color: colours.grey[100],
                             fontSize: "2.25rem",
                             fontWeight: 700,
                             marginBottom: "0.5rem",
@@ -486,7 +516,7 @@ const ViewNews: React.FC = () =&gt; {
                     &lt;/h1&gt;
                     &lt;p
                         style={{
-                            color: isLight ? colours.grey[300<span class="branch-0 cbranch-no" title="branch not covered" >] : colours.grey[300],</span>
+                            color: colours.grey[300],
                             fontSize: "1.125rem",
                             margin: 0,
                         }}
@@ -523,19 +553,13 @@ const ViewNews: React.FC = () =&gt; {
 <span class="cstat-no" title="statement not covered" >                                className="p-5 rounded-lg shadow-md hover:shadow-lg transition-all border"</span>
 <span class="cstat-no" title="statement not covered" >                                style={{</span>
 <span class="cstat-no" title="statement not covered" >                                    backgroundColor: item.is_read</span>
-<span class="cstat-no" title="statement not covered" >                                        ? isLight</span>
-<span class="cstat-no" title="statement not covered" >                                            ? colours.primary[400]</span>
-<span class="cstat-no" title="statement not covered" >                                            : colours.primary[400]</span>
-<span class="cstat-no" title="statement not covered" >                                        : isLight</span>
-<span class="cstat-no" title="statement not covered" >                                            ? colours.blueAccent[700]</span>
-<span class="cstat-no" title="statement not covered" >                                            : colours.blueAccent[700],</span>
+<span class="cstat-no" title="statement not covered" >                                        ? colours.primary[400]</span>
+<span class="cstat-no" title="statement not covered" >                                        : colours.blueAccent[700],</span>
 <span class="cstat-no" title="statement not covered" >                                    borderColor: item.is_read</span>
 <span class="cstat-no" title="statement not covered" >                                        ? isLight</span>
 <span class="cstat-no" title="statement not covered" >                                            ? colours.grey[300]</span>
 <span class="cstat-no" title="statement not covered" >                                            : colours.grey[700]</span>
-<span class="cstat-no" title="statement not covered" >                                        : isLight</span>
-<span class="cstat-no" title="statement not covered" >                                            ? colours.blueAccent[400]</span>
-<span class="cstat-no" title="statement not covered" >                                            : colours.blueAccent[400],</span>
+<span class="cstat-no" title="statement not covered" >                                        : colours.blueAccent[400],</span>
 <span class="cstat-no" title="statement not covered" >                                }}</span>
                             &gt;
 <span class="cstat-no" title="statement not covered" >                                &lt;div</span>
@@ -545,7 +569,7 @@ const ViewNews: React.FC = () =&gt; {
 <span class="cstat-no" title="statement not covered" >                                        alignItems: "center",</span>
 <span class="cstat-no" title="statement not covered" >                                    }}</span>
                                 &gt;
-<span class="cstat-no" title="statement not covered" >                                    &lt;div style={{ color: isLight ? colours.grey[100] : colours.grey[100] }}&gt;</span>
+<span class="cstat-no" title="statement not covered" >                                    &lt;div style={{ color: colours.grey[100] }}&gt;</span>
 <span class="cstat-no" title="statement not covered" >                                        &lt;b&gt;{item.title}&lt;/b&gt;</span>
 <span class="cstat-no" title="statement not covered" >                                        &lt;p&gt;{item.brief}&lt;/p&gt;</span>
 <span class="cstat-no" title="statement not covered" >                                    &lt;/div&gt;</span>
@@ -595,7 +619,7 @@ export default ViewNews;
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-03-22T11:39:08.804Z
+                at 2025-03-27T03:29:05.879Z
             </div>
         <script src="../../../../prettify.js"></script>
         <script>

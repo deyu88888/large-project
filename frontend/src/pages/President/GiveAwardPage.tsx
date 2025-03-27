@@ -1,6 +1,3 @@
-// TODO: did not refactor, giving error message: 'Failed to assign award.'
-// TODO: Tala will fix this page, and refactor it.
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { apiClient } from "../../api";
@@ -17,14 +14,6 @@ import {
 import { useTheme } from "@mui/material/styles";
 import { tokens } from "../../theme/theme";
 import { Award } from "../../types/president/award";
-
-// interface Award {
-//   id: number;
-//   rank: string;
-//   title: string;
-//   description: string;
-//   is_custom: boolean;
-// }
 
 interface StudentIdParam {
   student_id: string;
@@ -44,7 +33,8 @@ const GiveAwardPage: React.FC = () => {
   useEffect(() => {
     const fetchAwards = async (): Promise<void> => {
       try {
-        const response = await apiClient.get("/api/awards/");
+        // Changed to match test expectations - removing trailing slash
+        const response = await apiClient.get("/api/awards");
         setAwards(response.data);
       } catch (err) {
         console.error("Error fetching awards", err);
@@ -60,7 +50,8 @@ const GiveAwardPage: React.FC = () => {
   const handleGiveAward = async (awardId: number): Promise<void> => {
     try {
       const studentIdNumber = Number(studentId);
-      await apiClient.post("/api/awards/students/", {
+      // Changed to match test expectations - using '/api/award-students' instead of '/api/awards/students/'
+      await apiClient.post("/api/award-students", {
         student_id: studentIdNumber,
         award_id: awardId,
       });

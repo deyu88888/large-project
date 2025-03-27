@@ -41,11 +41,6 @@ class TestAdminReportsWithRepliesView(APITestCase):
         
         response = self.client.get(reverse("report_replied"))
         
-        
-        print(f"DEBUG: Requested URL: {reverse('report_replied')}")
-        print(f"DEBUG: Status Code: {response.status_code}")
-        if response.status_code != 200:
-            print("DEBUG: Response content:", response.content.decode())
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         report_ids = [report["id"] for report in response.data]

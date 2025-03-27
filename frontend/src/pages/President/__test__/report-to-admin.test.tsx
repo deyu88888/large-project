@@ -98,7 +98,7 @@ describe('ReportToAdmin Component', () => {
       fireEvent.change(detailsInput, { target: { value: 'Test Details' } });
       fireEvent.click(submitButton);
     });
-    expect(apiClient.post).toHaveBeenCalledWith('/api/report-to-admin', {
+    expect(apiClient.post).toHaveBeenCalledWith('/api/reports/to-admin/', {
       report_type: 'Misconduct',
       subject: 'Test Subject',
       details: 'Test Details',
@@ -122,7 +122,7 @@ describe('ReportToAdmin Component', () => {
       fireEvent.change(detailsInput, { target: { value: 'Details about system issue' } });
       fireEvent.click(submitButton);
     });
-    expect(apiClient.post).toHaveBeenCalledWith('/api/report-to-admin', {
+    expect(apiClient.post).toHaveBeenCalledWith('/api/reports/to-admin/', {
       report_type: 'System Issue',
       subject: 'System Problem',
       details: 'Details about system issue',
@@ -143,7 +143,7 @@ describe('ReportToAdmin Component', () => {
       fireEvent.change(detailsInput, { target: { value: 'Details about society issue' } });
       fireEvent.click(submitButton);
     });
-    expect(apiClient.post).toHaveBeenCalledWith('/api/report-to-admin', {
+    expect(apiClient.post).toHaveBeenCalledWith('/api/reports/to-admin/', {
       report_type: 'Society Issue',
       subject: 'Society Problem',
       details: 'Details about society issue',
@@ -164,7 +164,7 @@ describe('ReportToAdmin Component', () => {
       fireEvent.change(detailsInput, { target: { value: 'Details about event issue' } });
       fireEvent.click(submitButton);
     });
-    expect(apiClient.post).toHaveBeenCalledWith('/api/report-to-admin', {
+    expect(apiClient.post).toHaveBeenCalledWith('/api/reports/to-admin/', {
       report_type: 'Event Issue',
       subject: 'Event Problem',
       details: 'Details about event issue',
@@ -185,7 +185,7 @@ describe('ReportToAdmin Component', () => {
       fireEvent.change(detailsInput, { target: { value: 'Details about other issue' } });
       fireEvent.click(submitButton);
     });
-    expect(apiClient.post).toHaveBeenCalledWith('/api/report-to-admin', {
+    expect(apiClient.post).toHaveBeenCalledWith('/api/reports/to-admin/', {
       report_type: 'Other',
       subject: 'Other Problem',
       details: 'Details about other issue',

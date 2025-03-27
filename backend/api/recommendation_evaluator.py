@@ -628,12 +628,9 @@ class RecommendationEvaluator:
             filepath = os.path.join(self.results_path, filename)
             
             with open(filepath, 'w') as f:
-                json.dump(results, f, indent=2)
-                
-            print(f"Evaluation results saved to {filepath}")
-            
+                json.dump(results, f, indent=2)  
         except Exception as e:
-            print(f"Error saving evaluation results: {e}")
+            pass
 
 # Create a singleton instance for reuse
 recommendation_evaluator = RecommendationEvaluator()

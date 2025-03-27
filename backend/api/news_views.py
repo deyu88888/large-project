@@ -7,29 +7,11 @@ from django.utils import timezone
 from django.db.models import Manager
 from api.models import Society, SocietyNews, NewsComment, Student, NewsPublicationRequest
 from api.serializers import SocietyNewsSerializer, NewsCommentSerializer, NewsPublicationRequestSerializer
-
-def has_society_management_permission(student, society):
-    student_is_president = getattr(student, 'is_president', False)
-    
-    has_president_attr = hasattr(society, 'president')
-    
-    society_president = getattr(society, 'president', None)
-    society_president_id = getattr(society_president, 'id', None)
-    student_id = getattr(student, 'id', None)
-    
-    is_president = student_is_president and has_president_attr and society_president and society_president_id == student_id
-    
-    has_vp_attr = hasattr(society, 'vice_president')
-    society_vp = getattr(society, 'vice_president', None)
-    society_vp_id = getattr(society_vp, 'id', None)
-    
-    is_vice_president = has_vp_attr and society_vp and society_vp_id == student_id
-    
-    result = is_president or is_vice_president
-    return result
+from api.views_files.view_utility import has_society_management_permission
 
 
 class SocietyNewsListView(APIView):
+    """API view for handling society news list operations, including viewing and creating news posts."""
     permission_classes = [IsAuthenticated]
     
     def get(self, request, society_id):
@@ -137,8 +119,8 @@ class SocietyNewsListView(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
 class SocietyNewsDetailView(APIView):
+    """API view for retrieving, updating, and deleting individual society news posts."""
     permission_classes = [IsAuthenticated]
     
     def get(self, request, news_id):
@@ -218,8 +200,12 @@ class SocietyNewsDetailView(APIView):
         news_post.delete()
         return Response({"message": "News post deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
 
-
 class NewsCommentView(APIView):
+    """
+    API view for listing and creating comments on society news posts.
+    Handles both top-level comments and replies, with appropriate permission checks
+    to ensure only society members can view and create comments.
+    """
     permission_classes = [IsAuthenticated]
 
     def get(self, request, news_id):
@@ -272,6 +258,11 @@ class NewsCommentView(APIView):
 
 
 class NewsCommentDetailView(APIView):
+    """
+    API view for managing individual news comments, providing update and delete operations
+    with appropriate permission checks. Authors can edit their own comments, while both 
+    authors and society officers can delete comments.
+    """
     permission_classes = [IsAuthenticated]
     
     def put(self, request, comment_id):
@@ -312,6 +303,7 @@ class NewsCommentDetailView(APIView):
 
 
 class NewsCommentLikeView(APIView):
+    """API view for handling likes on news comments with appropriate permission checks."""
     permission_classes = [IsAuthenticated]
 
     def post(self, request, comment_id):
@@ -363,6 +355,7 @@ class NewsCommentLikeView(APIView):
 
 
 class NewsCommentDislikeView(APIView):
+    """API view for handling dislikes on news comments with appropriate permission checks."""
     permission_classes = [IsAuthenticated]
 
     def post(self, request, comment_id):
@@ -414,6 +407,10 @@ class NewsCommentDislikeView(APIView):
 
 
 class MemberNewsView(APIView):
+    """
+    API view for retrieving published news posts from all societies that a student is a
+    member of.
+    """
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -435,6 +432,7 @@ class MemberNewsView(APIView):
                 student_attrs[attr] = f"Error accessing attribute: {e}"
 
         student_societies = student.societies.all()
+        
         if not student_societies.exists():
             student_societies = student.societies_belongs_to.all()
 

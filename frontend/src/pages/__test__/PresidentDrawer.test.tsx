@@ -5,7 +5,7 @@ import { MemoryRouter } from 'react-router-dom';
 import PresidentDrawer from '../../components/layout/PresidentDrawer';
 import { apiClient } from '../../api';
 
-// Mock the react-router-dom hooks
+// Create a mock for useNavigate
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
@@ -30,6 +30,7 @@ describe('PresidentDrawer Component', () => {
     first_name: 'Test',
     last_name: 'User',
     icon: '/media/profile/testuser.jpg',
+    president_of: '1',
   };
 
   beforeEach(() => {
@@ -42,20 +43,19 @@ describe('PresidentDrawer Component', () => {
         removeItem: vi.fn(),
         setItem: vi.fn(),
       },
-      writable: true
+      writable: true,
     });
     
-    // Mock successful API response
-    (apiClient.get).mockResolvedValue({
-      data: mockStudentData
+    // Mock successful API response - important to resolve this immediately
+    apiClient.get.mockResolvedValue({
+      data: mockStudentData,
     });
   });
 
   const setup = async (drawerOpen = true) => {
-    let renderResult;
-    
+    let component;
     await act(async () => {
-      renderResult = render(
+      component = render(
         <MemoryRouter>
           <PresidentDrawer 
             drawer={drawerOpen} 
@@ -64,22 +64,23 @@ describe('PresidentDrawer Component', () => {
           />
         </MemoryRouter>
       );
-      
-      // Wait for useEffect to complete
-      await new Promise(resolve => setTimeout(resolve, 0));
     });
     
-    return renderResult;
+    // Important: Wait for the useEffect and API call to complete
+    await waitFor(() => {
+      expect(apiClient.get).toHaveBeenCalledWith('/api/user/current');
+    });
+    
+    return component;
   };
 
   it('renders without crashing', async () => {
     await setup();
-    expect(screen.getByText('President Dashboard')).toBeInTheDocument();
+    expect(screen.getByText('Dashboard')).toBeInTheDocument();
   });
 
   it('fetches student data on mount', async () => {
     await setup();
-    
     expect(apiClient.get).toHaveBeenCalledWith('/api/user/current');
     await waitFor(() => {
       expect(screen.getByText('Test User')).toBeInTheDocument();
@@ -88,13 +89,11 @@ describe('PresidentDrawer Component', () => {
 
   it('displays user information when drawer is open', async () => {
     await setup(true);
-    
     await waitFor(() => {
       expect(screen.getByText('Test User')).toBeInTheDocument();
-      expect(screen.getByText('President Dashboard')).toBeInTheDocument();
+      expect(screen.getByText('President')).toBeInTheDocument();
     });
-    
-    const userIcon = screen.getByAltText('testuser icon');
+    const userIcon = screen.getByAltText(`${mockStudentData.username} icon`);
     expect(userIcon).toBeInTheDocument();
     expect(userIcon).toHaveStyle({
       width: '72px',
@@ -104,69 +103,55 @@ describe('PresidentDrawer Component', () => {
 
   it('displays compact user information when drawer is closed', async () => {
     await setup(false);
-    
-    const userIcon = screen.getByAltText('testuser icon');
+    const userIcon = screen.getByAltText(`${mockStudentData.username} icon`);
     expect(userIcon).toBeInTheDocument();
     expect(userIcon).toHaveStyle({
       width: '25px',
       height: '25px',
     });
-    
     expect(screen.queryByText('Test User')).not.toBeInTheDocument();
   });
 
   it('renders all main menu items', async () => {
     await setup();
-    
     expect(screen.getByText('Dashboard')).toBeInTheDocument();
     expect(screen.getByText('My Societies')).toBeInTheDocument();
-    expect(screen.getByText('Start Society')).toBeInTheDocument();
-    expect(screen.getByText('View Events')).toBeInTheDocument();
+    expect(screen.getByText('My Events')).toBeInTheDocument();
+    expect(screen.getByText('News')).toBeInTheDocument();
+    expect(screen.getByText('Discover Societies')).toBeInTheDocument();
+    expect(screen.getByText('Discover Events')).toBeInTheDocument();
+  });
+
+  it('renders management menu items', async () => {
+    await setup();
+    await waitFor(() => {
+      expect(screen.getByText('Manage My Societies')).toBeInTheDocument();
+    });
+  });
+
+  it('renders bottom menu items', async () => {
+    await setup();
     expect(screen.getByText('Notifications')).toBeInTheDocument();
     expect(screen.getByText('Inbox')).toBeInTheDocument();
-  });
-
-  it('renders society management menu items', async () => {
-    await setup();
-    
-    expect(screen.getByText('Manage My Societies')).toBeInTheDocument();
-    expect(screen.getByText('Society Details')).toBeInTheDocument();
-    expect(screen.getByText('Society Events')).toBeInTheDocument();
-    expect(screen.getByText('Pending Members')).toBeInTheDocument();
-    expect(screen.getByText('All Members')).toBeInTheDocument();
-    expect(screen.getByText('Report to Admin')).toBeInTheDocument();
-  });
-
-  it('renders the join societies section', async () => {
-    await setup();
-    
-    // We need to use getAllByText because "Join Societies" appears twice in the document
-    // Once in the section header and once in the menu item
-    expect(screen.getAllByText('Join Societies')[0]).toBeInTheDocument();
+    expect(screen.getByText('Report')).toBeInTheDocument();
   });
 
   it('renders the logout button', async () => {
     await setup();
-    
     expect(screen.getByText('Logout')).toBeInTheDocument();
   });
 
   it('calls toggleDrawer when chevron button is clicked', async () => {
     await setup();
-    
-    // There are multiple buttons, so we need to get the one with the ChevronLeftIcon
-    const chevronButton = screen.getByTestId('ChevronLeftIcon').closest('button');
+    const chevronButton = screen.getByRole('button', { name: '' });
     fireEvent.click(chevronButton);
-    
     expect(mockToggleDrawer).toHaveBeenCalledTimes(1);
   });
 
   it('handles logout correctly', async () => {
     await setup();
-    
     const logoutButton = screen.getByText('Logout').closest('div');
     fireEvent.click(logoutButton);
-    
     expect(window.localStorage.removeItem).toHaveBeenCalledWith('access');
     expect(window.localStorage.removeItem).toHaveBeenCalledWith('refresh');
     expect(mockNavigate).toHaveBeenCalledWith('/login');
@@ -176,20 +161,30 @@ describe('PresidentDrawer Component', () => {
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const alertMock = vi.fn();
     global.alert = alertMock;
+    apiClient.get.mockRejectedValueOnce(new Error('Failed to fetch student data'));
     
-    (apiClient.get).mockRejectedValueOnce(new Error('Failed to fetch student data'));
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <PresidentDrawer 
+            drawer={true} 
+            toggleDrawer={mockToggleDrawer} 
+            location={mockLocation} 
+          />
+        </MemoryRouter>
+      );
+    });
     
-    await setup();
-    
-    expect(consoleErrorSpy).toHaveBeenCalled();
-    expect(alertMock).toHaveBeenCalledWith('Failed to retrieve student. Please contact an administrator.');
+    await waitFor(() => {
+      expect(consoleErrorSpy).toHaveBeenCalled();
+      expect(alertMock).toHaveBeenCalledWith('Failed to retrieve student. Please contact an administrator.');
+    });
     
     consoleErrorSpy.mockRestore();
   });
 
   it('updates selected item when menu item is clicked', async () => {
     await setup();
-    
     const dashboardLink = screen.getByText('Dashboard').closest('a');
     const mySocietiesLink = screen.getByText('My Societies').closest('a');
     
@@ -206,40 +201,27 @@ describe('PresidentDrawer Component', () => {
 
   it('navigates to correct routes for main menu items', async () => {
     await setup();
-    
     const dashboardLink = screen.getByText('Dashboard').closest('a');
     expect(dashboardLink).toHaveAttribute('href', '/student');
     
-    const startSocietyLink = screen.getByText('Start Society').closest('a');
-    expect(startSocietyLink).toHaveAttribute('href', '/student/start-society');
+    const mySocietiesLink = screen.getByText('My Societies').closest('a');
+    expect(mySocietiesLink).toHaveAttribute('href', '/student/my-societies');
     
-    const viewEventsLink = screen.getByText('View Events').closest('a');
-    expect(viewEventsLink).toHaveAttribute('href', '/student/view-events');
+    const myEventsLink = screen.getByText('My Events').closest('a');
+    expect(myEventsLink).toHaveAttribute('href', '/student/view-events');
   });
 
-  it('navigates to correct routes for society management items', async () => {
+  it('navigates to the correct route for managing societies', async () => {
     await setup();
-    
-    const manageSocietiesLink = screen.getByText('Manage My Societies').closest('a');
-    expect(manageSocietiesLink).toHaveAttribute('href', '/president-page/1');
-    
-    const societyDetailsLink = screen.getByText('Society Details').closest('a');
-    expect(societyDetailsLink).toHaveAttribute('href', '/president-page/1/manage-society-details');
-    
-    const societyEventsLink = screen.getByText('Society Events').closest('a');
-    expect(societyEventsLink).toHaveAttribute('href', '/president-page/1/manage-society-events');
+    await waitFor(() => {
+      const manageSocietiesLink = screen.getByText('Manage My Societies').closest('a');
+      expect(manageSocietiesLink).toHaveAttribute('href', '/president-page/1');
+    });
   });
 
-  it('navigates to the join society page', async () => {
+  it('navigates to the discover societies page', async () => {
     await setup();
-    
-    // We need to use getAllByText because "Join Societies" appears twice
-    // Then we need to find the one that's inside an <a> element
-    const joinSocietiesElements = screen.getAllByText('Join Societies');
-    const joinSocietiesLink = joinSocietiesElements.find(element => 
-      element.closest('a') !== null
-    ).closest('a');
-    
-    expect(joinSocietiesLink).toHaveAttribute('href', '/student/join-society');
+    const discoverSocietiesLink = screen.getByText('Discover Societies').closest('a');
+    expect(discoverSocietiesLink).toHaveAttribute('href', '/student/join-society');
   });
 });

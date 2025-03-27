@@ -186,7 +186,6 @@ class SocietyRequestSerializerTestCase(TestCase):
 
     def _assert_serializer_is_valid(self):
         if not self.serializer.is_valid():
-            print(f'Errors: {self.serializer.errors}')
             self.fail("Test serializer should be valid")
 
     def get_image(self, s):

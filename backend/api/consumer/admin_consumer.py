@@ -10,7 +10,6 @@ class SocietyRequestConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         """ Handle WebSocket connection """
         user = self.scope["user"]
-        print("Checking if user is an admin: ", user)
         user = await sync_to_async(User.objects.get)(username="admin_user")
         await self.accept()
         await self.send_pending_requests()

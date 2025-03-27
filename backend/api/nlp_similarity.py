@@ -95,8 +95,6 @@ class TextSimilarityAnalyzer:
             return
             
         try:
-            # Use a small but effective model for sentence embeddings
-            # 'all-MiniLM-L6-v2' is a good balance between speed and accuracy
             self.sentence_model = SentenceTransformer('all-MiniLM-L6-v2')
         except Exception:
             self.sentence_model = None
@@ -245,7 +243,6 @@ class TextSimilarityAnalyzer:
         Update the corpus with society descriptions and train the vectorizers.
         Removes duplicate descriptions and ensures enough variety for training.
         """
-
         # Remove duplicates
         unique_descriptions = list(set(society_descriptions))
 

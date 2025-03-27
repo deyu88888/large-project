@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { StrictMode } from 'react';
 
 // Create mock for render function
 const mockRender = vi.fn();
@@ -13,7 +12,7 @@ vi.mock('react-dom/client', () => ({
 
 // Mock App component
 const MockApp = vi.fn(() => <div data-testid="app">App Component</div>);
-vi.mock('../../app', () => ({
+vi.mock('../../app.tsx', () => ({
   App: MockApp
 }));
 
@@ -29,7 +28,7 @@ describe('Main entry point', () => {
     document.body.innerHTML = '<div id="root"></div>';
   });
 
-  it('renders App component in StrictMode', async () => {
+  it('renders App component directly without StrictMode', async () => {
     // Import the main module - this is what actually executes the code in main.tsx
     await import('../../main');
     
@@ -45,9 +44,8 @@ describe('Main entry point', () => {
     // Verify render was called
     expect(mockRender).toHaveBeenCalled();
     
-    // Verify the structure of what was rendered
+    // Verify the structure of what was rendered - should be App directly, not wrapped in StrictMode
     const renderArg = mockRender.mock.calls[0][0];
-    expect(renderArg.type).toBe(StrictMode);
-    expect(renderArg.props.children.type).toBe(MockApp);
+    expect(renderArg.type).toBe(MockApp);
   });
 });

@@ -240,5 +240,4 @@ def upload_avatar(request):
 
         return Response({"icon": student.icon.url})
     except Exception as e:
-        print("Avatar upload error:", e)
         return Response({"detail": "Image processing failed."}, status=500)
