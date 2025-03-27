@@ -18,9 +18,10 @@ import { SearchContext } from "../../components/layout/SearchContext";
 import { Event as AppEvent } from '../../types';
 import { EventPreview } from "../../components/EventPreview";
 import type { EventData } from "../../components/EventDetailLayout";
+import { getWebSocketUrl } from "../../utils/websocket";
 
 
-const WEBSOCKET_URL = "ws:";
+const WEBSOCKET_URL = getWebSocketUrl()
 const RECONNECT_TIMEOUT = 5000;
 
 interface DeleteDialogProps {

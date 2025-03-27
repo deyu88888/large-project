@@ -1,5 +1,6 @@
 // socketConnectionManager.ts
 import { ACCESS_TOKEN } from '../constants';
+import { getWebSocketUrl } from '../utils/websocket';
 
 // Define types for WebSocket message data
 export interface WebSocketMessage {
@@ -287,27 +288,8 @@ class SocketConnectionManager {
         clearTimeout(this.reconnectTimeout);
         this.reconnectTimeout = null;
       }
-      
-      // Determine WebSocket URL - use environment variable if available
-      let baseUrl;
-      
-      // Check if we're using Vite
-      if (typeof import.meta !== 'undefined' && import.meta.env) {
-        baseUrl = import.meta.env.VITE_WEBSOCKET_ADMIN_BASE_URL;
-      }
-      
-      // Fallback URL logic
-      if (!baseUrl) {
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const host = window.location.hostname;
-        
-        // Use port 8000 for localhost, otherwise use the same port as the current page
-        const port = (host === 'localhost' || host === '127.0.0.1') 
-          ? '8000' 
-          : window.location.port;
-        
-        baseUrl = `${protocol}//${host}${port ? ':' + port : ''}/ws`;
-      }
+
+      const baseUrl = getWebSocketUrl()
       
       // Determine endpoint based on connection attempt
       const endpoints = ['main', 'dashboard', 'echo', 'test-connection'];

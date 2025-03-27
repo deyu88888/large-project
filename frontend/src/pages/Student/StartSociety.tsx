@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import { useTheme } from "@mui/material/styles";
 import { tokens } from "../../theme/theme";
+import { apiClient } from "../../api";
 
 const StartSociety: React.FC = () => {
   const theme = useTheme();
@@ -22,7 +23,7 @@ const StartSociety: React.FC = () => {
     try {
       setError("");
       setSuccess("");
-      const response = await axios.post("/api/start-society/", {
+      const response = await apiClient.post("/api/start-society/", {
         name: societyName,
         description,
       });
