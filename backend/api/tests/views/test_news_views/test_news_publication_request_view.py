@@ -7,7 +7,6 @@ from unittest.mock import MagicMock
 sys.modules['transformers'] = MagicMock()
 sys.modules['transformers.utils.import_utils'] = MagicMock()
 sys.modules['transformers.models.bert.tokenization_bert_tf'] = MagicMock()
-from freezegun import freeze_time
 
 from api.models import (
     User, Student, Society, SocietyNews, NewsPublicationRequest, Notification
