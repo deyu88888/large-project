@@ -179,9 +179,9 @@ class RandomSocietyDataGenerator():
 
         # icon_name = f'{return_dict["name"].split()[0].lower()}.jpg'
         icon_name = f'https://picsum.photos/id/${randint(0,100)}/200/300'
-        return_dict["icon"] = os.path.join('pre-seed-icons', icon_name)
+        return_dict["icon"] = icon_name
 
-        return icon_name
+        return return_dict
 
     def generate_name(self) -> str:
         """Generates a society name"""
