@@ -139,7 +139,7 @@ CHANNEL_LAYERS = {
     }
 }
 
-MEDIA_URL = '/api/media/'
+MEDIA_URL = 'http://localhost:8000/api/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 
