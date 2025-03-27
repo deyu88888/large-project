@@ -293,14 +293,19 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
       formData.append("status", status);
       formData.append("is_pinned", isPinned.toString());
       formData.append("is_featured", isFeatured.toString());
-      formData.append("tags", JSON.stringify(tags));
+      formData.append("tags", JSON.stringify([]));
 
-      if (image) {
-        formData.append("image", image);
+      // Add right before line 298
+      if (image && image.size > 5 * 1024 * 1024) { // 5MB limit
+        alert("Image file is too large. Please select a file under 5MB.");
+        setIsSubmitting(false);
+        return;
       }
 
-      if (attachment) {
-        formData.append("attachment", attachment);
+      if (attachment && attachment.size > 10 * 1024 * 1024) { // 10MB limit
+        alert("Attachment file is too large. Please select a file under 10MB.");
+        setIsSubmitting(false);
+        return;
       }
 
       let response;
@@ -316,7 +321,7 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
           }
         );
       } else if (editorMode === "edit" && selectedNews) {
-        response = await apiClient.put(
+        response = await apiClient.patch(
           `/api/news/${selectedNews.id}/`,
           formData,
           {
@@ -327,7 +332,8 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
         );
       }
 
-      if (status === "PendingApproval" && response?.data?.id) {
+      // Change the error checking around lines 330-340 to properly handle null responses
+      if (status === "PendingApproval" && response && response.data && response.data.id) {
         try {
           await apiClient.post("/api/news/publication-request/", {
             news_post: response.data.id,
@@ -1206,12 +1212,7 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
             </Box>
 
             <Grid container spacing={3} mb={4}>
-              <Grid
-                size={{
-                  xs: 12,
-                  md: 6,
-                }}
-              >
+              <Grid item xs={12} md={6}>
                 <Paper
                   sx={{
                     p: 3,
@@ -1333,12 +1334,7 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
                 </Paper>
               </Grid>
 
-              <Grid
-                size={{
-                  xs: 12,
-                  md: 6,
-                }}
-              >
+              <Grid item xs={12} md={6}>
                 <Paper
                   sx={{
                     p: 3,
@@ -1451,12 +1447,7 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
               </Typography>
 
               <Grid container spacing={3}>
-                <Grid
-                  size={{
-                    xs: 12,
-                    md: 6,
-                  }}
-                >
+                <Grid item xs={12} md={6}>
                   <Box
                     sx={{
                       border: `2px dashed ${alpha(colors.grey[500], 0.3)}`,
@@ -1583,12 +1574,7 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
                   </Box>
                 </Grid>
 
-                <Grid
-                  size={{
-                    xs: 12,
-                    md: 6,
-                  }}
-                >
+                <Grid item xs={12} md={6}>
                   <Box
                     sx={{
                       border: `2px dashed ${alpha(colors.grey[500], 0.3)}`,
