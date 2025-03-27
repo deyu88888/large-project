@@ -39,16 +39,18 @@ from api.views_files.recommendation_views import *
 
 
 
-@csrf_exempt
+@api_view(['GET'])
+@permission_classes([AllowAny])
 def get_popular_societies(request):
     """
     Returns the top 5 most popular societies based on:
     - Number of members
     - Number of hosted events
     - Total event attendees
-    """
 
-    popular_societies = (
+    Data is processed via SocietySerializer.
+    """
+    popular_societies_qs = (
         Society.objects.annotate(
             total_members=Count("society_members"),
             total_events=Count("events"),
@@ -62,72 +64,38 @@ def get_popular_societies(request):
             )
         )
         .order_by("-popularity_score")[:5]
-        .values(
-            "id",
-            "name",
-            "description",
-            "category",
-            "social_media_links",
-            "membership_requirements",
-            "upcoming_projects_or_plans",
-            "tags",
-            "icon",
-            "president",
-            "status",
-            "approved_by",
-            "total_members",
-            "total_events",
-            "total_event_attendance",
-            "popularity_score"
-        )
     )
 
-    return JsonResponse(list(popular_societies), safe=False)
+    serializer = SocietySerializer(popular_societies_qs, many=True, context={'request': request})
+    return Response(serializer.data)
 
-@csrf_exempt
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
 def get_upcoming_events(request):
     """
-    Returns upcoming events sorted by date.
+    Returns upcoming events sorted by date, processed by EventSerializer.
     """
     current_datetime = timezone.now()
-    
-    all_upcoming_events = (
-        Event.objects.filter(date__gte=current_datetime)
-        .order_by('date')
-        .values(
-            'id',
-            'title',
-            'main_description',
-            'date',
-            'location',
-            'start_time',
-            'duration',
-            'hosted_by',
-            'hosted_by_id',
-            'current_attendees',
-            'status',
-            'broadcasts',
-            'comments',
-            'max_capacity',
-        )
-    )
-    seen_ids = set()
-    unique_events = []
+    events_qs = Event.objects.filter(date__gte=current_datetime).order_by('date')
 
-    for event in all_upcoming_events:
-        if event['id'] not in seen_ids:
-            seen_ids.add(event['id'])
-            unique_events.append(event)
-            if len(unique_events) >= 5:
+    seen_ids = set()
+    unique_events_list = []
+    for event in events_qs:
+        if event.id not in seen_ids:
+            seen_ids.add(event.id)
+            unique_events_list.append(event)
+            if len(unique_events_list) >= 5:
                 break
 
-    return JsonResponse(unique_events, safe=False)
+    serializer = EventSerializer(unique_events_list, many=True, context={'request': request})
+    return Response(serializer.data)
 
 @api_view(["GET"])
 @permission_classes([])
 def get_sorted_events(request):
     events = Event.objects.filter(date__gte=now()).order_by("date", "start_time")
-    serializer = EventSerializer(events, many=True)
+    serializer = EventSerializer(events, many=True, context={'request': request})
     return Response(serializer.data)
 
 
