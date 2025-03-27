@@ -51,7 +51,7 @@ const fetchReportById = async (reportId: string): Promise<Report> => {
 };
 
 const submitReportReply = async (reportId: string, content: string): Promise<void> => {
-  await apiClient.post("/api/report-replies", {
+  await apiClient.post("/api/reports/replies/", {
     report: reportId,
     content: content,
   });
