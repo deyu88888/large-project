@@ -176,7 +176,7 @@ class SocietyRequestSerializerTestCase(TestCase):
             f"showreel_images_request : {data['showreel_images_request']}"
         )
 
-        photos = {img["photo"][21:] for img in data["showreel_images_request"]}
+        photos = {img["photo"] for img in data["showreel_images_request"]}
         self.assertIn("/api/media/society_showreel_request/test_photo1.jpeg", photos)
         self.assertIn("/api/media/society_showreel_request/test_photo2.jpeg", photos)
 
