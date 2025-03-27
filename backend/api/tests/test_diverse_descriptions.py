@@ -1,9 +1,5 @@
-import nltk
-
-try:
-    nltk.data.find('tokenizers/punkt')
-except LookupError:
-    nltk.download('punkt', quiet=True)
+from tests.nltk_setup import ensure_punkt_downloaded
+ensure_punkt_downloaded()
 
 from django.test import TestCase
 from api.nlp_similarity import TextSimilarityAnalyzer
