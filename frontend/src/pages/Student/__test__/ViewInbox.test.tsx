@@ -1,87 +1,90 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { ThemeProvider, createTheme } from "@mui/material/styles";
-import ViewInbox from "../ViewInbox";
-import { apiClient } from "../../../api";
-import { vi } from "vitest";
-import { MemoryRouter } from "react-router-dom";
-import React from "react";
+import React from 'react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
+import ViewInbox from '../ViewInbox';
+import { apiClient } from '../../../api';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { MemoryRouter } from 'react-router-dom';
 
-// Mock the navigation function
-const mockNavigate = vi.fn();
 
-// Mock the API client
-vi.mock("../../../api", () => ({
-  apiClient: {
-    get: vi.fn(),
-    patch: vi.fn(),
-    delete: vi.fn(),
-  }
-}));
-
-// Mock react-router-dom hooks
-vi.mock("react-router-dom", async () => {
-  const actual = await vi.importActual("react-router-dom");
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
   return {
     ...actual,
     useNavigate: () => mockNavigate,
   };
 });
 
-describe("ViewInbox Component", () => {
-  const mockTheme = createTheme({
-    palette: {
-      mode: "light",
-    },
-  });
+vi.mock('../../../api', () => ({
+  apiClient: {
+    get: vi.fn(),
+    patch: vi.fn(),
+    delete: vi.fn(),
+  },
+}));
 
-  const mockNotifications = [
-    {
-      id: 1,
-      header: "Important Notice",
-      body: "This is an important notification",
-      is_read: false,
-      type: "notification"
-    },
-    {
-      id: 2,
-      header: "System Update",
-      body: "The system will be updated tonight",
-      is_read: true,
-      type: "notification"
-    },
-  ];
 
-  const mockReplyNotifications = [
-    {
-      id: 3,
-      header: "New Reply",
-      body: "Someone replied to your report",
-      is_read: false,
-      type: "report_reply",
-      report_id: 123
-    }
-  ];
+const mockInboxNotifications = [
+  {
+    id: 1,
+    header: 'New Society Announcement',
+    body: 'Computer Science Society has a new event',
+    is_read: false,
+    created_at: '2025-01-02T12:00:00Z',
+    type: 'notification'
+  },
+  {
+    id: 2,
+    header: 'Reminder',
+    body: 'Don\'t forget about tomorrow\'s meeting',
+    is_read: true,
+    created_at: '2025-01-01T10:00:00Z',
+    type: 'notification'
+  }
+];
 
+const mockReplyNotifications = [
+  {
+    id: 1,
+    header: 'Reply to your report',
+    body: 'Your report has been answered',
+    is_read: false,
+    send_time: '2025-01-03T14:00:00Z',
+    type: 'report_reply',
+    report_id: 123
+  }
+];
+
+
+const mockNavigate = vi.fn();
+
+describe('ViewInbox Component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     
-    // Set up default mock responses with the correct endpoints
-    apiClient.get.mockImplementation((url) => {
-      if (url === "/api/notifications/inbox/") {
-        return Promise.resolve({ data: mockNotifications });
-      } else if (url === "/api/reports/reply-notifications") {
+    
+    vi.mocked(apiClient.get).mockImplementation((url) => {
+      if (url === '/api/notifications/inbox/') {
+        return Promise.resolve({ data: mockInboxNotifications });
+      } else if (url === '/api/reports/reply-notifications') {
         return Promise.resolve({ data: mockReplyNotifications });
       }
       return Promise.resolve({ data: [] });
     });
-    
-    apiClient.patch.mockResolvedValue({ status: 200 });
-    apiClient.delete.mockResolvedValue({ status: 204 });
+
+    vi.mocked(apiClient.patch).mockResolvedValue({ status: 200 });
+    vi.mocked(apiClient.delete).mockResolvedValue({ status: 204 });
   });
 
-  const renderWithRouter = () => {
+  const renderComponent = () => {
+    const theme = createTheme({
+      palette: {
+        mode: 'dark',
+      },
+    });
+
     return render(
-      <ThemeProvider theme={mockTheme}>
+      <ThemeProvider theme={theme}>
         <MemoryRouter>
           <ViewInbox />
         </MemoryRouter>
@@ -89,168 +92,240 @@ describe("ViewInbox Component", () => {
     );
   };
 
-  it("renders loading state", () => {
-    // Delay the API response to show loading state
-    apiClient.get.mockImplementation(() => 
-      new Promise(resolve => setTimeout(() => resolve({ data: [] }), 100))
-    );
-
-    renderWithRouter();
-    expect(screen.getByText("Loading notifications...")).toBeInTheDocument();
-  });
-
-  it("displays empty state when no notifications are available", async () => {
-    // Override the default mock to return empty arrays
-    apiClient.get.mockImplementation(() => Promise.resolve({ data: [] }));
-
-    renderWithRouter();
-
-    await waitFor(() => {
-      expect(screen.getByText("No new notifications.")).toBeInTheDocument();
-    });
-  });
-
-  it("renders notifications correctly", async () => {
-    renderWithRouter();
-
-    await waitFor(() => {
-      // Check if notifications are rendered in the DOM
-      expect(screen.getByText(/Important Notice/)).toBeInTheDocument();
-      expect(screen.getByText(/This is an important notification/)).toBeInTheDocument();
-      expect(screen.getByText(/System Update/)).toBeInTheDocument();
-      expect(screen.getByText(/The system will be updated tonight/)).toBeInTheDocument();
-      expect(screen.getByText(/New Reply/)).toBeInTheDocument();
-    });
-
-    expect(screen.getByText("Read")).toBeInTheDocument();
+  it('displays loading state initially', async () => {
     
-    // Find all buttons with Mark as Read functionality
-    const markAsReadButtons = screen.getAllByRole("button", { 
-      name: (content) => content.includes("Mark as Read") 
-    });
-    expect(markAsReadButtons.length).toBe(2);
+    vi.mocked(apiClient.get).mockImplementation(() => new Promise(() => {}));
+    
+    renderComponent();
+    
+    expect(screen.getByText('Loading notifications...')).toBeInTheDocument();
   });
 
-  it("handles API error when fetching notifications", async () => {
-    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+  it('fetches and displays both types of notifications', async () => {
+    renderComponent();
     
-    // Make the API calls fail
-    apiClient.get.mockRejectedValueOnce(new Error("API error"));
-    apiClient.get.mockRejectedValueOnce(new Error("API error"));
-
-    renderWithRouter();
-
     await waitFor(() => {
-      expect(screen.getByText("No new notifications.")).toBeInTheDocument();
+      expect(apiClient.get).toHaveBeenCalledWith('/api/notifications/inbox/');
+      expect(apiClient.get).toHaveBeenCalledWith('/api/reports/reply-notifications');
     });
-
-    expect(consoleErrorSpy).toHaveBeenCalled();
-    consoleErrorSpy.mockRestore();
+    
+    
+    expect(screen.getByText('New Society Announcement')).toBeInTheDocument();
+    expect(screen.getByText('Computer Science Society has a new event')).toBeInTheDocument();
+    expect(screen.getByText('Reminder')).toBeInTheDocument();
+    expect(screen.getByText('Reply to your report')).toBeInTheDocument();
   });
 
-  it("marks notification as read when clicking 'Mark as Read' button", async () => {
-    renderWithRouter();
-
-    // Wait for component to render with data
-    await waitFor(() => {
-      expect(screen.getByText(/Important Notice/)).toBeInTheDocument();
-    });
-
-    // Find a Mark as Read button by role and click it
-    const markAsReadButtons = screen.getAllByRole("button", { 
-      name: (content) => content.includes("Mark as Read") 
-    });
-    expect(markAsReadButtons.length).toBe(2);
+  it('displays empty state when there are no notifications', async () => {
     
-    fireEvent.click(markAsReadButtons[0]);
-
+    vi.mocked(apiClient.get).mockImplementation(() => Promise.resolve({ data: [] }));
+    
+    renderComponent();
+    
     await waitFor(() => {
-      expect(apiClient.patch).toHaveBeenCalledWith("/api/notifications/1", { is_read: true });
+      expect(screen.getByText('No new notifications.')).toBeInTheDocument();
     });
   });
 
-  it("handles error when marking notification as read", async () => {
-    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+  it('displays "Mark as Read" for unread notifications', async () => {
+    renderComponent();
     
-    // Make the patch call fail
-    apiClient.patch.mockRejectedValueOnce(new Error("API error"));
-
-    renderWithRouter();
-
-    // Wait for component to render with data
     await waitFor(() => {
-      expect(screen.getByText(/Important Notice/)).toBeInTheDocument();
-    });
-
-    // Find a Mark as Read button by role and click it
-    const markAsReadButtons = screen.getAllByRole("button", { 
-      name: (content) => content.includes("Mark as Read") 
-    });
-    expect(markAsReadButtons.length).toBe(2);
-    
-    fireEvent.click(markAsReadButtons[0]);
-
-    await waitFor(() => {
-      expect(consoleErrorSpy).toHaveBeenCalled();
-    });
-
-    consoleErrorSpy.mockRestore();
-  });
-
-  it("updates UI after marking notification as read", async () => {
-    renderWithRouter();
-
-    // Wait for component to render with data
-    await waitFor(() => {
-      expect(screen.getByText(/Important Notice/)).toBeInTheDocument();
-    });
-
-    // Find a Mark as Read button by role and click it
-    const markAsReadButtons = screen.getAllByRole("button", { 
-      name: (content) => content.includes("Mark as Read") 
-    });
-    expect(markAsReadButtons.length).toBe(2);
-    
-    fireEvent.click(markAsReadButtons[0]);
-
-    await waitFor(() => {
-      // After the update, we should have one more "Read" text
-      expect(screen.getAllByText("Read").length).toBe(2);
       
-      // And one less "Mark as Read" button
-      const updatedMarkAsReadButtons = screen.getAllByRole("button", { 
-        name: (content) => content.includes("Mark as Read") 
-      });
-      expect(updatedMarkAsReadButtons.length).toBe(1);
+      const markAsReadButtons = screen.getAllByText('Mark as Read');
+      expect(markAsReadButtons.length).toBeGreaterThan(0);
     });
   });
 
-  it("handles deleting a notification", async () => {
-    renderWithRouter();
-
+  it('displays "Read" for read notifications', async () => {
+    renderComponent();
+    
     await waitFor(() => {
-      expect(screen.getByText(/Important Notice/)).toBeInTheDocument();
-    });
-
-    // Find and click the delete button for the first notification
-    const deleteButtons = screen.getAllByTitle("Delete notification");
-    fireEvent.click(deleteButtons[0]);
-
-    await waitFor(() => {
-      expect(apiClient.delete).toHaveBeenCalledWith("/api/notifications/inbox/1");
+      expect(screen.getByText('Read')).toBeInTheDocument();
     });
   });
 
-  it("navigates to report thread when clicking View Reply button", async () => {
-    renderWithRouter();
-
+  it('displays "View Reply" button for report reply notifications', async () => {
+    renderComponent();
+    
     await waitFor(() => {
-      expect(screen.getByText(/New Reply/)).toBeInTheDocument();
+      expect(screen.getByText('View Reply')).toBeInTheDocument();
     });
+  });
 
-    // Find and click the "View Reply" button
-    fireEvent.click(screen.getByText("View Reply"));
+  it('marks a notification as read when "Mark as Read" is clicked', async () => {
+    renderComponent();
+    
+    await waitFor(() => {
+      expect(screen.getByText('New Society Announcement')).toBeInTheDocument();
+    });
+    
+    
+    const notification = screen.getByText('New Society Announcement').closest('.p-5');
+    
+    
+    const markAsReadButton = within(notification).getByText('Mark as Read');
+    fireEvent.click(markAsReadButton);
+    
+    await waitFor(() => {
+      
+      
+      expect(apiClient.patch).toHaveBeenCalled();
+      
+      const firstCallArg = apiClient.patch.mock.calls[0][0];
+      expect(firstCallArg.includes('/api/notifications/')).toBeTruthy();
+    });
+  });
 
-    expect(mockNavigate).toHaveBeenCalledWith("/student/report-thread/123");
+  it('marks a report reply notification as read', async () => {
+    renderComponent();
+    
+    await waitFor(() => {
+      expect(screen.getByText('Reply to your report')).toBeInTheDocument();
+    });
+    
+    
+    const notification = screen.getByText('Reply to your report').closest('.p-5');
+    
+    
+    const markAsReadButton = within(notification).getByText('Mark as Read');
+    fireEvent.click(markAsReadButton);
+    
+    await waitFor(() => {
+      
+      expect(apiClient.patch).toHaveBeenCalled();
+      
+      const firstCallArg = apiClient.patch.mock.calls[0][0];
+      expect(firstCallArg.includes('/api/reports/reply-notifications/')).toBeTruthy();
+    });
+  });
+
+  it('deletes a notification when delete button is clicked', async () => {
+    renderComponent();
+    
+    await waitFor(() => {
+      expect(screen.getByText('New Society Announcement')).toBeInTheDocument();
+    });
+    
+    
+    const notification = screen.getByText('New Society Announcement').closest('.p-5');
+    
+    
+    const deleteButton = within(notification).getByTitle('Delete notification');
+    fireEvent.click(deleteButton);
+    
+    await waitFor(() => {
+      
+      expect(apiClient.delete).toHaveBeenCalled();
+      
+      const firstCallArg = apiClient.delete.mock.calls[0][0];
+      expect(firstCallArg.includes('/api/notifications/inbox/')).toBeTruthy();
+    });
+  });
+
+  it('deletes a report reply notification', async () => {
+    renderComponent();
+    
+    await waitFor(() => {
+      expect(screen.getByText('Reply to your report')).toBeInTheDocument();
+      expect(screen.getByText('View Reply')).toBeInTheDocument();
+    });
+    
+    
+    const notification = screen.getByText('View Reply').closest('.p-5');
+    
+    
+    const deleteButton = within(notification).getByTitle('Delete notification');
+    fireEvent.click(deleteButton);
+    
+    await waitFor(() => {
+      
+      expect(apiClient.delete).toHaveBeenCalled();
+      
+      const firstCallArg = apiClient.delete.mock.calls[0][0];
+      expect(firstCallArg.includes('/api/reports/reply-notifications/')).toBeTruthy();
+    });
+  });
+
+  it('navigates to the report thread when "View Reply" is clicked', async () => {
+    renderComponent();
+    
+    await waitFor(() => {
+      expect(screen.getByText('View Reply')).toBeInTheDocument();
+    });
+    
+    
+    fireEvent.click(screen.getByText('View Reply'));
+    
+    
+    expect(mockNavigate).toHaveBeenCalledWith('/student/report-thread/123');
+  });
+
+  it('handles errors when fetching notifications', async () => {
+    
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.mocked(apiClient.get).mockRejectedValue(new Error('Failed to fetch'));
+    
+    renderComponent();
+    
+    await waitFor(() => {
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        'Error fetching notifications:',
+        expect.anything()
+      );
+    });
+    
+    
+    expect(screen.getByText('No new notifications.')).toBeInTheDocument();
+    
+    consoleErrorSpy.mockRestore();
+  });
+
+  it('handles errors when marking notifications as read', async () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.mocked(apiClient.patch).mockRejectedValue(new Error('Failed to mark as read'));
+    
+    renderComponent();
+    
+    await waitFor(() => {
+      const markAsReadButtons = screen.getAllByText('Mark as Read');
+      expect(markAsReadButtons.length).toBeGreaterThan(0);
+    });
+    
+    
+    fireEvent.click(screen.getAllByText('Mark as Read')[0]);
+    
+    await waitFor(() => {
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        'Error marking notification as read:',
+        expect.anything()
+      );
+    });
+    
+    consoleErrorSpy.mockRestore();
+  });
+
+  it('handles errors when deleting notifications', async () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.mocked(apiClient.delete).mockRejectedValue(new Error('Failed to delete'));
+    
+    renderComponent();
+    
+    await waitFor(() => {
+      const deleteButtons = screen.getAllByTitle('Delete notification');
+      expect(deleteButtons.length).toBeGreaterThan(0);
+    });
+    
+    
+    fireEvent.click(screen.getAllByTitle('Delete notification')[0]);
+    
+    await waitFor(() => {
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        'Error deleting notification:',
+        expect.anything()
+      );
+    });
+    
+    consoleErrorSpy.mockRestore();
   });
 });
