@@ -4,14 +4,19 @@ import { vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import StartSociety from '../StartSociety';
-import axios from 'axios';
 
-// Replace jest.mock with vi.mock
-vi.mock('axios', () => ({
-  default: {
-    post: vi.fn(),
-  },
-}));
+// Mock the module using vi.mock
+// Using string value instead of a factory function to avoid hoisting issues
+vi.mock('../../../api', () => {
+  return {
+    apiClient: {
+      post: vi.fn()
+    }
+  };
+});
+
+// Import after mocking
+import { apiClient } from '../../../api';
 
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async () => {
@@ -32,7 +37,6 @@ const darkTheme = createTheme({
 describe('StartSociety', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.resetModules();
   });
 
   const renderComponent = (theme = lightTheme) =>
@@ -85,60 +89,59 @@ describe('StartSociety', () => {
   });
 
   it('submits the form successfully and clears fields on a 201 response', async () => {
-    (axios.post as unknown as vi.Mock).mockResolvedValueOnce({ status: 201 });
+    // Setup the mock to return a successful response
+    (apiClient.post as jest.Mock).mockResolvedValueOnce({ status: 201 });
+    
     renderComponent();
     const nameInput = screen.getByLabelText(/Society Name/i) as HTMLInputElement;
     const descriptionInput = screen.getByLabelText(/Description/i) as HTMLTextAreaElement;
+    
     await act(async () => {
       fireEvent.change(nameInput, { target: { value: 'New Society' } });
       fireEvent.change(descriptionInput, { target: { value: 'A new society description' } });
-    });
-    await act(async () => {
       fireEvent.submit(screen.getByRole('button', { name: /Submit Request/i }));
     });
-    await waitFor(() =>
-      expect(
-        screen.getByText(/Society creation request submitted successfully!/i)
-      ).toBeInTheDocument()
-    );
+    
+    expect(apiClient.post).toHaveBeenCalledWith("/api/start-society/", {
+      name: "New Society",
+      description: "A new society description",
+    });
+    
+    expect(screen.getByText(/Society creation request submitted successfully!/i)).toBeInTheDocument();
     expect(nameInput.value).toBe('');
     expect(descriptionInput.value).toBe('');
   });
 
   it('shows an error message when submission returns a non-201 response', async () => {
-    (axios.post as unknown as vi.Mock).mockResolvedValueOnce({ status: 400 });
+    (apiClient.post as jest.Mock).mockResolvedValueOnce({ status: 400 });
+    
     renderComponent();
     const nameInput = screen.getByLabelText(/Society Name/i) as HTMLInputElement;
     const descriptionInput = screen.getByLabelText(/Description/i) as HTMLTextAreaElement;
+    
     await act(async () => {
       fireEvent.change(nameInput, { target: { value: 'Test Society' } });
       fireEvent.change(descriptionInput, { target: { value: 'Test description' } });
-    });
-    await act(async () => {
       fireEvent.submit(screen.getByRole('button', { name: /Submit Request/i }));
     });
-    await waitFor(() =>
-      expect(screen.getByText(/Something went wrong. Please try again./i)).toBeInTheDocument()
-    );
+    
+    expect(screen.getByText(/Something went wrong. Please try again./i)).toBeInTheDocument();
   });
 
-  it('shows an error message when axios.post fails', async () => {
-    (axios.post as unknown as vi.Mock).mockRejectedValueOnce(new Error('Network error'));
+  it('shows an error message when apiClient.post fails', async () => {
+    (apiClient.post as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
+    
     renderComponent();
     const nameInput = screen.getByLabelText(/Society Name/i) as HTMLInputElement;
     const descriptionInput = screen.getByLabelText(/Description/i) as HTMLTextAreaElement;
+    
     await act(async () => {
       fireEvent.change(nameInput, { target: { value: 'Test Society' } });
       fireEvent.change(descriptionInput, { target: { value: 'Test description' } });
-    });
-    await act(async () => {
       fireEvent.submit(screen.getByRole('button', { name: /Submit Request/i }));
     });
-    await waitFor(() =>
-      expect(
-        screen.getByText(/Failed to create society. Please try again later./i)
-      ).toBeInTheDocument()
-    );
+    
+    expect(screen.getByText(/Failed to create society. Please try again later./i)).toBeInTheDocument();
   });
 
   it('renders correctly in dark mode', () => {
@@ -147,33 +150,31 @@ describe('StartSociety', () => {
   });
 
   it('allows submitting a new request after success', async () => {
-    (axios.post as unknown as vi.Mock).mockResolvedValueOnce({ status: 201 });
+    (apiClient.post as jest.Mock).mockResolvedValueOnce({ status: 201 });
+    
     renderComponent();
     const nameInput = screen.getByLabelText(/Society Name/i) as HTMLInputElement;
     const descriptionInput = screen.getByLabelText(/Description/i) as HTMLTextAreaElement;
+    
     await act(async () => {
       fireEvent.change(nameInput, { target: { value: 'First Society' } });
       fireEvent.change(descriptionInput, { target: { value: 'First description' } });
       fireEvent.submit(screen.getByRole('button', { name: /Submit Request/i }));
     });
-    await waitFor(() =>
-      expect(
-        screen.getByText(/Society creation request submitted successfully!/i)
-      ).toBeInTheDocument()
-    );
-    (axios.post as unknown as vi.Mock).mockResolvedValueOnce({ status: 201 });
+    
+    expect(screen.getByText(/Society creation request submitted successfully!/i)).toBeInTheDocument();
+    
+    (apiClient.post as jest.Mock).mockResolvedValueOnce({ status: 201 });
+    
     await act(async () => {
       fireEvent.change(nameInput, { target: { value: 'Second Society' } });
       fireEvent.change(descriptionInput, { target: { value: 'Second description' } });
       fireEvent.submit(screen.getByRole('button', { name: /Submit Request/i }));
     });
-    await waitFor(() =>
-      expect(
-        screen.getByText(/Society creation request submitted successfully!/i)
-      ).toBeInTheDocument()
-    );
-    expect(axios.post).toHaveBeenCalledTimes(2);
-    expect(axios.post).toHaveBeenNthCalledWith(2, "/api/start-society/", {
+    
+    expect(screen.getByText(/Society creation request submitted successfully!/i)).toBeInTheDocument();
+    expect(apiClient.post).toHaveBeenCalledTimes(2);
+    expect(apiClient.post).toHaveBeenNthCalledWith(2, "/api/start-society/", {
       name: "Second Society",
       description: "Second description",
     });
@@ -181,102 +182,102 @@ describe('StartSociety', () => {
 
   it('clears error message when form is submitted successfully after an error', async () => {
     renderComponent();
+    
     await act(async () => {
       fireEvent.submit(screen.getByRole('button', { name: /Submit Request/i }));
     });
+    
     expect(screen.getByText(/Please fill out all fields./i)).toBeInTheDocument();
-    (axios.post as unknown as vi.Mock).mockResolvedValueOnce({ status: 201 });
+    
+    (apiClient.post as jest.Mock).mockResolvedValueOnce({ status: 201 });
+    
     const nameInput = screen.getByLabelText(/Society Name/i) as HTMLInputElement;
     const descriptionInput = screen.getByLabelText(/Description/i) as HTMLTextAreaElement;
+    
     await act(async () => {
       fireEvent.change(nameInput, { target: { value: 'Test Society' } });
       fireEvent.change(descriptionInput, { target: { value: 'Test description' } });
       fireEvent.submit(screen.getByRole('button', { name: /Submit Request/i }));
     });
-    await waitFor(() => {
-      expect(screen.queryByText(/Please fill out all fields./i)).not.toBeInTheDocument();
-      expect(
-        screen.getByText(/Society creation request submitted successfully!/i)
-      ).toBeInTheDocument();
-    });
+    
+    expect(screen.queryByText(/Please fill out all fields./i)).not.toBeInTheDocument();
+    expect(screen.getByText(/Society creation request submitted successfully!/i)).toBeInTheDocument();
   });
 
   it('clears success message when form submission fails after a success', async () => {
-    (axios.post as unknown as vi.Mock).mockResolvedValueOnce({ status: 201 });
+    (apiClient.post as jest.Mock).mockResolvedValueOnce({ status: 201 });
+    
     renderComponent();
     const nameInput = screen.getByLabelText(/Society Name/i) as HTMLInputElement;
     const descriptionInput = screen.getByLabelText(/Description/i) as HTMLTextAreaElement;
+    
     await act(async () => {
       fireEvent.change(nameInput, { target: { value: 'Test Society' } });
       fireEvent.change(descriptionInput, { target: { value: 'Test description' } });
       fireEvent.submit(screen.getByRole('button', { name: /Submit Request/i }));
     });
-    await waitFor(() =>
-      expect(
-        screen.getByText(/Society creation request submitted successfully!/i)
-      ).toBeInTheDocument()
-    );
-    (axios.post as unknown as vi.Mock).mockResolvedValueOnce({ status: 400 });
+    
+    expect(screen.getByText(/Society creation request submitted successfully!/i)).toBeInTheDocument();
+    
+    (apiClient.post as jest.Mock).mockResolvedValueOnce({ status: 400 });
+    
     await act(async () => {
       fireEvent.change(nameInput, { target: { value: 'Another Society' } });
       fireEvent.change(descriptionInput, { target: { value: 'Another description' } });
       fireEvent.submit(screen.getByRole('button', { name: /Submit Request/i }));
     });
-    await waitFor(() => {
-      expect(
-        screen.queryByText(/Society creation request submitted successfully!/i)
-      ).not.toBeInTheDocument();
-      expect(screen.getByText(/Something went wrong. Please try again./i)).toBeInTheDocument();
-    });
+    
+    expect(screen.queryByText(/Society creation request submitted successfully!/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/Something went wrong. Please try again./i)).toBeInTheDocument();
   });
 
-  it('handles axios error with response data correctly', async () => {
+  it('handles api error with response data correctly', async () => {
     const consoleSpy = vi.spyOn(console, 'error');
     const errorWithResponse = {
       response: {
         data: { message: 'Society name already exists' },
       },
     };
-    (axios.post as unknown as vi.Mock).mockRejectedValueOnce(errorWithResponse);
+    
+    (apiClient.post as jest.Mock).mockRejectedValueOnce(errorWithResponse);
+    
     renderComponent();
     const nameInput = screen.getByLabelText(/Society Name/i) as HTMLInputElement;
     const descriptionInput = screen.getByLabelText(/Description/i) as HTMLTextAreaElement;
+    
     await act(async () => {
       fireEvent.change(nameInput, { target: { value: 'Test Society' } });
       fireEvent.change(descriptionInput, { target: { value: 'Test description' } });
       fireEvent.submit(screen.getByRole('button', { name: /Submit Request/i }));
     });
-    await waitFor(() => {
-      expect(
-        screen.getByText(/Failed to create society. Please try again later./i)
-      ).toBeInTheDocument();
-    });
+    
+    expect(screen.getByText(/Failed to create society. Please try again later./i)).toBeInTheDocument();
     expect(consoleSpy).toHaveBeenCalled();
     consoleSpy.mockRestore();
   });
 
-  it('handles different types of axios errors correctly', async () => {
+  it('handles different types of api errors correctly', async () => {
     const errorWithStatusCode = {
       response: {
         status: 403,
         data: { error: 'Permission denied' },
       },
     };
+    
     const consoleSpy = vi.spyOn(console, 'error');
-    (axios.post as unknown as vi.Mock).mockRejectedValueOnce(errorWithStatusCode);
+    (apiClient.post as jest.Mock).mockRejectedValueOnce(errorWithStatusCode);
+    
     renderComponent();
     const nameInput = screen.getByLabelText(/Society Name/i) as HTMLInputElement;
     const descriptionInput = screen.getByLabelText(/Description/i) as HTMLTextAreaElement;
+    
     await act(async () => {
       fireEvent.change(nameInput, { target: { value: 'Test Society' } });
       fireEvent.change(descriptionInput, { target: { value: 'Test description' } });
       fireEvent.submit(screen.getByRole('button', { name: /Submit Request/i }));
     });
-    await waitFor(() => {
-      expect(
-        screen.getByText(/Failed to create society. Please try again later./i)
-      ).toBeInTheDocument();
-    });
+    
+    expect(screen.getByText(/Failed to create society. Please try again later./i)).toBeInTheDocument();
     expect(consoleSpy).toHaveBeenCalled();
     consoleSpy.mockRestore();
   });
