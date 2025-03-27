@@ -25,6 +25,11 @@ jobs:
         python -m pip install --upgrade pip
         pip3 install -r requirements.txt
 
+    - name: Download NLTK punkt tokenizer
+      working-directory: backend
+      run: |
+        python3 -m nltk.downloader punkt
+
     - name: Run Tests
       working-directory: backend
       run: |
