@@ -230,10 +230,10 @@ class SeedingTestCase(TransactionTestCase):
         self.assertEqual(er.intent, "CreateEve")
         self.assertIsNone(er.approved)
 
-
     @patch("api.management.commands.seeding.event_generator.choice")
     def test_handle_event_status_rejected(self, mock_choice):
-        """Test handle_event_status creates an EventRequest with approved True for 'Rejected' status."""
+        """Test handle_event_status creates an EventRequest
+        with approved True for 'Rejected' status."""
         generator = self.command_instance.event_generator
         # Define a side effect that returns "Rejected" when the sequence is the status list,
         # and for other lists (like valid_hours or valid_minutes), return the first element.

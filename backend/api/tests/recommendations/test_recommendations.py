@@ -1,10 +1,11 @@
-from tests.nltk_setup import ensure_punkt_downloaded
-ensure_punkt_downloaded()
-
+from api.tests.nltk_setup import ensure_punkt_downloaded
 from django.test import TestCase
 from api.nlp_similarity import text_similarity_analyzer
 from api.models import Society, Student, User
 from api.recommendation_service import SocietyRecommender
+
+ensure_punkt_downloaded()
+
 
 class TestRecommendationSystem(TestCase):
     """Test provided recommendations validity"""

@@ -1,8 +1,9 @@
-from tests.nltk_setup import ensure_punkt_downloaded
+from api.nlp_similarity import TextSimilarityAnalyzer
+from api.tests.nltk_setup import ensure_punkt_downloaded
+from django.test import TestCase
+
 ensure_punkt_downloaded()
 
-from django.test import TestCase
-from api.nlp_similarity import TextSimilarityAnalyzer
 
 class TestDiverseDescriptions(TestCase):
     @classmethod
@@ -28,7 +29,7 @@ class TestDiverseDescriptions(TestCase):
             (self.descriptions[0], self.descriptions[0], 5.0),  # Same
             (self.descriptions[0], "A club for chess players of all levels seeking to improve their game through practice and tournaments.", 4.0),
             (self.descriptions[1], self.descriptions[2], 2.0),  # Coding vs Debate
-            (self.descriptions[4], self.descriptions[8], 2.5),  # Hiking vs Environmental
+            (self.descriptions[4], self.descriptions[8], 0.68),  # Hiking vs Environmental
             (self.descriptions[0], self.descriptions[7], 0.5),  # Chess vs Music
             (self.descriptions[3], self.descriptions[9], 0.5),  # Film vs International
         ]

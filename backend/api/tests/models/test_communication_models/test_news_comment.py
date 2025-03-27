@@ -1,6 +1,7 @@
 from django.test import TestCase
-from django.utils import timezone
 from django.db import IntegrityError
+from django.db import connection
+from django.db import transaction
 from api.models import NewsComment, SocietyNews, Society, Student, User
 
 
@@ -14,7 +15,7 @@ class NewsCommentModelTest(TestCase):
             role="admin",
             is_staff=True
         )
-        
+
         cls.student1 = Student.objects.create_user(
             username="student1",
             email="student1@example.com",
@@ -24,7 +25,7 @@ class NewsCommentModelTest(TestCase):
             last_name="One",
             status="Approved"
         )
-        
+
         cls.student2 = Student.objects.create_user(
             username="student2",
             email="student2@example.com",
@@ -34,7 +35,7 @@ class NewsCommentModelTest(TestCase):
             last_name="Two",
             status="Approved"
         )
-        
+
         cls.society = Society.objects.create(
             name="Test Society",
             description="A test society",
@@ -42,7 +43,7 @@ class NewsCommentModelTest(TestCase):
             president=cls.student1,
             approved_by=cls.admin_user
         )
-        
+
         cls.news_post = SocietyNews.objects.create(
             society=cls.society,
             title="Test News Post",
@@ -50,7 +51,7 @@ class NewsCommentModelTest(TestCase):
             author=cls.student1,
             status="Published"
         )
-        
+
         cls.comment = NewsComment.objects.create(
             news_post=cls.news_post,
             user=cls.student1,
@@ -77,7 +78,7 @@ class NewsCommentModelTest(TestCase):
             content="This is a reply to the test comment.",
             parent_comment=self.comment
         )
-        
+
         self.assertEqual(reply.parent_comment, self.comment)
         self.assertEqual(self.comment.total_replies(), 1)
         self.assertIn(reply, self.comment.replies.all())
@@ -89,28 +90,28 @@ class NewsCommentModelTest(TestCase):
             content="First level reply",
             parent_comment=self.comment
         )
-        
+
         reply2 = NewsComment.objects.create(
             news_post=self.news_post,
             user=self.student1,
             content="Second level reply",
             parent_comment=reply1
         )
-        
+
         self.assertEqual(self.comment.total_replies(), 1)
         self.assertEqual(reply1.total_replies(), 1)
         self.assertEqual(reply2.total_replies(), 0)
 
     def test_like_comment(self):
         self.comment.likes.add(self.student2)
-        
+
         self.assertEqual(self.comment.total_likes, 1)
         self.assertTrue(self.comment.liked_by(self.student2))
         self.assertFalse(self.comment.liked_by(self.student1))
 
     def test_dislike_comment(self):
         self.comment.dislikes.add(self.student2)
-        
+
         self.assertEqual(self.comment.total_dislikes, 1)
         self.assertTrue(self.comment.disliked_by(self.student2))
         self.assertFalse(self.comment.disliked_by(self.student1))
@@ -118,7 +119,7 @@ class NewsCommentModelTest(TestCase):
     def test_like_and_dislike_same_comment(self):
         self.comment.likes.add(self.student2)
         self.comment.dislikes.add(self.student2)
-        
+
         self.assertEqual(self.comment.total_likes, 1)
         self.assertEqual(self.comment.total_dislikes, 1)
         self.assertTrue(self.comment.liked_by(self.student2))
@@ -126,7 +127,7 @@ class NewsCommentModelTest(TestCase):
 
     def test_multiple_users_reactions(self):
         self.comment.likes.add(self.student1, self.student2)
-        
+
         self.assertEqual(self.comment.total_likes, 2)
         self.assertTrue(self.comment.liked_by(self.student1))
         self.assertTrue(self.comment.liked_by(self.student2))
@@ -134,7 +135,7 @@ class NewsCommentModelTest(TestCase):
     def test_remove_like(self):
         self.comment.likes.add(self.student2)
         self.assertEqual(self.comment.total_likes, 1)
-        
+
         self.comment.likes.remove(self.student2)
         self.assertEqual(self.comment.total_likes, 0)
         self.assertFalse(self.comment.liked_by(self.student2))
@@ -142,28 +143,26 @@ class NewsCommentModelTest(TestCase):
     def test_delete_news_post_cascades_to_comments(self):
         comment_id = self.comment.id
         self.news_post.delete()
-        
+
         with self.assertRaises(NewsComment.DoesNotExist):
             NewsComment.objects.get(id=comment_id)
 
     def test_delete_user_cascades_to_comments(self):
-        
         test_user = User.objects.create_user(
             username="test_only_user",
             email="testonly@example.com",
             password="password123"
         )
-        
-        
+
         test_comment = NewsComment.objects.create(
             news_post=self.news_post,
             user=test_user,
             content="Comment that will be deleted with user"
         )
-        
+
         comment_id = test_comment.id
         test_user.delete()
-        
+
         with self.assertRaises(NewsComment.DoesNotExist):
             NewsComment.objects.get(id=comment_id)
 
@@ -174,10 +173,10 @@ class NewsCommentModelTest(TestCase):
             content="This will be deleted with parent",
             parent_comment=self.comment
         )
-        
+
         reply_id = reply.id
         self.comment.delete()
-        
+
         with self.assertRaises(NewsComment.DoesNotExist):
             NewsComment.objects.get(id=reply_id)
 
@@ -188,37 +187,31 @@ class NewsCommentModelTest(TestCase):
                 user=self.student2,
                 content="Missing news_post"
             )
-            
+
     def test_user_required(self):
         """Test that user is required"""
-        
-        
-        from django.db import connection
         if getattr(connection, 'needs_rollback', False):
             self.skipTest("Previous transaction is in a broken state")
-            
-        
-        from django.db import transaction
+
         try:
             with transaction.atomic():
                 NewsComment.objects.create(
                     news_post=self.news_post,
                     content="Missing user"
                 )
-                
+
                 self.fail("IntegrityError was not raised")
         except IntegrityError:
-            
             pass
-    
+
     def test_ordering(self):
         newer_comment = NewsComment.objects.create(
             news_post=self.news_post,
             user=self.student2,
             content="This is a newer comment"
         )
-        
+
         comments = NewsComment.objects.filter(news_post=self.news_post, parent_comment=None)
-        
+
         self.assertEqual(comments[0], self.comment)
         self.assertEqual(comments[1], newer_comment)
