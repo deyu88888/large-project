@@ -4,7 +4,7 @@ This is a **Vite + React + TypeScript** frontend application using **TailwindCSS
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -49,8 +49,11 @@ npm run test:coverage
 npm run lint
 ```
 
+---
+
 ### Project structure
 
+```bash
 ├── public/             # Static assets
 ├── src/                # Main application source
 │   ├── components/     # Reusable UI components
@@ -58,10 +61,16 @@ npm run lint
 │   ├── pages/          # Route-based page components
 |   |   ├───__test__/   # Tests
 │   ├── hooks/          # Custom hooks
-│   ├── store/          # Zustand global store
+│   ├── stores/         # Zustand global store
 │   ├── utils/          # Utility functions
 │   ├── styles/         # Tailwind and global styles
+│   ├── types/          # Shared typescript types
+│   ├── routes/         # React dom router setup
+│   ├── theme/          # MUI theme setup
+│   ├── constants/      # Constants used accross the app
+│   ├── assets/         # Assets used in the app
 │   └── main.tsx        # App entry point
 ├── vite.config.ts      # Vite configuration
 ├── tsconfig.json       # TypeScript configuration
 └── package.json
+```
