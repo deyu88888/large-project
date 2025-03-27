@@ -25,14 +25,14 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>192/192</span>
+                <span class='fraction'>194/194</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>36/36</span>
+                <span class='fraction'>44/44</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>192/192</span>
+                <span class='fraction'>194/194</span>
             </div>
         
             
@@ -308,8 +308,7 @@
 <a name='L243'></a><a href='#L243'>243</a>
 <a name='L244'></a><a href='#L244'>244</a>
 <a name='L245'></a><a href='#L245'>245</a>
-<a name='L246'></a><a href='#L246'>246</a>
-<a name='L247'></a><a href='#L247'>247</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<a name='L246'></a><a href='#L246'>246</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
@@ -360,6 +359,7 @@
 <span class="cline-any cline-yes">15x</span>
 <span class="cline-any cline-yes">15x</span>
 <span class="cline-any cline-yes">15x</span>
+<span class="cline-any cline-yes">14x</span>
 <span class="cline-any cline-yes">14x</span>
 <span class="cline-any cline-yes">15x</span>
 <span class="cline-any cline-yes">1x</span>
@@ -498,8 +498,7 @@
 <span class="cline-any cline-yes">28x</span>
 <span class="cline-any cline-yes">28x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">30x</span>
 <span class="cline-any cline-yes">30x</span>
 <span class="cline-any cline-yes">15x</span>
 <span class="cline-any cline-yes">15x</span>
@@ -508,7 +507,6 @@
 <span class="cline-any cline-yes">15x</span>
 <span class="cline-any cline-yes">15x</span>
 <span class="cline-any cline-yes">15x</span>
-<span class="cline-any cline-yes">15x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">15x</span>
 <span class="cline-any cline-yes">15x</span>
@@ -523,7 +521,7 @@
 <span class="cline-any cline-yes">15x</span>
 <span class="cline-any cline-yes">15x</span>
 <span class="cline-any cline-yes">15x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">30x</span>
 <span class="cline-any cline-yes">30x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -599,19 +597,20 @@ const PresidentDrawer: React.FC&lt;PresidentDrawerProps&gt; = ({
   location,
 }) =&gt; {
   const [selected, setSelected] = useState("Dashboard");
-  const [student, setStudent] = useState&lt;any&gt;({});
+  const [student, setStudent] = useState&lt;any&gt;(null);
   const navigate = useNavigate();
 &nbsp;
   useEffect(() =&gt; {
-    const fetchStudentData = async () =&gt; {
-      try {
-        const response = await apiClient.get("/api/user/current");
-        setStudent(response.data);
-      } catch (error) {
-        console.error("Error retrieving student:", error);
-        alert("Failed to retrieve student. Please contact an administrator.");
-      }
-    };  
+      const fetchStudentData = async () =&gt; {
+        try {
+          const response = await apiClient.get("/api/user/current");
+          setStudent(response.data);
+          console.log(response.data);
+        } catch (error) {
+          console.error("Error retrieving student:", error);
+          alert("Failed to retrieve student. Please contact an administrator.");
+        }
+      };  
     fetchStudentData();
   }, []);
 &nbsp;
@@ -652,14 +651,14 @@ const PresidentDrawer: React.FC&lt;PresidentDrawerProps&gt; = ({
           &lt;Box sx={{ textAlign: "center" }}&gt;
             &lt;Link to="/student/profile" style={{ textDecoration: "none", color: "inherit" }}&gt;
               &lt;img
-                src={student?.icon}
-                alt={`${student?.username || 'User'} icon`}
-                style={{
-                  width: "72px",
-                  height: "72px",
-                  borderRadius: "50%",
-                  margin: "0 auto"
-                }}
+              src={student?.icon}
+              alt={`${student?.username || 'User'} icon`}
+              style={{
+                width: "72px",
+                height: "72px",
+                borderRadius: "50%",
+                margin: "0 auto"
+              }}
               /&gt;
               &lt;Typography variant="h6" fontWeight="bold" sx={{ mt: "10px" }}&gt;
                 {student?.first_name} {student?.last_name}
@@ -744,14 +743,12 @@ const PresidentDrawer: React.FC&lt;PresidentDrawerProps&gt; = ({
           &lt;/Typography&gt;
         &lt;/Box&gt;
       )}
-      
-      {/* Only render this section if student.president_of exists */}
-      {student?.president_of &amp;&amp; (
-        &lt;List&gt;
+      &lt;List&gt;
+        {student &amp;&amp; student.president_of ? (
           &lt;ListItem disablePadding&gt;
             &lt;ListItemButton
               component={Link}
-              to={`/president-page/${student.president_of}`}
+              to={"/president-page/" + student.president_of}
               selected={selected === "Manage My Societies"}
               onClick={<span class="fstat-no" title="function not covered" >() =&gt; setSelected("Manage My Societies")}</span>
               sx={{ justifyContent: drawer ? "initial" : "center", px: 2.5 }}
@@ -768,8 +765,8 @@ const PresidentDrawer: React.FC&lt;PresidentDrawerProps&gt; = ({
               {drawer &amp;&amp; &lt;ListItemText primary="Manage My Societies" /&gt;}
             &lt;/ListItemButton&gt;
           &lt;/ListItem&gt;
-        &lt;/List&gt;
-      )}
+        ) : null}
+      &lt;/List&gt;
       &lt;Divider /&gt;
 &nbsp;
       {/* Logout Item */}
@@ -808,7 +805,7 @@ export default PresidentDrawer;</pre></td></tr></table></pre>
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-03-27T02:34:14.760Z
+                at 2025-03-27T03:29:05.879Z
             </div>
         <script src="../../../../prettify.js"></script>
         <script>
