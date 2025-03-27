@@ -23,7 +23,7 @@ interface DataGridProps {
 }
 
 
-const WS_URL = "ws:";
+const WS_URL = "ws://127.0.0.1:8000/ws/admin/event/";
 const RECONNECT_DELAY = 5000;
 
 
