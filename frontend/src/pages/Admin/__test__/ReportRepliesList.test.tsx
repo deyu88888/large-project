@@ -143,8 +143,8 @@ describe('ReportRepliesList', () => {
     // Wait for and check if DataGrid receives the correct data
     await waitFor(() => {
       expect(screen.getByTestId('row-count').textContent).toBe('2');
-      // Fix: Change the expected column count from 8 to 7 to match the actual component
-      expect(screen.getByTestId('column-count').textContent).toBe('7');
+      // Update to expect 8 columns to match the actual component
+      expect(screen.getByTestId('column-count').textContent).toBe('8');
       expect(screen.getByTestId('row-1')).toHaveTextContent('Test Subject 1');
       expect(screen.getByTestId('row-2')).toHaveTextContent('Test Subject 2');
     });
