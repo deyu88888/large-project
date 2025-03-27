@@ -7,7 +7,7 @@ from api.recommendation_service import SocietyRecommender
 try:
     nltk.data.find('tokenizers/punkt')
 except LookupError:
-    nltk.download('punkt')
+    nltk.download('punkt', quiet=True)
 
 class TestRecommendationSystem(TestCase):
 

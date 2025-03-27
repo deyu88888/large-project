@@ -3,7 +3,7 @@ import nltk
 try:
     nltk.data.find('tokenizers/punkt')
 except LookupError:
-    nltk.download('punkt')
+    nltk.download('punkt', quiet=True)
 
 from django.test import TestCase
 from api.nlp_similarity import TextSimilarityAnalyzer
