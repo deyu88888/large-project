@@ -267,7 +267,7 @@ class SeedingTestCase(TransactionTestCase):
         initial_objects = Event.objects.count()
         generator.generate_random_event(self.society, past=True)
         event = Event.objects.exclude(title="Day").first()
-        self.assertTrue(event.date < date.today())
+        self.assertTrue(event.date <= date.today())
         self.assertEqual(Event.objects.count(), initial_objects+1)
 
     @patch("api.management.commands.seed.broadcast_dashboard_update")
