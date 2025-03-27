@@ -4,14 +4,15 @@ import Link from "@mui/material/Link";
 import FacebookIcon from "@mui/icons-material/Facebook";
 import InstagramIcon from "@mui/icons-material/Instagram";
 import XIcon from "@mui/icons-material/X";
-import WhatsAppIcon from '@mui/icons-material/WhatsApp';
-import StarOutlineRoundedIcon from '@mui/icons-material/StarOutlineRounded';
+import WhatsAppIcon from "@mui/icons-material/WhatsApp";
+import StarOutlineRoundedIcon from "@mui/icons-material/StarOutlineRounded";
 import { tokens } from "../theme/theme";
 import { Box, Divider, Paper, Typography } from "@mui/material";
 import { useSettingsStore } from "../stores/settings-store";
+import { Society } from "../types/student/society";
 
 interface SocietyDetailLayoutProps {
-  society: any;
+  society: Society;
   loading: boolean;
   joined: number | boolean;
   onJoinSociety: (societyId: number) => void;
@@ -54,8 +55,6 @@ const SocietyDetailLayout: React.FC<SocietyDetailLayoutProps> = ({
   if (society?.icon) {
     if (typeof society.icon === "string") {
       iconSrc = society.icon;
-    } else if (society.icon instanceof File) {
-      iconSrc = URL.createObjectURL(society.icon);
     }
   }
 
@@ -69,7 +68,7 @@ const SocietyDetailLayout: React.FC<SocietyDetailLayoutProps> = ({
         backgroundColor: isLight ? colours.primary[500] : colours.primary[500],
         maxWidth: drawer ? `calc(90vw - 125px)` : "90vw",
         marginLeft: "auto",
-        marginRight: "auto", 
+        marginRight: "auto",
       }}
     >
       <Box
@@ -82,7 +81,14 @@ const SocietyDetailLayout: React.FC<SocietyDetailLayoutProps> = ({
         }}
       >
         <header style={{ textAlign: "center", marginBottom: "0rem" }}>
-          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", flexDirection: "column" }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              flexDirection: "column",
+            }}
+          >
             {society?.icon && (
               <img
                 src={iconSrc}
@@ -96,7 +102,7 @@ const SocietyDetailLayout: React.FC<SocietyDetailLayoutProps> = ({
                 }}
               />
             )}
-            
+
             <h1
               style={{
                 fontSize: "2.25rem",
@@ -120,7 +126,7 @@ const SocietyDetailLayout: React.FC<SocietyDetailLayoutProps> = ({
         >
           {society?.category}
         </p>
-        
+
         <div
           style={{
             display: "flex",
@@ -150,7 +156,9 @@ const SocietyDetailLayout: React.FC<SocietyDetailLayoutProps> = ({
                 px: 2,
                 pb: 2,
                 mb: 3,
-                backgroundColor: isLight ? colours.primary[500] : colours.primary[500],
+                backgroundColor: isLight
+                  ? colours.primary[500]
+                  : colours.primary[500],
               }}
             >
               <Box
@@ -166,7 +174,9 @@ const SocietyDetailLayout: React.FC<SocietyDetailLayoutProps> = ({
                 <Box
                   sx={{
                     px: 2,
-                    backgroundColor: isLight ? colours.primary[500] : colours.primary[500],
+                    backgroundColor: isLight
+                      ? colours.primary[500]
+                      : colours.primary[500],
                     color: "secondary.main",
                     fontWeight: "bold",
                     textAlign: "center",
@@ -175,26 +185,35 @@ const SocietyDetailLayout: React.FC<SocietyDetailLayoutProps> = ({
                   SOCIETY ROLES
                 </Box>
               </Box>
-              <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                }}
+              >
                 <Typography variant="h5" sx={{ mb: 1 }}>
                   <strong>President: </strong>
-                  <a href={"/student/profile/"+society.president.id}>
-                    {society?.president.first_name} {society?.president.last_name}
+                  <a href={"/student/profile/" + society.president.id}>
+                    {society?.president.first_name}{" "}
+                    {society?.president.last_name}
                   </a>
                 </Typography>
                 {society?.vice_president && (
                   <Typography variant="h5" sx={{ mb: 1 }}>
-                    <strong>Vice President: </strong> 
-                    <a href={"/student/profile/"+society.vice_president.id}>
-                      {society.vice_president.first_name} {society.vice_president.last_name}
+                    <strong>Vice President: </strong>
+                    <a href={"/student/profile/" + society.vice_president.id}>
+                      {society.vice_president.first_name}{" "}
+                      {society.vice_president.last_name}
                     </a>
                   </Typography>
                 )}
                 {society?.event_manager && (
                   <Typography variant="h5" sx={{ mb: 1 }}>
-                    <strong>Event Manager: </strong> 
-                    <a href={"/student/profile/"+society.event_manager.id}>
-                      {society.event_manager.first_name} {society.event_manager.last_name}
+                    <strong>Event Manager: </strong>
+                    <a href={"/student/profile/" + society.event_manager.id}>
+                      {society.event_manager.first_name}{" "}
+                      {society.event_manager.last_name}
                     </a>
                   </Typography>
                 )}
@@ -205,7 +224,9 @@ const SocietyDetailLayout: React.FC<SocietyDetailLayoutProps> = ({
                 <button
                   onClick={() => onJoinSociety(society.id)}
                   style={{
-                    backgroundColor: isLight ? colours.blueAccent[400] : colours.blueAccent[500],
+                    backgroundColor: isLight
+                      ? colours.blueAccent[400]
+                      : colours.blueAccent[500],
                     color: isLight ? "#ffffff" : colours.grey[100],
                     padding: "0.5rem 1.5rem",
                     borderRadius: "0.5rem",
@@ -221,7 +242,9 @@ const SocietyDetailLayout: React.FC<SocietyDetailLayoutProps> = ({
                 <button
                   disabled
                   style={{
-                    backgroundColor: isLight ? colours.grey[900] : colours.grey[300],
+                    backgroundColor: isLight
+                      ? colours.grey[900]
+                      : colours.grey[300],
                     color: isLight ? colours.grey[0] : "#ffffff",
                     padding: "0.5rem 1.5rem",
                     borderRadius: "0.5rem",
@@ -248,7 +271,13 @@ const SocietyDetailLayout: React.FC<SocietyDetailLayoutProps> = ({
               p: 6,
             }}
           >
-            <Typography variant="h3" gutterBottom textAlign="center" padding={2} sx={{ fontWeight: "bold", fontFamily: "monaco" }}>
+            <Typography
+              variant="h3"
+              gutterBottom
+              textAlign="center"
+              padding={2}
+              sx={{ fontWeight: "bold", fontFamily: "monaco" }}
+            >
               Our Society Moments!
             </Typography>
             <Box
@@ -264,37 +293,45 @@ const SocietyDetailLayout: React.FC<SocietyDetailLayoutProps> = ({
             >
               {[...Array(6).keys()].map((_, index) => (
                 <Box key={index} sx={{ display: "inline-flex", gap: 2 }}>
-                  {society.showreel_images.map((showreel: any, showreelIndex: number) => (
-                    <Paper
-                      key={showreelIndex}
-                      elevation={2}
-                      sx={{
-                        p: 1,
-                        textAlign: "center",
-                        minWidth: 200,
-                        transition: "transform 0.3s",
-                        backgroundColor: isLight ? colours.primary[500] : colours.primary[500],
-                        "&:hover": {
-                          transform: "scale(1.05)",
-                          zIndex: 10,
-                        },
-                      }}
-                    >
-                      <img
-                        src={showreel.photo}
-                        alt={`Showreel ${showreelIndex + 1}`}
-                        style={{
-                          width: 200,
-                          height: 150,
-                          objectFit: "cover",
-                          borderRadius: 8,
+                  {society.showreel_images.map(
+                    (showreel: any, showreelIndex: number) => (
+                      <Paper
+                        key={showreelIndex}
+                        elevation={2}
+                        sx={{
+                          p: 1,
+                          textAlign: "center",
+                          minWidth: 200,
+                          transition: "transform 0.3s",
+                          backgroundColor: isLight
+                            ? colours.primary[500]
+                            : colours.primary[500],
+                          "&:hover": {
+                            transform: "scale(1.05)",
+                            zIndex: 10,
+                          },
                         }}
-                      />
-                      <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: "block" }}>
-                        {showreel.caption}
-                      </Typography>
-                    </Paper>
-                  ))}
+                      >
+                        <img
+                          src={showreel.photo}
+                          alt={`Showreel ${showreelIndex + 1}`}
+                          style={{
+                            width: 200,
+                            height: 150,
+                            objectFit: "cover",
+                            borderRadius: 8,
+                          }}
+                        />
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ mt: 1, display: "block" }}
+                        >
+                          {showreel.caption}
+                        </Typography>
+                      </Paper>
+                    )
+                  )}
                 </Box>
               ))}
             </Box>
@@ -302,11 +339,19 @@ const SocietyDetailLayout: React.FC<SocietyDetailLayoutProps> = ({
         )}
 
         {/* Tags and Contact Information */}
-        <Divider/>
+        <Divider />
         <div style={{ display: "flex" }}>
           <div style={{ flex: 1.0 }}>
-            <p style={{ marginBottom: "1.5rem", fontFamily: "monaco", fontSize: 15 }}>
-              {society?.tags?.map((tag: string) => "#" + tag || "No society tags!").join(", ")}
+            <p
+              style={{
+                marginBottom: "1.5rem",
+                fontFamily: "monaco",
+                fontSize: 15,
+              }}
+            >
+              {society?.tags
+                ?.map((tag: string) => "#" + tag || "No society tags!")
+                .join(", ")}
             </p>
             <p style={{ fontSize: 18 }}>
               Contact us:{" "}
@@ -350,7 +395,10 @@ const SocietyDetailLayout: React.FC<SocietyDetailLayoutProps> = ({
               </Link>
             )}
             {society?.social_media_links["WhatsApp"] && (
-              <Link href={society?.social_media_links["WhatsApp"]} target="_blank">
+              <Link
+                href={society?.social_media_links["WhatsApp"]}
+                target="_blank"
+              >
                 <WhatsAppIcon
                   style={{ fontSize: 70, color: isLight ? "black" : "white" }}
                 />
@@ -358,10 +406,10 @@ const SocietyDetailLayout: React.FC<SocietyDetailLayoutProps> = ({
             )}
             {society?.social_media_links["Other"] && (
               <Link href={society?.social_media_links["Other"]} target="_blank">
-              <StarOutlineRoundedIcon
-                style={{ fontSize: 70, color: isLight ? "black" : "white" }}
-              />
-            </Link>
+                <StarOutlineRoundedIcon
+                  style={{ fontSize: 70, color: isLight ? "black" : "white" }}
+                />
+              </Link>
             )}
           </div>
         </div>
