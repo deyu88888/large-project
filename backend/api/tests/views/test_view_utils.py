@@ -64,7 +64,7 @@ class TestViewUtils(TestCase):
 
     def test_student_has_role__event_manager(self):
         """Test that student_has_no_role works when event_manager"""
-        self.society.vice_president = self.student
+        self.society.event_manager = self.student
         self.student.is_event_manager = True
         self.society.save()
         self.student.save()
