@@ -113,7 +113,7 @@ class ManageEventListViewTest(APITestCase):
             format="json"
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        expected_data = EventSerializer([self.upcoming_event], many=True).data
+        expected_data = EventSerializer([self.upcoming_event], many=True, context={'request': response.wsgi_request}).data
         self.assertEqual(response.data, expected_data)
 
     def test_get_previous_events(self):
@@ -128,7 +128,7 @@ class ManageEventListViewTest(APITestCase):
             format="json"
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        expected_data = EventSerializer([self.previous_event], many=True).data
+        expected_data = EventSerializer([self.previous_event], many=True, context={'request': response.wsgi_request}).data
         self.assertEqual(response.data, expected_data)
 
     def test_get_pending_events(self):
@@ -143,7 +143,7 @@ class ManageEventListViewTest(APITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(self.pending_event.status, "Pending")
-        expected_data = EventSerializer([self.pending_event], many=True).data
+        expected_data = EventSerializer([self.pending_event], many=True, context={'request': response.wsgi_request}).data
         self.assertEqual(response.data, expected_data)
 
     def test_get_non_student_user(self):

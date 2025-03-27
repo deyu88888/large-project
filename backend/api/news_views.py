@@ -3,10 +3,9 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from django.utils import timezone
 from django.db.models import Manager
-from api.models import Society, SocietyNews, NewsComment, Student, NewsPublicationRequest
-from api.serializers import SocietyNewsSerializer, NewsCommentSerializer, NewsPublicationRequestSerializer
+from api.models import Society, SocietyNews, NewsComment, NewsPublicationRequest
+from api.serializers import SocietyNewsSerializer, NewsCommentSerializer
 from api.views_files.view_utility import has_society_management_permission
 
 
