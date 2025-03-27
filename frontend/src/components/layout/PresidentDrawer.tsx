@@ -12,7 +12,6 @@ import {
   ListItemIcon,
   ListItemText,
   Typography,
-
 } from "@mui/material";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
@@ -43,22 +42,21 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
   location,
 }) => {
   const [selected, setSelected] = useState("Dashboard");
-  const [student, setStudent] = useState<any>();
+  const [student, setStudent] = useState<any>({});
   const navigate = useNavigate();
 
   useEffect(() => {
-      const fetchStudentData = async () => {
-        try {
-          const response = await apiClient.get("/api/user/current");
-          setStudent(response.data);
-          console.log(student);
-        } catch (error) {
-          console.error("Error retrieving student:", error);
-          alert("Failed to retrieve student. Please contact an administrator.");
-        }
-      };  
+    const fetchStudentData = async () => {
+      try {
+        const response = await apiClient.get("/api/user/current");
+        setStudent(response.data);
+      } catch (error) {
+        console.error("Error retrieving student:", error);
+        alert("Failed to retrieve student. Please contact an administrator.");
+      }
+    };  
     fetchStudentData();
-    }, []);
+  }, []);
 
   const topMenuItems = [
     { title: "Dashboard", icon: <HomeOutlinedIcon />, to: "/student" },
@@ -97,14 +95,14 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
           <Box sx={{ textAlign: "center" }}>
             <Link to="/student/profile" style={{ textDecoration: "none", color: "inherit" }}>
               <img
-              src={student?.icon}
-              alt={`${student?.username} icon`}
-              style={{
-                width: "72px",
-                height: "72px",
-                borderRadius: "50%",
-                margin: "0 auto"
-              }}
+                src={student?.icon}
+                alt={`${student?.username || 'User'} icon`}
+                style={{
+                  width: "72px",
+                  height: "72px",
+                  borderRadius: "50%",
+                  margin: "0 auto"
+                }}
               />
               <Typography variant="h6" fontWeight="bold" sx={{ mt: "10px" }}>
                 {student?.first_name} {student?.last_name}
@@ -117,7 +115,7 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
         ) : (
           <img
             src={student?.icon}
-            alt={`${student?.username} icon`}
+            alt={`${student?.username || 'User'} icon`}
             style={{
               width: "25px",
               height: "25px",
@@ -129,57 +127,57 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
       <Divider />
 
       {/* Main Menu Items */}
-        <List>
-          {topMenuItems.map((item) => (
-            <ListItem key={item.title} disablePadding>
-              <ListItemButton
-                component={Link}
-                to={item.to}
-                selected={selected === item.title}
-                onClick={() => setSelected(item.title)}
-                sx={{ justifyContent: drawer ? "initial" : "center", px: 2.5 }}
+      <List>
+        {topMenuItems.map((item) => (
+          <ListItem key={item.title} disablePadding>
+            <ListItemButton
+              component={Link}
+              to={item.to}
+              selected={selected === item.title}
+              onClick={() => setSelected(item.title)}
+              sx={{ justifyContent: drawer ? "initial" : "center", px: 2.5 }}
+            >
+              <ListItemIcon
+                sx={{
+                  minWidth: 0,
+                  mr: drawer ? 3 : "auto",
+                  justifyContent: "center",
+                }}
               >
-                <ListItemIcon
-                  sx={{
-                    minWidth: 0,
-                    mr: drawer ? 3 : "auto",
-                    justifyContent: "center",
-                  }}
-                >
-                  {item.icon}
-                </ListItemIcon>
-                {drawer && <ListItemText primary={item.title} />}
-              </ListItemButton>
-            </ListItem>
-          ))}
-        </List>
-        <Divider />
+                {item.icon}
+              </ListItemIcon>
+              {drawer && <ListItemText primary={item.title} />}
+            </ListItemButton>
+          </ListItem>
+        ))}
+      </List>
+      <Divider />
 
-        <List>
-          {bottomMenuItems.map((item) => (
-            <ListItem key={item.title} disablePadding>
-              <ListItemButton
-                component={Link}
-                to={item.to}
-                selected={selected === item.title}
-                onClick={() => setSelected(item.title)}
-                sx={{ justifyContent: drawer ? "initial" : "center", px: 2.5 }}
+      <List>
+        {bottomMenuItems.map((item) => (
+          <ListItem key={item.title} disablePadding>
+            <ListItemButton
+              component={Link}
+              to={item.to}
+              selected={selected === item.title}
+              onClick={() => setSelected(item.title)}
+              sx={{ justifyContent: drawer ? "initial" : "center", px: 2.5 }}
+            >
+              <ListItemIcon
+                sx={{
+                  minWidth: 0,
+                  mr: drawer ? 3 : "auto",
+                  justifyContent: "center",
+                }}
               >
-                <ListItemIcon
-                  sx={{
-                    minWidth: 0,
-                    mr: drawer ? 3 : "auto",
-                    justifyContent: "center",
-                  }}
-                >
-                  {item.icon}
-                </ListItemIcon>
-                {drawer && <ListItemText primary={item.title} />}
-              </ListItemButton>
-            </ListItem>
-          ))}
-        </List>
-        <Divider />
+                {item.icon}
+              </ListItemIcon>
+              {drawer && <ListItemText primary={item.title} />}
+            </ListItemButton>
+          </ListItem>
+        ))}
+      </List>
+      <Divider />
 
       {/* Manage My Societies Section */}
       {drawer && (
@@ -189,30 +187,33 @@ const PresidentDrawer: React.FC<PresidentDrawerProps> = ({
           </Typography>
         </Box>
       )}
-      <List>
-        <ListItem disablePadding>
-          <ListItemButton
-            component={Link}
-            to={"/president-page/"+student.president_of}
-            selected={selected === "Manage My Societies"}
-            onClick={() => setSelected("Manage My Societies")}
-            sx={{ justifyContent: drawer ? "initial" : "center", px: 2.5 }}
-          >
-            <ListItemIcon
-              sx={{
-                minWidth: 0,
-                mr: drawer ? 3 : "auto",
-                justifyContent: "center",
-              }}
+      
+      {/* Only render this section if student.president_of exists */}
+      {student?.president_of && (
+        <List>
+          <ListItem disablePadding>
+            <ListItemButton
+              component={Link}
+              to={`/president-page/${student.president_of}`}
+              selected={selected === "Manage My Societies"}
+              onClick={() => setSelected("Manage My Societies")}
+              sx={{ justifyContent: drawer ? "initial" : "center", px: 2.5 }}
             >
-              <ManageAccountsOutlinedIcon />
-            </ListItemIcon>
-            {drawer && <ListItemText primary="Manage My Societies" />}
-          </ListItemButton>
-        </ListItem>
-      </List>
+              <ListItemIcon
+                sx={{
+                  minWidth: 0,
+                  mr: drawer ? 3 : "auto",
+                  justifyContent: "center",
+                }}
+              >
+                <ManageAccountsOutlinedIcon />
+              </ListItemIcon>
+              {drawer && <ListItemText primary="Manage My Societies" />}
+            </ListItemButton>
+          </ListItem>
+        </List>
+      )}
       <Divider />
-
 
       {/* Logout Item */}
       <List>

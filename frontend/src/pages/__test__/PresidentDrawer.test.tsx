@@ -30,7 +30,7 @@ describe('PresidentDrawer Component', () => {
     first_name: 'Test',
     last_name: 'User',
     icon: '/media/profile/testuser.jpg',
-    president_of: '1', // Added fallback property
+    president_of: '1',
   };
 
   beforeEach(() => {
@@ -46,16 +46,16 @@ describe('PresidentDrawer Component', () => {
       writable: true,
     });
     
-    // Mock successful API response
-    (apiClient.get).mockResolvedValue({
+    // Mock successful API response - important to resolve this immediately
+    apiClient.get.mockResolvedValue({
       data: mockStudentData,
     });
   });
 
   const setup = async (drawerOpen = true) => {
-    let renderResult;
+    let component;
     await act(async () => {
-      renderResult = render(
+      component = render(
         <MemoryRouter>
           <PresidentDrawer 
             drawer={drawerOpen} 
@@ -64,10 +64,14 @@ describe('PresidentDrawer Component', () => {
           />
         </MemoryRouter>
       );
-      // Wait for useEffect to complete
-      await new Promise(resolve => setTimeout(resolve, 0));
     });
-    return renderResult;
+    
+    // Important: Wait for the useEffect and API call to complete
+    await waitFor(() => {
+      expect(apiClient.get).toHaveBeenCalledWith('/api/user/current');
+    });
+    
+    return component;
   };
 
   it('renders without crashing', async () => {
@@ -120,7 +124,9 @@ describe('PresidentDrawer Component', () => {
 
   it('renders management menu items', async () => {
     await setup();
-    expect(screen.getByText('Manage My Societies')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('Manage My Societies')).toBeInTheDocument();
+    });
   });
 
   it('renders bottom menu items', async () => {
@@ -137,7 +143,7 @@ describe('PresidentDrawer Component', () => {
 
   it('calls toggleDrawer when chevron button is clicked', async () => {
     await setup();
-    const chevronButton = screen.getByTestId('ChevronLeftIcon').closest('button');
+    const chevronButton = screen.getByRole('button', { name: '' });
     fireEvent.click(chevronButton);
     expect(mockToggleDrawer).toHaveBeenCalledTimes(1);
   });
@@ -155,10 +161,25 @@ describe('PresidentDrawer Component', () => {
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const alertMock = vi.fn();
     global.alert = alertMock;
-    (apiClient.get).mockRejectedValueOnce(new Error('Failed to fetch student data'));
-    await setup();
-    expect(consoleErrorSpy).toHaveBeenCalled();
-    expect(alertMock).toHaveBeenCalledWith('Failed to retrieve student. Please contact an administrator.');
+    apiClient.get.mockRejectedValueOnce(new Error('Failed to fetch student data'));
+    
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <PresidentDrawer 
+            drawer={true} 
+            toggleDrawer={mockToggleDrawer} 
+            location={mockLocation} 
+          />
+        </MemoryRouter>
+      );
+    });
+    
+    await waitFor(() => {
+      expect(consoleErrorSpy).toHaveBeenCalled();
+      expect(alertMock).toHaveBeenCalledWith('Failed to retrieve student. Please contact an administrator.');
+    });
+    
     consoleErrorSpy.mockRestore();
   });
 
@@ -166,10 +187,13 @@ describe('PresidentDrawer Component', () => {
     await setup();
     const dashboardLink = screen.getByText('Dashboard').closest('a');
     const mySocietiesLink = screen.getByText('My Societies').closest('a');
+    
     // Initially Dashboard should be selected
     expect(dashboardLink).toHaveClass('Mui-selected');
+    
     // Click on My Societies
     fireEvent.click(mySocietiesLink);
+    
     // Now My Societies should be selected
     expect(mySocietiesLink).toHaveClass('Mui-selected');
     expect(dashboardLink).not.toHaveClass('Mui-selected');
@@ -179,16 +203,20 @@ describe('PresidentDrawer Component', () => {
     await setup();
     const dashboardLink = screen.getByText('Dashboard').closest('a');
     expect(dashboardLink).toHaveAttribute('href', '/student');
+    
     const mySocietiesLink = screen.getByText('My Societies').closest('a');
     expect(mySocietiesLink).toHaveAttribute('href', '/student/my-societies');
+    
     const myEventsLink = screen.getByText('My Events').closest('a');
     expect(myEventsLink).toHaveAttribute('href', '/student/view-events');
   });
 
   it('navigates to the correct route for managing societies', async () => {
     await setup();
-    const manageSocietiesLink = screen.getByText('Manage My Societies').closest('a');
-    expect(manageSocietiesLink).toHaveAttribute('href', '/president-page/1');
+    await waitFor(() => {
+      const manageSocietiesLink = screen.getByText('Manage My Societies').closest('a');
+      expect(manageSocietiesLink).toHaveAttribute('href', '/president-page/1');
+    });
   });
 
   it('navigates to the discover societies page', async () => {
