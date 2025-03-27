@@ -51,6 +51,86 @@ interface SocietyNewsFeedProps {
   societyId?: number;
 }
 
+interface StyleProps {
+  colors: ReturnType<typeof tokens>;
+}
+
+interface SocietyAvatarProps {
+  society: Society;
+  size?: number;
+}
+
+interface PostTagsProps {
+  tags: string[];
+  isFeatured: boolean;
+  maxVisible?: number;
+  styleProps: StyleProps;
+}
+
+interface PostStatsProps {
+  viewCount: number;
+  commentCount: number;
+  size?: "small" | "medium";
+  styleProps: StyleProps;
+}
+
+interface BookmarkButtonProps {
+  postId: number;
+  bookmarked: number[];
+  onToggleBookmark: (id: number) => void;
+  size?: "small" | "medium";
+  styleProps: StyleProps;
+}
+
+interface DetailedPostViewProps {
+  post: NewsPost;
+  onBack: () => void;
+  onHide: (postId: number) => void;
+  bookmarked: number[];
+  toggleBookmark: (postId: number) => void;
+  styleProps: StyleProps;
+}
+
+interface NewsCardProps {
+  post: NewsPost;
+  onPostClick: (post: NewsPost) => void;
+  onHidePost: (postId: number) => void;
+  styleProps: StyleProps;
+}
+
+interface NewsFeedProps {
+  loading: boolean;
+  newsPosts: NewsPost[];
+  visiblePosts: NewsPost[];
+  hiddenPosts: number[];
+  societyId?: number;
+  onPostClick: (post: NewsPost) => void;
+  onHidePost: (postId: number) => void;
+  resetHidden: () => void;
+  styleProps: StyleProps;
+}
+
+interface PostImageProps {
+  imageUrl: string;
+  title: string;
+  height: string;
+  styleProps: StyleProps;
+  card?: boolean;
+}
+
+interface SocietyInfoProps {
+  post: NewsPost;
+  size?: "small" | "medium";
+  styleProps: StyleProps;
+}
+
+interface PostTitleProps {
+  title: string;
+  isPinned: boolean;
+  onClick?: () => void;
+  styleProps: StyleProps;
+}
+
 // Utility functions
 const formatDateTime = (dateString: string): string => {
   if (!dateString) return "N/A";
@@ -67,7 +147,7 @@ const formatDateTime = (dateString: string): string => {
 };
 
 // Component for society avatar with fallback
-const SocietyAvatar: React.FC<{ society: Society; size?: number }> = ({ society, size = 40 }) => {
+const SocietyAvatar: React.FC<SocietyAvatarProps> = ({ society, size = 40 }) => {
   return (
     <Avatar
       src={society.icon || undefined}
@@ -80,13 +160,13 @@ const SocietyAvatar: React.FC<{ society: Society; size?: number }> = ({ society,
 };
 
 // Component for post tags
-const PostTags: React.FC<{ tags: string[]; isFeatured: boolean; maxVisible?: number }> = ({ 
+const PostTags: React.FC<PostTagsProps> = ({ 
   tags, 
   isFeatured, 
-  maxVisible = 3 
+  maxVisible = 3,
+  styleProps
 }) => {
-  const theme = useTheme();
-  const colors = tokens(theme.palette.mode);
+  const { colors } = styleProps;
   
   return (
     <Box display="flex" flexWrap="wrap" mb={1}>
@@ -126,13 +206,13 @@ const PostTags: React.FC<{ tags: string[]; isFeatured: boolean; maxVisible?: num
 };
 
 // Component for post stats (views and comments)
-const PostStats: React.FC<{ viewCount: number; commentCount: number; size?: "small" | "medium" }> = ({ 
+const PostStats: React.FC<PostStatsProps> = ({ 
   viewCount, 
   commentCount,
-  size = "medium"
+  size = "medium",
+  styleProps
 }) => {
-  const theme = useTheme();
-  const colors = tokens(theme.palette.mode);
+  const { colors } = styleProps;
   
   const fontSize = size === "small" ? 16 : 18;
   const marginRight = size === "small" ? 0.5 : 1;
@@ -158,14 +238,14 @@ const PostStats: React.FC<{ viewCount: number; commentCount: number; size?: "sma
 };
 
 // Component for bookmark button
-const BookmarkButton: React.FC<{ postId: number; bookmarked: number[]; onToggleBookmark: (id: number) => void; size?: "small" | "medium" }> = ({
+const BookmarkButton: React.FC<BookmarkButtonProps> = ({
   postId,
   bookmarked,
   onToggleBookmark,
-  size = "medium"
+  size = "medium",
+  styleProps
 }) => {
-  const theme = useTheme();
-  const colors = tokens(theme.palette.mode);
+  const { colors } = styleProps;
   const isBookmarked = bookmarked.includes(postId);
   
   return (
@@ -189,24 +269,580 @@ const BookmarkButton: React.FC<{ postId: number; bookmarked: number[]; onToggleB
   );
 };
 
-// Main component
-const SocietyNewsFeed: React.FC<SocietyNewsFeedProps> = ({ societyId }) => {
-  const theme = useTheme();
-  const colors = tokens(theme.palette.mode);
-
-  // State
-  const [loading, setLoading] = useState<boolean>(true);
-  const [newsPosts, setNewsPosts] = useState<NewsPost[]>([]);
-  const [selectedPost, setSelectedPost] = useState<NewsPost | null>(null);
-  const [bookmarked, setBookmarked] = useState<number[]>([]);
+// Post Image Component
+const PostImage: React.FC<PostImageProps> = ({ imageUrl, title, height, styleProps, card = false }) => {
+  const { colors } = styleProps;
   
-  // Track hidden post IDs
+  return (
+    <Box 
+      sx={{ 
+        height: height, 
+        overflow: 'hidden', 
+        display: 'flex', 
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: colors.primary[600],
+        position: 'relative',
+        borderRadius: card ? 1 : 0,
+        mb: card ? 2 : 0,
+        '&::after': {
+          content: '""',
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: card ? '30px' : '40px',
+          background: `linear-gradient(to top, ${colors.primary[400]}, transparent)`,
+        }
+      }}
+    >
+      <img 
+        src={imageUrl} 
+        alt={title} 
+        style={{ 
+          width: '100%', 
+          height: card ? '100%' : 'auto',
+          objectFit: 'cover',
+          maxHeight: '100%',
+          transition: 'transform 0.3s ease-in-out',
+        }} 
+      />
+    </Box>
+  );
+};
+
+// Society Info Component
+const SocietyInfo: React.FC<SocietyInfoProps> = ({ post, size = "medium", styleProps }) => {
+  const { colors } = styleProps;
+  const avatarSize = size === "small" ? 32 : 40;
+  
+  return (
+    <Box display="flex" alignItems="center" mb={2}>
+      <SocietyAvatar society={post.society_data} size={avatarSize} />
+      <Box>
+        <Typography variant={size === "small" ? "subtitle1" : "h6"}>
+          {post.society_data.name}
+        </Typography>
+        <Typography variant="caption" color={colors.grey[300]}>
+          {size === "medium" && "Posted by " + post.author_data.full_name + " on "}
+          {formatDateTime(post.published_at)}
+        </Typography>
+      </Box>
+    </Box>
+  );
+};
+
+// Post Title Component
+const PostTitle: React.FC<PostTitleProps> = ({ title, isPinned, onClick, styleProps }) => {
+  const { colors } = styleProps;
+  
+  return (
+    <Typography 
+      variant="h5" 
+      fontWeight="bold" 
+      mb={1}
+      onClick={onClick}
+      sx={onClick ? { 
+        cursor: 'pointer',
+        transition: 'color 0.2s',
+        '&:hover': { color: colors.blueAccent[300] } 
+      } : {}}
+    >
+      {isPinned && (
+        <PushPinIcon
+          sx={{
+            mr: 1,
+            verticalAlign: 'middle',
+            color: colors.greenAccent[500],
+            fontSize: onClick ? '0.9em' : '1em',
+          }}
+        />
+      )}
+      {title}
+    </Typography>
+  );
+};
+
+// Post Content Component
+const PostContent: React.FC<{
+  content: string;
+  truncated?: boolean;
+  styleProps: StyleProps;
+}> = ({ content, truncated = false, styleProps }) => {
+  const { colors } = styleProps;
+  
+  const processedContent = truncated 
+    ? content.replace(/<img[^>]*>/g, '[Image]')
+    : content;
+  
+  return (
+    <Box
+      sx={truncated ? {
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        display: '-webkit-box',
+        WebkitLineClamp: 3,
+        WebkitBoxOrient: 'vertical',
+        mb: 2,
+        color: colors.grey[200],
+        lineHeight: 1.6,
+      } : {
+        mb: 3,
+        fontSize: '1rem',
+        lineHeight: 1.6,
+        '& img': { 
+          maxWidth: '100%',
+          borderRadius: '4px',
+          boxShadow: '0 3px 10px rgba(0, 0, 0, 0.2)',
+        },
+        '& a': { 
+          color: colors.blueAccent[300],
+          textDecoration: 'none',
+          borderBottom: `1px solid ${colors.blueAccent[500]}`,
+          transition: 'all 0.2s ease',
+          '&:hover': {
+            color: colors.blueAccent[200],
+            borderBottomColor: colors.blueAccent[300],
+          }
+        },
+        '& p': {
+          marginBottom: '1em',
+        },
+        '& blockquote': {
+          borderLeft: `4px solid ${colors.blueAccent[500]}`,
+          padding: '0.5em 1em',
+          backgroundColor: colors.primary[500],
+          borderRadius: '0 4px 4px 0',
+        }
+      }}
+      dangerouslySetInnerHTML={{ __html: processedContent }}
+    />
+  );
+};
+
+// Hide Post Button Component
+const HidePostButton: React.FC<{
+  postId: number;
+  onHidePost: (id: number) => void;
+  small?: boolean;
+  styleProps: StyleProps;
+}> = ({ postId, onHidePost, small = false, styleProps }) => {
+  const { colors } = styleProps;
+  
+  return (
+    <motion.div
+      whileHover={{ scale: 1.1 }}
+      whileTap={{ scale: 0.95 }}
+    >
+      <IconButton
+        size={small ? "small" : "medium"}
+        onClick={(e) => {
+          e.stopPropagation();
+          onHidePost(postId);
+        }}
+        sx={{
+          ml: small ? 0 : 1,
+          color: colors.grey[300],
+          transition: 'all 0.2s ease',
+          '&:hover': {
+            color: colors.grey[100],
+            backgroundColor: colors.primary[300],
+            transform: 'scale(1.1)',
+          }
+        }}
+      >
+        <VisibilityOffIcon fontSize={small ? "small" : "medium"} />
+      </IconButton>
+    </motion.div>
+  );
+};
+
+// Attachment Button Component
+const AttachmentButton: React.FC<{
+  fileName: string;
+  styleProps: StyleProps;
+}> = ({ fileName, styleProps }) => {
+  const { colors } = styleProps;
+  
+  return (
+    <Button
+      variant="outlined"
+      sx={{ 
+        mt: 2, 
+        mb: 3,
+        borderColor: colors.blueAccent[400],
+        color: colors.blueAccent[300],
+        '&:hover': {
+          borderColor: colors.blueAccent[300],
+          backgroundColor: colors.primary[500],
+        }
+      }}
+      startIcon={<BookmarkIcon />}
+    >
+      Download {fileName}
+    </Button>
+  );
+};
+
+// Detailed post view component
+const DetailedPostView: React.FC<DetailedPostViewProps> = ({ 
+  post, 
+  onBack,
+  onHide,
+  bookmarked,
+  toggleBookmark,
+  styleProps
+}) => {
+  const { colors } = styleProps;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.3 }}
+    >
+      <Box>
+        <Box display="flex" alignItems="center" mb={3}>
+          <IconButton 
+            onClick={onBack} 
+            sx={{ 
+              mr: 1,
+              transition: 'all 0.2s ease',
+              '&:hover': {
+                transform: 'scale(1.1)',
+                backgroundColor: colors.primary[300],
+              }
+            }}
+          >
+            <ArrowBackIcon />
+          </IconButton>
+          <Typography variant="h5">News Post</Typography>
+        </Box>
+
+        <Paper
+          elevation={3}
+          sx={{ 
+            backgroundColor: colors.primary[400], 
+            overflow: 'hidden',
+            borderRadius: '8px',
+            boxShadow: `0 6px 20px rgba(0, 0, 0, 0.15)`,
+          }}
+        >
+          {post.image_url && (
+            <PostImage 
+              imageUrl={post.image_url} 
+              title={post.title} 
+              height="300px" 
+              styleProps={styleProps}
+            />
+          )}
+          
+          <Box p={3}>
+            <SocietyInfo post={post} styleProps={styleProps} />
+
+            <PostTitle 
+              title={post.title} 
+              isPinned={post.is_pinned} 
+              styleProps={styleProps} 
+            />
+
+            <Box mb={3}>
+              <PostTags 
+                tags={post.tags} 
+                isFeatured={post.is_featured}
+                maxVisible={10}
+                styleProps={styleProps}
+              />
+            </Box>
+
+            <PostContent content={post.content} styleProps={styleProps} />
+
+            {post.attachment_name && (
+              <AttachmentButton fileName={post.attachment_name} styleProps={styleProps} />
+            )}
+
+            <Divider sx={{ mb: 3 }} />
+
+            <Box display="flex" justifyContent="space-between" alignItems="center">
+              <PostStats 
+                viewCount={post.view_count} 
+                commentCount={post.comment_count}
+                styleProps={styleProps}
+              />
+              
+              <Box display="flex" alignItems="center">
+                <BookmarkButton 
+                  postId={post.id}
+                  bookmarked={bookmarked}
+                  onToggleBookmark={toggleBookmark}
+                  styleProps={styleProps}
+                />
+                <HidePostButton 
+                  postId={post.id} 
+                  onHidePost={(id) => {
+                    onHide(id);
+                    onBack();
+                  }}
+                  styleProps={styleProps}
+                />
+              </Box>
+            </Box>
+          </Box>
+
+          <Box sx={{ p: 3 }}>
+            <Divider sx={{ mb: 3 }} />
+            <Typography variant="h5" sx={{ mb: 2 }}>
+              Discussion
+            </Typography>
+
+            <Box mt={2}>
+              <NewsComment newsId={post.id} />
+            </Box>
+          </Box>
+        </Paper>
+      </Box>
+    </motion.div>
+  );
+};
+
+// News Feed Card Component
+const NewsCard: React.FC<NewsCardProps> = ({ post, onPostClick, onHidePost, styleProps }) => {
+  const { colors } = styleProps;
+  
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -4 }}
+      transition={{ duration: 0.2 }}
+    >
+      <Card
+        sx={{
+          mb: 3,
+          backgroundColor: colors.primary[400],
+          borderLeft: post.is_pinned ? `4px solid ${colors.greenAccent[500]}` : 'none',
+          borderRadius: '8px',
+          overflow: 'hidden',
+          boxShadow: post.is_pinned 
+            ? `0 6px 15px rgba(0, 0, 0, 0.15), 0 0 0 1px ${colors.greenAccent[800]}`
+            : `0 4px 12px rgba(0, 0, 0, 0.1)`,
+          '&:hover': {
+            boxShadow: post.is_pinned
+              ? `0 10px 25px rgba(0, 0, 0, 0.2), 0 0 0 2px ${colors.greenAccent[700]}`
+              : `0 8px 20px rgba(0, 0, 0, 0.15)`,
+          },
+        }}
+      >
+        <CardContent>
+          <SocietyInfo post={post} size="small" styleProps={styleProps} />
+          
+          <Box
+            sx={{
+              cursor: 'pointer',
+              '&:hover h5': { color: colors.blueAccent[300] },
+            }}
+            onClick={() => onPostClick(post)}
+          >
+            <PostTitle 
+              title={post.title} 
+              isPinned={post.is_pinned} 
+              styleProps={styleProps}
+              onClick={() => onPostClick(post)}
+            />
+
+            {post.image_url && (
+              <PostImage 
+                imageUrl={post.image_url} 
+                title={post.title} 
+                height="200px" 
+                styleProps={styleProps}
+                card={true}
+              />
+            )}
+
+            <PostContent 
+              content={post.content} 
+              truncated={true} 
+              styleProps={styleProps} 
+            />
+          </Box>
+
+          <PostTags 
+            tags={post.tags} 
+            isFeatured={post.is_featured} 
+            styleProps={styleProps}
+          />
+        </CardContent>
+
+        <CardActions sx={{ justifyContent: 'flex-end', px: 2, pb: 2 }}>
+          <Box display="flex" alignItems="center">
+            <HidePostButton 
+              postId={post.id} 
+              onHidePost={onHidePost} 
+              small={true}
+              styleProps={styleProps}
+            />
+          </Box>
+        </CardActions>
+      </Card>
+    </motion.div>
+  );
+};
+
+// Loading Component
+const LoadingIndicator: React.FC<{ styleProps: StyleProps }> = ({ styleProps }) => {
+  const { colors } = styleProps;
+  
+  return (
+    <Box display="flex" justifyContent="center" alignItems="center" p={4} minHeight="200px">
+      <CircularProgress sx={{ color: colors.blueAccent[400] }} />
+    </Box>
+  );
+};
+
+// Empty Feed Component
+const EmptyFeed: React.FC<{
+  newsPosts: NewsPost[];
+  hiddenPosts: number[];
+  societyId?: number;
+  onResetHidden: () => void;
+  styleProps: StyleProps;
+}> = ({ newsPosts, hiddenPosts, societyId, onResetHidden, styleProps }) => {
+  const { colors } = styleProps;
+  
+  return (
+    <Box 
+      textAlign="center" 
+      p={4} 
+      sx={{
+        backgroundColor: colors.primary[400],
+        borderRadius: '8px',
+        padding: '40px',
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+      }}
+    >
+      <Typography variant="h6" color={colors.grey[300]}>
+        {newsPosts.length === 0 
+          ? (societyId
+            ? "This society hasn't posted any news yet."
+            : "No news posts from your societies yet.")
+          : "All posts are currently hidden. Refresh the page to reset."}
+      </Typography>
+      {newsPosts.length > 0 && hiddenPosts.length > 0 && (
+        <Button 
+          variant="outlined" 
+          onClick={onResetHidden}
+          sx={{ 
+            mt: 2,
+            borderColor: colors.blueAccent[400],
+            color: colors.blueAccent[300],
+            '&:hover': {
+              borderColor: colors.blueAccent[300],
+              backgroundColor: colors.primary[500],
+            }
+          }}
+        >
+          Show All Posts
+        </Button>
+      )}
+    </Box>
+  );
+};
+
+// News Feed Component
+const NewsFeed: React.FC<NewsFeedProps> = ({ 
+  loading, 
+  newsPosts, 
+  visiblePosts, 
+  hiddenPosts, 
+  societyId, 
+  onPostClick, 
+  onHidePost, 
+  resetHidden,
+  styleProps 
+}) => {
+  if (loading) {
+    return <LoadingIndicator styleProps={styleProps} />;
+  }
+
+  if (visiblePosts.length === 0) {
+    return (
+      <EmptyFeed 
+        newsPosts={newsPosts} 
+        hiddenPosts={hiddenPosts} 
+        societyId={societyId} 
+        onResetHidden={resetHidden}
+        styleProps={styleProps}
+      />
+    );
+  }
+
+  return (
+    <AnimatePresence>
+      <Box>
+        {visiblePosts.map((post) => (
+          <NewsCard 
+            key={post.id} 
+            post={post} 
+            onPostClick={onPostClick} 
+            onHidePost={onHidePost}
+            styleProps={styleProps}
+          />
+        ))}
+      </Box>
+    </AnimatePresence>
+  );
+};
+
+// Custom hooks
+const useBookmarks = () => {
+  const [bookmarked, setBookmarked] = useState<number[]>(() => {
+    const savedBookmarks = localStorage.getItem('newsBookmarks');
+    return savedBookmarks ? JSON.parse(savedBookmarks) : [];
+  });
+
+  const toggleBookmark = useCallback((postId: number) => {
+    setBookmarked(prev => {
+      const updatedBookmarks = prev.includes(postId)
+        ? prev.filter(id => id !== postId)
+        : [...prev, postId];
+      
+      // Save to localStorage
+      localStorage.setItem('newsBookmarks', JSON.stringify(updatedBookmarks));
+      return updatedBookmarks;
+    });
+  }, []);
+
+  return { bookmarked, toggleBookmark };
+};
+
+const useHiddenPosts = () => {
   const [hiddenPosts, setHiddenPosts] = useState<number[]>(() => {
     const saved = localStorage.getItem('hiddenNewsPosts');
     return saved ? JSON.parse(saved) : [];
   });
 
-  // Fetch news data
+  const handleHidePost = useCallback((postId: number) => {
+    setHiddenPosts(prev => {
+      const updated = [...prev, postId];
+      localStorage.setItem('hiddenNewsPosts', JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
+  const resetHidden = useCallback(() => {
+    setHiddenPosts([]);
+    localStorage.removeItem('hiddenNewsPosts');
+  }, []);
+
+  return { hiddenPosts, handleHidePost, resetHidden };
+};
+
+const useNewsPosts = (societyId?: number) => {
+  const [newsPosts, setNewsPosts] = useState<NewsPost[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+
   const fetchNews = useCallback(async () => {
     setLoading(true);
     try {
@@ -223,16 +859,39 @@ const SocietyNewsFeed: React.FC<SocietyNewsFeedProps> = ({ societyId }) => {
     }
   }, [societyId]);
 
-  // Load data on mount and when societyId changes
   useEffect(() => {
     fetchNews();
-    
-    // Load bookmarks from localStorage
-    const savedBookmarks = localStorage.getItem('newsBookmarks');
-    if (savedBookmarks) {
-      setBookmarked(JSON.parse(savedBookmarks));
-    }
-  }, [societyId, fetchNews]);
+  }, [fetchNews]);
+
+  const sortedPosts = useMemo(() => {
+    return [...newsPosts].sort((a, b) => {
+      if (a.is_pinned && !b.is_pinned) return -1;
+      if (!a.is_pinned && b.is_pinned) return 1;
+      return new Date(b.published_at).getTime() - new Date(a.published_at).getTime();
+    });
+  }, [newsPosts]);
+
+  return { newsPosts, loading, sortedPosts };
+};
+
+// Main component
+const SocietyNewsFeed: React.FC<SocietyNewsFeedProps> = ({ societyId }) => {
+  const theme = useTheme();
+  const colors = tokens(theme.palette.mode);
+  const styleProps = { colors };
+
+  // Custom hooks for state management
+  const { newsPosts, loading, sortedPosts } = useNewsPosts(societyId);
+  const { bookmarked, toggleBookmark } = useBookmarks();
+  const { hiddenPosts, handleHidePost, resetHidden } = useHiddenPosts();
+  
+  // State for selected post
+  const [selectedPost, setSelectedPost] = useState<NewsPost | null>(null);
+
+  // Filter out hidden posts
+  const visiblePosts = useMemo(() => {
+    return sortedPosts.filter(post => !hiddenPosts.includes(post.id));
+  }, [sortedPosts, hiddenPosts]);
 
   // Handlers
   const handlePostClick = useCallback((post: NewsPost) => {
@@ -243,469 +902,33 @@ const SocietyNewsFeed: React.FC<SocietyNewsFeedProps> = ({ societyId }) => {
   const handleBackToFeed = useCallback(() => {
     setSelectedPost(null);
   }, []);
-  
-  // Hide post handler
-  const handleHidePost = useCallback((postId: number) => {
-    setHiddenPosts(prev => {
-      const updated = [...prev, postId];
-      localStorage.setItem('hiddenNewsPosts', JSON.stringify(updated));
-      return updated;
-    });
-  }, []);
-
-  const toggleBookmark = useCallback((postId: number) => {
-    setBookmarked(prev => {
-      const updatedBookmarks = prev.includes(postId)
-        ? prev.filter(id => id !== postId)
-        : [...prev, postId];
-      
-      // Save to localStorage
-      localStorage.setItem('newsBookmarks', JSON.stringify(updatedBookmarks));
-      return updatedBookmarks;
-    });
-  }, []);
-
-  // Memoized sorted posts
-  const sortedPosts = useMemo(() => {
-    return [...newsPosts].sort((a, b) => {
-      if (a.is_pinned && !b.is_pinned) return -1;
-      if (!a.is_pinned && b.is_pinned) return 1;
-      return new Date(b.published_at).getTime() - new Date(a.published_at).getTime();
-    });
-  }, [newsPosts]);
-  
-  // Filter out hidden posts
-  const visiblePosts = useMemo(() => {
-    return sortedPosts.filter(post => !hiddenPosts.includes(post.id));
-  }, [sortedPosts, hiddenPosts]);
-
-  // Detailed post view component
-  const DetailedPostView = useCallback(() => {
-    if (!selectedPost) return null;
-
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -20 }}
-        transition={{ duration: 0.3 }}
-      >
-        <Box>
-          <Box display="flex" alignItems="center" mb={3}>
-            <IconButton 
-              onClick={handleBackToFeed} 
-              sx={{ 
-                mr: 1,
-                transition: 'all 0.2s ease',
-                '&:hover': {
-                  transform: 'scale(1.1)',
-                  backgroundColor: colors.primary[300],
-                }
-              }}
-            >
-              <ArrowBackIcon />
-            </IconButton>
-            <Typography variant="h5">News Post</Typography>
-          </Box>
-
-          <Paper
-            elevation={3}
-            sx={{ 
-              backgroundColor: colors.primary[400], 
-              overflow: 'hidden',
-              borderRadius: '8px',
-              boxShadow: `0 6px 20px rgba(0, 0, 0, 0.15)`,
-            }}
-          >
-            {selectedPost.image_url && (
-              <Box 
-                sx={{ 
-                  height: '300px', 
-                  overflow: 'hidden', 
-                  display: 'flex', 
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  backgroundColor: colors.primary[600],
-                  position: 'relative',
-                  '&::after': {
-                    content: '""',
-                    position: 'absolute',
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    height: '40px',
-                    background: `linear-gradient(to top, ${colors.primary[400]}, transparent)`,
-                  }
-                }}
-              >
-                <img 
-                  src={selectedPost.image_url} 
-                  alt={selectedPost.title} 
-                  style={{ 
-                    width: '100%', 
-                    objectFit: 'cover',
-                    maxHeight: '100%',
-                    transition: 'transform 0.3s ease-in-out',
-                  }} 
-                />
-              </Box>
-            )}
-            
-            <Box p={3}>
-              {/* Society / Author Info */}
-              <Box display="flex" alignItems="center" mb={2}>
-                <SocietyAvatar society={selectedPost.society_data} />
-                <Box>
-                  <Typography variant="h6">{selectedPost.society_data.name}</Typography>
-                  <Typography variant="caption" color={colors.grey[300]}>
-                    Posted by {selectedPost.author_data.full_name} on{" "}
-                    {formatDateTime(selectedPost.published_at)}
-                  </Typography>
-                </Box>
-              </Box>
-
-              <Typography variant="h4" fontWeight="bold" mb={2}>
-                {selectedPost.is_pinned && (
-                  <PushPinIcon
-                    sx={{
-                      mr: 1,
-                      verticalAlign: 'middle',
-                      color: colors.greenAccent[500],
-                    }}
-                  />
-                )}
-                {selectedPost.title}
-              </Typography>
-
-              {/* Featured & Tags */}
-              <Box mb={3}>
-                <PostTags 
-                  tags={selectedPost.tags} 
-                  isFeatured={selectedPost.is_featured}
-                  maxVisible={10}
-                />
-              </Box>
-
-              <Box
-                mb={3}
-                sx={{
-                  fontSize: '1rem',
-                  lineHeight: 1.6,
-                  '& img': { 
-                    maxWidth: '100%',
-                    borderRadius: '4px',
-                    boxShadow: '0 3px 10px rgba(0, 0, 0, 0.2)',
-                  },
-                  '& a': { 
-                    color: colors.blueAccent[300],
-                    textDecoration: 'none',
-                    borderBottom: `1px solid ${colors.blueAccent[500]}`,
-                    transition: 'all 0.2s ease',
-                    '&:hover': {
-                      color: colors.blueAccent[200],
-                      borderBottomColor: colors.blueAccent[300],
-                    }
-                  },
-                  '& p': {
-                    marginBottom: '1em',
-                  },
-                  '& blockquote': {
-                    borderLeft: `4px solid ${colors.blueAccent[500]}`,
-                    padding: '0.5em 1em',
-                    backgroundColor: colors.primary[500],
-                    borderRadius: '0 4px 4px 0',
-                  }
-                }}
-                dangerouslySetInnerHTML={{ __html: selectedPost.content }}
-              />
-
-              {selectedPost.attachment_name && (
-                <Button
-                  variant="outlined"
-                  sx={{ 
-                    mt: 2, 
-                    mb: 3,
-                    borderColor: colors.blueAccent[400],
-                    color: colors.blueAccent[300],
-                    '&:hover': {
-                      borderColor: colors.blueAccent[300],
-                      backgroundColor: colors.primary[500],
-                    }
-                  }}
-                  startIcon={<BookmarkIcon />}
-                >
-                  Download {selectedPost.attachment_name}
-                </Button>
-              )}
-
-              <Divider sx={{ mb: 3 }} />
-
-              <Box display="flex" justifyContent="space-between" alignItems="center">
-                <PostStats 
-                  viewCount={selectedPost.view_count} 
-                  commentCount={selectedPost.comment_count}
-                />
-                
-                <Box display="flex" alignItems="center">
-                  <BookmarkButton 
-                    postId={selectedPost.id}
-                    bookmarked={bookmarked}
-                    onToggleBookmark={toggleBookmark}
-                  />
-                  <motion.div
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <IconButton
-                      onClick={() => {
-                        handleHidePost(selectedPost.id);
-                        handleBackToFeed();
-                      }}
-                      sx={{
-                        ml: 1,
-                        color: colors.grey[300],
-                        '&:hover': {
-                          color: colors.grey[100],
-                          backgroundColor: colors.primary[300],
-                        }
-                      }}
-                    >
-                      <VisibilityOffIcon />
-                    </IconButton>
-                  </motion.div>
-                </Box>
-              </Box>
-            </Box>
-
-            {/* Comments Section */}
-            <Box sx={{ p: 3 }}>
-              <Divider sx={{ mb: 3 }} />
-              <Typography variant="h5" sx={{ mb: 2 }}>
-                Discussion
-              </Typography>
-
-              <Box mt={2}>
-                <NewsComment newsId={selectedPost.id} />
-              </Box>
-            </Box>
-          </Paper>
-        </Box>
-      </motion.div>
-    );
-  }, [selectedPost, handleBackToFeed, colors, bookmarked, toggleBookmark, handleHidePost]);
-
-  // News Feed List Card Component
-  const NewsCard: React.FC<{ post: NewsPost }> = useCallback(({ post }) => {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        whileHover={{ y: -4 }}
-        transition={{ duration: 0.2 }}
-      >
-        <Card
-          sx={{
-            mb: 3,
-            backgroundColor: colors.primary[400],
-            borderLeft: post.is_pinned ? `4px solid ${colors.greenAccent[500]}` : 'none',
-            borderRadius: '8px',
-            overflow: 'hidden',
-            boxShadow: post.is_pinned 
-              ? `0 6px 15px rgba(0, 0, 0, 0.15), 0 0 0 1px ${colors.greenAccent[800]}`
-              : `0 4px 12px rgba(0, 0, 0, 0.1)`,
-            '&:hover': {
-              boxShadow: post.is_pinned
-                ? `0 10px 25px rgba(0, 0, 0, 0.2), 0 0 0 2px ${colors.greenAccent[700]}`
-                : `0 8px 20px rgba(0, 0, 0, 0.15)`,
-            },
-          }}
-        >
-          <CardContent>
-            <Box display="flex" alignItems="center" mb={2}>
-              <SocietyAvatar society={post.society_data} size={32} />
-              <Box>
-                <Typography variant="subtitle1">{post.society_data.name}</Typography>
-                <Typography variant="caption" color={colors.grey[300]}>
-                  {formatDateTime(post.published_at)}
-                </Typography>
-              </Box>
-            </Box>
-            
-            <Box
-              sx={{
-                cursor: 'pointer',
-                '&:hover h5': { color: colors.blueAccent[300] },
-              }}
-              onClick={() => handlePostClick(post)}
-            >
-              <Typography variant="h5" fontWeight="bold" mb={1}>
-                {post.is_pinned && (
-                  <PushPinIcon
-                    sx={{
-                      mr: 1,
-                      verticalAlign: 'middle',
-                      color: colors.greenAccent[500],
-                      fontSize: '0.9em',
-                    }}
-                  />
-                )}
-                {post.title}
-              </Typography>
-
-              {post.image_url && (
-                <Box
-                  sx={{
-                    height: '200px',
-                    overflow: 'hidden',
-                    borderRadius: 1,
-                    mb: 2,
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    backgroundColor: colors.primary[600],
-                    position: 'relative',
-                    '&::after': {
-                      content: '""',
-                      position: 'absolute',
-                      bottom: 0,
-                      left: 0,
-                      right: 0,
-                      height: '30px',
-                      background: `linear-gradient(to top, ${colors.primary[400]}, transparent)`,
-                    }
-                  }}
-                >
-                  <img
-                    src={post.image_url}
-                    alt={post.title}
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover',
-                      transition: 'transform 0.3s ease',
-                    }}
-                  />
-                </Box>
-              )}
-
-              <Box
-                sx={{
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  display: '-webkit-box',
-                  WebkitLineClamp: 3,
-                  WebkitBoxOrient: 'vertical',
-                  mb: 2,
-                  color: colors.grey[200],
-                  lineHeight: 1.6,
-                }}
-                dangerouslySetInnerHTML={{
-                  __html: post.content.replace(/<img[^>]*>/g, '[Image]'),
-                }}
-              />
-            </Box>
-
-            <PostTags tags={post.tags} isFeatured={post.is_featured} />
-          </CardContent>
-
-          <CardActions sx={{ justifyContent: 'flex-end', px: 2, pb: 2 }}>
-            <Box display="flex" alignItems="center">
-              <IconButton
-                size="small"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleHidePost(post.id);
-                }}
-                aria-label="Hide post"
-                sx={{ 
-                  color: colors.grey[300],
-                  transition: 'all 0.2s ease',
-                  '&:hover': {
-                    color: colors.grey[100],
-                    backgroundColor: colors.primary[300],
-                    transform: 'scale(1.1)',
-                  }
-                }}
-              >
-                <VisibilityOffIcon fontSize="small" />
-              </IconButton>
-            </Box>
-          </CardActions>
-        </Card>
-      </motion.div>
-    );
-  }, [colors, handlePostClick, handleHidePost]);
-
-  const NewsFeed = useCallback(() => {
-    if (loading) {
-      return (
-        <Box display="flex" justifyContent="center" alignItems="center" p={4} minHeight="200px">
-          <CircularProgress sx={{ color: colors.blueAccent[400] }} />
-        </Box>
-      );
-    }
-
-    if (visiblePosts.length === 0) {
-      return (
-        <Box 
-          textAlign="center" 
-          p={4} 
-          sx={{
-            backgroundColor: colors.primary[400],
-            borderRadius: '8px',
-            padding: '40px',
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-          }}
-        >
-          <Typography variant="h6" color={colors.grey[300]}>
-            {newsPosts.length === 0 
-              ? (societyId
-                ? "This society hasn't posted any news yet."
-                : "No news posts from your societies yet.")
-              : "All posts are currently hidden. Refresh the page to reset."}
-          </Typography>
-          {newsPosts.length > 0 && hiddenPosts.length > 0 && (
-            <Button 
-              variant="outlined" 
-              onClick={() => {
-                setHiddenPosts([]);
-                localStorage.removeItem('hiddenNewsPosts');
-              }}
-              sx={{ 
-                mt: 2,
-                borderColor: colors.blueAccent[400],
-                color: colors.blueAccent[300],
-                '&:hover': {
-                  borderColor: colors.blueAccent[300],
-                  backgroundColor: colors.primary[500],
-                }
-              }}
-            >
-              Show All Posts
-            </Button>
-          )}
-        </Box>
-      );
-    }
-
-    return (
-      <AnimatePresence>
-        <Box>
-          {visiblePosts.map((post) => (
-            <NewsCard key={post.id} post={post} />
-          ))}
-        </Box>
-      </AnimatePresence>
-    );
-  }, [loading, newsPosts, visiblePosts, hiddenPosts, societyId, colors, NewsCard]);
 
   return (
     <Box sx={{ width: '100%', maxWidth: '1200px', margin: '0 auto' }}>
       <AnimatePresence mode="wait">
-        {selectedPost ? <DetailedPostView /> : <NewsFeed />}
+        {selectedPost ? (
+          <DetailedPostView 
+            post={selectedPost} 
+            onBack={handleBackToFeed}
+            onHide={handleHidePost}
+            bookmarked={bookmarked}
+            toggleBookmark={toggleBookmark}
+            styleProps={styleProps}
+          />
+        ) : (
+          <NewsFeed 
+            loading={loading}
+            newsPosts={newsPosts}
+            visiblePosts={visiblePosts}
+            hiddenPosts={hiddenPosts}
+            societyId={societyId}
+            onPostClick={handlePostClick}
+            onHidePost={handleHidePost}
+            resetHidden={resetHidden}
+            styleProps={styleProps}
+          />
+        )}
       </AnimatePresence>
-
-      {/* Menu is no longer needed as we've replaced it with direct hide functionality */}
     </Box>
   );
 };
