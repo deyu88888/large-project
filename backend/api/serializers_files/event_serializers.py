@@ -20,6 +20,7 @@ class EventSerializer(serializers.ModelSerializer):
     extra_modules = serializers.SerializerMethodField()
     participant_modules = serializers.SerializerMethodField()
     is_member = serializers.SerializerMethodField()
+    cover_image = serializers.SerializerMethodField()
 
     class Meta:
         model = Event
@@ -30,6 +31,12 @@ class EventSerializer(serializers.ModelSerializer):
             'extra_modules', 'participant_modules', 'is_member'
         ]
         extra_kwargs = {'hosted_by': {'required': True}}
+
+    def get_cover_image(self, obj):
+        if obj.cover_image:
+            request = self.context.get('request')
+            return request.build_absolute_uri(obj.cover_image.url) if request else obj.cover_image.url
+        return None
 
     def get_extra_modules(self, obj):
         modules = obj.modules.filter(is_participant_only=False)

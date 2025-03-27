@@ -230,7 +230,7 @@ class ManageEventDetailsView(APIView):
     def get(self, request, event_id):
         """Returns a serialized event by id"""
         event = self.get_event(event_id)
-        serializer = EventSerializer(event)
+        serializer = EventSerializer(event, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def patch(self, request, event_id):

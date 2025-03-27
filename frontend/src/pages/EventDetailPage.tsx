@@ -150,20 +150,20 @@ const EventDetailPage: React.FC = () => {
 
   const eventData = {
     title: event.title,
-    main_description: event.main_description,
+    mainDescription: event.main_description,
     date: event.date,
-    start_time: event.start_time,
+    startTime: event.start_time,
     duration: event.duration,
     location: event.location || "TBA",
-    max_capacity: event.max_capacity,
-    cover_image_url: event.cover_image,
-    cover_image_file: null,
-    extra_modules: (event.extra_modules || []).map(mapModule),
-    participant_modules: (event.participant_modules || []).map(mapModule),
+    maxCapacity: event.max_capacity,
+    coverImageUrl: event.cover_image,
+    coverImageFile: null,
+    extraModules: (event.extra_modules || []).map(mapModule),
+    participantModules: (event.participant_modules || []).map(mapModule),
     is_participant,
     is_member,
-    event_id: event.id,
-    hosted_by: event.hosted_by,
+    eventId: event.id,
+    hostedBy: event.hosted_by,
     current_attendees: event.current_attendees
   };
 
