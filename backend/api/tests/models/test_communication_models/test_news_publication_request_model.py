@@ -9,7 +9,6 @@ from api.models import NewsPublicationRequest, SocietyNews, Student, User, Socie
 
 class NewsPublicationRequestModelTest(TestCase):
     def setUp(self):
-        # 创建 admin 用户
         self.admin_user = User.objects.create_user(
             username='adminuser',
             email='admin@example.com',
@@ -19,7 +18,6 @@ class NewsPublicationRequestModelTest(TestCase):
             role='admin',
             is_staff=True
         )
-        # 创建 student 用户
         self.student_user = Student.objects.create(
             username='studentuser',
             email='student@example.com',
@@ -28,7 +26,6 @@ class NewsPublicationRequestModelTest(TestCase):
             last_name='User',
             role='student'
         )
-        # 创建社团
         self.society = Society.objects.create(
             name='Test Society',
             description='Society for testing',
@@ -36,7 +33,6 @@ class NewsPublicationRequestModelTest(TestCase):
             approved_by=self.admin_user,
             status='Approved'
         )
-        # 创建新闻帖子
         self.news_post = SocietyNews.objects.create(
             society=self.society,
             title='Test News Post',
@@ -44,7 +40,6 @@ class NewsPublicationRequestModelTest(TestCase):
             author=self.student_user,
             status='Draft'
         )
-        # 创建初始的 publication request（fixture）
         self.publication_request = NewsPublicationRequest.objects.create(
             news_post=self.news_post,
             requested_by=self.student_user,
@@ -71,12 +66,10 @@ class NewsPublicationRequestModelTest(TestCase):
         self.assertEqual(str(self.publication_request), expected_string)
 
     def test_ordering(self):
-        # 创建两个新的请求
         first_req = NewsPublicationRequest.objects.create(
             news_post=self.news_post,
             requested_by=self.student_user
         )
-        # 将 first_req 的时间设置为 1 天前
         first_req.requested_at = timezone.now() - timedelta(days=1)
         first_req.save(update_fields=['requested_at'])
 
@@ -84,11 +77,7 @@ class NewsPublicationRequestModelTest(TestCase):
             news_post=self.news_post,
             requested_by=self.student_user
         )
-        # 获取所有针对同一新闻帖子的请求，按降序排序
         qs = list(NewsPublicationRequest.objects.filter(news_post=self.news_post).order_by("-requested_at"))
-        # 注意：setUp 中的 publication_request 的 requested_at 是创建时刻，
-        # second_req 的时间为当前时间，first_req 的时间为 1 天前，
-        # 所以预期顺序应为: qs[0] == second_req, qs[1] == self.publication_request, qs[2] == first_req.
         self.assertEqual(qs[0].id, second_req.id)
         self.assertEqual(qs[1].id, self.publication_request.id)
         self.assertEqual(qs[2].id, first_req.id)
@@ -181,7 +170,6 @@ class NewsPublicationRequestModelTest(TestCase):
         self.assertTrue(NewsPublicationRequest.objects.filter(id=self.publication_request.id).exists())
 
     def test_multiple_requests_for_same_news_post(self):
-        # setUp 中已有一条 publication_request
         first_request = NewsPublicationRequest.objects.create(
             news_post=self.news_post,
             requested_by=self.student_user
@@ -190,7 +178,6 @@ class NewsPublicationRequestModelTest(TestCase):
             news_post=self.news_post,
             requested_by=self.student_user
         )
-        # 由于 setUp 中已有一条记录，所以总数应为 3
         self.assertEqual(NewsPublicationRequest.objects.filter(news_post=self.news_post).count(), 3)
 
     def test_invalid_status(self):
@@ -227,6 +214,5 @@ class NewsPublicationRequestModelTest(TestCase):
         self.publication_request.refresh_from_db()
         self.news_post.refresh_from_db()
 
-        # 期望第一次审核时间保持不变
         self.assertEqual(self.publication_request.reviewed_at, first_review_time)
         self.assertEqual(self.news_post.status, 'Published')
