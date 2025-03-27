@@ -140,20 +140,31 @@ class AdminEventRequestViewTests(APITestCase):
     def test_non_admin_cannot_update_event(self):
         """Test that non-admin users cannot update events"""
         
-        self.client.force_authenticate(user=self.student)
+        isolated_event = Event.objects.create(
+            title=f"Isolated Test Event {uuid.uuid4().hex[:8]}",
+            main_description="Isolated test event description",
+            date=timezone.now().date(),
+            start_time=time(hour=19, minute=0),
+            duration=timedelta(hours=2),
+            hosted_by=self.society,
+            location="Isolated Test Location",
+            status="Pending"
+        )
         
+        self.client.force_authenticate(user=self.student)
         
         update_data = {"status": "Approved"}
         
-        
-        response = self.client.put(f"/api/admin/society/event/request/{self.event.id}", update_data, format='json')
-        
+        response = self.client.put(
+            f"/api/admin/society/event/request/{isolated_event.id}", 
+            update_data, 
+            format='json'
+        )
         
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         
-        
-        self.event.refresh_from_db()
-        self.assertEqual(self.event.status, "Pending")
+        isolated_event.refresh_from_db()
+        self.assertEqual(isolated_event.status, "Pending")
 
     def test_invalid_data_returns_400(self):
         """Test that invalid data returns a 400 response"""
