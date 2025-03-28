@@ -13,8 +13,20 @@ from api.views_files.view_utility import has_society_management_permission
 class IsAdminOrPresident(BasePermission):
     """Defines a permission check for if a user is an admin or president"""
     def has_permission(self, request, view):
-        return (request.user.is_authenticated
-            and (request.user.is_admin() or request.user.is_president))
+        # First check if user is authenticated
+        if not request.user.is_authenticated:
+            return False
+            
+        # Check if user is admin
+        is_admin = hasattr(request.user, 'is_admin') and callable(getattr(request.user, 'is_admin')) and request.user.is_admin()
+            
+        # Check if user is a president (safely)
+        is_president = False
+        if hasattr(request.user, 'student'):
+            if hasattr(request.user.student, 'is_president'):
+                is_president = request.user.student.is_president
+                
+        return is_admin or is_president
 
 
 class NewsView(APIView):

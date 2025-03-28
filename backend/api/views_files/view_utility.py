@@ -92,13 +92,22 @@ def has_society_management_permission(student, society, for_events_only=False):
     Check if a student has management permissions for a society.
     This includes being either the president, vice president, or event manager (for event operations).
     """
-    is_president = student.is_president and hasattr(society, 'president') and society.president and society.president.id == student.id
-    is_vice_president = hasattr(society, 'vice_president') and society.vice_president and society.vice_president.id == student.id
+    # Check if student is the president of the society
+    is_president = False
+    if hasattr(student, 'is_president') and student.is_president:
+        # Additional check to confirm if student is president of THIS society
+        if hasattr(student, 'president_of') and student.president_of and student.president_of.id == society.id:
+            is_president = True
+    
+    # Check if student is the vice president of the society
+    is_vice_president = False
+    if hasattr(society, 'vice_president') and society.vice_president:
+        is_vice_president = society.vice_president.id == student.id
+    
+    # Check if student is the event manager (only relevant for event operations)
     is_event_manager = False
-    if for_events_only:
-        is_event_manager = (hasattr(society, 'event_manager') and
-                           society.event_manager and
-                           society.event_manager.id == student.id)
+    if for_events_only and hasattr(society, 'event_manager') and society.event_manager:
+        is_event_manager = society.event_manager.id == student.id
 
     return is_president or is_vice_president or is_event_manager
 

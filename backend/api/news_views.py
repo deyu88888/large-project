@@ -159,7 +159,14 @@ class SocietyNewsDetailView(APIView):
             return Response({"error": "Only society presidents and vice presidents can update news posts."}, 
                             status=status.HTTP_403_FORBIDDEN)
         
-        data = request.data.copy() if hasattr(request.data, 'copy') else dict(request.data)
+        # Create a safe copy of the data without trying to copy file objects
+        data = {}
+        for key in request.data:
+            # Skip file objects when copying
+            if hasattr(request.data[key], 'read'):
+                data[key] = request.data[key]
+            else:
+                data[key] = request.data[key]
         
         current_status = news_post.status
         requested_status = data.get('status', None)
@@ -180,6 +187,14 @@ class SocietyNewsDetailView(APIView):
                     news_post=news_post,
                     status="Pending"
                 ).update(status="Cancelled")
+        
+        # Handle tags specially if they're coming as a JSON string
+        if 'tags' in data and isinstance(data['tags'], str):
+            import json
+            try:
+                data['tags'] = json.loads(data['tags'])
+            except json.JSONDecodeError:
+                pass
         
         serializer = SocietyNewsSerializer(news_post, data=data, partial=True, context={'request': request})
         if serializer.is_valid():

@@ -287,26 +287,40 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-
+  
     try {
       const formData = new FormData();
+      
+      // Add required text fields
       formData.append("title", title);
       formData.append("content", content);
       formData.append("status", status);
-      formData.append("is_pinned", isPinned.toString());
-      formData.append("is_featured", isFeatured.toString());
-      formData.append("tags", JSON.stringify(tags));
-
+      
+      // Make sure boolean values are explicitly strings
+      formData.append("is_pinned", isPinned ? "true" : "false");
+      formData.append("is_featured", isFeatured ? "true" : "false");
+      
+      // Add tags with JSON string approach
+      formData.append("tags", JSON.stringify(tags || []));
+      
+      // Add files if present
       if (image) {
         formData.append("image", image);
       }
-
+  
       if (attachment) {
         formData.append("attachment", attachment);
       }
-
+  
+      // Log form data for debugging
+      console.log("Submitting FormData:");
+      for (let [key, value] of formData.entries()) {
+        console.log(`${key}: ${value instanceof File ? value.name : value}`);
+      }
+  
       let response;
-
+      let statusChanged = false;
+  
       if (editorMode === "create") {
         response = await apiClient.post(
           `/api/society/${societyId}/news/`,
@@ -317,9 +331,15 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
             },
           }
         );
+        
+        // For new posts, the status always changes from nothing to whatever we set
+        statusChanged = true;
       } else if (editorMode === "edit" && selectedNews) {
+        // Check if status is changing from Draft to PendingApproval
+        statusChanged = (selectedNews.status === "Draft" && status === "PendingApproval");
+        
         response = await apiClient.put(
-          `/api/news/${selectedNews.id}/`,
+          `/api/news/${selectedNews.id}/detail/`,
           formData,
           {
             headers: {
@@ -328,8 +348,9 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
           }
         );
       }
-
-      if (status === "PendingApproval" && response?.data?.id) {
+  
+      // Only create a publication request if the status is changing from Draft to PendingApproval
+      if (status === "PendingApproval" && response?.data?.id && statusChanged) {
         try {
           await apiClient.post("/api/news/publication-request/", {
             news_post: response.data.id,
@@ -337,18 +358,53 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
           alert("Submitted for admin approval!");
         } catch (err) {
           console.error("Failed to create publication request:", err);
-          alert("News post saved as draft, but failed to request publication.");
+          
+          // If there's a specific error message from the server, show it
+          if (err.response && err.response.data && err.response.data.error) {
+            alert(`Failed to request publication: ${err.response.data.error}`);
+          } else {
+            alert("News post saved, but failed to request publication. It may already have a pending request.");
+          }
         }
+      } else if (editorMode === "edit") {
+        alert("News post updated successfully!");
       }
-
+  
       // Refresh news list
       fetchNews();
-
+  
       // Reset form and return to view mode
       setEditorMode("view");
       setSelectedNews(null);
     } catch (error) {
       console.error("Error submitting news:", error);
+      
+      // Enhanced error reporting
+      if (error.response) {
+        console.error("Response status:", error.response.status);
+        console.error("Response headers:", error.response.headers);
+        console.error("Server error details:", error.response.data);
+        
+        // Try to extract a meaningful error message for the user
+        let errorMessage = "An error occurred while submitting the news post.";
+        
+        if (typeof error.response.data === 'object' && error.response.data !== null) {
+          if (error.response.data.error) {
+            errorMessage = error.response.data.error;
+          } else {
+            const errorDetails = Object.entries(error.response.data)
+              .map(([field, messages]) => `${field}: ${messages}`)
+              .join('\n');
+            if (errorDetails) {
+              errorMessage = errorDetails;
+            }
+          }
+        }
+        
+        alert(`Error: ${errorMessage}`);
+      } else {
+        alert(`Error: ${error.message || "Unknown error occurred"}`);
+      }
     } finally {
       setIsSubmitting(false);
     }
