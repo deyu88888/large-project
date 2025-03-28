@@ -16,6 +16,7 @@ class SocietyNewsSerializer(serializers.ModelSerializer):
     is_author = serializers.SerializerMethodField()
     image_url = serializers.SerializerMethodField()
     attachment_name = serializers.SerializerMethodField()
+    attachment_url = serializers.SerializerMethodField()  # Define explicitly as a SerializerMethodField
     comments = serializers.SerializerMethodField(read_only=True)
     admin_notes = serializers.SerializerMethodField()
 
@@ -24,7 +25,7 @@ class SocietyNewsSerializer(serializers.ModelSerializer):
         model = SocietyNews
         fields = [
             'id', 'society', 'title', 'content', 'image', 'image_url',
-            'attachment', 'attachment_name', 'author', 'author_data',
+            'attachment', 'attachment_name', 'attachment_url', 'author', 'author_data',
             'society_data', 'created_at', 'updated_at', 'published_at',
             'status', 'is_featured', 'is_pinned', 'tags', 'view_count',
             'comment_count', 'is_author', 'comments', 'admin_notes',
@@ -108,6 +109,18 @@ class SocietyNewsSerializer(serializers.ModelSerializer):
                 return name
             return None
         except Exception:
+            return None
+
+    def get_attachment_url(self, obj):
+        """Get full attachment URL."""
+        try:
+            request = self.context.get("request")
+            if obj.attachment:
+                url = request.build_absolute_uri(obj.attachment.url) if request else obj.attachment.url
+                return url
+            return None
+        except Exception as e:
+            print(f"Error getting attachment URL: {e}")
             return None
 
     def get_comments(self, obj):
