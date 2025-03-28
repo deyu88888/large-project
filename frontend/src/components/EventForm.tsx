@@ -70,7 +70,7 @@ export const EventForm: React.FC<EventFormProps> = ({
   const isPastEvent = eventDateTime < now;
 
   const formatStartTime = (timeStr: string): string => {
-    return timeStr.length === 5 ? timeStr + ":00" : timeStr;  // 如果是 HH:MM，补 :00
+    return timeStr.length === 5 ? timeStr + ":00" : timeStr;
   };
 
   const handleAddModuleClick = (event: React.MouseEvent<HTMLButtonElement>) => setAnchorEl(event.currentTarget);
@@ -138,7 +138,7 @@ export const EventForm: React.FC<EventFormProps> = ({
 
     const fixedExtraModules = extraModules.map((mod) => {
       if (mod.type === "file" && !mod.fileValue && mod.textValue) {
-        return { ...mod, fileValue: mod.textValue };  // 直接用 URL 字符串
+        return { ...mod, fileValue: mod.textValue };
       }
       return mod;
     });
@@ -222,7 +222,9 @@ export const EventForm: React.FC<EventFormProps> = ({
 
   const coverImagePreviewSrc = coverImageFile
     ? URL.createObjectURL(coverImageFile)
-    : initialData?.coverImageUrl || "";
+    : initialData?.coverImageUrl;
+
+  console.log(initialData.coverImageUrl);
 
   return (
     <Box sx={{ p: 4 }}>
@@ -520,10 +522,10 @@ export const EventForm: React.FC<EventFormProps> = ({
           onClose={handleClosePreview}
           eventData={{
             ...previewData,
-            is_participant: true,
-            is_member: true,
-            event_id: 0,
-            hosted_by: 0,
+            isParticipant: true,
+            isMember: true,
+            eventId: 0,
+            hostedBy: 0,
           } as any}
         />
       )}
