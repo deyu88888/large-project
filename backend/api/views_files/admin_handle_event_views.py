@@ -179,7 +179,6 @@ class EventUpdateUndoHandler(RestoreHandler):
             if 'tags' in data and isinstance(data['tags'], list):
                 event.tags = data['tags']
             
-            # Manusha check this event model doesn't have images fiels
             if 'images' in data:
                 try:
                     event.images.clear()
