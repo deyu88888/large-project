@@ -693,13 +693,13 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
           <ArrowBackIcon />
         </IconButton>
         <Typography variant="h4" fontWeight="bold">
-          {editorMode === "view"
-            ? selectedNews
-              ? selectedNews.title || "(Untitled News Post)"
-              : "Society News Management"
-            : editorMode === "create"
-            ? "Create New News Post"
-            : "Edit News Post"}
+        {editorMode === "view"
+          ? selectedNews
+            ? "News Details"
+            : "Society News Management"
+          : editorMode === "create"
+          ? "Create New News Post"
+          : "Edit News Post"}
         </Typography>
       </Box>
 
