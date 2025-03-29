@@ -1245,6 +1245,7 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
                 fullWidth
                 variant="filled"
                 required
+                autoComplete="off"
                 InputProps={{
                   style: {
                     color: colors.grey[100],
@@ -1278,8 +1279,51 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
                       backgroundColor: alpha(colors.primary[600], 0.8),
                       boxShadow: `0 0 0 2px ${alpha(colors.blueAccent[500], 0.5)}`,
                       transform: "translateY(-2px)"
-                    },
+                    }
                   },
+                  "& .MuiAutocomplete-popper": {
+                    "& .MuiPaper-root": {
+                      backgroundColor: colors.primary[400],
+                      color: colors.grey[100],
+                      borderRadius: "8px",
+                      boxShadow: `0 4px 20px ${alpha(colors.primary[900], 0.3)}`
+                    },
+                    "& .MuiAutocomplete-option": {
+                      color: colors.grey[100],
+                      "&:hover, &.Mui-focused": {
+                        backgroundColor: alpha(colors.primary[500], 0.6)
+                      }
+                    }
+                  },
+                  // Fix for autofill background color in various browsers
+                  "& input:-webkit-autofill": {
+                    WebkitBoxShadow: `0 0 0 100px ${alpha(colors.primary[600], 0.8)} inset !important`,
+                    WebkitTextFillColor: `${colors.grey[100]} !important`,
+                    caretColor: `${colors.grey[100]} !important`,
+                    borderRadius: "inherit"
+                  },
+                  "& input:-webkit-autofill:hover": {
+                    WebkitBoxShadow: `0 0 0 100px ${alpha(colors.primary[600], 0.8)} inset !important`
+                  },
+                  "& input:-webkit-autofill:focus": {
+                    WebkitBoxShadow: `0 0 0 100px ${alpha(colors.primary[600], 0.8)} inset !important`
+                  },
+                  // General autofill style fix
+                  "& input[type=text]": {
+                    backgroundColor: "transparent !important"
+                  },
+                  // For Firefox and other browsers
+                  "& input": {
+                    "&:-webkit-autofill": {
+                      transition: "background-color 5000s ease-in-out 0s, color 5000s ease-in-out 0s"
+                    },
+                    "&:-moz-autofill": {
+                      transition: "background-color 5000s ease-in-out 0s, color 5000s ease-in-out 0s"
+                    },
+                    "&:-ms-autofill": {
+                      transition: "background-color 5000s ease-in-out 0s, color 5000s ease-in-out 0s"
+                    }
+                  }
                 }}
               />
             </Box>
@@ -1698,17 +1742,6 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
                       }}
                       InputProps={{
                         disableUnderline: true,
-                        startAdornment: (
-                          <Box sx={{
-                            display: "inline-flex",
-                            backgroundColor: alpha(colors.grey[500], 0.2),
-                            borderRadius: "50%",
-                            p: 0.8,
-                            mr: 1.5
-                          }}>
-                            <AddIcon sx={{ fontSize: 18, color: colors.grey[300] }} />
-                          </Box>
-                        )
                       }}
                     />
                     <Button
@@ -1821,22 +1854,6 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
                   <ImageIcon sx={{ mr: 1.5, color: colors.grey[300] }} />
                   Media
                 </Typography>
-                
-                <Box 
-                  sx={{
-                    backgroundColor: alpha(colors.blueAccent[800], 0.3),
-                    borderRadius: "20px",
-                    px: 1.5,
-                    py: 0.5,
-                    display: "flex",
-                    alignItems: "center",
-                    fontSize: "12px",
-                    color: colors.grey[300]
-                  }}
-                >
-                  <CloudUploadIcon sx={{ mr: 0.5, fontSize: 14 }} />
-                  Add media files
-                </Box>
               </Box>
 
               <Box sx={{ px: 3, pb: 3 }}>
