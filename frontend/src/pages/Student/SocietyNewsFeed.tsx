@@ -807,22 +807,25 @@ const NewsFeed: React.FC<NewsFeedProps> = ({
 
 
 const useBookmarks = () => {
-  const [bookmarked, setBookmarked] = useState<number[]>(() => {
-    const savedBookmarks = localStorage.getItem('newsBookmarks');
-    return savedBookmarks ? JSON.parse(savedBookmarks) : [];
+  const [bookmarkedId, setBookmarkedId] = useState<number | null>(() => {
+    const savedBookmark = localStorage.getItem('newsBookmark');
+    return savedBookmark ? JSON.parse(savedBookmark) : null;
   });
 
   const toggleBookmark = useCallback((postId: number) => {
-    setBookmarked(prev => {
-      const updatedBookmarks = prev.includes(postId)
-        ? prev.filter(id => id !== postId)
-        : [...prev, postId];
+    setBookmarkedId(prev => {
+
+
+      const newValue = prev === postId ? null : postId;
       
 
-      localStorage.setItem('newsBookmarks', JSON.stringify(updatedBookmarks));
-      return updatedBookmarks;
+      localStorage.setItem('newsBookmark', JSON.stringify(newValue));
+      return newValue;
     });
   }, []);
+
+
+  const bookmarked = bookmarkedId !== null ? [bookmarkedId] : [];
 
   return { bookmarked, toggleBookmark };
 };
@@ -849,17 +852,16 @@ const useHiddenPosts = () => {
   return { hiddenPosts, handleHidePost, resetHidden };
 };
 
-const useNewsPosts = (societyId?: number) => {
+const useNewsPosts = (societyId?: number, bookmarkedPosts: number[] = []) => {
   const [newsPosts, setNewsPosts] = useState<NewsPost[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
   const fetchNews = useCallback(async () => {
     setLoading(true);
     try {
-      const endpoint = societyId 
-        ? `/api/society/${societyId}/news/` 
+      const endpoint = societyId
+        ? `/api/society/${societyId}/news/`
         : '/api/news/feed/';
-      
       const response = await apiClient.get(endpoint);
       setNewsPosts(response.data);
     } catch (error) {
@@ -875,11 +877,21 @@ const useNewsPosts = (societyId?: number) => {
 
   const sortedPosts = useMemo(() => {
     return [...newsPosts].sort((a, b) => {
+
+      const aIsBookmarked = bookmarkedPosts.includes(a.id);
+      const bIsBookmarked = bookmarkedPosts.includes(b.id);
+      
+      if (aIsBookmarked && !bIsBookmarked) return -1;
+      if (!aIsBookmarked && bIsBookmarked) return 1;
+      
+
       if (a.is_pinned && !b.is_pinned) return -1;
       if (!a.is_pinned && b.is_pinned) return 1;
+      
+
       return new Date(b.published_at).getTime() - new Date(a.published_at).getTime();
     });
-  }, [newsPosts]);
+  }, [newsPosts, bookmarkedPosts]);
 
   return { newsPosts, loading, sortedPosts };
 };
@@ -889,10 +901,8 @@ const SocietyNewsFeed: React.FC<SocietyNewsFeedProps> = ({ societyId }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const styleProps = { colors };
-
-
-  const { newsPosts, loading, sortedPosts } = useNewsPosts(societyId);
   const { bookmarked, toggleBookmark } = useBookmarks();
+  const { newsPosts, loading, sortedPosts } = useNewsPosts(societyId, bookmarked);
   const { hiddenPosts, handleHidePost, resetHidden } = useHiddenPosts();
   
 
@@ -906,7 +916,6 @@ const SocietyNewsFeed: React.FC<SocietyNewsFeedProps> = ({ societyId }) => {
 
   const handlePostClick = useCallback((post: NewsPost) => {
     setSelectedPost(post);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
   const handleBackToFeed = useCallback(() => {
