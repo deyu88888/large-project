@@ -231,20 +231,20 @@ class NewsPublicationRequest(models.Model):
         ("Pending", "Pending"),
         ("Approved", "Approved"),
         ("Rejected", "Rejected"),
+        ("Cancelled", "Cancelled"),
+        ("Superseded_Approved", "Superseded (Previously Approved)"),
+        ("Superseded_Rejected", "Superseded (Previously Rejected)"),
     ]
-
     news_post = models.ForeignKey(
         SocietyNews,
         on_delete=models.CASCADE,
         related_name="publication_requests"
     )
-
     requested_by = models.ForeignKey(
         Student,
         on_delete=models.CASCADE,
         related_name="news_publication_requests"
     )
-
     reviewed_by = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
@@ -252,7 +252,6 @@ class NewsPublicationRequest(models.Model):
         blank=True,
         related_name="reviewed_news_publications"
     )
-
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="Pending")
     requested_at = models.DateTimeField(auto_now_add=True)
     reviewed_at = models.DateTimeField(null=True, blank=True)
@@ -272,7 +271,7 @@ class NewsPublicationRequest(models.Model):
             orig = NewsPublicationRequest.objects.get(pk=self.pk)
             if orig.status == "Pending" and self.status in ["Approved", "Rejected"]:
                 self.reviewed_at = timezone.now()
-
+                
                 # Update the news post status based on the decision
                 if self.status == "Approved":
                     self.news_post.status = "Published"
@@ -281,5 +280,5 @@ class NewsPublicationRequest(models.Model):
                 elif self.status == "Rejected":
                     self.news_post.status = "Rejected"
                     self.news_post.save()
-
+        
         super().save(*args, **kwargs)

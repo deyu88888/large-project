@@ -159,7 +159,6 @@ class SocietyNewsDetailView(APIView):
             return Response({"error": "Only society presidents and vice presidents can update news posts."}, 
                             status=status.HTTP_403_FORBIDDEN)
         
-
         data = {}
         for key in request.data:
             if hasattr(request.data[key], 'read'):
@@ -169,42 +168,62 @@ class SocietyNewsDetailView(APIView):
         
         current_status = news_post.status
         
-
-        if current_status == "Published":
-
+        if current_status == "Published" or current_status == "Rejected":
             content_changed = 'content' in data and data['content'] != news_post.content
             has_new_attachment = any(key.startswith('attachment') for key in data)
             
             if content_changed or has_new_attachment:
-
                 data['status'] = "PendingApproval"
                 
-
                 serializer = SocietyNewsSerializer(news_post, data=data, partial=True, context={'request': request})
                 if serializer.is_valid():
                     updated_post = serializer.save()
                     
-
+                    # Cancel any pending requests
                     NewsPublicationRequest.objects.filter(
                         news_post=news_post,
                         status="Pending"
                     ).update(status="Cancelled")
                     
-
-                    latest_approved = NewsPublicationRequest.objects.filter(
+                    # Change status of previously approved requests to "Superseded_Approved"
+                    NewsPublicationRequest.objects.filter(
                         news_post=news_post,
                         status="Approved"
+                    ).update(status="Superseded_Approved")
+                    
+                    # Change status of previously rejected requests to "Superseded_Rejected"
+                    NewsPublicationRequest.objects.filter(
+                        news_post=news_post,
+                        status="Rejected"
+                    ).update(status="Superseded_Rejected")
+                    
+                    # Get latest superseded request for reference
+                    latest_approved = NewsPublicationRequest.objects.filter(
+                        news_post=news_post,
+                        status="Superseded_Approved"
                     ).order_by('-reviewed_at').first()
                     
-
+                    latest_rejected = NewsPublicationRequest.objects.filter(
+                        news_post=news_post,
+                        status="Superseded_Rejected"
+                    ).order_by('-reviewed_at').first()
+                    
                     request_data = {
                         'news_post': updated_post,
                         'status': "Pending",
                         'requested_by': request.user.student
                     }
                     
-                    if latest_approved:
+                    # Use the most recent request between approved and rejected
+                    if latest_approved and latest_rejected:
+                        if latest_approved.reviewed_at > latest_rejected.reviewed_at:
+                            request_data['admin_notes'] = f"Revision of previously approved content (approved on {latest_approved.reviewed_at.strftime('%Y-%m-%d %H:%M')})"
+                        else:
+                            request_data['admin_notes'] = f"Revision of previously rejected content (rejected on {latest_rejected.reviewed_at.strftime('%Y-%m-%d %H:%M')})"
+                    elif latest_approved:
                         request_data['admin_notes'] = f"Revision of previously approved content (approved on {latest_approved.reviewed_at.strftime('%Y-%m-%d %H:%M')})"
+                    elif latest_rejected:
+                        request_data['admin_notes'] = f"Revision of previously rejected content (rejected on {latest_rejected.reviewed_at.strftime('%Y-%m-%d %H:%M')})"
                     
                     NewsPublicationRequest.objects.create(**request_data)
                     
@@ -212,7 +231,6 @@ class SocietyNewsDetailView(APIView):
                 else:
                     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
-
         elif 'status' in data:
             if request.user.is_admin():
                 pass
@@ -230,7 +248,6 @@ class SocietyNewsDetailView(APIView):
                     status="Pending"
                 ).update(status="Cancelled")
         
-
         if 'tags' in data and isinstance(data['tags'], str):
             import json
             try:

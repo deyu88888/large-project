@@ -30,7 +30,6 @@ const NewsPublicationRequestButton: React.FC<NewsPublicationRequestButtonProps> 
 
   const handleClickOpen = () => {
     if (skipConfirmation) {
-
       handleSubmit();
     } else {
       setOpen(true);
@@ -57,8 +56,6 @@ const NewsPublicationRequestButton: React.FC<NewsPublicationRequestButtonProps> 
     } catch (err: any) {
       setLoading(false);
       if (skipConfirmation) {
-
-
         if (onSuccess) {
           onSuccess();
         }
@@ -78,9 +75,9 @@ const NewsPublicationRequestButton: React.FC<NewsPublicationRequestButtonProps> 
         onClick={handleClickOpen}
         disabled={disabled || loading}
         sx={{
-          backgroundColor: '
+          backgroundColor: '#3a82f6',
           '&:hover': {
-            backgroundColor: '
+            backgroundColor: '#2563eb'
           }
         }}
       >
