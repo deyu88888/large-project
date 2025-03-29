@@ -11,16 +11,16 @@ def student_has_no_role(student, start=False, society_id=None):
     if start:
         action = "start another society"
 
-    # If society_id is provided, check roles only for that society
+
     if society_id is not None:
-        # Check if student is president of this specific society
+
         if student.is_president and student.president_of and student.president_of.id == society_id:
             return Response(
                 {"error": f"As president, you can't {action} before you transfer presidency."},
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        # Check if student is vice president of this specific society
+
         if student.is_vice_president:
             try:
                 Society.objects.get(id=society_id, vice_president=student)
@@ -32,7 +32,7 @@ def student_has_no_role(student, start=False, society_id=None):
             except Society.DoesNotExist:
                 pass
 
-        # Check if student is event manager of this specific society
+
         if student.is_event_manager:
             try:
                 Society.objects.get(id=society_id, event_manager=student)
@@ -44,7 +44,7 @@ def student_has_no_role(student, start=False, society_id=None):
             except Society.DoesNotExist:
                 pass
     else:
-        # Original checks for any society role (used when starting a new society)
+
         if student.is_president and student.president_of:
             return Response(
                 {"error": f"As president, you can't {action} before "
@@ -92,19 +92,19 @@ def has_society_management_permission(student, society, for_events_only=False):
     Check if a student has management permissions for a society.
     This includes being either the president, vice president, or event manager (for event operations).
     """
-    # Check if student is the president of the society
+
     is_president = False
     if hasattr(student, 'is_president') and student.is_president:
-        # Additional check to confirm if student is president of THIS society
+
         if hasattr(student, 'president_of') and student.president_of and student.president_of.id == society.id:
             is_president = True
     
-    # Check if student is the vice president of the society
+
     is_vice_president = False
     if hasattr(society, 'vice_president') and society.vice_president:
         is_vice_president = society.vice_president.id == student.id
     
-    # Check if student is the event manager (only relevant for event operations)
+
     is_event_manager = False
     if for_events_only and hasattr(society, 'event_manager') and society.event_manager:
         is_event_manager = society.event_manager.id == student.id
@@ -178,13 +178,13 @@ def set_foreign_key_relationship(obj, field_name, id_value, model_class):
         return
 
     try:
-        # Convert to int to handle both string and integer IDs
+
         item = model_class.objects.get(id=int(id_value))
         setattr(obj, field_name, item)
     except (model_class.DoesNotExist, ValueError, TypeError) as e:
         print(f"Error setting {field_name} with ID {id_value}: {str(e)}")
 
-# Handler implementations using Strategy Pattern
+
 class RestoreHandler:
     """Base class for all restore handlers."""
     def handle(self, original_data, log_entry):

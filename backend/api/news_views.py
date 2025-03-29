@@ -159,19 +159,61 @@ class SocietyNewsDetailView(APIView):
             return Response({"error": "Only society presidents and vice presidents can update news posts."}, 
                             status=status.HTTP_403_FORBIDDEN)
         
-        # Create a safe copy of the data without trying to copy file objects
+
         data = {}
         for key in request.data:
-            # Skip file objects when copying
             if hasattr(request.data[key], 'read'):
                 data[key] = request.data[key]
             else:
                 data[key] = request.data[key]
         
         current_status = news_post.status
-        requested_status = data.get('status', None)
+        
 
-        if 'status' in data:
+        if current_status == "Published":
+
+            content_changed = 'content' in data and data['content'] != news_post.content
+            has_new_attachment = any(key.startswith('attachment') for key in data)
+            
+            if content_changed or has_new_attachment:
+
+                data['status'] = "PendingApproval"
+                
+
+                serializer = SocietyNewsSerializer(news_post, data=data, partial=True, context={'request': request})
+                if serializer.is_valid():
+                    updated_post = serializer.save()
+                    
+
+                    NewsPublicationRequest.objects.filter(
+                        news_post=news_post,
+                        status="Pending"
+                    ).update(status="Cancelled")
+                    
+
+                    latest_approved = NewsPublicationRequest.objects.filter(
+                        news_post=news_post,
+                        status="Approved"
+                    ).order_by('-reviewed_at').first()
+                    
+
+                    request_data = {
+                        'news_post': updated_post,
+                        'status': "Pending",
+                        'requested_by': request.user.student
+                    }
+                    
+                    if latest_approved:
+                        request_data['admin_notes'] = f"Revision of previously approved content (approved on {latest_approved.reviewed_at.strftime('%Y-%m-%d %H:%M')})"
+                    
+                    NewsPublicationRequest.objects.create(**request_data)
+                    
+                    return Response(serializer.data, status=status.HTTP_200_OK)
+                else:
+                    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+
+        elif 'status' in data:
             if request.user.is_admin():
                 pass
             
@@ -188,7 +230,7 @@ class SocietyNewsDetailView(APIView):
                     status="Pending"
                 ).update(status="Cancelled")
         
-        # Handle tags specially if they're coming as a JSON string
+
         if 'tags' in data and isinstance(data['tags'], str):
             import json
             try:

@@ -16,7 +16,7 @@ class SocietyNewsSerializer(serializers.ModelSerializer):
     is_author = serializers.SerializerMethodField()
     image_url = serializers.SerializerMethodField()
     attachment_name = serializers.SerializerMethodField()
-    attachment_url = serializers.SerializerMethodField()  # Define explicitly as a SerializerMethodField
+    attachment_url = serializers.SerializerMethodField()
     comments = serializers.SerializerMethodField(read_only=True)
     admin_notes = serializers.SerializerMethodField()
 
@@ -141,7 +141,7 @@ class SocietyNewsSerializer(serializers.ModelSerializer):
             return None
 
         try:
-            # Get the most recently reviewed request with status="Rejected"
+
             rejected_req = NewsPublicationRequest.objects.filter(
                 news_post=obj, status="Rejected"
             ).order_by('-reviewed_at').first()
@@ -168,31 +168,31 @@ class SocietyNewsSerializer(serializers.ModelSerializer):
             tags = data.get('tags')
             if tags and not isinstance(tags, list):
                 try:
-                    # If it's a string, try to parse it as JSON
+
                     if isinstance(tags, str):
                         import json
                         try:
-                            # Try to parse as JSON
+
                             parsed_tags = json.loads(tags)
-                            # Ensure it's a list
+
                             if isinstance(parsed_tags, list):
                                 data['tags'] = parsed_tags
                             else:
-                                # If parsed but not a list, convert to a list with one item
+
                                 data['tags'] = [str(parsed_tags)]
                         except json.JSONDecodeError:
-                            # Not valid JSON, check if it's a single tag
+
                             if tags.strip():
-                                # Treat as a single tag
+
                                 data['tags'] = [tags.strip()]
                             else:
-                                # Empty string, use empty list
+
                                 data['tags'] = []
                     else:
-                        # Not a string or list, convert to string and use as single tag
+
                         data['tags'] = [str(tags)]
                 except Exception:
-                    # Default to empty list for safety
+
                     data['tags'] = []
         
         return data
@@ -282,7 +282,7 @@ class NewsCommentSerializer(serializers.ModelSerializer):
         try:
             return obj.dislikes.count()
         except Exception:
-            # Fallback to 0 if the dislikes table is not available
+
             return 0
 
     def get_disliked_by_user(self, obj):

@@ -1,4 +1,4 @@
-// Path: frontend/src/pages/President/SocietyNewsManager.tsx
+
 
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
@@ -95,7 +95,7 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
     "view"
   );
 
-  // New post state
+
   const [title, setTitle] = useState<string>("");
   const [content, setContent] = useState<string>("");
   const [status, setStatus] = useState<
@@ -111,7 +111,7 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
   const [isPdfOpen, setIsPdfOpen] = useState<boolean>(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [attachmentInfo, setAttachmentInfo] = useState<{name: string, url: string} | null>(null);
-  // Loading and action states
+
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -122,7 +122,7 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
     }
   }, [societyId]);
 
-  // Add this effect to update the PDF URL when a news post is selected
+
   useEffect(() => {
     if (selectedNews && selectedNews.attachment_name) {
       fetchPdfUrl();
@@ -134,10 +134,10 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
     try {
       const response = await apiClient.get(`/api/society/${societyId}/news/`);
       setNews(response.data);
-      return response.data; // Return the data
+      return response.data;
     } catch (error) {
       console.error("Error fetching news:", error);
-      return []; // Return empty array on error
+      return [];
     } finally {
       setLoading(false);
     }
@@ -161,7 +161,7 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
   };
 
   const handleCreateNews = () => {
-    // Reset form
+
     setTitle("");
     setContent("");
     setStatus("Draft");
@@ -173,7 +173,7 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
     setImagePreview(null);
     setAttachment(null);
 
-    // Switch to create mode
+
     setEditorMode("create");
   };
 
@@ -190,7 +190,7 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
     setImagePreview(news.image_url);
     setAttachment(null);
     if (news.attachment_name) {
-      // Store the attachment info to display when editing
+
       setAttachmentInfo({
         name: news.attachment_name,
         url: news.attachment_url
@@ -239,7 +239,7 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
       const file = event.target.files[0];
       setImage(file);
 
-      // Create a preview for the image
+
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result as string);
@@ -254,13 +254,13 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
     if (event.target.files && event.target.files[0]) {
       const file = event.target.files[0];
       
-      // Validate file type - only accept PDFs
+
       const fileType = file.type;
       const validTypes = ['application/pdf'];
       
       if (!validTypes.includes(fileType)) {
         alert("Please upload PDF files only.");
-        // Clear the input
+
         event.target.value = '';
         return;
       }
@@ -277,20 +277,20 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
     try {
       const formData = new FormData();
       
-      // Add required text fields
+
       formData.append("title", title);
       formData.append("content", content);
       formData.append("status", status);
       
-      // Make sure boolean values are explicitly strings
+
       formData.append("is_pinned", isPinned ? "true" : "false");
       formData.append("is_featured", isFeatured ? "true" : "false");
 
-      // Array notation approach
+
       if (tags && Array.isArray(tags) && tags.length > 0) {
         const cleanTags = tags.map(tag => String(tag).trim()).filter(Boolean);
         
-        // Send each tag with an index
+
         cleanTags.forEach((tag, index) => {
           formData.append(`tags[${index}]`, tag);
         });
@@ -298,7 +298,7 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
         formData.append("tags[]", "");
       }
       
-      // Add files if present
+
       if (image) {
         formData.append("image", image);
       }
@@ -306,16 +306,16 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
       if (attachment) {
         formData.append("attachment", attachment);
       } else if (attachmentInfo && editorMode === "edit") {
-        // If editing and there's existing attachment info but no new attachment file,
-        // we want to keep the existing attachment, so we don't need to do anything
+
+
         console.log("Keeping existing attachment:", attachmentInfo.name);
       } else if (!attachmentInfo && editorMode === "edit") {
-        // If editing and there's no attachment info (it was removed), 
-        // we need to explicitly indicate to remove the attachment
+
+
         formData.append("remove_attachment", "true");
       }
   
-      // Log form data for debugging
+
       console.log("Submitting FormData:");
       for (let [key, value] of formData.entries()) {
         console.log(`${key}: ${value instanceof File ? value.name : value}`);
@@ -335,10 +335,10 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
           }
         );
         
-        // For new posts, the status always changes from nothing to whatever we set
+
         statusChanged = true;
       } else if (editorMode === "edit" && selectedNews) {
-        // Check if status is changing from Draft to PendingApproval
+
         statusChanged = (selectedNews.status === "Draft" && status === "PendingApproval");
         
         response = await apiClient.put(
@@ -352,7 +352,7 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
         );
       }
   
-      // Only create a publication request if the status is changing from Draft to PendingApproval
+
       if (status === "PendingApproval" && response?.data?.id && statusChanged) {
         try {
           await apiClient.post("/api/news/publication-request/", {
@@ -362,7 +362,7 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
         } catch (err) {
           console.error("Failed to create publication request:", err);
           
-          // If there's a specific error message from the server, show it
+
           if (err.response && err.response.data && err.response.data.error) {
             alert(`Failed to request publication: ${err.response.data.error}`);
           } else {
@@ -373,22 +373,22 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
         alert("News post updated successfully!");
       }
   
-      // Refresh news list
+
       fetchNews();
   
-      // Reset form and return to view mode
+
       setEditorMode("view");
       setSelectedNews(null);
     } catch (error) {
       console.error("Error submitting news:", error);
       
-      // Enhanced error reporting
+
       if (error.response) {
         console.error("Response status:", error.response.status);
         console.error("Response headers:", error.response.headers);
         console.error("Server error details:", error.response.data);
         
-        // Try to extract a meaningful error message for the user
+
         let errorMessage = "An error occurred while submitting the news post.";
         
         if (typeof error.response.data === 'object' && error.response.data !== null) {
@@ -435,17 +435,17 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
     } else if (selectedNews) {
       setSelectedNews(null);
     } else {
-      // Instead of just relying on onBack, use navigate if available
+
       if (onBack) {
         onBack();
       } else {
-        // Navigate back using the router
+
         navigate(-1);
       }
     }
   };
 
-  // Get status color
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Published":
@@ -465,7 +465,7 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
 
   const fetchPdfUrl = () => {
     if (selectedNews && selectedNews.attachment_url) {
-      // Use the attachment_url directly from the API response
+
       console.log("Using PDF URL from backend:", selectedNews.attachment_url);
       setPdfUrl(selectedNews.attachment_url);
     } else {
@@ -473,7 +473,7 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
     }
   };
 
-  // Render post item for the list view
+
   const renderNewsItem = (post: NewsPost) => {
     const isPublished = post.status === "Published";
     const formattedDate = new Date(
@@ -532,19 +532,19 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
                   size="small"
                   sx={{
                     backgroundColor: getStatusColor(post.status),
-                    color: "#fff",
+                    color: "
                     fontWeight: "bold",
                   }}
                 />
 
                 {post.is_featured && (
                   <Chip
-                    icon={<StarIcon sx={{ color: "#fff !important" }} />}
+                    icon={<StarIcon sx={{ color: "
                     label="Featured"
                     size="small"
                     sx={{
                       backgroundColor: colors.blueAccent[500],
-                      color: "#fff",
+                      color: "
                     }}
                   />
                 )}
@@ -937,18 +937,18 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
               label={selectedNews.status}
               sx={{
                 backgroundColor: getStatusColor(selectedNews.status),
-                color: "#fff",
+                color: "
                 fontWeight: "bold",
               }}
             />
 
             {selectedNews.is_pinned && (
               <Chip
-                icon={<PushPinIcon sx={{ color: "#fff !important" }} />}
+                icon={<PushPinIcon sx={{ color: "
                 label="Pinned"
                 sx={{
                   backgroundColor: colors.greenAccent[600],
-                  color: "#fff",
+                  color: "
                   fontWeight: "bold",
                 }}
               />
@@ -956,11 +956,11 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
 
             {selectedNews.is_featured && (
               <Chip
-                icon={<StarIcon sx={{ color: "#fff !important" }} />}
+                icon={<StarIcon sx={{ color: "
                 label="Featured"
                 sx={{
                   backgroundColor: colors.blueAccent[600],
-                  color: "#fff",
+                  color: "
                   fontWeight: "bold",
                 }}
               />
@@ -1204,15 +1204,15 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
             <Box mt={2}>
               <NewsPublicationRequestButton
                 newsId={selectedNews.id}
-                skipConfirmation={true} // Skip confirmation dialog in view mode
+                skipConfirmation={true}
                 onSuccess={() => {
-                  // Update the status immediately
+
                   setSelectedNews({
                     ...selectedNews,
                     status: "PendingApproval"
                   });
                   
-                  // Also refresh the news list in the background
+
                   fetchNews();
                 }}
               />
@@ -1304,7 +1304,7 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
                       }
                     }
                   },
-                  // Fix for autofill background color in various browsers
+
                   "& input:-webkit-autofill": {
                     WebkitBoxShadow: `0 0 0 100px ${alpha(colors.primary[600], 0.8)} inset !important`,
                     WebkitTextFillColor: `${colors.grey[100]} !important`,
@@ -1317,11 +1317,11 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
                   "& input:-webkit-autofill:focus": {
                     WebkitBoxShadow: `0 0 0 100px ${alpha(colors.primary[600], 0.8)} inset !important`
                   },
-                  // General autofill style fix
+
                   "& input[type=text]": {
                     backgroundColor: "transparent !important"
                   },
-                  // For Firefox and other browsers
+
                   "& input": {
                     "&:-webkit-autofill": {
                       transition: "background-color 5000s ease-in-out 0s, color 5000s ease-in-out 0s"

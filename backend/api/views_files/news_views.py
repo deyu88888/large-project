@@ -13,14 +13,14 @@ from api.views_files.view_utility import has_society_management_permission
 class IsAdminOrPresident(BasePermission):
     """Defines a permission check for if a user is an admin or president"""
     def has_permission(self, request, view):
-        # First check if user is authenticated
+
         if not request.user.is_authenticated:
             return False
             
-        # Check if user is admin
+
         is_admin = hasattr(request.user, 'is_admin') and callable(getattr(request.user, 'is_admin')) and request.user.is_admin()
             
-        # Check if user is a president (safely)
+
         is_president = False
         if hasattr(request.user, 'student'):
             if hasattr(request.user.student, 'is_president'):
@@ -53,21 +53,21 @@ class NewsView(APIView):
         else:
             if societies:
                 society_members = User.objects.filter(
-                    student__isnull=False,  # Ensure the user is a student
+                    student__isnull=False,
                     student__societies__in=Society.objects.filter(id__in=societies)
                 ).distinct()
                 recipients.update(society_members)
 
             if events:
                 event_attendees = User.objects.filter(
-                    student__isnull=False,  # Ensure the user is a student
+                    student__isnull=False,
                     student__attended_events__in=Event.objects.filter(id__in=events)
                 ).distinct()
                 recipients.update(event_attendees)
 
         broadcast = BroadcastMessage.objects.create(sender=user, message=message)
 
-        # Assign societies, events and recipients
+
         if societies:
             broadcast.societies.set(Society.objects.filter(id__in=societies))
         if events:
@@ -87,7 +87,7 @@ class BroadcastListAPIView(APIView):
         """Gets all broadcast messages for a user"""
         user = request.user
 
-        query = Q(recipients=user) # Initialise query
+        query = Q(recipients=user)
 
         if hasattr(user, 'student'):
             student = user.student
@@ -168,7 +168,7 @@ class NewsPublicationRequestView(APIView):
         all_statuses = request.query_params.get('all_statuses') == 'true'
 
         if hasattr(user, "student"):
-            # For students, return their own requests
+
             requests = NewsPublicationRequest.objects.filter(
                 requested_by=user.student
             ).order_by('-requested_at')
@@ -223,7 +223,7 @@ class AdminNewsApprovalView(APIView):
             return Response({"error": "Invalid action. Must be 'Approved' or 'Rejected'"},
                 status=status.HTTP_400_BAD_REQUEST)
 
-        # Update the publication request
+
         publication_request.status = action
         publication_request.reviewed_by = request.user
         publication_request.reviewed_at = timezone.now()
@@ -240,7 +240,7 @@ class AdminNewsApprovalView(APIView):
         news_post.save()
         publication_request.save()
 
-        # Notify requester
+
         notification_header = f"News Publication {action}"
         notification_body = ("Your news publication request for "
             f"'{news_post.title}' has been {action.lower()}.")

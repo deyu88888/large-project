@@ -15,7 +15,7 @@ interface NewsPublicationRequestButtonProps {
   newsId: number;
   onSuccess?: () => void;
   disabled?: boolean;
-  skipConfirmation?: boolean; // New prop to skip confirmation dialog
+  skipConfirmation?: boolean;
 }
 
 const NewsPublicationRequestButton: React.FC<NewsPublicationRequestButtonProps> = ({
@@ -30,7 +30,7 @@ const NewsPublicationRequestButton: React.FC<NewsPublicationRequestButtonProps> 
 
   const handleClickOpen = () => {
     if (skipConfirmation) {
-      // Skip dialog and submit directly
+
       handleSubmit();
     } else {
       setOpen(true);
@@ -57,8 +57,8 @@ const NewsPublicationRequestButton: React.FC<NewsPublicationRequestButtonProps> 
     } catch (err: any) {
       setLoading(false);
       if (skipConfirmation) {
-        // If we're in skipConfirmation mode, still call onSuccess even on error
-        // This ensures the UI updates in view mode
+
+
         if (onSuccess) {
           onSuccess();
         }
@@ -78,9 +78,9 @@ const NewsPublicationRequestButton: React.FC<NewsPublicationRequestButtonProps> 
         onClick={handleClickOpen}
         disabled={disabled || loading}
         sx={{
-          backgroundColor: '#4caf50',
+          backgroundColor: '
           '&:hover': {
-            backgroundColor: '#388e3c',
+            backgroundColor: '
           }
         }}
       >

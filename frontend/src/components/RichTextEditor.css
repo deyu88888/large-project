@@ -22,7 +22,7 @@
   .editor-menu button {
     background-color: transparent;
     border: none;
-    color: #e0e0e0;
+    color:
     border-radius: 4px;
     padding: 0.25rem 0.5rem;
     margin-right: 0.25rem;
@@ -83,7 +83,7 @@
   }
   
   .ProseMirror blockquote {
-    border-left: 3px solid #3a82f6;
+    border-left: 3px solid
     padding-left: 1rem;
     margin-left: 0;
     margin-right: 0;
@@ -92,7 +92,7 @@
   }
   
   .ProseMirror a {
-    color: #3a82f6;
+    color:
     text-decoration: underline;
   }
   

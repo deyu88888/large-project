@@ -107,21 +107,21 @@ def custom_media_view(request, path):
     """Used to serve media, i.e. photos and PDFs to the frontend with proper headers"""
     file_path = os.path.join(settings.MEDIA_ROOT, path)
     
-    # Check if file exists and is a PDF
+
     if os.path.exists(file_path) and file_path.lower().endswith('.pdf'):
-        # For PDF files, use FileResponse with explicit headers
+
         response = FileResponse(open(file_path, 'rb'), content_type='application/pdf')
         
-        # Set headers to ensure proper PDF embedding
+
         response['Content-Disposition'] = f'inline; filename="{os.path.basename(file_path)}"'
         
-        # Add CORS headers if needed
-        response['Access-Control-Allow-Origin'] = '*'  # In production, restrict to your domain
+
+        response['Access-Control-Allow-Origin'] = '*'
         response['X-Frame-Options'] = 'SAMEORIGIN'
         
         return response
     
-    # For all other files, use the existing serve function
+
     return serve(request, path, document_root=settings.MEDIA_ROOT)
 
 
