@@ -532,19 +532,18 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
                   size="small"
                   sx={{
                     backgroundColor: getStatusColor(post.status),
-                    color: "
+                    color: "white",
                     fontWeight: "bold",
                   }}
                 />
-
                 {post.is_featured && (
                   <Chip
-                    icon={<StarIcon sx={{ color: "
+                    icon={<StarIcon sx={{ color: "white" }} />}
                     label="Featured"
                     size="small"
                     sx={{
                       backgroundColor: colors.blueAccent[500],
-                      color: "
+                      color: "white"
                     }}
                   />
                 )}
@@ -937,30 +936,28 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
               label={selectedNews.status}
               sx={{
                 backgroundColor: getStatusColor(selectedNews.status),
-                color: "
+                color: "white",
                 fontWeight: "bold",
               }}
             />
-
             {selectedNews.is_pinned && (
               <Chip
-                icon={<PushPinIcon sx={{ color: "
+                icon={<PushPinIcon sx={{ color: "white" }} />}
                 label="Pinned"
                 sx={{
                   backgroundColor: colors.greenAccent[600],
-                  color: "
+                  color: "white",
                   fontWeight: "bold",
                 }}
               />
             )}
-
             {selectedNews.is_featured && (
               <Chip
-                icon={<StarIcon sx={{ color: "
+                icon={<StarIcon sx={{ color: "white" }} />}
                 label="Featured"
                 sx={{
                   backgroundColor: colors.blueAccent[600],
-                  color: "
+                  color: "white",
                   fontWeight: "bold",
                 }}
               />
