@@ -36,7 +36,11 @@ from api.views_files.society_views import *
 from api.views_files.user_views import *
 from api.views_files.recommendation_feedback_views import *
 from api.views_files.recommendation_views import *
-
+from django.http import FileResponse, HttpResponse
+from django.conf import settings
+from django.views.static import serve
+import os
+import mimetypes
 
 
 @api_view(['GET'])
@@ -100,7 +104,24 @@ def get_sorted_events(request):
 
 
 def custom_media_view(request, path):
-    """Used to serve media, i.e. photos to the frontend"""
+    """Used to serve media, i.e. photos and PDFs to the frontend with proper headers"""
+    file_path = os.path.join(settings.MEDIA_ROOT, path)
+    
+
+    if os.path.exists(file_path) and file_path.lower().endswith('.pdf'):
+
+        response = FileResponse(open(file_path, 'rb'), content_type='application/pdf')
+        
+
+        response['Content-Disposition'] = f'inline; filename="{os.path.basename(file_path)}"'
+        
+
+        response['Access-Control-Allow-Origin'] = '*'
+        response['X-Frame-Options'] = 'SAMEORIGIN'
+        
+        return response
+    
+
     return serve(request, path, document_root=settings.MEDIA_ROOT)
 
 

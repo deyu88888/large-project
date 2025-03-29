@@ -1,4 +1,4 @@
-// Path: frontend/src/pages/President/SocietyNewsManager.tsx
+
 
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
@@ -47,30 +47,11 @@ import {
   Person as PersonIcon,
   Comment as CommentIcon,
   CloudUpload as CloudUploadIcon,
+  Close as CloseIcon,
 } from "@mui/icons-material";
-import ReactQuill from "react-quill";
-import "react-quill/dist/quill.snow.css";
+import RichTextEditor from "../../components/RichTextEditor";
 import { apiClient } from "../../api";
 import NewsPublicationRequestButton from "../../components/NewsPublicationRequestButton";
-
-// Custom wrapper component to avoid findDOMNode deprecation warning
-const QuillWrapper = ({ value, onChange, style, modules, formats, theme }) => {
-  const quillRef = useRef(null);
-
-  return (
-    <div className="quill-container">
-      <ReactQuill
-        ref={quillRef}
-        theme={theme}
-        value={value}
-        onChange={onChange}
-        modules={modules}
-        formats={formats}
-        style={style}
-      />
-    </div>
-  );
-};
 
 interface NewsPost {
   id: number;
@@ -87,6 +68,7 @@ interface NewsPost {
   view_count: number;
   image_url: string | null;
   attachment_name: string | null;
+  attachment_url: string | null;
   author_data: {
     id: number;
     username: string;
@@ -113,7 +95,7 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
     "view"
   );
 
-  // New post state
+
   const [title, setTitle] = useState<string>("");
   const [content, setContent] = useState<string>("");
   const [status, setStatus] = useState<
@@ -126,40 +108,13 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
   const [image, setImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [attachment, setAttachment] = useState<File | null>(null);
+  const [isPdfOpen, setIsPdfOpen] = useState<boolean>(false);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [attachmentInfo, setAttachmentInfo] = useState<{name: string, url: string} | null>(null);
 
-  // Loading and action states
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedId, setSelectedId] = useState<number | null>(null);
-
-  // Editor configuration
-  const modules = {
-    toolbar: [
-      [{ header: [1, 2, 3, false] }],
-      ["bold", "italic", "underline", "strike", "blockquote"],
-      [
-        { list: "ordered" },
-        { list: "bullet" },
-        { indent: "-1" },
-        { indent: "+1" },
-      ],
-      ["link"],
-      ["clean"],
-    ],
-  };
-
-  const formats = [
-    "header",
-    "bold",
-    "italic",
-    "underline",
-    "strike",
-    "blockquote",
-    "list",
-    "bullet",
-    "indent",
-    "link",
-  ];
 
   useEffect(() => {
     if (societyId) {
@@ -167,13 +122,22 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
     }
   }, [societyId]);
 
+
+  useEffect(() => {
+    if (selectedNews && selectedNews.attachment_name) {
+      fetchPdfUrl();
+    }
+  }, [selectedNews]);
+
   const fetchNews = async () => {
     setLoading(true);
     try {
       const response = await apiClient.get(`/api/society/${societyId}/news/`);
       setNews(response.data);
+      return response.data;
     } catch (error) {
       console.error("Error fetching news:", error);
+      return [];
     } finally {
       setLoading(false);
     }
@@ -197,7 +161,7 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
   };
 
   const handleCreateNews = () => {
-    // Reset form
+
     setTitle("");
     setContent("");
     setStatus("Draft");
@@ -209,7 +173,7 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
     setImagePreview(null);
     setAttachment(null);
 
-    // Switch to create mode
+
     setEditorMode("create");
   };
 
@@ -225,7 +189,15 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
     setImage(null);
     setImagePreview(news.image_url);
     setAttachment(null);
+    if (news.attachment_name) {
 
+      setAttachmentInfo({
+        name: news.attachment_name,
+        url: news.attachment_url
+      });
+    } else {
+      setAttachmentInfo(null);
+    }
     setEditorMode("edit");
     handleMenuClose();
   };
@@ -267,7 +239,7 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
       const file = event.target.files[0];
       setImage(file);
 
-      // Create a preview for the image
+
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result as string);
@@ -280,22 +252,52 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
     if (event.target.files && event.target.files[0]) {
-      setAttachment(event.target.files[0]);
+      const file = event.target.files[0];
+      
+
+      const fileType = file.type;
+      const validTypes = ['application/pdf'];
+      
+      if (!validTypes.includes(fileType)) {
+        alert("Please upload PDF files only.");
+
+        event.target.value = '';
+        return;
+      }
+      
+      setAttachment(file);
     }
   };
+  
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-
+  
     try {
       const formData = new FormData();
+      
+
       formData.append("title", title);
       formData.append("content", content);
       formData.append("status", status);
-      formData.append("is_pinned", isPinned.toString());
-      formData.append("is_featured", isFeatured.toString());
-      formData.append("tags", JSON.stringify(tags));
+      
+
+      formData.append("is_pinned", isPinned ? "true" : "false");
+      formData.append("is_featured", isFeatured ? "true" : "false");
+
+
+      if (tags && Array.isArray(tags) && tags.length > 0) {
+        const cleanTags = tags.map(tag => String(tag).trim()).filter(Boolean);
+        
+
+        cleanTags.forEach((tag, index) => {
+          formData.append(`tags[${index}]`, tag);
+        });
+      } else {
+        formData.append("tags[]", "");
+      }
+      
 
       if (image) {
         formData.append("image", image);
@@ -303,10 +305,25 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
 
       if (attachment) {
         formData.append("attachment", attachment);
+      } else if (attachmentInfo && editorMode === "edit") {
+
+
+        console.log("Keeping existing attachment:", attachmentInfo.name);
+      } else if (!attachmentInfo && editorMode === "edit") {
+
+
+        formData.append("remove_attachment", "true");
       }
+  
 
+      console.log("Submitting FormData:");
+      for (let [key, value] of formData.entries()) {
+        console.log(`${key}: ${value instanceof File ? value.name : value}`);
+      }
+  
       let response;
-
+      let statusChanged = false;
+  
       if (editorMode === "create") {
         response = await apiClient.post(
           `/api/society/${societyId}/news/`,
@@ -317,9 +334,15 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
             },
           }
         );
+        
+
+        statusChanged = true;
       } else if (editorMode === "edit" && selectedNews) {
+
+        statusChanged = (selectedNews.status === "Draft" && status === "PendingApproval");
+        
         response = await apiClient.put(
-          `/api/news/${selectedNews.id}/`,
+          `/api/news/${selectedNews.id}/detail/`,
           formData,
           {
             headers: {
@@ -328,8 +351,9 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
           }
         );
       }
+  
 
-      if (status === "PendingApproval" && response?.data?.id) {
+      if (status === "PendingApproval" && response?.data?.id && statusChanged) {
         try {
           await apiClient.post("/api/news/publication-request/", {
             news_post: response.data.id,
@@ -337,18 +361,53 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
           alert("Submitted for admin approval!");
         } catch (err) {
           console.error("Failed to create publication request:", err);
-          alert("News post saved as draft, but failed to request publication.");
+          
+
+          if (err.response && err.response.data && err.response.data.error) {
+            alert(`Failed to request publication: ${err.response.data.error}`);
+          } else {
+            alert("News post saved, but failed to request publication. It may already have a pending request.");
+          }
         }
+      } else if (editorMode === "edit") {
+        alert("News post updated successfully!");
       }
+  
 
-      // Refresh news list
       fetchNews();
+  
 
-      // Reset form and return to view mode
       setEditorMode("view");
       setSelectedNews(null);
     } catch (error) {
       console.error("Error submitting news:", error);
+      
+
+      if (error.response) {
+        console.error("Response status:", error.response.status);
+        console.error("Response headers:", error.response.headers);
+        console.error("Server error details:", error.response.data);
+        
+
+        let errorMessage = "An error occurred while submitting the news post.";
+        
+        if (typeof error.response.data === 'object' && error.response.data !== null) {
+          if (error.response.data.error) {
+            errorMessage = error.response.data.error;
+          } else {
+            const errorDetails = Object.entries(error.response.data)
+              .map(([field, messages]) => `${field}: ${messages}`)
+              .join('\n');
+            if (errorDetails) {
+              errorMessage = errorDetails;
+            }
+          }
+        }
+        
+        alert(`Error: ${errorMessage}`);
+      } else {
+        alert(`Error: ${error.message || "Unknown error occurred"}`);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -376,17 +435,17 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
     } else if (selectedNews) {
       setSelectedNews(null);
     } else {
-      // Instead of just relying on onBack, use navigate if available
+
       if (onBack) {
         onBack();
       } else {
-        // Navigate back using the router
+
         navigate(-1);
       }
     }
   };
 
-  // Get status color
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Published":
@@ -404,7 +463,17 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
     }
   };
 
-  // Render post item for the list view
+  const fetchPdfUrl = () => {
+    if (selectedNews && selectedNews.attachment_url) {
+
+      console.log("Using PDF URL from backend:", selectedNews.attachment_url);
+      setPdfUrl(selectedNews.attachment_url);
+    } else {
+      setPdfUrl(null);
+    }
+  };
+
+
   const renderNewsItem = (post: NewsPost) => {
     const isPublished = post.status === "Published";
     const formattedDate = new Date(
@@ -463,19 +532,19 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
                   size="small"
                   sx={{
                     backgroundColor: getStatusColor(post.status),
-                    color: "#fff",
+                    color: "
                     fontWeight: "bold",
                   }}
                 />
 
                 {post.is_featured && (
                   <Chip
-                    icon={<StarIcon sx={{ color: "#fff !important" }} />}
+                    icon={<StarIcon sx={{ color: "
                     label="Featured"
                     size="small"
                     sx={{
                       backgroundColor: colors.blueAccent[500],
-                      color: "#fff",
+                      color: "
                     }}
                   />
                 )}
@@ -637,13 +706,13 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
           <ArrowBackIcon />
         </IconButton>
         <Typography variant="h4" fontWeight="bold">
-          {editorMode === "view"
-            ? selectedNews
-              ? selectedNews.title || "(Untitled News Post)"
-              : "Society News Management"
-            : editorMode === "create"
-            ? "Create New News Post"
-            : "Edit News Post"}
+        {editorMode === "view"
+          ? selectedNews
+            ? "News Details"
+            : "Society News Management"
+          : editorMode === "create"
+          ? "Create New News Post"
+          : "Edit News Post"}
         </Typography>
       </Box>
 
@@ -868,18 +937,18 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
               label={selectedNews.status}
               sx={{
                 backgroundColor: getStatusColor(selectedNews.status),
-                color: "#fff",
+                color: "
                 fontWeight: "bold",
               }}
             />
 
             {selectedNews.is_pinned && (
               <Chip
-                icon={<PushPinIcon sx={{ color: "#fff !important" }} />}
+                icon={<PushPinIcon sx={{ color: "
                 label="Pinned"
                 sx={{
                   backgroundColor: colors.greenAccent[600],
-                  color: "#fff",
+                  color: "
                   fontWeight: "bold",
                 }}
               />
@@ -887,11 +956,11 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
 
             {selectedNews.is_featured && (
               <Chip
-                icon={<StarIcon sx={{ color: "#fff !important" }} />}
+                icon={<StarIcon sx={{ color: "
                 label="Featured"
                 sx={{
                   backgroundColor: colors.blueAccent[600],
-                  color: "#fff",
+                  color: "
                   fontWeight: "bold",
                 }}
               />
@@ -975,6 +1044,7 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
             <div dangerouslySetInnerHTML={{ __html: selectedNews.content }} />
           </Box>
 
+          {/* Replace the attachment section in the view mode (around line 1048-1123) */}
           {selectedNews.attachment_name && (
             <Box
               mb={3}
@@ -987,21 +1057,29 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
               <Typography variant="subtitle2" mb={1} fontWeight="bold">
                 Attachment
               </Typography>
-              <Button
-                variant="outlined"
-                startIcon={<AttachFileIcon />}
-                size="medium"
-                sx={{
-                  color: colors.blueAccent[400],
-                  borderColor: colors.blueAccent[400],
-                  "&:hover": {
-                    backgroundColor: alpha(colors.blueAccent[400], 0.1),
-                    borderColor: colors.blueAccent[300],
-                  },
-                }}
-              >
-                {selectedNews.attachment_name}
-              </Button>
+              <Box>
+                <Button
+                  variant="outlined"
+                  startIcon={<AttachFileIcon />}
+                  size="medium"
+                  onClick={() => {
+                    if (selectedNews.attachment_url) {
+                      window.open(selectedNews.attachment_url, '_blank');
+                    }
+                  }}
+                  sx={{
+                    mb: 2,
+                    color: colors.blueAccent[400],
+                    borderColor: colors.blueAccent[400],
+                    "&:hover": {
+                      backgroundColor: alpha(colors.blueAccent[400], 0.1),
+                      borderColor: colors.blueAccent[300],
+                    },
+                  }}
+                >
+                  View PDF: {selectedNews.attachment_name}
+                </Button>
+              </Box>
             </Box>
           )}
 
@@ -1126,7 +1204,17 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
             <Box mt={2}>
               <NewsPublicationRequestButton
                 newsId={selectedNews.id}
-                onSuccess={fetchNews}
+                skipConfirmation={true}
+                onSuccess={() => {
+
+                  setSelectedNews({
+                    ...selectedNews,
+                    status: "PendingApproval"
+                  });
+                  
+
+                  fetchNews();
+                }}
               />
             </Box>
           )}
@@ -1143,102 +1231,305 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
           }}
         >
           <form onSubmit={handleSubmit}>
-            <Typography variant="h6" mb={2} fontWeight="bold">
-              Title
-            </Typography>
-            <TextField
-              placeholder="Enter title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              fullWidth
-              variant="filled"
-              required
-              InputProps={{
-                style: {
-                  color: colors.grey[100],
-                  backgroundColor: alpha(colors.primary[600], 0.6),
-                  padding: "12px 12px",
-                  fontSize: "16px",
-                  fontWeight: "500",
-                  height: "48px",
-                  display: "flex",
-                  alignItems: "center",
-                },
-                disableUnderline: true,
-              }}
-              sx={{
-                mb: 3,
-                "& .MuiFilledInput-root": {
-                  backgroundColor: alpha(colors.primary[600], 0.6),
-                  borderRadius: "8px",
-                  "&:hover": {
-                    backgroundColor: alpha(colors.primary[600], 0.8),
-                  },
-                  "&.Mui-focused": {
-                    backgroundColor: alpha(colors.primary[600], 0.8),
-                  },
-                },
-              }}
-            />
-
+            {/* Enhanced Title Section */}
             <Box mb={4}>
-              <Typography variant="subtitle1" mb={1} fontWeight="bold">
-                Content
+              <Typography variant="h6" mb={2} fontWeight="bold" sx={{
+                display: "flex",
+                alignItems: "center",
+                "&:after": {
+                  content: '""',
+                  height: "3px",
+                  flexGrow: 1,
+                  ml: 2,
+                  borderRadius: "4px",
+                  backgroundColor: alpha(colors.grey[500], 0.2)
+                }
+              }}>
+                Title
               </Typography>
-              <QuillWrapper
-                theme="snow"
-                value={content}
-                onChange={setContent}
-                modules={modules}
-                formats={formats}
-                style={{
-                  backgroundColor: alpha(colors.primary[600], 0.6),
-                  borderRadius: "8px",
-                  border: `1px solid ${alpha(colors.grey[500], 0.3)}`,
-                  marginBottom: "20px",
-                  ".ql-toolbar": {
-                    borderColor: alpha(colors.grey[500], 0.3),
-                    backgroundColor: alpha(colors.primary[400], 0.7),
+              <TextField
+                placeholder="Enter compelling title..."
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                fullWidth
+                variant="filled"
+                required
+                autoComplete="off"
+                InputProps={{
+                  style: {
+                    color: colors.grey[100],
+                    backgroundColor: alpha(colors.primary[600], 0.6),
+                    padding: "16px 16px",
+                    fontSize: "18px",
+                    fontWeight: "500",
+                    borderRadius: "8px",
+                    height: "56px",
+                    display: "flex",
+                    alignItems: "center",
+                    boxShadow: `0 2px 8px ${alpha(colors.primary[900], 0.2)}`
                   },
-                  ".ql-container": {
-                    borderColor: alpha(colors.grey[500], 0.3),
+                  disableUnderline: true,
+                  startAdornment: (
+                    <EditIcon sx={{ mr: 1.5, color: alpha(colors.grey[300], 0.7) }} />
+                  )
+                }}
+                sx={{
+                  mb: 3,
+                  "& .MuiFilledInput-root": {
+                    backgroundColor: alpha(colors.primary[600], 0.6),
+                    borderRadius: "8px",
+                    transition: "all 0.3s ease",
+                    "&:hover": {
+                      backgroundColor: alpha(colors.primary[600], 0.8),
+                      transform: "translateY(-2px)",
+                      boxShadow: `0 4px 12px ${alpha(colors.primary[900], 0.3)}`
+                    },
+                    "&.Mui-focused": {
+                      backgroundColor: alpha(colors.primary[600], 0.8),
+                      boxShadow: `0 0 0 2px ${alpha(colors.blueAccent[500], 0.5)}`,
+                      transform: "translateY(-2px)"
+                    }
                   },
+                  "& .MuiAutocomplete-popper": {
+                    "& .MuiPaper-root": {
+                      backgroundColor: colors.primary[400],
+                      color: colors.grey[100],
+                      borderRadius: "8px",
+                      boxShadow: `0 4px 20px ${alpha(colors.primary[900], 0.3)}`
+                    },
+                    "& .MuiAutocomplete-option": {
+                      color: colors.grey[100],
+                      "&:hover, &.Mui-focused": {
+                        backgroundColor: alpha(colors.primary[500], 0.6)
+                      }
+                    }
+                  },
+
+                  "& input:-webkit-autofill": {
+                    WebkitBoxShadow: `0 0 0 100px ${alpha(colors.primary[600], 0.8)} inset !important`,
+                    WebkitTextFillColor: `${colors.grey[100]} !important`,
+                    caretColor: `${colors.grey[100]} !important`,
+                    borderRadius: "inherit"
+                  },
+                  "& input:-webkit-autofill:hover": {
+                    WebkitBoxShadow: `0 0 0 100px ${alpha(colors.primary[600], 0.8)} inset !important`
+                  },
+                  "& input:-webkit-autofill:focus": {
+                    WebkitBoxShadow: `0 0 0 100px ${alpha(colors.primary[600], 0.8)} inset !important`
+                  },
+
+                  "& input[type=text]": {
+                    backgroundColor: "transparent !important"
+                  },
+
+                  "& input": {
+                    "&:-webkit-autofill": {
+                      transition: "background-color 5000s ease-in-out 0s, color 5000s ease-in-out 0s"
+                    },
+                    "&:-moz-autofill": {
+                      transition: "background-color 5000s ease-in-out 0s, color 5000s ease-in-out 0s"
+                    },
+                    "&:-ms-autofill": {
+                      transition: "background-color 5000s ease-in-out 0s, color 5000s ease-in-out 0s"
+                    }
+                  }
                 }}
               />
             </Box>
 
+            {/* Enhanced Content Section */}
+            <Box mb={4}>
+              <Typography variant="subtitle1" mb={1} fontWeight="bold">
+                Content
+              </Typography>
+              <div className="tiptap-wrapper">
+                <RichTextEditor
+                  value={content}
+                  onChange={setContent}
+                  placeholder="Write your news content here..."
+                />
+                <style>
+                  {`.tiptap-wrapper .rich-text-editor {
+                    border: 1px solid ${alpha(colors.grey[500], 0.3)};
+                    border-radius: 8px;
+                    overflow: hidden;
+                    box-shadow: 0 2px 8px ${alpha(colors.primary[900], 0.2)};
+                  }
+                  
+                  .tiptap-wrapper .editor-menu {
+                    display: flex;
+                    flex-wrap: wrap;
+                    background-color: ${alpha(colors.primary[300], 0.2)};
+                    border-bottom: 1px solid ${alpha(colors.grey[500], 0.3)};
+                    padding: 10px;
+                    gap: 8px;
+                  }
+                  
+                  .tiptap-wrapper .editor-menu-group {
+                    display: flex;
+                    background-color: ${alpha(colors.primary[500], 0.3)};
+                    border-radius: 6px;
+                    padding: 2px;
+                    margin-right: 8px;
+                  }
+                  
+                  .tiptap-wrapper .editor-menu button {
+                    color: ${colors.grey[100]};
+                    background-color: transparent;
+                    border: none;
+                    border-radius: 4px;
+                    padding: 5px 10px;
+                    margin: 0 2px;
+                    font-weight: 500;
+                    transition: all 0.2s;
+                    font-size: 13px;
+                  }
+                  
+                  .tiptap-wrapper .editor-menu button:hover {
+                    background-color: ${alpha(colors.blueAccent[700], 0.3)};
+                    color: white;
+                  }
+                  
+                  .tiptap-wrapper .editor-menu button.is-active {
+                    background-color: ${colors.blueAccent[600]};
+                    color: white;
+                    font-weight: bold;
+                  }
+                  
+                  .tiptap-wrapper .editor-content {
+                    background-color: ${alpha(colors.primary[600], 0.4)};
+                    padding: 16px;
+                    min-height: 250px;
+                  }
+                  
+                  .tiptap-wrapper .ProseMirror {
+                    outline: none;
+                    min-height: 200px;
+                    color: ${colors.grey[100]};
+                    line-height: 1.6;
+                  }
+                  
+                  .tiptap-wrapper .ProseMirror p {
+                    margin-bottom: 1rem;
+                  }
+                  
+                  .tiptap-wrapper .ProseMirror h1, 
+                  .tiptap-wrapper .ProseMirror h2, 
+                  .tiptap-wrapper .ProseMirror h3 {
+                    color: ${colors.grey[100]};
+                    font-weight: bold;
+                    margin-top: 1.5rem;
+                    margin-bottom: 0.75rem;
+                    border-bottom: 1px solid ${alpha(colors.grey[400], 0.2)};
+                    padding-bottom: 5px;
+                  }
+                  
+                  .tiptap-wrapper .ProseMirror h1 { font-size: 1.75rem; }
+                  .tiptap-wrapper .ProseMirror h2 { font-size: 1.5rem; }
+                  .tiptap-wrapper .ProseMirror h3 { font-size: 1.25rem; }
+                  
+                  .tiptap-wrapper .ProseMirror ul, 
+                  .tiptap-wrapper .ProseMirror ol {
+                    padding-left: 1.5rem;
+                    margin-bottom: 1rem;
+                  }
+                  
+                  .tiptap-wrapper .ProseMirror li {
+                    margin-bottom: 0.5rem;
+                  }
+                  
+                  .tiptap-wrapper .ProseMirror blockquote {
+                    border-left: 3px solid ${colors.blueAccent[400]};
+                    padding-left: 1rem;
+                    margin-left: 0;
+                    margin-right: 0;
+                    font-style: italic;
+                    color: ${alpha(colors.grey[100], 0.7)};
+                    background-color: ${alpha(colors.primary[400], 0.3)};
+                    padding: 8px 16px;
+                    border-radius: 0 4px 4px 0;
+                  }
+                  
+                  .tiptap-wrapper .ProseMirror a {
+                    color: ${colors.blueAccent[300]};
+                    text-decoration: underline;
+                  }
+                  
+                  .tiptap-wrapper .ProseMirror p.is-editor-empty:first-child::before {
+                    content: attr(data-placeholder);
+                    float: left;
+                    color: ${alpha(colors.grey[100], 0.4)};
+                    pointer-events: none;
+                    height: 0;
+                  }
+                  
+                  .tiptap-wrapper .ProseMirror:focus {
+                    outline: none;
+                  }`}
+                </style>
+              </div>
+            </Box>
+
+            {/* Enhanced Publication Settings & Tags Sections - Already implemented in your code */}
             <Grid container spacing={3} mb={4}>
               <Grid size={{ xs: 12, md: 6 }}>
                 <Paper
                   sx={{
                     p: 3,
                     backgroundColor: alpha(colors.primary[500], 0.5),
-                    borderRadius: "8px",
+                    borderRadius: "12px",
                     height: "100%",
+                    boxShadow: `0 4px 20px ${alpha(colors.primary[900], 0.2)}`,
+                    transition: "transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out",
+                    "&:hover": {
+                      boxShadow: `0 8px 30px ${alpha(colors.primary[900], 0.3)}`,
+                      transform: "translateY(-4px)"
+                    }
                   }}
                 >
-                  <Typography variant="h6" mb={2} fontWeight="bold">
+                  <Typography variant="h6" mb={3} fontWeight="bold" sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    "&:before": {
+                      content: '""',
+                      width: "24px",
+                      height: "3px",
+                      mr: 2,
+                      borderRadius: "4px",
+                      backgroundColor: colors.greenAccent[500]
+                    }
+                  }}>
                     Publication Settings
                   </Typography>
 
-                  <Box mb={3}>
-                    <Typography variant="body1" mb={1} fontWeight="medium">
+                  <Box mb={3} sx={{ 
+                    backgroundColor: alpha(colors.primary[600], 0.3),
+                    borderRadius: "8px",
+                    p: 2
+                  }}>
+                    <Typography variant="body1" mb={1.5} fontWeight="medium" sx={{
+                      display: "flex",
+                      alignItems: "center",
+                    }}>
+                      <ScheduleIcon sx={{ mr: 1, fontSize: 20, color: colors.grey[300] }} />
                       Publication Status
                     </Typography>
                     <FormControl
                       fullWidth
                       sx={{
-                        mb: 3,
                         "& .MuiOutlinedInput-root": {
                           color: colors.grey[100],
                           "& fieldset": {
                             borderColor: alpha(colors.grey[500], 0.3),
+                            borderWidth: "2px",
+                            transition: "all 0.2s"
                           },
                           "&:hover fieldset": {
-                            borderColor: colors.grey[500],
+                            borderColor: colors.blueAccent[400],
                           },
                           "&.Mui-focused fieldset": {
                             borderColor: colors.blueAccent[400],
+                            borderWidth: "2px"
                           },
                         },
                       }}
@@ -1252,17 +1543,51 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
                         sx={{
                           backgroundColor: alpha(colors.primary[600], 0.6),
                           borderRadius: "8px",
+                          boxShadow: `0 2px 8px ${alpha(colors.primary[900], 0.15)}`,
+                          "& .MuiSelect-select": {
+                            display: "flex",
+                            alignItems: "center",
+                            py: 1.5
+                          }
                         }}
                       >
-                        <MenuItem value="Draft">Draft</MenuItem>
-                        <MenuItem value="PendingApproval">
+                        <MenuItem value="Draft" sx={{ 
+                          display: "flex", 
+                          alignItems: "center",
+                          gap: 1
+                        }}>
+                          <Box sx={{ 
+                            width: 10, 
+                            height: 10, 
+                            borderRadius: "50%", 
+                            backgroundColor: colors.grey[400],
+                            mr: 1
+                          }}/>
+                          Draft
+                        </MenuItem>
+                        <MenuItem value="PendingApproval" sx={{ 
+                          display: "flex", 
+                          alignItems: "center",
+                          gap: 1
+                        }}>
+                          <Box sx={{ 
+                            width: 10, 
+                            height: 10, 
+                            borderRadius: "50%", 
+                            backgroundColor: colors.blueAccent[400],
+                            mr: 1
+                          }}/>
                           Submit for Approval
                         </MenuItem>
                       </Select>
                     </FormControl>
                   </Box>
 
-                  <Box>
+                  <Box sx={{ 
+                    backgroundColor: alpha(colors.primary[600], 0.3),
+                    borderRadius: "8px",
+                    p: 2
+                  }}>
                     <FormControlLabel
                       control={
                         <Switch
@@ -1270,13 +1595,21 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
                           onChange={(e) => setIsPinned(e.target.checked)}
                           color="primary"
                           sx={{
-                            "& .MuiSwitch-switchBase.Mui-checked": {
-                              color: colors.greenAccent[600],
+                            "& .MuiSwitch-switchBase": {
+                              "&.Mui-checked": {
+                                color: colors.greenAccent[600],
+                                "& + .MuiSwitch-track": {
+                                  backgroundColor: alpha(colors.greenAccent[600], 0.5),
+                                  opacity: 1
+                                }
+                              }
                             },
-                            "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track":
-                              {
-                                backgroundColor: colors.greenAccent[600],
-                              },
+                            "& .MuiSwitch-thumb": {
+                              boxShadow: "0 2px 4px 0 rgba(0,0,0,0.2)"
+                            },
+                            "& .MuiSwitch-track": {
+                              opacity: 0.3
+                            }
                           }}
                         />
                       }
@@ -1288,9 +1621,13 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
                               color: isPinned
                                 ? colors.greenAccent[500]
                                 : colors.grey[500],
+                              transition: "transform 0.2s, color 0.2s",
+                              transform: isPinned ? "rotate(-45deg)" : "none"
                             }}
                           />
-                          <Typography>Pin to top</Typography>
+                          <Typography fontWeight={isPinned ? "medium" : "normal"}>
+                            Pin to top
+                          </Typography>
                         </Box>
                       }
                     />
@@ -1302,13 +1639,21 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
                           onChange={(e) => setIsFeatured(e.target.checked)}
                           color="primary"
                           sx={{
-                            "& .MuiSwitch-switchBase.Mui-checked": {
-                              color: colors.blueAccent[600],
+                            "& .MuiSwitch-switchBase": {
+                              "&.Mui-checked": {
+                                color: colors.blueAccent[600],
+                                "& + .MuiSwitch-track": {
+                                  backgroundColor: alpha(colors.blueAccent[600], 0.5),
+                                  opacity: 1
+                                }
+                              }
                             },
-                            "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track":
-                              {
-                                backgroundColor: colors.blueAccent[600],
-                              },
+                            "& .MuiSwitch-thumb": {
+                              boxShadow: "0 2px 4px 0 rgba(0,0,0,0.2)"
+                            },
+                            "& .MuiSwitch-track": {
+                              opacity: 0.3
+                            }
                           }}
                         />
                       }
@@ -1320,9 +1665,13 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
                               color: isFeatured
                                 ? colors.blueAccent[500]
                                 : colors.grey[500],
+                              transition: "transform 0.2s, color 0.2s",
+                              transform: isFeatured ? "scale(1.2)" : "scale(1)"
                             }}
                           />
-                          <Typography>Feature this post</Typography>
+                          <Typography fontWeight={isFeatured ? "medium" : "normal"}>
+                            Feature this post
+                          </Typography>
                         </Box>
                       }
                     />
@@ -1335,17 +1684,45 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
                   sx={{
                     p: 3,
                     backgroundColor: alpha(colors.primary[500], 0.5),
-                    borderRadius: "8px",
+                    borderRadius: "12px",
                     height: "100%",
+                    boxShadow: `0 4px 20px ${alpha(colors.primary[900], 0.2)}`,
+                    transition: "transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out",
+                    "&:hover": {
+                      boxShadow: `0 8px 30px ${alpha(colors.primary[900], 0.3)}`,
+                      transform: "translateY(-4px)"
+                    }
                   }}
                 >
-                  <Typography variant="h6" mb={2} fontWeight="bold">
+                  <Typography variant="h6" mb={3} fontWeight="bold" sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    "&:before": {
+                      content: '""',
+                      width: "24px",
+                      height: "3px",
+                      mr: 2,
+                      borderRadius: "4px",
+                      backgroundColor: colors.blueAccent[500]
+                    }
+                  }}>
                     Tags
                   </Typography>
 
-                  <Box display="flex" alignItems="center" mb={2}>
+                  <Box 
+                    display="flex" 
+                    alignItems="center" 
+                    mb={2.5}
+                    sx={{
+                      backgroundColor: alpha(colors.primary[600], 0.3),
+                      borderRadius: "8px",
+                      p: 0.5,
+                      pr: 0.5,
+                      boxShadow: `0 2px 8px ${alpha(colors.primary[900], 0.15)}`
+                    }}
+                  >
                     <TextField
-                      placeholder="Add a tag"
+                      placeholder="Add a tag..."
                       variant="filled"
                       size="small"
                       value={tagInput}
@@ -1356,22 +1733,16 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
                       }
                       sx={{
                         flexGrow: 1,
-                        mr: 1,
                         ".MuiFilledInput-root": {
                           color: colors.grey[100],
-                          backgroundColor: alpha(colors.primary[600], 0.6),
-                          borderRadius: "8px",
-                          padding: "12px 12px",
-                          fontSize: "16px",
+                          backgroundColor: "transparent",
+                          height: "44px",
+                          fontSize: "14px",
                           fontWeight: "500",
-                          height: "40px",
                           display: "flex",
                           alignItems: "center",
-                          "&:hover": {
-                            backgroundColor: alpha(colors.primary[600], 0.8),
-                          },
-                          "&.Mui-focused": {
-                            backgroundColor: alpha(colors.primary[600], 0.8),
+                          "&:hover, &.Mui-focused": {
+                            backgroundColor: "transparent",
                           },
                           "&::before, &::after": {
                             display: "none",
@@ -1388,9 +1759,16 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
                       disabled={!tagInput}
                       sx={{
                         backgroundColor: colors.blueAccent[600],
-                        "&:hover": { backgroundColor: colors.blueAccent[700] },
+                        height: "36px",
+                        minWidth: "36px",
+                        borderRadius: "8px",
+                        boxShadow: "none",
+                        "&:hover": { 
+                          backgroundColor: colors.blueAccent[700],
+                          boxShadow: `0 4px 12px ${alpha(colors.blueAccent[900], 0.3)}`
+                        },
                         "&.Mui-disabled": {
-                          backgroundColor: alpha(colors.grey[500], 0.3),
+                          backgroundColor: alpha(colors.grey[500], 0.2),
                         },
                       }}
                     >
@@ -1398,11 +1776,34 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
                     </Button>
                   </Box>
 
-                  <Box display="flex" flexWrap="wrap" gap={1}>
+                  <Box 
+                    display="flex" 
+                    flexWrap="wrap" 
+                    gap={1.5} 
+                    sx={{
+                      backgroundColor: alpha(colors.primary[600], 0.3),
+                      borderRadius: "8px",
+                      p: 2,
+                      minHeight: "120px"
+                    }}
+                  >
                     {tags.length === 0 ? (
-                      <Typography variant="body2" color={colors.grey[400]}>
-                        No tags added yet. Tags help users find your content.
-                      </Typography>
+                      <Box 
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          width: "100%",
+                          height: "100%",
+                          color: colors.grey[400],
+                          textAlign: "center",
+                          p: 2
+                        }}
+                      >
+                        <Typography variant="body2">
+                          No tags added yet. Tags help users find your content.
+                        </Typography>
+                      </Box>
                     ) : (
                       tags.map((tag) => (
                         <Chip
@@ -1410,10 +1811,16 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
                           label={tag}
                           onDelete={() => handleRemoveTag(tag)}
                           sx={{
-                            backgroundColor: alpha(colors.grey[500], 0.2),
+                            backgroundColor: alpha(colors.blueAccent[700], 0.2),
                             color: colors.grey[100],
+                            borderRadius: "6px",
+                            transition: "all 0.2s",
+                            fontWeight: "medium",
+                            border: `1px solid ${alpha(colors.blueAccent[500], 0.3)}`,
                             "&:hover": {
-                              backgroundColor: alpha(colors.grey[500], 0.3),
+                              backgroundColor: alpha(colors.blueAccent[700], 0.3),
+                              transform: "translateY(-2px)",
+                              boxShadow: `0 4px 8px ${alpha(colors.primary[900], 0.2)}`
                             },
                             "& .MuiChip-deleteIcon": {
                               color: colors.grey[300],
@@ -1430,262 +1837,437 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
               </Grid>
             </Grid>
 
+            {/* Enhanced Media Section - Already implemented in your code */}
             <Paper
               sx={{
-                p: 3,
+                p: 0,
                 backgroundColor: alpha(colors.primary[500], 0.5),
-                borderRadius: "8px",
+                borderRadius: "12px",
                 mb: 4,
+                overflow: "hidden",
+                boxShadow: `0 4px 20px ${alpha(colors.primary[900], 0.2)}`,
               }}
             >
-              <Typography variant="h6" mb={2} fontWeight="bold">
-                Media
-              </Typography>
+              <Box sx={{
+                p: 3,
+                pb: 2,
+                borderBottom: `1px solid ${alpha(colors.grey[500], 0.2)}`,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between"
+              }}>
+                <Typography variant="h6" fontWeight="bold" sx={{
+                  display: "flex",
+                  alignItems: "center",
+                }}>
+                  <ImageIcon sx={{ mr: 1.5, color: colors.grey[300] }} />
+                  Media
+                </Typography>
+              </Box>
 
-              <Grid container spacing={3}>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <Box
-                    sx={{
-                      border: `2px dashed ${alpha(colors.grey[500], 0.3)}`,
-                      borderRadius: "8px",
-                      p: 3,
-                      textAlign: "center",
-                      backgroundColor: alpha(colors.primary[600], 0.3),
-                      transition: "all 0.2s ease-in-out",
-                      "&:hover": {
-                        backgroundColor: alpha(colors.primary[600], 0.5),
-                        borderColor: alpha(colors.grey[500], 0.5),
-                      },
-                    }}
-                  >
-                    {imagePreview ? (
-                      <Box>
-                        <Box
-                          sx={{
-                            position: "relative",
-                            width: "100%",
-                            height: "200px",
-                            mb: 2,
-                            borderRadius: "8px",
-                            overflow: "hidden",
-                          }}
-                        >
-                          <img
-                            src={imagePreview}
-                            alt="Preview"
-                            style={{
-                              width: "100%",
-                              height: "100%",
-                              objectFit: "cover",
-                            }}
-                          />
+              <Box sx={{ px: 3, pb: 3 }}>
+                <Grid container spacing={3}>
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <Box
+                      sx={{
+                        borderRadius: "12px",
+                        p: 0,
+                        textAlign: "center",
+                        backgroundColor: alpha(colors.primary[600], 0.3),
+                        overflow: "hidden",
+                        position: "relative",
+                        boxShadow: `0 4px 16px ${alpha(colors.primary[900], 0.15)}`,
+                        transition: "all 0.3s ease",
+                        "&:hover": {
+                          backgroundColor: alpha(colors.primary[600], 0.4),
+                          transform: "translateY(-4px)",
+                          boxShadow: `0 8px 24px ${alpha(colors.primary[900], 0.25)}`,
+                        },
+                      }}
+                    >
+                      {imagePreview ? (
+                        <Box sx={{ height: "100%" }}>
                           <Box
                             sx={{
-                              position: "absolute",
-                              top: 0,
-                              right: 0,
-                              m: 1,
+                              position: "relative",
+                              width: "100%",
+                              height: "220px",
+                              overflow: "hidden",
                             }}
                           >
+                            <img
+                              src={imagePreview}
+                              alt="Preview"
+                              style={{
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "cover",
+                              }}
+                            />
+                            <Box
+                              sx={{
+                                position: "absolute",
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                background: `linear-gradient(to bottom, ${alpha(colors.primary[900], 0)} 70%, ${alpha(colors.primary[900], 0.8)})`,
+                              }}
+                            />
                             <IconButton
                               onClick={() => {
                                 setImage(null);
                                 setImagePreview(null);
                               }}
                               sx={{
-                                backgroundColor: alpha(
-                                  colors.primary[900],
-                                  0.7
-                                ),
+                                position: "absolute",
+                                top: 8,
+                                right: 8,
+                                backgroundColor: alpha(colors.primary[900], 0.6),
                                 "&:hover": {
-                                  backgroundColor: alpha(
-                                    colors.primary[900],
-                                    0.9
-                                  ),
+                                  backgroundColor: alpha(colors.primary[900], 0.8),
                                 },
                               }}
                             >
-                              <DeleteIcon sx={{ color: colors.grey[100] }} />
+                              <DeleteIcon sx={{ color: colors.grey[100], fontSize: 18 }} />
                             </IconButton>
                           </Box>
+
+                          <Box sx={{ p: 2 }}>
+                            <Typography variant="body2" sx={{ mb: 1.5, color: colors.grey[300], fontWeight: "medium" }}>
+                              Featured image uploaded successfully
+                            </Typography>
+                            <Button
+                              component="label"
+                              variant="outlined"
+                              startIcon={<CloudUploadIcon />}
+                              sx={{
+                                borderColor: colors.blueAccent[500],
+                                color: colors.blueAccent[500],
+                                borderRadius: "8px",
+                                "&:hover": {
+                                  borderColor: colors.blueAccent[400],
+                                  backgroundColor: alpha(colors.blueAccent[400], 0.1),
+                                },
+                              }}
+                            >
+                              Change Image
+                              <input
+                                type="file"
+                                hidden
+                                accept="image/*"
+                                onChange={handleImageChange}
+                              />
+                            </Button>
+                          </Box>
                         </Box>
-
-                        <Button
-                          component="label"
-                          variant="outlined"
-                          startIcon={<CloudUploadIcon />}
-                          sx={{
-                            borderColor: colors.blueAccent[500],
-                            color: colors.blueAccent[500],
-                            "&:hover": {
-                              borderColor: colors.blueAccent[400],
-                              backgroundColor: alpha(
-                                colors.blueAccent[400],
-                                0.1
-                              ),
-                            },
-                          }}
-                        >
-                          Change Image
-                          <input
-                            type="file"
-                            hidden
-                            accept="image/*"
-                            onChange={handleImageChange}
-                          />
-                        </Button>
-                      </Box>
-                    ) : (
-                      <Button
-                        component="label"
-                        sx={{
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          height: "100%",
-                          width: "100%",
-                          cursor: "pointer",
-                          py: 4,
-                          color: colors.grey[300],
-                        }}
-                      >
-                        <CloudUploadIcon
-                          sx={{ fontSize: 48, mb: 2, color: colors.grey[400] }}
-                        />
-                        <Typography variant="body1" fontWeight="bold" mb={1}>
-                          Upload Featured Image
-                        </Typography>
-                        <Typography variant="body2" color={colors.grey[400]}>
-                          Drag & drop or click to browse
-                        </Typography>
-                        <input
-                          type="file"
-                          hidden
-                          accept="image/*"
-                          onChange={handleImageChange}
-                        />
-                      </Button>
-                    )}
-                  </Box>
-                </Grid>
-
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <Box
-                    sx={{
-                      border: `2px dashed ${alpha(colors.grey[500], 0.3)}`,
-                      borderRadius: "8px",
-                      p: 3,
-                      textAlign: "center",
-                      backgroundColor: alpha(colors.primary[600], 0.3),
-                      transition: "all 0.2s ease-in-out",
-                      height: "100%",
-                      display: "flex",
-                      flexDirection: "column",
-                      justifyContent: "center",
-                      "&:hover": {
-                        backgroundColor: alpha(colors.primary[600], 0.5),
-                        borderColor: alpha(colors.grey[500], 0.5),
-                      },
-                    }}
-                  >
-                    {attachment ? (
-                      <Box>
+                      ) : (
                         <Box
                           sx={{
+                            p: 3,
                             display: "flex",
+                            flexDirection: "column",
                             alignItems: "center",
                             justifyContent: "center",
-                            mb: 2,
-                            p: 2,
-                            backgroundColor: alpha(colors.primary[700], 0.5),
-                            borderRadius: "8px",
+                            height: "100%",
+                            minHeight: "280px",
                           }}
                         >
-                          <AttachFileIcon
+                          <Box
                             sx={{
-                              fontSize: 32,
-                              mr: 2,
-                              color: colors.grey[300],
-                            }}
-                          />
-                          <Typography noWrap sx={{ maxWidth: "80%" }}>
-                            {attachment.name}
-                          </Typography>
-                          <IconButton
-                            onClick={() => setAttachment(null)}
-                            sx={{
-                              ml: "auto",
-                              color: colors.grey[300],
-                              "&:hover": {
-                                color: colors.redAccent[400],
-                              },
+                              width: 80,
+                              height: 80,
+                              borderRadius: "50%",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              backgroundColor: alpha(colors.primary[400], 0.3),
+                              mb: 3,
+                              transition: "all 0.3s ease",
+                              border: `1px dashed ${alpha(colors.grey[400], 0.3)}`,
                             }}
                           >
-                            <DeleteIcon />
-                          </IconButton>
+                            <CloudUploadIcon sx={{ fontSize: 32, color: colors.grey[400] }} />
+                          </Box>
+                          <Typography variant="h6" fontWeight="bold" mb={1} color={colors.grey[200]}>
+                            Featured Image
+                          </Typography>
+                          <Typography variant="body2" mb={3} color={colors.grey[400]} sx={{ maxWidth: "80%" }}>
+                            Upload a high-quality image for better engagement
+                          </Typography>
+                          <Button
+                            component="label"
+                            variant="contained"
+                            startIcon={<CloudUploadIcon />}
+                            sx={{
+                              backgroundColor: colors.blueAccent[600],
+                              "&:hover": { 
+                                backgroundColor: colors.blueAccent[700],
+                                transform: "translateY(-2px)",
+                                boxShadow: `0 6px 16px ${alpha(colors.blueAccent[900], 0.3)}`
+                              },
+                              px: 3,
+                              py: 1,
+                              borderRadius: "8px",
+                              transition: "all 0.2s",
+                            }}
+                          >
+                            Upload Image
+                            <input
+                              type="file"
+                              hidden
+                              accept="image/*"
+                              onChange={handleImageChange}
+                            />
+                          </Button>
                         </Box>
+                      )}
+                    </Box>
+                  </Grid>
 
-                        <Button
-                          component="label"
-                          variant="outlined"
-                          startIcon={<CloudUploadIcon />}
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <Box
+                      sx={{
+                        borderRadius: "12px",
+                        p: 0,
+                        textAlign: "center",
+                        backgroundColor: alpha(colors.primary[600], 0.3),
+                        overflow: "hidden",
+                        position: "relative",
+                        boxShadow: `0 4px 16px ${alpha(colors.primary[900], 0.15)}`,
+                        height: "100%",
+                        transition: "all 0.3s ease",
+                        "&:hover": {
+                          backgroundColor: alpha(colors.primary[600], 0.4),
+                          transform: "translateY(-4px)",
+                          boxShadow: `0 8px 24px ${alpha(colors.primary[900], 0.25)}`,
+                        },
+                      }}
+                    >
+                      {attachment ? (
+                        <Box>
+                          <Box sx={{ p: 3, pb: 0 }}>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                p: 3,
+                                backgroundColor: alpha(colors.blueAccent[900], 0.3),
+                                borderRadius: "8px",
+                                border: `1px solid ${alpha(colors.blueAccent[700], 0.3)}`,
+                                mb: 2,
+                              }}
+                            >
+                              <Box sx={{ display: "flex", alignItems: "center", overflow: "hidden" }}>
+                                <Box sx={{
+                                  width: 40,
+                                  height: 40,
+                                  borderRadius: "8px",
+                                  backgroundColor: alpha(colors.blueAccent[700], 0.2),
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  mr: 2,
+                                }}>
+                                  <AttachFileIcon sx={{ fontSize: 20, color: colors.blueAccent[400] }} />
+                                </Box>
+                                <Box sx={{ textAlign: "left" }}>
+                                  <Typography noWrap sx={{ maxWidth: "150px", fontWeight: "medium" }}>
+                                    {attachment.name}
+                                  </Typography>
+                                  <Typography variant="caption" color={colors.grey[400]}>
+                                    {(attachment.size / 1024).toFixed(1)} KB
+                                  </Typography>
+                                </Box>
+                              </Box>
+                              <IconButton
+                                onClick={() => setAttachment(null)}
+                                sx={{
+                                  color: colors.grey[300],
+                                  backgroundColor: alpha(colors.primary[900], 0.3),
+                                  "&:hover": {
+                                    backgroundColor: alpha(colors.redAccent[900], 0.3),
+                                    color: colors.redAccent[400],
+                                  },
+                                }}
+                              >
+                                <DeleteIcon sx={{ fontSize: 18 }} />
+                              </IconButton>
+                            </Box>
+                          </Box>
+
+                          <Box sx={{ p: 2, mt: 1 }}>
+                            <Typography variant="body2" sx={{ mb: 1.5, color: colors.grey[300], fontWeight: "medium" }}>
+                              PDF document uploaded successfully
+                            </Typography>
+                            <Button
+                              component="label"
+                              variant="outlined"
+                              startIcon={<CloudUploadIcon />}
+                              sx={{
+                                borderColor: colors.blueAccent[500],
+                                color: colors.blueAccent[500],
+                                borderRadius: "8px",
+                                "&:hover": {
+                                  borderColor: colors.blueAccent[400],
+                                  backgroundColor: alpha(colors.blueAccent[400], 0.1),
+                                },
+                              }}
+                              >
+                              Change PDF
+                              <input
+                                type="file"
+                                hidden
+                                onChange={handleAttachmentChange}
+                              />
+                            </Button>
+                          </Box>
+                        </Box>
+                      ) : attachmentInfo ? (
+                        <Box>
+                          <Box sx={{ p: 3, pb: 0 }}>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                p: 3,
+                                backgroundColor: alpha(colors.blueAccent[900], 0.3),
+                                borderRadius: "8px",
+                                border: `1px solid ${alpha(colors.blueAccent[700], 0.3)}`,
+                                mb: 2,
+                              }}
+                            >
+                              <Box sx={{ display: "flex", alignItems: "center", overflow: "hidden" }}>
+                                <Box sx={{
+                                  width: 40,
+                                  height: 40,
+                                  borderRadius: "8px",
+                                  backgroundColor: alpha(colors.blueAccent[700], 0.2),
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  mr: 2,
+                                }}>
+                                  <AttachFileIcon sx={{ fontSize: 20, color: colors.blueAccent[400] }} />
+                                </Box>
+                                <Box sx={{ textAlign: "left" }}>
+                                  <Typography noWrap sx={{ maxWidth: "150px", fontWeight: "medium" }}>
+                                    {attachmentInfo.name}
+                                  </Typography>
+                                  <Typography variant="caption" color={colors.grey[400]}>
+                                    Current PDF attachment
+                                  </Typography>
+                                </Box>
+                              </Box>
+                              <IconButton
+                                onClick={() => setAttachmentInfo(null)}
+                                sx={{
+                                  color: colors.grey[300],
+                                  backgroundColor: alpha(colors.primary[900], 0.3),
+                                  "&:hover": {
+                                    backgroundColor: alpha(colors.redAccent[900], 0.3),
+                                    color: colors.redAccent[400],
+                                  },
+                                }}
+                              >
+                                <DeleteIcon sx={{ fontSize: 18 }} />
+                              </IconButton>
+                            </Box>
+                          </Box>
+
+                          <Box sx={{ p: 2, mt: 1 }}>
+                            <Button
+                              component="label"
+                              variant="outlined"
+                              startIcon={<CloudUploadIcon />}
+                              sx={{
+                                borderColor: colors.blueAccent[500],
+                                color: colors.blueAccent[500],
+                                borderRadius: "8px",
+                                "&:hover": {
+                                  borderColor: colors.blueAccent[400],
+                                  backgroundColor: alpha(colors.blueAccent[400], 0.1),
+                                },
+                              }}
+                            >
+                              Change PDF
+                              <input
+                                type="file"
+                                hidden
+                                onChange={handleAttachmentChange}
+                              />
+                            </Button>
+                          </Box>
+                        </Box>
+                      ) : (
+                        <Box
                           sx={{
-                            borderColor: colors.blueAccent[500],
-                            color: colors.blueAccent[500],
-                            "&:hover": {
-                              borderColor: colors.blueAccent[400],
-                              backgroundColor: alpha(
-                                colors.blueAccent[400],
-                                0.1
-                              ),
-                            },
+                            p: 3,
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            height: "100%",
+                            minHeight: "280px",
                           }}
                         >
-                          Change Attachment
-                          <input
-                            type="file"
-                            hidden
-                            onChange={handleAttachmentChange}
-                          />
-                        </Button>
-                      </Box>
-                    ) : (
-                      <Button
-                        component="label"
-                        sx={{
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          height: "100%",
-                          width: "100%",
-                          cursor: "pointer",
-                          py: 4,
-                          color: colors.grey[300],
-                        }}
-                      >
-                        <AttachFileIcon
-                          sx={{ fontSize: 48, mb: 2, color: colors.grey[400] }}
-                        />
-                        <Typography variant="body1" fontWeight="bold" mb={1}>
-                          Upload Attachment
-                        </Typography>
-                        <Typography variant="body2" color={colors.grey[400]}>
-                          PDF, DOC, or other files
-                        </Typography>
-                        <input
-                          type="file"
-                          hidden
-                          onChange={handleAttachmentChange}
-                        />
-                      </Button>
-                    )}
-                  </Box>
+                          <Box
+                            sx={{
+                              width: 80,
+                              height: 80,
+                              borderRadius: "50%",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              backgroundColor: alpha(colors.primary[400], 0.3),
+                              mb: 3,
+                              transition: "all 0.3s ease",
+                              border: `1px dashed ${alpha(colors.grey[400], 0.3)}`,
+                            }}
+                          >
+                            <AttachFileIcon sx={{ fontSize: 32, color: colors.grey[400] }} />
+                          </Box>
+                          <Typography variant="h6" fontWeight="bold" mb={1} color={colors.grey[200]}>
+                            PDF Attachment
+                          </Typography>
+                          <Typography variant="body2" mb={3} color={colors.grey[400]} sx={{ maxWidth: "80%" }}>
+                            Upload PDF documentation, reports or additional resources
+                          </Typography>
+                          <Button
+                            component="label"
+                            variant="contained"
+                            startIcon={<AttachFileIcon />}
+                            sx={{
+                              backgroundColor: colors.blueAccent[600],
+                              "&:hover": { 
+                                backgroundColor: colors.blueAccent[700],
+                                transform: "translateY(-2px)",
+                                boxShadow: `0 6px 16px ${alpha(colors.blueAccent[900], 0.3)}`
+                              },
+                              px: 3,
+                              py: 1,
+                              borderRadius: "8px",
+                              transition: "all 0.2s",
+                            }}
+                          >
+                            Upload PDF
+                            <input
+                              type="file"
+                              hidden
+                              onChange={handleAttachmentChange}
+                            />
+                          </Button>
+                        </Box>
+                      )}
+                    </Box>
+                  </Grid>
                 </Grid>
-              </Grid>
+              </Box>
             </Paper>
 
+            {/* Enhanced Form Buttons */}
             <Box
               display="flex"
               justifyContent="space-between"
@@ -1699,10 +2281,16 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
                 sx={{
                   borderColor: alpha(colors.grey[500], 0.5),
                   color: colors.grey[300],
+                  borderWidth: "2px",
+                  borderRadius: "10px",
+                  px: 3,
+                  py: 1,
                   "&:hover": {
                     borderColor: colors.grey[300],
                     backgroundColor: alpha(colors.grey[500], 0.1),
+                    transform: "translateY(-2px)",
                   },
+                  transition: "all 0.2s",
                 }}
               >
                 Cancel
@@ -1715,11 +2303,32 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
                 startIcon={isSubmitting ? <CircularProgress size={20} /> : null}
                 sx={{
                   backgroundColor: colors.greenAccent[600],
-                  "&:hover": { backgroundColor: colors.greenAccent[700] },
+                  "&:hover": { 
+                    backgroundColor: colors.greenAccent[700],
+                    transform: "translateY(-2px)",
+                    boxShadow: `0 6px 16px ${alpha(colors.greenAccent[900], 0.3)}`
+                  },
                   fontWeight: "bold",
                   px: 4,
                   py: 1.2,
-                  borderRadius: "8px",
+                  borderRadius: "10px",
+                  transition: "all 0.2s ease",
+                  position: "relative",
+                  overflow: "hidden",
+                  "&::after": {
+                    content: '""',
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    height: "100%",
+                    background: `linear-gradient(to right, ${alpha(colors.greenAccent[600], 0)} 0%, ${alpha(colors.greenAccent[400], 0.3)} 50%, ${alpha(colors.greenAccent[600], 0)} 100%)`,
+                    transform: "translateX(-100%)",
+                    transition: "transform 0.6s ease",
+                  },
+                  "&:hover::after": {
+                    transform: "translateX(100%)",
+                  },
                 }}
               >
                 {!isSubmitting &&

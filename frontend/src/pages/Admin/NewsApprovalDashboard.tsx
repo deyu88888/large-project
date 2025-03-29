@@ -19,6 +19,8 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
+  Avatar,
+  Grid,
 } from '@mui/material';
 import {
   CheckCircle as ApproveIcon,
@@ -27,12 +29,43 @@ import {
   ArrowBack as BackIcon,
   Person as PersonIcon,
   AccessTime as TimeIcon,
+  Image as ImageIcon,
+  AttachFile as AttachFileIcon,
+  LocalOffer as TagIcon,
+  PushPin as PushPinIcon,
+  Star as StarIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { apiClient } from '../../api';
 import { useTheme } from '@mui/material/styles';
 import { tokens } from '../../theme/theme';
+import { alpha } from '@mui/material/styles';
 
+
+interface NewsContent {
+  id: number;
+  title: string;
+  content: string;
+  status: string;
+  is_featured: boolean;
+  is_pinned: boolean;
+  tags: string[];
+  image_url: string | null;
+  attachment_name: string | null;
+  attachment_url: string | null;
+  society_data?: {
+    id: number;
+    name: string;
+  };
+  author_data: {
+    id: number;
+    username: string;
+    full_name: string;
+  };
+  created_at: string;
+  comment_count: number;
+  view_count: number;
+}
 
 interface PublicationRequest {
   id: number;
@@ -49,17 +82,6 @@ interface PublicationRequest {
     id: number;
     username: string;
     full_name: string;
-  };
-}
-
-interface NewsContent {
-  id: number;
-  title: string;
-  content: string;
-  status: string;
-  society_data?: {
-    id: number;
-    name: string;
   };
 }
 
@@ -131,13 +153,27 @@ const formatDateTime = (dateString: string): string => {
 
 
 const PageHeader: React.FC<{ onBack: () => void }> = ({ onBack }) => {
+  const theme = useTheme();
+  const colors = tokens(theme.palette.mode);
   
   return (
-    <Box display="flex" alignItems="center" mb={3}>
-      <IconButton onClick={onBack} sx={{ mr: 1 }}>
+    <Box display="flex" alignItems="center" mb={3} sx={{
+      pb: 2,
+      borderBottom: `1px solid ${alpha(colors.grey[500], 0.3)}`,
+    }}>
+      <IconButton 
+        onClick={onBack} 
+        sx={{ 
+          mr: 2,
+          backgroundColor: alpha(colors.grey[500], 0.1),
+          '&:hover': {
+            backgroundColor: alpha(colors.grey[500], 0.2),
+          },
+        }}
+      >
         <BackIcon />
       </IconButton>
-      <Typography variant="h4">News Publication Approval</Typography>
+      <Typography variant="h4" fontWeight="bold">News Publication Approval</Typography>
     </Box>
   );
 };
@@ -257,6 +293,169 @@ const RequestHeader: React.FC<{
   );
 };
 
+
+const FeaturedImage: React.FC<{
+  imageUrl: string | null;
+}> = ({ imageUrl }) => {
+  const theme = useTheme();
+  const colors = tokens(theme.palette.mode);
+  
+  if (!imageUrl) return null;
+  
+  return (
+    <Box mb={3}>
+      <Typography variant="subtitle1" fontWeight="bold" mb={2}>Featured Image:</Typography>
+      <Box
+        sx={{
+          position: 'relative',
+          width: '100%',
+          height: '300px',
+          borderRadius: '8px',
+          overflow: 'hidden',
+          boxShadow: `0 4px 20px ${alpha(colors.primary[900], 0.3)}`,
+        }}
+      >
+        <img
+          src={imageUrl}
+          alt="Featured"
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+          }}
+        />
+      </Box>
+    </Box>
+  );
+};
+
+const TagsDisplay: React.FC<{
+  tags: string[];
+}> = ({ tags }) => {
+  const theme = useTheme();
+  const colors = tokens(theme.palette.mode);
+  
+  if (!tags || tags.length === 0) return null;
+  
+  return (
+    <Box mb={3}>
+      <Typography variant="subtitle1" fontWeight="bold" mb={2} display="flex" alignItems="center">
+        <TagIcon sx={{ mr: 1, fontSize: 20 }} />
+        Tags:
+      </Typography>
+      <Box display="flex" flexWrap="wrap" gap={1}>
+        {tags.map((tag, index) => (
+          <Chip
+            key={index}
+            label={tag}
+            sx={{
+              backgroundColor: alpha(colors.blueAccent[700], 0.2),
+              color: colors.grey[100],
+              borderRadius: '6px',
+              fontWeight: 'medium',
+              border: `1px solid ${alpha(colors.blueAccent[500], 0.3)}`,
+            }}
+          />
+        ))}
+      </Box>
+    </Box>
+  );
+};
+
+const AttachmentDisplay: React.FC<{
+  attachmentName: string | null;
+  attachmentUrl: string | null;
+}> = ({ attachmentName, attachmentUrl }) => {
+  const theme = useTheme();
+  const colors = tokens(theme.palette.mode);
+  
+  if (!attachmentName || !attachmentUrl) return null;
+  
+  return (
+    <Box mb={3}>
+      <Typography variant="subtitle1" fontWeight="bold" mb={2} display="flex" alignItems="center">
+        <AttachFileIcon sx={{ mr: 1, fontSize: 20 }} />
+        Attachment:
+      </Typography>
+      <Button
+        variant="outlined"
+        startIcon={<AttachFileIcon />}
+        onClick={() => window.open(attachmentUrl, '_blank')}
+        sx={{
+          color: colors.blueAccent[400],
+          borderColor: colors.blueAccent[400],
+          '&:hover': {
+            backgroundColor: alpha(colors.blueAccent[400], 0.1),
+            borderColor: colors.blueAccent[300],
+          },
+        }}
+      >
+        View PDF: {attachmentName}
+      </Button>
+    </Box>
+  );
+};
+
+const MetadataDisplay: React.FC<{
+  newsContent: NewsContent;
+}> = ({ newsContent }) => {
+  const theme = useTheme();
+  const colors = tokens(theme.palette.mode);
+  
+  return (
+    <Box
+      mb={3}
+      sx={{
+        backgroundColor: alpha(colors.primary[500], 0.3),
+        borderRadius: '8px',
+        p: 2,
+      }}
+    >
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2 }}>
+        <Box sx={{ flex: 1 }}>
+          <Box display="flex" alignItems="center" gap={1} mb={1}>
+            <PushPinIcon sx={{ 
+              color: newsContent.is_pinned ? colors.greenAccent[500] : colors.grey[500],
+              fontSize: 20 
+            }} />
+            <Typography>
+              {newsContent.is_pinned ? 'Pinned Post' : 'Not Pinned'}
+            </Typography>
+          </Box>
+          
+          <Box display="flex" alignItems="center" gap={1}>
+            <StarIcon sx={{ 
+              color: newsContent.is_featured ? colors.blueAccent[500] : colors.grey[500],
+              fontSize: 20 
+            }} />
+            <Typography>
+              {newsContent.is_featured ? 'Featured Post' : 'Not Featured'}
+            </Typography>
+          </Box>
+        </Box>
+        
+        <Box sx={{ flex: 1 }}>
+          <Box display="flex" alignItems="center" gap={1} mb={1}>
+            <TimeIcon sx={{ color: colors.grey[500], fontSize: 20 }} />
+            <Typography variant="body2" color={colors.grey[300]}>
+              Created: {formatDateTime(newsContent.created_at)}
+            </Typography>
+          </Box>
+          
+          <Box display="flex" alignItems="flex-start" gap={1}>
+            <PersonIcon sx={{ color: colors.grey[500], fontSize: 20, mt: 0.5 }} />
+            <Box>
+              <Typography variant="body2">
+                Author: {newsContent.author_data?.full_name || 'Unknown'}
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
+      </Box>
+    </Box>
+  );
+};
+
 const ContentPreview: React.FC<{
   content: string;
 }> = ({ content }) => {
@@ -273,6 +472,7 @@ const ContentPreview: React.FC<{
         maxHeight: '300px',
         overflow: 'auto',
         backgroundColor: colors.primary[500],
+        mb: 3,
       }}>
         <div dangerouslySetInnerHTML={{ __html: content }} />
       </Box>
@@ -291,14 +491,26 @@ const ActionButtons: React.FC<{
         color="success"
         startIcon={<ApproveIcon />}
         onClick={onApprove}
+        sx={{
+          fontWeight: 'bold',
+          px: 3,
+          py: 1,
+          borderRadius: '8px',
+        }}
       >
-        Approve
+        Approve Publication
       </Button>
       <Button
         variant="contained"
         color="error"
         startIcon={<RejectIcon />}
         onClick={onReject}
+        sx={{
+          fontWeight: 'bold',
+          px: 3,
+          py: 1,
+          borderRadius: '8px',
+        }}
       >
         Reject
       </Button>
@@ -314,23 +526,38 @@ const StatusMessage: React.FC<{
   const colors = tokens(theme.palette.mode);
   
   const backgroundColor = status === 'Approved' 
-    ? colors.greenAccent[900] 
-    : colors.redAccent[900];
+    ? alpha(colors.greenAccent[700], 0.2)
+    : alpha(colors.redAccent[700], 0.2);
+  
+  const borderColor = status === 'Approved'
+    ? alpha(colors.greenAccent[500], 0.5)
+    : alpha(colors.redAccent[500], 0.5);
+  
+  const textColor = status === 'Approved'
+    ? colors.greenAccent[400]
+    : colors.redAccent[400];
   
   return (
     <Box 
       mt={3} 
-      p={2} 
-      bgcolor={backgroundColor} 
-      borderRadius={1}
+      p={3} 
+      sx={{
+        backgroundColor,
+        borderRadius: '8px',
+        border: `1px solid ${borderColor}`,
+      }}
     >
-      <Typography variant="subtitle1" fontWeight="bold">
+      <Typography variant="subtitle1" fontWeight="bold" color={textColor}>
         This request has been {status.toLowerCase()}.
       </Typography>
       {notes && (
-        <Box mt={1}>
-          <Typography variant="subtitle2" fontWeight="bold">Admin notes:</Typography>
-          <Typography variant="body2">{notes}</Typography>
+        <Box mt={2} sx={{ backgroundColor: alpha(colors.primary[800], 0.3), p: 2, borderRadius: '4px' }}>
+          <Typography variant="subtitle2" fontWeight="bold" color={colors.grey[100]}>
+            Admin notes:
+          </Typography>
+          <Typography variant="body2" color={colors.grey[300]} mt={1}>
+            {notes}
+          </Typography>
         </Box>
       )}
     </Box>
@@ -360,17 +587,26 @@ const RequestCard: React.FC<{
   return (
     <Card 
       sx={{ 
-        mb: 2,
+        mb: 3,
         backgroundColor: colors.primary[400],
-        transition: 'all 0.3s ease',
+        transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+        '&:hover': {
+          transform: isExpanded ? 'none' : 'translateY(-5px)',
+          boxShadow: isExpanded ? 'none' : '0 12px 24px -10px rgba(0,0,0,0.3)',
+        },
+        boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+        borderRadius: '10px',
+        overflow: 'visible',
       }}
     >
       <CardContent 
         sx={{ 
           cursor: 'pointer',
+          p: 3,
           '&:hover': {
-            backgroundColor: colors.primary[500],
-          }
+            backgroundColor: isExpanded ? 'transparent' : alpha(colors.primary[500], 0.4),
+          },
+          transition: 'background-color 0.2s ease',
         }}
         onClick={onToggleExpand}
       >
@@ -378,15 +614,31 @@ const RequestCard: React.FC<{
       </CardContent>
       
       <Collapse in={isExpanded}>
-        <Divider />
-        <CardContent>
+        <Divider sx={{ opacity: 0.3 }} />
+        <CardContent sx={{ p: 3 }}>
           {isLoadingContent ? (
-            <Box display="flex" justifyContent="center" p={2}>
-              <CircularProgress size={30} />
+            <Box display="flex" justifyContent="center" p={4}>
+              <CircularProgress />
             </Box>
           ) : newsContent ? (
             <Box>
+              {/* New metadata section showing pinned/featured status */}
+              <MetadataDisplay newsContent={newsContent} />
+              
+              {/* Display featured image if available */}
+              <FeaturedImage imageUrl={newsContent.image_url} />
+              
+              {/* Display content preview */}
               <ContentPreview content={newsContent.content} />
+              
+              {/* Display tags if available */}
+              <TagsDisplay tags={newsContent.tags} />
+              
+              {/* Display attachment if available */}
+              <AttachmentDisplay 
+                attachmentName={newsContent.attachment_name} 
+                attachmentUrl={newsContent.attachment_url} 
+              />
               
               {request.status === 'Pending' && (
                 <ActionButtons 
@@ -431,14 +683,23 @@ const ActionDialog: React.FC<{
       PaperProps={{
         sx: {
           backgroundColor: colors.primary[400],
+          borderRadius: '10px',
         }
       }}
     >
-      <DialogTitle>
+      <DialogTitle sx={{ fontWeight: 'bold' }}>
         {action === 'approve' ? 'Approve' : 'Reject'} Publication Request
       </DialogTitle>
       <DialogContent>
-        <DialogContentText gutterBottom>
+        <DialogContentText 
+          sx={{ 
+            color: colors.grey[200],
+            mb: 2,
+            backgroundColor: alpha(colors.primary[500], 0.3),
+            p: 2,
+            borderRadius: '8px',
+          }}
+        >
           {action === 'approve' 
             ? 'This will publish the news post for all society members to view.'
             : 'This will mark the post as "Rejected" and return it to the author for further editing. The author will be able to see your feedback and resubmit after making changes.'}
@@ -459,6 +720,7 @@ const ActionDialog: React.FC<{
             '& .MuiOutlinedInput-root': {
               '& fieldset': {
                 borderColor: colors.grey[500],
+                borderRadius: '8px',
               },
               '&:hover fieldset': {
                 borderColor: colors.grey[400],
@@ -476,8 +738,18 @@ const ActionDialog: React.FC<{
           }}
         />
       </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} sx={{ color: colors.grey[300] }}>
+      <DialogActions sx={{ p: 2, pt: 0 }}>
+        <Button 
+          onClick={onClose} 
+          sx={{ 
+            color: colors.grey[300],
+            '&:hover': {
+              backgroundColor: alpha(colors.grey[700], 0.3),
+            },
+            borderRadius: '8px',
+            fontWeight: 'medium',
+          }}
+        >
           Cancel
         </Button>
         <Button 
@@ -486,6 +758,11 @@ const ActionDialog: React.FC<{
           color={action === 'approve' ? 'success' : 'error'}
           disabled={processing}
           startIcon={processing ? <CircularProgress size={20} /> : null}
+          sx={{
+            fontWeight: 'bold',
+            borderRadius: '8px',
+            px: 3,
+          }}
         >
           {action === 'approve' ? 'Approve' : 'Reject'}
         </Button>
@@ -497,6 +774,8 @@ const ActionDialog: React.FC<{
 
 const NewsApprovalDashboard: React.FC = () => {
   const navigate = useNavigate();
+  const theme = useTheme();
+  const colors = tokens(theme.palette.mode);
 
   const [requestsState, setRequestsState] = useState<RequestsState>({
     items: [],
@@ -693,48 +972,47 @@ const NewsApprovalDashboard: React.FC = () => {
   
   const filteredRequests = filterRequestsByTab(requestsState.items, requestsState.tabValue);
 
-  
-  return (
-    <Box p={3}>
-      <PageHeader onBack={() => navigate(-1)} />
-      
-      <StatusTabs 
-        value={requestsState.tabValue} 
-        onChange={handleTabChange} 
-        pendingCount={countRequestsByStatus(requestsState.items, 'Pending')}
-        approvedCount={countRequestsByStatus(requestsState.items, 'Approved')}
-        rejectedCount={countRequestsByStatus(requestsState.items, 'Rejected')}
-      />
-      
-      {requestsState.loading ? (
-        <LoadingIndicator />
-      ) : filteredRequests.length === 0 ? (
-        <EmptyState tabValue={requestsState.tabValue} />
-      ) : (
-        <Box>
-          {filteredRequests.map((request) => (
-            <RequestCard 
-              key={request.id}
-              request={request}
-              isExpanded={requestsState.expandedRequestId === request.id}
-              newsContent={contentsState.items[request.news_post]}
-              isLoadingContent={!!contentsState.loading[request.news_post]}
-              onToggleExpand={() => handleToggleRequestExpansion(request)}
-              onApprove={() => handleOpenDialog(request, 'approve')}
-              onReject={() => handleOpenDialog(request, 'reject')}
-            />
-          ))}
-        </Box>
-      )}
-      
-      <ActionDialog 
-        dialogState={dialogState}
-        onClose={handleCloseDialog}
-        onProcess={handleProcessRequest}
-        onNotesChange={handleNotesChange}
-      />
-    </Box>
-  );
+return (
+  <Box p={3}>
+    <PageHeader onBack={() => navigate(-1)} />
+    
+    <StatusTabs 
+      value={requestsState.tabValue} 
+      onChange={handleTabChange} 
+      pendingCount={countRequestsByStatus(requestsState.items, 'Pending')}
+      approvedCount={countRequestsByStatus(requestsState.items, 'Approved')}
+      rejectedCount={countRequestsByStatus(requestsState.items, 'Rejected')}
+    />
+    
+    {requestsState.loading ? (
+      <LoadingIndicator />
+    ) : filteredRequests.length === 0 ? (
+      <EmptyState tabValue={requestsState.tabValue} />
+    ) : (
+      <Box>
+        {filteredRequests.map((request) => (
+          <RequestCard 
+            key={request.id}
+            request={request}
+            isExpanded={requestsState.expandedRequestId === request.id}
+            newsContent={contentsState.items[request.news_post]}
+            isLoadingContent={!!contentsState.loading[request.news_post]}
+            onToggleExpand={() => handleToggleRequestExpansion(request)}
+            onApprove={() => handleOpenDialog(request, 'approve')}
+            onReject={() => handleOpenDialog(request, 'reject')}
+          />
+        ))}
+      </Box>
+    )}
+    
+    <ActionDialog 
+      dialogState={dialogState}
+      onClose={handleCloseDialog}
+      onProcess={handleProcessRequest}
+      onNotesChange={handleNotesChange}
+    />
+  </Box>
+);
 };
 
 export default NewsApprovalDashboard;

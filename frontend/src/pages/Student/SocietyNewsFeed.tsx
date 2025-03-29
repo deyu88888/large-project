@@ -13,11 +13,12 @@ import {
   BookmarkBorder as BookmarkBorderIcon,
   Visibility as VisibilityIcon,
   VisibilityOff as VisibilityOffIcon,
+  AttachFile as AttachFileIcon,
   ArrowBack as ArrowBackIcon
 } from '@mui/icons-material';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// Type definitions
+
 interface Society {
   id: number;
   name: string;
@@ -36,6 +37,7 @@ interface NewsPost {
   content: string;
   image_url: string | null;
   attachment_name: string | null;
+  attachment_url: string | null;
   society_data: Society;
   author_data: Author;
   created_at: string;
@@ -131,7 +133,7 @@ interface PostTitleProps {
   styleProps: StyleProps;
 }
 
-// Utility functions
+
 const formatDateTime = (dateString: string): string => {
   if (!dateString) return "N/A";
   const date = new Date(dateString);
@@ -146,7 +148,7 @@ const formatDateTime = (dateString: string): string => {
   });
 };
 
-// Component for society avatar with fallback
+
 const SocietyAvatar: React.FC<SocietyAvatarProps> = ({ society, size = 40 }) => {
   return (
     <Avatar
@@ -159,7 +161,7 @@ const SocietyAvatar: React.FC<SocietyAvatarProps> = ({ society, size = 40 }) => 
   );
 };
 
-// Component for post tags
+
 const PostTags: React.FC<PostTagsProps> = ({ 
   tags, 
   isFeatured, 
@@ -205,7 +207,7 @@ const PostTags: React.FC<PostTagsProps> = ({
   );
 };
 
-// Component for post stats (views and comments)
+
 const PostStats: React.FC<PostStatsProps> = ({ 
   viewCount, 
   commentCount,
@@ -237,7 +239,7 @@ const PostStats: React.FC<PostStatsProps> = ({
   );
 };
 
-// Component for bookmark button
+
 const BookmarkButton: React.FC<BookmarkButtonProps> = ({
   postId,
   bookmarked,
@@ -269,7 +271,7 @@ const BookmarkButton: React.FC<BookmarkButtonProps> = ({
   );
 };
 
-// Post Image Component
+
 const PostImage: React.FC<PostImageProps> = ({ imageUrl, title, height, styleProps, card = false }) => {
   const { colors } = styleProps;
   
@@ -311,7 +313,7 @@ const PostImage: React.FC<PostImageProps> = ({ imageUrl, title, height, stylePro
   );
 };
 
-// Society Info Component
+
 const SocietyInfo: React.FC<SocietyInfoProps> = ({ post, size = "medium", styleProps }) => {
   const { colors } = styleProps;
   const avatarSize = size === "small" ? 32 : 40;
@@ -332,7 +334,7 @@ const SocietyInfo: React.FC<SocietyInfoProps> = ({ post, size = "medium", styleP
   );
 };
 
-// Post Title Component
+
 const PostTitle: React.FC<PostTitleProps> = ({ title, isPinned, onClick, styleProps }) => {
   const { colors } = styleProps;
   
@@ -363,7 +365,7 @@ const PostTitle: React.FC<PostTitleProps> = ({ title, isPinned, onClick, stylePr
   );
 };
 
-// Post Content Component
+
 const PostContent: React.FC<{
   content: string;
   truncated?: boolean;
@@ -420,7 +422,7 @@ const PostContent: React.FC<{
   );
 };
 
-// Hide Post Button Component
+
 const HidePostButton: React.FC<{
   postId: number;
   onHidePost: (id: number) => void;
@@ -457,11 +459,13 @@ const HidePostButton: React.FC<{
   );
 };
 
-// Attachment Button Component
+
 const AttachmentButton: React.FC<{
   fileName: string;
+  fileUrl: string;
+  icon: React.ReactNode;
   styleProps: StyleProps;
-}> = ({ fileName, styleProps }) => {
+}> = ({ fileName, fileUrl, icon, styleProps }) => {
   const { colors } = styleProps;
   
   return (
@@ -477,14 +481,15 @@ const AttachmentButton: React.FC<{
           backgroundColor: colors.primary[500],
         }
       }}
-      startIcon={<BookmarkIcon />}
+      startIcon={icon}
+      onClick={() => window.open(fileUrl, '_blank')}
     >
-      Download {fileName}
+      View PDF: {fileName}
     </Button>
   );
 };
 
-// Detailed post view component
+
 const DetailedPostView: React.FC<DetailedPostViewProps> = ({ 
   post, 
   onBack,
@@ -558,8 +563,13 @@ const DetailedPostView: React.FC<DetailedPostViewProps> = ({
 
             <PostContent content={post.content} styleProps={styleProps} />
 
-            {post.attachment_name && (
-              <AttachmentButton fileName={post.attachment_name} styleProps={styleProps} />
+            {post.attachment_name && post.attachment_url && (
+              <AttachmentButton 
+                fileName={post.attachment_name} 
+                fileUrl={post.attachment_url}
+                icon={<AttachFileIcon />}
+                styleProps={styleProps} 
+              />
             )}
 
             <Divider sx={{ mb: 3 }} />
@@ -606,7 +616,7 @@ const DetailedPostView: React.FC<DetailedPostViewProps> = ({
   );
 };
 
-// News Feed Card Component
+
 const NewsCard: React.FC<NewsCardProps> = ({ post, onPostClick, onHidePost, styleProps }) => {
   const { colors } = styleProps;
   
@@ -690,7 +700,7 @@ const NewsCard: React.FC<NewsCardProps> = ({ post, onPostClick, onHidePost, styl
   );
 };
 
-// Loading Component
+
 const LoadingIndicator: React.FC<{ styleProps: StyleProps }> = ({ styleProps }) => {
   const { colors } = styleProps;
   
@@ -701,7 +711,7 @@ const LoadingIndicator: React.FC<{ styleProps: StyleProps }> = ({ styleProps }) 
   );
 };
 
-// Empty Feed Component
+
 const EmptyFeed: React.FC<{
   newsPosts: NewsPost[];
   hiddenPosts: number[];
@@ -750,7 +760,7 @@ const EmptyFeed: React.FC<{
   );
 };
 
-// News Feed Component
+
 const NewsFeed: React.FC<NewsFeedProps> = ({ 
   loading, 
   newsPosts, 
@@ -795,24 +805,27 @@ const NewsFeed: React.FC<NewsFeedProps> = ({
   );
 };
 
-// Custom hooks
+
 const useBookmarks = () => {
-  const [bookmarked, setBookmarked] = useState<number[]>(() => {
-    const savedBookmarks = localStorage.getItem('newsBookmarks');
-    return savedBookmarks ? JSON.parse(savedBookmarks) : [];
+  const [bookmarkedId, setBookmarkedId] = useState<number | null>(() => {
+    const savedBookmark = localStorage.getItem('newsBookmark');
+    return savedBookmark ? JSON.parse(savedBookmark) : null;
   });
 
   const toggleBookmark = useCallback((postId: number) => {
-    setBookmarked(prev => {
-      const updatedBookmarks = prev.includes(postId)
-        ? prev.filter(id => id !== postId)
-        : [...prev, postId];
+    setBookmarkedId(prev => {
+
+
+      const newValue = prev === postId ? null : postId;
       
-      // Save to localStorage
-      localStorage.setItem('newsBookmarks', JSON.stringify(updatedBookmarks));
-      return updatedBookmarks;
+
+      localStorage.setItem('newsBookmark', JSON.stringify(newValue));
+      return newValue;
     });
   }, []);
+
+
+  const bookmarked = bookmarkedId !== null ? [bookmarkedId] : [];
 
   return { bookmarked, toggleBookmark };
 };
@@ -839,17 +852,16 @@ const useHiddenPosts = () => {
   return { hiddenPosts, handleHidePost, resetHidden };
 };
 
-const useNewsPosts = (societyId?: number) => {
+const useNewsPosts = (societyId?: number, bookmarkedPosts: number[] = []) => {
   const [newsPosts, setNewsPosts] = useState<NewsPost[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
   const fetchNews = useCallback(async () => {
     setLoading(true);
     try {
-      const endpoint = societyId 
-        ? `/api/society/${societyId}/news/` 
+      const endpoint = societyId
+        ? `/api/society/${societyId}/news/`
         : '/api/news/feed/';
-      
       const response = await apiClient.get(endpoint);
       setNewsPosts(response.data);
     } catch (error) {
@@ -865,38 +877,45 @@ const useNewsPosts = (societyId?: number) => {
 
   const sortedPosts = useMemo(() => {
     return [...newsPosts].sort((a, b) => {
+
+      const aIsBookmarked = bookmarkedPosts.includes(a.id);
+      const bIsBookmarked = bookmarkedPosts.includes(b.id);
+      
+      if (aIsBookmarked && !bIsBookmarked) return -1;
+      if (!aIsBookmarked && bIsBookmarked) return 1;
+      
+
       if (a.is_pinned && !b.is_pinned) return -1;
       if (!a.is_pinned && b.is_pinned) return 1;
+      
+
       return new Date(b.published_at).getTime() - new Date(a.published_at).getTime();
     });
-  }, [newsPosts]);
+  }, [newsPosts, bookmarkedPosts]);
 
   return { newsPosts, loading, sortedPosts };
 };
 
-// Main component
+
 const SocietyNewsFeed: React.FC<SocietyNewsFeedProps> = ({ societyId }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const styleProps = { colors };
-
-  // Custom hooks for state management
-  const { newsPosts, loading, sortedPosts } = useNewsPosts(societyId);
   const { bookmarked, toggleBookmark } = useBookmarks();
+  const { newsPosts, loading, sortedPosts } = useNewsPosts(societyId, bookmarked);
   const { hiddenPosts, handleHidePost, resetHidden } = useHiddenPosts();
   
-  // State for selected post
+
   const [selectedPost, setSelectedPost] = useState<NewsPost | null>(null);
 
-  // Filter out hidden posts
+
   const visiblePosts = useMemo(() => {
     return sortedPosts.filter(post => !hiddenPosts.includes(post.id));
   }, [sortedPosts, hiddenPosts]);
 
-  // Handlers
+
   const handlePostClick = useCallback((post: NewsPost) => {
     setSelectedPost(post);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
   const handleBackToFeed = useCallback(() => {
