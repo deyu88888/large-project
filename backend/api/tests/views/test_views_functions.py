@@ -2,15 +2,13 @@ from datetime import date, timedelta
 import json
 import os
 from random import choice
+from unittest.mock import patch
 from django.conf import settings
 from django.urls import reverse
 from PIL import Image
 from rest_framework.test import APITestCase
-from unittest.mock import patch
 from api.models import Student, User, Society, Event, Comment
-from api.views import get_popular_societies, get_upcoming_events, get_sorted_events, \
-    custom_media_view, like_comment, dislike_comment, toggle_follow, check_email, \
-    upload_avatar
+from api.views import *
 from api.tests.file_deletion import delete_file
 
 
