@@ -157,22 +157,44 @@ class SocietyNewsSerializer(serializers.ModelSerializer):
         """Validate the news post data"""
         if data.get('status') == 'Published' and not data.get('title'):
             raise serializers.ValidationError({"title": "Published news must have a title."})
-
+        
         status_value = data.get('status')
         if status_value and status_value not in ['Draft', 'PendingApproval', 'Rejected', 'Published', 'Archived']:
             raise serializers.ValidationError({
                 "status": f"Invalid status: {status_value}. Must be one of: Draft, PendingApproval, Rejected, Published, Archived"
             })
-
+        
         if 'tags' in data:
             tags = data.get('tags')
             if tags and not isinstance(tags, list):
                 try:
+                    # If it's a string, try to parse it as JSON
                     if isinstance(tags, str):
-                        data['tags'] = loads(tags)
+                        import json
+                        try:
+                            # Try to parse as JSON
+                            parsed_tags = json.loads(tags)
+                            # Ensure it's a list
+                            if isinstance(parsed_tags, list):
+                                data['tags'] = parsed_tags
+                            else:
+                                # If parsed but not a list, convert to a list with one item
+                                data['tags'] = [str(parsed_tags)]
+                        except json.JSONDecodeError:
+                            # Not valid JSON, check if it's a single tag
+                            if tags.strip():
+                                # Treat as a single tag
+                                data['tags'] = [tags.strip()]
+                            else:
+                                # Empty string, use empty list
+                                data['tags'] = []
+                    else:
+                        # Not a string or list, convert to string and use as single tag
+                        data['tags'] = [str(tags)]
                 except Exception:
-                    raise serializers.ValidationError({"tags": "Tags must be a list"})
-
+                    # Default to empty list for safety
+                    data['tags'] = []
+        
         return data
 
     def create(self, validated_data):

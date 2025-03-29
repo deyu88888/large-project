@@ -285,9 +285,18 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
       // Make sure boolean values are explicitly strings
       formData.append("is_pinned", isPinned ? "true" : "false");
       formData.append("is_featured", isFeatured ? "true" : "false");
-      
-      // Add tags with JSON string approach
-      formData.append("tags", JSON.stringify(tags || []));
+
+      // Array notation approach
+      if (tags && Array.isArray(tags) && tags.length > 0) {
+        const cleanTags = tags.map(tag => String(tag).trim()).filter(Boolean);
+        
+        // Send each tag with an index
+        cleanTags.forEach((tag, index) => {
+          formData.append(`tags[${index}]`, tag);
+        });
+      } else {
+        formData.append("tags[]", "");
+      }
       
       // Add files if present
       if (image) {
@@ -1455,7 +1464,7 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
                   }
                   
                   .tiptap-wrapper .ProseMirror:focus {
-                    box-shadow: 0 0 0 2px ${alpha(colors.blueAccent[500], 0.3)} inset;
+                    outline: none;
                   }`}
                 </style>
               </div>
