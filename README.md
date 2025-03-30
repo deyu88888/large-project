@@ -6,7 +6,10 @@ This is a **fullstack monorepo** containing:
 - **Backend**: Django + ASGI + WebSockets + Daphne + SQLDB
 - **Docker**: Development setup with Docker Compose
 - **CI/CD**: GitHub Actions in `.github/workflows/`
-- **Readme**: Frontend in `frontend/README.md` and Backend in `backend/README.md`
+- **Developer Manual**: Frontend in `frontend/README.md` and Backend in `backend/README.md`
+- **SEG Report**: SEG Report is `SEG_report.pdf` and src in `SEG_report/`
+
+Production app is at [https://infiniteloop.space](https://infiniteloop.space)
 
 ---
 
