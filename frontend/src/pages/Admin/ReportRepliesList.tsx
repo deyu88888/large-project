@@ -1,15 +1,33 @@
 import React, { useEffect, useState, useContext, useCallback, useMemo } from 'react';
-import { Box, Button, Typography, useTheme, Alert, Chip, CircularProgress } from "@mui/material";
+import { 
+  Box, 
+  Button, 
+  Typography, 
+  useTheme, 
+  Alert, 
+  Chip, 
+  CircularProgress 
+} from "@mui/material";
 import { DataGrid, GridToolbar, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 import { tokens } from "../../theme/theme";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { useSettingsStore } from "../../stores/settings-store";
 import { fetchReportsWithReplies } from './fetchReports';
 import { useNavigate } from 'react-router-dom';
+import { useWebSocketChannel } from "../../hooks/useWebSocketChannel";
 
-
-const REFRESH_INTERVAL = 5 * 60 * 1000; 
-
+interface Report {
+  id: number | string;
+  subject: string;
+  from_student_name: string;
+  requested_at: string;
+  latest_reply: {
+    replied_by: string;
+    content: string;
+    created_at: string;
+  };
+  [key: string]: any;
+}
 
 interface ReportState {
   items: Report[];
@@ -50,6 +68,26 @@ interface DataGridContainerProps {
   drawer: boolean;
 }
 
+interface HeaderProps {
+  colors: ReturnType<typeof tokens>;
+}
+
+const Header: React.FC<HeaderProps> = ({ colors }) => {
+  return (
+    <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+      <Typography
+        variant="h1"
+        sx={{
+          color: colors.grey[100],
+          fontSize: "1.75rem",
+          fontWeight: 800,
+        }}
+      >
+        Reports Needing Reply
+      </Typography>
+    </Box>
+  );
+};
 
 const formatDateToLocale = (dateString: string): string => {
   try {
@@ -71,7 +109,6 @@ const filterReportsBySearchTerm = (reports: Report[], searchTerm: string): Repor
       .includes(normalizedSearchTerm)
   );
 };
-
 
 const LatestReplyCell: React.FC<LatestReplyProps> = ({ repliedBy, content }) => {
   return (
@@ -202,7 +239,6 @@ const DataGridContainer: React.FC<DataGridContainerProps> = ({ reports, columns,
   );
 };
 
-
 const createReportColumns = (
   handleViewThread: (id: number | string) => void,
   handleReply: (id: number | string) => void,
@@ -216,12 +252,17 @@ const createReportColumns = (
       field: "latest_reply_content", 
       headerName: "Latest Reply", 
       flex: 2,
-      renderCell: (params: GridRenderCellParams) => (
-        <LatestReplyCell 
-          repliedBy={params.row.latest_reply.replied_by}
-          content={params.row.latest_reply.content}
-        />
-      )
+      renderCell: (params: GridRenderCellParams) => {
+        if (!params.row.latest_reply) {
+          return <Typography variant="body2">No replies yet</Typography>;
+        }
+        return (
+          <LatestReplyCell 
+            repliedBy={params.row.latest_reply.replied_by || 'Unknown'}
+            content={params.row.latest_reply.content || 'No content'}
+          />
+        );
+      }
     },
     { 
       field: "status", 
@@ -233,23 +274,33 @@ const createReportColumns = (
       field: "latest_reply_date", 
       headerName: "Latest Reply Date", 
       flex: 1.2,
-      renderCell: (params: GridRenderCellParams) => (
-        <DateCell 
-          dateString={params.row.latest_reply.created_at}
-          formatter={formatDate}
-        />
-      )
+      renderCell: (params: GridRenderCellParams) => {
+        if (!params.row.latest_reply || !params.row.latest_reply.created_at) {
+          return <Typography variant="body2">No date available</Typography>;
+        }
+        return (
+          <DateCell 
+            dateString={params.row.latest_reply.created_at}
+            formatter={formatDate}
+          />
+        );
+      }
     },
     { 
       field: "requested_at", 
       headerName: "Report Date", 
       flex: 1.2,
-      renderCell: (params: GridRenderCellParams) => (
-        <DateCell 
-          dateString={params.row.requested_at}
-          formatter={formatDate}
-        />
-      )
+      renderCell: (params: GridRenderCellParams) => {
+        if (!params.row.requested_at) {
+          return <Typography variant="body2">No date available</Typography>;
+        }
+        return (
+          <DateCell 
+            dateString={params.row.requested_at}
+            formatter={formatDate}
+          />
+        );
+      }
     },
     {
       field: "actions",
@@ -266,11 +317,16 @@ const createReportColumns = (
   ];
 };
 
-
 const loadReportData = async (): Promise<Report[]> => {
-  return await fetchReportsWithReplies() as any;
+  try {
+    const data = await fetchReportsWithReplies() as Report[];
+    
+    return Array.isArray(data) ? data : [];
+  } catch (error) {
+    console.error("Error fetching reports with replies:", error);
+    throw error;
+  }
 };
-
 
 const ReportRepliesList: React.FC = () => {
   const theme = useTheme();
@@ -279,26 +335,44 @@ const ReportRepliesList: React.FC = () => {
   const { drawer } = useSettingsStore();
   const navigate = useNavigate();
   
-  
   const [reportState, setReportState] = useState<ReportState>({
     items: [],
     loading: true,
     error: null
   });
-
   
-  const handleViewThread = useCallback((reportId: number | string) => {
-    navigate(`/admin/report-thread/${reportId}`);
-  }, [navigate]);
-
-  const handleReply = useCallback((reportId: number | string) => {
-    navigate(`/admin/report-list/${reportId}/reply`);
-  }, [navigate]);
-
-  const handleClearError = useCallback(() => {
-    setReportState(prev => ({ ...prev, error: null }));
-  }, []);
-
+  const [isConnected, setIsConnected] = useState(false);
+  
+  const { 
+    data: wsData, 
+    loading: wsLoading, 
+    error: wsError, 
+    refresh: wsRefresh, 
+    isConnected: wsConnected 
+  } = useWebSocketChannel<Report[]>(
+    'admin_reports', 
+    loadReportData
+  );
+  
+  useEffect(() => {
+    if (wsData) {
+      const safeData = Array.isArray(wsData) ? wsData : [];
+      setReportState(prev => ({
+        ...prev,
+        items: safeData,
+        loading: false
+      }));
+    }
+    
+    setIsConnected(wsConnected);
+    
+    if (wsError) {
+      setReportState(prev => ({
+        ...prev,
+        error: `Failed to fetch reports: ${wsError}`
+      }));
+    }
+  }, [wsData, wsConnected, wsError]);
   
   const fetchReports = useCallback(async () => {
     setReportState(prev => ({ ...prev, loading: true }));
@@ -319,39 +393,57 @@ const ReportRepliesList: React.FC = () => {
       }));
     }
   }, []);
-
   
   useEffect(() => {
     fetchReports();
-    
-    const intervalId = setInterval(fetchReports, REFRESH_INTERVAL);
-    
-    return () => clearInterval(intervalId);
   }, [fetchReports]);
+  
+  const handleViewThread = useCallback((reportId: number | string) => {
+    navigate(`/admin/report-thread/${reportId}`);
+  }, [navigate]);
 
+  const handleReply = useCallback((reportId: number | string) => {
+    navigate(`/admin/report-list/${reportId}/reply`);
+  }, [navigate]);
+
+  const handleClearError = useCallback(() => {
+    setReportState(prev => ({ ...prev, error: null }));
+  }, []);
   
   const formatDate = useCallback(formatDateToLocale, []);
-
   
-  const filteredReports = useMemo(() => 
-    filterReportsBySearchTerm(reportState.items, searchTerm || ''),
-    [reportState.items, searchTerm]
-  );
-
+  const filteredReports = useMemo(() => {
+    const reports = reportState.items || [];
+    
+    const safeReports = Array.isArray(reports) ? reports : [];
+    return filterReportsBySearchTerm(safeReports, searchTerm || '');
+  }, [reportState.items, searchTerm]);
   
   const columns = useMemo(() => 
     createReportColumns(handleViewThread, handleReply, formatDate),
     [handleViewThread, handleReply, formatDate]
   );
-
+  
+  const handleRefresh = useCallback(() => {
+    wsRefresh();
+    fetchReports();
+  }, [wsRefresh, fetchReports]);
   
   if (reportState.loading && reportState.items.length === 0) {
     return <LoadingState message="Loading reports..." />;
   }
-
   
   return (
-    <>
+    <Box
+      sx={{
+        height: "calc(100vh - 64px)",
+        maxWidth: drawer ? `calc(100% - 3px)`: "100%",
+      }}
+    >
+      <Header 
+        colors={colors}
+      />
+      
       {reportState.error && (
         <ErrorAlert 
           message={reportState.error} 
@@ -362,11 +454,11 @@ const ReportRepliesList: React.FC = () => {
       <DataGridContainer 
         reports={filteredReports}
         columns={columns}
-        loading={reportState.loading}
+        loading={reportState.loading || wsLoading}
         colors={colors}
         drawer={drawer}
       />
-    </>
+    </Box>
   );
 };
   

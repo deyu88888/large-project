@@ -24,6 +24,7 @@ import { apiClient, apiPaths } from "../../api.ts";
 import { useAuthStore } from "../../stores/auth-store.ts";
 import { tokens } from "../../theme/theme.ts";
 import { Admin } from "../../types.ts";
+import { useWebSocketChannel } from "../../hooks/useWebSocketChannel";
 
 interface AdminFormData {
   username: string;
@@ -92,8 +93,13 @@ interface AdminDetailFormProps {
 }
 
 const fetchAdminData = async (adminId: number): Promise<Admin> => {
-  const response = await apiClient.get(`${apiPaths.USER.ADMINVIEW(adminId)}`);
-  return response.data;
+  try {
+    const response = await apiClient.get(`${apiPaths.USER.ADMINVIEW(adminId)}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching admin details", error);
+    throw error;
+  }
 };
 
 const updateAdminData = async (
@@ -220,7 +226,7 @@ const AdminDetailForm: React.FC<AdminDetailFormProps> = ({
   >
     <form onSubmit={onSubmit}>
       <Grid container spacing={2}>
-        <Grid size={{ xs: 12 }}>
+        <Grid item xs={12}>
           <FormTextField
             label="Username"
             name="username"
@@ -230,7 +236,7 @@ const AdminDetailForm: React.FC<AdminDetailFormProps> = ({
           />
         </Grid>
 
-        <Grid size={{ xs: 6 }}>
+        <Grid item xs={6}>
           <FormTextField
             label="First Name"
             name="first_name"
@@ -240,7 +246,7 @@ const AdminDetailForm: React.FC<AdminDetailFormProps> = ({
           />
         </Grid>
 
-        <Grid size={{ xs: 6 }}>
+        <Grid item xs={6}>
           <FormTextField
             label="Last Name"
             name="last_name"
@@ -250,7 +256,7 @@ const AdminDetailForm: React.FC<AdminDetailFormProps> = ({
           />
         </Grid>
 
-        <Grid size={{ xs: 6 }}>
+        <Grid item xs={6}>
           <FormTextField
             label="Email"
             name="email"
@@ -260,7 +266,7 @@ const AdminDetailForm: React.FC<AdminDetailFormProps> = ({
           />
         </Grid>
 
-        <Grid size={{ xs: 6 }}>
+        <Grid item xs={6}>
           <FormTextField
             label="Role"
             name="role"
@@ -270,7 +276,7 @@ const AdminDetailForm: React.FC<AdminDetailFormProps> = ({
           />
         </Grid>
 
-        <Grid size={{ xs: 6 }}>
+        <Grid item xs={6}>
           <SwitchField
             name="is_active"
             label="Active"
@@ -280,7 +286,7 @@ const AdminDetailForm: React.FC<AdminDetailFormProps> = ({
           />
         </Grid>
 
-        <Grid size={{ xs: 6 }}>
+        <Grid item xs={6}>
           <SwitchField
             name="is_super_admin"
             label="Super Admin"
@@ -304,9 +310,7 @@ const ViewAdmin: React.FC = () => {
   const { admin_id } = useParams<{ admin_id: string }>();
   const adminId = Number(admin_id);
 
-  const [admin, setAdmin] = useState<Admin | null>(null);
   const [formData, setFormData] = useState<AdminFormData | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
   const [snackbar, setSnackbar] = useState<SnackbarState>({
     open: false,
@@ -316,6 +320,42 @@ const ViewAdmin: React.FC = () => {
 
   const isCurrentUserSuperAdmin = user?.is_super_admin || false;
   const canEdit = isCurrentUserSuperAdmin;
+
+  const fetchAdminDataWrapper = useCallback(async () => {
+    try {
+      return await fetchAdminData(adminId);
+    } catch (error) {
+      console.error("Error fetching admin details", error);
+      throw error;
+    }
+  }, [adminId]);
+
+  const { 
+    data: admin, 
+    loading, 
+    error: wsError, 
+    refresh, 
+    isConnected 
+  } = useWebSocketChannel<Admin>(
+    `admin/${adminId}`, 
+    fetchAdminDataWrapper
+  );
+
+  useEffect(() => {
+    if (admin) {
+      setFormData(admin);
+    }
+  }, [admin]);
+
+  useEffect(() => {
+    if (wsError) {
+      setSnackbar({
+        open: true,
+        message: `Error loading data: ${wsError}`,
+        severity: "error"
+      });
+    }
+  }, [wsError]);
 
   const handleChange = useCallback(
     (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -359,25 +399,6 @@ const ViewAdmin: React.FC = () => {
     []
   );
 
-  const loadAdminData = useCallback(async () => {
-    try {
-      setLoading(true);
-      const data = await fetchAdminData(adminId);
-      console.log("Fetched admin data:", data);
-      setAdmin(data);
-      setFormData(data);
-    } catch (error) {
-      console.error("Error fetching admin details", error);
-      showSnackbar("Failed to load admin details", "error");
-    } finally {
-      setLoading(false);
-    }
-  }, [adminId, showSnackbar]);
-
-  useEffect(() => {
-    loadAdminData();
-  }, [loadAdminData]);
-
   const handleSubmit = useCallback(
     async (e: FormEvent) => {
       e.preventDefault();
@@ -398,11 +419,10 @@ const ViewAdmin: React.FC = () => {
 
         console.log("Sending data to backend:", dataToSend);
 
-        const updatedAdmin = await updateAdminData(adminId, dataToSend);
-
-        setAdmin(updatedAdmin);
-        setFormData(updatedAdmin);
-
+        await updateAdminData(adminId, dataToSend);
+        
+        refresh();
+        
         showSnackbar("Admin updated successfully!", "success");
       } catch (error) {
         console.error("Error updating admin", error);
@@ -411,7 +431,7 @@ const ViewAdmin: React.FC = () => {
         setSaving(false);
       }
     },
-    [formData, admin, canEdit, adminId, showSnackbar]
+    [formData, admin, canEdit, adminId, showSnackbar, refresh]
   );
 
   if (loading || !formData) {
@@ -420,7 +440,9 @@ const ViewAdmin: React.FC = () => {
 
   return (
     <Box minHeight="100vh" p={4}>
-      <BackButton onClick={handleGoBack} />
+      <Box>
+        <BackButton onClick={handleGoBack} />
+      </Box>
 
       <Typography variant="h2" textAlign="center" mb={4}>
         Admin Details

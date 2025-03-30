@@ -1,4 +1,4 @@
-import { useState, useEffect, memo, useCallback } from "react";
+import { useState, useEffect, memo, useCallback, useMemo } from "react";
 import { Calendar, momentLocalizer } from "react-big-calendar";
 import moment from "moment";
 import {
@@ -16,6 +16,8 @@ import {
 import Header from "../../components/Header";
 import { tokens } from "../../theme/theme";
 import { getAllEvents } from "../../api";
+import { useWebSocketChannel } from "../../hooks/useWebSocketChannel";
+import { FaSync } from "react-icons/fa";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 
 const EVENT_COLORS = [
@@ -92,9 +94,6 @@ const AdminCalendar = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
 
-  const [events, setEvents] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [moreEvents, setMoreEvents] = useState<{
@@ -102,21 +101,42 @@ const AdminCalendar = () => {
     data: any[];
   }>({ open: false, data: [] });
 
-  useEffect(() => {
-    const fetchEvents = async () => {
-      try {
-        setLoading(true);
-        const data = await getAllEvents();
-        setEvents(formatEvents(data || []));
-      } catch (err) {
-        setError("Failed to load events. Please try again.");
-      } finally {
-        setLoading(false);
-      }
-    };
+  
+  const fetchCalendarEvents = async () => {
+    try {
+      const data = await getAllEvents();
+      return data || [];
+    } catch (err) {
+      console.error("Failed to load events:", err);
+      return [];
+    }
+  };
 
-    fetchEvents();
-  }, []);
+  
+  const { 
+    data: eventsData, 
+    loading, 
+    error: wsError, 
+    refresh, 
+    isConnected 
+  } = useWebSocketChannel(
+    'events_calendar', 
+    fetchCalendarEvents
+  );
+
+  
+  const events = useMemo(() => formatEvents(eventsData || []), [eventsData]);
+
+  
+  const [error, setError] = useState<string | null>(null);
+  
+  useEffect(() => {
+    if (wsError) {
+      setError(`Failed to load events: ${wsError}`);
+    } else {
+      setError(null);
+    }
+  }, [wsError]);
 
   const handleSelectEvent = useCallback((event: any) => {
     setSelectedEvent(event);
@@ -373,14 +393,6 @@ const AdminCalendar = () => {
         mb={3}
       >
         <Header title="Admin Calendar" subtitle="View All Events" />
-        <Button
-          variant="contained"
-          color="secondary"
-          onClick={() => window.location.reload()}
-          sx={{ borderRadius: "8px" }}
-        >
-          Refresh
-        </Button>
       </Box>
 
       {error && (
@@ -417,7 +429,6 @@ const AdminCalendar = () => {
           min={new Date()}
           max={new Date()}
           onSelectEvent={handleSelectEvent}
-          // eventLimit={5}
           popup={false}
           drilldownView="day"
         />

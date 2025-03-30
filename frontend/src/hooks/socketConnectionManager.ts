@@ -292,7 +292,7 @@ class SocketConnectionManager {
       const baseUrl = getWebSocketUrl()
       
       // Determine endpoint based on connection attempt
-      const endpoints = ['main', 'dashboard', 'echo', 'test-connection'];
+      const endpoints = ['universal', 'main', 'dashboard', 'echo', 'test-connection'];
       const endpointIndex = Math.min(this.connectionAttempt - 1, endpoints.length - 1);
       const endpoint = endpoints[endpointIndex];
       const socketUrl = `${baseUrl}/${endpoint}/`;
@@ -390,7 +390,8 @@ class SocketConnectionManager {
         // and will trigger reconnection
       };
       
-      // Handle incoming messages
+      // Updated onmessage handler for socketConnectionManager.ts
+
       this.ws.onmessage = (event) => {
         try {
           const data: WebSocketMessage = JSON.parse(event.data);
@@ -465,6 +466,39 @@ class SocketConnectionManager {
             if (data.available_channels) {
               this.setSupportedChannels(data.available_channels);
               this.logWithTime('log', 'Available channels:', data.available_channels);
+            }
+            
+            return;
+          }
+          
+          // Handle available_channels as implicit authentication
+          if (data.type === 'available_channels') {
+            this.logWithTime('log', 'Authentication successful (channels received)');
+            this.setStatus(CONNECTION_STATES.AUTHENTICATED);
+            
+            // Store supported channels
+            if (data.channels) {
+              this.setSupportedChannels(data.channels);
+              this.logWithTime('log', 'Available channels:', data.channels);
+            }
+            
+            // Re-subscribe to all active channels
+            const activeChannels = Object.keys(this.channelSubscribers);
+            if (activeChannels.length > 0) {
+              this.logWithTime('log', `Re-subscribing to ${activeChannels.length} active channels`);
+              
+              activeChannels.forEach(channel => {
+                if (this.channelSubscribers[channel].length > 0) {
+                  const subscribeMsg = {
+                    type: 'subscribe',
+                    channel
+                  };
+                  
+                  if (this.safeSend(subscribeMsg)) {
+                    this.logWithTime('log', `Re-subscribed to channel: ${channel}`);
+                  }
+                }
+              });
             }
             
             return;
