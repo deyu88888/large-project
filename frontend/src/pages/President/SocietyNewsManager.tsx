@@ -205,7 +205,7 @@ const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
   const handleDeleteNews = async (id: number) => {
     if (window.confirm("Are you sure you want to delete this news post?")) {
       try {
-        await apiClient.delete(`/api/news/${id}/`);
+        await apiClient.delete(`/api/news/${id}/detail/`);
         setNews((prevNews) => prevNews.filter((news) => news.id !== id));
         handleMenuClose();
       } catch (error) {
