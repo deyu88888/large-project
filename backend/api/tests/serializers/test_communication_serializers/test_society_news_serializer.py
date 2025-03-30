@@ -1,13 +1,12 @@
 import json
 from django.test import TestCase
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.urls import reverse
 from django.utils import timezone
 from rest_framework.test import APIRequestFactory
-from datetime import timedelta
-import tempfile
+from django.contrib.auth.models import AnonymousUser
 from io import BytesIO
 from PIL import Image
+
 
 from api.models import (
     User, Student, Society, SocietyNews, NewsComment, NewsPublicationRequest
@@ -29,9 +28,6 @@ class SocietyNewsSerializerTest(TestCase):
         )
         self.admin_user.is_staff = True
         self.admin_user.save()
-
-        
-        
         
         self.student = Student._default_manager.create_user(
             username="student1",
@@ -54,7 +50,6 @@ class SocietyNewsSerializerTest(TestCase):
             major="Business",
             status="Approved"
         )
-
         
         self.society = Society.objects.create(
             name="Test Society",
@@ -65,15 +60,12 @@ class SocietyNewsSerializerTest(TestCase):
             category="Academic"
         )
         
-        
         image = BytesIO()
         Image.new('RGB', (100, 100)).save(image, 'JPEG')
         image.seek(0)
         self.test_image = SimpleUploadedFile("test_image.jpg", image.getvalue(), content_type="image/jpeg")
         
-        
         self.test_attachment = SimpleUploadedFile("test_doc.pdf", b"Test document content", content_type="application/pdf")
-        
         
         self.news_post = SocietyNews.objects.create(
             society=self.society,
@@ -87,7 +79,6 @@ class SocietyNewsSerializerTest(TestCase):
             tags=["test", "news"]
         )
         
-        
         self.comment1 = NewsComment.objects.create(
             news_post=self.news_post,
             user=self.student,
@@ -100,14 +91,12 @@ class SocietyNewsSerializerTest(TestCase):
             content="This is another test comment"
         )
         
-        
         self.reply = NewsComment.objects.create(
             news_post=self.news_post,
             user=self.student,
             content="This is a reply",
             parent_comment=self.comment2
         )
-        
         
         self.factory = APIRequestFactory()
         
@@ -120,7 +109,7 @@ class SocietyNewsSerializerTest(TestCase):
         data = serializer.data
         
         expected_fields = [
-            'id', 'title', 'content', 'image_url', 'attachment_name', 
+            'id', 'title', 'content', 'image_url', 'attachment_url', 'attachment_name', 
             'author_data', 'society_data', 'created_at', 'updated_at', 
             'published_at', 'status', 'is_featured', 'is_pinned',
             'tags', 'view_count', 'comment_count', 'is_author', 'comments',
@@ -154,7 +143,6 @@ class SocietyNewsSerializerTest(TestCase):
         self.assertEqual(data['society_data']['id'], self.society.id)
         self.assertEqual(data['society_data']['name'], self.society.name)
         
-        
     def test_comment_count(self):
         """Test that comment count is correctly calculated"""
         request = self.factory.get("/")
@@ -162,7 +150,6 @@ class SocietyNewsSerializerTest(TestCase):
         
         serializer = SocietyNewsSerializer(self.news_post, context={"request": request})
         data = serializer.data
-        
         
         self.assertEqual(data['comment_count'], 3)
         
@@ -194,9 +181,7 @@ class SocietyNewsSerializerTest(TestCase):
         serializer = SocietyNewsSerializer(self.news_post, context={"request": request})
         data = serializer.data
         
-        
         self.assertEqual(len(data['comments']), 2)
-        
         
         comment_ids = [comment['id'] for comment in data['comments']]
         self.assertIn(self.comment1.id, comment_ids)
@@ -207,7 +192,6 @@ class SocietyNewsSerializerTest(TestCase):
         
         self.news_post.status = "Rejected"
         self.news_post.save()
-        
         
         rejection_notes = "Content not appropriate for the platform"
         rejected_request = NewsPublicationRequest.objects.create(
@@ -363,9 +347,123 @@ class SocietyNewsSerializerTest(TestCase):
         
         self.assertEqual(len(data), 3)
         
-        
         for item in data:
             self.assertIn('id', item)
             self.assertIn('title', item)
             self.assertIn('content', item)
             self.assertIn('author_data', item)
+            
+    
+    def test_attachment_url_serialization(self):
+        """Test that attachment URL is correctly serialized"""
+        news_with_attachment = SocietyNews.objects.create(
+            society=self.society,
+            title="News with Attachment",
+            content="This post has an attachment",
+            author=self.student,
+            status="Published",
+            attachment=self.test_attachment
+        )
+        
+        request = self.factory.get("/")
+        request.user = self.student
+        
+        serializer = SocietyNewsSerializer(news_with_attachment, context={"request": request})
+        data = serializer.data
+        
+        self.assertIsNotNone(data['attachment_url'])
+        self.assertIsNotNone(data['attachment_name'])
+        
+        attachment_name = data['attachment_name']
+        self.assertTrue(attachment_name.startswith("test_doc"))
+        self.assertTrue(attachment_name.endswith(".pdf"))
+    
+    def test_tags_conversion_with_single_string(self):
+        """Test tags conversion with a single string value"""
+        data_with_single_string = {
+            'society': self.society.id,
+            'title': 'Test Title',
+            'content': 'Test content',
+            'status': 'Draft',
+            'tags': 'singletag'
+        }
+        
+        serializer = SocietyNewsSerializer(data=data_with_single_string)
+        self.assertTrue(serializer.is_valid())
+        self.assertEqual(serializer.validated_data['tags'], ['singletag'])
+    
+    def test_tags_conversion_with_empty_string(self):
+        """Test tags conversion with an empty string"""
+        data_with_empty_string = {
+            'society': self.society.id,
+            'title': 'Test Title',
+            'content': 'Test content',
+            'status': 'Draft',
+            'tags': ''
+        }
+        
+        serializer = SocietyNewsSerializer(data=data_with_empty_string)
+        self.assertTrue(serializer.is_valid())
+        
+        tags_value = serializer.validated_data.get('tags', None)
+        self.assertTrue(tags_value == [] or tags_value == '' or tags_value is None, 
+                      f"Expected empty value, got: {tags_value}")
+    
+    def test_tags_conversion_with_non_string_non_list(self):
+        """Test tags conversion with a non-string, non-list value (like a number)"""
+        data_with_number = {
+            'society': self.society.id,
+            'title': 'Test Title',
+            'content': 'Test content',
+            'status': 'Draft',
+            'tags': 123
+        }
+        
+        serializer = SocietyNewsSerializer(data=data_with_number)
+        self.assertTrue(serializer.is_valid())
+        self.assertEqual(serializer.validated_data['tags'], ['123'])
+    
+    def test_author_data_with_no_author(self):
+        """Test behavior when news post has no author"""
+        news_without_author = SocietyNews.objects.create(
+            society=self.society,
+            title="No Author News",
+            content="This post has no author",
+            status="Draft"
+        )
+        
+        request = self.factory.get("/")
+        request.user = self.student
+        
+        serializer = SocietyNewsSerializer(news_without_author, context={"request": request})
+        data = serializer.data
+        
+        self.assertIsNone(data['author_data'])
+    
+    def test_is_author_when_not_authenticated(self):
+        """Test is_author field when user is not authenticated"""
+        request = self.factory.get("/")
+        request.user = AnonymousUser()
+        
+        serializer = SocietyNewsSerializer(self.news_post, context={"request": request})
+        data = serializer.data
+        
+        self.assertFalse(data['is_author'])
+    
+    def test_create_without_request_context(self):
+        """Test create method behavior without request context"""
+        data = {
+            'society': self.society.id,
+            'title': 'Test Without Context',
+            'content': 'This post is created without request context',
+            'status': 'Draft',
+            'author': self.student.id  # Explicitly provide author
+        }
+        
+        serializer = SocietyNewsSerializer(data=data)
+        self.assertTrue(serializer.is_valid())
+        
+        news = serializer.save()
+        
+        self.assertEqual(news.author, self.student)
+        self.assertEqual(news.title, 'Test Without Context')
