@@ -24,6 +24,8 @@ import { useTheme } from "@mui/material/styles";
 import { apiClient, apiPaths } from "../../api";
 import { tokens } from "../../theme/theme";
 import { Society } from "../../types";
+import { useWebSocketChannel } from "../../hooks/useWebSocketChannel";
+import { FaSync } from "react-icons/fa";
 
 interface FormErrors {
   name?: string;
@@ -37,14 +39,6 @@ interface Notification {
   open: boolean;
   message: string;
   severity: "success" | "error" | "info" | "warning";
-}
-
-interface SocietyFormState {
-  society: Society | null;
-  formData: Society | null;
-  loading: boolean;
-  saving: boolean;
-  errors: FormErrors;
 }
 
 interface TextFieldProps {
@@ -98,11 +92,50 @@ interface SocietyFormProps {
   onSubmit: (e: FormEvent) => void;
 }
 
+interface StatusIndicatorProps {
+  isConnected: boolean;
+  onRefresh: () => void;
+  colors: ReturnType<typeof tokens>;
+}
+
+const StatusIndicator: React.FC<StatusIndicatorProps> = ({ isConnected, onRefresh, colors }) => (
+  <Box display="flex" alignItems="center" mb={2}>
+    <Box
+      component="span"
+      sx={{
+        width: 8,
+        height: 8,
+        borderRadius: '50%',
+        backgroundColor: isConnected ? colors.greenAccent[500] : colors.orangeAccent[500],
+        mr: 1
+      }}
+    />
+    <Typography variant="body2" fontSize="0.75rem" color={colors.grey[300]} mr={2}>
+      {isConnected ? 'Live updates' : 'Offline mode'}
+    </Typography>
+    <Button
+      variant="contained"
+      color="secondary"
+      startIcon={<FaSync />}
+      onClick={onRefresh}
+      size="small"
+      sx={{ borderRadius: "8px" }}
+    >
+      Refresh
+    </Button>
+  </Box>
+);
+
 const fetchSocietyData = async (societyId: number): Promise<Society> => {
-  const response = await apiClient.get(
-    apiPaths.USER.ADMINSOCIETYVIEW(societyId)
-  );
-  return response.data;
+  try {
+    const response = await apiClient.get(
+      apiPaths.USER.ADMINSOCIETYVIEW(societyId)
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching society details:", error);
+    throw error;
+  }
 };
 
 const updateSocietyData = async (
@@ -390,14 +423,14 @@ const SocietyForm: React.FC<SocietyFormProps> = ({
       <form onSubmit={onSubmit}>
         <Grid container>
           {/* Upload Icon */}
-          <Grid size={{ md: 6, xs: 12 }}>
+          <Grid item md={6} xs={12}>
             <FileUpload
               onFileChange={onFileChange}
               currentIcon={formData.icon}
             />
           </Grid>
           <Grid container spacing={3}>
-            <Grid size={{ xs: 12 }}>
+            <Grid item xs={12}>
               <FormTextField
                 {...commonTextFieldProps}
                 label="Society Name"
@@ -411,7 +444,7 @@ const SocietyForm: React.FC<SocietyFormProps> = ({
               />
             </Grid>
 
-            <Grid size={{ xs: 12 }}>
+            <Grid item xs={12}>
               <FormTextField
                 {...commonTextFieldProps}
                 label="Description"
@@ -427,7 +460,7 @@ const SocietyForm: React.FC<SocietyFormProps> = ({
               />
             </Grid>
 
-            <Grid size={{ md: 6, xs: 12 }}>
+            <Grid item md={6} xs={12}>
               <FormTextField
                 {...commonTextFieldProps}
                 label="Category"
@@ -441,14 +474,14 @@ const SocietyForm: React.FC<SocietyFormProps> = ({
               />
             </Grid>
 
-            <Grid size={{ md: 6, xs: 12 }}>
+            <Grid item md={6} xs={12}>
               <FormTextField
                 {...commonTextFieldProps}
                 label="President"
                 name="president"
                 value={
                   formData.president
-                  // @ts-expect-error:
+                  
                     ? `${formData.president.first_name} ${formData.president.last_name}`
                     : ""
                 }
@@ -457,7 +490,7 @@ const SocietyForm: React.FC<SocietyFormProps> = ({
               />
             </Grid>
 
-            <Grid size={{ md: 6, xs: 12 }}>
+            <Grid item md={6} xs={12}>
               <FormTextField
                 {...commonTextFieldProps}
                 label="Approved By"
@@ -468,7 +501,7 @@ const SocietyForm: React.FC<SocietyFormProps> = ({
               />
             </Grid>
 
-            <Grid size={{ md: 6, xs: 12 }}>
+            <Grid item md={6} xs={12}>
               <FormTextField
                 {...commonTextFieldProps}
                 label="Status"
@@ -479,7 +512,7 @@ const SocietyForm: React.FC<SocietyFormProps> = ({
               />
             </Grid>
 
-            <Grid size={{ xs: 12 }}>
+            <Grid item xs={12}>
               <FormTextField
                 {...commonTextFieldProps}
                 label="Tags (comma separated)"
@@ -513,19 +546,59 @@ const ViewSociety: React.FC = () => {
   const { society_id } = useParams<{ society_id: string }>();
   const societyId = Number(society_id);
 
-  const [formState, setFormState] = useState<SocietyFormState>({
-    society: null,
-    formData: null,
-    loading: true,
-    saving: false,
-    errors: {},
-  });
-
+  const [formData, setFormData] = useState<Society | null>(null);
+  const [iconFile, setIconFile] = useState<File | null>(null);
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [saving, setSaving] = useState<boolean>(false);
   const [notification, setNotification] = useState<Notification>({
     open: false,
     message: "",
     severity: "info",
   });
+
+  
+  const fetchSocietyDataWrapper = useCallback(async () => {
+    try {
+      return await fetchSocietyData(societyId);
+    } catch (error) {
+      console.error("Error fetching society details:", error);
+      throw error;
+    }
+  }, [societyId]);
+
+  
+  const { 
+    data: society, 
+    loading, 
+    error: wsError, 
+    refresh, 
+    isConnected 
+  } = useWebSocketChannel<Society>(
+    `society/${societyId}`, 
+    fetchSocietyDataWrapper
+  );
+
+  
+  useEffect(() => {
+    if (society) {
+      setFormData({
+        ...society,
+        social_media_links: society.social_media_links || {},
+        tags: society.tags || [],
+      });
+    }
+  }, [society]);
+
+  
+  useEffect(() => {
+    if (wsError) {
+      setNotification({
+        open: true,
+        message: `Error loading data: ${wsError}`,
+        severity: "error"
+      });
+    }
+  }, [wsError]);
 
   const showNotification = useCallback(
     (
@@ -549,21 +622,17 @@ const ViewSociety: React.FC = () => {
     (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       const { name, value } = e.target;
 
-      setFormState((prev) => {
-        if (!prev.formData) return prev;
+      setFormData((prev) => {
+        if (!prev) return null;
+        return { ...prev, [name]: value };
+      });
 
-        const updatedFormData = { ...prev.formData, [name]: value };
-
-        const updatedErrors = { ...prev.errors };
+      setErrors((prev) => {
+        const updatedErrors = { ...prev };
         if (updatedErrors[name]) {
           delete updatedErrors[name];
         }
-
-        return {
-          ...prev,
-          formData: updatedFormData,
-          errors: updatedErrors,
-        };
+        return updatedErrors;
       });
     },
     []
@@ -573,31 +642,25 @@ const ViewSociety: React.FC = () => {
     const tagsValue = e.target.value;
     const tagsArray = parseTagsString(tagsValue);
 
-    setFormState((prev) => {
-      if (!prev.formData) return prev;
+    setFormData((prev) => {
+      if (!prev) return null;
+      return { ...prev, tags: tagsArray };
+    });
 
-      const updatedFormData = { ...prev.formData, tags: tagsArray };
-
-      const updatedErrors = { ...prev.errors };
+    setErrors((prev) => {
+      const updatedErrors = { ...prev };
       if (updatedErrors.tags) {
         delete updatedErrors.tags;
       }
-
-      return {
-        ...prev,
-        formData: updatedFormData,
-        errors: updatedErrors,
-      };
+      return updatedErrors;
     });
   }, []);
 
   const handleFileChange = useCallback((file: File) => {
-    setFormState((prev) => {
-      if (!prev.formData) return prev;
-      return {
-        ...prev,
-        formData: { ...prev.formData, icon: file },
-      };
+    setIconFile(file);
+    setFormData((prev) => {
+      if (!prev) return null;
+      return { ...prev, icon: file };
     });
   }, []);
 
@@ -606,69 +669,30 @@ const ViewSociety: React.FC = () => {
   }, [navigate]);
 
   const resetForm = useCallback(() => {
-    setFormState((prev) => {
-      if (!prev.society) return prev;
-
-      return {
-        ...prev,
-        formData: {
-          ...prev.society,
-          social_media_links: prev.society.social_media_links || {},
-          tags: prev.society.tags || [],
-        },
-        errors: {},
-      };
-    });
-
+    if (society) {
+      setFormData({
+        ...society,
+        social_media_links: society.social_media_links || {},
+        tags: society.tags || [],
+      });
+      setIconFile(null);
+      setErrors({});
+    }
+    
     showNotification("Form has been reset to original values", "info");
-  }, [showNotification]);
+  }, [society, showNotification]);
 
   const validateAndSetErrors = useCallback(() => {
-    const newErrors = validateSocietyForm(formState.formData);
-
-    setFormState((prev) => ({
-      ...prev,
-      errors: newErrors,
-    }));
-
+    const newErrors = validateSocietyForm(formData);
+    setErrors(newErrors);
     return isFormValid(newErrors);
-  }, [formState.formData]);
-
-  const loadSocietyData = useCallback(async () => {
-    try {
-      setFormState((prev) => ({ ...prev, loading: true }));
-
-      const data = await fetchSocietyData(societyId);
-
-      setFormState({
-        society: data,
-        formData: {
-          ...data,
-          social_media_links: data.social_media_links || {},
-          tags: data.tags || [],
-        },
-        loading: false,
-        saving: false,
-        errors: {},
-      });
-
-      showNotification("Society loaded successfully!", "success");
-    } catch (error) {
-      console.error("Error fetching society details:", error);
-      showNotification("Failed to load society details", "error");
-
-      setFormState((prev) => ({
-        ...prev,
-        loading: false,
-      }));
-    }
-  }, [societyId, showNotification]);
+  }, [formData]);
 
   const handleSubmit = useCallback(
     async (e: FormEvent) => {
       e.preventDefault();
 
-      if (!formState.formData || !formState.society) return;
+      if (!formData || !society) return;
 
       const isValid = validateAndSetErrors();
       if (!isValid) {
@@ -677,41 +701,31 @@ const ViewSociety: React.FC = () => {
       }
 
       try {
-        setFormState((prev) => ({ ...prev, saving: true }));
+        setSaving(true);
 
         const formDataToSend = createFormDataFromSociety(
-          formState.formData,
-          formState.formData.icon instanceof File
-            ? formState.formData.icon
-            : undefined
+          formData,
+          iconFile
         );
 
         await updateSocietyData(societyId, formDataToSend);
-
+        
+        
+        refresh();
+        setIconFile(null);
+        
         showNotification("Society updated successfully!", "success");
-        await loadSocietyData();
       } catch (error) {
         console.error("Error updating society:", error);
         showNotification("Failed to update society", "error");
       } finally {
-        setFormState((prev) => ({ ...prev, saving: false }));
+        setSaving(false);
       }
     },
-    [
-      formState.formData,
-      formState.society,
-      societyId,
-      validateAndSetErrors,
-      showNotification,
-      loadSocietyData,
-    ]
+    [formData, society, societyId, iconFile, validateAndSetErrors, showNotification, refresh]
   );
 
-  useEffect(() => {
-    loadSocietyData();
-  }, [loadSocietyData]);
-
-  if (formState.loading || !formState.formData) {
+  if (loading || !formData) {
     return <LoadingSpinner />;
   }
 
@@ -723,7 +737,14 @@ const ViewSociety: React.FC = () => {
         backgroundColor: colors.primary[500],
       }}
     >
-      <BackButton onClick={handleGoBack} />
+      <Box display="flex" justifyContent="space-between" alignItems="center">
+        <BackButton onClick={handleGoBack} />
+        <StatusIndicator 
+          isConnected={isConnected}
+          onRefresh={refresh}
+          colors={colors}
+        />
+      </Box>
 
       <Typography
         variant="h2"
@@ -736,9 +757,9 @@ const ViewSociety: React.FC = () => {
       </Typography>
 
       <SocietyForm
-        formData={formState.formData}
-        errors={formState.errors}
-        saving={formState.saving}
+        formData={formData}
+        errors={errors}
+        saving={saving}
         onTextChange={handleTextChange}
         onTagsChange={handleTagsChange}
         onFileChange={handleFileChange}

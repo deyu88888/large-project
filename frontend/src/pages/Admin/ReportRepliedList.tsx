@@ -3,7 +3,8 @@ import {
   Box, 
   Button, 
   useTheme, 
-  Alert 
+  Alert,
+  Typography
 } from "@mui/material";
 import { DataGrid, GridColDef, GridToolbar, GridRenderCellParams } from "@mui/x-data-grid";
 import { tokens } from "../../theme/theme";
@@ -11,7 +12,8 @@ import { SearchContext } from "../../components/layout/SearchContext";
 import { useSettingsStore } from "../../stores/settings-store";
 import { apiClient } from "../../api";
 import { useNavigate } from 'react-router-dom';
-
+import { useWebSocketChannel } from "../../hooks/useWebSocketChannel";
+import { FaSync } from "react-icons/fa";
 
 interface ReportWithReplies {
   id: number | string;
@@ -22,12 +24,6 @@ interface ReportWithReplies {
   reply_count: number;
   latest_reply_date: string;
   [key: string]: any; 
-}
-
-interface ReportState {
-  items: ReportWithReplies[];
-  loading: boolean;
-  error: string | null;
 }
 
 interface DataGridContainerProps {
@@ -41,6 +37,59 @@ interface ErrorAlertProps {
   message: string;
 }
 
+interface HeaderProps {
+  colors: ReturnType<typeof tokens>;
+  isConnected: boolean;
+  onRefresh: () => void;
+}
+
+interface ActionButtonProps {
+  reportId: string | number;
+  onClick: (id: string | number) => void;
+}
+
+const Header: React.FC<HeaderProps> = ({ colors, isConnected, onRefresh }) => {
+  return (
+    <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+      <Typography
+        variant="h1"
+        sx={{
+          color: colors.grey[100],
+          fontSize: "1.75rem",
+          fontWeight: 800,
+        }}
+      >
+        Reports With Replies
+      </Typography>
+      
+      <Box display="flex" alignItems="center">
+        <Box
+          component="span"
+          sx={{
+            width: 8,
+            height: 8,
+            borderRadius: '50%',
+            backgroundColor: isConnected ? colors.greenAccent[500] : colors.orangeAccent[500],
+            mr: 1
+          }}
+        />
+        <Typography variant="body2" fontSize="0.75rem" color={colors.grey[300]} mr={2}>
+          {isConnected ? 'Live updates' : 'Offline mode'}
+        </Typography>
+        <Button
+          variant="contained"
+          color="secondary"
+          startIcon={<FaSync />}
+          onClick={onRefresh}
+          size="small"
+          sx={{ borderRadius: "8px" }}
+        >
+          Refresh
+        </Button>
+      </Box>
+    </Box>
+  );
+};
 
 const filterReportsBySearchTerm = (reports: ReportWithReplies[], searchTerm: string): ReportWithReplies[] => {
   if (!searchTerm) return reports;
@@ -63,10 +112,14 @@ const formatDateString = (dateStr: string): string => {
   }
 };
 
-
 const fetchReportReplies = async (): Promise<ReportWithReplies[]> => {
-  const response = await apiClient.get("/api/admin/reports-replied");
-  return response.data || [];
+  try {
+    const response = await apiClient.get("/api/admin/reports-replied");
+    return response.data || [];
+  } catch (error) {
+    console.error("Error fetching reports with replies:", error);
+    throw error;
+  }
 };
 
 const ErrorAlert: React.FC<ErrorAlertProps> = ({ message }) => {
@@ -85,7 +138,7 @@ const FullPageErrorAlert: React.FC<ErrorAlertProps> = ({ message }) => {
   );
 };
 
-const ActionButton: React.FC<{ reportId: string | number; onClick: (id: string | number) => void }> = ({ reportId, onClick }) => {
+const ActionButton: React.FC<ActionButtonProps> = ({ reportId, onClick }) => {
   return (
     <Button
       variant="contained"
@@ -144,7 +197,6 @@ const DataGridContainer: React.FC<DataGridContainerProps> = ({ reports, columns,
   );
 };
 
-
 const createReportColumns = (
   handleViewThread: (id: string | number) => void,
 ): GridColDef[] => {
@@ -180,7 +232,6 @@ const createReportColumns = (
   ];
 };
 
-
 const ReportRepliedList: React.FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
@@ -189,59 +240,41 @@ const ReportRepliedList: React.FC = () => {
   const { drawer } = useSettingsStore();
   
   
-  const [reportState, setReportState] = useState<ReportState>({
-    items: [],
-    loading: true,
-    error: null
-  });
-
+  const { 
+    data: reports, 
+    loading, 
+    error, 
+    refresh, 
+    isConnected 
+  } = useWebSocketChannel<ReportWithReplies[]>(
+    'admin/reports', 
+    fetchReportReplies
+  );
+  
+  
+  useEffect(() => {
+    if (error) {
+      console.error(`WebSocket error: ${error}`);
+    }
+  }, [error]);
   
   const handleViewThread = useCallback((reportId: string | number) => {
     navigate(`/admin/report-thread/${reportId}`);
   }, [navigate]);
-
-  const loadReportReplies = useCallback(async () => {
-    setReportState(prev => ({ ...prev, loading: true }));
-    
-    try {
-      const data = await fetchReportReplies();
-      setReportState({
-        items: data,
-        loading: false,
-        error: null
-      });
-    } catch (err) {
-      console.error("Error fetching reports with replies:", err);
-      setReportState({
-        items: [],
-        loading: false,
-        error: "Failed to fetch reports with replies. Please try again."
-      });
-    }
-  }, []);
-
-  
-  useEffect(() => {
-    loadReportReplies();
-  }, [loadReportReplies]);
-
   
   const filteredReports = useMemo(() => 
-    filterReportsBySearchTerm(reportState.items, searchTerm || ''),
-    [reportState.items, searchTerm]
+    filterReportsBySearchTerm(reports || [], searchTerm || ''),
+    [reports, searchTerm]
   );
-
   
   const columns = useMemo(() => 
     createReportColumns(handleViewThread),
     [handleViewThread]
   );
-
   
-  if (reportState.error && !reportState.items.length) {
-    return <FullPageErrorAlert message={reportState.error} />;
+  if (error && (!reports || reports.length === 0)) {
+    return <FullPageErrorAlert message={error} />;
   }
-
   
   return (
     <Box
@@ -250,12 +283,18 @@ const ReportRepliedList: React.FC = () => {
         maxWidth: drawer ? `calc(100% - 3px)` : "100%",
       }}
     >
-      {reportState.error && <ErrorAlert message={reportState.error} />}
+      <Header 
+        colors={colors}
+        isConnected={isConnected}
+        onRefresh={refresh}
+      />
+      
+      {error && <ErrorAlert message={error} />}
       
       <DataGridContainer 
         reports={filteredReports}
         columns={columns}
-        loading={reportState.loading}
+        loading={loading}
         colors={colors}
       />
     </Box>

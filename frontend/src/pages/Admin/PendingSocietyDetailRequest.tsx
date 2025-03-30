@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useContext, useCallback } from "react";
-import { Box, useTheme, Button, Alert, Snackbar } from "@mui/material";
+import { Box, useTheme, Button, Alert, Snackbar, Typography } from "@mui/material";
 import { DataGrid, GridRenderCellParams, GridToolbar } from "@mui/x-data-grid";
 import { apiClient, apiPaths } from "../../api";
 import { tokens } from "../../theme/theme";
@@ -7,13 +7,52 @@ import { useSettingsStore } from "../../stores/settings-store";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { SocietyPreview } from "../../components/SocietyPreview";
 import { SocietyDetailRequest } from "../../types/admin/society";
-
+import { useWebSocketChannel } from "../../hooks/useWebSocketChannel";
+import { FaSync } from "react-icons/fa";
 
 interface AlertState {
   open: boolean;
   message: string;
   severity: 'success' | 'error';
 }
+
+interface HeaderProps {
+  colors: any;
+  isConnected: boolean;
+  onRefresh: () => void;
+}
+
+const Header: React.FC<HeaderProps> = ({ colors, isConnected, onRefresh }) => {
+  return (
+    <Box display="flex" justifyContent="flex-end" alignItems="center" mb={2}>
+      <Box display="flex" alignItems="center">
+        <Box
+          component="span"
+          sx={{
+            width: 8,
+            height: 8,
+            borderRadius: '50%',
+            backgroundColor: isConnected ? colors.greenAccent[500] : colors.orangeAccent[500],
+            mr: 1
+          }}
+        />
+        <Typography variant="body2" fontSize="0.75rem" color={colors.grey[300]} mr={2}>
+          {isConnected ? 'Live updates' : 'Offline mode'}
+        </Typography>
+        <Button
+          variant="contained"
+          color="secondary"
+          startIcon={<FaSync />}
+          onClick={onRefresh}
+          size="small"
+          sx={{ borderRadius: "8px" }}
+        >
+          Refresh
+        </Button>
+      </Box>
+    </Box>
+  );
+};
 
 const fetchPendingSocietyDetailRequests = async () => {
   try {
@@ -34,16 +73,46 @@ const PendingSocietyDetailRequests: React.FC = () => {
   const { drawer } = useSettingsStore();
   const [openPreview, setOpenPreview] = useState<boolean>(false);
   const [selectedRequest, setSelectedRequest] = useState<SocietyDetailRequest | null>(null);
-  const [detailRequests, setDetailRequests] = useState<SocietyDetailRequest[]>([]);
 
-  const fetchData = async () => {
-    const data = await fetchPendingSocietyDetailRequests();
-    setDetailRequests(data);
+  
+  const fetchSocietyDetailRequestsWS = async () => {
+    try {
+      return await fetchPendingSocietyDetailRequests();
+    } catch (error) {
+      console.error("Error fetching society detail requests:", error);
+      return [];
+    }
   };
 
+  
+  const { 
+    data: detailRequests, 
+    loading, 
+    error: wsError, 
+    refresh, 
+    isConnected 
+  } = useWebSocketChannel<SocietyDetailRequest[]>(
+    'society_requests', 
+    fetchSocietyDetailRequestsWS
+  );
+
+  
+  const [alert, setAlert] = useState<AlertState>({
+    open: false,
+    message: '',
+    severity: 'success'
+  });
+
+  
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (wsError) {
+      setAlert({
+        open: true,
+        message: `WebSocket error: ${wsError}`,
+        severity: 'error'
+      });
+    }
+  }, [wsError]);
 
   const filteredDetailRequests = Array.isArray(detailRequests)
     ? detailRequests.filter((request) => {
@@ -70,7 +139,10 @@ const PendingSocietyDetailRequests: React.FC = () => {
   const handleAccept = async (id: number) => {
     try {
       await apiClient.put(`${apiPaths.SOCIETY.DETAIL_REQUEST}${id}/`, { status: "Approved" });
-      setDetailRequests((prev) => prev.filter((request) => request.id !== id));
+      
+      
+      refresh();
+      
       setAlert({
         open: true,
         message: `Society detail request approved successfully.`,
@@ -89,7 +161,10 @@ const PendingSocietyDetailRequests: React.FC = () => {
   const handleReject = async (id: number) => {
     try {
       await apiClient.put(`${apiPaths.SOCIETY.DETAIL_REQUEST}${id}/`, { status: "Rejected" });
-      setDetailRequests((prev) => prev.filter((request) => request.id !== id));
+      
+      
+      refresh();
+      
       setAlert({
         open: true,
         message: `Society detail request rejected successfully.`,
@@ -104,13 +179,6 @@ const PendingSocietyDetailRequests: React.FC = () => {
       });
     }
   };
-
-  // State for alerts/notifications
-  const [alert, setAlert] = useState<AlertState>({
-    open: false,
-    message: '',
-    severity: 'success'
-  });
 
   const handleCloseAlert = useCallback(() => {
     setAlert(prev => ({ ...prev, open: false }));
@@ -191,6 +259,13 @@ const PendingSocietyDetailRequests: React.FC = () => {
         maxWidth: drawer ? `calc(100% - 3px)` : "100%",
       }}
     >
+      {/* Add WebSocket status header */}
+      <Header 
+        colors={colors}
+        isConnected={isConnected}
+        onRefresh={refresh}
+      />
+      
       <Box
         sx={{
           height: "78vh",
@@ -224,6 +299,7 @@ const PendingSocietyDetailRequests: React.FC = () => {
           columns={columns}
           slots={{ toolbar: GridToolbar }}
           autoHeight
+          loading={loading}
           resizeThrottleMs={0}
           disableRowSelectionOnClick
         />

@@ -1,5 +1,5 @@
-import React, { useContext, useCallback, useState, useMemo } from "react";
-import { Box, useTheme, Button, Snackbar, Alert } from "@mui/material";
+import React, { useContext, useCallback, useState, useMemo, useEffect } from "react";
+import { Box, useTheme, Button, Snackbar, Alert, Typography } from "@mui/material";
 import {
   DataGrid,
   GridColDef,
@@ -9,13 +9,14 @@ import {
 import { tokens } from "../../theme/theme";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { useSettingsStore } from "../../stores/settings-store";
-import { useFetchWebSocket } from "../../hooks/useFetchWebSocket";
 import { fetchPendingRequests } from "./utils";
 import { apiPaths } from "../../api";
 import { updateRequestStatus } from "../../api/requestApi";
 import { EventPreview } from "../../components/EventPreview";
 import type { EventData, ExtraModule } from "../../types/event/event";
-import {mapToEventRequestData} from "../../utils/mapper.ts";
+import { mapToEventRequestData } from "../../utils/mapper.ts";
+import { useWebSocketChannel } from "../../hooks/useWebSocketChannel";
+import { FaSync } from "react-icons/fa";
 
 interface AlertState {
   open: boolean;
@@ -40,6 +41,13 @@ interface DataGridCustomProps {
   columns: GridColDef[];
   drawer: boolean;
   colors: ReturnType<typeof tokens>;
+  loading: boolean;
+}
+
+interface HeaderProps {
+  colors: ReturnType<typeof tokens>;
+  isConnected: boolean;
+  onRefresh: () => void;
 }
 
 const filterEventsBySearchTerm = (
@@ -68,6 +76,38 @@ const createErrorAlert = (message: string): AlertState => ({
   message,
   severity: "error",
 });
+
+const Header: React.FC<HeaderProps> = ({ colors, isConnected, onRefresh }) => {
+  return (
+    <Box display="flex" justifyContent="flex-end" alignItems="center" mb={2}>
+      <Box display="flex" alignItems="center">
+        <Box
+          component="span"
+          sx={{
+            width: 8,
+            height: 8,
+            borderRadius: '50%',
+            backgroundColor: isConnected ? colors.greenAccent[500] : colors.orangeAccent[500],
+            mr: 1
+          }}
+        />
+        <Typography variant="body2" fontSize="0.75rem" color={colors.grey[300]} mr={2}>
+          {isConnected ? 'Live updates' : 'Offline mode'}
+        </Typography>
+        <Button
+          variant="contained"
+          color="secondary"
+          startIcon={<FaSync />}
+          onClick={onRefresh}
+          size="small"
+          sx={{ borderRadius: "8px" }}
+        >
+          Refresh
+        </Button>
+      </Box>
+    </Box>
+  );
+};
 
 const ActionButtons: React.FC<ActionButtonsProps> = ({
   id,
@@ -119,7 +159,7 @@ const EventNotification: React.FC<EventNotificationProps> = ({ alert, onClose })
   );
 };
 
-const EventsDataGrid: React.FC<DataGridCustomProps> = ({ events, columns, colors }) => {
+const EventsDataGrid: React.FC<DataGridCustomProps> = ({ events, columns, colors, loading }) => {
   return (
     <Box
       sx={{
@@ -153,6 +193,7 @@ const EventsDataGrid: React.FC<DataGridCustomProps> = ({ events, columns, colors
         slots={{ toolbar: GridToolbar }}
         resizeThrottleMs={0}
         autoHeight
+        loading={loading}
         disableRowSelectionOnClick
         initialState={{
           pagination: { paginationModel: { pageSize: 100 } },
@@ -176,10 +217,35 @@ const PendingEventRequest: React.FC = () => {
     severity: "success",
   });
 
-  const pendingData = useFetchWebSocket<any[]>(
-    () => fetchPendingRequests(apiPaths.EVENTS.PENDINGEVENTREQUEST),
-    "event"
+  
+  const fetchPendingEventData = async () => {
+    try {
+      const data = await fetchPendingRequests(apiPaths.EVENTS.PENDINGEVENTREQUEST);
+      return data || [];
+    } catch (error) {
+      console.error("Error fetching pending events:", error);
+      return [];
+    }
+  };
+
+  
+  const { 
+    data: pendingData, 
+    loading, 
+    error: wsError, 
+    refresh, 
+    isConnected 
+  } = useWebSocketChannel<any[]>(
+    'dashboard', 
+    fetchPendingEventData
   );
+
+  
+  useEffect(() => {
+    if (wsError) {
+      setAlert(createErrorAlert(`WebSocket error: ${wsError}`));
+    }
+  }, [wsError]);
 
   const events: EventData[] = useMemo(() => {
     return (pendingData ?? []).map(mapToEventRequestData);
@@ -195,12 +261,14 @@ const PendingEventRequest: React.FC = () => {
       try {
         await updateRequestStatus(id, status, apiPaths.EVENTS.UPDATEENEVENTREQUEST);
         setAlert(createSuccessAlert(`Event ${status.toLowerCase()} successfully.`));
+        
+        refresh();
       } catch (error) {
         console.error(`Error updating event status:`, error);
         setAlert(createErrorAlert(`Failed to ${status.toLowerCase()} event.`));
       }
     },
-    []
+    [refresh]
   );
 
   const handleCloseAlert = useCallback(() => {
@@ -247,11 +315,18 @@ const PendingEventRequest: React.FC = () => {
         maxWidth: drawer ? `calc(100% - 3px)` : "100%",
       }}
     >
+      <Header 
+        colors={colors}
+        isConnected={isConnected}
+        onRefresh={refresh}
+      />
+
       <EventsDataGrid
         events={filteredEvents}
         columns={columns}
         drawer={drawer}
         colors={colors}
+        loading={loading}
       />
 
       <EventNotification alert={alert} onClose={handleCloseAlert} />

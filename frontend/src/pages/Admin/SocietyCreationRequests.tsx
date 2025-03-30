@@ -4,11 +4,11 @@ import { DataGrid, GridColDef, GridToolbar, GridRenderCellParams } from "@mui/x-
 import { tokens } from "../../theme/theme";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { useSettingsStore } from "../../stores/settings-store";
-import { useFetchWebSocket } from "../../hooks/useFetchWebSocket";
 import { updateRequestStatus } from "../../api/requestApi";
 import { apiPaths } from "../../api";
 import { fetchPendingRequests } from "./utils";
-
+import { useWebSocketChannel } from "../../hooks/useWebSocketChannel";
+import { FaSync } from "react-icons/fa";
 
 interface Society {
   id: number;
@@ -58,6 +58,54 @@ interface DataGridContainerProps {
   drawer: boolean;
 }
 
+interface HeaderProps {
+  colors: ReturnType<typeof tokens>;
+  isConnected: boolean;
+  onRefresh: () => void;
+}
+
+const Header: React.FC<HeaderProps> = ({ colors, isConnected, onRefresh }) => {
+  return (
+    <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+      <Typography
+        variant="h1"
+        sx={{
+          color: colors.grey[100],
+          fontSize: "1.75rem",
+          fontWeight: 800,
+        }}
+      >
+        Pending Society Requests
+      </Typography>
+      
+      <Box display="flex" alignItems="center">
+        <Box
+          component="span"
+          sx={{
+            width: 8,
+            height: 8,
+            borderRadius: '50%',
+            backgroundColor: isConnected ? colors.greenAccent[500] : colors.orangeAccent[500],
+            mr: 1
+          }}
+        />
+        <Typography variant="body2" fontSize="0.75rem" color={colors.grey[300]} mr={2}>
+          {isConnected ? 'Live updates' : 'Offline mode'}
+        </Typography>
+        <Button
+          variant="contained"
+          color="secondary"
+          startIcon={<FaSync />}
+          onClick={onRefresh}
+          size="small"
+          sx={{ borderRadius: "8px" }}
+        >
+          Refresh
+        </Button>
+      </Box>
+    </Box>
+  );
+};
 
 const processSocietyMembers = (society: Society): ProcessedSociety => {
   return {
@@ -87,7 +135,6 @@ const filterSocietiesBySearchTerm = (societies: ProcessedSociety[], searchTerm: 
     return searchString.includes(normalizedSearchTerm);
   });
 };
-
 
 const TruncatedCell: React.FC<TruncatedCellProps> = ({ value }) => {
   return (
@@ -160,7 +207,7 @@ const DataGridContainer: React.FC<DataGridContainerProps> = ({
   return (
     <Box
       sx={{
-        height: "calc(100vh - 64px)",
+        height: "calc(100vh - 64px - 52px)", 
         maxWidth: drawer ? `calc(100% - 3px)`: "100%",
       }}
     >
@@ -206,7 +253,6 @@ const DataGridContainer: React.FC<DataGridContainerProps> = ({
     </Box>
   );
 };
-
 
 const createSocietyColumns = (
   handleStatusChange: (id: number, status: "Approved" | "Rejected") => void
@@ -266,15 +312,13 @@ const createSocietyColumns = (
   ];
 };
 
-
 const PendingSocietyRequest: React.FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const { searchTerm } = useContext(SearchContext);
   const { drawer } = useSettingsStore();
   
-  
-  const [societies, setSocieties] = useState<Society[]>([]);
+  const [localSocieties, setLocalSocieties] = useState<Society[]>([]);
   const [notification, setNotification] = useState<NotificationState>({
     open: false,
     message: '',
@@ -282,11 +326,45 @@ const PendingSocietyRequest: React.FC = () => {
   });
   
   
-  const fetchedSocieties = useFetchWebSocket<Society[]>(
-    () => fetchPendingRequests(apiPaths.USER.PENDINGSOCIETYREQUEST), 
-    'society'
-  ).flatMap;
+  const fetchSocietyData = useCallback(async () => {
+    try {
+      const data = await fetchPendingRequests(apiPaths.USER.PENDINGSOCIETYREQUEST);
+      return data || [];
+    } catch (error) {
+      console.error("Error fetching pending society requests:", error);
+      return [];
+    }
+  }, []);
   
+  
+  const { 
+    data: societies, 
+    loading, 
+    error: wsError, 
+    refresh, 
+    isConnected 
+  } = useWebSocketChannel<Society[]>(
+    'admin/societies', 
+    fetchSocietyData
+  );
+  
+  
+  useEffect(() => {
+    if (wsError) {
+      setNotification({
+        open: true,
+        message: `WebSocket error: ${wsError}`,
+        severity: 'error'
+      });
+    }
+  }, [wsError]);
+  
+  
+  useEffect(() => {
+    if (societies) {
+      setLocalSocieties(societies);
+    }
+  }, [societies]);
   
   const handleCloseNotification = useCallback(() => {
     setNotification(prev => ({ ...prev, open: false }));
@@ -301,7 +379,7 @@ const PendingSocietyRequest: React.FC = () => {
   }, []);
 
   const updateSocietiesAfterStatusChange = useCallback((societyId: number) => {
-    setSocieties(prevSocieties => 
+    setLocalSocieties(prevSocieties => 
       prevSocieties.filter(society => society.id !== societyId)
     );
   }, []);
@@ -319,6 +397,9 @@ const PendingSocietyRequest: React.FC = () => {
         `Society ${status === "Approved" ? "approved" : "rejected"} successfully.`, 
         'success'
       );
+      
+      
+      refresh();
     } catch (error) {
       console.error(`Error updating society status:`, error);
       
@@ -329,28 +410,13 @@ const PendingSocietyRequest: React.FC = () => {
       );
       
       
-      recoverSocietyData();
+      refresh();
     }
-  }, [updateSocietiesAfterStatusChange, showNotification]);
-
-  const recoverSocietyData = useCallback(async () => {
-    const data = await fetchPendingRequests(apiPaths.USER.PENDINGSOCIETYREQUEST);
-    if (Array.isArray(data)) {
-      setSocieties(data);
-    }
-  }, []);
-
-  
-  useEffect(() => {
-    if (Array.isArray(fetchedSocieties)) {
-      setSocieties(fetchedSocieties);
-    }
-  }, [fetchedSocieties]);
-
+  }, [updateSocietiesAfterStatusChange, showNotification, refresh]);
   
   const processedSocieties = useMemo(() => 
-    processSocieties(societies),
-    [societies]
+    processSocieties(localSocieties),
+    [localSocieties]
   );
 
   const filteredSocieties = useMemo(() => 
@@ -362,15 +428,20 @@ const PendingSocietyRequest: React.FC = () => {
     createSocietyColumns(handleStatusChange),
     [handleStatusChange]
   );
-
   
   return (
-    <>
+    <Box sx={{ height: "calc(100vh - 64px)", maxWidth: drawer ? `calc(100% - 3px)` : "100%" }}>
+      <Header 
+        colors={colors}
+        isConnected={isConnected}
+        onRefresh={refresh}
+      />
+      
       <DataGridContainer 
         societies={filteredSocieties}
         columns={columns}
         colors={colors}
-        loading={societies.length === 0}
+        loading={loading}
         drawer={drawer}
       />
 
@@ -378,7 +449,7 @@ const PendingSocietyRequest: React.FC = () => {
         notification={notification}
         onClose={handleCloseNotification}
       />
-    </>
+    </Box>
   );
 };
 

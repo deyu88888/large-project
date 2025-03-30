@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef, useContext, useMemo, useCallback } from "react";
-import { Box, 
+import { useState, useEffect, useContext, useMemo, useCallback } from "react";
+import { 
+  Box, 
   Typography, 
   useTheme, 
   Button, 
@@ -8,7 +9,8 @@ import { Box,
   Dialog, 
   DialogContentText, 
   DialogActions, 
-  TextField } from "@mui/material";
+  TextField 
+} from "@mui/material";
 import { DataGrid, GridColDef, GridToolbar, GridRenderCellParams } from "@mui/x-data-grid";
 import { apiClient, apiPaths } from "../../api";
 import { tokens } from "../../theme/theme";
@@ -16,21 +18,13 @@ import { useSettingsStore } from "../../stores/settings-store";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { Society } from '../../types';
 import { useNavigate } from "react-router-dom";
-import { getWebSocketUrl } from "../../utils/websocket";
-
-
-const WS_URL = getWebSocketUrl()
-const RECONNECT_DELAY = 5000;
-
+import { useWebSocketChannel } from "../../hooks/useWebSocketChannel";
+import { FaSync } from "react-icons/fa";
 
 interface SocietyDialogState {
   open: boolean;
   reason: string;
   selectedSociety: Society | null;
-}
-
-interface WebSocketRef {
-  current: WebSocket | null;
 }
 
 interface ActionButtonsProps {
@@ -45,6 +39,7 @@ interface DataGridContainerProps {
   columns: GridColDef[];
   colors: ReturnType<typeof tokens>;
   drawer: boolean;
+  loading: boolean;
 }
 
 interface DeleteDialogProps {
@@ -65,6 +60,54 @@ interface MembersCellProps {
   members: any[] | null;
 }
 
+interface HeaderProps {
+  colors: ReturnType<typeof tokens>;
+  isConnected: boolean;
+  onRefresh: () => void;
+}
+
+const Header: React.FC<HeaderProps> = ({ colors, isConnected, onRefresh }) => {
+  return (
+    <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+      <Typography
+        variant="h1"
+        sx={{
+          color: colors.grey[100],
+          fontSize: "1.75rem",
+          fontWeight: 800,
+        }}
+      >
+        Society List
+      </Typography>
+      
+      <Box display="flex" alignItems="center">
+        <Box
+          component="span"
+          sx={{
+            width: 8,
+            height: 8,
+            borderRadius: '50%',
+            backgroundColor: isConnected ? colors.greenAccent[500] : colors.orangeAccent[500],
+            mr: 1
+          }}
+        />
+        <Typography variant="body2" fontSize="0.75rem" color={colors.grey[300]} mr={2}>
+          {isConnected ? 'Live updates' : 'Offline mode'}
+        </Typography>
+        <Button
+          variant="contained"
+          color="secondary"
+          startIcon={<FaSync />}
+          onClick={onRefresh}
+          size="small"
+          sx={{ borderRadius: "8px" }}
+        >
+          Refresh
+        </Button>
+      </Box>
+    </Box>
+  );
+};
 
 const filterSocietiesBySearchTerm = (societies: Society[], searchTerm: string): Society[] => {
   if (!searchTerm) return societies;
@@ -79,10 +122,14 @@ const filterSocietiesBySearchTerm = (societies: Society[], searchTerm: string): 
   );
 };
 
-
 const fetchSocietyList = async (): Promise<Society[]> => {
-  const res = await apiClient.get(apiPaths.USER.SOCIETY);
-  return res.data;
+  try {
+    const res = await apiClient.get(apiPaths.USER.SOCIETY);
+    return res.data;
+  } catch (error) {
+    console.error("Error fetching societies:", error);
+    return [];
+  }
 };
 
 const deleteSociety = async (societyId: number | string, reason: string): Promise<void> => {
@@ -92,47 +139,6 @@ const deleteSociety = async (societyId: number | string, reason: string): Promis
     data: { reason },
   });
 };
-
-
-const setupWebSocketHandlers = (
-  socket: WebSocket,
-  onMessage: () => void
-): void => {
-  socket.onopen = () => {
-    console.log("WebSocket Connected for Society List");
-  };
-
-  socket.onmessage = (event) => {
-    try {
-      const data = JSON.parse(event.data);
-      console.log("WebSocket Update Received:", data);
-      onMessage();
-    } catch (error) {
-      console.error("Error parsing WebSocket message:", error);
-    }
-  };
-
-  socket.onerror = (event) => {
-    console.error("WebSocket Error:", event);
-  };
-};
-
-const createWebSocketConnection = (
-  url: string,
-  onMessage: () => void,
-  onClose: () => void
-): WebSocket => {
-  const socket = new WebSocket(url);
-  setupWebSocketHandlers(socket, onMessage);
-  
-  socket.onclose = (event) => {
-    console.log("WebSocket Disconnected:", event.reason);
-    onClose();
-  };
-  
-  return socket;
-};
-
 
 const PresidentCell: React.FC<PresidentCellProps> = ({ president }) => {
   return (
@@ -181,12 +187,13 @@ const DataGridContainer: React.FC<DataGridContainerProps> = ({
   societies, 
   columns, 
   colors, 
-  drawer 
+  drawer,
+  loading
 }) => {
   return (
     <Box
       sx={{
-        height: "calc(100vh - 64px)",
+        height: "calc(100vh - 64px - 52px)", 
         maxWidth: drawer ? `calc(100% - 3px)` : "100%",
       }}
     >
@@ -224,6 +231,8 @@ const DataGridContainer: React.FC<DataGridContainerProps> = ({
           slots={{ toolbar: GridToolbar }}
           autoHeight
           resizeThrottleMs={0}
+          loading={loading}
+          disableRowSelectionOnClick
         />
       </Box>
     </Box>
@@ -247,7 +256,7 @@ const DeleteDialog: React.FC<DeleteDialogProps> = ({
       <DialogContent>
         <DialogContentText>
           You may undo this action in the Activity Log. <br />
-          <strong>Compulsory:</strong> Provide a reason for deleting this student.
+          <strong>Compulsory:</strong> Provide a reason for deleting this society.
         </DialogContentText>
         <TextField
           autoFocus
@@ -273,7 +282,6 @@ const DeleteDialog: React.FC<DeleteDialogProps> = ({
     </Dialog>
   );
 };
-
 
 const createSocietyColumns = (
   handleViewSociety: (id: string) => void,
@@ -325,68 +333,36 @@ const createSocietyColumns = (
  * Displays a list of societies with options to view details or delete
  */
 const SocietyList: React.FC = () => {
-  
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const navigate = useNavigate();
   const { drawer } = useSettingsStore();
   const { searchTerm } = useContext(SearchContext);
-  const ws = useRef<WebSocket | null>(null);
   
-  
-  const [societies, setSocieties] = useState<Society[]>([]);
   const [dialogState, setDialogState] = useState<SocietyDialogState>({
     open: false,
     reason: '',
     selectedSociety: null
   });
-
   
-  const loadSocieties = useCallback(async () => {
-    try {
-      const data = await fetchSocietyList();
-      setSocieties(data);
-    } catch (error) {
-      console.error("Error fetching societies:", error);
-    }
-  }, []);
-
   
-  const handleWebSocketMessage = useCallback(() => {
-    loadSocieties();
-  }, [loadSocieties]);
-
-  const reconnectWebSocket = useCallback(() => {
-    setTimeout(() => {
-      connectWebSocket();
-    }, RECONNECT_DELAY);
-  }, []);
-
-  const connectWebSocket = useCallback(() => {
-    if (ws.current) {
-      ws.current.close();
-    }
-    
-    ws.current = createWebSocketConnection(
-      WS_URL,
-      handleWebSocketMessage,
-      reconnectWebSocket
-    );
-  }, [handleWebSocketMessage, reconnectWebSocket]);
-
+  const { 
+    data: societies, 
+    loading, 
+    error, 
+    refresh, 
+    isConnected 
+  } = useWebSocketChannel<Society[]>(
+    'admin/societies', 
+    fetchSocietyList
+  );
+  
   
   useEffect(() => {
-    loadSocieties();
-    connectWebSocket();
-
-    
-    return () => {
-      if (ws.current) {
-        ws.current.close();
-      }
-    };
-  }, [connectWebSocket, loadSocieties]);
-
+    if (error) {
+      console.error(`WebSocket error: ${error}`);
+    }
+  }, [error]);
   
   const handleViewSociety = useCallback((societyId: string) => {
     navigate(`/admin/view-society/${societyId}`);
@@ -422,19 +398,21 @@ const SocietyList: React.FC = () => {
     
     try {
       await deleteSociety(selectedSociety.id, reason);
-      loadSocieties();
+      
+      refresh();
     } catch (error) {
       console.error("Error deleting society:", error);
     }
     
     handleCloseDialog();
-  }, [dialogState, loadSocieties, handleCloseDialog]);
-
+  }, [dialogState, refresh, handleCloseDialog]);
   
-  const filteredSocieties = useMemo(() => 
-    filterSocietiesBySearchTerm(societies, searchTerm || ''),
-    [societies, searchTerm]
-  );
+  const filteredSocieties = useMemo(() => {
+    
+    if (!societies || !Array.isArray(societies)) return [];
+    
+    return filterSocietiesBySearchTerm(societies, searchTerm || '');
+  }, [societies, searchTerm]);
 
   const columns = useMemo(() => 
     createSocietyColumns(handleViewSociety, handleOpenDialog),
@@ -442,12 +420,19 @@ const SocietyList: React.FC = () => {
   );
 
   return (
-    <>
+    <Box sx={{ height: "calc(100vh - 64px)", maxWidth: drawer ? `calc(100% - 3px)` : "100%" }}>
+      <Header 
+        colors={colors}
+        isConnected={isConnected}
+        onRefresh={refresh}
+      />
+      
       <DataGridContainer 
         societies={filteredSocieties}
         columns={columns}
         colors={colors}
         drawer={drawer}
+        loading={loading}
       />
       
       <DeleteDialog 
@@ -456,7 +441,7 @@ const SocietyList: React.FC = () => {
         onReasonChange={handleReasonChange}
         onConfirm={handleDeleteConfirmed}
       />
-    </>
+    </Box>
   );
 };
 

@@ -1,85 +1,103 @@
-import React, { useState, useEffect, useRef, useContext, useMemo, useCallback } from "react";
-import { Box, useTheme } from "@mui/material";
+import React, { useState, useContext, useMemo, useCallback, useEffect } from "react";
+import { Box, useTheme, Button, Typography } from "@mui/material";
 import { DataGrid, GridColDef, GridToolbar } from "@mui/x-data-grid";
 import { apiClient, apiPaths } from "../../api";
 import { tokens } from "../../theme/theme";
 import { useSettingsStore } from "../../stores/settings-store";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { Society } from '../../types';
-import { getWebSocketUrl } from "../../utils/websocket";
+import { useWebSocketChannel } from "../../hooks/useWebSocketChannel";
+import { FaSync } from "react-icons/fa";
+
+interface HeaderProps {
+  colors: any;
+  isConnected: boolean;
+  onRefresh: () => void;
+}
+
+const Header: React.FC<HeaderProps> = ({ colors, isConnected, onRefresh }) => {
+  return (
+    <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+      <Typography
+        variant="h1"
+        sx={{
+          color: colors.grey[100],
+          fontSize: "1.75rem",
+          fontWeight: 800,
+        }}
+      >
+        Rejected Societies
+      </Typography>
+      
+      <Box display="flex" alignItems="center">
+        <Box
+          component="span"
+          sx={{
+            width: 8,
+            height: 8,
+            borderRadius: '50%',
+            backgroundColor: isConnected ? colors.greenAccent[500] : colors.orangeAccent[500],
+            mr: 1
+          }}
+        />
+        <Typography variant="body2" fontSize="0.75rem" color={colors.grey[300]} mr={2}>
+          {isConnected ? 'Live updates' : 'Offline mode'}
+        </Typography>
+        <Button
+          variant="contained"
+          color="secondary"
+          startIcon={<FaSync />}
+          onClick={onRefresh}
+          size="small"
+          sx={{ borderRadius: "8px" }}
+        >
+          Refresh
+        </Button>
+      </Box>
+    </Box>
+  );
+};
 
 /**
  * SocietyListRejected Component
  * Displays a list of rejected societies with real-time updates via WebSocket
  */
 const SocietyListRejected: React.FC = () => {
-  
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
-  const [societies, setSocieties] = useState<Society[]>([]);
-  const ws = useRef<WebSocket | null>(null);
   const { drawer } = useSettingsStore();
   const { searchTerm } = useContext(SearchContext);
-  const WEBSOCKET_URL = getWebSocketUrl()
-  const RECONNECT_TIMEOUT = 5000;
+
   
-  /**
-   * Fetches the list of rejected societies from the API
-   */
-  const fetchSocieties = useCallback(async () => {
+  const fetchRejectedSocieties = useCallback(async () => {
     try {
       const res = await apiClient.get(apiPaths.USER.REJECTEDSOCIETY);
-      setSocieties(res.data);
+      return res.data;
     } catch (error) {
       console.error("Error fetching rejected societies:", error);
+      return [];
     }
   }, []);
 
-  /**
-   * Establishes WebSocket connection for real-time updates
-   */
-  const connectWebSocket = useCallback(() => {
-    ws.current = new WebSocket(WEBSOCKET_URL);
-
-    ws.current.onopen = () => {
-      console.log("WebSocket Connected for Rejected Society List");
-    };
-
-    ws.current.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        console.log("WebSocket Update Received:", data);
-        fetchSocieties(); 
-      } catch (error) {
-        console.error("Error parsing WebSocket message:", error);
-      }
-    };
-
-    ws.current.onerror = (event) => {
-      console.error("WebSocket Error:", event);
-    };
-
-    ws.current.onclose = (event) => {
-      console.log("WebSocket Disconnected:", event.reason);
-      setTimeout(() => {
-        connectWebSocket();
-      }, RECONNECT_TIMEOUT);
-    };
-  }, [fetchSocieties]);
+  
+  const { 
+    data: societies, 
+    loading, 
+    error, 
+    refresh, 
+    isConnected 
+  } = useWebSocketChannel<Society[]>(
+    'admin/societies', 
+    fetchRejectedSocieties
+  );
 
   
   useEffect(() => {
-    fetchSocieties();
-    connectWebSocket();
-
-    
-    return () => {
-      if (ws.current) {
-        ws.current.close();
-      }
-    };
-  }, [fetchSocieties, connectWebSocket]);
-
+    if (error) {
+      console.error(`WebSocket error: ${error}`);
+    }
+  }, [error]);
+  
   
   const columns: GridColDef[] = [
     { field: "id", headerName: "ID", flex: 0.5 },
@@ -89,15 +107,18 @@ const SocietyListRejected: React.FC = () => {
     { field: "membershipRequirements", headerName: "Membership Requirements", flex: 1 },
   ];
 
-  
   const filteredSocieties = useMemo(
-    () =>
-      societies.filter((society) =>
+    () => {
+      
+      if (!societies || !Array.isArray(societies)) return [];
+      
+      return societies.filter((society) =>
         Object.values(society)
           .join(" ")
           .toLowerCase()
           .includes((searchTerm || '').toLowerCase())
-      ),
+      );
+    },
     [societies, searchTerm]
   );
 
@@ -108,6 +129,12 @@ const SocietyListRejected: React.FC = () => {
         maxWidth: drawer ? `calc(100% - 3px)` : "100%",
       }}
     >
+      <Header 
+        colors={colors}
+        isConnected={isConnected}
+        onRefresh={refresh}
+      />
+      
       <Box
         sx={{
           height: "78vh",
@@ -148,7 +175,7 @@ const SocietyListRejected: React.FC = () => {
             },
           }}
           pageSizeOptions={[5, 10, 25]}
-          loading={societies.length === 0}
+          loading={loading}
           disableRowSelectionOnClick
         />
       </Box>

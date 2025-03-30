@@ -40,7 +40,8 @@ import { apiClient } from '../../api';
 import { useTheme } from '@mui/material/styles';
 import { tokens } from '../../theme/theme';
 import { alpha } from '@mui/material/styles';
-
+import { useWebSocketChannel } from "../../hooks/useWebSocketChannel";
+import { FaSync } from "react-icons/fa";
 
 interface NewsContent {
   id: number;
@@ -152,28 +153,56 @@ const formatDateTime = (dateString: string): string => {
 };
 
 
-const PageHeader: React.FC<{ onBack: () => void }> = ({ onBack }) => {
+const PageHeader: React.FC<{ onBack: () => void; isConnected: boolean; onRefresh: () => void }> = ({ onBack, isConnected, onRefresh }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   
   return (
-    <Box display="flex" alignItems="center" mb={3} sx={{
+    <Box display="flex" justifyContent="space-between" alignItems="center" mb={3} sx={{
       pb: 2,
       borderBottom: `1px solid ${alpha(colors.grey[500], 0.3)}`,
     }}>
-      <IconButton 
-        onClick={onBack} 
-        sx={{ 
-          mr: 2,
-          backgroundColor: alpha(colors.grey[500], 0.1),
-          '&:hover': {
-            backgroundColor: alpha(colors.grey[500], 0.2),
-          },
-        }}
-      >
-        <BackIcon />
-      </IconButton>
-      <Typography variant="h4" fontWeight="bold">News Publication Approval</Typography>
+      <Box display="flex" alignItems="center">
+        <IconButton 
+          onClick={onBack} 
+          sx={{ 
+            mr: 2,
+            backgroundColor: alpha(colors.grey[500], 0.1),
+            '&:hover': {
+              backgroundColor: alpha(colors.grey[500], 0.2),
+            },
+          }}
+        >
+          <BackIcon />
+        </IconButton>
+        <Typography variant="h4" fontWeight="bold">News Publication Approval</Typography>
+      </Box>
+      
+      <Box display="flex" alignItems="center">
+        <Box
+          component="span"
+          sx={{
+            width: 8,
+            height: 8,
+            borderRadius: '50%',
+            backgroundColor: isConnected ? colors.greenAccent[500] : colors.orangeAccent[500],
+            mr: 1
+          }}
+        />
+        <Typography variant="body2" fontSize="0.75rem" color={colors.grey[300]} mr={2}>
+          {isConnected ? 'Live updates' : 'Offline mode'}
+        </Typography>
+        <Button
+          variant="contained"
+          color="secondary"
+          startIcon={<FaSync />}
+          onClick={onRefresh}
+          size="small"
+          sx={{ borderRadius: "8px" }}
+        >
+          Refresh
+        </Button>
+      </Box>
     </Box>
   );
 };
@@ -799,6 +828,32 @@ const NewsApprovalDashboard: React.FC = () => {
     currentRequest: null
   });
 
+  const fetchPublicationRequests = async () => {
+    try {
+      const data = await fetchAllRequests();
+      return data;
+    } catch (error) {
+      console.error('Error fetching publication requests:', error);
+      return [];
+    }
+  };
+  
+  
+  const { 
+    isConnected, 
+    refresh,
+    error: wsError 
+  } = useWebSocketChannel(
+    'channel_dashboard/stats', 
+    fetchPublicationRequests
+  );
+  
+  
+  useEffect(() => {
+    if (wsError) {
+      console.error(`WebSocket error: ${wsError}`);
+    }
+  }, [wsError]);
   
   useEffect(() => {
     loadAllRequests();
@@ -840,8 +895,16 @@ const NewsApprovalDashboard: React.FC = () => {
     setRequestsLoading(true);
     
     try {
-      const data = await fetchAllRequests();
-      setRequests(data);
+      
+      if (refresh) {
+        const data = await refresh();
+        if (data) {
+          setRequests(data);
+        }
+      } else {
+        const data = await fetchAllRequests();
+        setRequests(data);
+      }
     } catch (error) {
       console.error('Error fetching publication requests:', error);
     } finally {
@@ -974,7 +1037,11 @@ const NewsApprovalDashboard: React.FC = () => {
 
 return (
   <Box p={3}>
-    <PageHeader onBack={() => navigate(-1)} />
+    <PageHeader 
+      onBack={() => navigate(-1)} 
+      isConnected={isConnected} 
+      onRefresh={refresh} 
+    />
     
     <StatusTabs 
       value={requestsState.tabValue} 

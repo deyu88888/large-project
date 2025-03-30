@@ -1,20 +1,33 @@
 import React, { useEffect, useState, useContext, useCallback, useMemo } from 'react';
-import { Box, Button, Typography, useTheme, Alert, Chip, CircularProgress } from "@mui/material";
+import { 
+  Box, 
+  Button, 
+  Typography, 
+  useTheme, 
+  Alert, 
+  Chip, 
+  CircularProgress 
+} from "@mui/material";
 import { DataGrid, GridToolbar, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 import { tokens } from "../../theme/theme";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { useSettingsStore } from "../../stores/settings-store";
 import { fetchReportsWithReplies } from './fetchReports';
 import { useNavigate } from 'react-router-dom';
+import { useWebSocketChannel } from "../../hooks/useWebSocketChannel";
+import { FaSync } from "react-icons/fa";
 
-
-const REFRESH_INTERVAL = 5 * 60 * 1000; 
-
-
-interface ReportState {
-  items: Report[];
-  loading: boolean;
-  error: string | null;
+interface Report {
+  id: number | string;
+  subject: string;
+  from_student_name: string;
+  requested_at: string;
+  latest_reply: {
+    replied_by: string;
+    content: string;
+    created_at: string;
+  };
+  [key: string]: any;
 }
 
 interface LatestReplyProps {
@@ -50,6 +63,54 @@ interface DataGridContainerProps {
   drawer: boolean;
 }
 
+interface HeaderProps {
+  colors: ReturnType<typeof tokens>;
+  isConnected: boolean;
+  onRefresh: () => void;
+}
+
+const Header: React.FC<HeaderProps> = ({ colors, isConnected, onRefresh }) => {
+  return (
+    <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+      <Typography
+        variant="h1"
+        sx={{
+          color: colors.grey[100],
+          fontSize: "1.75rem",
+          fontWeight: 800,
+        }}
+      >
+        Reports Needing Reply
+      </Typography>
+      
+      <Box display="flex" alignItems="center">
+        <Box
+          component="span"
+          sx={{
+            width: 8,
+            height: 8,
+            borderRadius: '50%',
+            backgroundColor: isConnected ? colors.greenAccent[500] : colors.orangeAccent[500],
+            mr: 1
+          }}
+        />
+        <Typography variant="body2" fontSize="0.75rem" color={colors.grey[300]} mr={2}>
+          {isConnected ? 'Live updates' : 'Offline mode'}
+        </Typography>
+        <Button
+          variant="contained"
+          color="secondary"
+          startIcon={<FaSync />}
+          onClick={onRefresh}
+          size="small"
+          sx={{ borderRadius: "8px" }}
+        >
+          Refresh
+        </Button>
+      </Box>
+    </Box>
+  );
+};
 
 const formatDateToLocale = (dateString: string): string => {
   try {
@@ -71,7 +132,6 @@ const filterReportsBySearchTerm = (reports: Report[], searchTerm: string): Repor
       .includes(normalizedSearchTerm)
   );
 };
-
 
 const LatestReplyCell: React.FC<LatestReplyProps> = ({ repliedBy, content }) => {
   return (
@@ -202,7 +262,6 @@ const DataGridContainer: React.FC<DataGridContainerProps> = ({ reports, columns,
   );
 };
 
-
 const createReportColumns = (
   handleViewThread: (id: number | string) => void,
   handleReply: (id: number | string) => void,
@@ -266,11 +325,14 @@ const createReportColumns = (
   ];
 };
 
-
 const loadReportData = async (): Promise<Report[]> => {
-  return await fetchReportsWithReplies() as any;
+  try {
+    return await fetchReportsWithReplies() as Report[];
+  } catch (error) {
+    console.error("Error fetching reports with replies:", error);
+    throw error;
+  }
 };
-
 
 const ReportRepliesList: React.FC = () => {
   const theme = useTheme();
@@ -279,13 +341,26 @@ const ReportRepliesList: React.FC = () => {
   const { drawer } = useSettingsStore();
   const navigate = useNavigate();
   
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
-  const [reportState, setReportState] = useState<ReportState>({
-    items: [],
-    loading: true,
-    error: null
-  });
-
+  
+  const { 
+    data: reports, 
+    loading, 
+    error, 
+    refresh, 
+    isConnected 
+  } = useWebSocketChannel<Report[]>(
+    'admin/reports', 
+    loadReportData
+  );
+  
+  
+  useEffect(() => {
+    if (error) {
+      setErrorMessage(`Failed to fetch reports: ${error}`);
+    }
+  }, [error]);
   
   const handleViewThread = useCallback((reportId: number | string) => {
     navigate(`/admin/report-thread/${reportId}`);
@@ -296,65 +371,41 @@ const ReportRepliesList: React.FC = () => {
   }, [navigate]);
 
   const handleClearError = useCallback(() => {
-    setReportState(prev => ({ ...prev, error: null }));
+    setErrorMessage(null);
   }, []);
-
-  
-  const fetchReports = useCallback(async () => {
-    setReportState(prev => ({ ...prev, loading: true }));
-    
-    try {
-      const data = await loadReportData();
-      setReportState({
-        items: data,
-        loading: false,
-        error: null
-      });
-    } catch (error) {
-      console.error("Error fetching reports:", error);
-      setReportState(prev => ({
-        ...prev,
-        error: "Failed to fetch reports with replies.",
-        loading: false
-      }));
-    }
-  }, []);
-
-  
-  useEffect(() => {
-    fetchReports();
-    
-    const intervalId = setInterval(fetchReports, REFRESH_INTERVAL);
-    
-    return () => clearInterval(intervalId);
-  }, [fetchReports]);
-
   
   const formatDate = useCallback(formatDateToLocale, []);
-
   
   const filteredReports = useMemo(() => 
-    filterReportsBySearchTerm(reportState.items, searchTerm || ''),
-    [reportState.items, searchTerm]
+    filterReportsBySearchTerm(reports || [], searchTerm || ''),
+    [reports, searchTerm]
   );
-
   
   const columns = useMemo(() => 
     createReportColumns(handleViewThread, handleReply, formatDate),
     [handleViewThread, handleReply, formatDate]
   );
-
   
-  if (reportState.loading && reportState.items.length === 0) {
+  if (loading && (!reports || reports.length === 0)) {
     return <LoadingState message="Loading reports..." />;
   }
-
   
   return (
-    <>
-      {reportState.error && (
+    <Box
+      sx={{
+        height: "calc(100vh - 64px)",
+        maxWidth: drawer ? `calc(100% - 3px)`: "100%",
+      }}
+    >
+      <Header 
+        colors={colors}
+        isConnected={isConnected}
+        onRefresh={refresh}
+      />
+      
+      {errorMessage && (
         <ErrorAlert 
-          message={reportState.error} 
+          message={errorMessage} 
           onClose={handleClearError}
         />
       )}
@@ -362,11 +413,11 @@ const ReportRepliesList: React.FC = () => {
       <DataGridContainer 
         reports={filteredReports}
         columns={columns}
-        loading={reportState.loading}
+        loading={loading}
         colors={colors}
         drawer={drawer}
       />
-    </>
+    </Box>
   );
 };
   

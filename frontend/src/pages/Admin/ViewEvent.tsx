@@ -21,6 +21,8 @@ import { useTheme } from "@mui/material/styles";
 import { apiClient, apiPaths } from "../../api";
 import { tokens } from "../../theme/theme";
 import { Event } from "../../types";
+import { useWebSocketChannel } from "../../hooks/useWebSocketChannel";
+import { FaSync } from "react-icons/fa";
 
 interface FormErrors {
   title?: string;
@@ -37,14 +39,6 @@ interface Notification {
   open: boolean;
   message: string;
   severity: "success" | "error" | "info" | "warning";
-}
-
-interface EventFormState {
-  event: Event | null;
-  formData: Event | null;
-  loading: boolean;
-  saving: boolean;
-  errors: FormErrors;
 }
 
 interface TextFieldProps {
@@ -92,6 +86,40 @@ interface EventFormProps {
   onReset: () => void;
 }
 
+interface StatusIndicatorProps {
+  isConnected: boolean;
+  onRefresh: () => void;
+  colors: ReturnType<typeof tokens>;
+}
+
+const StatusIndicator: React.FC<StatusIndicatorProps> = ({ isConnected, onRefresh, colors }) => (
+  <Box display="flex" alignItems="center" mb={2}>
+    <Box
+      component="span"
+      sx={{
+        width: 8,
+        height: 8,
+        borderRadius: '50%',
+        backgroundColor: isConnected ? colors.greenAccent[500] : colors.orangeAccent[500],
+        mr: 1
+      }}
+    />
+    <Typography variant="body2" fontSize="0.75rem" color={colors.grey[300]} mr={2}>
+      {isConnected ? 'Live updates' : 'Offline mode'}
+    </Typography>
+    <Button
+      variant="contained"
+      color="secondary"
+      startIcon={<FaSync />}
+      onClick={onRefresh}
+      size="small"
+      sx={{ borderRadius: "8px" }}
+    >
+      Refresh
+    </Button>
+  </Box>
+);
+
 const createField = (
   formData: Event | null,
   name: string,
@@ -102,8 +130,13 @@ const createField = (
 };
 
 const fetchEventData = async (eventId: number): Promise<Event> => {
-  const response = await apiClient.get(apiPaths.USER.ADMINEVENTVIEW(eventId));
-  return response.data;
+  try {
+    const response = await apiClient.get(apiPaths.USER.ADMINEVENTVIEW(eventId));
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching event details", error);
+    throw error;
+  }
 };
 
 const updateEventData = async (eventId: number, data: Event): Promise<void> => {
@@ -125,7 +158,7 @@ const validateEventForm = (formData: Event | null): FormErrors => {
 
   const errors: FormErrors = {};
 
-  // Use main_description or description based on what's available
+  
   const description = formData.main_description || formData.description;
 
   errors.title = validateRequiredField(formData.title, "Title");
@@ -267,7 +300,7 @@ const EventForm: React.FC<EventFormProps> = ({
     >
       <form onSubmit={onSubmit}>
         <Grid container spacing={2}>
-          <Grid size={{ xs: 12 }}>
+          <Grid item xs={12}>
             <FormTextField
               label="Event Title"
               name="title"
@@ -279,7 +312,7 @@ const EventForm: React.FC<EventFormProps> = ({
             />
           </Grid>
 
-          <Grid size={{ xs: 12 }}>
+          <Grid item xs={12}>
             <FormTextField
               label="Description"
               name="main_description"
@@ -293,7 +326,7 @@ const EventForm: React.FC<EventFormProps> = ({
             />
           </Grid>
 
-          <Grid size={{ xs: 12, md: 6 }}>
+          <Grid item xs={12} md={6}>
             <FormTextField
               label="Date"
               name="date"
@@ -307,7 +340,7 @@ const EventForm: React.FC<EventFormProps> = ({
             />
           </Grid>
 
-          <Grid size={{ xs: 12, md: 6 }}>
+          <Grid item xs={12} md={6}>
             <FormTextField
               label="Start Time"
               name="start_time"
@@ -321,7 +354,7 @@ const EventForm: React.FC<EventFormProps> = ({
             />
           </Grid>
 
-          <Grid size={{ xs: 12, md: 6 }}>
+          <Grid item xs={12} md={6}>
             <FormTextField
               label="Duration"
               name="duration"
@@ -333,7 +366,7 @@ const EventForm: React.FC<EventFormProps> = ({
             />
           </Grid>
 
-          <Grid size={{ xs: 12, md: 6 }}>
+          <Grid item xs={12} md={6}>
             <FormTextField
               label="Location"
               name="location"
@@ -345,7 +378,7 @@ const EventForm: React.FC<EventFormProps> = ({
             />
           </Grid>
 
-          <Grid size={{ xs: 12 }}>
+          <Grid item xs={12}>
             <FormTextField
               label="Hosted By"
               name="hosted_by"
@@ -368,43 +401,75 @@ const EventForm: React.FC<EventFormProps> = ({
  * ViewEvent component for displaying and editing event details
  */
 const ViewEvent: React.FC = () => {
+  const theme = useTheme();
+  const colors = tokens(theme.palette.mode);
   const navigate = useNavigate();
   const { event_id } = useParams<{ event_id: string }>();
   const eventId = Number(event_id);
 
-  const [formState, setFormState] = useState<EventFormState>({
-    event: null,
-    formData: null,
-    loading: true,
-    saving: false,
-    errors: {},
-  });
-
+  const [formData, setFormData] = useState<Event | null>(null);
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [saving, setSaving] = useState<boolean>(false);
   const [notification, setNotification] = useState<Notification>({
     open: false,
     message: "",
     severity: "info",
   });
 
+  
+  const fetchEventDataWrapper = useCallback(async () => {
+    try {
+      return await fetchEventData(eventId);
+    } catch (error) {
+      console.error("Error fetching event details", error);
+      throw error;
+    }
+  }, [eventId]);
+
+  
+  const { 
+    data: event, 
+    loading, 
+    error: wsError, 
+    refresh, 
+    isConnected 
+  } = useWebSocketChannel<Event>(
+    `event/${eventId}`, 
+    fetchEventDataWrapper
+  );
+
+  
+  useEffect(() => {
+    if (event) {
+      setFormData(event);
+    }
+  }, [event]);
+
+  
+  useEffect(() => {
+    if (wsError) {
+      setNotification({
+        open: true,
+        message: `Error loading data: ${wsError}`,
+        severity: "error"
+      });
+    }
+  }, [wsError]);
+
   const handleChange = useCallback(
     (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       const { name, value } = e.target;
 
-      setFormState((prev) => {
-        const updatedFormData = prev.formData
-          ? { ...prev.formData, [name]: value }
-          : null;
+      setFormData((prev) => 
+        prev ? { ...prev, [name]: value } : null
+      );
 
-        const updatedErrors = { ...prev.errors };
+      setErrors((prev) => {
+        const updatedErrors = { ...prev };
         if (updatedErrors[name]) {
           delete updatedErrors[name];
         }
-
-        return {
-          ...prev,
-          formData: updatedFormData,
-          errors: updatedErrors,
-        };
+        return updatedErrors;
       });
     },
     []
@@ -415,12 +480,11 @@ const ViewEvent: React.FC = () => {
   }, [navigate]);
 
   const handleReset = useCallback(() => {
-    setFormState((prev) => ({
-      ...prev,
-      formData: prev.event,
-      errors: {},
-    }));
-  }, []);
+    if (event) {
+      setFormData(event);
+      setErrors({});
+    }
+  }, [event]);
 
   const handleNotificationClose = useCallback(() => {
     setNotification((prev) => ({ ...prev, open: false }));
@@ -440,95 +504,64 @@ const ViewEvent: React.FC = () => {
     []
   );
 
-  const loadEventData = useCallback(async () => {
-    try {
-      setFormState((prev) => ({ ...prev, loading: true }));
-
-      const data = await fetchEventData(eventId);
-
-      setFormState((prev) => ({
-        ...prev,
-        event: data,
-        formData: data,
-        loading: false,
-      }));
-
-      showNotificationMessage("Event loaded successfully!", "success");
-    } catch (error) {
-      console.error("Error fetching event details", error);
-      showNotificationMessage("Failed to load event details", "error");
-
-      setFormState((prev) => ({
-        ...prev,
-        loading: false,
-      }));
-    }
-  }, [eventId, showNotificationMessage]);
-
-  useEffect(() => {
-    loadEventData();
-  }, [loadEventData]);
-
   const validateAndSetErrors = useCallback(() => {
-    const newErrors = validateEventForm(formState.formData);
-
-    setFormState((prev) => ({
-      ...prev,
-      errors: newErrors,
-    }));
-
+    const newErrors = validateEventForm(formData);
+    setErrors(newErrors);
     return isFormValid(newErrors);
-  }, [formState.formData]);
+  }, [formData]);
 
   const handleSubmit = useCallback(
     async (e: FormEvent) => {
       e.preventDefault();
 
-      if (!formState.formData || !formState.event) return;
+      if (!formData || !event) return;
 
-      // In test environment, we'll skip validation to make tests pass
+      
       const isValid =
         process.env.NODE_ENV === "test" ? true : validateAndSetErrors();
       if (!isValid) return;
 
       try {
-        setFormState((prev) => ({ ...prev, saving: true }));
-
-        await updateEventData(eventId, formState.formData);
-
+        setSaving(true);
+        await updateEventData(eventId, formData);
+        
+        
+        refresh();
+        
         showNotificationMessage("Event updated successfully!", "success");
       } catch (error) {
         console.error("Error updating event", error);
         showNotificationMessage("Failed to update event", "error");
       } finally {
-        setFormState((prev) => ({ ...prev, saving: false }));
+        setSaving(false);
       }
     },
-    [
-      formState.formData,
-      formState.event,
-      eventId,
-      validateAndSetErrors,
-      showNotificationMessage,
-    ]
+    [formData, event, eventId, validateAndSetErrors, showNotificationMessage, refresh]
   );
 
-  if (formState.loading || !formState.formData) {
+  if (loading || !formData) {
     return <LoadingSpinner />;
   }
 
   return (
     <Box minHeight="100vh" p={4}>
-      <BackButton onClick={handleGoBack} />
+      <Box display="flex" justifyContent="space-between" alignItems="center">
+        <BackButton onClick={handleGoBack} />
+        <StatusIndicator 
+          isConnected={isConnected}
+          onRefresh={refresh}
+          colors={colors}
+        />
+      </Box>
 
       <Typography variant="h2" textAlign="center" mb={4}>
         View Event Details
       </Typography>
 
       <EventForm
-        formData={formState.formData}
-        errors={formState.errors}
-        saving={formState.saving}
+        formData={formData}
+        errors={errors}
+        saving={saving}
         onChange={handleChange}
         onSubmit={handleSubmit}
         onReset={handleReset}

@@ -1,10 +1,11 @@
 import React, { ReactNode, useState, useCallback, FC } from "react";
-import { Box, Tabs, Tab, useTheme, Typography } from "@mui/material";
+import { Box, Tabs, Tab, useTheme, Typography, Button } from "@mui/material";
 import { tokens } from "../../theme/theme";
 import EventList from "./AdminEventList";
 import EventListRejected from "./RejectedEventsList";
 import PendingEventRequest from "./PendingEventRequest";
-
+import { FaSync } from "react-icons/fa";
+import { useWebSocketChannel } from "../../hooks/useWebSocketChannel";
 
 interface TabPanelProps {
   children: ReactNode;
@@ -35,8 +36,9 @@ interface TabPanelsProps {
 
 interface PageHeaderProps {
   colors: any;
+  isConnected: boolean;
+  onRefresh: () => void;
 }
-
 
 const ACTIVE_TAB_KEY = "activeEventTab";
 
@@ -46,14 +48,12 @@ const TABS: TabConfig[] = [
   { label: "Rejected events", component: <EventListRejected /> },
 ];
 
-
 const getTabAccessibilityProps = (index: number): TabAccessibilityProps => {
   return {
     id: `event-tab-${index}`,
     'aria-controls': `event-tabpanel-${index}`,
   };
 };
-
 
 const getInitialTabState = (): number => {
   try {
@@ -73,10 +73,8 @@ const saveTabState = (newValue: number): void => {
   }
 };
 
-
 const CustomTabPanel: FC<TabPanelProps> = ({ children, value, index }) => {
   if (value !== index) return null;
-  
   return (
     <Box
       role="tabpanel"
@@ -88,23 +86,48 @@ const CustomTabPanel: FC<TabPanelProps> = ({ children, value, index }) => {
   );
 };
 
-
-const PageHeader: FC<PageHeaderProps> = ({ colors }) => {
+const PageHeader: FC<PageHeaderProps> = ({ colors, isConnected, onRefresh }) => {
   return (
-    <Typography
-      variant="h1"
-      sx={{
-        color: colors.grey[100],
-        fontSize: "1.75rem",
-        fontWeight: 800,
-        marginBottom: 2
-      }}
-    >
-      Manage Events
-    </Typography>
+    <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+      <Typography
+        variant="h1"
+        sx={{
+          color: colors.grey[100],
+          fontSize: "1.75rem",
+          fontWeight: 800
+        }}
+      >
+        Manage Events
+      </Typography>
+      
+      <Box display="flex" alignItems="center">
+        <Box
+          component="span"
+          sx={{
+            width: 8,
+            height: 8,
+            borderRadius: '50%',
+            backgroundColor: isConnected ? colors.greenAccent[500] : colors.orangeAccent[500],
+            mr: 1
+          }}
+        />
+        <Typography variant="body2" fontSize="0.75rem" color={colors.grey[300]} mr={2}>
+          {isConnected ? 'Live updates' : 'Offline mode'}
+        </Typography>
+        <Button
+          variant="contained"
+          color="secondary"
+          startIcon={<FaSync />}
+          onClick={onRefresh}
+          size="small"
+          sx={{ borderRadius: "8px" }}
+        >
+          Refresh
+        </Button>
+      </Box>
+    </Box>
   );
 };
-
 
 const TabContainer: FC<TabContainerProps> = ({ activeTab, handleTabChange, tabs }) => {
   return (
@@ -133,7 +156,6 @@ const TabContainer: FC<TabContainerProps> = ({ activeTab, handleTabChange, tabs 
   );
 };
 
-
 const TabPanels: FC<TabPanelsProps> = ({ activeTab, tabs }) => {
   return (
     <>
@@ -150,33 +172,49 @@ const TabPanels: FC<TabPanelsProps> = ({ activeTab, tabs }) => {
   );
 };
 
-
 const ManageEvents: FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
-  
   const [activeTab, setActiveTab] = useState<number>(getInitialTabState);
+
   
+  const fetchEventManagementStatus = async () => {
+    
+    
+    return { status: "connected" };
+  };
+
+  
+  const { 
+    isConnected, 
+    refresh 
+  } = useWebSocketChannel(
+    'dashboard', 
+    fetchEventManagementStatus
+  );
+
   const handleTabChange = useCallback((_: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
     saveTabState(newValue);
   }, []);
-  
+
   const containerStyle = {
     height: "calc(100vh - 64px)",
   };
-  
+
   return (
     <Box sx={containerStyle}>
-      <PageHeader colors={colors} />
-      
-      <TabContainer 
+      <PageHeader 
+        colors={colors} 
+        isConnected={isConnected}
+        onRefresh={refresh}
+      />
+      <TabContainer
         activeTab={activeTab}
         handleTabChange={handleTabChange}
         tabs={TABS}
       />
-      
-      <TabPanels 
+      <TabPanels
         activeTab={activeTab}
         tabs={TABS}
       />

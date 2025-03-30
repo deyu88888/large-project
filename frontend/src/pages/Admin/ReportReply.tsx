@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Box, Typography, Button, TextField, CircularProgress } from "@mui/material";
+import { Box, Typography, Button, TextField, CircularProgress, Alert } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { apiClient } from "../../api";
 import { tokens } from "../../theme/theme";
-
+import { useWebSocketChannel } from "../../hooks/useWebSocketChannel";
 
 interface Report {
   report_type: string;
@@ -13,12 +13,6 @@ interface Report {
   from_student_username: string;
   requested_at: string;
   [key: string]: any;
-}
-
-interface ReportState {
-  data: Report | null;
-  loading: boolean;
-  error: string | null;
 }
 
 interface ReplyState {
@@ -42,10 +36,39 @@ interface ReplyFormProps {
   content: string;
   onChange: (content: string) => void;
   onSubmit: (e: React.FormEvent) => void;
+  disabled: boolean;
 }
 
+interface StatusBarProps {
+  isConnected: boolean;
+  colors: ReturnType<typeof tokens>;
+}
 
-const fetchReportById = async (reportId: string): Promise<Report> => {
+const StatusBar: React.FC<StatusBarProps> = ({ isConnected, colors }) => {
+  return (
+    <Box display="flex" alignItems="center" mb={2}>
+      <Box
+        component="span"
+        sx={{
+          width: 8,
+          height: 8,
+          borderRadius: '50%',
+          backgroundColor: isConnected ? colors.greenAccent[500] : colors.orangeAccent[500],
+          mr: 1
+        }}
+      />
+      <Typography variant="body2" fontSize="0.75rem" color={colors.grey[300]}>
+        {isConnected ? 'Live connection' : 'Offline mode'}
+      </Typography>
+    </Box>
+  );
+};
+
+const fetchReportById = async (reportId: string | undefined): Promise<Report> => {
+  if (!reportId) {
+    throw new Error("Report ID is missing");
+  }
+  
   const response = await apiClient.get(`/api/reports/to-admin/${reportId}/`);
   return response.data;
 };
@@ -57,13 +80,12 @@ const submitReportReply = async (reportId: string, content: string): Promise<voi
   });
 };
 
-
 const LoadingState: React.FC<LoadingStateProps> = () => {
   return <CircularProgress />;
 };
 
 const ErrorState: React.FC<ErrorStateProps> = ({ message }) => {
-  return <Typography color="error">{message}</Typography>;
+  return <Alert severity="error" sx={{ mt: 2, mb: 2 }}>{message}</Alert>;
 };
 
 const ReportDetails: React.FC<ReportDetailsProps> = ({ report }) => {
@@ -77,7 +99,7 @@ const ReportDetails: React.FC<ReportDetailsProps> = ({ report }) => {
   return (
     <Box
       sx={{
-        backgroundColor: theme.palette.mode === "dark" ? colors.primary[500] : "#ffffff",
+        backgroundColor: theme.palette.mode === "dark" ? colors.primary[500] : colors.grey[100],
         p: 4,
         borderRadius: "8px",
         boxShadow: 3,
@@ -100,7 +122,7 @@ const ReportDetails: React.FC<ReportDetailsProps> = ({ report }) => {
   );
 };
 
-const ReplyForm: React.FC<ReplyFormProps> = ({ content, onChange, onSubmit }) => {
+const ReplyForm: React.FC<ReplyFormProps> = ({ content, onChange, onSubmit, disabled }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   
@@ -109,7 +131,7 @@ const ReplyForm: React.FC<ReplyFormProps> = ({ content, onChange, onSubmit }) =>
       component="form"
       onSubmit={onSubmit}
       sx={{
-        backgroundColor: theme.palette.mode === "dark" ? colors.primary[500] : "#ffffff",
+        backgroundColor: theme.palette.mode === "dark" ? colors.primary[500] : colors.grey[100],
         p: 4,
         borderRadius: "8px",
         boxShadow: 3,
@@ -120,7 +142,7 @@ const ReplyForm: React.FC<ReplyFormProps> = ({ content, onChange, onSubmit }) =>
         fontWeight="bold"
         mb={2}
         sx={{
-          color: theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d",
+          color: theme.palette.mode === "dark" ? colors.grey[100] : colors.grey[800],
         }}
       >
         Your Reply
@@ -133,9 +155,10 @@ const ReplyForm: React.FC<ReplyFormProps> = ({ content, onChange, onSubmit }) =>
         multiline
         rows={5}
         required
+        disabled={disabled}
         sx={{
-          backgroundColor: theme.palette.mode === "dark" ? colors.primary[600] : "#ffffff",
-          color: theme.palette.mode === "dark" ? colors.grey[100] : "#000",
+          backgroundColor: theme.palette.mode === "dark" ? colors.primary[600] : colors.grey[50],
+          color: theme.palette.mode === "dark" ? colors.grey[100] : colors.grey[800],
           borderRadius: "4px",
         }}
       />
@@ -143,10 +166,11 @@ const ReplyForm: React.FC<ReplyFormProps> = ({ content, onChange, onSubmit }) =>
       <Button
         type="submit"
         fullWidth
+        disabled={disabled}
         sx={{
           mt: 3,
           backgroundColor: colors.blueAccent[500],
-          color: "#ffffff",
+          color: colors.grey[100],
           fontWeight: "bold",
           "&:hover": { backgroundColor: colors.blueAccent[600] },
         }}
@@ -166,8 +190,8 @@ const PageContainer: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       minHeight="100vh"
       p={4}
       sx={{
-        backgroundColor: theme.palette.mode === "dark" ? "#141b2d" : "#fcfcfc",
-        color: theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d",
+        backgroundColor: theme.palette.mode === "dark" ? colors.primary[400] : colors.grey[50],
+        color: theme.palette.mode === "dark" ? colors.grey[100] : colors.grey[800],
       }}
     >
       {children}
@@ -185,7 +209,7 @@ const PageTitle: React.FC = () => {
       fontWeight="bold"
       mb={3}
       sx={{
-        color: theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d",
+        color: theme.palette.mode === "dark" ? colors.grey[100] : colors.grey[800],
       }}
     >
       Reply to Report
@@ -193,57 +217,45 @@ const PageTitle: React.FC = () => {
   );
 };
 
-
 const ReportReply: React.FC = () => {
   const navigate = useNavigate();
   const { reportId } = useParams<{ reportId: string }>();
-  
-  
-  const [reportState, setReportState] = useState<ReportState>({
-    data: null,
-    loading: true,
-    error: null
-  });
+  const theme = useTheme();
+  const colors = tokens(theme.palette.mode);
   
   const [replyState, setReplyState] = useState<ReplyState>({
     content: "",
     error: null
   });
-
   
-  const loadReportData = async () => {
-    if (!reportId) {
-      setReportState({
-        data: null,
-        loading: false,
-        error: "Report ID is missing"
-      });
-      return;
-    }
-    
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  
+  const fetchReportData = useCallback(async () => {
     try {
-      setReportState(prev => ({ ...prev, loading: true }));
-      const reportData = await fetchReportById(reportId);
-      setReportState({
-        data: reportData,
-        loading: false,
-        error: null
-      });
-    } catch (err) {
-      console.error("Error fetching report:", err);
-      setReportState({
-        data: null,
-        loading: false,
-        error: "Failed to fetch report details. The report might not exist or you don't have permission to view it."
-      });
+      return await fetchReportById(reportId);
+    } catch (error) {
+      console.error("Error fetching report:", error);
+      const errorMessage = error instanceof Error ? error.message : 
+        "Failed to fetch report details. The report might not exist or you don't have permission to view it.";
+      throw new Error(errorMessage);
     }
-  };
-
+  }, [reportId]);
+  
+  
+  const { 
+    data: report, 
+    loading, 
+    error, 
+    isConnected 
+  } = useWebSocketChannel<Report>(
+    `report/${reportId}`, 
+    fetchReportData
+  );
   
   const handleReplyContentChange = (content: string) => {
     setReplyState(prev => ({ ...prev, content }));
   };
-
   
   const handleSubmitReply = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -253,47 +265,48 @@ const ReportReply: React.FC = () => {
       return;
     }
     
+    setIsSubmitting(true);
+    setReplyState(prev => ({ ...prev, error: null }));
+    
     try {
       await submitReportReply(reportId, replyState.content);
       alert("Reply submitted successfully!");
       navigate("/admin/reports");
     } catch (err) {
-      setReplyState(prev => ({ ...prev, error: "Failed to submit reply" }));
+      setReplyState(prev => ({ ...prev, error: "Failed to submit reply. Please try again." }));
+    } finally {
+      setIsSubmitting(false);
     }
   };
-
   
-  useEffect(() => {
-    loadReportData();
-  }, [reportId]);
-
   
-  if (reportState.loading) {
-    return <LoadingState />;
+  const errorMessage = replyState.error || error;
+  
+  if (loading && !report) {
+    return (
+      <PageContainer>
+        <PageTitle />
+        <LoadingState />
+      </PageContainer>
+    );
   }
-
-  
-  if (reportState.error) {
-    return <ErrorState message={reportState.error} />;
-  }
-
-  
-  if (replyState.error) {
-    return <ErrorState message={replyState.error} />;
-  }
-
   
   return (
     <PageContainer>
       <PageTitle />
       
-      {reportState.data && (
+      <StatusBar isConnected={isConnected} colors={colors} />
+      
+      {errorMessage && <ErrorState message={errorMessage} />}
+      
+      {report && (
         <>
-          <ReportDetails report={reportState.data} />
+          <ReportDetails report={report} />
           <ReplyForm 
             content={replyState.content}
             onChange={handleReplyContentChange}
             onSubmit={handleSubmitReply}
+            disabled={isSubmitting}
           />
         </>
       )}
