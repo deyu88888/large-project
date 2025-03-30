@@ -1,4 +1,7 @@
+# TODO: initial refactoring complete
+
 from random import choice
+
 
 class RandomCommentDataGenerator():
     """Class encompassing tools to generate event data"""

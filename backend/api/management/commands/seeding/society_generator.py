@@ -7,6 +7,7 @@ from django.core.management import color_style
 from api.models import User, Society, Student, SocietyRequest, SocietyShowreel
 from api.management.commands.seeding.seeding_utility import get_active_students
 
+
 class RandomSocietyDataGenerator():
     """Class encompassing tools to generate society data"""
     def __init__(self, admin_generator, event_generator):

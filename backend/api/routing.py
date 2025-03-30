@@ -11,6 +11,8 @@ websocket_urlpatterns = [
     re_path(r"ws/main/$", DashboardConsumer.as_asgi()),
     re_path(r"ws/dashboard/$", DashboardConsumer.as_asgi()),
     
+    # TODO: REMOVE the following line and the corresponding consumer?
+    # TODO: since it's not used anywhere
     # Test endpoint with simpler consumer
     re_path(r"ws/echo/$", EchoConsumer.as_asgi()),
     

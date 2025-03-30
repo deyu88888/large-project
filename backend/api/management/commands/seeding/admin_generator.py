@@ -1,3 +1,5 @@
+# TODO: initial refactoring complete
+
 from random import choice, random
 from api.models import User, AdminReportRequest, Society, ReportReply
 from api.management.commands.seeding.seeding_utility import create_report, \

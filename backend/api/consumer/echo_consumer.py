@@ -1,9 +1,12 @@
+# TODO: reomve this file? not used
+
 # api/consumer/echo_consumer.py
 import json
 import logging
 from channels.generic.websocket import WebsocketConsumer
 
 logger = logging.getLogger('websockets')
+
 
 class EchoConsumer(WebsocketConsumer):
     def connect(self):

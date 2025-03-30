@@ -1,5 +1,8 @@
+# TODO: initial refactoring complete
+
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
+
 
 class CommentConsumer(AsyncWebsocketConsumer):
     async def connect(self):
