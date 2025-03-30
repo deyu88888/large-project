@@ -6,7 +6,6 @@ import { tokens } from "../../theme/theme";
 import { useSettingsStore } from "../../stores/settings-store";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { SocietyPreview } from "../../components/SocietyPreview";
-import { EventPreview } from "../../components/EventPreview";
 import { SocietyDetailRequest } from "../../types/admin/society";
 
 

@@ -16,44 +16,12 @@ import { tokens } from "../../theme/theme";
 import { useSettingsStore } from "../../stores/settings-store";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { EventPreview } from "../../components/EventPreview";
-import type { EventData, ExtraModule } from "../../types/event/event";
+import type { EventData } from "../../types/event/event";
 import { getWebSocketUrl } from "../../utils/websocket";
+import {mapToEventRequestData} from "../../utils/mapper.ts";
 
 const WS_URL = getWebSocketUrl();
 const RECONNECT_DELAY = 5000;
-
-const mapModule = (mod: any): ExtraModule => ({
-  id: mod.id,
-  type: mod.type,
-  textValue: mod.text_value,
-  fileValue: mod.file_value,
-});
-
-const mapToEventRequestData = (data: any): EventData => {
-  const event = data.event;
-  return {
-    eventId: event.id || null,
-    title: event.title || "",
-    mainDescription: event.main_description || "",
-    coverImageUrl: event.cover_image || "",
-    date: event.date || "",
-    startTime: event.start_time || "",
-    duration: event.duration || "",
-    hostedBy: event.hosted_by || 0,
-    location: event.location || "",
-    maxCapacity: event.max_capacity || 0,
-    currentAttendees: event.current_attendees || [],
-    extraModules: Array.isArray(event.extra_modules)
-      ? event.extra_modules.map(mapModule)
-      : [],
-    participantModules: Array.isArray(event.participant_modules)
-      ? event.participant_modules.map(mapModule)
-      : [],
-    isParticipant: true,
-    isMember: true,
-    adminReason: data.admin_reason ?? "",
-  };
-};
 
 interface DeleteDialogProps {
   open: boolean;
