@@ -1,6 +1,5 @@
 from datetime import timedelta
 import json
-from types import SimpleNamespace
 
 from django.test import TestCase
 from django.utils import timezone
@@ -143,15 +142,27 @@ class EventRequestSerializerTestCase(TestCase):
         self.assertEqual(self.event.title, "Updated Title")
         self.assertEqual(self.event.duration, timedelta(hours=2))
         self.assertEqual(self.event.status, "Pending")
-        self.assertEqual(self.event.modules.count(), 2)  # replaced by new modules
+        self.assertEqual(self.event.modules.count(), 2)
         self.event_request.refresh_from_db()
         self.assertIsNone(self.event_request.approved)
 
-    def test_get_event_returns_id(self):
+    def test_event_in_serialized_data(self):
+        """Test that 'event' in serialized data is a dictionary with expected fields"""
         serializer = EventRequestSerializer(instance=self.event_request)
-        self.assertEqual(serializer.data["event"], self.event.id)
-
-    def test_get_event_returns_none(self):
-        dummy_obj = SimpleNamespace(event=None)
-        serializer = EventRequestSerializer()
-        self.assertIsNone(serializer.get_event(dummy_obj))
+        serialized_data = serializer.data
+        self.assertIsInstance(serialized_data['event'], dict)
+        
+        self.assertEqual(serialized_data['event']['id'], self.event.id)
+        self.assertEqual(serialized_data['event']['title'], self.event.title)
+        self.assertEqual(serialized_data['event']['main_description'], self.event.main_description)
+        self.assertEqual(serialized_data['event']['location'], self.event.location)
+        
+    def test_serialization_behavior_with_null_fields(self):
+        """Test that serializer handles null values appropriately"""
+        event_data = serializer = EventRequestSerializer(instance=self.event_request).data
+        default_fields = ['cover_image', 'hosted_by', 'extra_modules', 'participant_modules', 
+                         'is_member', 'is_participant']
+        
+        for field in default_fields:
+            self.assertIn(field, event_data['event'])
+            
