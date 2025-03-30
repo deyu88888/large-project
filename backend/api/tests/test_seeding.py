@@ -1,4 +1,5 @@
 from datetime import date
+import random
 from unittest.mock import patch
 from django.test import TransactionTestCase
 
@@ -163,25 +164,32 @@ class SeedingTestCase(TransactionTestCase):
         self.command_instance.randomly_assign_awards(1)
         self.assertEqual(AwardStudent.objects.count(), initial_count + 1)
 
-
-    @patch("api.management.commands.seeding.society_generator.choice")
-    def test_handle_society_status_approved(self, mock_choice):
+    def test_handle_society_status_approved(self):
         """Test handle_society_status returns True for 'Approved' status."""
         generator = self.command_instance.society_generator
-        mock_choice.return_value = "Approved"
-        result = generator.handle_society_status(self.president, "Test Society")
+        data = generator.generate()
+        result = generator.handle_society_request_approval(self.president, data)
         self.assertTrue(result)
         # SocietyRequest should be created when approved, sends approval notif
-        self.assertTrue(SocietyRequest.objects.filter(name="Test Society").exists())
+        self.assertTrue(SocietyRequest.objects.filter(name=data["name"]).exists())
 
     @patch("api.management.commands.seeding.society_generator.choice")
     def test_handle_society_status_pending(self, mock_choice):
         """Test handle_society_status creates a SocietyRequest for 'Pending' status."""
+        orig_choice = random.choice
+
+        def choice_side_effect(seq):
+            if seq == [False, None]:
+                return None
+            return orig_choice(seq)
+        mock_choice.side_effect = choice_side_effect
+
         generator = self.command_instance.society_generator
-        mock_choice.return_value = "Pending"
-        result = generator.handle_society_status(self.president, "Test Society")
-        self.assertFalse(result)
-        sr = SocietyRequest.objects.get(name="Test Society")
+        data = generator.generate()
+        mock_choice.return_value = None
+        result = generator.create_unapproved_society_request(self.president, data)
+        self.assertTrue(result)
+        sr = SocietyRequest.objects.get(name=data["name"])
         self.assertEqual(sr.intent, "CreateSoc")
         self.assertEqual(sr.from_student, self.president)
         self.assertIsNone(sr.approved)
@@ -189,17 +197,26 @@ class SeedingTestCase(TransactionTestCase):
     @patch("api.management.commands.seeding.society_generator.choice")
     def test_handle_society_status_rejected(self, mock_choice):
         """Test handle_society_status creates a SocietyRequest with approved True for 'Rejected' status."""
+        orig_choice = random.choice
+
+        def choice_side_effect(seq):
+            if seq == [False, None]:
+                return False
+            return orig_choice(seq)
+        mock_choice.side_effect = choice_side_effect
+
         generator = self.command_instance.society_generator
-        mock_choice.return_value = "Rejected"
-        result = generator.handle_society_status(self.president, "Test Society")
-        self.assertFalse(result)
-        sr = SocietyRequest.objects.get(name="Test Society")
+        data = generator.generate()
+        result = generator.create_unapproved_society_request(self.president, data)
+        self.assertTrue(result)
+        sr = SocietyRequest.objects.get(name=data["name"])
         self.assertEqual(sr.intent, "CreateSoc")
         self.assertFalse(sr.approved)
 
+
     @patch("api.management.commands.seeding.event_generator.choice")
-    def test_handle_event_status_approved(self, mock_choice):
-        """Test handle_event_status returns True for 'Approved' status."""
+    def test_handle_event_request_approval(self, mock_choice):
+        """Test handle_event_request_approval returns True status."""
         generator = self.command_instance.event_generator
         def side_effect(seq):
             if seq == ["Pending", "Approved", "Rejected"]:
@@ -207,44 +224,45 @@ class SeedingTestCase(TransactionTestCase):
             return seq[0]  # For valid_hours and valid_minutes
         mock_choice.side_effect = side_effect
 
-        result = generator.handle_event_status(self.event)
+        result = generator.handle_event_request_approval(self.event)
         self.assertTrue(result)
         # Does now exist for notification reasons
         self.assertTrue(EventRequest.objects.filter(hosted_by=self.society).exists())
 
 
     @patch("api.management.commands.seeding.event_generator.choice")
-    def test_handle_event_status_pending(self, mock_choice):
-        """Test handle_event_status creates an EventRequest for 'Pending' status."""
+    def test_handle_event_request_not_approval_rejected(self, mock_choice):
+        """Test handle_event_request_not_approval creates an EventRequest for 'Pending' status."""
         generator = self.command_instance.event_generator
         def side_effect(seq):
-            if seq == ["Pending", "Approved", "Rejected"]:
+            if seq == ["Pending", "Rejected"]:
                 return "Pending"
             # For other sequences (like valid_hours or valid_minutes), return the first element.
             return seq[0]
         mock_choice.side_effect = side_effect
 
-        result = generator.handle_event_status(self.event)
-        self.assertFalse(result)
+        result = generator.handle_event_request_not_approval(self.event)
+        self.assertTrue(result)
         er = EventRequest.objects.get(hosted_by=self.society)
         self.assertEqual(er.intent, "CreateEve")
         self.assertIsNone(er.approved)
 
+
     @patch("api.management.commands.seeding.event_generator.choice")
-    def test_handle_event_status_rejected(self, mock_choice):
-        """Test handle_event_status creates an EventRequest
+    def test_handle_event_request_not_approval_rejected(self, mock_choice):
+        """Test handle_event_request_not_approval creates an EventRequest
         with approved True for 'Rejected' status."""
         generator = self.command_instance.event_generator
         # Define a side effect that returns "Rejected" when the sequence is the status list,
         # and for other lists (like valid_hours or valid_minutes), return the first element.
         def side_effect(seq):
-            if seq == ["Pending", "Approved", "Rejected"]:
+            if seq == ["Pending", "Rejected"]:
                 return "Rejected"
             return seq[0]
         mock_choice.side_effect = side_effect
 
-        result = generator.handle_event_status(self.event)
-        self.assertFalse(result)
+        result = generator.handle_event_request_not_approval(self.event)
+        self.assertTrue(result)
         er = EventRequest.objects.get(hosted_by=self.society)
         self.assertEqual(er.intent, "CreateEve")
         self.assertFalse(er.approved)
@@ -367,7 +385,7 @@ class SeedingTestCase(TransactionTestCase):
         self.assertEqual(Student.objects.count(), 14)
         create_soc_requests = SocietyRequest.objects.filter(intent="CreateSoc").count()
         soc_count = Society.objects.count()
-        self.assertEqual(create_soc_requests, 1)
+        self.assertEqual(create_soc_requests, 2)
         self.assertIn(soc_count, [1, 2]) # 2 societies if second approved, else 1
         self.assertEqual(Award.objects.count(), 9)
         self.assertEqual(AwardStudent.objects.count(), 1)
