@@ -163,16 +163,15 @@ def process_timedelta_field(obj, field_name, delta_str):
         
 def set_many_to_many_relationship(obj, field_name, id_list, model_class):
     """Set a many-to-many relationship from a list of IDs."""
+    if not obj.pk:
+        print(f"Skipping M2M relationship for '{field_name}' because object has no primary key yet.")
+        return
     try:
-        getattr(obj, field_name).clear()
-        for item_id in id_list:
-            try:
-                item = model_class.objects.get(id=int(item_id))
-                getattr(obj, field_name).add(item)
-            except Exception as e:
-                print(f"Error adding {field_name} {item_id}: {str(e)}")
+        m2m_field = getattr(obj, field_name)
+        m2m_field.set(model_class.objects.filter(id__in=id_list))
     except Exception as e:
-        print(f"Error setting {field_name}: {str(e)}")
+        print(f"Error setting M2M field '{field_name}': {str(e)}")
+    
 
 def set_foreign_key_relationship(obj, field_name, id_value, model_class):
     """Set a foreign key relationship from an ID value."""
