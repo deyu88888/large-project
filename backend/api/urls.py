@@ -9,7 +9,7 @@ from api.views import (
     AdminListView, AdminStudentListView, AdminDeleteView, AdminRestoreView,
     AdminActivityLogView, AdminManageStudentDetailsView, AdminManageSocietyDetailsView,
     AdminManageEventDetailsView, AdminEventRequestView, AdminEventView,
-    AdminSocietyRequestView, AdminSocietyDetailRequestView, AdminNewsApprovalView,
+    AdminSocietyRequestView, AdminSocietyDetailRequestView,
     AdminRepliesListView, AdminReportsWithRepliesView, AdminManageAdminDetailsView,
 
     # Society
@@ -23,9 +23,6 @@ from api.views import (
     ManageEventListView, CreateEventRequestView, RSVPEventView, EventHistoryView,
     get_sorted_events, AllEventsView, EventDetailsView, EventCommentsView,
     ManageEventDetailsView, like_comment, dislike_comment, JoinedEventsView,
-
-    # News
-    NewsView, BroadcastListAPIView, NewsPublicationRequestView,
 
     # Notifications & Messages
     StudentNotificationsView, NotificationsView, StudentInboxView,
@@ -49,10 +46,11 @@ from api.views import (
 )
 from .utils import request_otp, verify_otp
 
-from .news_views import (
+# Import from the new consolidated news_views.py file
+from api.views_files.news_views import (
+    NewsView, BroadcastListAPIView, NewsPublicationRequestView, AdminNewsApprovalView,
     SocietyNewsListView, SocietyNewsDetailView, NewsCommentView,
-    NewsCommentDetailView, NewsCommentLikeView, MemberNewsView,
-    NewsCommentDislikeView
+    NewsCommentDetailView, NewsCommentLikeView, NewsCommentDislikeView, MemberNewsView
 )
 
 # Authentication & User management
