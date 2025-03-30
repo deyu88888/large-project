@@ -1,11 +1,10 @@
-
-import React, { ReactNode, useState, useCallback } from "react";
+import React, { ReactNode, useState, useCallback, useEffect } from "react";
 import { Box, Tabs, Tab, useTheme, Typography } from "@mui/material";
 import { tokens } from "../../theme/theme";
 import AdminReportList from "./AdminReportList";
 import ReportRepliedList from "./ReportRepliedList";
 import ReportRepliesList from "./ReportRepliesList";
-
+import { useWebSocketChannel } from "../../hooks/useWebSocketChannel";
 
 interface TabPanelProps {
   children: ReactNode;
@@ -24,9 +23,11 @@ interface StorageOperations {
   setActiveTab: (value: number) => void;
 }
 
+interface HeaderProps {
+  colors: ReturnType<typeof tokens>;
+}
 
 const STORAGE_KEY = "reportsActiveTab";
-
 
 const createTabConfigs = (): TabConfig[] => [
   { label: "New reports", component: <AdminReportList />, ariaLabel: "New reports tab" },
@@ -58,7 +59,6 @@ const createStorageOperations = (): StorageOperations => {
     setActiveTab,
   };
 };
-
 
 const CustomTabPanel: React.FC<TabPanelProps> = ({ children, value, index }) => {
   if (value !== index) {
@@ -123,22 +123,22 @@ const TabPanelContainer: React.FC<{
   );
 };
 
-const PageTitle: React.FC<{ colors: ReturnType<typeof tokens> }> = ({ colors }) => {
+const PageHeader: React.FC<HeaderProps> = ({ colors }) => {
   return (
-    <Typography
-      variant="h1"
-      sx={{
-        color: colors.grey[100],
-        fontSize: "1.75rem",
-        fontWeight: 800,
-        mb: 2,
-      }}
-    >
-      Manage Reports
-    </Typography>
+    <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+      <Typography
+        variant="h1"
+        sx={{
+          color: colors.grey[100],
+          fontSize: "1.75rem",
+          fontWeight: 800,
+        }}
+      >
+        Manage Reports
+      </Typography>
+    </Box>
   );
 };
-
 
 const ManageReports: React.FC = () => {
   const theme = useTheme();
@@ -147,6 +147,25 @@ const ManageReports: React.FC = () => {
   const storage = createStorageOperations();
   
   const [activeTabIndex, setActiveTabIndex] = useState<number>(storage.getActiveTab);
+
+  const fetchReportStatus = async () => {
+    return { status: "connected" };
+  };
+  
+  const { 
+    isConnected, 
+    refresh,
+    error 
+  } = useWebSocketChannel(
+    'dashboard_stats', 
+    fetchReportStatus
+  );
+  
+  useEffect(() => {
+    if (error) {
+      console.error(`WebSocket error: ${error}`);
+    }
+  }, [error]);
 
   const handleTabChange = useCallback((_: React.SyntheticEvent, newValue: number) => {
     setActiveTabIndex(newValue);
@@ -160,7 +179,9 @@ const ManageReports: React.FC = () => {
         backgroundColor: theme.palette.background.default,
       }}
     >
-      <PageTitle colors={colors} />
+      <PageHeader 
+        colors={colors} 
+      />
       <ReportTabs 
         tabs={tabs} 
         activeTabIndex={activeTabIndex} 

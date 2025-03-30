@@ -16,19 +16,15 @@ import {
   Grid,
   FormControlLabel,
   Switch,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { apiClient, apiPaths } from "../../api.ts";
 import { useAuthStore } from "../../stores/auth-store.ts";
 import { tokens } from "../../theme/theme.ts";
 import { Student } from "../../types.ts";
-
-interface StudentFormState {
-  student: Student | null;
-  formData: Student | null;
-  loading: boolean;
-  saving: boolean;
-}
+import { useWebSocketChannel } from "../../hooks/useWebSocketChannel";
 
 interface SnackbarState {
   open: boolean;
@@ -73,6 +69,11 @@ interface BackButtonProps {
   onClick: () => void;
 }
 
+interface SnackbarAlertProps {
+  state: SnackbarState;
+  onClose: () => void;
+}
+
 interface StudentFormProps {
   formData: Student;
   saving: boolean;
@@ -87,10 +88,15 @@ interface StudentFormProps {
 }
 
 const fetchStudentData = async (studentId: number): Promise<Student> => {
-  const response = await apiClient.get(
-    apiPaths.USER.ADMINSTUDENTVIEW(studentId)
-  );
-  return response.data;
+  try {
+    const response = await apiClient.get(
+      apiPaths.USER.ADMINSTUDENTVIEW(studentId)
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching student details", error);
+    throw error;
+  }
 };
 
 const updateStudentData = async (
@@ -234,6 +240,23 @@ const BackButton: React.FC<BackButtonProps> = ({ onClick }) => (
   </Button>
 );
 
+const SnackbarAlert: React.FC<SnackbarAlertProps> = ({ state, onClose }) => (
+  <Snackbar
+    open={state.open}
+    autoHideDuration={6000}
+    onClose={onClose}
+    anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+  >
+    <Alert
+      onClose={onClose}
+      severity={state.severity}
+      sx={{ width: "100%" }}
+    >
+      {state.message}
+    </Alert>
+  </Snackbar>
+);
+
 const StudentForm: React.FC<StudentFormProps> = ({
   formData,
   saving,
@@ -256,7 +279,7 @@ const StudentForm: React.FC<StudentFormProps> = ({
     >
       <form onSubmit={onSubmit}>
         <Grid container spacing={2}>
-          <Grid size={{ xs: 12 }}>
+          <Grid item xs={12}>
             <FormTextField
               label="Username"
               name="username"
@@ -265,7 +288,7 @@ const StudentForm: React.FC<StudentFormProps> = ({
             />
           </Grid>
 
-          <Grid size={{ xs: 6 }}>
+          <Grid item xs={6}>
             <FormTextField
               label="First Name"
               name="first_name"
@@ -274,7 +297,7 @@ const StudentForm: React.FC<StudentFormProps> = ({
             />
           </Grid>
 
-          <Grid size={{ xs: 6 }}>
+          <Grid item xs={6}>
             <FormTextField
               label="Last Name"
               name="last_name"
@@ -283,7 +306,7 @@ const StudentForm: React.FC<StudentFormProps> = ({
             />
           </Grid>
 
-          <Grid size={{ xs: 6 }}>
+          <Grid item xs={6}>
             <FormTextField
               label="Email"
               name="email"
@@ -292,7 +315,7 @@ const StudentForm: React.FC<StudentFormProps> = ({
             />
           </Grid>
 
-          <Grid size={{ xs: 6 }}>
+          <Grid item xs={6}>
             <FormTextField
               label="Role"
               name="role"
@@ -301,7 +324,7 @@ const StudentForm: React.FC<StudentFormProps> = ({
             />
           </Grid>
 
-          <Grid size={{ xs: 6 }}>
+          <Grid item xs={6}>
             <FormTextField
               label="Major"
               name="major"
@@ -310,22 +333,21 @@ const StudentForm: React.FC<StudentFormProps> = ({
             />
           </Grid>
 
-          <Grid size={{ xs: 6 }}>
+          <Grid item xs={6}>
             <SocietiesField
-            // @ts-expect-error:
               value={formData.societies}
               onChange={onSocietiesChange}
             />
           </Grid>
 
-          <Grid size={{ xs: 12 }}>
+          <Grid item xs={12}>
             <PresidentField
               value={formData.president_of}
               onChange={onPresidentOfChange}
             />
           </Grid>
 
-          <Grid size={{ xs: 6 }}>
+          <Grid item xs={6}>
             <SwitchField
               label="Active"
               name="isActive"
@@ -334,7 +356,7 @@ const StudentForm: React.FC<StudentFormProps> = ({
             />
           </Grid>
 
-          <Grid size={{ xs: 12 }}>
+          <Grid item xs={12}>
             <SwitchField
               label="Is President"
               name="is_president"
@@ -358,159 +380,159 @@ const ViewStudent: React.FC = () => {
   const { student_id } = useParams<{ student_id: string }>();
   const studentId = Number(student_id);
 
-  const [formState, setFormState] = useState<StudentFormState>({
-    student: null,
-    formData: null,
-    loading: true,
-    saving: false,
-  });
-
+  const [formData, setFormData] = useState<Student | null>(null);
+  const [saving, setSaving] = useState<boolean>(false);
   const [snackbar, setSnackbar] = useState<SnackbarState>({
     open: false,
     message: "",
     severity: "success",
   });
 
+  const fetchStudentDataWrapper = useCallback(async () => {
+    try {
+      return await fetchStudentData(studentId);
+    } catch (error) {
+      console.error("Error fetching student details", error);
+      throw error;
+    }
+  }, [studentId]);
+
+  const { 
+    data: student, 
+    loading, 
+    error: wsError, 
+    refresh, 
+    isConnected 
+  } = useWebSocketChannel<Student>(
+    `student/${studentId}`, 
+    fetchStudentDataWrapper
+  );
+
+  useEffect(() => {
+    if (student) {
+      setFormData({ ...student });
+    }
+  }, [student]);
+
+  useEffect(() => {
+    if (wsError) {
+      setSnackbar({
+        open: true,
+        message: `Error loading data: ${wsError}`,
+        severity: "error"
+      });
+    }
+  }, [wsError]);
+
   const handleTextChange = useCallback(
     (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       const { name, value } = e.target;
 
-      setFormState((prev) => {
-        if (!prev.formData) return prev;
-
-        return {
-          ...prev,
-          formData: { ...prev.formData, [name]: value },
-        };
+      setFormData((prev) => {
+        if (!prev) return null;
+        return { ...prev, [name]: value };
       });
     },
     []
   );
 
   const handleSocietiesChange = useCallback((societies: number[]) => {
-    setFormState((prev: any) => {
-      if (!prev.formData) return prev;
-
-      return {
-        ...prev,
-        formData: { ...prev.formData, societies },
-      };
+    setFormData((prev) => {
+      if (!prev) return null;
+      return { ...prev, societies };
     });
   }, []);
 
   const handlePresidentOfChange = useCallback((presidentOf: number[]) => {
-    setFormState((prev) => {
-      if (!prev.formData) return prev;
-
-      return {
-        ...prev,
-        formData: { ...prev.formData, president_of: presidentOf },
-      };
+    setFormData((prev) => {
+      if (!prev) return null;
+      return { ...prev, president_of: presidentOf };
     });
   }, []);
 
   const handleActiveChange = useCallback((active: boolean) => {
-    setFormState((prev) => {
-      if (!prev.formData) return prev;
-
-      return {
-        ...prev,
-        formData: { ...prev.formData, isActive: active },
-      };
+    setFormData((prev) => {
+      if (!prev) return null;
+      return { ...prev, is_active: active };
     });
   }, []);
 
   const handleIsPresidentChange = useCallback((isPresident: boolean) => {
-    setFormState((prev) => {
-      if (!prev.formData) return prev;
-
-      return {
-        ...prev,
-        formData: { ...prev.formData, is_president: isPresident },
-      };
+    setFormData((prev) => {
+      if (!prev) return null;
+      return { ...prev, is_president: isPresident };
     });
   }, []);
 
   const handleGoBack = useCallback(() => {
     navigate(-1);
   }, [navigate]);
-
-  const loadStudentData = useCallback(async () => {
-    try {
-      setFormState((prev) => ({ ...prev, loading: true }));
-
-      const data = await fetchStudentData(studentId);
-
-      setFormState({
-        student: data,
-        formData: { ...data },
-        loading: false,
-        saving: false,
-      });
-
-      setSnackbar({
-        open: true,
-        message: "Student updated successfully!",
-        severity: "success",
-      });
-    } catch (error) {
-      console.error("Error fetching student details", error);
-
-      setFormState((prev) => ({
-        ...prev,
-        loading: false,
-      }));
-    }
-  }, [studentId]);
-
-  useEffect(() => {
-    loadStudentData();
-  }, [loadStudentData]);
+  
+  const handleCloseSnackbar = useCallback(() => {
+    setSnackbar(prev => ({ ...prev, open: false }));
+  }, []);
 
   const handleSubmit = useCallback(
     async (e: FormEvent) => {
       e.preventDefault();
 
-      if (!formState.formData || !formState.student) return;
+      if (!formData || !student) return;
 
       try {
-        setFormState((prev) => ({ ...prev, saving: true }));
+        setSaving(true);
 
-        const formDataToSend = createFormDataFromStudent(formState.formData);
+        const formDataToSend = createFormDataFromStudent(formData);
         await updateStudentData(studentId, formDataToSend);
-
-        alert("Student updated successfully!");
+        
+        refresh();
+        
+        setSnackbar({
+          open: true,
+          message: "Student updated successfully!",
+          severity: "success"
+        });
       } catch (error) {
         console.error("Error updating student", error);
-        alert("There was an error updating the student.");
+        setSnackbar({
+          open: true,
+          message: "There was an error updating the student.",
+          severity: "error"
+        });
       } finally {
-        setFormState((prev) => ({ ...prev, saving: false }));
+        setSaving(false);
       }
     },
-    [formState.formData, formState.student, studentId]
+    [formData, student, studentId, refresh]
   );
 
-  if (formState.loading || !formState.formData) {
+  if (loading || !formData) {
     return <LoadingSpinner />;
   }
 
   return (
     <Box minHeight="100vh" p={4}>
-      <BackButton onClick={handleGoBack} />
+      <Box>
+        <BackButton onClick={handleGoBack} />
+      </Box>
 
       <Typography variant="h2" textAlign="center" mb={4}>
         View Student Details
       </Typography>
 
       <StudentForm
-        formData={formState.formData}
-        saving={formState.saving}
+        formData={formData}
+        saving={saving}
         onTextChange={handleTextChange}
         onSocietiesChange={handleSocietiesChange}
         onPresidentOfChange={handlePresidentOfChange}
         onActiveChange={handleActiveChange}
         onIsPresidentChange={handleIsPresidentChange}
         onSubmit={handleSubmit}
+      />
+      
+      <SnackbarAlert 
+        state={snackbar}
+        onClose={handleCloseSnackbar}
       />
     </Box>
   );

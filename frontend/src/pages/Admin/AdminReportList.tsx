@@ -1,5 +1,5 @@
 import { useEffect, useState, useContext, useCallback, FC } from 'react';
-import { Box, Button, useTheme } from "@mui/material";
+import { Box, Button, useTheme, Typography } from "@mui/material";
 import { DataGrid, GridColDef, GridRenderCellParams, GridToolbar } from "@mui/x-data-grid";
 import { tokens } from "../../theme/theme";
 import { SearchContext } from "../../components/layout/SearchContext";
@@ -7,7 +7,7 @@ import { useSettingsStore } from "../../stores/settings-store";
 import { fetchReports } from './fetchReports';
 import { Report } from '../../types/president/report';
 import { useNavigate } from 'react-router-dom';
-
+import { useWebSocketChannel } from "../../hooks/useWebSocketChannel";
 
 interface DataGridContainerProps {
   filteredReports: Report[];
@@ -24,6 +24,10 @@ interface ActionButtonProps {
   onReply: (id: string) => void;
 }
 
+interface HeaderProps {
+  colors: any;
+}
+
 const formatDate = (dateString: string): string => {
   return new Date(dateString).toLocaleString();
 };
@@ -35,6 +39,22 @@ const createMailtoUrl = (email: string, subject: string): string => {
   return `mailto:${email}?subject=${emailSubject}&body=${emailBody}`;
 };
 
+const Header: FC<HeaderProps> = ({ colors }) => {
+  return (
+    <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+      <Typography
+        variant="h1"
+        sx={{
+          color: colors.grey[100],
+          fontSize: "1.75rem",
+          fontWeight: 800,
+        }}
+      >
+        Manage Reports
+      </Typography>
+    </Box>
+  );
+};
 
 const ActionButton: FC<ActionButtonProps> = ({
   reportId,
@@ -65,7 +85,6 @@ const ActionButton: FC<ActionButtonProps> = ({
     </Button>
   );
 };
-
 
 const DataGridContainer: FC<DataGridContainerProps> = ({
   filteredReports,
@@ -115,7 +134,6 @@ const DataGridContainer: FC<DataGridContainerProps> = ({
   );
 };
 
-
 const EmailCell: FC<{ email: string | null }> = ({ email }) => {
   if (!email) return <>-</>;
   
@@ -126,11 +144,9 @@ const EmailCell: FC<{ email: string | null }> = ({ email }) => {
   );
 };
 
-
 const ReporterCell: FC<{ reporter: string | null }> = ({ reporter }) => {
   return <>{reporter || "Public User"}</>;
 };
-
 
 const DateCell: FC<{ date: string }> = ({ date }) => {
   return <>{formatDate(date)}</>;
@@ -146,33 +162,40 @@ const AdminReportList: FC = () => {
   const { searchTerm } = useContext(SearchContext);
   const { drawer } = useSettingsStore(); 
 
-  
-  const [reports, setReports] = useState<Report[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [, setError] = useState<string | null>(null);
-
-  
-  const loadReports = useCallback(async () => {
+  const fetchReportsWS = async () => {
     try {
-      setLoading(true);
       const data = await fetchReports();
-      setReports(data);
-      setError(null);
+      return data;
     } catch (error) {
       console.error("Failed to fetch reports:", error);
-      setError("Failed to fetch reports. Please try again later.");
-    } finally {
-      setLoading(false);
+      return [];
     }
-  }, []);
-
+  };
+  
+  const { 
+    data: reports, 
+    loading, 
+    error,
+    refresh, 
+    isConnected 
+  } = useWebSocketChannel<Report[]>(
+    'dashboard_stats', 
+    fetchReportsWS
+  );
   
   useEffect(() => {
-    loadReports();
-  }, [loadReports]);
+    if (error) {
+      console.error(`WebSocket error: ${error}`);
+    }
+  }, [error]);
 
+  const handleReplyClick = useCallback((reportId: string) => {
+    navigate(`/admin/report-list/${reportId}/reply`);
+  }, [navigate]);
   
   const getFilteredReports = useCallback(() => {
+    if (!reports || !Array.isArray(reports)) return [];
+    
     return reports.filter((report) =>
       Object.values(report)
         .join(" ")
@@ -181,12 +204,6 @@ const AdminReportList: FC = () => {
     );
   }, [reports, searchTerm]);
 
-  
-  const handleReplyClick = useCallback((reportId: string) => {
-    navigate(`/admin/report-list/${reportId}/reply`);
-  }, [navigate]);
-
-  
   const getColumns = useCallback((): GridColDef[] => [
     { field: "id", headerName: "ID", flex: 0.5 },
     {
@@ -231,19 +248,21 @@ const AdminReportList: FC = () => {
       ),
     }
   ], [handleReplyClick]);
-
   
   const getContainerStyles = useCallback(() => ({
     height: "calc(100vh - 64px)",
     maxWidth: drawer ? `calc(100% - 3px)`: "100%",
   }), [drawer]);
-
   
   const filteredReports = getFilteredReports();
   const columns = getColumns();
 
   return (
     <Box sx={getContainerStyles()}>
+      <Header 
+        colors={colors}
+      />
+      
       <DataGridContainer 
         filteredReports={filteredReports}
         columns={columns}

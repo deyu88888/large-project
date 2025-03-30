@@ -5,7 +5,7 @@ import SocietyList from "./SocietyList";
 import SocietyListRejected from "./RejectedSocietiesList";
 import PendingSocietyRequest from "./SocietyCreationRequests";
 import PendingSocietyDetailRequests from "./PendingSocietyDetailRequest";
-
+import { useWebSocketChannel } from "../../hooks/useWebSocketChannel";
 
 interface TabPanelProps {
   children: ReactNode;
@@ -38,7 +38,6 @@ interface HeaderProps {
   colors: any;
 }
 
-
 const ACTIVE_TAB_KEY = "activeTab";
 
 const TABS: TabConfig[] = [
@@ -47,7 +46,6 @@ const TABS: TabConfig[] = [
   { label: "Rejected societies", component: <SocietyListRejected /> },
   { label: "Society detail requests", component: <PendingSocietyDetailRequests /> },
 ];
-
 
 const getTabAccessibilityProps = (index: number): TabAccessibilityProps => {
   return {
@@ -74,7 +72,6 @@ const saveTabToStorage = (tabIndex: number): void => {
   }
 };
 
-
 const CustomTabPanel: FC<TabPanelProps> = ({ children, value, index }) => {
   if (value !== index) return null;
   
@@ -89,23 +86,22 @@ const CustomTabPanel: FC<TabPanelProps> = ({ children, value, index }) => {
   );
 };
 
-
 const Header: FC<HeaderProps> = ({ colors }) => {
   return (
-    <Typography
-      variant="h1"
-      sx={{
-        color: colors.grey[100],
-        fontSize: "1.75rem",
-        fontWeight: 800,
-        marginBottom: 2
-      }}
-    >
-      Manage Societies
-    </Typography>
+    <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+      <Typography
+        variant="h1"
+        sx={{
+          color: colors.grey[100],
+          fontSize: "1.75rem",
+          fontWeight: 800,
+        }}
+      >
+        Manage Societies
+      </Typography>
+    </Box>
   );
 };
-
 
 const TabsContainer: FC<TabsContainerProps> = ({ activeTab, onTabChange, tabs }) => {
   return (
@@ -134,7 +130,6 @@ const TabsContainer: FC<TabsContainerProps> = ({ activeTab, onTabChange, tabs })
   );
 };
 
-
 const TabPanels: FC<TabPanelsProps> = ({ activeTab, tabs }) => {
   return (
     <>
@@ -151,14 +146,30 @@ const TabPanels: FC<TabPanelsProps> = ({ activeTab, tabs }) => {
   );
 };
 
-
 const ManageSocieties: FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   
-  
   const [activeTab, setActiveTab] = useState<number>(getInitialTabState);
   
+  const fetchSocietyStatus = async () => {
+    return { status: "connected" };
+  };
+
+  const { 
+    isConnected, 
+    refresh,
+    error 
+  } = useWebSocketChannel(
+    'admin_societies',
+    fetchSocietyStatus
+  );
+  
+  useEffect(() => {
+    if (error) {
+      console.error(`WebSocket error: ${error}`);
+    }
+  }, [error]);
   
   const saveTabPreference = useCallback((tabIndex: number) => {
     saveTabToStorage(tabIndex);
@@ -169,13 +180,11 @@ const ManageSocieties: FC = () => {
     saveTabPreference(newValue);
   }, [saveTabPreference]);
   
-  
   useEffect(() => {
     return () => {
       saveTabPreference(activeTab);
     };
   }, [activeTab, saveTabPreference]);
-  
   
   const containerStyle = {
     height: "calc(100vh - 64px)",
@@ -183,7 +192,9 @@ const ManageSocieties: FC = () => {
   
   return (
     <Box sx={containerStyle}>
-      <Header colors={colors} />
+      <Header 
+        colors={colors}
+      />
       
       <TabsContainer 
         activeTab={activeTab}

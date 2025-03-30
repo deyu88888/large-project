@@ -1,4 +1,4 @@
-import { useState, useEffect, FC } from "react";
+import { useState, useEffect, FC, useMemo } from "react";
 import {
   Box,
   Typography,
@@ -8,12 +8,14 @@ import {
   Card,
   CardContent,
   Divider,
+  CircularProgress,
 } from "@mui/material";
 import {
   FaUsers,
   FaCalendarAlt,
   FaEnvelope,
   FaNewspaper,
+  FaSync,
 } from "react-icons/fa";
 import Header from "../../components/Header";
 import { tokens } from "../../theme/theme";
@@ -21,6 +23,7 @@ import { apiClient } from "../../api";
 import { useSettingsStore } from "../../stores/settings-store";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../stores/auth-store";
+import { useWebSocketChannel } from "../../hooks/useWebSocketChannel";
 import {
   Event,
   Notification,
@@ -255,6 +258,7 @@ const StatsSection: FC<StatsSectionProps> = ({
 const LoadingState: FC<{ color: string }> = ({ color }) => {
   return (
     <div className="text-center">
+      <CircularProgress color="secondary" sx={{ mb: 2 }} />
       <Typography variant="h4" color={color}>
         Loading your dashboard...
       </Typography>
@@ -304,21 +308,75 @@ const AdminDashboard: FC = () => {
   const colours = tokens(theme?.palette?.mode) || {};
   const navigate = useNavigate();
 
-  const [userStats, setUserStats] = useState<UserStats | null>(null);
-  const [events, setEvents] = useState<Event[]>([]);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [pendingPublications, setPendingPublications] = useState<Publication[]>(
-    []
-  );
-  const [loading, setLoading] = useState(true);
-
   const { drawer } = useSettingsStore();
   const { user, setUser } = useAuthStore();
+  
+  
+  const fetchDashboardData = async () => {
+    try {
+      
+      const [statsResponse, eventsResponse, notificationsResponse, publicationResponse] = await Promise.all([
+        apiClient.get("/api/dashboard/stats/"),
+        apiClient.get("/api/events/all/"),
+        apiClient.get("/api/notifications/"),
+        apiClient.get("/api/news/publication-request/")
+      ]);
+      
+      
+      const pendingOnly = publicationResponse.data.filter(
+        (req: any) => req.status === "Pending"
+      );
+      
+      
+      return {
+        userStats: statsResponse.data || { totalUsers: 0 },
+        events: eventsResponse.data || [],
+        notifications: notificationsResponse.data || [],
+        pendingPublications: pendingOnly || []
+      };
+    } catch (error) {
+      console.error("Error fetching dashboard data:", error);
+      return {
+        userStats: { totalUsers: 0 },
+        events: [],
+        notifications: [],
+        pendingPublications: []
+      };
+    }
+  };
 
+  
+  const { 
+    data: dashboardData, 
+    loading, 
+    error,
+    refresh, 
+    isConnected 
+  } = useWebSocketChannel(
+    'dashboard_stats',
+    fetchDashboardData
+  );
+
+  
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  
   useEffect(() => {
-    fetchData();
+    if (error) {
+      setErrorMessage(`Error loading dashboard data: ${error}`);
+    } else {
+      setErrorMessage(null);
+    }
+  }, [error]);
+
+  
+  const userStats = dashboardData?.userStats || null;
+  const events = dashboardData?.events || [];
+  const notifications = dashboardData?.notifications || [];
+  const pendingPublications = dashboardData?.pendingPublications || [];
+
+  
+  useEffect(() => {
     fetchCurrentUser();
-    fetchPendingPublications();
   }, []);
 
   const fetchCurrentUser = async () => {
@@ -328,56 +386,6 @@ const AdminDashboard: FC = () => {
     } catch (error) {
       console.error("Error fetching current user:", error);
       setUser(null);
-    }
-  };
-
-  const fetchData = async () => {
-    await fetchUserStats();
-    await fetchEvents();
-    await fetchNotifications();
-    setLoading(false);
-  };
-
-  const fetchUserStats = async () => {
-    try {
-      const statsResponse = await apiClient.get("/api/dashboard/stats/");
-      setUserStats(statsResponse.data || {});
-    } catch (error) {
-      console.error("Error fetching user stats:", error);
-      setUserStats(null);
-    }
-  };
-
-  const fetchEvents = async () => {
-    try {
-      const eventsResponse = await apiClient.get("/api/events/all/");
-      setEvents(eventsResponse.data || []);
-    } catch (error) {
-      console.error("Error fetching events:", error);
-      setEvents([]);
-    }
-  };
-
-  const fetchNotifications = async () => {
-    try {
-      const notificationsResponse = await apiClient.get("/api/notifications/");
-      setNotifications(notificationsResponse.data || []);
-    } catch (error) {
-      console.error("Error fetching notifications:", error);
-      setNotifications([]);
-    }
-  };
-
-  const fetchPendingPublications = async () => {
-    try {
-      const response = await apiClient.get("/api/news/publication-request/");
-      const pendingOnly = response.data.filter(
-        (req: any) => req.status === "Pending"
-      );
-      setPendingPublications(pendingOnly || []);
-    } catch (error) {
-      console.error("Error fetching publication requests:", error);
-      setPendingPublications([]);
     }
   };
 
@@ -399,13 +407,30 @@ const AdminDashboard: FC = () => {
   return (
     <div style={getContainerStyle()}>
       <div style={{ maxWidth: "1600px", margin: "0 auto" }}>
-        <header className="text-center mb-16">
+        <Box
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
+          className="mb-8"
+        >
           <Header
             title={`Welcome to your Dashboard, ${user?.first_name ?? "User"}!`}
             subtitle="Manage users, societies, and more."
           />
-        </header>
-
+        </Box>
+        {errorMessage && (
+          <Paper
+            sx={{
+              p: 2,
+              mb: 3,
+              bgcolor: 'rgba(244, 67, 54, 0.1)',
+              border: '1px solid rgba(244, 67, 54, 0.3)',
+              borderRadius: 2
+            }}
+          >
+            <Typography color="error">{errorMessage}</Typography>
+          </Paper>
+        )}
         <DashboardContent
           loading={loading}
           userStats={userStats}

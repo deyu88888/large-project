@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext, useRef, useCallback, FC } from "react";
+import React, { useState, useContext, useCallback, FC } from "react";
 import {
   Box,
   useTheme,
@@ -8,7 +8,8 @@ import {
   DialogContentText,
   Dialog,
   DialogActions,
-  TextField
+  TextField,
+  Typography
 } from "@mui/material";
 import { DataGrid, GridColDef, GridToolbar, GridRenderCellParams } from "@mui/x-data-grid";
 import { apiClient, apiPaths } from "../../api";
@@ -17,11 +18,8 @@ import { useSettingsStore } from "../../stores/settings-store";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { EventPreview } from "../../components/EventPreview";
 import type { EventData } from "../../types/event/event";
-import { getWebSocketUrl } from "../../utils/websocket";
 import {mapToEventRequestData} from "../../utils/mapper.ts";
-
-const WS_URL = getWebSocketUrl();
-const RECONNECT_DELAY = 5000;
+import { useWebSocketChannel } from "../../hooks/useWebSocketChannel";
 
 interface DeleteDialogProps {
   open: boolean;
@@ -31,6 +29,33 @@ interface DeleteDialogProps {
   onCancel: () => void;
   onConfirm: () => void;
 }
+
+interface HeaderProps {
+  colors: any;
+}
+
+interface ActionButtonsProps {
+  event: EventData;
+  onView: (event: EventData) => void;
+  onDelete: (event: EventData) => void;
+}
+
+const Header: FC<HeaderProps> = ({ colors }) => {
+  return (
+    <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+      <Typography
+        variant="h1"
+        sx={{
+          color: colors.grey[100],
+          fontSize: "1.75rem",
+          fontWeight: 800,
+        }}
+      >
+        Rejected Events
+      </Typography>
+    </Box>
+  );
+};
 
 const DeleteDialog: FC<DeleteDialogProps> = ({ open, event, reason, onReasonChange, onCancel, onConfirm }) => {
   return (
@@ -60,11 +85,7 @@ const DeleteDialog: FC<DeleteDialogProps> = ({ open, event, reason, onReasonChan
   );
 };
 
-const ActionButtons: FC<{
-  event: EventData;
-  onView: (event: EventData) => void;
-  onDelete: (event: EventData) => void;
-}> = ({ event, onView, onDelete }) => (
+const ActionButtons: FC<ActionButtonsProps> = ({ event, onView, onDelete }) => (
   <Box>
     <Button onClick={() => onView(event)} variant="contained" color="primary" sx={{ mr: 1 }}>View</Button>
     <Button onClick={() => onDelete(event)} variant="contained" color="error">Delete</Button>
@@ -77,61 +98,38 @@ const EventListRejected: React.FC = () => {
   const { searchTerm } = useContext(SearchContext);
   const { drawer } = useSettingsStore();
 
-  const [events, setEvents] = useState<EventData[]>([]);
-  const [loading, setLoading] = useState(true);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<EventData | null>(null);
   const [previewEvent, setPreviewEvent] = useState<EventData | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [reason, setReason] = useState("");
 
-  const ws = useRef<WebSocket | null>(null);
-  const reconnectRef = useRef<NodeJS.Timeout | null>(null);
-
   const fetchRejectedEvents = useCallback(async () => {
     try {
-      setLoading(true);
       const res = await apiClient.get(apiPaths.EVENTS.REJECTEDEVENTLIST);
-      const mapped = (res.data ?? []).map(mapToEventRequestData);
-      setEvents(mapped);
+      return (res.data ?? []).map(mapToEventRequestData);
     } catch (err) {
       console.error("Fetch error:", err);
-    } finally {
-      setLoading(false);
+      return [];
     }
   }, []);
 
-  const connectWebSocket = useCallback(() => {
-    if (ws.current) ws.current.close();
-    if (reconnectRef.current) clearTimeout(reconnectRef.current);
+  const { 
+    data: events = [], // Provide a default empty array
+    loading, 
+    error, 
+    refresh, 
+    isConnected 
+  } = useWebSocketChannel<EventData[]>(
+    'admin_events', 
+    fetchRejectedEvents
+  );
 
-    ws.current = new WebSocket(WS_URL);
-
-    ws.current.onopen = () => console.log("WebSocket connected");
-    ws.current.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        console.log("Update received:", data);
-        fetchRejectedEvents();
-      } catch (err) {
-        console.error("Parse error:", err);
-      }
-    };
-    ws.current.onerror = (e) => console.error("WebSocket error:", e);
-    ws.current.onclose = (e) => {
-      console.log("WebSocket closed:", e.reason);
-      reconnectRef.current = setTimeout(() => connectWebSocket(), RECONNECT_DELAY);
-    };
-  }, [fetchRejectedEvents]);
-
-  useEffect(() => {
-    fetchRejectedEvents();
-    connectWebSocket();
-    return () => {
-      if (ws.current) ws.current.close();
-      if (reconnectRef.current) clearTimeout(reconnectRef.current);
-    };
-  }, [fetchRejectedEvents, connectWebSocket]);
+  React.useEffect(() => {
+    if (error) {
+      console.error(`WebSocket error: ${error}`);
+    }
+  }, [error]);
 
   const handleView = (event: EventData) => {
     setPreviewEvent(event);
@@ -151,7 +149,8 @@ const EventListRejected: React.FC = () => {
         url: apiPaths.USER.DELETE("Event", selectedEvent.eventId),
         data: { reason },
       });
-      await fetchRejectedEvents();
+      
+      refresh();
     } catch (e) {
       console.error("Delete error:", e);
     } finally {
@@ -161,7 +160,10 @@ const EventListRejected: React.FC = () => {
     }
   };
 
-  const filteredEvents = events.filter((event) =>
+  // Make sure events is always an array
+  const eventsArray = Array.isArray(events) ? events : [];
+  
+  const filteredEvents = eventsArray.filter((event) =>
     `${event.eventId} ${event.title} ${event.date} ${event.startTime} ${event.duration} ${event.hostedBy} ${event.location}`
       .toLowerCase()
       .includes((searchTerm || "").toLowerCase())
@@ -193,6 +195,10 @@ const EventListRejected: React.FC = () => {
 
   return (
     <Box sx={{ height: "calc(100vh - 64px)", maxWidth: drawer ? `calc(100% - 3px)` : "100%" }}>
+      <Header 
+        colors={colors}
+      />
+      
       <Box
         sx={{
           height: "78vh",
