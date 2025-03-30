@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useContext, useCallback } from "react";
-import { Box, useTheme, Button, Alert, Snackbar, Typography } from "@mui/material";
+import { Box, useTheme, Button, Alert, Snackbar } from "@mui/material";
 import { DataGrid, GridRenderCellParams, GridToolbar } from "@mui/x-data-grid";
 import { apiClient, apiPaths } from "../../api";
 import { tokens } from "../../theme/theme";
@@ -7,7 +7,7 @@ import { useSettingsStore } from "../../stores/settings-store";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { SocietyPreview } from "../../components/SocietyPreview";
 import { SocietyDetailRequest } from "../../types/admin/society";
-import { useWebSocketChannel } from "../../hooks/useWebSocketChannel";
+
 
 interface AlertState {
   open: boolean;
@@ -34,42 +34,16 @@ const PendingSocietyDetailRequests: React.FC = () => {
   const { drawer } = useSettingsStore();
   const [openPreview, setOpenPreview] = useState<boolean>(false);
   const [selectedRequest, setSelectedRequest] = useState<SocietyDetailRequest | null>(null);
+  const [detailRequests, setDetailRequests] = useState<SocietyDetailRequest[]>([]);
 
-  const fetchSocietyDetailRequestsWS = async () => {
-    try {
-      return await fetchPendingSocietyDetailRequests();
-    } catch (error) {
-      console.error("Error fetching society detail requests:", error);
-      return [];
-    }
+  const fetchData = async () => {
+    const data = await fetchPendingSocietyDetailRequests();
+    setDetailRequests(data);
   };
-  
-  const { 
-    data: detailRequests, 
-    loading, 
-    error: wsError, 
-    refresh, 
-    isConnected 
-  } = useWebSocketChannel<SocietyDetailRequest[]>(
-    'admin_societies', 
-    fetchSocietyDetailRequestsWS
-  );
-  
-  const [alert, setAlert] = useState<AlertState>({
-    open: false,
-    message: '',
-    severity: 'success'
-  });
-  
+
   useEffect(() => {
-    if (wsError) {
-      setAlert({
-        open: true,
-        message: `WebSocket error: ${wsError}`,
-        severity: 'error'
-      });
-    }
-  }, [wsError]);
+    fetchData();
+  }, []);
 
   const filteredDetailRequests = Array.isArray(detailRequests)
     ? detailRequests.filter((request) => {
@@ -96,9 +70,7 @@ const PendingSocietyDetailRequests: React.FC = () => {
   const handleAccept = async (id: number) => {
     try {
       await apiClient.put(`${apiPaths.SOCIETY.DETAIL_REQUEST}${id}/`, { status: "Approved" });
-      
-      refresh();
-      
+      setDetailRequests((prev) => prev.filter((request) => request.id !== id));
       setAlert({
         open: true,
         message: `Society detail request approved successfully.`,
@@ -117,9 +89,7 @@ const PendingSocietyDetailRequests: React.FC = () => {
   const handleReject = async (id: number) => {
     try {
       await apiClient.put(`${apiPaths.SOCIETY.DETAIL_REQUEST}${id}/`, { status: "Rejected" });
-      
-      refresh();
-      
+      setDetailRequests((prev) => prev.filter((request) => request.id !== id));
       setAlert({
         open: true,
         message: `Society detail request rejected successfully.`,
@@ -134,6 +104,13 @@ const PendingSocietyDetailRequests: React.FC = () => {
       });
     }
   };
+
+  // State for alerts/notifications
+  const [alert, setAlert] = useState<AlertState>({
+    open: false,
+    message: '',
+    severity: 'success'
+  });
 
   const handleCloseAlert = useCallback(() => {
     setAlert(prev => ({ ...prev, open: false }));
@@ -247,7 +224,6 @@ const PendingSocietyDetailRequests: React.FC = () => {
           columns={columns}
           slots={{ toolbar: GridToolbar }}
           autoHeight
-          loading={loading}
           resizeThrottleMs={0}
           disableRowSelectionOnClick
         />

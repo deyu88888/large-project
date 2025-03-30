@@ -3,8 +3,7 @@ import {
   Box, 
   Button, 
   useTheme, 
-  Alert,
-  Typography
+  Alert 
 } from "@mui/material";
 import { DataGrid, GridColDef, GridToolbar, GridRenderCellParams } from "@mui/x-data-grid";
 import { tokens } from "../../theme/theme";
@@ -12,7 +11,7 @@ import { SearchContext } from "../../components/layout/SearchContext";
 import { useSettingsStore } from "../../stores/settings-store";
 import { apiClient } from "../../api";
 import { useNavigate } from 'react-router-dom';
-import { useWebSocketChannel } from "../../hooks/useWebSocketChannel";
+
 
 interface ReportWithReplies {
   id: number | string;
@@ -42,26 +41,6 @@ interface ErrorAlertProps {
   message: string;
 }
 
-interface HeaderProps {
-  colors: ReturnType<typeof tokens>;
-}
-
-const Header: React.FC<HeaderProps> = ({ colors }) => {
-  return (
-    <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-      <Typography
-        variant="h1"
-        sx={{
-          color: colors.grey[100],
-          fontSize: "1.75rem",
-          fontWeight: 800,
-        }}
-      >
-        Reports With Replies
-      </Typography>
-    </Box>
-  );
-};
 
 const filterReportsBySearchTerm = (reports: ReportWithReplies[], searchTerm: string): ReportWithReplies[] => {
   if (!searchTerm) return reports;
@@ -84,15 +63,10 @@ const formatDateString = (dateStr: string): string => {
   }
 };
 
+
 const fetchReportReplies = async (): Promise<ReportWithReplies[]> => {
-  try {
-    const response = await apiClient.get("/api/admin/reports-replied");
-    
-    return Array.isArray(response.data) ? response.data : [];
-  } catch (error) {
-    console.error("Error fetching reports with replies:", error);
-    throw error;
-  }
+  const response = await apiClient.get("/api/admin/reports-replied");
+  return response.data || [];
 };
 
 const ErrorAlert: React.FC<ErrorAlertProps> = ({ message }) => {
@@ -125,8 +99,6 @@ const ActionButton: React.FC<{ reportId: string | number; onClick: (id: string |
 };
 
 const DataGridContainer: React.FC<DataGridContainerProps> = ({ reports, columns, loading, colors }) => {
-  const safeReports = Array.isArray(reports) ? reports : [];
-  
   return (
     <Box
       sx={{
@@ -157,7 +129,7 @@ const DataGridContainer: React.FC<DataGridContainerProps> = ({ reports, columns,
       }}
     >
       <DataGrid
-        rows={safeReports}
+        rows={reports}
         columns={columns}
         slots={{ toolbar: GridToolbar }}
         resizeThrottleMs={0}
@@ -171,6 +143,7 @@ const DataGridContainer: React.FC<DataGridContainerProps> = ({ reports, columns,
     </Box>
   );
 };
+
 
 const createReportColumns = (
   handleViewThread: (id: string | number) => void,
@@ -190,12 +163,7 @@ const createReportColumns = (
       field: "latest_reply_date",
       headerName: "Latest Reply Date",
       flex: 1.5,
-      valueFormatter: (params) => {
-        if (!params || params.value === undefined || params.value === null) {
-          return "No date";
-        }
-        return formatDateString(params.value);
-      },
+      valueFormatter: (params: { value: string }) => formatDateString(params.value),
     },
     {
       field: "action",
@@ -212,6 +180,7 @@ const createReportColumns = (
   ];
 };
 
+
 const ReportRepliedList: React.FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
@@ -219,53 +188,25 @@ const ReportRepliedList: React.FC = () => {
   const { searchTerm } = useContext(SearchContext);
   const { drawer } = useSettingsStore();
   
+  
   const [reportState, setReportState] = useState<ReportState>({
     items: [],
     loading: true,
     error: null
   });
+
   
-  const [isConnected, setIsConnected] = useState(false);
-  
-  const { 
-    data: wsData, 
-    isConnected: wsConnected, 
-    refresh: wsRefresh, 
-    error: wsError
-  } = useWebSocketChannel<ReportWithReplies[]>(
-    'admin_reports', 
-    fetchReportReplies
-  );
-  
-  useEffect(() => {
-    if (wsData) {
-      const safeData = Array.isArray(wsData) ? wsData : [];
-      setReportState(prev => ({
-        ...prev,
-        items: safeData,
-        loading: false
-      }));
-    }
-    
-    setIsConnected(wsConnected);
-    
-    if (wsError) {
-      setReportState(prev => ({
-        ...prev,
-        error: wsError
-      }));
-    }
-  }, [wsData, wsConnected, wsError]);
-  
+  const handleViewThread = useCallback((reportId: string | number) => {
+    navigate(`/admin/report-thread/${reportId}`);
+  }, [navigate]);
+
   const loadReportReplies = useCallback(async () => {
     setReportState(prev => ({ ...prev, loading: true }));
     
     try {
       const data = await fetchReportReplies();
-      
-      const safeData = Array.isArray(data) ? data : [];
       setReportState({
-        items: safeData,
+        items: data,
         loading: false,
         error: null
       });
@@ -278,36 +219,29 @@ const ReportRepliedList: React.FC = () => {
       });
     }
   }, []);
-  
-  const handleRefresh = useCallback(() => {
-    wsRefresh();
-    loadReportReplies();
-  }, [wsRefresh, loadReportReplies]);
+
   
   useEffect(() => {
     loadReportReplies();
   }, [loadReportReplies]);
+
   
-  const handleViewThread = useCallback((reportId: string | number) => {
-    navigate(`/admin/report-thread/${reportId}`);
-  }, [navigate]);
-  
-  const filteredReports = useMemo(() => {
-    const items = reportState.items || [];
-    
-    const safeItems = Array.isArray(items) ? items : [];
-    
-    return filterReportsBySearchTerm(safeItems, searchTerm || '');
-  }, [reportState.items, searchTerm]);
+  const filteredReports = useMemo(() => 
+    filterReportsBySearchTerm(reportState.items, searchTerm || ''),
+    [reportState.items, searchTerm]
+  );
+
   
   const columns = useMemo(() => 
     createReportColumns(handleViewThread),
     [handleViewThread]
   );
+
   
   if (reportState.error && !reportState.items.length) {
     return <FullPageErrorAlert message={reportState.error} />;
   }
+
   
   return (
     <Box
@@ -316,10 +250,6 @@ const ReportRepliedList: React.FC = () => {
         maxWidth: drawer ? `calc(100% - 3px)` : "100%",
       }}
     >
-      <Header 
-        colors={colors}
-      />
-      
       {reportState.error && <ErrorAlert message={reportState.error} />}
       
       <DataGridContainer 

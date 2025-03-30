@@ -4,10 +4,11 @@ import { DataGrid, GridColDef, GridToolbar, GridRenderCellParams } from "@mui/x-
 import { tokens } from "../../theme/theme";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { useSettingsStore } from "../../stores/settings-store";
+import { useFetchWebSocket } from "../../hooks/useFetchWebSocket";
 import { updateRequestStatus } from "../../api/requestApi";
 import { apiPaths } from "../../api";
 import { fetchPendingRequests } from "./utils";
-import { useWebSocketChannel } from "../../hooks/useWebSocketChannel";
+
 
 interface Society {
   id: number;
@@ -57,26 +58,6 @@ interface DataGridContainerProps {
   drawer: boolean;
 }
 
-interface HeaderProps {
-  colors: ReturnType<typeof tokens>;
-}
-
-const Header: React.FC<HeaderProps> = ({ colors }) => {
-  return (
-    <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-      <Typography
-        variant="h1"
-        sx={{
-          color: colors.grey[100],
-          fontSize: "1.75rem",
-          fontWeight: 800,
-        }}
-      >
-        Pending Society Requests
-      </Typography>
-    </Box>
-  );
-};
 
 const processSocietyMembers = (society: Society): ProcessedSociety => {
   return {
@@ -106,6 +87,7 @@ const filterSocietiesBySearchTerm = (societies: ProcessedSociety[], searchTerm: 
     return searchString.includes(normalizedSearchTerm);
   });
 };
+
 
 const TruncatedCell: React.FC<TruncatedCellProps> = ({ value }) => {
   return (
@@ -178,7 +160,7 @@ const DataGridContainer: React.FC<DataGridContainerProps> = ({
   return (
     <Box
       sx={{
-        height: "calc(100vh - 64px - 52px)", 
+        height: "calc(100vh - 64px)",
         maxWidth: drawer ? `calc(100% - 3px)`: "100%",
       }}
     >
@@ -224,6 +206,7 @@ const DataGridContainer: React.FC<DataGridContainerProps> = ({
     </Box>
   );
 };
+
 
 const createSocietyColumns = (
   handleStatusChange: (id: number, status: "Approved" | "Rejected") => void
@@ -283,55 +266,27 @@ const createSocietyColumns = (
   ];
 };
 
+
 const PendingSocietyRequest: React.FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const { searchTerm } = useContext(SearchContext);
   const { drawer } = useSettingsStore();
   
-  const [localSocieties, setLocalSocieties] = useState<Society[]>([]);
+  
+  const [societies, setSocieties] = useState<Society[]>([]);
   const [notification, setNotification] = useState<NotificationState>({
     open: false,
     message: '',
     severity: 'success'
   });
   
-  const fetchSocietyData = useCallback(async () => {
-    try {
-      const data = await fetchPendingRequests(apiPaths.USER.PENDINGSOCIETYREQUEST);
-      return data || [];
-    } catch (error) {
-      console.error("Error fetching pending society requests:", error);
-      return [];
-    }
-  }, []);
   
-  const { 
-    data: societies, 
-    loading, 
-    error: wsError, 
-    refresh, 
-    isConnected 
-  } = useWebSocketChannel<Society[]>(
-    'admin_societies', 
-    fetchSocietyData
-  );
+  const fetchedSocieties = useFetchWebSocket<Society[]>(
+    () => fetchPendingRequests(apiPaths.USER.PENDINGSOCIETYREQUEST), 
+    'society'
+  ).flatMap;
   
-  useEffect(() => {
-    if (wsError) {
-      setNotification({
-        open: true,
-        message: `WebSocket error: ${wsError}`,
-        severity: 'error'
-      });
-    }
-  }, [wsError]);
-  
-  useEffect(() => {
-    if (societies) {
-      setLocalSocieties(societies);
-    }
-  }, [societies]);
   
   const handleCloseNotification = useCallback(() => {
     setNotification(prev => ({ ...prev, open: false }));
@@ -346,38 +301,56 @@ const PendingSocietyRequest: React.FC = () => {
   }, []);
 
   const updateSocietiesAfterStatusChange = useCallback((societyId: number) => {
-    setLocalSocieties(prevSocieties => 
+    setSocieties(prevSocieties => 
       prevSocieties.filter(society => society.id !== societyId)
     );
   }, []);
 
   const handleStatusChange = useCallback(async (id: number, status: "Approved" | "Rejected") => {
     try {
+      
       updateSocietiesAfterStatusChange(id);
       
+      
       await updateRequestStatus(id, status, apiPaths.USER.PENDINGSOCIETYREQUEST);
+      
       
       showNotification(
         `Society ${status === "Approved" ? "approved" : "rejected"} successfully.`, 
         'success'
       );
-      
-      refresh();
     } catch (error) {
       console.error(`Error updating society status:`, error);
+      
       
       showNotification(
         `Failed to ${status.toLowerCase()} society request.`, 
         'error'
       );
       
-      refresh();
+      
+      recoverSocietyData();
     }
-  }, [updateSocietiesAfterStatusChange, showNotification, refresh]);
+  }, [updateSocietiesAfterStatusChange, showNotification]);
+
+  const recoverSocietyData = useCallback(async () => {
+    const data = await fetchPendingRequests(apiPaths.USER.PENDINGSOCIETYREQUEST);
+    if (Array.isArray(data)) {
+      setSocieties(data);
+    }
+  }, []);
+
+  
+  useEffect(() => {
+    if (Array.isArray(fetchedSocieties)) {
+      setSocieties(fetchedSocieties);
+    }
+  }, [fetchedSocieties]);
+
   
   const processedSocieties = useMemo(() => 
-    processSocieties(localSocieties),
-    [localSocieties]
+    processSocieties(societies),
+    [societies]
   );
 
   const filteredSocieties = useMemo(() => 
@@ -389,18 +362,15 @@ const PendingSocietyRequest: React.FC = () => {
     createSocietyColumns(handleStatusChange),
     [handleStatusChange]
   );
+
   
   return (
-    <Box sx={{ height: "calc(100vh - 64px)", maxWidth: drawer ? `calc(100% - 3px)` : "100%" }}>
-      <Header 
-        colors={colors}
-      />
-      
+    <>
       <DataGridContainer 
         societies={filteredSocieties}
         columns={columns}
         colors={colors}
-        loading={loading}
+        loading={societies.length === 0}
         drawer={drawer}
       />
 
@@ -408,7 +378,7 @@ const PendingSocietyRequest: React.FC = () => {
         notification={notification}
         onClose={handleCloseNotification}
       />
-    </Box>
+    </>
   );
 };
 

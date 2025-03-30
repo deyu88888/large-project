@@ -18,7 +18,7 @@ import { SearchContext } from "../../components/layout/SearchContext";
 import { useSettingsStore } from "../../stores/settings-store";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../stores/auth-store";
-import { useWebSocketChannel } from "../../hooks/useWebSocketChannel";
+
 
 interface AdminUser {
   id: number;
@@ -51,7 +51,6 @@ interface DataGridContainerProps {
   columns: GridColDef[];
   colors: any;
   drawer: boolean;
-  loading: boolean;
 }
 
 interface ActionButtonsProps {
@@ -62,29 +61,29 @@ interface ActionButtonsProps {
   onDelete: (admin: AdminUser) => void;
 }
 
+
 const Header: FC<HeaderProps> = ({ colors, theme }) => {
   return (
-    <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-      <Typography
-        variant="h1"
-        sx={{
-          color: theme.palette.mode === "light" ? colors.grey[100] : colors.grey[100],
-          fontSize: "1.75rem",
-          fontWeight: 800,
-        }}
-      >
-        Admin List
-      </Typography>
-    </Box>
+    <Typography
+      variant="h1"
+      sx={{
+        color: theme.palette.mode === "light" ? colors.grey[100] : colors.grey[100],
+        fontSize: "1.75rem",
+        fontWeight: 800,
+        marginBottom: "1rem",
+      }}
+    >
+      Admin List
+    </Typography>
   );
 };
+
 
 const DataGridContainer: FC<DataGridContainerProps> = ({ 
   filteredAdmins, 
   columns, 
   colors,
-  drawer,
-  loading
+  drawer
 }) => {
   const dataGridStyles = {
     height: "78vh",
@@ -128,7 +127,6 @@ const DataGridContainer: FC<DataGridContainerProps> = ({
           resizeThrottleMs={0}
           autoHeight
           getRowId={(row) => row.id}
-          loading={loading}
           initialState={{
             pagination: {
               paginationModel: { pageSize: 25, page: 0 },
@@ -140,6 +138,7 @@ const DataGridContainer: FC<DataGridContainerProps> = ({
     </Box>
   );
 };
+
 
 const DeleteDialog: FC<DeleteDialogProps> = ({ 
   open, 
@@ -173,17 +172,14 @@ const DeleteDialog: FC<DeleteDialogProps> = ({
         <Button onClick={onClose} color="primary">
           Cancel
         </Button>
-        <Button 
-          onClick={onConfirm} 
-          color="error"
-          disabled={!reason.trim()}
-        >
+        <Button onClick={onConfirm} color="error">
           Confirm
         </Button>
       </DialogActions>
     </Dialog>
   );
 };
+
 
 const ActionButtons: FC<ActionButtonsProps> = ({ 
   adminId, 
@@ -215,6 +211,7 @@ const ActionButtons: FC<ActionButtonsProps> = ({
   );
 };
 
+
 const AdminList: FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
@@ -223,36 +220,23 @@ const AdminList: FC = () => {
   const { drawer } = useSettingsStore();
   const { user, setUser } = useAuthStore();
 
+  const [admins, setAdmins] = useState<AdminUser[]>([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedAdmin, setSelectedAdmin] = useState<AdminUser | null>(null);
   const [reason, setReason] = useState('');
   
-  const fetchAdminUsers = async () => {
+  const isSuperAdmin = user?.is_super_admin === true;
+  const actionsColumnWidth = isSuperAdmin ? 170 : 85;
+
+  const fetchAdmins = async () => {
     try {
       const res = await apiClient.get(apiPaths.USER.ADMIN);
-      return res.data.filter((user: any) => user.role === "admin");
+      const adminUsers = res.data.filter((user: any) => user.role === "admin");
+      setAdmins(adminUsers);
     } catch (error) {
       console.error("Error fetching admins:", error);
-      return [];
     }
   };
-
-  const { 
-    data: admins, 
-    loading, 
-    error, 
-    refresh, 
-    isConnected 
-  } = useWebSocketChannel<AdminUser[]>(
-    'dashboard_stats', 
-    fetchAdminUsers
-  );
-  
-  useEffect(() => {
-    if (error) {
-      console.error(`WebSocket error: ${error}`);
-    }
-  }, [error]);
   
   const fetchCurrentUser = async () => {
     try {
@@ -264,15 +248,11 @@ const AdminList: FC = () => {
   };
 
   useEffect(() => {
+    fetchAdmins();
     fetchCurrentUser();
   }, []);
 
-  const isSuperAdmin = user?.is_super_admin === true;
-  const actionsColumnWidth = isSuperAdmin ? 170 : 85;
-
   const getFilteredAdmins = () => {
-    if (!admins || !Array.isArray(admins)) return [];
-    
     return admins.filter((admin) =>
       Object.values(admin)
         .join(" ")
@@ -301,7 +281,7 @@ const AdminList: FC = () => {
   };
 
   const handleConfirmDelete = async () => {
-    if (selectedAdmin === null || !reason.trim()) return;
+    if (selectedAdmin === null) return;
     
     try {
       await apiClient.request({
@@ -309,8 +289,7 @@ const AdminList: FC = () => {
         url: apiPaths.USER.DELETE("Admin", selectedAdmin.id),
         data: { reason },
       });
-      
-      await refresh();
+      await fetchAdmins();
     } catch (error) {
       console.error("Error deleting admin:", error);
     }
@@ -365,17 +344,15 @@ const AdminList: FC = () => {
         maxWidth: drawer ? `calc(100% - 3px)` : "100%",
       }}
     >
-      <Header
-        colors={colors}
-        theme={theme}
-      />
-      <DataGridContainer
+      <Header colors={colors} theme={theme} />
+      
+      <DataGridContainer 
         filteredAdmins={filteredAdmins}
         columns={columns}
         colors={colors}
         drawer={drawer}
-        loading={loading}
       />
+      
       <DeleteDialog
         open={openDialog}
         admin={selectedAdmin}

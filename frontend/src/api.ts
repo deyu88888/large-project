@@ -35,8 +35,7 @@ apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem(ACCESS_TOKEN);
     console.log("Request URL:", config.url);
-    // Ensure proper URL formatting with a slash between base URL and path
-    console.log("Full URL:", apiUrl + (config.url?.startsWith('/') ? config.url : '/' + config.url));
+    console.log("Full URL:", apiUrl + config.url);
     console.log("Authorization Token:", token);
 
     if (token && isTokenValid(token)) {
@@ -104,10 +103,10 @@ export const apiPaths = {
   },
   EVENTS: {
     ALL: "/api/events",
-    PENDINGEVENTREQUEST: "/api/admin/society/event/pending",
-    UPDATEENEVENTREQUEST: "/api/admin/society/event/request",
-    APPROVEDEVENTLIST: "/api/admin/society/event/approved",
-    REJECTEDEVENTLIST: "/api/admin/society/event/rejected",
+    PENDINGEVENTREQUEST: "api/admin/society/event/pending",
+    UPDATEENEVENTREQUEST: "api/admin/society/event/request",
+    APPROVEDEVENTLIST: "api/admin/society/event/approved",
+    REJECTEDEVENTLIST: "api/admin/society/event/rejected",
   },
 };
 

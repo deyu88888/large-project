@@ -1,5 +1,5 @@
-import React, { useContext, useCallback, useState, useMemo, useEffect } from "react";
-import { Box, useTheme, Button, Snackbar, Alert, Typography } from "@mui/material";
+import React, { useContext, useCallback, useState, useMemo } from "react";
+import { Box, useTheme, Button, Snackbar, Alert } from "@mui/material";
 import {
   DataGrid,
   GridColDef,
@@ -9,13 +9,13 @@ import {
 import { tokens } from "../../theme/theme";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { useSettingsStore } from "../../stores/settings-store";
+import { useFetchWebSocket } from "../../hooks/useFetchWebSocket";
 import { fetchPendingRequests } from "./utils";
 import { apiPaths } from "../../api";
 import { updateRequestStatus } from "../../api/requestApi";
 import { EventPreview } from "../../components/EventPreview";
 import type { EventData, ExtraModule } from "../../types/event/event";
-import { mapToEventRequestData } from "../../utils/mapper.ts";
-import { useWebSocketChannel } from "../../hooks/useWebSocketChannel";
+import {mapToEventRequestData} from "../../utils/mapper.ts";
 
 interface AlertState {
   open: boolean;
@@ -40,7 +40,6 @@ interface DataGridCustomProps {
   columns: GridColDef[];
   drawer: boolean;
   colors: ReturnType<typeof tokens>;
-  loading: boolean;
 }
 
 const filterEventsBySearchTerm = (
@@ -120,7 +119,7 @@ const EventNotification: React.FC<EventNotificationProps> = ({ alert, onClose })
   );
 };
 
-const EventsDataGrid: React.FC<DataGridCustomProps> = ({ events, columns, colors, loading }) => {
+const EventsDataGrid: React.FC<DataGridCustomProps> = ({ events, columns, colors }) => {
   return (
     <Box
       sx={{
@@ -154,7 +153,6 @@ const EventsDataGrid: React.FC<DataGridCustomProps> = ({ events, columns, colors
         slots={{ toolbar: GridToolbar }}
         resizeThrottleMs={0}
         autoHeight
-        loading={loading}
         disableRowSelectionOnClick
         initialState={{
           pagination: { paginationModel: { pageSize: 100 } },
@@ -178,39 +176,13 @@ const PendingEventRequest: React.FC = () => {
     severity: "success",
   });
 
-  const fetchPendingEventData = async () => {
-    try {
-      const data = await fetchPendingRequests(apiPaths.EVENTS.PENDINGEVENTREQUEST);
-      return data || [];
-    } catch (error) {
-      console.error("Error fetching pending events:", error);
-      return [];
-    }
-  };
-  
-  const { 
-    data: pendingData, 
-    loading, 
-    error: wsError, 
-    refresh, 
-    isConnected 
-  } = useWebSocketChannel<any[]>(
-    'admin_events', 
-    fetchPendingEventData
+  const pendingData = useFetchWebSocket<any[]>(
+    () => fetchPendingRequests(apiPaths.EVENTS.PENDINGEVENTREQUEST),
+    "event"
   );
-  
-  useEffect(() => {
-    if (wsError) {
-      setAlert(createErrorAlert(`WebSocket error: ${wsError}`));
-    }
-  }, [wsError]);
 
   const events: EventData[] = useMemo(() => {
-    // Add a safety check to ensure pendingData is an array before mapping
-    if (!pendingData || !Array.isArray(pendingData)) {
-      return [];
-    }
-    return pendingData.map(mapToEventRequestData);
+    return (pendingData ?? []).map(mapToEventRequestData);
   }, [pendingData]);
 
   const handleViewEvent = useCallback((event: EventData) => {
@@ -223,14 +195,12 @@ const PendingEventRequest: React.FC = () => {
       try {
         await updateRequestStatus(id, status, apiPaths.EVENTS.UPDATEENEVENTREQUEST);
         setAlert(createSuccessAlert(`Event ${status.toLowerCase()} successfully.`));
-        
-        refresh();
       } catch (error) {
         console.error(`Error updating event status:`, error);
         setAlert(createErrorAlert(`Failed to ${status.toLowerCase()} event.`));
       }
     },
-    [refresh]
+    []
   );
 
   const handleCloseAlert = useCallback(() => {
@@ -282,7 +252,6 @@ const PendingEventRequest: React.FC = () => {
         columns={columns}
         drawer={drawer}
         colors={colors}
-        loading={loading}
       />
 
       <EventNotification alert={alert} onClose={handleCloseAlert} />

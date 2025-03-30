@@ -4,7 +4,7 @@ import { tokens } from "../../theme/theme";
 import EventList from "./AdminEventList";
 import EventListRejected from "./RejectedEventsList";
 import PendingEventRequest from "./PendingEventRequest";
-import { useWebSocketChannel } from "../../hooks/useWebSocketChannel";
+
 
 interface TabPanelProps {
   children: ReactNode;
@@ -37,6 +37,7 @@ interface PageHeaderProps {
   colors: any;
 }
 
+
 const ACTIVE_TAB_KEY = "activeEventTab";
 
 const TABS: TabConfig[] = [
@@ -45,12 +46,14 @@ const TABS: TabConfig[] = [
   { label: "Rejected events", component: <EventListRejected /> },
 ];
 
+
 const getTabAccessibilityProps = (index: number): TabAccessibilityProps => {
   return {
     id: `event-tab-${index}`,
     'aria-controls': `event-tabpanel-${index}`,
   };
 };
+
 
 const getInitialTabState = (): number => {
   try {
@@ -70,8 +73,10 @@ const saveTabState = (newValue: number): void => {
   }
 };
 
+
 const CustomTabPanel: FC<TabPanelProps> = ({ children, value, index }) => {
   if (value !== index) return null;
+  
   return (
     <Box
       role="tabpanel"
@@ -83,22 +88,23 @@ const CustomTabPanel: FC<TabPanelProps> = ({ children, value, index }) => {
   );
 };
 
+
 const PageHeader: FC<PageHeaderProps> = ({ colors }) => {
   return (
-    <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-      <Typography
-        variant="h1"
-        sx={{
-          color: colors.grey[100],
-          fontSize: "1.75rem",
-          fontWeight: 800
-        }}
-      >
-        Manage Events
-      </Typography>
-    </Box>
+    <Typography
+      variant="h1"
+      sx={{
+        color: colors.grey[100],
+        fontSize: "1.75rem",
+        fontWeight: 800,
+        marginBottom: 2
+      }}
+    >
+      Manage Events
+    </Typography>
   );
 };
+
 
 const TabContainer: FC<TabContainerProps> = ({ activeTab, handleTabChange, tabs }) => {
   return (
@@ -127,6 +133,7 @@ const TabContainer: FC<TabContainerProps> = ({ activeTab, handleTabChange, tabs 
   );
 };
 
+
 const TabPanels: FC<TabPanelsProps> = ({ activeTab, tabs }) => {
   return (
     <>
@@ -143,44 +150,33 @@ const TabPanels: FC<TabPanelsProps> = ({ activeTab, tabs }) => {
   );
 };
 
+
 const ManageEvents: FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
+  
   const [activeTab, setActiveTab] = useState<number>(getInitialTabState);
-
-  const fetchEventManagementStatus = async () => {
-    return { status: "connected" };
-  };
-
-  // Still keep the WebSocket connection for data updates
-  const { 
-    isConnected, 
-    refresh 
-  } = useWebSocketChannel(
-    'admin_events', 
-    fetchEventManagementStatus
-  );
-
+  
   const handleTabChange = useCallback((_: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
     saveTabState(newValue);
   }, []);
-
+  
   const containerStyle = {
     height: "calc(100vh - 64px)",
   };
-
+  
   return (
     <Box sx={containerStyle}>
-      <PageHeader
-        colors={colors}
-      />
-      <TabContainer
+      <PageHeader colors={colors} />
+      
+      <TabContainer 
         activeTab={activeTab}
         handleTabChange={handleTabChange}
         tabs={TABS}
       />
-      <TabPanels
+      
+      <TabPanels 
         activeTab={activeTab}
         tabs={TABS}
       />
