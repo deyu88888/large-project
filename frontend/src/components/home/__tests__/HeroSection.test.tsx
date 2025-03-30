@@ -87,12 +87,20 @@ describe('HeroSection', () => {
     
     
     expect(screen.getByText('Welcome to Infinite Loop Innovators')).toBeDefined();
-    expect(screen.getByText('Discover societies, events, and latest news all in one place')).toBeDefined();
+    expect(screen.getByText('Explore a hub of vibrant student societies, exciting events, and real-time campus happenings.')).toBeDefined();
     
+    expect(screen.getByText('Find Your People, Join Their Societies')).toBeDefined();
+    expect(screen.getByText('See what your friends are part of and jump into the events and communities they love!')).toBeDefined();
     
-    expect(screen.getByText('Featured Content 1')).toBeDefined();
-  });
+    expect(screen.getByText('Upcoming Events You Can’t Miss')).toBeDefined();
+    expect(screen.getByText('Mark your calendar! Keynotes, hackathons, and game nights are just around the corner.')).toBeDefined();  
 
+    expect(screen.getByText('Start Your Own Society')).toBeDefined();
+    expect(screen.getByText('Got an idea? Launch your own student society in just a few clicks. We’ll help you grow it.')).toBeDefined(); 
+  });
+    
+
+    
   it('renders breadcrumbs when provided', () => {
     const breadcrumbs = [
       { label: 'Home', href: '/' },
