@@ -24,7 +24,6 @@ import { useTheme } from "@mui/material/styles";
 import { apiClient, apiPaths } from "../../api";
 import { tokens } from "../../theme/theme";
 import { Society } from "../../types";
-import { useWebSocketChannel } from "../../hooks/useWebSocketChannel";
 
 interface FormErrors {
   name?: string;
@@ -38,6 +37,14 @@ interface Notification {
   open: boolean;
   message: string;
   severity: "success" | "error" | "info" | "warning";
+}
+
+interface SocietyFormState {
+  society: Society | null;
+  formData: Society | null;
+  loading: boolean;
+  saving: boolean;
+  errors: FormErrors;
 }
 
 interface TextFieldProps {
@@ -92,15 +99,10 @@ interface SocietyFormProps {
 }
 
 const fetchSocietyData = async (societyId: number): Promise<Society> => {
-  try {
-    const response = await apiClient.get(
-      apiPaths.USER.ADMINSOCIETYVIEW(societyId)
-    );
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching society details:", error);
-    throw error;
-  }
+  const response = await apiClient.get(
+    apiPaths.USER.ADMINSOCIETYVIEW(societyId)
+  );
+  return response.data;
 };
 
 const updateSocietyData = async (
@@ -388,14 +390,14 @@ const SocietyForm: React.FC<SocietyFormProps> = ({
       <form onSubmit={onSubmit}>
         <Grid container>
           {/* Upload Icon */}
-          <Grid item md={6} xs={12}>
+          <Grid size={{ md: 6, xs: 12 }}>
             <FileUpload
               onFileChange={onFileChange}
               currentIcon={formData.icon}
             />
           </Grid>
           <Grid container spacing={3}>
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <FormTextField
                 {...commonTextFieldProps}
                 label="Society Name"
@@ -409,7 +411,7 @@ const SocietyForm: React.FC<SocietyFormProps> = ({
               />
             </Grid>
 
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <FormTextField
                 {...commonTextFieldProps}
                 label="Description"
@@ -425,7 +427,7 @@ const SocietyForm: React.FC<SocietyFormProps> = ({
               />
             </Grid>
 
-            <Grid item md={6} xs={12}>
+            <Grid size={{ md: 6, xs: 12 }}>
               <FormTextField
                 {...commonTextFieldProps}
                 label="Category"
@@ -439,13 +441,14 @@ const SocietyForm: React.FC<SocietyFormProps> = ({
               />
             </Grid>
 
-            <Grid item md={6} xs={12}>
+            <Grid size={{ md: 6, xs: 12 }}>
               <FormTextField
                 {...commonTextFieldProps}
                 label="President"
                 name="president"
                 value={
                   formData.president
+                  // @ts-expect-error:
                     ? `${formData.president.first_name} ${formData.president.last_name}`
                     : ""
                 }
@@ -454,7 +457,7 @@ const SocietyForm: React.FC<SocietyFormProps> = ({
               />
             </Grid>
 
-            <Grid item md={6} xs={12}>
+            <Grid size={{ md: 6, xs: 12 }}>
               <FormTextField
                 {...commonTextFieldProps}
                 label="Approved By"
@@ -465,7 +468,7 @@ const SocietyForm: React.FC<SocietyFormProps> = ({
               />
             </Grid>
 
-            <Grid item md={6} xs={12}>
+            <Grid size={{ md: 6, xs: 12 }}>
               <FormTextField
                 {...commonTextFieldProps}
                 label="Status"
@@ -476,7 +479,7 @@ const SocietyForm: React.FC<SocietyFormProps> = ({
               />
             </Grid>
 
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <FormTextField
                 {...commonTextFieldProps}
                 label="Tags (comma separated)"
@@ -510,55 +513,19 @@ const ViewSociety: React.FC = () => {
   const { society_id } = useParams<{ society_id: string }>();
   const societyId = Number(society_id);
 
-  const [formData, setFormData] = useState<Society | null>(null);
-  const [iconFile, setIconFile] = useState<File | null>(null);
-  const [errors, setErrors] = useState<FormErrors>({});
-  const [saving, setSaving] = useState<boolean>(false);
+  const [formState, setFormState] = useState<SocietyFormState>({
+    society: null,
+    formData: null,
+    loading: true,
+    saving: false,
+    errors: {},
+  });
+
   const [notification, setNotification] = useState<Notification>({
     open: false,
     message: "",
     severity: "info",
   });
-
-  const fetchSocietyDataWrapper = useCallback(async () => {
-    try {
-      return await fetchSocietyData(societyId);
-    } catch (error) {
-      console.error("Error fetching society details:", error);
-      throw error;
-    }
-  }, [societyId]);
-
-  const { 
-    data: society, 
-    loading, 
-    error: wsError, 
-    refresh, 
-    isConnected 
-  } = useWebSocketChannel<Society>(
-    `society/${societyId}`, 
-    fetchSocietyDataWrapper
-  );
-
-  useEffect(() => {
-    if (society) {
-      setFormData({
-        ...society,
-        social_media_links: society.social_media_links || {},
-        tags: society.tags || [],
-      });
-    }
-  }, [society]);
-
-  useEffect(() => {
-    if (wsError) {
-      setNotification({
-        open: true,
-        message: `Error loading data: ${wsError}`,
-        severity: "error"
-      });
-    }
-  }, [wsError]);
 
   const showNotification = useCallback(
     (
@@ -582,17 +549,21 @@ const ViewSociety: React.FC = () => {
     (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       const { name, value } = e.target;
 
-      setFormData((prev) => {
-        if (!prev) return null;
-        return { ...prev, [name]: value };
-      });
+      setFormState((prev) => {
+        if (!prev.formData) return prev;
 
-      setErrors((prev) => {
-        const updatedErrors = { ...prev };
+        const updatedFormData = { ...prev.formData, [name]: value };
+
+        const updatedErrors = { ...prev.errors };
         if (updatedErrors[name]) {
           delete updatedErrors[name];
         }
-        return updatedErrors;
+
+        return {
+          ...prev,
+          formData: updatedFormData,
+          errors: updatedErrors,
+        };
       });
     },
     []
@@ -602,25 +573,31 @@ const ViewSociety: React.FC = () => {
     const tagsValue = e.target.value;
     const tagsArray = parseTagsString(tagsValue);
 
-    setFormData((prev) => {
-      if (!prev) return null;
-      return { ...prev, tags: tagsArray };
-    });
+    setFormState((prev) => {
+      if (!prev.formData) return prev;
 
-    setErrors((prev) => {
-      const updatedErrors = { ...prev };
+      const updatedFormData = { ...prev.formData, tags: tagsArray };
+
+      const updatedErrors = { ...prev.errors };
       if (updatedErrors.tags) {
         delete updatedErrors.tags;
       }
-      return updatedErrors;
+
+      return {
+        ...prev,
+        formData: updatedFormData,
+        errors: updatedErrors,
+      };
     });
   }, []);
 
   const handleFileChange = useCallback((file: File) => {
-    setIconFile(file);
-    setFormData((prev) => {
-      if (!prev) return null;
-      return { ...prev, icon: file };
+    setFormState((prev) => {
+      if (!prev.formData) return prev;
+      return {
+        ...prev,
+        formData: { ...prev.formData, icon: file },
+      };
     });
   }, []);
 
@@ -629,30 +606,69 @@ const ViewSociety: React.FC = () => {
   }, [navigate]);
 
   const resetForm = useCallback(() => {
-    if (society) {
-      setFormData({
-        ...society,
-        social_media_links: society.social_media_links || {},
-        tags: society.tags || [],
-      });
-      setIconFile(null);
-      setErrors({});
-    }
-    
+    setFormState((prev) => {
+      if (!prev.society) return prev;
+
+      return {
+        ...prev,
+        formData: {
+          ...prev.society,
+          social_media_links: prev.society.social_media_links || {},
+          tags: prev.society.tags || [],
+        },
+        errors: {},
+      };
+    });
+
     showNotification("Form has been reset to original values", "info");
-  }, [society, showNotification]);
+  }, [showNotification]);
 
   const validateAndSetErrors = useCallback(() => {
-    const newErrors = validateSocietyForm(formData);
-    setErrors(newErrors);
+    const newErrors = validateSocietyForm(formState.formData);
+
+    setFormState((prev) => ({
+      ...prev,
+      errors: newErrors,
+    }));
+
     return isFormValid(newErrors);
-  }, [formData]);
+  }, [formState.formData]);
+
+  const loadSocietyData = useCallback(async () => {
+    try {
+      setFormState((prev) => ({ ...prev, loading: true }));
+
+      const data = await fetchSocietyData(societyId);
+
+      setFormState({
+        society: data,
+        formData: {
+          ...data,
+          social_media_links: data.social_media_links || {},
+          tags: data.tags || [],
+        },
+        loading: false,
+        saving: false,
+        errors: {},
+      });
+
+      showNotification("Society loaded successfully!", "success");
+    } catch (error) {
+      console.error("Error fetching society details:", error);
+      showNotification("Failed to load society details", "error");
+
+      setFormState((prev) => ({
+        ...prev,
+        loading: false,
+      }));
+    }
+  }, [societyId, showNotification]);
 
   const handleSubmit = useCallback(
     async (e: FormEvent) => {
       e.preventDefault();
 
-      if (!formData || !society) return;
+      if (!formState.formData || !formState.society) return;
 
       const isValid = validateAndSetErrors();
       if (!isValid) {
@@ -661,30 +677,41 @@ const ViewSociety: React.FC = () => {
       }
 
       try {
-        setSaving(true);
+        setFormState((prev) => ({ ...prev, saving: true }));
 
         const formDataToSend = createFormDataFromSociety(
-          formData,
-          iconFile
+          formState.formData,
+          formState.formData.icon instanceof File
+            ? formState.formData.icon
+            : undefined
         );
 
         await updateSocietyData(societyId, formDataToSend);
-        
-        refresh();
-        setIconFile(null);
-        
+
         showNotification("Society updated successfully!", "success");
+        await loadSocietyData();
       } catch (error) {
         console.error("Error updating society:", error);
         showNotification("Failed to update society", "error");
       } finally {
-        setSaving(false);
+        setFormState((prev) => ({ ...prev, saving: false }));
       }
     },
-    [formData, society, societyId, iconFile, validateAndSetErrors, showNotification, refresh]
+    [
+      formState.formData,
+      formState.society,
+      societyId,
+      validateAndSetErrors,
+      showNotification,
+      loadSocietyData,
+    ]
   );
 
-  if (loading || !formData) {
+  useEffect(() => {
+    loadSocietyData();
+  }, [loadSocietyData]);
+
+  if (formState.loading || !formState.formData) {
     return <LoadingSpinner />;
   }
 
@@ -696,9 +723,7 @@ const ViewSociety: React.FC = () => {
         backgroundColor: colors.primary[500],
       }}
     >
-      <Box>
-        <BackButton onClick={handleGoBack} />
-      </Box>
+      <BackButton onClick={handleGoBack} />
 
       <Typography
         variant="h2"
@@ -711,9 +736,9 @@ const ViewSociety: React.FC = () => {
       </Typography>
 
       <SocietyForm
-        formData={formData}
-        errors={errors}
-        saving={saving}
+        formData={formState.formData}
+        errors={formState.errors}
+        saving={formState.saving}
         onTextChange={handleTextChange}
         onTagsChange={handleTagsChange}
         onFileChange={handleFileChange}

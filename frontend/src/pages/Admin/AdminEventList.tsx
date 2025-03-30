@@ -8,8 +8,7 @@ import {
   DialogContentText,
   Dialog,
   DialogActions,
-  TextField,
-  Typography
+  TextField
 } from "@mui/material";
 import { DataGrid, GridColDef, GridToolbar, GridRenderCellParams } from "@mui/x-data-grid";
 import { apiClient, apiPaths } from "../../api";
@@ -17,9 +16,13 @@ import { tokens } from "../../theme/theme";
 import { useSettingsStore } from "../../stores/settings-store";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { EventPreview } from "../../components/EventPreview";
-import type { EventData } from "../../types/event/event";
-import { mapToEventRequestData } from "../../utils/mapper.ts";
-import { useWebSocketChannel } from "../../hooks/useWebSocketChannel";
+import type { EventData, ExtraModule } from "../../types/event/event";
+import { getWebSocketUrl } from "../../utils/websocket";
+import {mapToEventRequestData} from "../../utils/mapper.ts";
+
+
+const WEBSOCKET_URL = getWebSocketUrl()
+const RECONNECT_TIMEOUT = 5000;
 
 interface DeleteDialogProps {
   open: boolean;
@@ -70,6 +73,7 @@ const ActionButtons: FC<ActionButtonsProps> = ({
   );
 };
 
+
 const DeleteDialog: FC<DeleteDialogProps> = ({
   open,
   event,
@@ -114,6 +118,7 @@ const DeleteDialog: FC<DeleteDialogProps> = ({
     </Dialog>
   );
 };
+
 
 const DataGridContainer: FC<DataGridContainerProps> = ({
   filteredEvents,
@@ -163,44 +168,105 @@ const DataGridContainer: FC<DataGridContainerProps> = ({
   );
 };
 
+const createWebSocket = (
+  url: string,
+  onOpen: () => void,
+  onMessage: (data: any) => void,
+  onError: (event: globalThis.Event) => void,
+  onClose: (event: CloseEvent) => void
+): WebSocket => {
+  const socket = new WebSocket(url);
+  socket.onopen = onOpen;
+  socket.onmessage = onMessage;
+  socket.onerror = onError;
+  socket.onclose = onClose;
+  return socket;
+};
+
+const parseWebSocketMessage = (event: MessageEvent): any => {
+  try {
+    return JSON.parse(event.data);
+  } catch (error) {
+    console.error("Error parsing WebSocket message:", error);
+    return null;
+  }
+};
+
 const EventList: FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const { drawer } = useSettingsStore();
   const { searchTerm } = useContext(SearchContext);
   
+  const [events, setEvents] = useState<EventData[]>([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<EventData | null>(null);
   const [reason, setReason] = useState('');
+  const [loading, setLoading] = useState(true);
   const [previewOpen, setPreviewOpen] = useState(false);
-  
-  const fetchEvents = async () => {
+
+  const ws = useRef<WebSocket | null>(null);
+
+  const fetchEvents = useCallback(async () => {
     try {
+      setLoading(true);
       const res = await apiClient.get(apiPaths.EVENTS.APPROVEDEVENTLIST);
       const mapped = (res.data ?? []).map(mapToEventRequestData);
-      return mapped;
+      setEvents(mapped);
     } catch (error) {
       console.error("Error fetching events:", error);
-      return [];
+    } finally {
+      setLoading(false);
     }
-  };
+  }, []);
   
-  const { 
-    data: events, 
-    loading, 
-    error, 
-    refresh, 
-    isConnected 
-  } = useWebSocketChannel<EventData[]>(
-    'admin_events', 
-    fetchEvents
-  );
+  const handleSocketOpen = useCallback(() => {
+    console.log("WebSocket Connected for Event List");
+  }, []);
+
+  const handleSocketMessage = useCallback((event: MessageEvent) => {
+    const data = parseWebSocketMessage(event);
+    if (data) {
+      console.log("WebSocket Update Received:", data);
+      fetchEvents();
+    }
+  }, [fetchEvents]);
+
+  const handleSocketError = useCallback((event: EventData) => {
+    console.error("WebSocket Error:", event);
+  }, []);
+
+  const handleSocketClose = useCallback((event: CloseEvent) => {
+    console.log("WebSocket Disconnected:", event.reason);
+    setTimeout(() => connectWebSocket(), RECONNECT_TIMEOUT);
+  }, []);
+
+  
+  const connectWebSocket = useCallback(() => {
+    if (ws.current?.readyState === WebSocket.OPEN) {
+      return;
+    }
+
+    ws.current = createWebSocket(
+      WEBSOCKET_URL,
+      handleSocketOpen,
+      handleSocketMessage,
+      handleSocketError as any,
+      handleSocketClose
+    );
+  }, [handleSocketOpen, handleSocketMessage, handleSocketError, handleSocketClose]);
+
   
   useEffect(() => {
-    if (error) {
-      console.error(`WebSocket error: ${error}`);
-    }
-  }, [error]);
+    fetchEvents();
+    connectWebSocket();
+
+    return () => {
+      if (ws.current) {
+        ws.current.close();
+      }
+    };
+  }, [fetchEvents, connectWebSocket]);
 
   const handleViewEvent = useCallback((event: EventData) => {
     setSelectedEvent(event);
@@ -233,18 +299,16 @@ const EventList: FC = () => {
         url: apiPaths.USER.DELETE("Event", selectedEvent.eventId),
         data: { reason },
       });
-      
-      await refresh();
+      await fetchEvents();
     } catch (error) {
       console.error("Error deleting event:", error);
     } finally {
       handleCloseDialog();
     }
-  }, [selectedEvent, reason, refresh, handleCloseDialog]);
+  }, [selectedEvent, reason, fetchEvents, handleCloseDialog]);
 
+  
   const getFilteredEvents = useCallback(() => {
-    if (!events || !Array.isArray(events)) return [];
-    
     return events.filter((event) =>
       Object.values(event)
         .join(" ")
@@ -253,6 +317,7 @@ const EventList: FC = () => {
     );
   }, [events, searchTerm]);
 
+  
   const getColumns = useCallback((): GridColDef[] => [
     { field: "eventId", headerName: "ID", flex: 0.3 },
     { field: "title", headerName: "Title", flex: 1 },
@@ -279,6 +344,7 @@ const EventList: FC = () => {
     },
   ], [handleViewEvent, handleOpenDialog]);
 
+
   const getContainerStyle = useCallback(() => ({
     height: "calc(100vh - 64px)", 
     maxWidth: drawer ? `calc(100% - 3px)` : "100%",
@@ -289,12 +355,13 @@ const EventList: FC = () => {
 
   return (
     <Box sx={getContainerStyle()}>
-      <DataGridContainer
+      <DataGridContainer 
         filteredEvents={filteredEvents}
         columns={columns}
         loading={loading}
         colors={colors}
       />
+      
       <DeleteDialog
         open={openDialog}
         event={selectedEvent}
@@ -303,6 +370,7 @@ const EventList: FC = () => {
         onCancel={handleCloseDialog}
         onConfirm={handleConfirmDelete}
       />
+
       {selectedEvent && (
         <EventPreview
           open={previewOpen}

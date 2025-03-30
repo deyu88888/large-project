@@ -40,7 +40,7 @@ import { apiClient } from '../../api';
 import { useTheme } from '@mui/material/styles';
 import { tokens } from '../../theme/theme';
 import { alpha } from '@mui/material/styles';
-import { useWebSocketChannel } from "../../hooks/useWebSocketChannel";
+
 
 interface NewsContent {
   id: number;
@@ -157,27 +157,23 @@ const PageHeader: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const colors = tokens(theme.palette.mode);
   
   return (
-    <Box display="flex" justifyContent="space-between" alignItems="center" mb={3} sx={{
+    <Box display="flex" alignItems="center" mb={3} sx={{
       pb: 2,
       borderBottom: `1px solid ${alpha(colors.grey[500], 0.3)}`,
     }}>
-      <Box display="flex" alignItems="center">
-        <IconButton 
-          onClick={onBack} 
-          sx={{ 
-            mr: 2,
-            backgroundColor: alpha(colors.grey[500], 0.1),
-            '&:hover': {
-              backgroundColor: alpha(colors.grey[500], 0.2),
-            },
-          }}
-        >
-          <BackIcon />
-        </IconButton>
-        <Typography variant="h4" fontWeight="bold">News Publication Approval</Typography>
-      </Box>
-      
-      
+      <IconButton 
+        onClick={onBack} 
+        sx={{ 
+          mr: 2,
+          backgroundColor: alpha(colors.grey[500], 0.1),
+          '&:hover': {
+            backgroundColor: alpha(colors.grey[500], 0.2),
+          },
+        }}
+      >
+        <BackIcon />
+      </IconButton>
+      <Typography variant="h4" fontWeight="bold">News Publication Approval</Typography>
     </Box>
   );
 };
@@ -803,32 +799,6 @@ const NewsApprovalDashboard: React.FC = () => {
     currentRequest: null
   });
 
-  const fetchPublicationRequests = async () => {
-    try {
-      const data = await fetchAllRequests();
-      return data;
-    } catch (error) {
-      console.error('Error fetching publication requests:', error);
-      return [];
-    }
-  };
-  
-  
-  const { 
-    isConnected, 
-    refresh,
-    error: wsError 
-  } = useWebSocketChannel(
-    'dashboard_stats', 
-    fetchPublicationRequests
-  );
-  
-  
-  useEffect(() => {
-    if (wsError) {
-      console.error(`WebSocket error: ${wsError}`);
-    }
-  }, [wsError]);
   
   useEffect(() => {
     loadAllRequests();
@@ -870,16 +840,8 @@ const NewsApprovalDashboard: React.FC = () => {
     setRequestsLoading(true);
     
     try {
-      
-      if (refresh) {
-        const data = await refresh();
-        if (data) {
-          setRequests(data);
-        }
-      } else {
-        const data = await fetchAllRequests();
-        setRequests(data);
-      }
+      const data = await fetchAllRequests();
+      setRequests(data);
     } catch (error) {
       console.error('Error fetching publication requests:', error);
     } finally {

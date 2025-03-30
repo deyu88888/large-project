@@ -18,7 +18,12 @@ import { SearchContext } from "../../components/layout/SearchContext";
 import { useSettingsStore } from "../../stores/settings-store";
 import { Student } from "../../types";
 import { useNavigate } from "react-router-dom";
-import { useWebSocketChannel } from "../../hooks/useWebSocketChannel";
+
+
+interface StudentListState {
+  students: Student[];
+  loading: boolean;
+}
 
 interface DialogState {
   open: boolean;
@@ -48,7 +53,8 @@ interface DataGridContainerProps {
   drawer: boolean;
 }
 
-interface HeaderProps {
+interface PageTitleProps {
+  title: string;
   colors: ReturnType<typeof tokens>;
 }
 
@@ -61,22 +67,6 @@ interface BooleanCellProps {
   value: boolean;
 }
 
-const Header: React.FC<HeaderProps> = ({ colors }) => {
-  return (
-    <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-      <Typography
-        variant="h1"
-        sx={{
-          color: colors.grey[100],
-          fontSize: "1.75rem",
-          fontWeight: 800,
-        }}
-      >
-        Student List
-      </Typography>
-    </Box>
-  );
-};
 
 const filterStudentsBySearchTerm = (students: Student[], searchTerm: string): Student[] => {
   if (!searchTerm) return students;
@@ -91,14 +81,10 @@ const filterStudentsBySearchTerm = (students: Student[], searchTerm: string): St
   );
 };
 
+
 const fetchStudentList = async (): Promise<Student[]> => {
-  try {
-    const res = await apiClient.get(apiPaths.USER.STUDENTS);
-    return res.data || [];
-  } catch (error) {
-    console.error("Error fetching students:", error);
-    return [];
-  }
+  const res = await apiClient.get(apiPaths.USER.STUDENTS);
+  return res.data || [];
 };
 
 const deleteStudent = async (studentId: number | string, reason: string): Promise<void> => {
@@ -107,6 +93,23 @@ const deleteStudent = async (studentId: number | string, reason: string): Promis
     url: apiPaths.USER.DELETE("Student", Number(studentId)),
     data: { reason },
   });
+};
+
+
+const PageTitle: React.FC<PageTitleProps> = ({ title, colors }) => {
+  return (
+    <Typography
+      variant="h1"
+      sx={{
+        color: colors.grey[100],
+        fontSize: "1.75rem",
+        fontWeight: 800,
+        marginBottom: "1rem",
+      }}
+    >
+      {title}
+    </Typography>
+  );
 };
 
 const ActionButtons: React.FC<ActionButtonsProps> = ({ 
@@ -232,7 +235,7 @@ const DataGridContainer: React.FC<DataGridContainerProps> = ({
   return (
     <Box sx={dataGridStyles}>
       <DataGrid
-        rows={Array.isArray(students) ? students : []}
+        rows={students}
         columns={columns}
         slots={{ toolbar: GridToolbar }}
         resizeThrottleMs={0}
@@ -246,6 +249,7 @@ const DataGridContainer: React.FC<DataGridContainerProps> = ({
     </Box>
   );
 };
+
 
 const createStudentColumns = (
   handleViewStudent: (id: string) => void,
@@ -315,28 +319,39 @@ const StudentList: React.FC = () => {
   const { searchTerm } = useContext(SearchContext);
   const { drawer } = useSettingsStore();
   
+  
+  const [studentState, setStudentState] = useState<StudentListState>({
+    students: [],
+    loading: true
+  });
+  
   const [dialogState, setDialogState] = useState<DialogState>({
     open: false,
     selectedStudent: null,
     reason: ''
   });
 
-  const { 
-    data: students, 
-    loading, 
-    error, 
-    refresh, 
-    isConnected 
-  } = useWebSocketChannel<Student[]>(
-    'admin_students', 
-    fetchStudentList
-  );
+  
+  const loadStudents = useCallback(async () => {
+    setStudentState(prev => ({ ...prev, loading: true }));
+    
+    try {
+      const data = await fetchStudentList();
+      setStudentState({
+        students: data,
+        loading: false
+      });
+    } catch (error) {
+      console.error("Error fetching students:", error);
+      setStudentState(prev => ({ ...prev, loading: false }));
+    }
+  }, []);
+
   
   useEffect(() => {
-    if (error) {
-      console.error(`WebSocket error: ${error}`);
-    }
-  }, [error]);
+    loadStudents();
+  }, [loadStudents]);
+
   
   const handleViewStudent = useCallback((studentId: string) => {
     navigate(`/admin/view-student/${studentId}`);
@@ -372,18 +387,18 @@ const StudentList: React.FC = () => {
     
     try {
       await deleteStudent(selectedStudent.id, reason);
-      
-      refresh();
+      loadStudents();
     } catch (error) {
       console.error("Error deleting student:", error);
     }
     
     handleCloseDialog();
-  }, [dialogState, refresh, handleCloseDialog]);
+  }, [dialogState, loadStudents, handleCloseDialog]);
+
   
   const filteredStudents = useMemo(() => 
-    filterStudentsBySearchTerm(students || [], searchTerm || ''),
-    [students, searchTerm]
+    filterStudentsBySearchTerm(studentState.students, searchTerm || ''),
+    [studentState.students, searchTerm]
   );
 
   const columns = useMemo(() => 
@@ -398,14 +413,12 @@ const StudentList: React.FC = () => {
         maxWidth: drawer ? `calc(100% - 3px)` : "100%",
       }}
     >
-      <Header 
-        colors={colors}
-      />
+      <PageTitle title="Student List" colors={colors} />
 
       <DataGridContainer 
         students={filteredStudents}
         columns={columns}
-        loading={loading}
+        loading={studentState.loading}
         colors={colors}
         drawer={drawer}
       />

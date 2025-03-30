@@ -22,8 +22,7 @@ import { tokens } from "../../theme/theme";
 import { useSettingsStore } from "../../stores/settings-store";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { fetchPendingRequests } from "./utils";
-import { useWebSocketChannel } from "../../hooks/useWebSocketChannel";
-import { FaSync } from "react-icons/fa";
+
 
 interface NotificationState {
   open: boolean;
@@ -160,6 +159,9 @@ const LoadingIndicator: React.FC = () => {
 };
 
 const ActivityLogList: React.FC<ActivityLogListProps> = () => {
+  
+  const [data, setData] = useState<ActivityLog[]>([]);
+  const [loading, setLoading] = useState(true);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedLog, setSelectedLog] = useState<ActivityLog | null>(null);
   const [notification, setNotification] = useState<NotificationState>({
@@ -176,37 +178,6 @@ const ActivityLogList: React.FC<ActivityLogListProps> = () => {
   const colors = tokens(theme.palette.mode);
   const { drawer } = useSettingsStore();
   const { searchTerm } = useContext(SearchContext);
-
-  
-  const fetchActivityLogs = async () => {
-    try {
-      const logs = await fetchPendingRequests(apiPaths.USER.ACTIVITYLOG);
-      return Array.isArray(logs) ? logs : [];
-    } catch (error) {
-      console.error("Failed to fetch activity logs", error);
-      showNotification("Failed to load activity logs", "error");
-      return [];
-    }
-  };
-
-  
-  const { 
-    data, 
-    loading, 
-    error, 
-    refresh, 
-    isConnected 
-  } = useWebSocketChannel<ActivityLog[]>(
-    'dashboard_activities',
-    fetchActivityLogs
-  );
-
-  
-  useEffect(() => {
-    if (error) {
-      showNotification(`Error: ${error}`, "error");
-    }
-  }, [error]);
 
   const showNotification = (
     message: string, 
@@ -226,6 +197,23 @@ const ActivityLogList: React.FC<ActivityLogListProps> = () => {
   const setIsProcessing = (id: number | null, isProcessing: boolean) => {
     setProcessing({ id, isProcessing });
   };
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const logs = await fetchPendingRequests(apiPaths.USER.ACTIVITYLOG);
+      setData(Array.isArray(logs) ? logs : []);
+    } catch (error) {
+      console.error("Failed to fetch activity logs", error);
+      showNotification("Failed to load activity logs", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  useEffect(() => {
+    fetchData();
+  }, []);
   
   const handleOpenDialog = (log: ActivityLog) => {
     setSelectedLog(log);
@@ -243,10 +231,7 @@ const ActivityLogList: React.FC<ActivityLogListProps> = () => {
     try {
       setIsProcessing(selectedLog.id, true);
       await apiClient.delete(apiPaths.USER.DELETEACTIVITYLOG(selectedLog.id));
-      
-      
-      await refresh();
-      
+      await fetchData();
       showNotification("Log entry permanently deleted", "success");
     } catch (error) {
       console.error("Error deleting log:", error);
@@ -262,9 +247,7 @@ const ActivityLogList: React.FC<ActivityLogListProps> = () => {
       setIsProcessing(id, true);
       await apiClient.post(apiPaths.USER.UNDO_DELETE(id));
       showNotification("Action undone successfully!", "success");
-      
-      
-      await refresh();
+      setData((prev) => prev.filter((item) => item.id !== id));
     } catch (error) {
       console.error("Error undoing action", error);
       showNotification("Failed to undo action", "error");
@@ -273,19 +256,17 @@ const ActivityLogList: React.FC<ActivityLogListProps> = () => {
     }
   };
   
-  const filteredActivityLogs = useMemo(() => {
-    // Make sure data is an array before filtering
-    if (data && Array.isArray(data)) {
-      return data.filter((activityLog) =>
-        Object.values(activityLog)
-          .join(" ")
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase())
-      );
-    }
-    return [];
-  }, [data, searchTerm]);
+  const filteredActivityLogs = useMemo(() => 
+    data.filter((activityLog) =>
+      Object.values(activityLog)
+        .join(" ")
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase())
+    ), 
+    [data, searchTerm]
+  );
 
+  // Using the refactored code from local branch
   const getColumns = (): GridColDef[] => [
     { field: "id", headerName: "ID", flex: 0.3 },
     { field: "action_type", headerName: "Action Type", flex: 1 },
@@ -360,11 +341,9 @@ const ActivityLogList: React.FC<ActivityLogListProps> = () => {
 
   return (
     <Box sx={getContainerStyles()}>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h1" sx={getTitleStyles()}>
-          Activity Log
-        </Typography>
-      </Box>
+      <Typography variant="h1" sx={getTitleStyles()}>
+        Activity Log
+      </Typography>
       
       {loading ? (
         <LoadingIndicator />
