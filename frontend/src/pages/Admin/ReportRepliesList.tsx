@@ -15,7 +15,6 @@ import { useSettingsStore } from "../../stores/settings-store";
 import { fetchReportsWithReplies } from './fetchReports';
 import { useNavigate } from 'react-router-dom';
 import { useWebSocketChannel } from "../../hooks/useWebSocketChannel";
-import { FaSync } from "react-icons/fa";
 
 interface Report {
   id: number | string;
@@ -71,11 +70,9 @@ interface DataGridContainerProps {
 
 interface HeaderProps {
   colors: ReturnType<typeof tokens>;
-  isConnected: boolean;
-  onRefresh: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ colors, isConnected, onRefresh }) => {
+const Header: React.FC<HeaderProps> = ({ colors }) => {
   return (
     <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
       <Typography
@@ -88,32 +85,6 @@ const Header: React.FC<HeaderProps> = ({ colors, isConnected, onRefresh }) => {
       >
         Reports Needing Reply
       </Typography>
-      
-      <Box display="flex" alignItems="center">
-        <Box
-          component="span"
-          sx={{
-            width: 8,
-            height: 8,
-            borderRadius: '50%',
-            backgroundColor: isConnected ? colors.greenAccent[500] : colors.orangeAccent[500],
-            mr: 1
-          }}
-        />
-        <Typography variant="body2" fontSize="0.75rem" color={colors.grey[300]} mr={2}>
-          {isConnected ? 'Live updates' : 'Offline mode'}
-        </Typography>
-        <Button
-          variant="contained"
-          color="secondary"
-          startIcon={<FaSync />}
-          onClick={onRefresh}
-          size="small"
-          sx={{ borderRadius: "8px" }}
-        >
-          Refresh
-        </Button>
-      </Box>
     </Box>
   );
 };
@@ -282,7 +253,6 @@ const createReportColumns = (
       headerName: "Latest Reply", 
       flex: 2,
       renderCell: (params: GridRenderCellParams) => {
-        
         if (!params.row.latest_reply) {
           return <Typography variant="body2">No replies yet</Typography>;
         }
@@ -305,7 +275,6 @@ const createReportColumns = (
       headerName: "Latest Reply Date", 
       flex: 1.2,
       renderCell: (params: GridRenderCellParams) => {
-        
         if (!params.row.latest_reply || !params.row.latest_reply.created_at) {
           return <Typography variant="body2">No date available</Typography>;
         }
@@ -366,16 +335,13 @@ const ReportRepliesList: React.FC = () => {
   const { drawer } = useSettingsStore();
   const navigate = useNavigate();
   
-  
   const [reportState, setReportState] = useState<ReportState>({
     items: [],
     loading: true,
     error: null
   });
   
-  
   const [isConnected, setIsConnected] = useState(false);
-  
   
   const { 
     data: wsData, 
@@ -388,10 +354,8 @@ const ReportRepliesList: React.FC = () => {
     loadReportData
   );
   
-  
   useEffect(() => {
     if (wsData) {
-      
       const safeData = Array.isArray(wsData) ? wsData : [];
       setReportState(prev => ({
         ...prev,
@@ -409,7 +373,6 @@ const ReportRepliesList: React.FC = () => {
       }));
     }
   }, [wsData, wsConnected, wsError]);
-  
   
   const fetchReports = useCallback(async () => {
     setReportState(prev => ({ ...prev, loading: true }));
@@ -431,7 +394,6 @@ const ReportRepliesList: React.FC = () => {
     }
   }, []);
   
-  
   useEffect(() => {
     fetchReports();
   }, [fetchReports]);
@@ -449,7 +411,6 @@ const ReportRepliesList: React.FC = () => {
   }, []);
   
   const formatDate = useCallback(formatDateToLocale, []);
-  
   
   const filteredReports = useMemo(() => {
     const reports = reportState.items || [];
@@ -481,8 +442,6 @@ const ReportRepliesList: React.FC = () => {
     >
       <Header 
         colors={colors}
-        isConnected={isConnected}
-        onRefresh={handleRefresh}
       />
       
       {reportState.error && (

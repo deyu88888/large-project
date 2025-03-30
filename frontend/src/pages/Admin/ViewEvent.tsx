@@ -22,7 +22,6 @@ import { apiClient, apiPaths } from "../../api";
 import { tokens } from "../../theme/theme";
 import { Event } from "../../types";
 import { useWebSocketChannel } from "../../hooks/useWebSocketChannel";
-import { FaSync } from "react-icons/fa";
 
 interface FormErrors {
   title?: string;
@@ -86,40 +85,6 @@ interface EventFormProps {
   onReset: () => void;
 }
 
-interface StatusIndicatorProps {
-  isConnected: boolean;
-  onRefresh: () => void;
-  colors: ReturnType<typeof tokens>;
-}
-
-const StatusIndicator: React.FC<StatusIndicatorProps> = ({ isConnected, onRefresh, colors }) => (
-  <Box display="flex" alignItems="center" mb={2}>
-    <Box
-      component="span"
-      sx={{
-        width: 8,
-        height: 8,
-        borderRadius: '50%',
-        backgroundColor: isConnected ? colors.greenAccent[500] : colors.orangeAccent[500],
-        mr: 1
-      }}
-    />
-    <Typography variant="body2" fontSize="0.75rem" color={colors.grey[300]} mr={2}>
-      {isConnected ? 'Live updates' : 'Offline mode'}
-    </Typography>
-    <Button
-      variant="contained"
-      color="secondary"
-      startIcon={<FaSync />}
-      onClick={onRefresh}
-      size="small"
-      sx={{ borderRadius: "8px" }}
-    >
-      Refresh
-    </Button>
-  </Box>
-);
-
 const createField = (
   formData: Event | null,
   name: string,
@@ -158,7 +123,6 @@ const validateEventForm = (formData: Event | null): FormErrors => {
 
   const errors: FormErrors = {};
 
-  
   const description = formData.main_description || formData.description;
 
   errors.title = validateRequiredField(formData.title, "Title");
@@ -416,7 +380,6 @@ const ViewEvent: React.FC = () => {
     severity: "info",
   });
 
-  
   const fetchEventDataWrapper = useCallback(async () => {
     try {
       return await fetchEventData(eventId);
@@ -426,7 +389,6 @@ const ViewEvent: React.FC = () => {
     }
   }, [eventId]);
 
-  
   const { 
     data: event, 
     loading, 
@@ -438,14 +400,12 @@ const ViewEvent: React.FC = () => {
     fetchEventDataWrapper
   );
 
-  
   useEffect(() => {
     if (event) {
       setFormData(event);
     }
   }, [event]);
 
-  
   useEffect(() => {
     if (wsError) {
       setNotification({
@@ -516,7 +476,6 @@ const ViewEvent: React.FC = () => {
 
       if (!formData || !event) return;
 
-      
       const isValid =
         process.env.NODE_ENV === "test" ? true : validateAndSetErrors();
       if (!isValid) return;
@@ -524,7 +483,6 @@ const ViewEvent: React.FC = () => {
       try {
         setSaving(true);
         await updateEventData(eventId, formData);
-        
         
         refresh();
         
@@ -545,13 +503,8 @@ const ViewEvent: React.FC = () => {
 
   return (
     <Box minHeight="100vh" p={4}>
-      <Box display="flex" justifyContent="space-between" alignItems="center">
+      <Box>
         <BackButton onClick={handleGoBack} />
-        <StatusIndicator 
-          isConnected={isConnected}
-          onRefresh={refresh}
-          colors={colors}
-        />
       </Box>
 
       <Typography variant="h2" textAlign="center" mb={4}>

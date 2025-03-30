@@ -1,5 +1,5 @@
 import React, { useState, useContext, useMemo, useCallback, useEffect } from "react";
-import { Box, useTheme, Button, Typography } from "@mui/material";
+import { Box, useTheme, Typography } from "@mui/material";
 import { DataGrid, GridColDef, GridToolbar } from "@mui/x-data-grid";
 import { apiClient, apiPaths } from "../../api";
 import { tokens } from "../../theme/theme";
@@ -7,15 +7,12 @@ import { useSettingsStore } from "../../stores/settings-store";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { Society } from '../../types';
 import { useWebSocketChannel } from "../../hooks/useWebSocketChannel";
-import { FaSync } from "react-icons/fa";
 
 interface HeaderProps {
   colors: any;
-  isConnected: boolean;
-  onRefresh: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ colors, isConnected, onRefresh }) => {
+const Header: React.FC<HeaderProps> = ({ colors }) => {
   return (
     <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
       <Typography
@@ -28,32 +25,6 @@ const Header: React.FC<HeaderProps> = ({ colors, isConnected, onRefresh }) => {
       >
         Rejected Societies
       </Typography>
-      
-      <Box display="flex" alignItems="center">
-        <Box
-          component="span"
-          sx={{
-            width: 8,
-            height: 8,
-            borderRadius: '50%',
-            backgroundColor: isConnected ? colors.greenAccent[500] : colors.orangeAccent[500],
-            mr: 1
-          }}
-        />
-        <Typography variant="body2" fontSize="0.75rem" color={colors.grey[300]} mr={2}>
-          {isConnected ? 'Live updates' : 'Offline mode'}
-        </Typography>
-        <Button
-          variant="contained"
-          color="secondary"
-          startIcon={<FaSync />}
-          onClick={onRefresh}
-          size="small"
-          sx={{ borderRadius: "8px" }}
-        >
-          Refresh
-        </Button>
-      </Box>
     </Box>
   );
 };
@@ -68,7 +39,6 @@ const SocietyListRejected: React.FC = () => {
   const { drawer } = useSettingsStore();
   const { searchTerm } = useContext(SearchContext);
 
-  
   const fetchRejectedSocieties = useCallback(async () => {
     try {
       const res = await apiClient.get(apiPaths.USER.REJECTEDSOCIETY);
@@ -78,7 +48,6 @@ const SocietyListRejected: React.FC = () => {
       return [];
     }
   }, []);
-
   
   const { 
     data: societies, 
@@ -90,14 +59,12 @@ const SocietyListRejected: React.FC = () => {
     'admin_societies', 
     fetchRejectedSocieties
   );
-
   
   useEffect(() => {
     if (error) {
       console.error(`WebSocket error: ${error}`);
     }
   }, [error]);
-  
   
   const columns: GridColDef[] = [
     { field: "id", headerName: "ID", flex: 0.5 },
@@ -109,7 +76,6 @@ const SocietyListRejected: React.FC = () => {
 
   const filteredSocieties = useMemo(
     () => {
-      
       if (!societies || !Array.isArray(societies)) return [];
       
       return societies.filter((society) =>
@@ -131,8 +97,6 @@ const SocietyListRejected: React.FC = () => {
     >
       <Header 
         colors={colors}
-        isConnected={isConnected}
-        onRefresh={refresh}
       />
       
       <Box

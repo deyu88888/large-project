@@ -16,7 +16,6 @@ import { EventPreview } from "../../components/EventPreview";
 import type { EventData, ExtraModule } from "../../types/event/event";
 import { mapToEventRequestData } from "../../utils/mapper.ts";
 import { useWebSocketChannel } from "../../hooks/useWebSocketChannel";
-import { FaSync } from "react-icons/fa";
 
 interface AlertState {
   open: boolean;
@@ -42,12 +41,6 @@ interface DataGridCustomProps {
   drawer: boolean;
   colors: ReturnType<typeof tokens>;
   loading: boolean;
-}
-
-interface HeaderProps {
-  colors: ReturnType<typeof tokens>;
-  isConnected: boolean;
-  onRefresh: () => void;
 }
 
 const filterEventsBySearchTerm = (
@@ -76,38 +69,6 @@ const createErrorAlert = (message: string): AlertState => ({
   message,
   severity: "error",
 });
-
-const Header: React.FC<HeaderProps> = ({ colors, isConnected, onRefresh }) => {
-  return (
-    <Box display="flex" justifyContent="flex-end" alignItems="center" mb={2}>
-      <Box display="flex" alignItems="center">
-        <Box
-          component="span"
-          sx={{
-            width: 8,
-            height: 8,
-            borderRadius: '50%',
-            backgroundColor: isConnected ? colors.greenAccent[500] : colors.orangeAccent[500],
-            mr: 1
-          }}
-        />
-        <Typography variant="body2" fontSize="0.75rem" color={colors.grey[300]} mr={2}>
-          {isConnected ? 'Live updates' : 'Offline mode'}
-        </Typography>
-        <Button
-          variant="contained"
-          color="secondary"
-          startIcon={<FaSync />}
-          onClick={onRefresh}
-          size="small"
-          sx={{ borderRadius: "8px" }}
-        >
-          Refresh
-        </Button>
-      </Box>
-    </Box>
-  );
-};
 
 const ActionButtons: React.FC<ActionButtonsProps> = ({
   id,
@@ -217,7 +178,6 @@ const PendingEventRequest: React.FC = () => {
     severity: "success",
   });
 
-  
   const fetchPendingEventData = async () => {
     try {
       const data = await fetchPendingRequests(apiPaths.EVENTS.PENDINGEVENTREQUEST);
@@ -227,7 +187,6 @@ const PendingEventRequest: React.FC = () => {
       return [];
     }
   };
-
   
   const { 
     data: pendingData, 
@@ -239,7 +198,6 @@ const PendingEventRequest: React.FC = () => {
     'admin_events', 
     fetchPendingEventData
   );
-
   
   useEffect(() => {
     if (wsError) {
@@ -248,7 +206,11 @@ const PendingEventRequest: React.FC = () => {
   }, [wsError]);
 
   const events: EventData[] = useMemo(() => {
-    return (pendingData ?? []).map(mapToEventRequestData);
+    // Add a safety check to ensure pendingData is an array before mapping
+    if (!pendingData || !Array.isArray(pendingData)) {
+      return [];
+    }
+    return pendingData.map(mapToEventRequestData);
   }, [pendingData]);
 
   const handleViewEvent = useCallback((event: EventData) => {
@@ -315,12 +277,6 @@ const PendingEventRequest: React.FC = () => {
         maxWidth: drawer ? `calc(100% - 3px)` : "100%",
       }}
     >
-      <Header 
-        colors={colors}
-        isConnected={isConnected}
-        onRefresh={refresh}
-      />
-
       <EventsDataGrid
         events={filteredEvents}
         columns={columns}

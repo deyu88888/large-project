@@ -8,51 +8,12 @@ import { SearchContext } from "../../components/layout/SearchContext";
 import { SocietyPreview } from "../../components/SocietyPreview";
 import { SocietyDetailRequest } from "../../types/admin/society";
 import { useWebSocketChannel } from "../../hooks/useWebSocketChannel";
-import { FaSync } from "react-icons/fa";
 
 interface AlertState {
   open: boolean;
   message: string;
   severity: 'success' | 'error';
 }
-
-interface HeaderProps {
-  colors: any;
-  isConnected: boolean;
-  onRefresh: () => void;
-}
-
-const Header: React.FC<HeaderProps> = ({ colors, isConnected, onRefresh }) => {
-  return (
-    <Box display="flex" justifyContent="flex-end" alignItems="center" mb={2}>
-      <Box display="flex" alignItems="center">
-        <Box
-          component="span"
-          sx={{
-            width: 8,
-            height: 8,
-            borderRadius: '50%',
-            backgroundColor: isConnected ? colors.greenAccent[500] : colors.orangeAccent[500],
-            mr: 1
-          }}
-        />
-        <Typography variant="body2" fontSize="0.75rem" color={colors.grey[300]} mr={2}>
-          {isConnected ? 'Live updates' : 'Offline mode'}
-        </Typography>
-        <Button
-          variant="contained"
-          color="secondary"
-          startIcon={<FaSync />}
-          onClick={onRefresh}
-          size="small"
-          sx={{ borderRadius: "8px" }}
-        >
-          Refresh
-        </Button>
-      </Box>
-    </Box>
-  );
-};
 
 const fetchPendingSocietyDetailRequests = async () => {
   try {
@@ -74,7 +35,6 @@ const PendingSocietyDetailRequests: React.FC = () => {
   const [openPreview, setOpenPreview] = useState<boolean>(false);
   const [selectedRequest, setSelectedRequest] = useState<SocietyDetailRequest | null>(null);
 
-  
   const fetchSocietyDetailRequestsWS = async () => {
     try {
       return await fetchPendingSocietyDetailRequests();
@@ -83,7 +43,6 @@ const PendingSocietyDetailRequests: React.FC = () => {
       return [];
     }
   };
-
   
   const { 
     data: detailRequests, 
@@ -95,14 +54,12 @@ const PendingSocietyDetailRequests: React.FC = () => {
     'admin_societies', 
     fetchSocietyDetailRequestsWS
   );
-
   
   const [alert, setAlert] = useState<AlertState>({
     open: false,
     message: '',
     severity: 'success'
   });
-
   
   useEffect(() => {
     if (wsError) {
@@ -140,7 +97,6 @@ const PendingSocietyDetailRequests: React.FC = () => {
     try {
       await apiClient.put(`${apiPaths.SOCIETY.DETAIL_REQUEST}${id}/`, { status: "Approved" });
       
-      
       refresh();
       
       setAlert({
@@ -161,7 +117,6 @@ const PendingSocietyDetailRequests: React.FC = () => {
   const handleReject = async (id: number) => {
     try {
       await apiClient.put(`${apiPaths.SOCIETY.DETAIL_REQUEST}${id}/`, { status: "Rejected" });
-      
       
       refresh();
       
@@ -259,13 +214,6 @@ const PendingSocietyDetailRequests: React.FC = () => {
         maxWidth: drawer ? `calc(100% - 3px)` : "100%",
       }}
     >
-      {/* Add WebSocket status header */}
-      <Header 
-        colors={colors}
-        isConnected={isConnected}
-        onRefresh={refresh}
-      />
-      
       <Box
         sx={{
           height: "78vh",

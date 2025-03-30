@@ -25,7 +25,6 @@ import { useAuthStore } from "../../stores/auth-store.ts";
 import { tokens } from "../../theme/theme.ts";
 import { Admin } from "../../types.ts";
 import { useWebSocketChannel } from "../../hooks/useWebSocketChannel";
-import { FaSync } from "react-icons/fa";
 
 interface AdminFormData {
   username: string;
@@ -92,40 +91,6 @@ interface AdminDetailFormProps {
   ) => (e: React.ChangeEvent<HTMLInputElement>) => void;
   onSubmit: (e: FormEvent) => void;
 }
-
-interface StatusIndicatorProps {
-  isConnected: boolean;
-  onRefresh: () => void;
-  colors: ReturnType<typeof tokens>;
-}
-
-const StatusIndicator: React.FC<StatusIndicatorProps> = ({ isConnected, onRefresh, colors }) => (
-  <Box display="flex" alignItems="center" justifyContent="flex-end" mb={2}>
-    <Box
-      component="span"
-      sx={{
-        width: 8,
-        height: 8,
-        borderRadius: '50%',
-        backgroundColor: isConnected ? colors.greenAccent[500] : colors.orangeAccent[500],
-        mr: 1
-      }}
-    />
-    <Typography variant="body2" fontSize="0.75rem" color={colors.grey[300]} mr={2}>
-      {isConnected ? 'Live updates' : 'Offline mode'}
-    </Typography>
-    <Button
-      variant="contained"
-      color="secondary"
-      startIcon={<FaSync />}
-      onClick={onRefresh}
-      size="small"
-      sx={{ borderRadius: "8px" }}
-    >
-      Refresh
-    </Button>
-  </Box>
-);
 
 const fetchAdminData = async (adminId: number): Promise<Admin> => {
   try {
@@ -356,7 +321,6 @@ const ViewAdmin: React.FC = () => {
   const isCurrentUserSuperAdmin = user?.is_super_admin || false;
   const canEdit = isCurrentUserSuperAdmin;
 
-  
   const fetchAdminDataWrapper = useCallback(async () => {
     try {
       return await fetchAdminData(adminId);
@@ -366,7 +330,6 @@ const ViewAdmin: React.FC = () => {
     }
   }, [adminId]);
 
-  
   const { 
     data: admin, 
     loading, 
@@ -378,14 +341,12 @@ const ViewAdmin: React.FC = () => {
     fetchAdminDataWrapper
   );
 
-  
   useEffect(() => {
     if (admin) {
       setFormData(admin);
     }
   }, [admin]);
 
-  
   useEffect(() => {
     if (wsError) {
       setSnackbar({
@@ -459,7 +420,6 @@ const ViewAdmin: React.FC = () => {
         console.log("Sending data to backend:", dataToSend);
 
         await updateAdminData(adminId, dataToSend);
-
         
         refresh();
         
@@ -480,13 +440,8 @@ const ViewAdmin: React.FC = () => {
 
   return (
     <Box minHeight="100vh" p={4}>
-      <Box display="flex" justifyContent="space-between" alignItems="center">
+      <Box>
         <BackButton onClick={handleGoBack} />
-        <StatusIndicator 
-          isConnected={isConnected}
-          onRefresh={refresh}
-          colors={colors}
-        />
       </Box>
 
       <Typography variant="h2" textAlign="center" mb={4}>

@@ -19,8 +19,6 @@ import { useSettingsStore } from "../../stores/settings-store";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../stores/auth-store";
 import { useWebSocketChannel } from "../../hooks/useWebSocketChannel";
-import { FaSync } from "react-icons/fa";
-
 
 interface AdminUser {
   id: number;
@@ -46,8 +44,6 @@ interface DeleteDialogProps {
 interface HeaderProps {
   colors: any;
   theme: any;
-  isConnected: boolean;
-  onRefresh: () => void;
 }
 
 interface DataGridContainerProps {
@@ -66,8 +62,7 @@ interface ActionButtonsProps {
   onDelete: (admin: AdminUser) => void;
 }
 
-
-const Header: FC<HeaderProps> = ({ colors, theme, isConnected, onRefresh }) => {
+const Header: FC<HeaderProps> = ({ colors, theme }) => {
   return (
     <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
       <Typography
@@ -80,36 +75,9 @@ const Header: FC<HeaderProps> = ({ colors, theme, isConnected, onRefresh }) => {
       >
         Admin List
       </Typography>
-      
-      <Box display="flex" alignItems="center">
-        <Box
-          component="span"
-          sx={{
-            width: 8,
-            height: 8,
-            borderRadius: '50%',
-            backgroundColor: isConnected ? colors.greenAccent[500] : colors.orangeAccent[500],
-            mr: 1
-          }}
-        />
-        <Typography variant="body2" fontSize="0.75rem" color={colors.grey[300]} mr={2}>
-          {isConnected ? 'Live updates' : 'Offline mode'}
-        </Typography>
-        <Button
-          variant="contained"
-          color="secondary"
-          startIcon={<FaSync />}
-          onClick={onRefresh}
-          size="small"
-          sx={{ borderRadius: "8px" }}
-        >
-          Refresh
-        </Button>
-      </Box>
     </Box>
   );
 };
-
 
 const DataGridContainer: FC<DataGridContainerProps> = ({ 
   filteredAdmins, 
@@ -173,7 +141,6 @@ const DataGridContainer: FC<DataGridContainerProps> = ({
   );
 };
 
-
 const DeleteDialog: FC<DeleteDialogProps> = ({ 
   open, 
   admin, 
@@ -218,7 +185,6 @@ const DeleteDialog: FC<DeleteDialogProps> = ({
   );
 };
 
-
 const ActionButtons: FC<ActionButtonsProps> = ({ 
   adminId, 
   admin, 
@@ -249,7 +215,6 @@ const ActionButtons: FC<ActionButtonsProps> = ({
   );
 };
 
-
 const AdminList: FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
@@ -262,7 +227,6 @@ const AdminList: FC = () => {
   const [selectedAdmin, setSelectedAdmin] = useState<AdminUser | null>(null);
   const [reason, setReason] = useState('');
   
-  
   const fetchAdminUsers = async () => {
     try {
       const res = await apiClient.get(apiPaths.USER.ADMIN);
@@ -273,7 +237,6 @@ const AdminList: FC = () => {
     }
   };
 
-  
   const { 
     data: admins, 
     loading, 
@@ -284,7 +247,6 @@ const AdminList: FC = () => {
     'dashboard_stats', 
     fetchAdminUsers
   );
-  
   
   useEffect(() => {
     if (error) {
@@ -309,7 +271,6 @@ const AdminList: FC = () => {
   const actionsColumnWidth = isSuperAdmin ? 170 : 85;
 
   const getFilteredAdmins = () => {
-    
     if (!admins || !Array.isArray(admins)) return [];
     
     return admins.filter((admin) =>
@@ -348,7 +309,6 @@ const AdminList: FC = () => {
         url: apiPaths.USER.DELETE("Admin", selectedAdmin.id),
         data: { reason },
       });
-      
       
       await refresh();
     } catch (error) {
@@ -405,21 +365,17 @@ const AdminList: FC = () => {
         maxWidth: drawer ? `calc(100% - 3px)` : "100%",
       }}
     >
-      <Header 
-        colors={colors} 
-        theme={theme} 
-        isConnected={isConnected}
-        onRefresh={refresh}
+      <Header
+        colors={colors}
+        theme={theme}
       />
-      
-      <DataGridContainer 
+      <DataGridContainer
         filteredAdmins={filteredAdmins}
         columns={columns}
         colors={colors}
         drawer={drawer}
         loading={loading}
       />
-      
       <DeleteDialog
         open={openDialog}
         admin={selectedAdmin}

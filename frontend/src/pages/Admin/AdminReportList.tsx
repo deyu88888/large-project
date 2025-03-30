@@ -8,7 +8,6 @@ import { fetchReports } from './fetchReports';
 import { Report } from '../../types/president/report';
 import { useNavigate } from 'react-router-dom';
 import { useWebSocketChannel } from "../../hooks/useWebSocketChannel";
-import { FaSync } from "react-icons/fa";
 
 interface DataGridContainerProps {
   filteredReports: Report[];
@@ -27,8 +26,6 @@ interface ActionButtonProps {
 
 interface HeaderProps {
   colors: any;
-  isConnected: boolean;
-  onRefresh: () => void;
 }
 
 const formatDate = (dateString: string): string => {
@@ -42,7 +39,7 @@ const createMailtoUrl = (email: string, subject: string): string => {
   return `mailto:${email}?subject=${emailSubject}&body=${emailBody}`;
 };
 
-const Header: FC<HeaderProps> = ({ colors, isConnected, onRefresh }) => {
+const Header: FC<HeaderProps> = ({ colors }) => {
   return (
     <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
       <Typography
@@ -55,32 +52,6 @@ const Header: FC<HeaderProps> = ({ colors, isConnected, onRefresh }) => {
       >
         Manage Reports
       </Typography>
-      
-      <Box display="flex" alignItems="center">
-        <Box
-          component="span"
-          sx={{
-            width: 8,
-            height: 8,
-            borderRadius: '50%',
-            backgroundColor: isConnected ? colors.greenAccent[500] : colors.orangeAccent[500],
-            mr: 1
-          }}
-        />
-        <Typography variant="body2" fontSize="0.75rem" color={colors.grey[300]} mr={2}>
-          {isConnected ? 'Live updates' : 'Offline mode'}
-        </Typography>
-        <Button
-          variant="contained"
-          color="secondary"
-          startIcon={<FaSync />}
-          onClick={onRefresh}
-          size="small"
-          sx={{ borderRadius: "8px" }}
-        >
-          Refresh
-        </Button>
-      </Box>
     </Box>
   );
 };
@@ -191,7 +162,6 @@ const AdminReportList: FC = () => {
   const { searchTerm } = useContext(SearchContext);
   const { drawer } = useSettingsStore(); 
 
-  
   const fetchReportsWS = async () => {
     try {
       const data = await fetchReports();
@@ -201,7 +171,6 @@ const AdminReportList: FC = () => {
       return [];
     }
   };
-
   
   const { 
     data: reports, 
@@ -213,7 +182,6 @@ const AdminReportList: FC = () => {
     'dashboard_stats', 
     fetchReportsWS
   );
-
   
   useEffect(() => {
     if (error) {
@@ -224,10 +192,8 @@ const AdminReportList: FC = () => {
   const handleReplyClick = useCallback((reportId: string) => {
     navigate(`/admin/report-list/${reportId}/reply`);
   }, [navigate]);
-
   
   const getFilteredReports = useCallback(() => {
-    
     if (!reports || !Array.isArray(reports)) return [];
     
     return reports.filter((report) =>
@@ -295,8 +261,6 @@ const AdminReportList: FC = () => {
     <Box sx={getContainerStyles()}>
       <Header 
         colors={colors}
-        isConnected={isConnected} 
-        onRefresh={refresh}
       />
       
       <DataGridContainer 

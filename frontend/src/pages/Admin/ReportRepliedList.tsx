@@ -13,7 +13,6 @@ import { useSettingsStore } from "../../stores/settings-store";
 import { apiClient } from "../../api";
 import { useNavigate } from 'react-router-dom';
 import { useWebSocketChannel } from "../../hooks/useWebSocketChannel";
-import { FaSync } from "react-icons/fa";
 
 interface ReportWithReplies {
   id: number | string;
@@ -45,11 +44,9 @@ interface ErrorAlertProps {
 
 interface HeaderProps {
   colors: ReturnType<typeof tokens>;
-  isConnected: boolean;
-  onRefresh: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ colors, isConnected, onRefresh }) => {
+const Header: React.FC<HeaderProps> = ({ colors }) => {
   return (
     <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
       <Typography
@@ -62,32 +59,6 @@ const Header: React.FC<HeaderProps> = ({ colors, isConnected, onRefresh }) => {
       >
         Reports With Replies
       </Typography>
-      
-      <Box display="flex" alignItems="center">
-        <Box
-          component="span"
-          sx={{
-            width: 8,
-            height: 8,
-            borderRadius: '50%',
-            backgroundColor: isConnected ? colors.greenAccent[500] : colors.orangeAccent[500],
-            mr: 1
-          }}
-        />
-        <Typography variant="body2" fontSize="0.75rem" color={colors.grey[300]} mr={2}>
-          {isConnected ? 'Live updates' : 'Offline mode'}
-        </Typography>
-        <Button
-          variant="contained"
-          color="secondary"
-          startIcon={<FaSync />}
-          onClick={onRefresh}
-          size="small"
-          sx={{ borderRadius: "8px" }}
-        >
-          Refresh
-        </Button>
-      </Box>
     </Box>
   );
 };
@@ -154,7 +125,6 @@ const ActionButton: React.FC<{ reportId: string | number; onClick: (id: string |
 };
 
 const DataGridContainer: React.FC<DataGridContainerProps> = ({ reports, columns, loading, colors }) => {
-  
   const safeReports = Array.isArray(reports) ? reports : [];
   
   return (
@@ -221,7 +191,6 @@ const createReportColumns = (
       headerName: "Latest Reply Date",
       flex: 1.5,
       valueFormatter: (params) => {
-        
         if (!params || params.value === undefined || params.value === null) {
           return "No date";
         }
@@ -250,13 +219,11 @@ const ReportRepliedList: React.FC = () => {
   const { searchTerm } = useContext(SearchContext);
   const { drawer } = useSettingsStore();
   
-  
   const [reportState, setReportState] = useState<ReportState>({
     items: [],
     loading: true,
     error: null
   });
-  
   
   const [isConnected, setIsConnected] = useState(false);
   
@@ -270,10 +237,8 @@ const ReportRepliedList: React.FC = () => {
     fetchReportReplies
   );
   
-  
   useEffect(() => {
     if (wsData) {
-      
       const safeData = Array.isArray(wsData) ? wsData : [];
       setReportState(prev => ({
         ...prev,
@@ -291,7 +256,6 @@ const ReportRepliedList: React.FC = () => {
       }));
     }
   }, [wsData, wsConnected, wsError]);
-  
   
   const loadReportReplies = useCallback(async () => {
     setReportState(prev => ({ ...prev, loading: true }));
@@ -315,7 +279,6 @@ const ReportRepliedList: React.FC = () => {
     }
   }, []);
   
-  
   const handleRefresh = useCallback(() => {
     wsRefresh();
     loadReportReplies();
@@ -329,9 +292,7 @@ const ReportRepliedList: React.FC = () => {
     navigate(`/admin/report-thread/${reportId}`);
   }, [navigate]);
   
-  
   const filteredReports = useMemo(() => {
-    
     const items = reportState.items || [];
     
     const safeItems = Array.isArray(items) ? items : [];
@@ -357,8 +318,6 @@ const ReportRepliedList: React.FC = () => {
     >
       <Header 
         colors={colors}
-        isConnected={isConnected}
-        onRefresh={handleRefresh}
       />
       
       {reportState.error && <ErrorAlert message={reportState.error} />}

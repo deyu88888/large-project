@@ -20,7 +20,6 @@ import { EventPreview } from "../../components/EventPreview";
 import type { EventData } from "../../types/event/event";
 import { mapToEventRequestData } from "../../utils/mapper.ts";
 import { useWebSocketChannel } from "../../hooks/useWebSocketChannel";
-import { FaSync } from "react-icons/fa";
 
 interface DeleteDialogProps {
   open: boolean;
@@ -174,7 +173,6 @@ const EventList: FC = () => {
   const [selectedEvent, setSelectedEvent] = useState<EventData | null>(null);
   const [reason, setReason] = useState('');
   const [previewOpen, setPreviewOpen] = useState(false);
-
   
   const fetchEvents = async () => {
     try {
@@ -186,7 +184,6 @@ const EventList: FC = () => {
       return [];
     }
   };
-
   
   const { 
     data: events, 
@@ -198,7 +195,6 @@ const EventList: FC = () => {
     'admin_events', 
     fetchEvents
   );
-
   
   useEffect(() => {
     if (error) {
@@ -238,7 +234,6 @@ const EventList: FC = () => {
         data: { reason },
       });
       
-      
       await refresh();
     } catch (error) {
       console.error("Error deleting event:", error);
@@ -248,7 +243,6 @@ const EventList: FC = () => {
   }, [selectedEvent, reason, refresh, handleCloseDialog]);
 
   const getFilteredEvents = useCallback(() => {
-    
     if (!events || !Array.isArray(events)) return [];
     
     return events.filter((event) =>
@@ -295,42 +289,12 @@ const EventList: FC = () => {
 
   return (
     <Box sx={getContainerStyle()}>
-      {/* Header with connection status and refresh button */}
-      <Box display="flex" justifyContent="flex-end" alignItems="center" mb={2}>
-        <Box display="flex" alignItems="center" mr={2}>
-          <Box
-            component="span"
-            sx={{
-              width: 8,
-              height: 8,
-              borderRadius: '50%',
-              backgroundColor: isConnected ? colors.greenAccent[500] : colors.orangeAccent[500],
-              mr: 1
-            }}
-          />
-          <Typography variant="body2" fontSize="0.75rem" color={colors.grey[300]}>
-            {isConnected ? 'Live updates' : 'Offline mode'}
-          </Typography>
-        </Box>
-        <Button
-          variant="contained"
-          color="secondary"
-          startIcon={<FaSync />}
-          onClick={refresh}
-          size="small"
-          sx={{ borderRadius: "8px" }}
-        >
-          Refresh Events
-        </Button>
-      </Box>
-
-      <DataGridContainer 
+      <DataGridContainer
         filteredEvents={filteredEvents}
         columns={columns}
         loading={loading}
         colors={colors}
       />
-      
       <DeleteDialog
         open={openDialog}
         event={selectedEvent}
@@ -339,7 +303,6 @@ const EventList: FC = () => {
         onCancel={handleCloseDialog}
         onConfirm={handleConfirmDelete}
       />
-
       {selectedEvent && (
         <EventPreview
           open={previewOpen}

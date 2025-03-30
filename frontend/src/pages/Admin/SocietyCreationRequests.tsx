@@ -8,7 +8,6 @@ import { updateRequestStatus } from "../../api/requestApi";
 import { apiPaths } from "../../api";
 import { fetchPendingRequests } from "./utils";
 import { useWebSocketChannel } from "../../hooks/useWebSocketChannel";
-import { FaSync } from "react-icons/fa";
 
 interface Society {
   id: number;
@@ -60,11 +59,9 @@ interface DataGridContainerProps {
 
 interface HeaderProps {
   colors: ReturnType<typeof tokens>;
-  isConnected: boolean;
-  onRefresh: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ colors, isConnected, onRefresh }) => {
+const Header: React.FC<HeaderProps> = ({ colors }) => {
   return (
     <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
       <Typography
@@ -77,32 +74,6 @@ const Header: React.FC<HeaderProps> = ({ colors, isConnected, onRefresh }) => {
       >
         Pending Society Requests
       </Typography>
-      
-      <Box display="flex" alignItems="center">
-        <Box
-          component="span"
-          sx={{
-            width: 8,
-            height: 8,
-            borderRadius: '50%',
-            backgroundColor: isConnected ? colors.greenAccent[500] : colors.orangeAccent[500],
-            mr: 1
-          }}
-        />
-        <Typography variant="body2" fontSize="0.75rem" color={colors.grey[300]} mr={2}>
-          {isConnected ? 'Live updates' : 'Offline mode'}
-        </Typography>
-        <Button
-          variant="contained"
-          color="secondary"
-          startIcon={<FaSync />}
-          onClick={onRefresh}
-          size="small"
-          sx={{ borderRadius: "8px" }}
-        >
-          Refresh
-        </Button>
-      </Box>
     </Box>
   );
 };
@@ -325,7 +296,6 @@ const PendingSocietyRequest: React.FC = () => {
     severity: 'success'
   });
   
-  
   const fetchSocietyData = useCallback(async () => {
     try {
       const data = await fetchPendingRequests(apiPaths.USER.PENDINGSOCIETYREQUEST);
@@ -335,7 +305,6 @@ const PendingSocietyRequest: React.FC = () => {
       return [];
     }
   }, []);
-  
   
   const { 
     data: societies, 
@@ -348,7 +317,6 @@ const PendingSocietyRequest: React.FC = () => {
     fetchSocietyData
   );
   
-  
   useEffect(() => {
     if (wsError) {
       setNotification({
@@ -358,7 +326,6 @@ const PendingSocietyRequest: React.FC = () => {
       });
     }
   }, [wsError]);
-  
   
   useEffect(() => {
     if (societies) {
@@ -386,29 +353,23 @@ const PendingSocietyRequest: React.FC = () => {
 
   const handleStatusChange = useCallback(async (id: number, status: "Approved" | "Rejected") => {
     try {
-      
       updateSocietiesAfterStatusChange(id);
       
-      
       await updateRequestStatus(id, status, apiPaths.USER.PENDINGSOCIETYREQUEST);
-      
       
       showNotification(
         `Society ${status === "Approved" ? "approved" : "rejected"} successfully.`, 
         'success'
       );
       
-      
       refresh();
     } catch (error) {
       console.error(`Error updating society status:`, error);
-      
       
       showNotification(
         `Failed to ${status.toLowerCase()} society request.`, 
         'error'
       );
-      
       
       refresh();
     }
@@ -433,8 +394,6 @@ const PendingSocietyRequest: React.FC = () => {
     <Box sx={{ height: "calc(100vh - 64px)", maxWidth: drawer ? `calc(100% - 3px)` : "100%" }}>
       <Header 
         colors={colors}
-        isConnected={isConnected}
-        onRefresh={refresh}
       />
       
       <DataGridContainer 

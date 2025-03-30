@@ -1,11 +1,10 @@
 import React, { ReactNode, useState, useCallback, useEffect } from "react";
-import { Box, Tabs, Tab, useTheme, Typography, Button } from "@mui/material";
+import { Box, Tabs, Tab, useTheme, Typography } from "@mui/material";
 import { tokens } from "../../theme/theme";
 import AdminReportList from "./AdminReportList";
 import ReportRepliedList from "./ReportRepliedList";
 import ReportRepliesList from "./ReportRepliesList";
 import { useWebSocketChannel } from "../../hooks/useWebSocketChannel";
-import { FaSync } from "react-icons/fa";
 
 interface TabPanelProps {
   children: ReactNode;
@@ -26,8 +25,6 @@ interface StorageOperations {
 
 interface HeaderProps {
   colors: ReturnType<typeof tokens>;
-  isConnected: boolean;
-  onRefresh: () => void;
 }
 
 const STORAGE_KEY = "reportsActiveTab";
@@ -126,7 +123,7 @@ const TabPanelContainer: React.FC<{
   );
 };
 
-const PageHeader: React.FC<HeaderProps> = ({ colors, isConnected, onRefresh }) => {
+const PageHeader: React.FC<HeaderProps> = ({ colors }) => {
   return (
     <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
       <Typography
@@ -139,32 +136,6 @@ const PageHeader: React.FC<HeaderProps> = ({ colors, isConnected, onRefresh }) =
       >
         Manage Reports
       </Typography>
-      
-      <Box display="flex" alignItems="center">
-        <Box
-          component="span"
-          sx={{
-            width: 8,
-            height: 8,
-            borderRadius: '50%',
-            backgroundColor: isConnected ? colors.greenAccent[500] : colors.orangeAccent[500],
-            mr: 1
-          }}
-        />
-        <Typography variant="body2" fontSize="0.75rem" color={colors.grey[300]} mr={2}>
-          {isConnected ? 'Live updates' : 'Offline mode'}
-        </Typography>
-        <Button
-          variant="contained"
-          color="secondary"
-          startIcon={<FaSync />}
-          onClick={onRefresh}
-          size="small"
-          sx={{ borderRadius: "8px" }}
-        >
-          Refresh
-        </Button>
-      </Box>
     </Box>
   );
 };
@@ -177,13 +148,9 @@ const ManageReports: React.FC = () => {
   
   const [activeTabIndex, setActiveTabIndex] = useState<number>(storage.getActiveTab);
 
-  
   const fetchReportStatus = async () => {
-    
-    
     return { status: "connected" };
   };
-
   
   const { 
     isConnected, 
@@ -193,7 +160,6 @@ const ManageReports: React.FC = () => {
     'dashboard_stats', 
     fetchReportStatus
   );
-
   
   useEffect(() => {
     if (error) {
@@ -215,8 +181,6 @@ const ManageReports: React.FC = () => {
     >
       <PageHeader 
         colors={colors} 
-        isConnected={isConnected}
-        onRefresh={refresh}
       />
       <ReportTabs 
         tabs={tabs} 

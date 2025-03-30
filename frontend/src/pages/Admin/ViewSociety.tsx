@@ -25,7 +25,6 @@ import { apiClient, apiPaths } from "../../api";
 import { tokens } from "../../theme/theme";
 import { Society } from "../../types";
 import { useWebSocketChannel } from "../../hooks/useWebSocketChannel";
-import { FaSync } from "react-icons/fa";
 
 interface FormErrors {
   name?: string;
@@ -91,40 +90,6 @@ interface SocietyFormProps {
   onFileChange: (file: File) => void;
   onSubmit: (e: FormEvent) => void;
 }
-
-interface StatusIndicatorProps {
-  isConnected: boolean;
-  onRefresh: () => void;
-  colors: ReturnType<typeof tokens>;
-}
-
-const StatusIndicator: React.FC<StatusIndicatorProps> = ({ isConnected, onRefresh, colors }) => (
-  <Box display="flex" alignItems="center" mb={2}>
-    <Box
-      component="span"
-      sx={{
-        width: 8,
-        height: 8,
-        borderRadius: '50%',
-        backgroundColor: isConnected ? colors.greenAccent[500] : colors.orangeAccent[500],
-        mr: 1
-      }}
-    />
-    <Typography variant="body2" fontSize="0.75rem" color={colors.grey[300]} mr={2}>
-      {isConnected ? 'Live updates' : 'Offline mode'}
-    </Typography>
-    <Button
-      variant="contained"
-      color="secondary"
-      startIcon={<FaSync />}
-      onClick={onRefresh}
-      size="small"
-      sx={{ borderRadius: "8px" }}
-    >
-      Refresh
-    </Button>
-  </Box>
-);
 
 const fetchSocietyData = async (societyId: number): Promise<Society> => {
   try {
@@ -481,7 +446,6 @@ const SocietyForm: React.FC<SocietyFormProps> = ({
                 name="president"
                 value={
                   formData.president
-                  
                     ? `${formData.president.first_name} ${formData.president.last_name}`
                     : ""
                 }
@@ -556,7 +520,6 @@ const ViewSociety: React.FC = () => {
     severity: "info",
   });
 
-  
   const fetchSocietyDataWrapper = useCallback(async () => {
     try {
       return await fetchSocietyData(societyId);
@@ -566,7 +529,6 @@ const ViewSociety: React.FC = () => {
     }
   }, [societyId]);
 
-  
   const { 
     data: society, 
     loading, 
@@ -578,7 +540,6 @@ const ViewSociety: React.FC = () => {
     fetchSocietyDataWrapper
   );
 
-  
   useEffect(() => {
     if (society) {
       setFormData({
@@ -589,7 +550,6 @@ const ViewSociety: React.FC = () => {
     }
   }, [society]);
 
-  
   useEffect(() => {
     if (wsError) {
       setNotification({
@@ -710,7 +670,6 @@ const ViewSociety: React.FC = () => {
 
         await updateSocietyData(societyId, formDataToSend);
         
-        
         refresh();
         setIconFile(null);
         
@@ -737,13 +696,8 @@ const ViewSociety: React.FC = () => {
         backgroundColor: colors.primary[500],
       }}
     >
-      <Box display="flex" justifyContent="space-between" alignItems="center">
+      <Box>
         <BackButton onClick={handleGoBack} />
-        <StatusIndicator 
-          isConnected={isConnected}
-          onRefresh={refresh}
-          colors={colors}
-        />
       </Box>
 
       <Typography

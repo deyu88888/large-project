@@ -1,12 +1,11 @@
 import React, { ReactNode, useEffect, useState, useCallback, FC } from "react";
-import { Box, Tabs, Tab, useTheme, Typography, Button } from "@mui/material";
+import { Box, Tabs, Tab, useTheme, Typography } from "@mui/material";
 import { tokens } from "../../theme/theme";
 import SocietyList from "./SocietyList";
 import SocietyListRejected from "./RejectedSocietiesList";
 import PendingSocietyRequest from "./SocietyCreationRequests";
 import PendingSocietyDetailRequests from "./PendingSocietyDetailRequest";
 import { useWebSocketChannel } from "../../hooks/useWebSocketChannel";
-import { FaSync } from "react-icons/fa";
 
 interface TabPanelProps {
   children: ReactNode;
@@ -37,8 +36,6 @@ interface TabPanelsProps {
 
 interface HeaderProps {
   colors: any;
-  isConnected: boolean;
-  onRefresh: () => void;
 }
 
 const ACTIVE_TAB_KEY = "activeTab";
@@ -89,7 +86,7 @@ const CustomTabPanel: FC<TabPanelProps> = ({ children, value, index }) => {
   );
 };
 
-const Header: FC<HeaderProps> = ({ colors, isConnected, onRefresh }) => {
+const Header: FC<HeaderProps> = ({ colors }) => {
   return (
     <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
       <Typography
@@ -102,32 +99,6 @@ const Header: FC<HeaderProps> = ({ colors, isConnected, onRefresh }) => {
       >
         Manage Societies
       </Typography>
-      
-      <Box display="flex" alignItems="center">
-        <Box
-          component="span"
-          sx={{
-            width: 8,
-            height: 8,
-            borderRadius: '50%',
-            backgroundColor: isConnected ? colors.greenAccent[500] : colors.orangeAccent[500],
-            mr: 1
-          }}
-        />
-        <Typography variant="body2" fontSize="0.75rem" color={colors.grey[300]} mr={2}>
-          {isConnected ? 'Live updates' : 'Offline mode'}
-        </Typography>
-        <Button
-          variant="contained"
-          color="secondary"
-          startIcon={<FaSync />}
-          onClick={onRefresh}
-          size="small"
-          sx={{ borderRadius: "8px" }}
-        >
-          Refresh
-        </Button>
-      </Box>
     </Box>
   );
 };
@@ -181,14 +152,10 @@ const ManageSocieties: FC = () => {
   
   const [activeTab, setActiveTab] = useState<number>(getInitialTabState);
   
-  
   const fetchSocietyStatus = async () => {
-    
-    
     return { status: "connected" };
   };
 
-  
   const { 
     isConnected, 
     refresh,
@@ -197,7 +164,6 @@ const ManageSocieties: FC = () => {
     'admin_societies',
     fetchSocietyStatus
   );
-
   
   useEffect(() => {
     if (error) {
@@ -228,8 +194,6 @@ const ManageSocieties: FC = () => {
     <Box sx={containerStyle}>
       <Header 
         colors={colors}
-        isConnected={isConnected}
-        onRefresh={refresh}
       />
       
       <TabsContainer 

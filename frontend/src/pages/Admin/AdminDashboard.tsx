@@ -407,51 +407,23 @@ const AdminDashboard: FC = () => {
   return (
     <div style={getContainerStyle()}>
       <div style={{ maxWidth: "1600px", margin: "0 auto" }}>
-        <Box 
-          display="flex" 
-          justifyContent="space-between" 
-          alignItems="center" 
+        <Box
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
           className="mb-8"
         >
           <Header
             title={`Welcome to your Dashboard, ${user?.first_name ?? "User"}!`}
             subtitle="Manage users, societies, and more."
           />
-          <Box display="flex" alignItems="center" gap={2}>
-            {/* WebSocket connection status */}
-            <Box display="flex" alignItems="center">
-              <Box
-                component="span"
-                sx={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: '50%',
-                  backgroundColor: isConnected ? colours.greenAccent[500] : colours.orangeAccent[500],
-                  mr: 1
-                }}
-              />
-              <Typography variant="body2" fontSize="0.75rem" color={colours.grey[300]}>
-                {isConnected ? 'Live updates' : 'Offline mode'}
-              </Typography>
-            </Box>
-            <Button
-              variant="contained"
-              color="secondary"
-              startIcon={<FaSync />}
-              onClick={refresh}
-              sx={{ borderRadius: "8px" }}
-            >
-              Refresh
-            </Button>
-          </Box>
         </Box>
-
         {errorMessage && (
-          <Paper 
-            sx={{ 
-              p: 2, 
-              mb: 3, 
-              bgcolor: 'rgba(244, 67, 54, 0.1)', 
+          <Paper
+            sx={{
+              p: 2,
+              mb: 3,
+              bgcolor: 'rgba(244, 67, 54, 0.1)',
               border: '1px solid rgba(244, 67, 54, 0.3)',
               borderRadius: 2
             }}
@@ -459,7 +431,6 @@ const AdminDashboard: FC = () => {
             <Typography color="error">{errorMessage}</Typography>
           </Paper>
         )}
-
         <DashboardContent
           loading={loading}
           userStats={userStats}

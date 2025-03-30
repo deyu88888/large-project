@@ -20,7 +20,6 @@ import { EventPreview } from "../../components/EventPreview";
 import type { EventData } from "../../types/event/event";
 import {mapToEventRequestData} from "../../utils/mapper.ts";
 import { useWebSocketChannel } from "../../hooks/useWebSocketChannel";
-import { FaSync } from "react-icons/fa";
 
 interface DeleteDialogProps {
   open: boolean;
@@ -33,8 +32,6 @@ interface DeleteDialogProps {
 
 interface HeaderProps {
   colors: any;
-  isConnected: boolean;
-  onRefresh: () => void;
 }
 
 interface ActionButtonsProps {
@@ -43,7 +40,7 @@ interface ActionButtonsProps {
   onDelete: (event: EventData) => void;
 }
 
-const Header: FC<HeaderProps> = ({ colors, isConnected, onRefresh }) => {
+const Header: FC<HeaderProps> = ({ colors }) => {
   return (
     <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
       <Typography
@@ -56,32 +53,6 @@ const Header: FC<HeaderProps> = ({ colors, isConnected, onRefresh }) => {
       >
         Rejected Events
       </Typography>
-      
-      <Box display="flex" alignItems="center">
-        <Box
-          component="span"
-          sx={{
-            width: 8,
-            height: 8,
-            borderRadius: '50%',
-            backgroundColor: isConnected ? colors.greenAccent[500] : colors.orangeAccent[500],
-            mr: 1
-          }}
-        />
-        <Typography variant="body2" fontSize="0.75rem" color={colors.grey[300]} mr={2}>
-          {isConnected ? 'Live updates' : 'Offline mode'}
-        </Typography>
-        <Button
-          variant="contained"
-          color="secondary"
-          startIcon={<FaSync />}
-          onClick={onRefresh}
-          size="small"
-          sx={{ borderRadius: "8px" }}
-        >
-          Refresh
-        </Button>
-      </Box>
     </Box>
   );
 };
@@ -133,7 +104,6 @@ const EventListRejected: React.FC = () => {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [reason, setReason] = useState("");
 
-  
   const fetchRejectedEvents = useCallback(async () => {
     try {
       const res = await apiClient.get(apiPaths.EVENTS.REJECTEDEVENTLIST);
@@ -144,9 +114,8 @@ const EventListRejected: React.FC = () => {
     }
   }, []);
 
-  
   const { 
-    data: events, 
+    data: events = [], // Provide a default empty array
     loading, 
     error, 
     refresh, 
@@ -156,7 +125,6 @@ const EventListRejected: React.FC = () => {
     fetchRejectedEvents
   );
 
-  
   React.useEffect(() => {
     if (error) {
       console.error(`WebSocket error: ${error}`);
@@ -192,7 +160,10 @@ const EventListRejected: React.FC = () => {
     }
   };
 
-  const filteredEvents = (events || []).filter((event) =>
+  // Make sure events is always an array
+  const eventsArray = Array.isArray(events) ? events : [];
+  
+  const filteredEvents = eventsArray.filter((event) =>
     `${event.eventId} ${event.title} ${event.date} ${event.startTime} ${event.duration} ${event.hostedBy} ${event.location}`
       .toLowerCase()
       .includes((searchTerm || "").toLowerCase())
@@ -226,8 +197,6 @@ const EventListRejected: React.FC = () => {
     <Box sx={{ height: "calc(100vh - 64px)", maxWidth: drawer ? `calc(100% - 3px)` : "100%" }}>
       <Header 
         colors={colors}
-        isConnected={isConnected}
-        onRefresh={refresh}
       />
       
       <Box

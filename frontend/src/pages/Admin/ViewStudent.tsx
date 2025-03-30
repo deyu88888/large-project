@@ -25,7 +25,6 @@ import { useAuthStore } from "../../stores/auth-store.ts";
 import { tokens } from "../../theme/theme.ts";
 import { Student } from "../../types.ts";
 import { useWebSocketChannel } from "../../hooks/useWebSocketChannel";
-import { FaSync } from "react-icons/fa";
 
 interface SnackbarState {
   open: boolean;
@@ -70,12 +69,6 @@ interface BackButtonProps {
   onClick: () => void;
 }
 
-interface StatusIndicatorProps {
-  isConnected: boolean;
-  onRefresh: () => void;
-  colors: ReturnType<typeof tokens>;
-}
-
 interface SnackbarAlertProps {
   state: SnackbarState;
   onClose: () => void;
@@ -93,34 +86,6 @@ interface StudentFormProps {
   onIsPresidentChange: (isPresident: boolean) => void;
   onSubmit: (e: FormEvent) => void;
 }
-
-const StatusIndicator: React.FC<StatusIndicatorProps> = ({ isConnected, onRefresh, colors }) => (
-  <Box display="flex" alignItems="center" mb={2}>
-    <Box
-      component="span"
-      sx={{
-        width: 8,
-        height: 8,
-        borderRadius: '50%',
-        backgroundColor: isConnected ? colors.greenAccent[500] : colors.orangeAccent[500],
-        mr: 1
-      }}
-    />
-    <Typography variant="body2" fontSize="0.75rem" color={colors.grey[300]} mr={2}>
-      {isConnected ? 'Live updates' : 'Offline mode'}
-    </Typography>
-    <Button
-      variant="contained"
-      color="secondary"
-      startIcon={<FaSync />}
-      onClick={onRefresh}
-      size="small"
-      sx={{ borderRadius: "8px" }}
-    >
-      Refresh
-    </Button>
-  </Box>
-);
 
 const fetchStudentData = async (studentId: number): Promise<Student> => {
   try {
@@ -370,7 +335,6 @@ const StudentForm: React.FC<StudentFormProps> = ({
 
           <Grid item xs={6}>
             <SocietiesField
-            
               value={formData.societies}
               onChange={onSocietiesChange}
             />
@@ -424,7 +388,6 @@ const ViewStudent: React.FC = () => {
     severity: "success",
   });
 
-  
   const fetchStudentDataWrapper = useCallback(async () => {
     try {
       return await fetchStudentData(studentId);
@@ -434,7 +397,6 @@ const ViewStudent: React.FC = () => {
     }
   }, [studentId]);
 
-  
   const { 
     data: student, 
     loading, 
@@ -446,14 +408,12 @@ const ViewStudent: React.FC = () => {
     fetchStudentDataWrapper
   );
 
-  
   useEffect(() => {
     if (student) {
       setFormData({ ...student });
     }
   }, [student]);
 
-  
   useEffect(() => {
     if (wsError) {
       setSnackbar({
@@ -524,7 +484,6 @@ const ViewStudent: React.FC = () => {
         const formDataToSend = createFormDataFromStudent(formData);
         await updateStudentData(studentId, formDataToSend);
         
-        
         refresh();
         
         setSnackbar({
@@ -552,13 +511,8 @@ const ViewStudent: React.FC = () => {
 
   return (
     <Box minHeight="100vh" p={4}>
-      <Box display="flex" justifyContent="space-between" alignItems="center">
+      <Box>
         <BackButton onClick={handleGoBack} />
-        <StatusIndicator 
-          isConnected={isConnected}
-          onRefresh={refresh}
-          colors={colors}
-        />
       </Box>
 
       <Typography variant="h2" textAlign="center" mb={4}>

@@ -39,31 +39,6 @@ interface ReplyFormProps {
   disabled: boolean;
 }
 
-interface StatusBarProps {
-  isConnected: boolean;
-  colors: ReturnType<typeof tokens>;
-}
-
-const StatusBar: React.FC<StatusBarProps> = ({ isConnected, colors }) => {
-  return (
-    <Box display="flex" alignItems="center" mb={2}>
-      <Box
-        component="span"
-        sx={{
-          width: 8,
-          height: 8,
-          borderRadius: '50%',
-          backgroundColor: isConnected ? colors.greenAccent[500] : colors.orangeAccent[500],
-          mr: 1
-        }}
-      />
-      <Typography variant="body2" fontSize="0.75rem" color={colors.grey[300]}>
-        {isConnected ? 'Live connection' : 'Offline mode'}
-      </Typography>
-    </Box>
-  );
-};
-
 const fetchReportById = async (reportId: string | undefined): Promise<Report> => {
   if (!reportId) {
     throw new Error("Report ID is missing");
@@ -230,7 +205,6 @@ const ReportReply: React.FC = () => {
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  
   const fetchReportData = useCallback(async () => {
     try {
       return await fetchReportById(reportId);
@@ -241,7 +215,6 @@ const ReportReply: React.FC = () => {
       throw new Error(errorMessage);
     }
   }, [reportId]);
-  
   
   const { 
     data: report, 
@@ -279,7 +252,6 @@ const ReportReply: React.FC = () => {
     }
   };
   
-  
   const errorMessage = replyState.error || error;
   
   if (loading && !report) {
@@ -294,8 +266,6 @@ const ReportReply: React.FC = () => {
   return (
     <PageContainer>
       <PageTitle />
-      
-      <StatusBar isConnected={isConnected} colors={colors} />
       
       {errorMessage && <ErrorState message={errorMessage} />}
       

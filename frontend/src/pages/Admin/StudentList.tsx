@@ -19,7 +19,6 @@ import { useSettingsStore } from "../../stores/settings-store";
 import { Student } from "../../types";
 import { useNavigate } from "react-router-dom";
 import { useWebSocketChannel } from "../../hooks/useWebSocketChannel";
-import { FaSync } from "react-icons/fa";
 
 interface DialogState {
   open: boolean;
@@ -51,8 +50,6 @@ interface DataGridContainerProps {
 
 interface HeaderProps {
   colors: ReturnType<typeof tokens>;
-  isConnected: boolean;
-  onRefresh: () => void;
 }
 
 interface PresidentCellProps {
@@ -64,7 +61,7 @@ interface BooleanCellProps {
   value: boolean;
 }
 
-const Header: React.FC<HeaderProps> = ({ colors, isConnected, onRefresh }) => {
+const Header: React.FC<HeaderProps> = ({ colors }) => {
   return (
     <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
       <Typography
@@ -77,32 +74,6 @@ const Header: React.FC<HeaderProps> = ({ colors, isConnected, onRefresh }) => {
       >
         Student List
       </Typography>
-      
-      <Box display="flex" alignItems="center">
-        <Box
-          component="span"
-          sx={{
-            width: 8,
-            height: 8,
-            borderRadius: '50%',
-            backgroundColor: isConnected ? colors.greenAccent[500] : colors.orangeAccent[500],
-            mr: 1
-          }}
-        />
-        <Typography variant="body2" fontSize="0.75rem" color={colors.grey[300]} mr={2}>
-          {isConnected ? 'Live updates' : 'Offline mode'}
-        </Typography>
-        <Button
-          variant="contained"
-          color="secondary"
-          startIcon={<FaSync />}
-          onClick={onRefresh}
-          size="small"
-          sx={{ borderRadius: "8px" }}
-        >
-          Refresh
-        </Button>
-      </Box>
     </Box>
   );
 };
@@ -350,7 +321,6 @@ const StudentList: React.FC = () => {
     reason: ''
   });
 
-  
   const { 
     data: students, 
     loading, 
@@ -361,7 +331,6 @@ const StudentList: React.FC = () => {
     'admin_students', 
     fetchStudentList
   );
-  
   
   useEffect(() => {
     if (error) {
@@ -431,8 +400,6 @@ const StudentList: React.FC = () => {
     >
       <Header 
         colors={colors}
-        isConnected={isConnected}
-        onRefresh={refresh}
       />
 
       <DataGridContainer 
