@@ -3,7 +3,7 @@ import { render, screen, waitFor, fireEvent, act } from '@testing-library/react'
 import { vi } from 'vitest';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import ProfilePage from '../profile';
+import ProfilePage from '../Profile';
 import { apiClient, apiPaths } from '../../api';
 
 // Create themes for testing

@@ -6,7 +6,6 @@ import { tokens } from "../../theme/theme";
 import { useSettingsStore } from "../../stores/settings-store";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { SocietyPreview } from "../../components/SocietyPreview";
-import { EventPreview } from "../../components/EventPreview";
 import { SocietyDetailRequest } from "../../types/admin/society";
 
 
@@ -251,29 +250,21 @@ const PendingSocietyDetailRequests: React.FC = () => {
       )}
 
       {/* Alert for success/failure messages */}
-      <Snackbar 
-        open={alert.open} 
-        autoHideDuration={6000} 
+      <Snackbar
+        open={alert.open}
+        autoHideDuration={6000}
         onClose={handleCloseAlert}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       >
-        <Alert 
-          onClose={handleCloseAlert} 
-          severity={alert.severity} 
+        <Alert
+          onClose={handleCloseAlert}
+          severity={alert.severity}
           variant="filled"
           sx={{ width: '100%' }}
         >
           {alert.message}
         </Alert>
       </Snackbar>
-
-      {selectedRequest && (
-        <EventPreview
-          open={openPreview}
-          onClose={() => setOpenPreview(false)}
-          eventData={selectedRequest}
-        />
-      )}
     </Box>
   );
 };

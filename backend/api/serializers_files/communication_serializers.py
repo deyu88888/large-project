@@ -16,6 +16,7 @@ class SocietyNewsSerializer(serializers.ModelSerializer):
     is_author = serializers.SerializerMethodField()
     image_url = serializers.SerializerMethodField()
     attachment_name = serializers.SerializerMethodField()
+    attachment_url = serializers.SerializerMethodField()
     comments = serializers.SerializerMethodField(read_only=True)
     admin_notes = serializers.SerializerMethodField()
 
@@ -24,7 +25,7 @@ class SocietyNewsSerializer(serializers.ModelSerializer):
         model = SocietyNews
         fields = [
             'id', 'society', 'title', 'content', 'image', 'image_url',
-            'attachment', 'attachment_name', 'author', 'author_data',
+            'attachment', 'attachment_name', 'attachment_url', 'author', 'author_data',
             'society_data', 'created_at', 'updated_at', 'published_at',
             'status', 'is_featured', 'is_pinned', 'tags', 'view_count',
             'comment_count', 'is_author', 'comments', 'admin_notes',
@@ -110,6 +111,18 @@ class SocietyNewsSerializer(serializers.ModelSerializer):
         except Exception:
             return None
 
+    def get_attachment_url(self, obj):
+        """Get full attachment URL."""
+        try:
+            request = self.context.get("request")
+            if obj.attachment:
+                url = request.build_absolute_uri(obj.attachment.url) if request else obj.attachment.url
+                return url
+            return None
+        except Exception as e:
+            print(f"Error getting attachment URL: {e}")
+            return None
+
     def get_comments(self, obj):
         """Get top-level comments."""
         try:
@@ -128,7 +141,7 @@ class SocietyNewsSerializer(serializers.ModelSerializer):
             return None
 
         try:
-            # Get the most recently reviewed request with status="Rejected"
+
             rejected_req = NewsPublicationRequest.objects.filter(
                 news_post=obj, status="Rejected"
             ).order_by('-reviewed_at').first()
@@ -144,22 +157,44 @@ class SocietyNewsSerializer(serializers.ModelSerializer):
         """Validate the news post data"""
         if data.get('status') == 'Published' and not data.get('title'):
             raise serializers.ValidationError({"title": "Published news must have a title."})
-
+        
         status_value = data.get('status')
         if status_value and status_value not in ['Draft', 'PendingApproval', 'Rejected', 'Published', 'Archived']:
             raise serializers.ValidationError({
                 "status": f"Invalid status: {status_value}. Must be one of: Draft, PendingApproval, Rejected, Published, Archived"
             })
-
+        
         if 'tags' in data:
             tags = data.get('tags')
             if tags and not isinstance(tags, list):
                 try:
-                    if isinstance(tags, str):
-                        data['tags'] = loads(tags)
-                except Exception:
-                    raise serializers.ValidationError({"tags": "Tags must be a list"})
 
+                    if isinstance(tags, str):
+                        import json
+                        try:
+
+                            parsed_tags = json.loads(tags)
+
+                            if isinstance(parsed_tags, list):
+                                data['tags'] = parsed_tags
+                            else:
+
+                                data['tags'] = [str(parsed_tags)]
+                        except json.JSONDecodeError:
+
+                            if tags.strip():
+
+                                data['tags'] = [tags.strip()]
+                            else:
+
+                                data['tags'] = []
+                    else:
+
+                        data['tags'] = [str(tags)]
+                except Exception:
+
+                    data['tags'] = []
+        
         return data
 
     def create(self, validated_data):
@@ -247,7 +282,7 @@ class NewsCommentSerializer(serializers.ModelSerializer):
         try:
             return obj.dislikes.count()
         except Exception:
-            # Fallback to 0 if the dislikes table is not available
+
             return 0
 
     def get_disliked_by_user(self, obj):

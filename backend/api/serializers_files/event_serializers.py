@@ -8,18 +8,30 @@ class EventModuleSerializer(serializers.ModelSerializer):
     """
     serializer for the EventModule model.
     """
+    file_value = serializers.SerializerMethodField()
+
     class Meta:
         model = EventModule
         fields = ['id', 'type', 'text_value', 'file_value', 'is_participant_only']
+
+    def get_file_value(self, obj):
+        if obj.file_value:
+            request = self.context.get('request', None)
+            if request:
+                return request.build_absolute_uri(obj.file_value.url)
+            return obj.file_value.url
+        return None
 
 class EventSerializer(serializers.ModelSerializer):
     """
     serializer for the EventModule model.
     """
+    cover_image = serializers.SerializerMethodField()
     current_attendees = StudentSerializer(many=True, read_only=True)
     extra_modules = serializers.SerializerMethodField()
     participant_modules = serializers.SerializerMethodField()
     is_member = serializers.SerializerMethodField()
+    is_participant = serializers.SerializerMethodField()
 
     class Meta:
         model = Event
@@ -27,17 +39,24 @@ class EventSerializer(serializers.ModelSerializer):
             'id', 'title', 'main_description', 'cover_image', 'date',
             'start_time', 'duration', 'hosted_by', 'location',
             'max_capacity', 'current_attendees', 'status',
-            'extra_modules', 'participant_modules', 'is_member'
+            'extra_modules', 'participant_modules', 'is_member',
+            'is_participant'
         ]
         extra_kwargs = {'hosted_by': {'required': True}}
 
+    def get_cover_image(self, obj):
+        if obj.cover_image:
+            request = self.context.get('request')
+            return request.build_absolute_uri(obj.cover_image.url) if request else obj.cover_image.url
+        return None
+
     def get_extra_modules(self, obj):
         modules = obj.modules.filter(is_participant_only=False)
-        return EventModuleSerializer(modules, many=True).data
+        return EventModuleSerializer(modules, many=True, context=self.context).data
 
     def get_participant_modules(self, obj):
         modules = obj.modules.filter(is_participant_only=True)
-        return EventModuleSerializer(modules, many=True).data
+        return EventModuleSerializer(modules, many=True, context=self.context).data
 
     def get_is_member(self, obj):
         request = self.context.get("request")
@@ -48,6 +67,14 @@ class EventSerializer(serializers.ModelSerializer):
             return False
         return obj.hosted_by.society_members.filter(id=student.id).exists()
 
+    def get_is_participant(self, obj):
+        request = self.context.get("request")
+        if not request or not request.user.is_authenticated:
+            return False
+        student = getattr(request.user, "student", None)
+        if not student:
+            return False
+        return obj.current_attendees.filter(id=student.id).exists()
 
 class CommentSerializer(serializers.ModelSerializer):
     """

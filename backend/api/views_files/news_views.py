@@ -13,8 +13,20 @@ from api.views_files.view_utility import has_society_management_permission
 class IsAdminOrPresident(BasePermission):
     """Defines a permission check for if a user is an admin or president"""
     def has_permission(self, request, view):
-        return (request.user.is_authenticated
-            and (request.user.is_admin() or request.user.is_president))
+
+        if not request.user.is_authenticated:
+            return False
+            
+
+        is_admin = hasattr(request.user, 'is_admin') and callable(getattr(request.user, 'is_admin')) and request.user.is_admin()
+            
+
+        is_president = False
+        if hasattr(request.user, 'student'):
+            if hasattr(request.user.student, 'is_president'):
+                is_president = request.user.student.is_president
+                
+        return is_admin or is_president
 
 
 class NewsView(APIView):
@@ -41,21 +53,21 @@ class NewsView(APIView):
         else:
             if societies:
                 society_members = User.objects.filter(
-                    student__isnull=False,  # Ensure the user is a student
+                    student__isnull=False,
                     student__societies__in=Society.objects.filter(id__in=societies)
                 ).distinct()
                 recipients.update(society_members)
 
             if events:
                 event_attendees = User.objects.filter(
-                    student__isnull=False,  # Ensure the user is a student
+                    student__isnull=False,
                     student__attended_events__in=Event.objects.filter(id__in=events)
                 ).distinct()
                 recipients.update(event_attendees)
 
         broadcast = BroadcastMessage.objects.create(sender=user, message=message)
 
-        # Assign societies, events and recipients
+
         if societies:
             broadcast.societies.set(Society.objects.filter(id__in=societies))
         if events:
@@ -75,7 +87,7 @@ class BroadcastListAPIView(APIView):
         """Gets all broadcast messages for a user"""
         user = request.user
 
-        query = Q(recipients=user) # Initialise query
+        query = Q(recipients=user)
 
         if hasattr(user, 'student'):
             student = user.student
@@ -135,11 +147,23 @@ class NewsPublicationRequestView(APIView):
             news_post=news_post,
             status="Pending"
         ).exists()
+
         if existing_request:
             return Response(
                 {"error": "A publication request for this news post is already pending"},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+        # Mark any previous requests as superseded
+        NewsPublicationRequest.objects.filter(
+            news_post=news_post,
+            status="Approved"
+        ).update(status="Superseded_Approved")
+        
+        NewsPublicationRequest.objects.filter(
+            news_post=news_post,
+            status="Rejected"
+        ).update(status="Superseded_Rejected")
 
         publication_request = NewsPublicationRequest.objects.create(
             news_post=news_post,
@@ -156,20 +180,24 @@ class NewsPublicationRequestView(APIView):
         all_statuses = request.query_params.get('all_statuses') == 'true'
 
         if hasattr(user, "student"):
-            # For students, return their own requests
+            # For students, filter out superseded requests by default
             requests = NewsPublicationRequest.objects.filter(
                 requested_by=user.student
+            ).exclude(
+                status__in=["Superseded_Approved", "Superseded_Rejected"]
             ).order_by('-requested_at')
         elif user.is_admin():
             if all_statuses:
+                # If the admin specifically wants all, include everything
                 requests = NewsPublicationRequest.objects.all().order_by('-requested_at')
             else:
+                # By default, only show pending requests to admins
                 requests = NewsPublicationRequest.objects.filter(
                     status="Pending"
                 ).order_by('-requested_at')
         else:
             return Response({"error": "Unauthorized"},
-                        status=status.HTTP_403_FORBIDDEN)
+                          status=status.HTTP_403_FORBIDDEN)
 
         serializer = NewsPublicationRequestSerializer(requests, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -185,11 +213,13 @@ class AdminNewsApprovalView(APIView):
         """Get all pending news publication requests (admins only)"""
         if not request.user.is_admin():
             return Response({"error": "Only admins can view pending publication requests"},
-                            status=status.HTTP_403_FORBIDDEN)
-
+                    status=status.HTTP_403_FORBIDDEN)
+        
+        # Only get Pending requests - superseded ones are excluded by default
         requests_qs = NewsPublicationRequest.objects.filter(
             status="Pending"
         ).order_by('-requested_at')
+        
         serializer = NewsPublicationRequestSerializer(requests_qs, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -197,51 +227,48 @@ class AdminNewsApprovalView(APIView):
         """Approve or reject a news publication request"""
         if not request.user.is_admin():
             return Response({"error": "Only admins can approve or reject "
-                "publication requests"},
-                status=status.HTTP_403_FORBIDDEN)
-
+                            "publication requests"},
+                    status=status.HTTP_403_FORBIDDEN)
+        
         try:
             publication_request = NewsPublicationRequest.objects.get(id=request_id)
         except NewsPublicationRequest.DoesNotExist:
             return Response({"error": "Publication request not found"},
-                status=status.HTTP_404_NOT_FOUND)
-
+                    status=status.HTTP_404_NOT_FOUND)
+        
         action = request.data.get('status')
         if action not in ['Approved', 'Rejected']:
             return Response({"error": "Invalid action. Must be 'Approved' or 'Rejected'"},
-                status=status.HTTP_400_BAD_REQUEST)
-
-        # Update the publication request
+                    status=status.HTTP_400_BAD_REQUEST)
+        
         publication_request.status = action
         publication_request.reviewed_by = request.user
         publication_request.reviewed_at = timezone.now()
         publication_request.admin_notes = request.data.get('admin_notes', '')
-
+        
         news_post = publication_request.news_post
-
         if action == "Approved":
             news_post.status = "Published"
             news_post.published_at = timezone.now()
         else:
             news_post.status = "Rejected"
-
+        
         news_post.save()
         publication_request.save()
-
-        # Notify requester
+        
         notification_header = f"News Publication {action}"
         notification_body = ("Your news publication request for "
-            f"'{news_post.title}' has been {action.lower()}.")
-
+                            f"'{news_post.title}' has been {action.lower()}.")
+        
         if action == "Rejected" and publication_request.admin_notes:
             notification_body += f" Admin notes: {publication_request.admin_notes}"
-
+        
         Notification.objects.create(
             header=notification_header,
             body=notification_body,
             for_user=publication_request.requested_by,
             is_important=True
         )
-
+        
         serializer = NewsPublicationRequestSerializer(publication_request)
         return Response(serializer.data, status=status.HTTP_200_OK)

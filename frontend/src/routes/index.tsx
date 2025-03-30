@@ -12,10 +12,10 @@ import ManageReports from "../pages/Admin/ManageReports";
 import PublicLayout from "../components/home/PublicLayout";
 
 // Lazy-loaded pages
-const LoginPage = lazy(() => import("../pages/Login"));
-const RegisterPage = lazy(() => import("../pages/Register"));
+const LoginPage = lazy(() => import("../pages/Login.tsx"));
+const RegisterPage = lazy(() => import("../pages/Register.tsx"));
 const SearchResultsPage = lazy(() => import("../pages/SearchResultsPage"))
-const ProfilePage = lazy(() => import("../pages/Profile"));
+const ProfilePage = lazy(() => import("../pages/Profile.tsx"));
 const StudentDashboard = lazy(() => import("../pages/Student/StudentDashboard"));
 const MySocieties = lazy(() => import("../pages/Student/MyJoinedSocieties"));
 const ViewEvents = lazy(() => import("../pages/Student/MyJoinedEvents"));

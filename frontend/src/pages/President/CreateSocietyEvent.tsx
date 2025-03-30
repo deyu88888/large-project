@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTheme } from "@mui/material";
-import { tokens } from "../../theme/theme";
 import { EventForm } from "../../components/EventForm";
 import { apiClient } from "../../api";
 
@@ -41,17 +40,6 @@ const CreateEvent: React.FC = () => {
   const theme = useTheme();
   const { societyId } = useParams<{ societyId: string }>();
   const navigate = useNavigate();
-  
-  const [loading, setLoading] = useState<boolean>(false);
-  const [snackbar, setSnackbar] = useState<{
-    open: boolean;
-    message: string;
-    severity: "success" | "error";
-  }>({
-    open: false,
-    message: "",
-    severity: "success",
-  });
 
   React.useEffect(() => {
     const isDarkMode = theme.palette.mode === "dark";

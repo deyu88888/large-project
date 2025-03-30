@@ -6,7 +6,7 @@ from api.models import AdminReportRequest, Society, Event, EventModule, Request,
 from api.serializers_files.serializers_utility import is_user_student, get_report_reply_chain
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
-from api.serializers import EventModuleSerializer
+from api.serializers import EventSerializer
 
 
 def is_request_provided(context):
@@ -118,23 +118,18 @@ class UserRequestSerializer(RequestSerializer):
 
 
 class EventRequestSerializer(serializers.ModelSerializer):
-    extra_modules = EventModuleSerializer(many=True, required=False)
-    participant_modules = EventModuleSerializer(many=True, required=False)
-    event = serializers.SerializerMethodField()
+    event = EventSerializer(read_only=True)
     approved = serializers.BooleanField(required=False)
+    admin_reason = serializers.CharField(required=False)
 
     class Meta:
         """EventRequestSerializer meta data"""
         model = EventRequest
         fields = [
             "id", "event", "hosted_by", "from_student", "intent",
-            "approved", "requested_at", "extra_modules", "participant_modules"
+            "approved", "requested_at", "admin_reason"
         ]
         read_only_fields = ["from_student", "intent", "hosted_by", "event", "requested_at"]
-
-    def get_event(self, obj):
-        """Returns the id of the event the request is made for"""
-        return obj.event.id if obj.event else None
 
     def _parse_json_field(self, field_name, default="[]"):
         raw_data = self.context["request"].data.get(field_name, default)
@@ -197,8 +192,9 @@ class EventRequestSerializer(serializers.ModelSerializer):
             hosted_by=hosted_by,
             from_student=student,
             intent="CreateEve",
-            approved=False,
-            event=event
+            approved=None,
+            event=event,
+            admin_reason = request_obj.data.get("admin_reason", "")
         )
         return event_request
 
@@ -232,6 +228,7 @@ class EventRequestSerializer(serializers.ModelSerializer):
                              file_prefix="participant_module_file")
 
         instance.approved = None
+        instance.admin_reason = request_obj.data.get("admin_reason", instance.admin_reason)
         instance.save()
         return instance
 

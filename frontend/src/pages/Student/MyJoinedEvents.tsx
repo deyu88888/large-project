@@ -5,16 +5,10 @@ import { useTheme } from "@mui/material/styles";
 import { tokens } from "../../theme/theme";
 import { CircularProgress } from "@mui/material";
 import EventCard from "../../components/EventCard";
+import {EventData} from "../../types/event/event.ts";
+import {mapToEventData} from "../../utils/mapper.ts";
 
 // Interfaces and Types
-interface EventData {
-  id: number;
-  title: string;
-  date: string;
-  location: string;
-  current_attendees?: any[];
-}
-
 interface StyleProps {
   isLight: boolean;
   colours: any;
@@ -101,7 +95,7 @@ const EventsGrid: React.FC<EventsGridProps> = ({ events, handleViewEvent, styleP
     >
       {events.map((event) => (
         <EventCard
-          key={event.id}
+          key={event.eventId}
           event={event}
           followingsAttending={[]}
           isLight={isLight}
@@ -165,7 +159,8 @@ const useFetchEvents = () => {
   const fetchEvents = async () => {
     try {
       const response = await apiClient.get("/api/events/joined/");
-      setEvents(response.data || []);
+      const mappedEvents = (response.data || []).map(mapToEventData);
+      setEvents(mappedEvents);
     } catch (error) {
       console.error("Error fetching joined events:", error);
     } finally {

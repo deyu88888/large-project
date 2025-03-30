@@ -1,237 +1,253 @@
-import { useState, useEffect, useContext, useRef, useCallback } from "react";
-import { Box, useTheme } from "@mui/material";
-import { DataGrid, GridColDef, GridToolbar } from "@mui/x-data-grid";
+import React, { useEffect, useState, useContext, useRef, useCallback, FC } from "react";
+import {
+  Box,
+  useTheme,
+  Button,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  Dialog,
+  DialogActions,
+  TextField
+} from "@mui/material";
+import { DataGrid, GridColDef, GridToolbar, GridRenderCellParams } from "@mui/x-data-grid";
 import { apiClient, apiPaths } from "../../api";
 import { tokens } from "../../theme/theme";
-import { SearchContext } from "../../components/layout/SearchContext";
 import { useSettingsStore } from "../../stores/settings-store";
-import { Event } from '../../types';
+import { SearchContext } from "../../components/layout/SearchContext";
+import { EventPreview } from "../../components/EventPreview";
+import type { EventData } from "../../types/event/event";
 import { getWebSocketUrl } from "../../utils/websocket";
+import {mapToEventRequestData} from "../../utils/mapper.ts";
 
-
-interface WebSocketRef {
-  current: WebSocket | null;
-}
-
-interface TimeoutRef {
-  current: NodeJS.Timeout | null;
-}
-
-interface DataGridProps {
-  events: Event[];
-  columns: GridColDef[];
-  colors: ReturnType<typeof tokens>;
-}
-
-
-const WS_URL = getWebSocketUrl()
+const WS_URL = getWebSocketUrl();
 const RECONNECT_DELAY = 5000;
 
+interface DeleteDialogProps {
+  open: boolean;
+  event: EventData | null;
+  reason: string;
+  onReasonChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onCancel: () => void;
+  onConfirm: () => void;
+}
 
-const filterEventsBySearchTerm = (events: Event[], searchTerm: string): Event[] => {
-  if (!searchTerm) return events;
-  
-  const normalizedSearchTerm = searchTerm.toLowerCase();
-  
-  return events.filter((event) =>
-    Object.values(event)
-      .join(" ")
-      .toLowerCase()
-      .includes(normalizedSearchTerm)
-  );
-};
-
-const createEventColumns = (): GridColDef[] => {
-  return [
-    { field: "id", headerName: "ID", flex: 0.5 },
-    { field: "title", headerName: "Title", flex: 1 },
-    { field: "main_description", headerName: "Description", flex: 2},
-    { field: "date", headerName: "Date", flex: 1 },
-    { field: "start_time", headerName: "Start Time", flex: 1 },
-    { field: "duration", headerName: "Duration", flex: 1 },
-    { field: "hosted_by", headerName: "Hosted By", flex: 1 },
-    { field: "location", headerName: "Location", flex: 1 },
-  ];
-};
-
-
-const fetchRejectedEvents = async (): Promise<Event[]> => {
-  try {
-    const res = await apiClient.get(apiPaths.EVENTS.REJECTEDEVENTLIST);
-    return res.data || [];
-  } catch (error) {
-    console.error("Error fetching rejected events:", error);
-    return [];
-  }
-};
-
-
-const closeWebSocket = (ws: WebSocketRef): void => {
-  if (ws.current) {
-    ws.current.close();
-  }
-};
-
-const clearReconnectTimeout = (timeoutRef: TimeoutRef): void => {
-  if (timeoutRef.current) {
-    clearTimeout(timeoutRef.current);
-    timeoutRef.current = null;
-  }
-};
-
-const setupWebSocketOnOpen = (ws: WebSocket): void => {
-  ws.onopen = () => {
-    console.log("WebSocket Connected for Rejected Events List");
-  };
-};
-
-const setupWebSocketOnMessage = (ws: WebSocket, onUpdate: () => void): void => {
-  ws.onmessage = (event) => {
-    try {
-      const data = JSON.parse(event.data);
-      console.log("WebSocket Update Received:", data);
-      onUpdate();
-    } catch (error) {
-      console.error("Error parsing WebSocket message:", error);
-    }
-  };
-};
-
-const setupWebSocketOnError = (ws: WebSocket): void => {
-  ws.onerror = (event) => {
-    console.error("WebSocket Error:", event);
-  };
-};
-
-const setupWebSocketOnClose = (
-  ws: WebSocket,
-  reconnectFn: () => void,
-  reconnectTimeoutRef: TimeoutRef
-): void => {
-  ws.onclose = (event) => {
-    console.log("WebSocket Disconnected:", event.reason);
-    
-    reconnectTimeoutRef.current = setTimeout(() => {
-      reconnectFn();
-    }, RECONNECT_DELAY);
-  };
-};
-
-
-const EventsDataGrid: React.FC<DataGridProps> = ({ events, columns, colors }) => {
+const DeleteDialog: FC<DeleteDialogProps> = ({ open, event, reason, onReasonChange, onCancel, onConfirm }) => {
   return (
-    <Box
-      sx={{
-        height: "78vh",
-        "& .MuiDataGrid-root": { border: "none" },
-        "& .MuiDataGrid-cell": { borderBottom: "none" },
-        "& .MuiDataGrid-columnHeaders": {
-          backgroundColor: colors.blueAccent[700],
-          borderBottom: "none",
-        },
-        "& .MuiDataGrid-columnHeader": {
-          whiteSpace: "normal",
-          wordBreak: "break-word",
-        },
-        "& .MuiDataGrid-virtualScroller": {
-          backgroundColor: colors.primary[400],
-        },
-        "& .MuiDataGrid-footerContainer": {
-          borderTop: "none",
-          backgroundColor: colors.blueAccent[700],
-        },
-        "& .MuiCheckbox-root": {
-          color: `${colors.greenAccent[200]} !important`,
-        },
-        "& .MuiDataGrid-toolbarContainer .MuiButton-text": {
-          color: `${colors.blueAccent[500]} !important`,
-        },
-      }}
-    >
-      <DataGrid
-        rows={events}
-        columns={columns}
-        slots={{ toolbar: GridToolbar }}
-        resizeThrottleMs={0}
-        autoHeight
-        disableRowSelectionOnClick
-        initialState={{
-          pagination: { paginationModel: { pageSize: 100 } },
-        }}
-      />
-    </Box>
+    <Dialog open={open} onClose={onCancel}>
+      <DialogTitle>{event ? `Confirm deletion of "${event.title}"` : "Delete Event"}</DialogTitle>
+      <DialogContent>
+        <DialogContentText>
+          This action can be undone in the Activity Log. <br />
+          <strong>Reason required:</strong>
+        </DialogContentText>
+        <TextField
+          autoFocus
+          margin="dense"
+          label="Reason for Deletion"
+          fullWidth
+          variant="standard"
+          value={reason}
+          onChange={onReasonChange}
+          required
+        />
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onCancel}>Cancel</Button>
+        <Button onClick={onConfirm} color="error" disabled={!reason.trim()}>Confirm</Button>
+      </DialogActions>
+    </Dialog>
   );
 };
 
-/**
- * EventListRejected component that displays a list of rejected events
- */
+const ActionButtons: FC<{
+  event: EventData;
+  onView: (event: EventData) => void;
+  onDelete: (event: EventData) => void;
+}> = ({ event, onView, onDelete }) => (
+  <Box>
+    <Button onClick={() => onView(event)} variant="contained" color="primary" sx={{ mr: 1 }}>View</Button>
+    <Button onClick={() => onDelete(event)} variant="contained" color="error">Delete</Button>
+  </Box>
+);
+
 const EventListRejected: React.FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
-  const { drawer } = useSettingsStore();
-  const [events, setEvents] = useState<Event[]>([]);
-  const loadingRef = useRef(true);
   const { searchTerm } = useContext(SearchContext);
+  const { drawer } = useSettingsStore();
+
+  const [events, setEvents] = useState<EventData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<EventData | null>(null);
+  const [previewEvent, setPreviewEvent] = useState<EventData | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [reason, setReason] = useState("");
+
   const ws = useRef<WebSocket | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectRef = useRef<NodeJS.Timeout | null>(null);
 
-
-  const loadEvents = useCallback(async () => {
-    loadingRef.current=true;
-    const data = await fetchRejectedEvents();
-    setEvents(data);
-    loadingRef.current=false;
-    ;
+  const fetchRejectedEvents = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await apiClient.get(apiPaths.EVENTS.REJECTEDEVENTLIST);
+      const mapped = (res.data ?? []).map(mapToEventRequestData);
+      setEvents(mapped);
+    } catch (err) {
+      console.error("Fetch error:", err);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  
   const connectWebSocket = useCallback(() => {
-    
-    closeWebSocket(ws);
-    clearReconnectTimeout(reconnectTimeoutRef);
-    
-    
+    if (ws.current) ws.current.close();
+    if (reconnectRef.current) clearTimeout(reconnectRef.current);
+
     ws.current = new WebSocket(WS_URL);
-    
-    
-    if (ws.current) {
-      setupWebSocketOnOpen(ws.current);
-      setupWebSocketOnMessage(ws.current, loadEvents);
-      setupWebSocketOnError(ws.current);
-      setupWebSocketOnClose(ws.current, connectWebSocket, reconnectTimeoutRef);
-    }
-  }, [loadEvents]);
 
-  
-  useEffect(() => {
-    loadEvents();
-    connectWebSocket();
-  
-    
-    return () => {
-      closeWebSocket(ws);
-      clearReconnectTimeout(reconnectTimeoutRef);
+    ws.current.onopen = () => console.log("WebSocket connected");
+    ws.current.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        console.log("Update received:", data);
+        fetchRejectedEvents();
+      } catch (err) {
+        console.error("Parse error:", err);
+      }
     };
-  }, [loadEvents, connectWebSocket]);
+    ws.current.onerror = (e) => console.error("WebSocket error:", e);
+    ws.current.onclose = (e) => {
+      console.log("WebSocket closed:", e.reason);
+      reconnectRef.current = setTimeout(() => connectWebSocket(), RECONNECT_DELAY);
+    };
+  }, [fetchRejectedEvents]);
 
-  
-  const filteredEvents = filterEventsBySearchTerm(events, searchTerm || "");
+  useEffect(() => {
+    fetchRejectedEvents();
+    connectWebSocket();
+    return () => {
+      if (ws.current) ws.current.close();
+      if (reconnectRef.current) clearTimeout(reconnectRef.current);
+    };
+  }, [fetchRejectedEvents, connectWebSocket]);
 
-  const columns = createEventColumns();
+  const handleView = (event: EventData) => {
+    setPreviewEvent(event);
+    setPreviewOpen(true);
+  };
+
+  const handleDeleteOpen = (event: EventData) => {
+    setSelectedEvent(event);
+    setOpenDialog(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!selectedEvent || !reason.trim()) return;
+    try {
+      await apiClient.request({
+        method: "DELETE",
+        url: apiPaths.USER.DELETE("Event", selectedEvent.eventId),
+        data: { reason },
+      });
+      await fetchRejectedEvents();
+    } catch (e) {
+      console.error("Delete error:", e);
+    } finally {
+      setOpenDialog(false);
+      setSelectedEvent(null);
+      setReason("");
+    }
+  };
+
+  const filteredEvents = events.filter((event) =>
+    `${event.eventId} ${event.title} ${event.date} ${event.startTime} ${event.duration} ${event.hostedBy} ${event.location}`
+      .toLowerCase()
+      .includes((searchTerm || "").toLowerCase())
+  );
+
+  const columns: GridColDef<EventData>[] = [
+    { field: "eventId", headerName: "ID", flex: 0.3 },
+    { field: "title", headerName: "Title", flex: 1 },
+    { field: "date", headerName: "Date", flex: 0.7 },
+    { field: "startTime", headerName: "Start Time", flex: 0.7 },
+    { field: "duration", headerName: "Duration", flex: 0.7 },
+    { field: "hostedBy", headerName: "Hosted By", flex: 0.7 },
+    { field: "location", headerName: "Location", flex: 1 },
+    {
+      field: "actions",
+      headerName: "Actions",
+      flex: 1.4,
+      sortable: false,
+      filterable: false,
+      renderCell: (params: GridRenderCellParams<EventData>) => (
+        <ActionButtons
+          event={params.row}
+          onView={handleView}
+          onDelete={handleDeleteOpen}
+        />
+      ),
+    },
+  ];
 
   return (
-    <Box
-      sx={{
-        height: "calc(100vh - 64px)",
-        maxWidth: drawer ? `calc(100% - 3px)` : "100%",
-      }}
-    >
-      <EventsDataGrid 
-        events={filteredEvents}
-        columns={columns}
-        colors={colors}
+    <Box sx={{ height: "calc(100vh - 64px)", maxWidth: drawer ? `calc(100% - 3px)` : "100%" }}>
+      <Box
+        sx={{
+          height: "78vh",
+          "& .MuiDataGrid-root": { border: "none" },
+          "& .MuiDataGrid-cell": { borderBottom: "none" },
+          "& .MuiDataGrid-columnHeaders": {
+            backgroundColor: colors.blueAccent[700],
+            borderBottom: "none",
+          },
+          "& .MuiDataGrid-columnHeader": {
+            whiteSpace: "normal",
+            wordBreak: "break-word",
+          },
+          "& .MuiDataGrid-virtualScroller": {
+            backgroundColor: colors.primary[400],
+          },
+          "& .MuiDataGrid-footerContainer": {
+            borderTop: "none",
+            backgroundColor: colors.blueAccent[700],
+          },
+          "& .MuiCheckbox-root": {
+            color: `${colors.greenAccent[200]} !important`,
+          },
+          "& .MuiDataGrid-toolbarContainer .MuiButton-text": {
+            color: `${colors.blueAccent[500]} !important`,
+          },
+        }}
+      >
+        <DataGrid
+          rows={filteredEvents}
+          columns={columns}
+          getRowId={(row) => row.eventId}
+          slots={{ toolbar: GridToolbar }}
+          loading={loading}
+          autoHeight
+          disableRowSelectionOnClick
+        />
+      </Box>
+
+      <DeleteDialog
+        open={openDialog}
+        event={selectedEvent}
+        reason={reason}
+        onReasonChange={(e) => setReason(e.target.value)}
+        onCancel={() => setOpenDialog(false)}
+        onConfirm={handleDeleteConfirm}
       />
+
+      {previewEvent && (
+        <EventPreview
+          open={previewOpen}
+          onClose={() => setPreviewOpen(false)}
+          eventData={previewEvent}
+        />
+      )}
     </Box>
   );
 };

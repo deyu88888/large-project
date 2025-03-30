@@ -7,7 +7,8 @@ import { CircularProgress } from "@mui/material";
 import EventCard from "../components/EventCard";
 import { useAuthStore } from "../stores/auth-store";
 import { User } from "../types/user/user";
-import { EventData, Attendee } from "../types/shared/event";
+import { EventData, Attendee } from "../types/event/event";
+import { mapToEventData } from "../utils/mapper.ts";
 
 export default function AllEventsPage() {
     const navigate = useNavigate();
@@ -53,8 +54,8 @@ export default function AllEventsPage() {
         apiClient
             .get("/api/events/all/")
             .then((res) => {
-                console.log("Fetched Events:", res.data);
-                setEvents(res.data || []);
+                const mappedEvents = (res.data || []).map(mapToEventData);
+                setEvents(mappedEvents);
             })
             .catch((error) => {
                 console.error("Error fetching events:", error);
@@ -164,16 +165,16 @@ export default function AllEventsPage() {
                                 !userLoading &&
                                 currentUser &&
                                 currentUser.following &&
-                                event.current_attendees
+                                event.currentAttendees
                             ) {
-                                followingsAttending = event.current_attendees.filter((attendee) =>
+                                followingsAttending = event.currentAttendees.filter((attendee) =>
                                     currentUser.following!.includes(attendee.id)
                                 );
                             }
 
                             return (
                                 <EventCard
-                                    key={event.id}
+                                    key={event.eventId}
                                     event={event}
                                     followingsAttending={followingsAttending}
                                     isLight={isLight}

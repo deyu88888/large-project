@@ -36,7 +36,11 @@ from api.views_files.society_views import *
 from api.views_files.user_views import *
 from api.views_files.recommendation_feedback_views import *
 from api.views_files.recommendation_views import *
-
+from django.http import FileResponse, HttpResponse
+from django.conf import settings
+from django.views.static import serve
+import os
+import mimetypes
 
 
 @api_view(['GET'])
@@ -100,7 +104,18 @@ def get_sorted_events(request):
 
 
 def custom_media_view(request, path):
-    """Used to serve media, i.e. photos to the frontend"""
+    """Used to serve media, i.e. photos and PDFs to the frontend with proper headers"""
+    file_path = os.path.join(settings.MEDIA_ROOT, path)
+
+    if os.path.exists(file_path) and file_path.lower().endswith('.pdf'):
+        response = FileResponse(open(file_path, 'rb'), content_type='application/pdf')
+
+        response['Content-Disposition'] = f'inline; filename="{os.path.basename(file_path)}"'
+        response['Access-Control-Allow-Origin'] = '*'
+        response['X-Frame-Options'] = 'SAMEORIGIN'
+
+        return response
+
     return serve(request, path, document_root=settings.MEDIA_ROOT)
 
 
@@ -108,7 +123,7 @@ def custom_media_view(request, path):
 def like_comment(request, comment_id):
     """Allow user to like a comment"""
     comment = Comment.objects.get(id=comment_id)
-    user = request.user
+    user = User.objects.get(pk=request.user.pk)
 
     if user in comment.likes.all():
         comment.likes.remove(user)
@@ -123,7 +138,7 @@ def like_comment(request, comment_id):
 def dislike_comment(request, comment_id):
     """Allow user to dislike a comment"""
     comment = Comment.objects.get(id=comment_id)
-    user = request.user
+    user = User.objects.get(pk=request.user.pk)
 
     if user in comment.dislikes.all():
         comment.dislikes.remove(user)
@@ -142,7 +157,7 @@ def toggle_follow(request, user_id):
     - only can follow other users
     - if followed then just can unfollow, vice versa
     """
-    current_user = request.user
+    current_user = User.objects.get(pk=request.user.pk)
     target_user = get_object_or_404(User, id=user_id)
 
     if current_user == target_user:

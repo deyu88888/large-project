@@ -94,7 +94,7 @@ describe('DashboardFooter', () => {
     fireEvent.click(linkedInButton);
     
     expect(window.open).toHaveBeenCalledWith(
-      'https:
+      'https://uk.linkedin.com',
       '_blank',
       'noopener,noreferrer'
     );
@@ -107,7 +107,7 @@ describe('DashboardFooter', () => {
     fireEvent.click(githubButton);
     
     expect(window.open).toHaveBeenCalledWith(
-      'https:
+      'https://github.com/deyu88888/large-project',
       '_blank',
       'noopener,noreferrer'
     );

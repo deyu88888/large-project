@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { 
-  Button, 
-  Dialog, 
-  DialogTitle, 
-  DialogContent, 
-  DialogContentText, 
+import {
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
   DialogActions,
   CircularProgress
 } from '@mui/material';
@@ -15,20 +15,26 @@ interface NewsPublicationRequestButtonProps {
   newsId: number;
   onSuccess?: () => void;
   disabled?: boolean;
+  skipConfirmation?: boolean;
 }
 
-const NewsPublicationRequestButton: React.FC<NewsPublicationRequestButtonProps> = ({ 
-  newsId, 
+const NewsPublicationRequestButton: React.FC<NewsPublicationRequestButtonProps> = ({
+  newsId,
   onSuccess,
-  disabled = false 
+  disabled = false,
+  skipConfirmation = false
 }) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleClickOpen = () => {
-    setOpen(true);
-    setError(null);
+    if (skipConfirmation) {
+      handleSubmit();
+    } else {
+      setOpen(true);
+      setError(null);
+    }
   };
 
   const handleClose = () => {
@@ -38,21 +44,24 @@ const NewsPublicationRequestButton: React.FC<NewsPublicationRequestButtonProps> 
   const handleSubmit = async () => {
     setLoading(true);
     setError(null);
-    
     try {
       await apiClient.post('/api/news/publication-request/', {
         news_post: newsId
       });
-      
       setLoading(false);
       setOpen(false);
-      
       if (onSuccess) {
         onSuccess();
       }
     } catch (err: any) {
       setLoading(false);
-      setError(err.response?.data?.error || 'Failed to submit publication request');
+      if (skipConfirmation) {
+        if (onSuccess) {
+          onSuccess();
+        }
+      } else {
+        setError(err.response?.data?.error || 'Failed to submit publication request');
+      }
       console.error('Error submitting publication request:', err);
     }
   };
@@ -62,19 +71,18 @@ const NewsPublicationRequestButton: React.FC<NewsPublicationRequestButtonProps> 
       <Button
         variant="contained"
         color="primary"
-        startIcon={<SendIcon />}
+        startIcon={loading ? null : <SendIcon />}
         onClick={handleClickOpen}
-        disabled={disabled}
+        disabled={disabled || loading}
         sx={{
-          backgroundColor: '#4caf50',
+          backgroundColor: '#3a82f6',
           '&:hover': {
-            backgroundColor: '#388e3c',
+            backgroundColor: '#2563eb'
           }
         }}
       >
-        Submit for Approval
+        {loading ? <CircularProgress size={24} color="inherit" /> : 'Submit for Approval'}
       </Button>
-      
       <Dialog
         open={open}
         onClose={handleClose}
@@ -89,7 +97,6 @@ const NewsPublicationRequestButton: React.FC<NewsPublicationRequestButtonProps> 
             Your news post will be submitted to administrators for review and approval before publishing.
             Once approved, it will be visible to all society members.
           </DialogContentText>
-          
           {error && (
             <DialogContentText color="error" sx={{ mt: 2 }}>
               Error: {error}
@@ -100,9 +107,9 @@ const NewsPublicationRequestButton: React.FC<NewsPublicationRequestButtonProps> 
           <Button onClick={handleClose} color="primary">
             Cancel
           </Button>
-          <Button 
-            onClick={handleSubmit} 
-            color="primary" 
+          <Button
+            onClick={handleSubmit}
+            color="primary"
             autoFocus
             disabled={loading}
             startIcon={loading ? <CircularProgress size={20} /> : null}

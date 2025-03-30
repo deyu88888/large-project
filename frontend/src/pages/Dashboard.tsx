@@ -8,6 +8,8 @@ import { Society, Event } from "../types";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import { useWebSocketManager, CONNECTION_STATES } from "../hooks/useWebSocketManager";
+import {EventData} from "../types/event/event.ts";
+import {mapToEventData} from "../utils/mapper.ts";
 
 export default function Dashboard() {
   const theme = useTheme();
@@ -61,7 +63,7 @@ export default function Dashboard() {
     navigate(`/event/${id}`);
   };
 
-  const renderEvents = (events: Event[]) => {
+  const renderEvents = (events: EventData[]) => {
     if (!events || events.length === 0) {
       return (
         <Box sx={{ gridColumn: "1 / -1", textAlign: "center", p: 3 }}>
@@ -72,9 +74,9 @@ export default function Dashboard() {
       );
     }
 
-    return events.map((event: Event) => (
+    return events.map((event: EventData) => (
       <EventCard
-        key={event.id}
+        key={event.eventId}
         event={event}
         isLight={isLight}
         colors={colors}
@@ -154,7 +156,11 @@ export default function Dashboard() {
           gap: "1rem",
         }}
       >
-        {renderEvents(upcomingEvents)}
+        {renderEvents(
+          Array.isArray(upcomingEvents)
+            ? upcomingEvents.map(mapToEventData)
+            : []
+        )}
       </Box>
     </Container>
   );

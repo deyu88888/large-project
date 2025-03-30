@@ -228,9 +228,13 @@ class ManageEventDetailsView(APIView):
         return False
 
     def get(self, request, event_id):
-        """Returns a serialized event by id"""
+        """Returns a serialized event request (or event if no request exists) by event id"""
         event = self.get_event(event_id)
-        serializer = EventSerializer(event)
+        event_request = EventRequest.objects.filter(event=event).first()
+        if event_request:
+            serializer = EventRequestSerializer(event_request, context={'request': request})
+        else:
+            serializer = EventSerializer(event, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def patch(self, request, event_id):

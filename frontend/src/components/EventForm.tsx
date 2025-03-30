@@ -3,7 +3,8 @@ import {
   Box,
   Button,
   Menu,
-  MenuItem, Snackbar,
+  MenuItem,
+  Snackbar,
   TextField,
   Typography
 } from "@mui/material";
@@ -14,24 +15,12 @@ import {
   verticalListSortingStrategy,
   arrayMove
 } from "@dnd-kit/sortable";
-import { SortableItem, ExtraModule, ExtraModuleType } from "./SortableItem";
+import { SortableItem } from "./SortableItem";
 import { EventPreview } from "./EventPreview";
+import { ExtraModule, EventFormInitialData } from "../types/event/event.ts";
 
 interface EventFormProps {
-  initialData?: {
-    title: string;
-    mainDescription: string;
-    date: string;
-    startTime: string;
-    duration: string;
-    location: string;
-    maxCapacity: number;
-    coverImageFile?: File | null;
-    coverImageUrl?: string;
-    extraModules: ExtraModule[];
-    participantModules: ExtraModule[];
-    adminReason: string;
-  };
+  initialData?: EventFormInitialData
   onSubmit: (formData: FormData) => Promise<void>;
   submitButtonText?: string;
   isEditMode?: boolean;
@@ -70,7 +59,7 @@ export const EventForm: React.FC<EventFormProps> = ({
   const isPastEvent = eventDateTime < now;
 
   const formatStartTime = (timeStr: string): string => {
-    return timeStr.length === 5 ? timeStr + ":00" : timeStr;  // 如果是 HH:MM，补 :00
+    return timeStr.length === 5 ? timeStr + ":00" : timeStr;
   };
 
   const handleAddModuleClick = (event: React.MouseEvent<HTMLButtonElement>) => setAnchorEl(event.currentTarget);
@@ -88,13 +77,13 @@ export const EventForm: React.FC<EventFormProps> = ({
     setSnackbarOpen(false);
   };
 
-  const handleSelectModule = (type: ExtraModuleType) => {
+  const handleSelectModule = (type: ExtraModule["type"]) => {
     const newModule: ExtraModule = { id: Date.now().toString(), type };
     setExtraModules((prev) => [...prev, newModule]);
     handleMenuClose();
   };
 
-  const handleSelectParticipantModule = (type: ExtraModuleType) => {
+  const handleSelectParticipantModule = (type: ExtraModule["type"]) => {
     const newModule: ExtraModule = { id: Date.now().toString() + "_p", type };
     setParticipantModules((prev) => [...prev, newModule]);
     handleParticipantMenuClose();
@@ -138,7 +127,7 @@ export const EventForm: React.FC<EventFormProps> = ({
 
     const fixedExtraModules = extraModules.map((mod) => {
       if (mod.type === "file" && !mod.fileValue && mod.textValue) {
-        return { ...mod, fileValue: mod.textValue };  // 直接用 URL 字符串
+        return { ...mod, fileValue: mod.textValue };
       }
       return mod;
     });
@@ -222,7 +211,7 @@ export const EventForm: React.FC<EventFormProps> = ({
 
   const coverImagePreviewSrc = coverImageFile
     ? URL.createObjectURL(coverImageFile)
-    : initialData?.coverImageUrl || "";
+    : initialData?.coverImageUrl;
 
   return (
     <Box sx={{ p: 4 }}>
@@ -520,10 +509,10 @@ export const EventForm: React.FC<EventFormProps> = ({
           onClose={handleClosePreview}
           eventData={{
             ...previewData,
-            is_participant: true,
-            is_member: true,
-            event_id: 0,
-            hosted_by: 0,
+            isParticipant: true,
+            isMember: true,
+            eventId: 0,
+            hostedBy: 0,
           } as any}
         />
       )}
@@ -543,5 +532,3 @@ export const EventForm: React.FC<EventFormProps> = ({
     </Box>
   );
 };
-
-export type EventFormInitialData = EventFormProps["initialData"];

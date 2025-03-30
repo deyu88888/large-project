@@ -1,50 +1,32 @@
 import { Box, Typography, Button, Snackbar, useTheme } from "@mui/material";
 import MuiAlert from "@mui/material/Alert";
-import { ExtraModule } from "./SortableItem";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiClient } from "../api";
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 import { useSettingsStore } from "../stores/settings-store";
 import { tokens } from "../theme/theme";
-
-export interface EventData {
-  title: string;
-  main_description: string;
-  date: string;
-  start_time: string;
-  duration: string;
-  location: string;
-  max_capacity: number;
-  cover_image_url?: string;
-  cover_image_file?: File | null;
-  extra_modules: ExtraModule[];
-  participant_modules: ExtraModule[];
-  is_participant: boolean;
-  is_member: boolean;
-  event_id: number;
-  hosted_by: number;
-  current_attendees: any[];
-}
+import { ExtraModule, EventData } from "../types/event/event.ts";
 
 export function EventDetailLayout({ eventData }: { eventData: EventData }) {
   const {
     title,
-    main_description,
+    mainDescription,
     date,
-    start_time,
+    startTime,
     duration,
     location,
-    max_capacity,
-    cover_image_file,
-    cover_image_url,
-    extra_modules,
-    participant_modules,
-    is_participant,
-    is_member,
-    event_id,
-    hosted_by,
-    current_attendees,
+    maxCapacity,
+    coverImageFile,
+    coverImageUrl,
+    extraModules,
+    participantModules,
+    isParticipant,
+    isMember,
+    eventId,
+    hostedBy,
+    currentAttendees,
+    adminReason,
   } = eventData;
 
   const theme = useTheme();
@@ -55,13 +37,13 @@ export function EventDetailLayout({ eventData }: { eventData: EventData }) {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMsg, setSnackbarMsg] = useState("");
 
-  const coverImageSrc = cover_image_file
-    ? URL.createObjectURL(cover_image_file)
-    : cover_image_url;
+  const coverImageSrc = coverImageFile
+    ? URL.createObjectURL(coverImageFile)
+    : coverImageUrl;
 
   const handleJoinEvent = async () => {
     try {
-      await apiClient.post("/api/events/rsvp/", { event_id: event_id });
+      await apiClient.post("/api/events/rsvp/", { event_id: eventId });
       setSnackbarMsg("Successfully joined the event!");
       setSnackbarOpen(true);
       setTimeout(() => window.location.reload(), 1000);
@@ -73,7 +55,7 @@ export function EventDetailLayout({ eventData }: { eventData: EventData }) {
 
   const handleCancelRSVP = async () => {
     try {
-      await apiClient.delete("/api/events/rsvp/", { data: { event_id: event_id } });
+      await apiClient.delete("/api/events/rsvp/", { data: { event_id: eventId } });
       setSnackbarMsg("Canceled RSVP.");
       setSnackbarOpen(true);
       setTimeout(() => window.location.reload(), 1000);
@@ -87,7 +69,7 @@ export function EventDetailLayout({ eventData }: { eventData: EventData }) {
     setSnackbarMsg("Please join the society to RSVP.");
     setSnackbarOpen(true);
     setTimeout(() => {
-      navigate(`/student/view-society/${hosted_by}`);
+      navigate(`/student/view-society/${hostedBy}`);
     }, 1500);
   };
 
@@ -179,6 +161,37 @@ export function EventDetailLayout({ eventData }: { eventData: EventData }) {
       marginLeft: "auto",
       marginRight: "auto",
      }}>
+      {adminReason && adminReason.trim() !== "" && (
+        <Box
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+          flexWrap="wrap"
+          sx={{
+            mb: 2,
+            textAlign: "center" ,
+            backgroundColor: "yellow",
+            p: 3,
+            borderRadius: 3,
+            maxWidth: "85%",
+            mx: "auto"
+        }}
+        >
+          <Typography variant="h4" sx={{ fontWeight: "bold", mr: 1 }}>
+            For Admin:
+          </Typography>
+          <Typography
+            variant="h5"
+            sx={{
+              wordBreak: "break-word",
+              whiteSpace: "normal",
+            }}
+          >
+            {adminReason}
+          </Typography>
+        </Box>
+      )}
+
       <Box sx={{ textAlign: "center" }}>
         <Typography variant="h1" gutterBottom sx={{ fontWeight: "bold" }}>
           {title || "Event Title"}
@@ -255,7 +268,7 @@ export function EventDetailLayout({ eventData }: { eventData: EventData }) {
               <strong>Date:</strong> {date}
             </Typography>
             <Typography variant="body1" sx={{ mb: 1 }}>
-              <strong>Time:</strong> {start_time}
+              <strong>Time:</strong> {startTime}
             </Typography>
             <Typography variant="body1" sx={{ mb: 1 }}>
               <strong>Duration:</strong> {duration}
@@ -264,14 +277,14 @@ export function EventDetailLayout({ eventData }: { eventData: EventData }) {
               <strong>Location:</strong> {location}
             </Typography>
             <Typography variant="body1" sx={{ mb: 1 }}>
-              <strong>Max Capacity:</strong> {max_capacity === 0 ? "No Limit" : max_capacity}
+              <strong>Max Capacity:</strong> {maxCapacity === 0 ? "No Limit" : maxCapacity}
             </Typography>
             <Typography variant="body1" sx={{ mb: 1 }}>
-              <strong>Participants:</strong> {current_attendees?.length || 0}
+              <strong>Participants:</strong> {currentAttendees?.length || 0}
             </Typography>
   
             <Box sx={{ mt: 2 }}>
-              {!is_member ? (
+              {!isMember ? (
                 <Button variant="outlined"
                         onClick={handleJoinSociety}
                         sx={{
@@ -282,7 +295,7 @@ export function EventDetailLayout({ eventData }: { eventData: EventData }) {
                 >
                   Join Society to RSVP
                 </Button>
-              ) : is_participant ? (
+              ) : isParticipant ? (
                 <Button variant="contained" color="error" onClick={handleCancelRSVP}>
                   Cancel RSVP
                 </Button>
@@ -312,18 +325,18 @@ export function EventDetailLayout({ eventData }: { eventData: EventData }) {
             Overview
           </Typography>
           <Typography variant="body1" sx={{ whiteSpace: "pre-wrap", mb: 3 }}>
-            {main_description || "No description provided."}
+            {mainDescription || "No description provided."}
           </Typography>
   
-          {extra_modules?.map(renderModule)}
+          {extraModules?.map(renderModule)}
   
-          {participant_modules?.length > 0 && (
-            is_participant ? (
+          {participantModules?.length > 0 && (
+            isParticipant ? (
               <>
                 <Typography variant="h3" sx={{ mb: 2, fontWeight: "bold" }}>
                   Participants Only Content
                 </Typography>
-                {participant_modules?.map(renderModule)}
+                {participantModules?.map(renderModule)}
               </>
             ) : (
               <>
