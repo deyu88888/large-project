@@ -1,12 +1,14 @@
+from unittest.mock import MagicMock, patch
 from rest_framework.test import APITestCase
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import get_user_model
-from unittest.mock import MagicMock, patch
+from api.models import Student
 
 User = get_user_model()
 
 class CurrentUserViewTestCase(APITestCase):
+    """TestCases for CurrentUserView"""
     def setUp(self):
         """
         Set up a user and token for the test case.
@@ -31,6 +33,24 @@ class CurrentUserViewTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["username"], self.user.username)
 
+    def test_get_current_student_with_valid_token(self):
+        """
+        Test retrieving the current student with a valid JWT token.
+        """
+        student = Student.objects.create_user(
+            username="teststudent",
+            email="teststudent@example.com",
+            password="testpassword123",
+            first_name="Test",
+            last_name="User"
+        )
+        refresh = RefreshToken.for_user(student)
+        self.access_token = str(refresh.access_token)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.access_token}")
+        response = self.client.get(self.current_user_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["username"], student.username)
+
     def test_get_current_user_with_invalid_token(self):
         """
         Test retrieving the current user with an invalid JWT token.
@@ -49,6 +69,18 @@ class CurrentUserViewTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertIn("detail", response.data)
         self.assertEqual(response.data["detail"], "Authentication credentials were not provided.")
+
+    @patch("api.views_files.user_views.UserSerializer")
+    def test_get_current_user_with_error(self, mock_serializer):
+        """
+        Test retrieving the current user without providing a token.
+        """
+        mock_serializer.side_effect = Exception("Test exception")
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.access_token}")
+        response = self.client.get(self.current_user_url)
+        self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+        self.assertIn("error", response.data)
+        self.assertEqual(response.data["error"], "Server error fetching user data")
 
     @patch("api.views_files.user_views.UserSerializer")
     def test_get_current_user_with_serializer_error(self, MockUserSerializer):
