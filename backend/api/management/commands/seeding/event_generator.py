@@ -1,20 +1,16 @@
-# TODO: initial refactoring complete
-
 from datetime import date, datetime, time, timedelta
 from random import choice, randint, random
 from api.models import Event, EventRequest, Comment, Society
-from api.management.commands.seeding.seeding_utility import \
-    assign_comment_parent, get_comment_data, like_dislike_comments, \
-    get_model_entries_as_list, get_active_students
+from api.management.commands.seeding.seeding_utility import assign_comment_parent, \
+    get_comment_data, like_dislike_comments, get_model_entries_as_list, get_active_students
 from django.core.management import color_style
 
 
 class RandomEventDataGenerator():
     """Class encompassing tools to generate event data"""
-
     def __init__(self):
         self.society_type = {
-            "COMPETETIVE": [  # Tournament
+            "COMPETETIVE": [ # Tournament
                 "football",
                 "gaming",
                 "rugby",
@@ -25,7 +21,7 @@ class RandomEventDataGenerator():
                 "tabletop",
                 "chess",
             ],
-            "CASUAL": [  # Gathering
+            "CASUAL": [ # Gathering
                 "literature",
                 "gaming",
                 "sewing",
@@ -36,7 +32,7 @@ class RandomEventDataGenerator():
                 "music",
                 "philosophy",
             ],
-            "ACADEMIC": [  # Seminar
+            "ACADEMIC": [ # Seminar
                 "mathematics",
                 "literature",
                 "physics",
@@ -48,7 +44,7 @@ class RandomEventDataGenerator():
                 "architecture",
                 "robotics"
             ],
-            "CREATIVE": [  # Showcase
+            "CREATIVE": [ # Showcase
                 "sewing",
                 "knitting",
                 "architecture",
@@ -58,7 +54,7 @@ class RandomEventDataGenerator():
                 "music",
                 "retro",
             ],
-            "TECHNICAL": [  # Workshop
+            "TECHNICAL": [ # Workshop
                 "computing",
                 "physics",
                 "mathematics",
@@ -66,7 +62,7 @@ class RandomEventDataGenerator():
                 "robotics",
                 "economics",
             ],
-            "DISCUSSION": [  # Debate
+            "DISCUSSION": [ # Debate
                 "politics",
                 "economics",
                 "philosophy",
@@ -148,7 +144,7 @@ class RandomEventDataGenerator():
         """Generates an event name"""
         returnval = None
         options = list(self.society_type.keys())
-        for _ in range(len(options)-1):  # Purposeful to create variety
+        for _ in range (len(options)-1): # Purposeful to create variety
             # Designed to randomly accessing categories
             option = choice(options)
             options.remove(option)
@@ -187,8 +183,7 @@ class RandomEventDataGenerator():
             random_days = randint(1, 30)
         else:
             random_days = randint(0, 30)
-        # Ensures date lies in the past if past is true
-        mult = 1 - 2 * int(past)
+        mult = 1 - 2 * int(past) # Ensures date lies in the past if past is true
         return today + timedelta(days=random_days) * mult
 
     def generate_reasonable_time(self, event_date):
@@ -227,29 +222,35 @@ class RandomEventDataGenerator():
         ]
         return choice(locations)
 
-    def create_event(self, n, past=False) -> None:
+    def create_event(self, n, past=False, for_society=None):
         """Create n different events"""
         societies = get_model_entries_as_list(Society)
         if not societies:
-            print(self.style.WARNING(
-                "No societies found. Skipping event creation."))
+            print(self.style.WARNING("No societies found. Skipping event creation."))
             return
 
         for i in range(1, n + 1):
-            print(f"Seeding event {i}/{n}", end='\r')
-            society = choice(societies)
+            print(f"Seeding {'past ' if past else ''}event "
+            f"{f'for {for_society} ' if for_society else ''}{i}/{n}", end='\r')
+            society = choice(societies) if not for_society else for_society
 
-            event, _ = self.generate_random_event(
-                society, status="Pending", past=past)
+            event, _ = self.generate_random_event(society, status="Pending", past=past)
 
-            approved = self.handle_event_status(event)
-            if approved and past:
-                self.handle_attendance(event)
+            approved = self.handle_event_request_approval(event)
             if approved:
                 self.create_event_comments(event, past)
+                all_students = list(society.society_members.order_by("?"))
+                num_attendees = min(randint(5, 20), len(all_students))
+                selected_attendees = all_students[:num_attendees]
+
+                event.current_attendees.add(*selected_attendees)
+                event.save()
+            if approved and past:
+                self.handle_attendance(event)
 
         print(self.style.SUCCESS(
-            f"Seeding {'past' if past else ''} event {n}/{n}"
+            f"Seeding {'past ' if past else ''}event "
+            f"{f'for {for_society} ' if for_society else ''}{n}/{n}"
         ), flush=True)
 
     def handle_attendance(self, event):
@@ -260,10 +261,9 @@ class RandomEventDataGenerator():
             if attended:
                 attendee.attended_events.add(event)
 
-    def generate_random_event(self, society, data=None, status="Approved", past=False):
+    def generate_random_event(self, society, status="Approved", past=False):
         """Generate a random event and ensure attendees are added."""
-        if not data:
-            data = self.generate(society.name, past)
+        data = self.generate(society.name, past)
         event, created = Event.objects.get_or_create(
             title=data["name"],
             main_description=data["description"],
@@ -275,51 +275,81 @@ class RandomEventDataGenerator():
             status=status,
         )
 
-        if created and status == "Approved":
-            self.create_event_comments(event, past)
-        if created:
-            all_students = list(society.society_members.order_by("?"))
-            num_attendees = min(randint(5, 20), len(all_students))
-            selected_attendees = all_students[:num_attendees]
-
-            event.current_attendees.add(*selected_attendees)
-            event.save()
-            print(self.style.SUCCESS(
-                f"Event Created: {event.title} ({event.date})"))
-
         return event, created
 
-    def handle_event_status(self, event):
-        """Creates requests for event creation"""
-        random_status = choice(["Pending", "Approved", "Rejected"])
-
-        if event.date < date.today():
-            random_status = "Approved" if random_status == "Pending" else random_status
-
-        default_student = event.hosted_by.president or get_active_students().first()
+    def handle_event_request_approval(self, event : Event):
+        """Creates requests for event approval"""
+        default_student = self.select_from_student(event.hosted_by)
         if not default_student:
-            print("No student available to assign from_student.")
             return False
 
-        EventRequest.objects.create(
+        er = self.get_default_event_request(event, default_student)
+        er.approved = True
+        event.status = "Approved"
+        er.save()
+        event.save()
+
+        return True
+
+    def create_event_requests(self, n, past=False):
+        """Creates unapproved event requests"""
+        societies = get_model_entries_as_list(Society)
+        if not societies:
+            print(self.style.WARNING("No societies found. Skipping event request creation."))
+            return
+
+        for i in range(1, n + 1):
+            print(f"Seeding {'past ' if past else ''}event request {i}/{n}", end='\r')
+            society = choice(societies)
+
+            event, _ = self.generate_random_event(society, status="Pending", past=past)
+
+            self.handle_event_request_not_approval(event)
+
+        print(self.style.SUCCESS(
+            f"Seeding {'past ' if past else ''}event request {n}/{n}"
+        ), flush=True)
+
+    def handle_event_request_not_approval(self, event : Event):
+        """Creates requests for event approval"""
+        random_status = choice(["Pending", "Rejected"])
+        default_student = self.select_from_student(event.hosted_by)
+        if not default_student:
+            return False
+
+        er = self.get_default_event_request(event, default_student)
+        if random_status == "Rejected":
+            er.approved = False
+        event.status = random_status
+        er.save()
+        event.save()
+
+        return True
+
+    def select_from_student(self, society: Society):
+        """Returns a valid student for sending an eventrequest"""
+        from_options = [society.president]
+        if society.vice_president:
+            from_options.append(society.vice_president)
+        if society.event_manager:
+            from_options.append(society.vice_president)
+
+        default_student = choice(from_options) or get_active_students().first()
+        if not default_student:
+            print("No student available to assign from_student.")
+            return None
+        return default_student
+
+    def get_default_event_request(self, event, student):
+        """Returns a basic event_request object"""
+        return EventRequest.objects.create(
             event=event,
             hosted_by=event.hosted_by,
-            from_student=default_student,
+            from_student=student,
             intent="CreateEve",
-            approved=(
-                True if random_status == "Approved"
-                else False if random_status == "Rejected"
-                else None
-            ),
         )
 
-        if random_status == "Approved":
-            event.status = "Approved"
-            event.save()
-
-        return random_status == "Approved"
-
-    def create_event_comments(self, event: Event, past: bool = False, parent: Comment = None):
+    def create_event_comments(self, event: Event, past: bool=False, parent: Comment=None):
         """Seeds comments on events"""
         content = get_comment_data(parent, past)
         society_members = list(event.hosted_by.society_members.all())
