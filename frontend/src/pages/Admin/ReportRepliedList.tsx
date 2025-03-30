@@ -26,6 +26,12 @@ interface ReportWithReplies {
   [key: string]: any; 
 }
 
+interface ReportState {
+  items: ReportWithReplies[];
+  loading: boolean;
+  error: string | null;
+}
+
 interface DataGridContainerProps {
   reports: ReportWithReplies[];
   columns: GridColDef[];
@@ -41,11 +47,6 @@ interface HeaderProps {
   colors: ReturnType<typeof tokens>;
   isConnected: boolean;
   onRefresh: () => void;
-}
-
-interface ActionButtonProps {
-  reportId: string | number;
-  onClick: (id: string | number) => void;
 }
 
 const Header: React.FC<HeaderProps> = ({ colors, isConnected, onRefresh }) => {
@@ -115,7 +116,8 @@ const formatDateString = (dateStr: string): string => {
 const fetchReportReplies = async (): Promise<ReportWithReplies[]> => {
   try {
     const response = await apiClient.get("/api/admin/reports-replied");
-    return response.data || [];
+    
+    return Array.isArray(response.data) ? response.data : [];
   } catch (error) {
     console.error("Error fetching reports with replies:", error);
     throw error;
@@ -138,7 +140,7 @@ const FullPageErrorAlert: React.FC<ErrorAlertProps> = ({ message }) => {
   );
 };
 
-const ActionButton: React.FC<ActionButtonProps> = ({ reportId, onClick }) => {
+const ActionButton: React.FC<{ reportId: string | number; onClick: (id: string | number) => void }> = ({ reportId, onClick }) => {
   return (
     <Button
       variant="contained"
@@ -152,6 +154,9 @@ const ActionButton: React.FC<ActionButtonProps> = ({ reportId, onClick }) => {
 };
 
 const DataGridContainer: React.FC<DataGridContainerProps> = ({ reports, columns, loading, colors }) => {
+  
+  const safeReports = Array.isArray(reports) ? reports : [];
+  
   return (
     <Box
       sx={{
@@ -182,7 +187,7 @@ const DataGridContainer: React.FC<DataGridContainerProps> = ({ reports, columns,
       }}
     >
       <DataGrid
-        rows={reports}
+        rows={safeReports}
         columns={columns}
         slots={{ toolbar: GridToolbar }}
         resizeThrottleMs={0}
@@ -215,7 +220,13 @@ const createReportColumns = (
       field: "latest_reply_date",
       headerName: "Latest Reply Date",
       flex: 1.5,
-      valueFormatter: (params: { value: string }) => formatDateString(params.value),
+      valueFormatter: (params) => {
+        
+        if (!params || params.value === undefined || params.value === null) {
+          return "No date";
+        }
+        return formatDateString(params.value);
+      },
     },
     {
       field: "action",
@@ -240,12 +251,20 @@ const ReportRepliedList: React.FC = () => {
   const { drawer } = useSettingsStore();
   
   
+  const [reportState, setReportState] = useState<ReportState>({
+    items: [],
+    loading: true,
+    error: null
+  });
+  
+  
+  const [isConnected, setIsConnected] = useState(false);
+  
   const { 
-    data: reports, 
-    loading, 
-    error, 
-    refresh, 
-    isConnected 
+    data: wsData, 
+    isConnected: wsConnected, 
+    refresh: wsRefresh, 
+    error: wsError
   } = useWebSocketChannel<ReportWithReplies[]>(
     'admin/reports', 
     fetchReportReplies
@@ -253,27 +272,80 @@ const ReportRepliedList: React.FC = () => {
   
   
   useEffect(() => {
-    if (error) {
-      console.error(`WebSocket error: ${error}`);
+    if (wsData) {
+      
+      const safeData = Array.isArray(wsData) ? wsData : [];
+      setReportState(prev => ({
+        ...prev,
+        items: safeData,
+        loading: false
+      }));
     }
-  }, [error]);
+    
+    setIsConnected(wsConnected);
+    
+    if (wsError) {
+      setReportState(prev => ({
+        ...prev,
+        error: wsError
+      }));
+    }
+  }, [wsData, wsConnected, wsError]);
+  
+  
+  const loadReportReplies = useCallback(async () => {
+    setReportState(prev => ({ ...prev, loading: true }));
+    
+    try {
+      const data = await fetchReportReplies();
+      
+      const safeData = Array.isArray(data) ? data : [];
+      setReportState({
+        items: safeData,
+        loading: false,
+        error: null
+      });
+    } catch (err) {
+      console.error("Error fetching reports with replies:", err);
+      setReportState({
+        items: [],
+        loading: false,
+        error: "Failed to fetch reports with replies. Please try again."
+      });
+    }
+  }, []);
+  
+  
+  const handleRefresh = useCallback(() => {
+    wsRefresh();
+    loadReportReplies();
+  }, [wsRefresh, loadReportReplies]);
+  
+  useEffect(() => {
+    loadReportReplies();
+  }, [loadReportReplies]);
   
   const handleViewThread = useCallback((reportId: string | number) => {
     navigate(`/admin/report-thread/${reportId}`);
   }, [navigate]);
   
-  const filteredReports = useMemo(() => 
-    filterReportsBySearchTerm(reports || [], searchTerm || ''),
-    [reports, searchTerm]
-  );
+  
+  const filteredReports = useMemo(() => {
+    
+    const items = reportState.items || [];
+    
+    const safeItems = Array.isArray(items) ? items : [];
+    
+    return filterReportsBySearchTerm(safeItems, searchTerm || '');
+  }, [reportState.items, searchTerm]);
   
   const columns = useMemo(() => 
     createReportColumns(handleViewThread),
     [handleViewThread]
   );
   
-  if (error && (!reports || reports.length === 0)) {
-    return <FullPageErrorAlert message={error} />;
+  if (reportState.error && !reportState.items.length) {
+    return <FullPageErrorAlert message={reportState.error} />;
   }
   
   return (
@@ -286,15 +358,15 @@ const ReportRepliedList: React.FC = () => {
       <Header 
         colors={colors}
         isConnected={isConnected}
-        onRefresh={refresh}
+        onRefresh={handleRefresh}
       />
       
-      {error && <ErrorAlert message={error} />}
+      {reportState.error && <ErrorAlert message={reportState.error} />}
       
       <DataGridContainer 
         reports={filteredReports}
         columns={columns}
-        loading={loading}
+        loading={reportState.loading}
         colors={colors}
       />
     </Box>

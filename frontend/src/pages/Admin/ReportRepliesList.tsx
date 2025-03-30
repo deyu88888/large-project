@@ -30,6 +30,12 @@ interface Report {
   [key: string]: any;
 }
 
+interface ReportState {
+  items: Report[];
+  loading: boolean;
+  error: string | null;
+}
+
 interface LatestReplyProps {
   repliedBy: string;
   content: string;
@@ -275,12 +281,18 @@ const createReportColumns = (
       field: "latest_reply_content", 
       headerName: "Latest Reply", 
       flex: 2,
-      renderCell: (params: GridRenderCellParams) => (
-        <LatestReplyCell 
-          repliedBy={params.row.latest_reply.replied_by}
-          content={params.row.latest_reply.content}
-        />
-      )
+      renderCell: (params: GridRenderCellParams) => {
+        
+        if (!params.row.latest_reply) {
+          return <Typography variant="body2">No replies yet</Typography>;
+        }
+        return (
+          <LatestReplyCell 
+            repliedBy={params.row.latest_reply.replied_by || 'Unknown'}
+            content={params.row.latest_reply.content || 'No content'}
+          />
+        );
+      }
     },
     { 
       field: "status", 
@@ -292,23 +304,34 @@ const createReportColumns = (
       field: "latest_reply_date", 
       headerName: "Latest Reply Date", 
       flex: 1.2,
-      renderCell: (params: GridRenderCellParams) => (
-        <DateCell 
-          dateString={params.row.latest_reply.created_at}
-          formatter={formatDate}
-        />
-      )
+      renderCell: (params: GridRenderCellParams) => {
+        
+        if (!params.row.latest_reply || !params.row.latest_reply.created_at) {
+          return <Typography variant="body2">No date available</Typography>;
+        }
+        return (
+          <DateCell 
+            dateString={params.row.latest_reply.created_at}
+            formatter={formatDate}
+          />
+        );
+      }
     },
     { 
       field: "requested_at", 
       headerName: "Report Date", 
       flex: 1.2,
-      renderCell: (params: GridRenderCellParams) => (
-        <DateCell 
-          dateString={params.row.requested_at}
-          formatter={formatDate}
-        />
-      )
+      renderCell: (params: GridRenderCellParams) => {
+        if (!params.row.requested_at) {
+          return <Typography variant="body2">No date available</Typography>;
+        }
+        return (
+          <DateCell 
+            dateString={params.row.requested_at}
+            formatter={formatDate}
+          />
+        );
+      }
     },
     {
       field: "actions",
@@ -327,7 +350,9 @@ const createReportColumns = (
 
 const loadReportData = async (): Promise<Report[]> => {
   try {
-    return await fetchReportsWithReplies() as Report[];
+    const data = await fetchReportsWithReplies() as Report[];
+    
+    return Array.isArray(data) ? data : [];
   } catch (error) {
     console.error("Error fetching reports with replies:", error);
     throw error;
@@ -341,15 +366,23 @@ const ReportRepliesList: React.FC = () => {
   const { drawer } = useSettingsStore();
   const navigate = useNavigate();
   
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  
+  const [reportState, setReportState] = useState<ReportState>({
+    items: [],
+    loading: true,
+    error: null
+  });
+  
+  
+  const [isConnected, setIsConnected] = useState(false);
   
   
   const { 
-    data: reports, 
-    loading, 
-    error, 
-    refresh, 
-    isConnected 
+    data: wsData, 
+    loading: wsLoading, 
+    error: wsError, 
+    refresh: wsRefresh, 
+    isConnected: wsConnected 
   } = useWebSocketChannel<Report[]>(
     'admin/reports', 
     loadReportData
@@ -357,10 +390,51 @@ const ReportRepliesList: React.FC = () => {
   
   
   useEffect(() => {
-    if (error) {
-      setErrorMessage(`Failed to fetch reports: ${error}`);
+    if (wsData) {
+      
+      const safeData = Array.isArray(wsData) ? wsData : [];
+      setReportState(prev => ({
+        ...prev,
+        items: safeData,
+        loading: false
+      }));
     }
-  }, [error]);
+    
+    setIsConnected(wsConnected);
+    
+    if (wsError) {
+      setReportState(prev => ({
+        ...prev,
+        error: `Failed to fetch reports: ${wsError}`
+      }));
+    }
+  }, [wsData, wsConnected, wsError]);
+  
+  
+  const fetchReports = useCallback(async () => {
+    setReportState(prev => ({ ...prev, loading: true }));
+    
+    try {
+      const data = await loadReportData();
+      setReportState({
+        items: data,
+        loading: false,
+        error: null
+      });
+    } catch (error) {
+      console.error("Error fetching reports:", error);
+      setReportState(prev => ({
+        ...prev,
+        error: "Failed to fetch reports with replies.",
+        loading: false
+      }));
+    }
+  }, []);
+  
+  
+  useEffect(() => {
+    fetchReports();
+  }, [fetchReports]);
   
   const handleViewThread = useCallback((reportId: number | string) => {
     navigate(`/admin/report-thread/${reportId}`);
@@ -371,22 +445,30 @@ const ReportRepliesList: React.FC = () => {
   }, [navigate]);
 
   const handleClearError = useCallback(() => {
-    setErrorMessage(null);
+    setReportState(prev => ({ ...prev, error: null }));
   }, []);
   
   const formatDate = useCallback(formatDateToLocale, []);
   
-  const filteredReports = useMemo(() => 
-    filterReportsBySearchTerm(reports || [], searchTerm || ''),
-    [reports, searchTerm]
-  );
+  
+  const filteredReports = useMemo(() => {
+    const reports = reportState.items || [];
+    
+    const safeReports = Array.isArray(reports) ? reports : [];
+    return filterReportsBySearchTerm(safeReports, searchTerm || '');
+  }, [reportState.items, searchTerm]);
   
   const columns = useMemo(() => 
     createReportColumns(handleViewThread, handleReply, formatDate),
     [handleViewThread, handleReply, formatDate]
   );
   
-  if (loading && (!reports || reports.length === 0)) {
+  const handleRefresh = useCallback(() => {
+    wsRefresh();
+    fetchReports();
+  }, [wsRefresh, fetchReports]);
+  
+  if (reportState.loading && reportState.items.length === 0) {
     return <LoadingState message="Loading reports..." />;
   }
   
@@ -400,12 +482,12 @@ const ReportRepliesList: React.FC = () => {
       <Header 
         colors={colors}
         isConnected={isConnected}
-        onRefresh={refresh}
+        onRefresh={handleRefresh}
       />
       
-      {errorMessage && (
+      {reportState.error && (
         <ErrorAlert 
-          message={errorMessage} 
+          message={reportState.error} 
           onClose={handleClearError}
         />
       )}
@@ -413,7 +495,7 @@ const ReportRepliesList: React.FC = () => {
       <DataGridContainer 
         reports={filteredReports}
         columns={columns}
-        loading={loading}
+        loading={reportState.loading || wsLoading}
         colors={colors}
         drawer={drawer}
       />
