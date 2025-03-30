@@ -3,15 +3,7 @@ import { IconButton, TextField, Typography, Button } from "@mui/material";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { FaTimes } from "react-icons/fa";
-
-export type ExtraModuleType = "description" | "image" | "file" | "subtitle";
-
-export interface ExtraModule {
-  id: string;
-  type: ExtraModuleType;
-  textValue?: string;
-  fileValue?: File | string;
-}
+import { ExtraModule } from "../types/event/event.ts";
 
 interface SortableItemProps {
   mod: ExtraModule;

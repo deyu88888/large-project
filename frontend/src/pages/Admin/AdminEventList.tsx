@@ -15,9 +15,8 @@ import { apiClient, apiPaths } from "../../api";
 import { tokens } from "../../theme/theme";
 import { useSettingsStore } from "../../stores/settings-store";
 import { SearchContext } from "../../components/layout/SearchContext";
-import { Event as AppEvent } from '../../types';
 import { EventPreview } from "../../components/EventPreview";
-import type { EventData } from "../../components/EventDetailLayout";
+import type { EventData, ExtraModule } from "../../types/event/event";
 import { getWebSocketUrl } from "../../utils/websocket";
 
 
@@ -26,7 +25,7 @@ const RECONNECT_TIMEOUT = 5000;
 
 interface DeleteDialogProps {
   open: boolean;
-  event: AppEvent | null;
+  event: EventData | null;
   reason: string;
   onReasonChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onCancel: () => void;
@@ -34,38 +33,51 @@ interface DeleteDialogProps {
 }
 
 interface ActionButtonsProps {
-  eventId: string;
-  event: AppEvent;
-  onView: (event: AppEvent) => void;
-  onDelete: (event: AppEvent) => void;
+  eventId: number;
+  event: EventData;
+  onView: (event: EventData) => void;
+  onDelete: (event: EventData) => void;
 }
 
 interface DataGridContainerProps {
-  filteredEvents: AppEvent[];
+  filteredEvents: EventData[];
   columns: GridColDef[];
   loading: boolean;
   colors: any;
 }
 
-function mapToEventData(raw: any): EventData {
+const mapModule = (mod: any): ExtraModule => ({
+  id: mod.id,
+  type: mod.type,
+  textValue: mod.text_value,
+  fileValue: mod.file_value,
+});
+
+const mapToEventRequestData = (data: any): EventData => {
+  const event = data.event;
   return {
-    title: raw.title || "",
-    main_description: raw.main_description || "",
-    date: raw.date || "",
-    start_time: raw.start_time || "",
-    duration: raw.duration || "",
-    location: raw.location || "",
-    max_capacity: raw.max_capacity || 0,
-    hosted_by: raw.hosted_by || 0,
-    event_id: raw.id,
-    current_attendees: raw.any,
-    cover_image_url: raw.cover_image || "",
-    extra_modules: raw.extra_modules || [],
-    participant_modules: raw.participant_modules || [],
-    is_participant: false,
-    is_member: false,
+    eventId: event.id || null,
+    title: event.title || "",
+    mainDescription: event.main_description || "",
+    coverImageUrl: event.cover_image || "",
+    date: event.date || "",
+    startTime: event.start_time || "",
+    duration: event.duration || "",
+    hostedBy: event.hosted_by || 0,
+    location: event.location || "",
+    maxCapacity: event.max_capacity || 0,
+    currentAttendees: event.current_attendees || [],
+    extraModules: Array.isArray(event.extra_modules)
+      ? event.extra_modules.map(mapModule)
+      : [],
+    participantModules: Array.isArray(event.participant_modules)
+      ? event.participant_modules.map(mapModule)
+      : [],
+    isParticipant: true,
+    isMember: true,
+    adminReason: data.admin_reason ?? "",
   };
-}
+};
 
 const ActionButtons: FC<ActionButtonsProps> = ({
   event,
@@ -178,6 +190,7 @@ const DataGridContainer: FC<DataGridContainerProps> = ({
       <DataGrid
         rows={filteredEvents}
         columns={columns}
+        getRowId={(row) => row.eventId}
         slots={{ toolbar: GridToolbar }}
         loading={loading}
         resizeThrottleMs={0}
@@ -186,10 +199,6 @@ const DataGridContainer: FC<DataGridContainerProps> = ({
     </Box>
   );
 };
-
-// const handleSocketError = useCallback((event: Event) => {
-//   console.error("WebSocket Error:", event);
-// }, []);
 
 const createWebSocket = (
   url: string,
@@ -221,12 +230,11 @@ const EventList: FC = () => {
   const { drawer } = useSettingsStore();
   const { searchTerm } = useContext(SearchContext);
   
-  const [events, setEvents] = useState<AppEvent[]>([]);
+  const [events, setEvents] = useState<EventData[]>([]);
   const [openDialog, setOpenDialog] = useState(false);
-  const [selectedEvent, setSelectedEvent] = useState<AppEvent | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<EventData | null>(null);
   const [reason, setReason] = useState('');
   const [loading, setLoading] = useState(true);
-  const [previewEvent, setPreviewEvent] = useState<EventData | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
 
   const ws = useRef<WebSocket | null>(null);
@@ -235,7 +243,8 @@ const EventList: FC = () => {
     try {
       setLoading(true);
       const res = await apiClient.get(apiPaths.EVENTS.APPROVEDEVENTLIST);
-      setEvents(res.data || []);
+      const mapped = (res.data ?? []).map(mapToEventRequestData);
+      setEvents(mapped);
     } catch (error) {
       console.error("Error fetching events:", error);
     } finally {
@@ -255,7 +264,7 @@ const EventList: FC = () => {
     }
   }, [fetchEvents]);
 
-  const handleSocketError = useCallback((event: AppEvent) => {
+  const handleSocketError = useCallback((event: EventData) => {
     console.error("WebSocket Error:", event);
   }, []);
 
@@ -291,13 +300,12 @@ const EventList: FC = () => {
     };
   }, [fetchEvents, connectWebSocket]);
 
-  const handleViewEvent = useCallback((event: AppEvent) => {
-    const data = mapToEventData(event);
-    setPreviewEvent(data);
+  const handleViewEvent = useCallback((event: EventData) => {
+    setSelectedEvent(event);
     setPreviewOpen(true);
   }, []);
 
-  const handleOpenDialog = useCallback((event: AppEvent) => {
+  const handleOpenDialog = useCallback((event: EventData) => {
     setSelectedEvent(event);
     setOpenDialog(true);
   }, []);
@@ -320,7 +328,7 @@ const EventList: FC = () => {
     try {
       await apiClient.request({
         method: "DELETE",
-        url: apiPaths.USER.DELETE("Event", selectedEvent.id),
+        url: apiPaths.USER.DELETE("Event", selectedEvent.eventId),
         data: { reason },
       });
       await fetchEvents();
@@ -343,24 +351,23 @@ const EventList: FC = () => {
 
   
   const getColumns = useCallback((): GridColDef[] => [
-    { field: "id", headerName: "ID", flex: 0.3 },
+    { field: "eventId", headerName: "ID", flex: 0.3 },
     { field: "title", headerName: "Title", flex: 1 },
-    { field: "main_description", headerName: "Description", flex: 2 },
-    { field: "date", headerName: "Date", flex: 1 },
-    { field: "start_time", headerName: "Start Time", flex: 1 },
-    { field: "duration", headerName: "Duration", flex: 1 },
-    { field: "hosted_by", headerName: "Hosted By", flex: 0.5 },
+    { field: "date", headerName: "Date", flex: 0.7 },
+    { field: "startTime", headerName: "Start Time", flex: 0.7 },
+    { field: "duration", headerName: "Duration", flex: 0.7 },
+    { field: "hostedBy", headerName: "Hosted By", flex: 0.7 },
     { field: "location", headerName: "Location", flex: 1 },
     {
       field: "actions",
       headerName: "Actions",
-      width: 170,
-      minWidth: 170,
+      flex: 1.4,
+      minWidth: 250,
       sortable: false,
       filterable: false,
-      renderCell: (params: GridRenderCellParams) => (
+      renderCell: (params: GridRenderCellParams<EventData>) => (
         <ActionButtons
-          eventId={params.row.id}
+          eventId={params.row.eventId}
           event={params.row}
           onView={handleViewEvent}
           onDelete={handleOpenDialog}
@@ -368,6 +375,7 @@ const EventList: FC = () => {
       ),
     },
   ], [handleViewEvent, handleOpenDialog]);
+
 
   const getContainerStyle = useCallback(() => ({
     height: "calc(100vh - 64px)", 
@@ -395,11 +403,11 @@ const EventList: FC = () => {
         onConfirm={handleConfirmDelete}
       />
 
-      {previewEvent && (
+      {selectedEvent && (
         <EventPreview
           open={previewOpen}
           onClose={() => setPreviewOpen(false)}
-          eventData={previewEvent}
+          eventData={selectedEvent}
         />
       )}
     </Box>

@@ -1,6 +1,14 @@
 import { Box, Typography } from "@mui/material";
 import { StyledButton } from "./home/StyledButton";
-import { EventCardProps } from "../types/shared/event";
+import { Attendee, EventData } from "../types/event/event";
+
+export interface EventCardProps {
+  event: EventData;
+  isLight: boolean;
+  colors: any;
+  onViewEvent: (id: number) => void;
+  followingsAttending?: Attendee[];
+}
 
 const EventCard = ({
   event,
@@ -50,9 +58,9 @@ const EventCard = ({
           borderRadius: "0.5rem",
         }}
       >
-        {event.cover_image ? (
+        {event.coverImageUrl ? (
           <img
-            src={event.cover_image}
+            src={event.coverImageUrl}
             alt={event.title}
             style={{
               width: "100%",
@@ -123,8 +131,8 @@ const EventCard = ({
             mb: 2,
           }}
         >
-          {event.main_description?.substring(0, 120)}
-          {event.main_description && event.main_description.length > 120
+          {event.mainDescription?.substring(0, 120)}
+          {event.mainDescription && event.mainDescription.length > 120
             ? "..."
             : ""}
         </Typography>
@@ -204,7 +212,7 @@ const EventCard = ({
       {/* View Button */}
       <Box sx={{ display: "flex", justifyContent: "flex-end", mt: "auto" }}>
         <StyledButton
-          onClick={() => onViewEvent(event.id)}
+          onClick={() => onViewEvent(event.eventId)}
           sx={{
             "& .MuiButtonBase-root, & .MuiButton-root": {
               color: isLight ? "black !important" : "white !important",

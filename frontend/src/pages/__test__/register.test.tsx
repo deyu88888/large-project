@@ -3,7 +3,7 @@ import { render, screen, fireEvent, act } from '@testing-library/react';
 import { vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import RegisterPage from '../register';
+import RegisterPage from '../Register';
 import { apiClient, apiPaths } from "../../api";
 
 // Mock the API client

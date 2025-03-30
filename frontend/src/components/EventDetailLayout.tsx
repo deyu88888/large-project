@@ -1,31 +1,12 @@
 import { Box, Typography, Button, Snackbar, useTheme } from "@mui/material";
 import MuiAlert from "@mui/material/Alert";
-import { ExtraModule } from "./SortableItem";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiClient } from "../api";
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 import { useSettingsStore } from "../stores/settings-store";
 import { tokens } from "../theme/theme";
-
-export interface EventData {
-  title: string;
-  mainDescription: string;
-  date: string;
-  startTime: string;
-  duration: string;
-  location: string;
-  maxCapacity: number;
-  coverImageUrl?: string;
-  coverImageFile?: File | null;
-  extraModules: ExtraModule[];
-  participantModules: ExtraModule[];
-  isParticipant: boolean;
-  isMember: boolean;
-  eventId: number;
-  hostedBy: number;
-  current_attendees: any[];
-}
+import { ExtraModule, EventData } from "../types/event/event.ts";
 
 export function EventDetailLayout({ eventData }: { eventData: EventData }) {
   const {
@@ -44,7 +25,8 @@ export function EventDetailLayout({ eventData }: { eventData: EventData }) {
     isMember,
     eventId,
     hostedBy,
-    current_attendees,
+    currentAttendees,
+    adminReason,
   } = eventData;
 
   const theme = useTheme();
@@ -179,6 +161,37 @@ export function EventDetailLayout({ eventData }: { eventData: EventData }) {
       marginLeft: "auto",
       marginRight: "auto",
      }}>
+      {adminReason && adminReason.trim() !== "" && (
+        <Box
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+          flexWrap="wrap"
+          sx={{
+            mb: 2,
+            textAlign: "center" ,
+            backgroundColor: "yellow",
+            p: 3,
+            borderRadius: 3,
+            maxWidth: "85%",
+            mx: "auto"
+        }}
+        >
+          <Typography variant="h4" sx={{ fontWeight: "bold", mr: 1 }}>
+            For Admin:
+          </Typography>
+          <Typography
+            variant="h5"
+            sx={{
+              wordBreak: "break-word",
+              whiteSpace: "normal",
+            }}
+          >
+            {adminReason}
+          </Typography>
+        </Box>
+      )}
+
       <Box sx={{ textAlign: "center" }}>
         <Typography variant="h1" gutterBottom sx={{ fontWeight: "bold" }}>
           {title || "Event Title"}
@@ -267,7 +280,7 @@ export function EventDetailLayout({ eventData }: { eventData: EventData }) {
               <strong>Max Capacity:</strong> {maxCapacity === 0 ? "No Limit" : maxCapacity}
             </Typography>
             <Typography variant="body1" sx={{ mb: 1 }}>
-              <strong>Participants:</strong> {current_attendees?.length || 0}
+              <strong>Participants:</strong> {currentAttendees?.length || 0}
             </Typography>
   
             <Box sx={{ mt: 2 }}>

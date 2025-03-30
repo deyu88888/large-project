@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { apiClient } from "../../api";
-import { EventForm, EventFormInitialData } from "../../components/EventForm";
+import { EventForm } from "../../components/EventForm";
 import { CircularProgress, Box } from "@mui/material";
-import { ExtraModule } from "../../components/SortableItem";
-import { RouteParams } from "../../types/president/event";
+import { ExtraModule, EventFormInitialData, RouteParams } from "../../types/event/event.ts";
 
 export default function EditEventDetails() {
   const { eventId } = useParams<RouteParams>();
@@ -37,21 +36,23 @@ export default function EditEventDetails() {
   };
 
   const formatInitialData = (data: any): EventFormInitialData => {
+    const event = data.event || data;
     return {
-      title: data.title || "",
-      mainDescription: data.main_description || "",
-      date: data.date || "",
-      startTime: data.start_time || "",
-      duration: data.duration || "",
-      location: data.location || "",
-      maxCapacity: data.max_capacity || 0,
+      title: event.title ?? "",
+      mainDescription: event.main_description ?? "",
+      date: event.date ?? "",
+      startTime: event.start_time ?? "",
+      duration: event.duration ?? "",
+      location: event.location ?? "",
+      maxCapacity: event.max_capacity ?? 0,
       coverImageFile: null,
-      coverImageUrl: data.cover_image || "",
-      extraModules: extractModules(data.extra_modules || [], false),
-      participantModules: extractModules(data.participant_modules || [], true),
-      adminReason: "",
+      coverImageUrl: event.cover_image ?? "",
+      extraModules: extractModules(event.extra_modules ?? [], false),
+      participantModules: extractModules(event.participant_modules ?? [], true),
+      adminReason: data.admin_reason ?? "",
     };
   };
+
 
   const extractModules = (modules: unknown[], isParticipantOnly: boolean): ExtraModule[] => {
     if (!Array.isArray(modules)) return [];
@@ -63,18 +64,20 @@ export default function EditEventDetails() {
 
   const mapModule = (mod: any): ExtraModule => {
     if (!mod) return { id: '0', type: 'text' as any, textValue: '' };
-    
-    const fileUrl = mod.file_value || mod.text_value || "";
     return {
       id: mod.id?.toString() || '0',
       type: mod.type || 'text',
-      textValue: mod.text_value || mod.file_value || "",
-      fileValue: mod.type === "file" && fileUrl ? fileUrl : undefined,
+      textValue: mod.text_value || "",
+      fileValue: mod.file_value || "",
     };
   };
 
   const handleSubmit = async (formData: FormData): Promise<void> => {
     try {
+      for (const [key, value] of formData.entries()) {
+        console.log(key, value);
+      }
+
       const response = await apiClient.patch(`/api/events/${eventId}/manage/`, formData);
 
       if (response.status === 200) {

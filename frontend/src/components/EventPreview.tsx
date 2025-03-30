@@ -7,7 +7,8 @@ import {
   Typography
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
-import { EventDetailLayout, EventData } from "./EventDetailLayout";
+import { EventDetailLayout } from "./EventDetailLayout";
+import { EventData } from "../types/event/event.ts";
 
 interface Props {
   open: boolean;

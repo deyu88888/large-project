@@ -1,4 +1,4 @@
-import { ExtraModule } from "../../components/SortableItem";
+import { ExtraModule } from "../event/event";
 
 export interface DescriptionRequest {
   id: number;

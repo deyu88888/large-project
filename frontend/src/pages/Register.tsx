@@ -378,7 +378,7 @@ export default function RegisterPage() {
                   >
                     Already signed up?{" "}
                     <a
-                      href="/login"
+                      href="/Login"
                       style={{
                         color: colors.blueAccent[300],
                         textDecoration: "underline",

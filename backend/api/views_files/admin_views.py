@@ -7,10 +7,11 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from api.models import AdminReportRequest, Event, Society, Student, User,\
-    ActivityLog, ReportReply, SocietyRequest
+    ActivityLog, ReportReply, SocietyRequest, EventRequest
 from api.serializers import AdminReportRequestSerializer, EventSerializer, \
     SocietySerializer, StudentSerializer, UserSerializer, AdminSerializer,\
-    ActivityLogSerializer, ReportReplySerializer, SocietyRequestSerializer
+    ActivityLogSerializer, ReportReplySerializer, SocietyRequestSerializer, \
+    EventRequestSerializer
 from api.views_files.view_utility import get_admin_if_user_is_admin
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
@@ -25,8 +26,12 @@ class AdminEventView(APIView):
         Returns a list of upcoming approved events sorted by date and time.
         """
         event_status = event_status.capitalize()
-        events = Event.objects.filter(status=event_status).order_by("date", "start_time")
-        serializer = EventSerializer(events, many=True, context={"request": request})
+        event = Event.objects.filter(status=event_status)
+        event_requests = (EventRequest.objects
+                            .filter(event__in=event)
+                            .order_by("event__date", "event__start_time")
+                         )
+        serializer = EventRequestSerializer(event_requests, many=True, context={"request": request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -254,7 +259,7 @@ class AdminManageEventDetailsView(APIView):
         event = Event.objects.filter(id=event_id).first()
         if not event:
             return Response({"error": "Event not found."}, status=status.HTTP_404_NOT_FOUND)
-        serializer = EventSerializer(event)
+        serializer = EventSerializer(event, context={"request": request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def patch(self, request, event_id):
@@ -311,7 +316,7 @@ class AdminManageEventDetailsView(APIView):
 
         data = request.data.copy()
         current_attendees_data = data.pop("current_attendees", None)
-        serializer = EventSerializer(event, data=data, partial=True)
+        serializer = EventSerializer(event, data=data, partial=True, context={"request": request})
 
         if serializer.is_valid():
             log_entry = ActivityLog.objects.create(

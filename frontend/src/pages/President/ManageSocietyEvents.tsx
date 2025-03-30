@@ -18,7 +18,7 @@ import {
 import { useTheme } from "@mui/material/styles";
 import { apiClient } from "../../api";
 import { tokens } from "../../theme/theme";
-import { Event } from "../../types/president/event";
+import { Event } from "../../types/event/event";
 
 type FilterType = "upcoming" | "previous" | "pending" | "rejected";
 

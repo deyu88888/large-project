@@ -3,7 +3,8 @@ import {
   Box,
   Button,
   Menu,
-  MenuItem, Snackbar,
+  MenuItem,
+  Snackbar,
   TextField,
   Typography
 } from "@mui/material";
@@ -14,24 +15,12 @@ import {
   verticalListSortingStrategy,
   arrayMove
 } from "@dnd-kit/sortable";
-import { SortableItem, ExtraModule, ExtraModuleType } from "./SortableItem";
+import { SortableItem } from "./SortableItem";
 import { EventPreview } from "./EventPreview";
+import { ExtraModule, EventFormInitialData } from "../types/event/event.ts";
 
 interface EventFormProps {
-  initialData?: {
-    title: string;
-    mainDescription: string;
-    date: string;
-    startTime: string;
-    duration: string;
-    location: string;
-    maxCapacity: number;
-    coverImageFile?: File | null;
-    coverImageUrl?: string;
-    extraModules: ExtraModule[];
-    participantModules: ExtraModule[];
-    adminReason: string;
-  };
+  initialData?: EventFormInitialData
   onSubmit: (formData: FormData) => Promise<void>;
   submitButtonText?: string;
   isEditMode?: boolean;
@@ -88,13 +77,13 @@ export const EventForm: React.FC<EventFormProps> = ({
     setSnackbarOpen(false);
   };
 
-  const handleSelectModule = (type: ExtraModuleType) => {
+  const handleSelectModule = (type: ExtraModule["type"]) => {
     const newModule: ExtraModule = { id: Date.now().toString(), type };
     setExtraModules((prev) => [...prev, newModule]);
     handleMenuClose();
   };
 
-  const handleSelectParticipantModule = (type: ExtraModuleType) => {
+  const handleSelectParticipantModule = (type: ExtraModule["type"]) => {
     const newModule: ExtraModule = { id: Date.now().toString() + "_p", type };
     setParticipantModules((prev) => [...prev, newModule]);
     handleParticipantMenuClose();
@@ -223,8 +212,6 @@ export const EventForm: React.FC<EventFormProps> = ({
   const coverImagePreviewSrc = coverImageFile
     ? URL.createObjectURL(coverImageFile)
     : initialData?.coverImageUrl;
-
-  console.log(initialData.coverImageUrl);
 
   return (
     <Box sx={{ p: 4 }}>
@@ -545,5 +532,3 @@ export const EventForm: React.FC<EventFormProps> = ({
     </Box>
   );
 };
-
-export type EventFormInitialData = EventFormProps["initialData"];
