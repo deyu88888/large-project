@@ -844,7 +844,7 @@ const NewsApprovalDashboard: React.FC = () => {
     refresh,
     error: wsError 
   } = useWebSocketChannel(
-    'channel_dashboard/stats', 
+    'dashboard_stats', 
     fetchPublicationRequests
   );
   

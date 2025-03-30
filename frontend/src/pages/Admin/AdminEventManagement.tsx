@@ -189,7 +189,7 @@ const ManageEvents: FC = () => {
     isConnected, 
     refresh 
   } = useWebSocketChannel(
-    'dashboard', 
+    'admin_events', 
     fetchEventManagementStatus
   );
 

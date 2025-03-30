@@ -384,7 +384,7 @@ const ReportRepliesList: React.FC = () => {
     refresh: wsRefresh, 
     isConnected: wsConnected 
   } = useWebSocketChannel<Report[]>(
-    'admin/reports', 
+    'admin_reports', 
     loadReportData
   );
   

@@ -152,7 +152,7 @@ const EventListRejected: React.FC = () => {
     refresh, 
     isConnected 
   } = useWebSocketChannel<EventData[]>(
-    'admin/events', 
+    'admin_events', 
     fetchRejectedEvents
   );
 

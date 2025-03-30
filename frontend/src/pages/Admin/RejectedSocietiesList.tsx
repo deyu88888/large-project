@@ -87,7 +87,7 @@ const SocietyListRejected: React.FC = () => {
     refresh, 
     isConnected 
   } = useWebSocketChannel<Society[]>(
-    'admin/societies', 
+    'admin_societies', 
     fetchRejectedSocieties
   );
 

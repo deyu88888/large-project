@@ -195,7 +195,7 @@ const EventList: FC = () => {
     refresh, 
     isConnected 
   } = useWebSocketChannel<EventData[]>(
-    'dashboard', 
+    'admin_events', 
     fetchEvents
   );
 

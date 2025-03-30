@@ -236,7 +236,7 @@ const PendingEventRequest: React.FC = () => {
     refresh, 
     isConnected 
   } = useWebSocketChannel<any[]>(
-    'dashboard', 
+    'admin_events', 
     fetchPendingEventData
   );
 

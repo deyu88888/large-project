@@ -190,7 +190,7 @@ const ManageReports: React.FC = () => {
     refresh,
     error 
   } = useWebSocketChannel(
-    'channel_dashboard/stats', 
+    'dashboard_stats', 
     fetchReportStatus
   );
 

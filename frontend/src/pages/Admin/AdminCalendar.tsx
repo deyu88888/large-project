@@ -120,7 +120,7 @@ const AdminCalendar = () => {
     refresh, 
     isConnected 
   } = useWebSocketChannel(
-    'dashboard', 
+    'events_calendar', 
     fetchCalendarEvents
   );
 
@@ -393,33 +393,6 @@ const AdminCalendar = () => {
         mb={3}
       >
         <Header title="Admin Calendar" subtitle="View All Events" />
-        <Box display="flex" alignItems="center" gap={2}>
-          {/* WebSocket connection status */}
-          <Box display="flex" alignItems="center">
-            <Box
-              component="span"
-              sx={{
-                width: 8,
-                height: 8,
-                borderRadius: '50%',
-                backgroundColor: isConnected ? colors.greenAccent[500] : colors.orangeAccent[500],
-                mr: 1
-              }}
-            />
-            <Typography variant="body2" fontSize="0.75rem" color={colors.grey[300]}>
-              {isConnected ? 'Live updates' : 'Offline mode'}
-            </Typography>
-          </Box>
-          <Button
-            variant="contained"
-            color="secondary"
-            startIcon={<FaSync />}
-            onClick={refresh}
-            sx={{ borderRadius: "8px" }}
-          >
-            Refresh
-          </Button>
-        </Box>
       </Box>
 
       {error && (

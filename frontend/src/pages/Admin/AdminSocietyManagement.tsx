@@ -194,7 +194,7 @@ const ManageSocieties: FC = () => {
     refresh,
     error 
   } = useWebSocketChannel(
-    'society_requests', 
+    'admin_societies',
     fetchSocietyStatus
   );
 

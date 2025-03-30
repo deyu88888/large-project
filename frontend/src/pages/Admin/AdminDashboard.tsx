@@ -353,7 +353,7 @@ const AdminDashboard: FC = () => {
     refresh, 
     isConnected 
   } = useWebSocketChannel(
-    'channel_dashboard/stats',
+    'dashboard_stats',
     fetchDashboardData
   );
 

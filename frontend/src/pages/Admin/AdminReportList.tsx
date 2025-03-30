@@ -210,7 +210,7 @@ const AdminReportList: FC = () => {
     refresh, 
     isConnected 
   } = useWebSocketChannel<Report[]>(
-    'channel_dashboard/stats', 
+    'dashboard_stats', 
     fetchReportsWS
   );
 

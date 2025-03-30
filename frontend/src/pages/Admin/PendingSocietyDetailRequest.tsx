@@ -92,7 +92,7 @@ const PendingSocietyDetailRequests: React.FC = () => {
     refresh, 
     isConnected 
   } = useWebSocketChannel<SocietyDetailRequest[]>(
-    'society_requests', 
+    'admin_societies', 
     fetchSocietyDetailRequestsWS
   );
 

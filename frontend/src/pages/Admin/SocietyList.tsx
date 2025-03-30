@@ -353,7 +353,7 @@ const SocietyList: React.FC = () => {
     refresh, 
     isConnected 
   } = useWebSocketChannel<Society[]>(
-    'admin/societies', 
+    'admin_societies', 
     fetchSocietyList
   );
   

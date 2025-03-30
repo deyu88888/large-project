@@ -261,7 +261,7 @@ const DataGridContainer: React.FC<DataGridContainerProps> = ({
   return (
     <Box sx={dataGridStyles}>
       <DataGrid
-        rows={students}
+        rows={Array.isArray(students) ? students : []}
         columns={columns}
         slots={{ toolbar: GridToolbar }}
         resizeThrottleMs={0}
@@ -358,7 +358,7 @@ const StudentList: React.FC = () => {
     refresh, 
     isConnected 
   } = useWebSocketChannel<Student[]>(
-    'admin/students', 
+    'admin_students', 
     fetchStudentList
   );
   

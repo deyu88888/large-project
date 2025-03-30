@@ -281,7 +281,7 @@ const AdminList: FC = () => {
     refresh, 
     isConnected 
   } = useWebSocketChannel<AdminUser[]>(
-    'channel_dashboard/stats', 
+    'dashboard_stats', 
     fetchAdminUsers
   );
   
