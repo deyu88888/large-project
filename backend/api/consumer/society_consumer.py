@@ -1,3 +1,5 @@
+# TODO: remove? not in use anywhere
+
 from channels.generic.websocket import AsyncWebsocketConsumer
 import json
 

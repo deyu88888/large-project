@@ -7,6 +7,7 @@ from django.core.management import color_style
 from api.models import User, Society, Student, SocietyRequest, SocietyShowreel
 from api.management.commands.seeding.seeding_utility import get_active_students
 
+
 class RandomSocietyDataGenerator():
     """Class encompassing tools to generate society data"""
     def __init__(self, admin_generator, event_generator):
@@ -176,6 +177,7 @@ class RandomSocietyDataGenerator():
         return_dict["description"] = self.generate_description()
         return_dict["category"] = choice(self.categories)
         return_dict["tags"] = self.generate_tags(return_dict["name"].split()[0])
+        return_dict["social_media_links"] = self.get_society_socials()
 
         icon_name = f'{return_dict["name"].split()[0].lower()}.jpg'
         return_dict["icon"] = os.path.join('pre-seed-icons', icon_name)
@@ -226,94 +228,92 @@ class RandomSocietyDataGenerator():
         for i in range(1, n+1):
             print(f"Seeding society {i}/{n}", end='\r', flush=True)
 
-            available_students = get_active_students().order_by("?")
-            if not available_students.exists():
-                print(self.style.WARNING("No available students."))
-                break
-
-            # Get an admin for the required approved_by field
-            admin = User.get_admins().order_by('?').first()
-            if not admin:
-                print(self.style.WARNING("No admin users found. Creating one."))
-                self.admin_generator.create_admin(1)
-                admin = User.get_admins().first()
-
+            admin = self.get_viable_admin()
             data = self.generate()
             approved = True
             society = None
-            president = president_force
-            viable_presidents = (
-                available_students
-                .filter(president_of=None)
-                .filter(is_vice_president=False)
-                .filter(is_event_manager=False)
-            )
-            if not president_force:
-                president = viable_presidents.first()
-            if not name:
-                approved = self.handle_society_status(
-                    president,
-                    data["name"],
-                )
-            else:
+
+            president = president_force or self.get_new_society_president()
+            if not president:
+                return
+            if name:
                 data["name"] = name
-            if approved:
-                if "social_media_links" not in data or not data["social_media_links"]:
-                    data["social_media_links"] = {
-                        "Email": f"{data['name'].lower().replace(' ', '')}@example.com"
-                    }
-
-                society, created = Society.objects.get_or_create(
-                    name=data["name"],
-                    president=president,
-                    category=data["category"],
-                    status="Approved",
-                    description=data["description"],
-                    tags=data["tags"],
-                    icon=data["icon"],
-                    approved_by=admin,
-                    social_media_links=data["social_media_links"]
+            else:
+                approved = self.handle_society_request_approval(
+                    president,
+                    data,
                 )
-                if created:
-                    self.finalize_society_creation(society)
+                if not approved:
+                    continue
 
-                    num_events = randint(2, 5)
-                    for _ in range(num_events):
-                        self.event_generator.generate_random_event(society)
+            if "social_media_links" not in data or not data["social_media_links"]:
+                data["social_media_links"] = {
+                    "Email": f"{data['name'].lower().replace(' ', '')}@example.com"
+                }
+
+            society, created = Society.objects.get_or_create(
+                name=data["name"],
+                president=president,
+                category=data["category"],
+                status="Approved",
+                description=data["description"],
+                tags=data["tags"],
+                icon=data["icon"],
+                approved_by=admin,
+                social_media_links=data["social_media_links"]
+            )
+            if created:
+                self.finalize_society_creation(society)
+
+                num_events = randint(2, 4)
+                self.event_generator.create_event(num_events, for_society=society)
 
         print(self.style.SUCCESS(f"Seeding society {n}/{n}"), flush=True)
 
-    def set_society_socials(self, society : Society):
+    def get_new_society_president(self):
+        """Gets a user who can take the role of society president"""
+        available_students = get_active_students().order_by("?")
+        if not available_students.exists():
+            print(self.style.WARNING("No available students."))
+            return None
+
+        viable_presidents = (
+            available_students
+            .filter(president_of=None)
+            .filter(is_vice_president=False)
+            .filter(is_event_manager=False)
+        )
+        return viable_presidents.first()
+
+    def get_viable_admin(self):
+        """Get an admin for the required approved_by field"""
+        admin = User.get_admins().order_by('?').first()
+        if not admin:
+            print(self.style.WARNING("No admin users found. Creating one."))
+            self.admin_generator.create_admin(1)
+            admin = User.get_admins().first()
+        return admin
+
+    def get_society_socials(self):
         """Assigns socials to a society (placeholder kclsu)"""
         socials_dict = {
             "Facebook": "https://www.facebook.com/kclsupage/",
             "Instagram": "https://www.instagram.com/kclsu/",
             "X": "https://x.com/kclsu",
         }
-        society.social_media_links = socials_dict
+        return socials_dict
 
     def finalize_society_creation(self, society):
         """Finishes society creation with proper members and roles"""
         society.president.president_of = society
         society.president.is_president = True
 
-        # Ensure at least 5 members
-        all_students = list(
-            Student.objects.exclude(
-                id=society.president.id
-                ).order_by("?").filter(is_active=True
-            )
+        selected_members, request_members = (
+            self.get_selected_and_request_members(society.president)
         )
-        members_num = 5
-        while members_num < get_active_students().count()-1 and random() <= 0.912:
-            members_num += 1
-        selected_members = all_students[:members_num-2]
-        request_members = all_students[members_num-2:members_num]
 
-        # Ensure the president is always a member
         society.society_members.add(society.president)
         society.society_members.add(*selected_members)
-        society.save()
 
         for member in request_members:
             SocietyRequest.objects.create(
@@ -322,64 +322,93 @@ class RandomSocietyDataGenerator():
                 society=society,
             )
 
-        selected_members = list(
+        role_viable_members = list(
             society.society_members
             .filter(is_vice_president=False)
             .filter(is_event_manager=False)
             .filter(is_president=False)
         )
         # Assign roles (ensure at least 2 for vp and event manager)
-        if len(selected_members) >= 2:
-            society.vice_president = selected_members[0]
+        if len(role_viable_members) >= 2:
+            society.vice_president = role_viable_members[0]
             society.vice_president.is_vice_president = True
             society.vice_president.save()
 
-            society.event_manager = selected_members[1]
+            society.event_manager = role_viable_members[1]
             society.event_manager.is_event_manager = True
             society.event_manager.save()
 
-        society.approved_by = User.get_admins().order_by('?').first()
-
-        self.set_society_socials(society)
+        society.society_socials = self.get_society_socials()
         self.seed_society_showreel(society)
 
         society.save()
         society.president.save()
 
-    def handle_society_status(self, president, name):
-        """Creates society requests if pending, else assigns an admin to approved_by"""
-        # At least half of the societies should be approved
-        random_status = choice(["Approved", "Approved", "Pending", "Rejected"])
-
-        if random_status == "Approved":
-            society_request, _ = SocietyRequest.objects.get_or_create(
-                name=name,
-                president=president,
-                category="Tech",
-                from_student=president,
-                intent="CreateSoc",
+    def get_selected_and_request_members(self, president):
+        """Get two lists of members to be added to the society"""
+        all_students = list(
+            Student.objects.exclude(
+                id=president.id
+                ).order_by("?").filter(is_active=True
             )
+        )
+        members_num = 5
+        while members_num < get_active_students().count()-1 and random() <= 0.912:
+            members_num += 1
+        selected_members = all_students[:members_num-2]
+        request_members = all_students[members_num-2:members_num]
+        return selected_members, request_members
 
+    def handle_society_request_approval(self, president, data):
+        """Creates approved society requests"""
+        society_request, created = SocietyRequest.objects.get_or_create(
+            name=data["name"],
+            from_student=president,
+            category=data["category"],
+            description=data["description"],
+            icon=data["icon"],
+            social_media_links=data["social_media_links"],
+            intent="CreateSoc",
+        )
+        if created:
             society_request.approved = True
             society_request.save()
             return True
-        elif random_status == "Pending":
-            SocietyRequest.objects.get_or_create(
-                name=name,
-                president=president,
-                category="Tech",
-                from_student=president,
-                intent="CreateSoc",
-            )
-        else:
-            SocietyRequest.objects.get_or_create(
-                name=name,
-                president=president,
-                from_student=president,
-                category="Tech",
-                intent="CreateSoc",
-                approved=False,
-            )
+        return False
+
+    def create_society_requests(self, n):
+        """Create n society requests"""
+        for i in range(1, n+1):
+            print(f"Seeding society request {i}/{n}", end='\r', flush=True)
+
+            data = self.generate()
+
+            president = self.get_new_society_president()
+            if not president:
+                print(self.style.WARNING("No students eligible to be presidents left."))
+                return
+
+            self.create_unapproved_society_request(president, data)
+
+        print(self.style.SUCCESS(f"Seeding society request {n}/{n}"), flush=True)
+
+    def create_unapproved_society_request(self, president, data):
+        """Creates approved society requests"""
+        approved = choice([False, None])
+
+        society_request, created = SocietyRequest.objects.get_or_create(
+            name=data["name"],
+            from_student=president,
+            category=data["category"],
+            description=data["description"],
+            icon=data["icon"],
+            social_media_links=data["social_media_links"],
+            intent="CreateSoc",
+        )
+        if created:
+            society_request.approved = approved
+            society_request.save()
+            return True
         return False
 
     def seed_society_showreel(self, society, caption="A sample caption", n=randint(1, 10)):

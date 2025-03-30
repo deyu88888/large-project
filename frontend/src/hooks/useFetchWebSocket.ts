@@ -306,7 +306,7 @@ export const useFetchWebSocket = <T>(
   let webSocketManager;
   try {
     webSocketManager = useWebSocketManager();
-  } catch (e) {
+  } catch (e) { 
     // WebSocketManager not available, will fall back to legacy method
     webSocketManager = null;
   }

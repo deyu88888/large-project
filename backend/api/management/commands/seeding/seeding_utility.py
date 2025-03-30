@@ -1,10 +1,13 @@
+# TODO: initial refactoring complete
+
 from random import randint
 from api.models import AdminReportRequest, Student
 from api.management.commands.seeding.comment_generator import RandomCommentDataGenerator
 
+
 def create_report(society, student, report_type, i):
     """Creates an individual report"""
-    is_from_society_officer = True if student==society.president else False
+    is_from_society_officer = True if student == society.president else False
     email = student.email
     from_student = student
 
@@ -18,19 +21,23 @@ def create_report(society, student, report_type, i):
     )
     return report
 
+
 def get_model_entries_as_list(model):
     """Get all the entries from a model as a single list"""
     return list(model.objects.all())
 
+
 def get_active_students():
     """Get all students marked as active"""
     return Student.objects.filter(is_active=True)
+
 
 def assign_comment_parent(comment, parent):
     """Assigns a parent comment to a comment"""
     if parent:
         comment.parent_comment = parent
         comment.save()
+
 
 def get_comment_data(parent, past=False):
     """Gets the content for a comment"""
@@ -41,11 +48,13 @@ def get_comment_data(parent, past=False):
         data = generator.generate_comment(past)
     return data["content"]
 
+
 def like_dislike_comments(comment, society_members):
     """Applies likes and dislike to a comment"""
     like_num = randint(0, 5)
     comment.likes.add(*society_members[:min(like_num, len(society_members))])
     if like_num < len(society_members):
         dislike_num = like_num + randint(0, 5)
-        comment.dislikes.add(*society_members[like_num:min(dislike_num, len(society_members))])
+        comment.dislikes.add(
+            *society_members[like_num:min(dislike_num, len(society_members))])
     comment.save()

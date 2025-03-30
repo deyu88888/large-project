@@ -1,0 +1,17 @@
+[run]
+omit =
+    */site-packages/*
+    */tests/*
+    */migrations/*
+    manage.py
+    */__init__.py
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __str__
+    if self\.debug
+    raise NotImplementedError
+
+[html]
+directory = htmlcov

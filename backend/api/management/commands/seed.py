@@ -42,7 +42,7 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         """Handles database seeding"""
         # Create/Get Admin using create_admin, to avoid code duplication
-        quantity = kwargs.get("quantity", [5, 100, 50, 35, 5, 200, 10, 15])
+        quantity = kwargs.get("quantity", [5, 150, 40, 50, 5, 200, 10, 15])
         self.admin_generator.create_admin(quantity[0])
         self.admin_generator.create_super_admins()
 
@@ -50,8 +50,11 @@ class Command(BaseCommand):
 
         self.create_default_students()
         self.society_generator.create_society(quantity[2])
+        self.society_generator.create_society_requests(quantity[2])
         self.event_generator.create_event(quantity[3], past=False)
         self.event_generator.create_event(quantity[4], past=True)
+        self.event_generator.create_event_requests(quantity[3], past=False)
+        self.event_generator.create_event_requests(quantity[4], past=True)
 
         self.pre_define_awards()
         self.randomly_assign_awards(quantity[5])
@@ -155,7 +158,7 @@ class Command(BaseCommand):
         society = Society.objects.filter(name="Robotics Club").first()
         president.president_of = society
         self.society_generator.seed_society_showreel(society, n=10)
-        self.event_generator.generate_random_event(society)
+        self.event_generator.create_event(1, for_society=society)
 
         society.vice_president = vice_president
         society.event_manager = event_manager
