@@ -114,11 +114,6 @@ const emptyStateStyles = (isLight: boolean, colors: ReturnType<typeof tokens>) =
   boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
 });
 
-const emptyStateIconStyles = {
-  fontSize: "3rem",
-  marginBottom: "1rem",
-};
-
 const emptyStateTitleStyles = (isLight: boolean, colors: ReturnType<typeof tokens>) => ({
   color: isLight ? colors.grey[200] : colors.grey[300],
   fontSize: "1.25rem",
@@ -298,9 +293,6 @@ const AllSocieties: React.FC = () => {
 
     return (
       <div style={emptyStateStyles(isLight, colors)}>
-        <div style={emptyStateIconStyles}>
-          🔍
-        </div>
         <p style={emptyStateTitleStyles(isLight, colors)}>
           No societies available at the moment.
         </p>

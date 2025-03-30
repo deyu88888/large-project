@@ -224,7 +224,7 @@ export default function Calendar() {
       >
         <EventCalendar 
           events={events} 
-          // @ts-expect-error: TODO
+          // @ts-expect-error:
           height="100%"
           forceEventDuration={true}
           eventTimeFormat={{

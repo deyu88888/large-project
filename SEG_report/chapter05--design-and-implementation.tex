@@ -192,6 +192,47 @@ Ensuring system quality required a comprehensive testing approach:
 
 The \texttt{tests} directory structure shows our approach to organizing tests by functionality rather than by file structure, improving test discoverability and maintenance.
 
+\subsection{Code Structure and Function Length}
+
+While we generally aimed for concise, single-responsibility functions throughout our codebase, certain view methods were intentionally implemented as longer functions due to the complex nature of the operations they handle. Several patterns emerged where longer functions were justified by specific technical considerations:
+
+\begin{itemize}
+    \item \textbf{Complex Workflow Management}: Functions handling complete business processes needed to maintain the integrity of multi-step workflows.
+    
+    \item \textbf{Transaction Coherence}: Operations requiring database consistency across multiple models benefited from being contained within a single method.
+    
+    \item \textbf{Permission and Role Management}: Functions dealing with intricate permission checking and role assignments required comprehensive logic in one place.
+    
+    \item \textbf{Real-time Notification Integration}: Methods that both perform database operations and trigger WebSocket notifications needed to handle both concerns to ensure synchronization.
+\end{itemize}
+
+Consider the following examples from our codebase:
+
+\textbf{Society Approval Workflow} (\texttt{api.view\_files.request\_views.AdminSocietyRequestView.put}):
+This method handles society approval/rejection by an administrator. Its length is justified because it must perform authorization checks, validate and update society records, create activity log entries for audit purposes, clean up expired logs, send real-time WebSocket notifications, and construct appropriate responses. Breaking this function into smaller pieces would require passing state between functions and potentially complicate error handling.
+
+\textbf{Society Role Management} (\texttt{api.view\_files.president\_views.SocietyRoleManagementView
+.patch}):
+This method handles the complex task of assigning or removing leadership roles within societies. Its length is necessary because it handles multiple roles (vice president and event manager) with parallel logic, requires complex verification to maintain data integrity, must update both society and student models atomically, and implements different logic paths for role removal and assignment that share context.
+
+\textbf{Joining Society Requests} (\texttt{api.view\_files.request\_views.RequestJoinSocietyView.post}):
+This method processes student requests to join societies. The function length is appropriate because it must verify student existence, check society existence, validate that the student isn't already a member, check for existing pending requests, and create new requests when appropriate—all within a single transaction to maintain data consistency.
+
+\textbf{Recommendation Feedback Collection} (\texttt{api.view\_files.recommendation\_views.
+RecommendationFeedbackView.post}):
+This method handles multiple types of recommendation feedback (ratings, relevance scores, and join indicators). Its length is justified by the need to validate different combinations of feedback types, process each type appropriately, and maintain consistent processing of metadata across feedback types.
+
+\textbf{News Publication Approval} (\texttt{api.view\_files.news\_views.AdminNewsApprovalView.put}):
+This method handles the approval or rejection of news publication requests. Its complexity stems from the need to update multiple related models (publication requests and news posts) in a single transaction, create notifications based on approval decisions, construct dynamic notification content, and maintain a complete audit trail.
+
+\textbf{News Publication Request Creation} (\texttt{api.view\_files.news\_views.NewsPublication
+RequestView.post}):
+This method handles creating requests to publish society news. Its length is necessary to verify user permissions (including complex checks for society management rights), validate news post existence, check for existing requests, and create new publication requests with appropriate metadata.
+
+While we could have decomposed these methods into smaller functions, doing so would have introduced additional complexity through state management between functions. The current approach provides better readability by keeping related operations together, ensures transaction integrity by handling all database operations in a single context, and facilitates debugging by making the complete workflow visible in one place.
+
+For future development, we would consider implementing a more systematic approach to managing complex operations, potentially through workflow patterns or service classes, while maintaining the benefits of our current approach to function organization.
+
 \section{Evolution of Implementation}
 
 Throughout the project, our implementation approach evolved in response to challenges and changing requirements:

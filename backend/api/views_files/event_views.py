@@ -31,7 +31,7 @@ class JoinedEventsView(APIView):
 
         events = Event.objects.filter(current_attendees__id=student.id).distinct()
 
-        serializer = EventSerializer(events, many=True)
+        serializer = EventSerializer(events, many=True, context={'request': request})
         return Response(serializer.data)
 
 class RSVPEventView(APIView):
@@ -51,7 +51,7 @@ class RSVPEventView(APIView):
             # Hosted by societies the student belongs to
             hosted_by__in=student.societies.all()
         )
-        serializer = EventSerializer(events, many=True)
+        serializer = EventSerializer(events, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
@@ -190,7 +190,7 @@ class ManageEventListView(APIView):
         elif filter_type == "pending":
             events = events.filter(status="Pending")
 
-        serializer = EventSerializer(events, many=True)
+        serializer = EventSerializer(events, many=True, context={'request': request})
         return Response(serializer.data, status=200)
 
 
@@ -214,7 +214,7 @@ class AllEventsView(APIView):
     def get(self, request):
         """Gets all approved Events, ordered for convenience"""
         events = Event.objects.filter(status="Approved").order_by("date", "start_time")
-        serializer = EventSerializer(events, many=True)
+        serializer = EventSerializer(events, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 

@@ -141,35 +141,35 @@ const EventDetailPage: React.FC = () => {
     fileValue: mod.file_value,
   });
 
-  const isParticipant =
+  const is_participant =
     userId !== null &&
     event.current_attendees &&
     event.current_attendees.some((attendee: any) => attendee.id === userId);
 
-  const isMember = event.is_member;
+  const is_member = event.is_member;
 
   const eventData = {
     title: event.title,
-    mainDescription: event.main_description,
+    main_description: event.main_description,
     date: event.date,
-    startTime: event.start_time,
+    start_time: event.start_time,
     duration: event.duration,
     location: event.location || "TBA",
-    maxCapacity: event.max_capacity,
-    coverImageUrl: event.cover_image,
-    coverImageFile: null,
-    extraModules: (event.extra_modules || []).map(mapModule),
-    participantModules: (event.participant_modules || []).map(mapModule),
-    isParticipant,
-    isMember,
-    eventId: event.id,
-    hostedBy: event.hosted_by,
+    max_capacity: event.max_capacity,
+    cover_image_url: event.cover_image,
+    cover_image_file: null,
+    extra_modules: (event.extra_modules || []).map(mapModule),
+    participant_modules: (event.participant_modules || []).map(mapModule),
+    is_participant,
+    is_member,
+    event_id: event.id,
+    hosted_by: event.hosted_by,
     current_attendees: event.current_attendees
   };
 
   console.log("userId:", userId);
   console.log("event.current_attendees:", event.current_attendees);
-  console.log("isParticipant:", isParticipant);
+  console.log("isParticipant:", is_participant);
 
   return (
     <div style={{ padding: "40px", maxWidth: "1000px", margin: "0 auto" }}>

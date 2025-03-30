@@ -1,7 +1,6 @@
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
 import {
-  Grid,
   TextField,
   Button,
   InputAdornment,
@@ -100,134 +99,127 @@ export default function PasswordForm({
             <Typography variant="h5">Update Password</Typography>
           </Divider>
 
-          <Grid container spacing={3}>
+          <Box
+            display="flex"
+            flexDirection="column"
+            gap={3}
+            sx={{ maxWidth: 1000, mx: "auto", mt: 2 }}
+          >
             {/* Current Password */}
-            <Grid
-              size={{
-                xs: 12,
+            <TextField
+              fullWidth
+              name="currentPassword"
+              label="Current Password"
+              variant="filled"
+              type={showCurrent ? "text" : "password"}
+              value={values.currentPassword}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              error={
+                touched.currentPassword && Boolean(errors.currentPassword)
+              }
+              helperText={touched.currentPassword && errors.currentPassword}
+              InputLabelProps={{ style: { color: colors.grey[300] } }}
+              InputProps={{
+                style: {
+                  color: colors.grey[100],
+                  backgroundColor: isDark
+                    ? colors.primary[600]
+                    : colors.primary[0],
+                },
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton onClick={toggleCurrent} edge="end">
+                      {showCurrent ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
               }}
-            >
-              <TextField
-                fullWidth
-                name="currentPassword"
-                label="Current Password"
-                variant="filled"
-                type={showCurrent ? "text" : "password"}
-                value={values.currentPassword}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                error={
-                  touched.currentPassword && Boolean(errors.currentPassword)
-                }
-                helperText={touched.currentPassword && errors.currentPassword}
-                InputLabelProps={{ style: { color: colors.grey[300] } }}
-                InputProps={{
-                  style: {
-                    color: colors.grey[100],
-                    backgroundColor: isDark
-                      ? colors.primary[600]
-                      : colors.primary[0],
-                  },
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton onClick={toggleCurrent} edge="end">
-                        {showCurrent ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-              />
-            </Grid>
+            />
 
             {/* New Password */}
-            <Grid size={{ xs: 12 }}>
-              <TextField
-                fullWidth
-                name="newPassword"
-                label="New Password"
-                variant="filled"
-                type={showNew ? "text" : "password"}
-                value={values.newPassword}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                error={touched.newPassword && Boolean(errors.newPassword)}
-                helperText={touched.newPassword && errors.newPassword}
-                InputLabelProps={{ style: { color: colors.grey[300] } }}
-                InputProps={{
-                  style: {
-                    color: colors.grey[100],
-                    backgroundColor: isDark
-                      ? colors.primary[600]
-                      : colors.primary[0],
-                  },
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton onClick={toggleNew} edge="end">
-                        {showNew ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-              />
-            </Grid>
+            <TextField
+              fullWidth
+              name="newPassword"
+              label="New Password"
+              variant="filled"
+              type={showNew ? "text" : "password"}
+              value={values.newPassword}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              error={touched.newPassword && Boolean(errors.newPassword)}
+              helperText={touched.newPassword && errors.newPassword}
+              InputLabelProps={{ style: { color: colors.grey[300] } }}
+              InputProps={{
+                style: {
+                  color: colors.grey[100],
+                  backgroundColor: isDark
+                    ? colors.primary[600]
+                    : colors.primary[0],
+                },
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton onClick={toggleNew} edge="end">
+                      {showNew ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
 
             {/* Confirm Password */}
-            <Grid size={{ xs: 12 }}>
-              <TextField
-                fullWidth
-                name="confirmPassword"
-                label="Confirm Password"
-                variant="filled"
-                type={showConfirm ? "text" : "password"}
-                value={values.confirmPassword}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                error={
-                  touched.confirmPassword && Boolean(errors.confirmPassword)
-                }
-                helperText={touched.confirmPassword && errors.confirmPassword}
-                InputLabelProps={{ style: { color: colors.grey[300] } }}
-                InputProps={{
-                  style: {
-                    color: colors.grey[100],
-                    backgroundColor: isDark
-                      ? colors.primary[600]
-                      : colors.primary[0],
-                  },
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton onClick={toggleConfirm} edge="end">
-                        {showConfirm ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-              />
-            </Grid>
+            <TextField
+              fullWidth
+              name="confirmPassword"
+              label="Confirm Password"
+              variant="filled"
+              type={showConfirm ? "text" : "password"}
+              value={values.confirmPassword}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              error={
+                touched.confirmPassword && Boolean(errors.confirmPassword)
+              }
+              helperText={touched.confirmPassword && errors.confirmPassword}
+              InputLabelProps={{ style: { color: colors.grey[300] } }}
+              InputProps={{
+                style: {
+                  color: colors.grey[100],
+                  backgroundColor: isDark
+                    ? colors.primary[600]
+                    : colors.primary[0],
+                },
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton onClick={toggleConfirm} edge="end">
+                      {showConfirm ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
 
             {/* Submit */}
-            <Grid size={{ xs: 12 }}>
-              <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-                <Button
-                  type="submit"
-                  variant="contained"
-                  disabled={isSubmitting}
-                  sx={{
-                    backgroundColor: colors.blueAccent[600],
-                    color: colors.grey[100],
-                    fontSize: "14px",
-                    fontWeight: "bold",
-                    padding: "10px 20px",
-                    "&:hover": {
-                      backgroundColor: colors.blueAccent[500],
-                    },
-                  }}
-                >
-                  Update Password
-                </Button>
-              </Box>
-            </Grid>
-          </Grid>
+            <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+              <Button
+                type="submit"
+                variant="contained"
+                disabled={isSubmitting}
+                sx={{
+                  backgroundColor: colors.blueAccent[600],
+                  color: colors.grey[100],
+                  fontSize: "14px",
+                  fontWeight: "bold",
+                  padding: "10px 20px",
+                  "&:hover": {
+                    backgroundColor: colors.blueAccent[500],
+                  },
+                }}
+              >
+                Update Password
+              </Button>
+            </Box>
+          </Box>
         </Form>
       )}
     </Formik>

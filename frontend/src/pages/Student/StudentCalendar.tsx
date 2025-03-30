@@ -1,8 +1,28 @@
 import { useState, useEffect, useMemo } from "react";
 import { Calendar, momentLocalizer } from "react-big-calendar";
 import moment from "moment-timezone";
-import { Box, CircularProgress, Typography, useTheme, Dialog, DialogTitle, DialogContent, DialogActions, Button, Chip, Alert, IconButton } from "@mui/material";
-import { FaCalendarCheck, FaCalendarTimes, FaMapMarkerAlt, FaUsers, FaInfoCircle, FaSync } from "react-icons/fa";
+import {
+  Box,
+  CircularProgress,
+  Typography,
+  useTheme,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  Chip,
+  Alert,
+  IconButton,
+} from "@mui/material";
+import {
+  FaCalendarCheck,
+  FaCalendarTimes,
+  FaMapMarkerAlt,
+  FaUsers,
+  FaInfoCircle,
+  FaSync,
+} from "react-icons/fa";
 import { tokens } from "../../theme/theme";
 import { apiClient } from "../../api";
 import "react-big-calendar/lib/css/react-big-calendar.css";
@@ -10,10 +30,10 @@ import "react-big-calendar/lib/css/react-big-calendar.css";
 import {
   EventData,
   CalendarEvent,
-  StudentCalendarProps
+  StudentCalendarProps,
 } from "../../types/shared/calendar";
 
-// Interfaces
+// ----------------- INTERFACES -----------------
 interface StyleProps {
   colours: ReturnType<typeof tokens>;
 }
@@ -72,7 +92,7 @@ interface NoEventsMessageProps {
   styleProps: StyleProps;
 }
 
-// Utility functions
+// ----------------- UTILITY FUNCTIONS -----------------
 const parseDateTime = (dateStr: string, timeStr: string, tz: string): Date => {
   if (!dateStr || !timeStr) {
     throw new Error("Invalid date or time");
@@ -81,7 +101,9 @@ const parseDateTime = (dateStr: string, timeStr: string, tz: string): Date => {
   return dateTime.toDate();
 };
 
-const extractDurationValues = (durationStr: string): { hours: number; minutes: number } => {
+const extractDurationValues = (
+  durationStr: string
+): { hours: number; minutes: number } => {
   const hourRegex = /(\d+(?:\.\d+)?)\s*(?:hour|hr|h)s?/i;
   const minuteRegex = /(\d+(?:\.\d+)?)\s*(?:minute|min|m)s?/i;
   let hours = 0;
@@ -112,18 +134,27 @@ const extractDurationValues = (durationStr: string): { hours: number; minutes: n
 const calculateEndTime = (startDate: Date, durationStr: string): Date => {
   const endDate = new Date(startDate);
   const { hours, minutes } = extractDurationValues(durationStr);
-  
+
   endDate.setHours(endDate.getHours() + Math.floor(hours));
-  endDate.setMinutes(endDate.getMinutes() + Math.round((hours % 1) * 60) + minutes);
+  endDate.setMinutes(
+    endDate.getMinutes() + Math.round((hours % 1) * 60) + minutes
+  );
   return endDate;
 };
 
-const transformEvent = (event: EventData, societies: StudentCalendarProps['societies'], timezone: string): CalendarEvent => {
+const transformEvent = (
+  event: EventData,
+  societies: StudentCalendarProps["societies"],
+  timezone: string
+): CalendarEvent => {
   const startDate = parseDateTime(event.date, event.start_time, timezone);
   const endDate = calculateEndTime(startDate, event.duration);
-  const society = societies?.find(s => s.id === event.hosted_by);
-  const societyName = society ? society.name : event.societyName || `Society ${event.hosted_by}`;
-  
+
+  const society = societies?.find((s) => s.id === event.hosted_by);
+  const societyName = society
+    ? society.name
+    : event.societyName || `Society ${event.hosted_by}`;
+
   return {
     id: event.id,
     title: event.title,
@@ -137,11 +168,13 @@ const transformEvent = (event: EventData, societies: StudentCalendarProps['socie
   };
 };
 
-// Component Functions
+// ----------------- COMPONENTS -----------------
+
+// --- Calendar event display in the calendar view ---
 const CustomEvent: React.FC<CustomEventProps> = ({ event }) => {
   const start = moment(event.start);
   const end = moment(event.end);
-  
+
   return (
     <div className="p-1">
       <strong className="block text-sm">{event.title}</strong>
@@ -149,7 +182,10 @@ const CustomEvent: React.FC<CustomEventProps> = ({ event }) => {
         {start.format("LT")} - {end.format("LT")}
         {event.rsvp && (
           <span className="ml-2">
-            <FaCalendarCheck size={10} style={{ display: "inline", marginRight: "2px" }} />
+            <FaCalendarCheck
+              size={10}
+              style={{ display: "inline", marginRight: "2px" }}
+            />
             RSVP
           </span>
         )}
@@ -158,12 +194,13 @@ const CustomEvent: React.FC<CustomEventProps> = ({ event }) => {
   );
 };
 
+// --- Dialog Title ---
 const EventDialogTitle: React.FC<{
   selectedEvent: CalendarEvent;
   eventStyleGetter: (event: CalendarEvent) => { style: React.CSSProperties };
 }> = ({ selectedEvent, eventStyleGetter }) => {
   const backgroundColor = eventStyleGetter(selectedEvent).style.backgroundColor;
-  
+
   return (
     <DialogTitle
       style={{
@@ -187,6 +224,7 @@ const EventDialogTitle: React.FC<{
   );
 };
 
+// --- Dialog Content Info (Time, Location, Society, Description) ---
 const EventDateTimeInfo: React.FC<{
   start: Date;
   end: Date;
@@ -194,7 +232,12 @@ const EventDateTimeInfo: React.FC<{
 }> = ({ start, end, timezone }) => {
   return (
     <Box mb={2}>
-      <Typography variant="subtitle1" fontWeight="bold" display="flex" alignItems="center">
+      <Typography
+        variant="subtitle1"
+        fontWeight="bold"
+        display="flex"
+        alignItems="center"
+      >
         <FaInfoCircle style={{ marginRight: "8px" }} />
         When:
       </Typography>
@@ -215,10 +258,15 @@ const EventLocationInfo: React.FC<{
   location: string;
 }> = ({ location }) => {
   if (!location) return null;
-  
+
   return (
     <Box mb={2}>
-      <Typography variant="subtitle1" fontWeight="bold" display="flex" alignItems="center">
+      <Typography
+        variant="subtitle1"
+        fontWeight="bold"
+        display="flex"
+        alignItems="center"
+      >
         <FaMapMarkerAlt style={{ marginRight: "8px" }} />
         Location:
       </Typography>
@@ -231,10 +279,15 @@ const EventSocietyInfo: React.FC<{
   societyName: string;
 }> = ({ societyName }) => {
   if (!societyName) return null;
-  
+
   return (
     <Box mb={2}>
-      <Typography variant="subtitle1" fontWeight="bold" display="flex" alignItems="center">
+      <Typography
+        variant="subtitle1"
+        fontWeight="bold"
+        display="flex"
+        alignItems="center"
+      >
         <FaUsers style={{ marginRight: "8px" }} />
         Hosted By:
       </Typography>
@@ -247,10 +300,15 @@ const EventDescriptionInfo: React.FC<{
   description: string;
 }> = ({ description }) => {
   if (!description) return null;
-  
+
   return (
     <Box mb={2}>
-      <Typography variant="subtitle1" fontWeight="bold" display="flex" alignItems="center">
+      <Typography
+        variant="subtitle1"
+        fontWeight="bold"
+        display="flex"
+        alignItems="center"
+      >
         <FaInfoCircle style={{ marginRight: "8px" }} />
         Description:
       </Typography>
@@ -259,13 +317,16 @@ const EventDescriptionInfo: React.FC<{
   );
 };
 
-const EventDialogContent: React.FC<DialogContentProps> = ({ selectedEvent, timezone }) => {
+const EventDialogContent: React.FC<DialogContentProps> = ({
+  selectedEvent,
+  timezone,
+}) => {
   return (
     <DialogContent dividers>
-      <EventDateTimeInfo 
-        start={selectedEvent.start} 
-        end={selectedEvent.end} 
-        timezone={timezone} 
+      <EventDateTimeInfo
+        start={selectedEvent.start}
+        end={selectedEvent.end}
+        timezone={timezone}
       />
       <EventLocationInfo location={selectedEvent.location} />
       <EventSocietyInfo societyName={selectedEvent.societyName} />
@@ -274,48 +335,69 @@ const EventDialogContent: React.FC<DialogContentProps> = ({ selectedEvent, timez
   );
 };
 
-const EventDialogActions: React.FC<DialogActionProps> = ({ 
-  selectedEvent, 
-  handleCloseDialog, 
-  handleRSVP, 
-  rsvpLoading, 
-  styleProps 
+// --- DIALOG ACTIONS: separate buttons for RSVP vs Cancel RSVP ---
+const EventDialogActions: React.FC<DialogActionProps> = ({
+  selectedEvent,
+  handleCloseDialog,
+  handleRSVP,
+  rsvpLoading,
+  styleProps,
 }) => {
   const { colours } = styleProps;
-  
+
   return (
     <DialogActions sx={{ p: 2, display: "flex", justifyContent: "space-between" }}>
       <Button onClick={handleCloseDialog} color="inherit">
         Close
       </Button>
-      <Button
-        variant="contained"
-        startIcon={selectedEvent.rsvp ? <FaCalendarTimes /> : <FaCalendarCheck />}
-        onClick={() => handleRSVP(selectedEvent.id, !selectedEvent.rsvp)}
-        disabled={rsvpLoading}
-        color={selectedEvent.rsvp ? "error" : "primary"}
-        sx={{
-          backgroundColor: selectedEvent.rsvp ? colours.redAccent[500] : colours.blueAccent[500],
-          "&:hover": {
-            backgroundColor: selectedEvent.rsvp
-              ? colours.redAccent[600]
-              : colours.blueAccent[600],
-          },
-        }}
-      >
-        {rsvpLoading
-          ? "Updating..."
-          : selectedEvent.rsvp
-            ? "Cancel RSVP"
-            : "RSVP to Event"}
-      </Button>
+
+      {/* If already RSVP’d → show Cancel RSVP; otherwise → show RSVP */}
+      {selectedEvent.rsvp ? (
+        <Button
+          variant="contained"
+          startIcon={<FaCalendarTimes />}
+          onClick={() => handleRSVP(selectedEvent.id, false)}
+          disabled={rsvpLoading}
+          color="error"
+          sx={{
+            backgroundColor: colours.redAccent[500],
+            "&:hover": {
+              backgroundColor: colours.redAccent[600],
+            },
+          }}
+        >
+          {rsvpLoading ? "Updating..." : "Cancel RSVP"}
+        </Button>
+      ) : (
+        <Button
+          variant="contained"
+          startIcon={<FaCalendarCheck />}
+          onClick={() => handleRSVP(selectedEvent.id, true)}
+          disabled={rsvpLoading}
+          color="primary"
+          sx={{
+            backgroundColor: colours.blueAccent[500],
+            "&:hover": {
+              backgroundColor: colours.blueAccent[600],
+            },
+          }}
+        >
+          {rsvpLoading ? "Updating..." : "RSVP to Event"}
+        </Button>
+      )}
     </DialogActions>
   );
 };
 
-const CalendarHeader: React.FC<CalendarHeaderProps> = ({ timezone, fetchEvents, loading, styleProps }) => {
+// --- Top Header: Timezone, Refresh Button ---
+const CalendarHeader: React.FC<CalendarHeaderProps> = ({
+  timezone,
+  fetchEvents,
+  loading,
+  styleProps,
+}) => {
   const { colours } = styleProps;
-  
+
   return (
     <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
       <Typography variant="h6" sx={{ color: colours.grey[100] }}>
@@ -338,9 +420,10 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({ timezone, fetchEvents, 
   );
 };
 
+// --- Alert for Errors ---
 const AlertMessage: React.FC<AlertMessageProps> = ({ error, onClear }) => {
   if (!error) return null;
-  
+
   return (
     <Alert severity="error" sx={{ mb: 3 }} onClose={onClear}>
       {error}
@@ -348,36 +431,54 @@ const AlertMessage: React.FC<AlertMessageProps> = ({ error, onClear }) => {
   );
 };
 
-const LoadingIndicator: React.FC<{ colours: ReturnType<typeof tokens> }> = ({ colours }) => {
+// --- Loading Indicator ---
+const LoadingIndicator: React.FC<{ colours: ReturnType<typeof tokens> }> = ({
+  colours,
+}) => {
   return (
-    <Box display="flex" justifyContent="center" alignItems="center" height="500px">
-      <CircularProgress size={40} sx={{ color: colours.blueAccent[500] }} role="progressbar" />
+    <Box
+      display="flex"
+      justifyContent="center"
+      alignItems="center"
+      height="500px"
+    >
+      <CircularProgress
+        size={40}
+        sx={{ color: colours.blueAccent[500] }}
+        role="progressbar"
+      />
     </Box>
   );
 };
 
+// --- When there are no events to show ---
 const NoEventsMessage: React.FC<NoEventsMessageProps> = ({ styleProps }) => {
   const { colours } = styleProps;
-  
+
   return (
-    <Typography variant="body1" align="center" sx={{ color: colours.grey[300], py: 4 }}>
+    <Typography
+      variant="body1"
+      align="center"
+      sx={{ color: colours.grey[300], py: 4 }}
+    >
       No events from your societies
     </Typography>
   );
 };
 
-const CalendarContainer: React.FC<CalendarContainerProps> = ({ 
-  events, 
-  handleSelectEvent, 
-  eventStyleGetter, 
-  CustomEvent 
+// --- Calendar Container ---
+const CalendarContainer: React.FC<CalendarContainerProps> = ({
+  events,
+  handleSelectEvent,
+  eventStyleGetter,
+  CustomEvent,
 }) => {
   const localizer = momentLocalizer(moment);
   const minTime = new Date();
   minTime.setHours(6, 0, 0);
   const maxTime = new Date();
   maxTime.setHours(23, 0, 0);
-  
+
   return (
     <Calendar
       localizer={localizer}
@@ -409,6 +510,7 @@ const CalendarContainer: React.FC<CalendarContainerProps> = ({
   );
 };
 
+// --- Event Dialog ---
 const EventDialog: React.FC<EventDialogProps> = ({
   openDialog,
   handleCloseDialog,
@@ -416,12 +518,12 @@ const EventDialog: React.FC<EventDialogProps> = ({
   handleRSVP,
   rsvpLoading,
   timezone,
-  styleProps
+  styleProps,
 }) => {
   const { colours } = styleProps;
-  
+
   if (!selectedEvent) return null;
-  
+
   const eventStyleGetter = (event: CalendarEvent) => {
     const colorOptions = [
       "#6c5ce7",
@@ -446,7 +548,7 @@ const EventDialog: React.FC<EventDialogProps> = ({
       },
     };
   };
-  
+
   return (
     <Dialog
       open={openDialog}
@@ -461,7 +563,10 @@ const EventDialog: React.FC<EventDialogProps> = ({
         },
       }}
     >
-      <EventDialogTitle selectedEvent={selectedEvent} eventStyleGetter={eventStyleGetter} />
+      <EventDialogTitle
+        selectedEvent={selectedEvent}
+        eventStyleGetter={eventStyleGetter}
+      />
       <EventDialogContent selectedEvent={selectedEvent} timezone={timezone} />
       <EventDialogActions
         selectedEvent={selectedEvent}
@@ -474,37 +579,40 @@ const EventDialog: React.FC<EventDialogProps> = ({
   );
 };
 
-// Custom Hooks
+// ----------------- CUSTOM HOOKS -----------------
 const useCalendarEvents = (
-  societies: StudentCalendarProps['societies'] = [],
+  societies: StudentCalendarProps["societies"] = [],
   userEvents: EventData[] | undefined,
   timezone: string
 ) => {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  
-  const societyIds = useMemo(() => societies?.map(s => s.id) || [], [societies]);
-  
+
+  const societyIds = useMemo(() => societies?.map((s) => s.id) || [], [societies]);
+
   const transformEvents = (eventsData: EventData[]) => {
     try {
-      const formatted = eventsData.map(event => transformEvent(event, societies, timezone));
+      const formatted = eventsData.map((event) =>
+        transformEvent(event, societies, timezone)
+      );
       setEvents(formatted);
     } catch (err) {
       console.error("Error transforming events:", err);
       setError("Failed to process events. Please try again.");
     }
   };
-  
+
   const fetchEvents = async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await apiClient.get<EventData[]>("/api/events/");
+      // Updated API endpoint from "/api/events/" to "/api/events/all/"
+      const response = await apiClient.get<EventData[]>("/api/events/all/");
       if (!response.data) {
         throw new Error("No data received from API");
       }
-      const filtered = response.data.filter(e => societyIds.includes(e.hosted_by));
+      const filtered = response.data.filter((e) => societyIds.includes(e.hosted_by));
       transformEvents(filtered);
     } catch (err) {
       console.error("Error fetching events:", err);
@@ -513,16 +621,16 @@ const useCalendarEvents = (
       setLoading(false);
     }
   };
-  
+
   useEffect(() => {
     if (!userEvents) {
       fetchEvents();
       return;
     }
-    
+
     setLoading(true);
     try {
-      const filtered = userEvents.filter(e => societyIds.includes(e.hosted_by));
+      const filtered = userEvents.filter((e) => societyIds.includes(e.hosted_by));
       transformEvents(filtered);
     } catch (err) {
       console.error("Error transforming userEvents:", err);
@@ -531,73 +639,75 @@ const useCalendarEvents = (
       setLoading(false);
     }
   }, [userEvents, societyIds]);
-  
+
   return { events, loading, error, setError, fetchEvents, setEvents };
 };
 
 const useEventSelection = () => {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [openDialog, setOpenDialog] = useState<boolean>(false);
-  
+
   const handleSelectEvent = (event: CalendarEvent) => {
     setSelectedEvent(event);
     setOpenDialog(true);
   };
-  
+
   const handleCloseDialog = () => {
     setOpenDialog(false);
     setSelectedEvent(null);
   };
-  
-  return { 
-    selectedEvent, 
-    setSelectedEvent, 
-    openDialog, 
-    setOpenDialog, 
-    handleSelectEvent, 
-    handleCloseDialog 
+
+  return {
+    selectedEvent,
+    setSelectedEvent,
+    openDialog,
+    setOpenDialog,
+    handleSelectEvent,
+    handleCloseDialog,
   };
 };
 
-const useRsvpHandler = (setEvents: React.Dispatch<React.SetStateAction<CalendarEvent[]>>, setSelectedEvent: React.Dispatch<React.SetStateAction<CalendarEvent | null>>) => {
+const useRsvpHandler = (
+  setEvents: React.Dispatch<React.SetStateAction<CalendarEvent[]>>,
+  setSelectedEvent: React.Dispatch<React.SetStateAction<CalendarEvent | null>>
+) => {
   const [rsvpLoading, setRsvpLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   const handleRSVP = async (eventId: number, isAttending: boolean) => {
     try {
       setRsvpLoading(true);
-      
-      // Add logging to help debug the request
-      console.log("Sending RSVP request with:", { event_id: eventId });
-      
+
       if (isAttending) {
-        // Use URL with trailing slash as requested
         await apiClient.post("/api/events/rsvp/", { event_id: eventId });
       } else {
-        // Use URL with trailing slash as requested
         await apiClient.delete("/api/events/rsvp/", { data: { event_id: eventId } });
       }
-      
-      setEvents(prev => prev.map(e => (e.id === eventId ? { ...e, rsvp: isAttending } : e)));
-      setSelectedEvent(prev => prev && prev.id === eventId ? { ...prev, rsvp: isAttending } : prev);
-    } catch (err) {
+
+      setEvents((prev) =>
+        prev.map((e) => (e.id === eventId ? { ...e, rsvp: isAttending } : e))
+      );
+      setSelectedEvent((prev) =>
+        prev && prev.id === eventId ? { ...prev, rsvp: isAttending } : prev
+      );
+    } catch (err: any) {
       console.error("Error updating RSVP:", err);
-      
+
       // More detailed error logging
       if (err.response) {
         console.error("Server response data:", err.response.data);
       }
-      
+
       setError("Failed to update RSVP status. Please try again.");
     } finally {
       setRsvpLoading(false);
     }
   };
-  
+
   return { rsvpLoading, error, setError, handleRSVP };
 };
 
-// Main Component
+// ----------------- MAIN COMPONENT -----------------
 function StudentCalendar({
   societies = [],
   userEvents,
@@ -606,33 +716,29 @@ function StudentCalendar({
   const theme = useTheme();
   const colours = tokens(theme.palette.mode);
   const styleProps = { colours };
-  
-  // Custom hooks
-  const { 
-    events, 
-    loading, 
-    error, 
-    setError, 
-    fetchEvents, 
-    setEvents 
-  } = useCalendarEvents(societies, userEvents, timezone);
-  
-  const { 
-    selectedEvent, 
+
+  // 1) Load / transform events
+  const { events, loading, error, setError, fetchEvents, setEvents } =
+    useCalendarEvents(societies, userEvents, timezone);
+
+  // 2) Track selected event & open/close the dialog
+  const {
+    selectedEvent,
     setSelectedEvent,
-    openDialog, 
-    handleSelectEvent, 
-    handleCloseDialog 
+    openDialog,
+    handleSelectEvent,
+    handleCloseDialog,
   } = useEventSelection();
-  
-  const { 
-    rsvpLoading, 
-    error: rsvpError, 
+
+  // 3) Handle RSVP state changes
+  const {
+    rsvpLoading,
+    error: rsvpError,
     setError: setRsvpError,
-    handleRSVP 
+    handleRSVP,
   } = useRsvpHandler(setEvents, setSelectedEvent);
-  
-  // Event styling function - directly copied from your working code
+
+  // 4) Calendar event style
   function eventStyleGetter(event: CalendarEvent) {
     const colorOptions = [
       "#6c5ce7",
@@ -657,30 +763,32 @@ function StudentCalendar({
       },
     };
   }
-  
-  // Memoized values
+
+  // Memoize the events array
   const memoizedEvents = useMemo(() => events, [events]);
+
+  // Combine errors
   const combinedError = error || rsvpError;
   const clearError = () => {
     setError(null);
     setRsvpError(null);
   };
-  
+
   return (
     <>
       <AlertMessage error={combinedError} onClear={clearError} />
-      
+
       {loading ? (
         <LoadingIndicator colours={colours} />
       ) : (
         <Box>
-          <CalendarHeader 
-            timezone={timezone} 
-            fetchEvents={fetchEvents} 
-            loading={loading} 
-            styleProps={styleProps} 
+          <CalendarHeader
+            timezone={timezone}
+            fetchEvents={fetchEvents}
+            loading={loading}
+            styleProps={styleProps}
           />
-          
+
           {memoizedEvents.length === 0 ? (
             <NoEventsMessage styleProps={styleProps} />
           ) : (
@@ -689,7 +797,7 @@ function StudentCalendar({
                 className="bg-white/90 backdrop-blur-sm rounded-3xl p-6"
                 style={{ backgroundColor: colours.primary[400] }}
               >
-                <CalendarContainer 
+                <CalendarContainer
                   events={memoizedEvents}
                   handleSelectEvent={handleSelectEvent}
                   eventStyleGetter={eventStyleGetter}
@@ -700,8 +808,8 @@ function StudentCalendar({
           )}
         </Box>
       )}
-      
-      <EventDialog 
+
+      <EventDialog
         openDialog={openDialog}
         handleCloseDialog={handleCloseDialog}
         selectedEvent={selectedEvent}

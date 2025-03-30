@@ -111,7 +111,12 @@ export function HoverCard({ userId, children }: HoverCardProps) {
       <Popover
         open={open}
         anchorEl={anchorEl}
-        onClose={() => setOpen(false)}
+        onClose={() => {
+          setOpen(false);
+          if (document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur();
+          }
+        }}
         anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
         transformOrigin={{ vertical: "top", horizontal: "left" }}
         disableRestoreFocus

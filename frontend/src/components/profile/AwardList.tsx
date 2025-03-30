@@ -1,4 +1,4 @@
-import { Box, Divider, Grid, Paper, Typography } from "@mui/material";
+import { Box, Divider, Paper, Typography } from "@mui/material";
 import { FaTrophy } from "react-icons/fa";
 import { tokens } from "../../theme/theme";
 
@@ -40,7 +40,12 @@ export default function AwardList({ awards, isSelf, colors }: AwardListProps) {
           </Typography>
         </Box>
       ) : (
-        <Grid container spacing={3}>
+        <Box
+          display="flex"
+          flexWrap="wrap"
+          gap={3}
+          justifyContent="flex-start"
+        >
           {awards.map((award) => {
             const rankColor =
               award.award.rank === "Gold"
@@ -48,6 +53,7 @@ export default function AwardList({ awards, isSelf, colors }: AwardListProps) {
                 : award.award.rank === "Silver"
                 ? "#C0C0C0"
                 : "#CD7F32";
+
             const rankBg =
               award.award.rank === "Gold"
                 ? "rgba(255, 215, 0, 0.1)"
@@ -56,13 +62,12 @@ export default function AwardList({ awards, isSelf, colors }: AwardListProps) {
                 : "rgba(205, 127, 50, 0.1)";
 
             return (
-              <Grid
-                size={{
-                  xs: 12,
-                  sm: 6,
-                  md: 4,
-                }}
+              <Box
                 key={award.id}
+                sx={{
+                  flex: "1 1 calc(33.333% - 24px)",
+                  minWidth: "250px",
+                }}
               >
                 <Paper
                   elevation={3}
@@ -111,10 +116,10 @@ export default function AwardList({ awards, isSelf, colors }: AwardListProps) {
                     {award.award.description}
                   </Typography>
                 </Paper>
-              </Grid>
+              </Box>
             );
           })}
-        </Grid>
+        </Box>
       )}
     </>
   );

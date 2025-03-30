@@ -17,8 +17,7 @@ interface AwardCardProps {
 const AwardCard: React.FC<AwardCardProps> = ({ award }) => {
   const theme = useTheme();
   const colours = tokens(theme.palette.mode);
-  
-  // Determine award color based on rank
+
   const getRankColor = (rank: string) => {
     switch (rank) {
       case 'Gold':
@@ -62,17 +61,19 @@ const AwardCard: React.FC<AwardCardProps> = ({ award }) => {
           transform: 'rotate(45deg) translate(10px, -20px)',
         }}
       />
-      
+
       <Box display="flex" alignItems="center" mb={2}>
-        <FaTrophy 
-          size={24} 
-          style={{ marginRight: 12, color: rankColor }}
-        />
+        <span data-testid="award-icon">
+          <FaTrophy 
+            size={24}
+            style={{ marginRight: 12, color: rankColor }}
+          />
+        </span>
         <Typography variant="h6" sx={{ color: colours.grey[100] }}>
           {award.award.title}
         </Typography>
       </Box>
-      
+
       <Typography 
         variant="subtitle2" 
         sx={{ 
@@ -87,7 +88,7 @@ const AwardCard: React.FC<AwardCardProps> = ({ award }) => {
       >
         {award.award.rank} Award
       </Typography>
-      
+
       <Typography variant="body2" sx={{ color: colours.grey[300], mt: 1 }}>
         {award.award.description}
       </Typography>

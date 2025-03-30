@@ -33,10 +33,9 @@ class AwardStudentModelTestCase(TestCase):
     def test_timestamp(self):
         """Test that upon awarding, the time is recorded in awarded_at"""
         self.award_student.award = self.award
-        time = now()
-        self.assertEqual(self.award_student.awarded_at.hour, time.hour)
-        self.assertEqual(self.award_student.awarded_at.minute, time.minute)
-        self.assertEqual(self.award_student.awarded_at.second, time.second)
+        current_time = now()
+        delta = abs((self.award_student.awarded_at - current_time).total_seconds())
+        self.assertLess(delta, 2, f"Time delta {delta} seconds is too large")
 
     def test_foreign_key_integrity(self):
         """Test that foreign keys must point to valid references"""

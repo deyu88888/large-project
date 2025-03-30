@@ -1,0 +1,43 @@
+services:
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: backend
+    expose:
+      - "8000"
+    networks:
+      - app-network
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    expose:
+      - "80"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+  traefik:
+    image: traefik:v2.11
+    container_name: traefik
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - traefik_letsencrypt:/letsencrypt
+    networks:
+      - app-network
+
+volumes:
+  traefik_letsencrypt:
+
+networks:
+  app-network:
+    driver: bridge

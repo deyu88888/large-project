@@ -30,10 +30,11 @@ export type SocietyEvent = {        // avoid naming conflicts with JavaScript's 
   };
 
   export type Event = {
-    cover_image: any;   // TODO: change name of this event
+    cover_image: string;
     id: number;
     title: string;
     description?: string;
+    main_description?: string;
     date: string;
     start_time: string;
     duration: string;

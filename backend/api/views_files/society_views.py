@@ -21,7 +21,7 @@ class JoinedSocietiesView(APIView):
             return error
 
         societies = student.societies_belongs_to.all()
-        serializer = SocietySerializer(societies, many=True)
+        serializer = SocietySerializer(societies, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def delete(self, request, society_id):
@@ -65,7 +65,7 @@ class SocietyMembersListView(APIView):
         """Gets a list of members belonging to a society referenced by society_id"""
         society = get_object_or_404(Society, pk=society_id)
         members = society.society_members.all()
-        serializer = StudentSerializer(members, many=True)
+        serializer = StudentSerializer(members, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -131,5 +131,5 @@ class PublicSocietiesView(APIView):
         Retrieves a list of all societies with their details.
         """
         societies = Society.objects.all()
-        serializer = SocietySerializer(societies, many=True)
+        serializer = SocietySerializer(societies, many=True, context={"request": request})
         return Response(serializer.data, status=status.HTTP_200_OK)

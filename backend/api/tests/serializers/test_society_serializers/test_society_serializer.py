@@ -59,7 +59,6 @@ class SocietySerializerTestCase(TestCase):
             approved_by=self.admin,
         )
         
-        # Note: student3 is not a president of any society
         
         # Add members to societies
         self.society.society_members.add(self.student2)

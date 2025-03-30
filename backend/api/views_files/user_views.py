@@ -77,7 +77,7 @@ class CurrentUserView(APIView):
 
             try:
                 student_user = Student.objects.get(pk=user.pk)
-                serializer = StudentSerializer(student_user)
+                serializer = StudentSerializer(student_user, context={'request': request})
             except Student.DoesNotExist:
                 serializer = UserSerializer(user)
 
