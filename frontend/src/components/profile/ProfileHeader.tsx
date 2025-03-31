@@ -113,9 +113,9 @@ export default function ProfileHeader({
             <Avatar
               src={avatarSrc}
               sx={{ width: 64, height: 64 }}
-              onClick={handleAvatarClick}
+              onClick={profile.is_staff ? undefined : handleAvatarClick}
             />
-            {isSelf && (
+            {isSelf && !profile.is_staff && (
               <IconButton
                 size="small"
                 sx={{ position: "absolute", bottom: -5, right: -5, backgroundColor: "white" }}
