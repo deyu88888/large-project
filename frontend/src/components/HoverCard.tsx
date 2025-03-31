@@ -1,4 +1,4 @@
-// HoverCard.tsx
+// Refactored
 import React, { useState, useRef } from "react";
 import {
   Popover,

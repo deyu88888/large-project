@@ -1,3 +1,4 @@
+// Refactored
 import { apiClient, apiPaths } from "../api";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";

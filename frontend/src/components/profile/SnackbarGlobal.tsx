@@ -1,3 +1,4 @@
+// Refactored
 import { Snackbar, Alert } from "@mui/material";
 
 interface SnackbarGlobalProps {

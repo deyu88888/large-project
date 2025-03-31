@@ -1,3 +1,4 @@
+// Refactored
 import React, { useContext, useCallback, useState, useEffect, useMemo } from "react";
 import { Box, useTheme, Button, Snackbar, Alert } from "@mui/material";
 import {
@@ -90,7 +91,7 @@ const EventNotification: React.FC<EventNotificationProps> = ({ alert, onClose })
       open={alert.open}
       autoHideDuration={6000}
       onClose={onClose}
-      anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+      anchorOrigin={{ vertical: "top", horizontal: "center" }}
     >
       <Alert onClose={onClose} severity={alert.severity} variant="filled" sx={{ width: "100%" }}>
         {alert.message}

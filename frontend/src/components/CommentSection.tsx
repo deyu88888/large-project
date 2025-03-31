@@ -1,25 +1,10 @@
+// Refactored
 import { useEffect, useRef, useState } from "react";
 import { CommentItem } from "./CommentItem";
 import { apiClient } from "../api";
 import { Box, Button, Pagination, Typography } from "@mui/material";
 import { TextToggle } from "./TextToggle";
-
-// Define comment type interface
-interface CommentType {
-  id: number;
-  content: string;
-  create_at: string;
-  user_data: {
-    id: number;
-    username: string;
-  };
-  parent_comment: number | null;
-  replies: CommentType[];
-  likes: number;
-  dislikes: number;
-  liked_by_user: boolean;
-  disliked_by_user: boolean;
-}
+import { CommentType } from "../types/event/comment.ts";
 
 // Main comment section component
 export function CommentSection({ eventId }: { eventId: number }) {

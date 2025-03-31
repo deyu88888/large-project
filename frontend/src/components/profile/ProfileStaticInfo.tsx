@@ -1,3 +1,4 @@
+// Refactored
 import {Paper, Typography, Box, Divider, colors} from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { User } from "../../types/user/user";

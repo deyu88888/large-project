@@ -81,7 +81,7 @@ def get_upcoming_events(request):
     Returns upcoming events sorted by date, processed by EventSerializer.
     """
     current_datetime = timezone.now()
-    events_qs = Event.objects.filter(date__gte=current_datetime).order_by('date')
+    events_qs = Event.objects.filter(date__gte=current_datetime, status='Approved').order_by('date')
 
     seen_ids = set()
     unique_events_list = []

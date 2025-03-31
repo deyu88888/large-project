@@ -1,3 +1,4 @@
+// Refactored
 import { useRef, useState } from "react";
 import {
   Avatar,
@@ -16,24 +17,7 @@ import {
 import { Link } from "react-router-dom";
 import { apiClient } from "../api";
 import { HoverCard } from "./HoverCard";
-
-// Type definition for a comment
-interface CommentType {
-  id: number;
-  content: string;
-  create_at: string;
-  user_data: {
-    id: number;
-    username: string;
-    icon?: string;
-  };
-  parent_comment: number | null;
-  replies: CommentType[];
-  likes: number;
-  dislikes: number;
-  liked_by_user: boolean;
-  disliked_by_user: boolean;
-}
+import { CommentType } from "../types/event/comment.ts";
 
 interface Props {
   comment: CommentType;

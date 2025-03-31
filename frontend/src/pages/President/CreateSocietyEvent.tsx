@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+// Refactored
+import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useTheme } from "@mui/material";
+import { useTheme, Snackbar } from "@mui/material";
+import MuiAlert from "@mui/material/Alert";
 import { EventForm } from "../../components/EventForm";
 import { apiClient } from "../../api";
 
@@ -8,15 +10,17 @@ interface FormData {
   [key: string]: any;
 }
 
+const Alert = React.forwardRef(function Alert(props, ref) {
+  return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
+});
+
 const createStyleTag = (isDarkMode: boolean) => {
   const existingStyle = document.getElementById("event-form-styles");
   if (existingStyle) {
     existingStyle.remove();
   }
-
   const style = document.createElement("style");
   style.id = "event-form-styles";
-
   style.innerHTML = `
     .event-form-wrapper .MuiTypography-root,
     .event-form-wrapper .MuiButton-root,
@@ -32,7 +36,6 @@ const createStyleTag = (isDarkMode: boolean) => {
       border-color: ${isDarkMode ? "#fff !important" : "#141b2d !important"};
     }
   `;
-
   document.head.appendChild(style);
 };
 
@@ -41,10 +44,27 @@ const CreateEvent: React.FC = () => {
   const { societyId } = useParams<{ societyId: string }>();
   const navigate = useNavigate();
 
-  React.useEffect(() => {
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
+
+  const showSnackbar = (message: string, severity: "success" | "error") => {
+    setSnackbarMessage(message);
+    setSnackbarSeverity(severity);
+    setSnackbarOpen(true);
+  };
+
+  const handleSnackbarClose = (
+    _event?: React.SyntheticEvent | Event,
+    reason?: string
+  ) => {
+    if (reason === "clickaway") return;
+    setSnackbarOpen(false);
+  };
+
+  useEffect(() => {
     const isDarkMode = theme.palette.mode === "dark";
     createStyleTag(isDarkMode);
-
     return () => {
       const styleTag = document.getElementById("event-form-styles");
       if (styleTag) {
@@ -55,16 +75,6 @@ const CreateEvent: React.FC = () => {
 
   const isSuccessful = (status: number): boolean => status === 201;
 
-  const showSuccessAndNavigateBack = () => {
-    alert("Event created successfully!");
-    navigate(-1);
-  };
-
-  const showError = (error: unknown) => {
-    console.error("Error creating event:", error);
-    alert("Failed to create event.");
-  };
-
   const handleSubmit = async (formData: FormData): Promise<void> => {
     try {
       const response = await apiClient.post(
@@ -73,17 +83,36 @@ const CreateEvent: React.FC = () => {
       );
 
       if (isSuccessful(response.status)) {
-        showSuccessAndNavigateBack();
+        showSnackbar("Event created successfully!", "success");
+
+        setTimeout(() => {
+          navigate(-1);
+        }, 2000);
         return;
       }
 
       throw new Error(`Server error: ${response.statusText}`);
     } catch (error: unknown) {
-      showError(error);
+      console.error("Error creating event:", error);
+      showSnackbar("Failed to create event.", "error");
     }
   };
 
-  return <EventForm onSubmit={handleSubmit} />;
+  return (
+    <>
+      <EventForm onSubmit={handleSubmit} />
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={4000}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: "100%" }}>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
+    </>
+  );
 };
 
 export default CreateEvent;
