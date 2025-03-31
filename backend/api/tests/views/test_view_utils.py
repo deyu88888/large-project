@@ -288,7 +288,7 @@ class TestViewUtils(TestCase):
     @patch("builtins.print")
     def test_set_many_to_many_relationship_invalid(self, mock_print):
         """Test the ability to set a m2m relationship from an invalid list of IDs"""
-        ids = []
+        valid_ids = []
         students = []
         for i in range(5):
             student = Student.objects.create(
@@ -299,12 +299,18 @@ class TestViewUtils(TestCase):
                 role='student',
                 major='CompSci',
             )
-            ids.append(student.id + 1)
+            valid_ids.append(student.id)
             students.append(student)
-        self.society.society_members.clear()
-        set_many_to_many_relationship(self.society, "society_members", ids, Student)
-        self.assertNotEqual(list(self.society.society_members.all()), students)
-        mock_print.assert_called()
+        
+        unsaved_society = Society(
+            name="Unsaved Society",
+            description="Test Description"
+        )
+        
+        set_many_to_many_relationship(unsaved_society, "society_members", valid_ids, Student)
+        mock_print.assert_called_once()
+        message = mock_print.call_args[0][0]
+        self.assertIn("no primary key", message)
 
     @patch("builtins.print")
     def test_set_many_to_many_relationship_invalid_field(self, mock_print):

@@ -12,18 +12,64 @@ class SocietyRestoreHandler(RestoreHandler):
     def handle(self, original_data, log_entry):
         """Restore a deleted society."""
         try:
+            if not original_data.get('president') and not original_data.get('approved_by'):
+                return Response({
+                    "error": "Cannot restore society: required fields 'president' and 'approved_by' are missing from the original data."
+                }, status=status.HTTP_400_BAD_REQUEST)
+                
+            president = None
+            approved_by = None
+            
+            president_id = original_data.get('president')
+            if president_id:
+                try:
+                    president = Student.objects.get(id=president_id)
+                except Student.DoesNotExist:
+                    pass
+                    
+            approved_by_id = original_data.get('approved_by')
+            if approved_by_id:
+                try:
+                    approved_by = User.objects.get(id=approved_by_id)
+                except User.DoesNotExist:
+                    pass
+            
             society_data = {k: v for k, v in original_data.items() if k not in [
                 'id', 'president', 'vice_president', 'event_manager', 
-                'leader', 'approved_by', 'members', 'society_members', 'events'
+                'approved_by', 'members', 'society_members', 'events'
             ]}
+            
+            if president:
+                society_data['president'] = president
+            if approved_by:
+                society_data['approved_by'] = approved_by
+                
+            if 'president' not in society_data or 'approved_by' not in society_data:
+                if 'approved_by' not in society_data:
+                    admin_user = User.objects.filter(role='admin').first()
+                    if admin_user:
+                        society_data['approved_by'] = admin_user
+                
+                if 'president' not in society_data:
+                    for role in ['president', 'vice_president', 'event_manager']:
+                        role_id = original_data.get(role)
+                        if role_id:
+                            try:
+                                society_data['president'] = Student.objects.get(id=role_id)
+                                break
+                            except Student.DoesNotExist:
+                                continue
             
             society = Society.objects.create(**society_data)
             
-            set_foreign_key_relationship(society, 'president', original_data.get('president'), Student)
-            set_foreign_key_relationship(society, 'vice_president', original_data.get('vice_president'), Student)
-            set_foreign_key_relationship(society, 'event_manager', original_data.get('event_manager'), Student)
-            set_foreign_key_relationship(society, 'leader', original_data.get('leader'), Student)
-            set_foreign_key_relationship(society, 'approved_by', original_data.get('approved_by'), User)
+            if original_data.get('vice_president'):
+                set_foreign_key_relationship(society, 'vice_president', original_data.get('vice_president'), Student)
+            
+            if original_data.get('event_manager'):
+                set_foreign_key_relationship(society, 'event_manager', original_data.get('event_manager'), Student)
+            
+            if original_data.get('president'):
+                set_foreign_key_relationship(society, 'president', original_data.get('president'), Student)
             
             society.save()
             
@@ -56,7 +102,7 @@ class SocietyUpdateUndoHandler(RestoreHandler):
                 return Response({"error": "Society not found."}, status=status.HTTP_404_NOT_FOUND)
             
             many_to_many_fields = ['society_members', 'tags', 'showreel_images']
-            foreign_key_fields = ['leader', 'vice_president', 'event_manager', 'approved_by']
+            foreign_key_fields = ['president', 'vice_president', 'event_manager', 'approved_by']
             complex_json_fields = ['social_media_links']
             
             data = original_data.copy()
@@ -74,7 +120,7 @@ class SocietyUpdateUndoHandler(RestoreHandler):
             society.save()
             
             set_foreign_key_relationship(society, 'approved_by', data.get('approved_by'), User)
-            for role in ['leader', 'vice_president', 'event_manager']:
+            for role in ['president', 'vice_president', 'event_manager']:
                 if role in data and data[role] and isinstance(data[role], dict):
                     set_foreign_key_relationship(society, role, data[role].get('id'), Student)
             society.save()
@@ -91,12 +137,10 @@ class SocietyUpdateUndoHandler(RestoreHandler):
                 for image_data in data['showreel_images']:
                     try:
                         if isinstance(image_data, dict) and 'id' in image_data:
-                            # Try to get existing showreel image
                             showreel = SocietyShowreel.objects.get(id=image_data['id'])
                             showreel.society = society
                             showreel.save()
                         elif isinstance(image_data, int):
-                            # Try to get existing showreel image by ID
                             showreel = SocietyShowreel.objects.get(id=image_data)
                             showreel.society = society
                             showreel.save()
@@ -124,7 +168,6 @@ class SocietyStatusChangeUndoHandler(RestoreHandler):
                 return Response({"error": "Society not found."}, status=status.HTTP_404_NOT_FOUND)
             society.status = "Pending"
             
-            # If there was an approved_by field and we're undoing an approval, clear it
             if log_entry.action_type == "Approve" and hasattr(society, 'approved_by'):
                 society.approved_by = None
             

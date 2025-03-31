@@ -1,9 +1,8 @@
-import React, { useEffect, useState, forwardRef } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { apiClient } from "../../api";
 import { EventForm } from "../../components/EventForm";
 import { CircularProgress, Box, Snackbar } from "@mui/material";
-import MuiAlert, { AlertProps } from "@mui/material/Alert";
 import {
   ExtraModule,
   EventFormInitialData,
@@ -13,22 +12,23 @@ import {
   EventDataResponse,
   ModuleData,
 } from "../../types/president/EditEventDetails";
-
-const Alert = forwardRef<HTMLDivElement, AlertProps>(function Alert(props, ref) {
-  return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
-});
+import { Alert } from "../../components/Alert";
 
 export default function EditEventDetails() {
   const { eventId } = useParams<RouteParams>();
   const navigate = useNavigate();
 
-  const [initialData, setInitialData] = useState<EventFormInitialData | null>(null);
+  const [initialData, setInitialData] = useState<EventFormInitialData | null>(
+    null
+  );
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
-  const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
+  const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">(
+    "success"
+  );
 
   const setSuccessSnackbar = (message: string) => {
     setSnackbarMessage(message);

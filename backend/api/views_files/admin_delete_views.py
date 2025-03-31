@@ -10,6 +10,8 @@ from rest_framework.views import APIView
 from api.models import Event, Society, Student, User, ActivityLog
 import time as time_module
 from api.utils import *
+from .admin_handle_student_views import StudentRestoreHandler, StudentUpdateUndoHandler
+from .admin_handle_admin_views import AdminRestoreHandler, AdminUpdateUndoHandler
 from .admin_handle_event_views import EventRestoreHandler, EventUpdateUndoHandler, EventStatusChangeUndoHandler
 from .admin_handle_society_views import SocietyRestoreHandler, SocietyUpdateUndoHandler, SocietyStatusChangeUndoHandler
 from api.views_files.view_utility import get_admin_if_user_is_admin, RestoreHandler, set_foreign_key_relationship, set_many_to_many_relationship
@@ -22,7 +24,7 @@ class AdminBaseView(APIView):
         "Student": Student,
         "Society": Society,
         "Event": Event,
-         "Admin": User,
+        "Admin": User,
     }
 
     def check_admin_permission(self, user):
@@ -180,7 +182,6 @@ class AdminRestoreView(AdminBaseView):
                 except json.JSONDecodeError:
                     return Response({"error": "Error decoding original data."}, status=status.HTTP_400_BAD_REQUEST)
             else:
-                # For Approve/Reject, we don't necessarily need original data
                 original_data = {}
                 if log_entry.original_data:
                     try:
@@ -192,7 +193,6 @@ class AdminRestoreView(AdminBaseView):
             if not model:
                 return Response({"error": "Unsupported target type."}, status=status.HTTP_400_BAD_REQUEST)
 
-            # Route to appropriate handler based on action type and target type
             handler_factory = RestoreHandlerFactory()
             handler = handler_factory.get_handler(log_entry.action_type, target_type)
             
@@ -215,16 +215,16 @@ class RestoreHandlerFactory:
     def get_handler(self, action_type, target_type):
         """Get the appropriate handler for the given action and target type."""
         handlers = {
-            # Deletion handlers
             ("Delete", "Student"): StudentRestoreHandler(),
             ("Delete", "Society"): SocietyRestoreHandler(),
             ("Delete", "Event"): EventRestoreHandler(),
+            ("Delete", "Admin"): AdminRestoreHandler(),
             
-            # Update handlers
+            ("Update", "Student"): StudentUpdateUndoHandler(),
             ("Update", "Society"): SocietyUpdateUndoHandler(),
             ("Update", "Event"): EventUpdateUndoHandler(),
+            ("Update", "Admin"): AdminUpdateUndoHandler(),
             
-            # Status change handlers (Approve/Reject)
             ("Approve", "Society"): SocietyStatusChangeUndoHandler(),
             ("Reject", "Society"): SocietyStatusChangeUndoHandler(),
             ("Approve", "Event"): EventStatusChangeUndoHandler(),
@@ -232,104 +232,3 @@ class RestoreHandlerFactory:
         }
         
         return handlers.get((action_type, target_type))
-
-
-class StudentRestoreHandler(RestoreHandler):
-    """Handler for restoring deleted students."""
-    def handle(self, original_data, log_entry):
-        """Restore a deleted student."""
-        try:
-            user_data = {
-                'username': original_data.get('username'),
-                'email': original_data.get('email'),
-                'first_name': original_data.get('first_name'),
-                'last_name': original_data.get('last_name'),
-                'is_active': original_data.get('is_active', True),
-                'role': original_data.get('role', 'student'),
-            }
-            
-            user_id = original_data.get('id')
-            email = user_data.get('email')
-            username = user_data.get('username')
-            
-            user = None
-            if user_id:
-                try:
-                    user = User.objects.filter(id=int(user_id)).first()
-                except (ValueError, TypeError):
-                    pass
-                    
-            if not user and email:
-                user = User.objects.filter(email=email).first()
-                
-            if not user and username:
-                user = User.objects.filter(username=username).first()
-            
-            if not user:
-                if email:
-                    while User.objects.filter(email=email).exists():
-                        timestamp = int(time_module.time())
-                        email_parts = email.split('@')
-                        if len(email_parts) == 2:
-                            email = f"{email_parts[0]}+{timestamp}@{email_parts[1]}"
-                        else:
-                            email = f"restored_{timestamp}@example.com"
-                    user_data['email'] = email
-                
-                if username:
-                    while User.objects.filter(username=username).exists():
-                        timestamp = int(time_module.time())
-                        username = f"{username}_{timestamp}"
-                    user_data['username'] = username
-                    
-                user = User.objects.create(**user_data)
-
-            student = Student.objects.filter(user_ptr=user).first()
-            student_data = {k: v for k, v in original_data.items() if k not in [
-                'id', 'username', 'email', 'first_name', 'last_name', 'is_active',
-                'password', 'last_login', 'is_superuser', 'is_staff', 'date_joined',
-                'groups', 'user_permissions', 'societies', 'attended_events', 'followers',
-                'following', 'president_of', 'user_ptr', 'role'
-            ]}
-            
-            if not student:
-                
-                student = Student(user_ptr_id=user.id)
-                student.__dict__.update(user.__dict__)
-                
-                for key, value in student_data.items():
-                    if value is not None:
-                        setattr(student, key, value)
-                
-                # Save with raw=True to avoid problems with inheritance
-                student.save_base(raw=True)
-            else:
-                for key, value in student_data.items():
-                    if value is not None:
-                        setattr(student, key, value)
-                student.save()
-            
-            society_ids = original_data.get('societies', [])
-            if society_ids:
-                set_many_to_many_relationship(student, 'societies', society_ids, Society)
-
-            event_ids = original_data.get('attended_events', [])
-            if event_ids:
-                set_many_to_many_relationship(student, 'attended_events', event_ids, Event)
-
-            follower_ids = original_data.get('followers', [])
-            if follower_ids:
-                set_many_to_many_relationship(student, 'followers', follower_ids, User)
-
-            following_ids = original_data.get('following', [])
-            if following_ids:
-                set_many_to_many_relationship(student, 'following', following_ids, User)
-            
-            set_foreign_key_relationship(student, 'president_of', original_data.get('president_of'), Society)
-            student.save()
-            
-            log_entry.delete()
-            return Response({"message": "Student restored successfully!"}, status=status.HTTP_200_OK)
-            
-        except Exception as e:
-            return Response({"error": f"Failed to restore Student: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
