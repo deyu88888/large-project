@@ -21,9 +21,15 @@ import {
 } from "@mui/material";
 import { tokens } from "../../theme/theme";
 import { Member } from "../../types/president/member";
-import {
-  Society,
-} from "../../types/president/ViewSocietyMembers";
+
+interface Society {
+  id: number;
+  name: string;
+  president?: { id: number };
+  vice_president?: { id: number };
+  event_manager?: { id: number };
+  [key: string]: any;
+}
 
 const ViewSocietyMembers: React.FC = () => {
   const { societyId } = useParams<{ societyId: string }>();
@@ -42,427 +48,160 @@ const ViewSocietyMembers: React.FC = () => {
   });
   const [roleActionLoading, setRoleActionLoading] = useState(false);
 
-  const determineEffectiveSocietyId = (): string => {
-    return String(societyId || user?.president_of);
-  };
-
-  const validateSocietyId = (id: string | undefined): void => {
-    if (!id) throw new Error("No society id available");
-  };
-
-  const fetchSocietyData = async (id: string): Promise<void> => {
-    const response = await apiClient.get(apiPaths.SOCIETY.MANAGE_DETAILS(Number(id)));
-    setSociety(response.data);
-  };
-
-  const fetchMembersData = async (id: string): Promise<void> => {
-    const response = await apiClient.get(`/api/society/${id}/members/`);
-    setMembers(response.data || []);
-  };
-
-  const handleFetchError = (error: unknown): void => {
-    console.error("Error fetching data:", error);
-  };
-
-  const completeDataFetch = (): void => {
-    setLoading(false);
-  };
-
-  const fetchData = async (): Promise<void> => {
-    try {
-      const id = determineEffectiveSocietyId();
-      validateSocietyId(id);
-
-      if (id) {
-        await fetchSocietyData(id);
-        await fetchMembersData(id);
-      }
-    } catch (error) {
-      handleFetchError(error);
-    } finally {
-      completeDataFetch();
-    }
-  };
-
   useEffect(() => {
     fetchData();
   }, [societyId, user]);
 
-  const navigateToProfile = (memberId: number): void => {
-    navigate(`/student/profile/${memberId}`);
+  const fetchData = async () => {
+    try {
+      const id = societyId || user?.president_of;
+      if (!id) throw new Error("No society id available");
+
+      const societyResponse = await apiClient.get(apiPaths.SOCIETY.MANAGE_DETAILS(Number(societyId)));
+      const membersResponse = await apiClient.get(`/api/society/${id}/members/`);
+
+      setSociety(societyResponse.data);
+      setMembers(membersResponse.data || []);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleViewProfile = (memberId: number): void => {
-    navigateToProfile(memberId);
-  };
-
-  const navigateToGiveAward = (memberId: number): void => {
-    navigate(`/president-page/${societyId}/give-award-page/${memberId}`);
-  };
-
-  const handleGiveAward = (memberId: number): void => {
-    navigateToGiveAward(memberId);
-  };
-
-  const navigateToAssignRole = (memberId: number): void => {
-    navigate(`/president-page/${societyId}/assign-role/${memberId}`);
-  };
-
+  const handleViewProfile = (memberId: number): void | Promise<void> => navigate(`/student/profile/${memberId}`);
+  const handleGiveAward = (memberId: number): void => void navigate(`/president-page/${societyId}/give-award-page/${memberId}`);
   const handleAssignRole = (memberId: number): void => {
-    navigateToAssignRole(memberId);
-  };
-
-  const openRemoveRoleDialog = (role: string, memberId: number): void => {
-    setConfirmDialog({ open: true, role, memberId });
+    navigate(`/president-page/${societyId}/assign-role/${memberId}`) as void;
   };
 
   const handleRemoveRole = (role: string, memberId: number): void => {
-    openRemoveRoleDialog(role, memberId);
-  };
-
-  const closeRemoveRoleDialog = (): void => {
-    setConfirmDialog({ open: false, role: '', memberId: null });
-  };
-
-  const startRoleAction = (): void => {
-    setRoleActionLoading(true);
-  };
-
-  const endRoleAction = (): void => {
-    setRoleActionLoading(false);
-  };
-
-  const createRemoveRolePayload = (role: string): Record<string, null> => {
-    return { [role]: null };
-  };
-
-  const sendRemoveRoleRequest = async (role: string): Promise<void> => {
-    const payload = createRemoveRolePayload(role);
-    await apiClient.patch(`/api/society/${societyId}/roles/`, payload);
-  };
-
-  const handleRemoveRoleError = (error: unknown): void => {
-    console.error("Error removing role:", error);
+    setConfirmDialog({ open: true, role, memberId });
   };
 
   const handleConfirmRemoveRole = async (): Promise<void> => {
     if (!confirmDialog.role || !confirmDialog.memberId) return;
-    
-    startRoleAction();
+    setRoleActionLoading(true);
+
     try {
-      await sendRemoveRoleRequest(confirmDialog.role);
+      const payload: Record<string, null> = { [confirmDialog.role]: null };
+      await apiClient.patch(`/api/society/${societyId}/roles/`, payload);
       await fetchData();
     } catch (error) {
-      handleRemoveRoleError(error);
+      console.error("Error removing role:", error);
     } finally {
-      endRoleAction();
-      closeRemoveRoleDialog();
+      setRoleActionLoading(false);
+      setConfirmDialog({ open: false, role: '', memberId: null });
     }
   };
 
-  const isPresident = (memberId: number): boolean => {
-    return society?.president?.id === memberId;
-  };
-  
-  const isVicePresident = (memberId: number): boolean => {
-    return society?.vice_president?.id === memberId;
-  };
-  
-  const isEventManager = (memberId: number): boolean => {
-    return society?.event_manager?.id === memberId;
-  };
+  const isPresident = (memberId: number): boolean => society?.president?.id === memberId;
+  const isVicePresident = (memberId: number): boolean => society?.vice_president?.id === memberId;
+  const isEventManager = (memberId: number): boolean => society?.event_manager?.id === memberId;
 
-  const hasAnyRole = (memberId: number): boolean => {
-    return isPresident(memberId) || isVicePresident(memberId) || isEventManager(memberId);
-  };
+  const renderRoleChip = (label: string, color: string, onClick: () => void) => (
+    <Chip
+      label={label}
+      size="small"
+      sx={{ bgcolor: color, color: 'white', fontWeight: 'bold', cursor: 'pointer' }}
+      onClick={onClick}
+      onDelete={onClick}
+    />
+  );
 
-  const formatRoleName = (role: string): string => {
-    return role.replace('_', ' ');
-  };
+  const renderMemberList = () => (
+    <List>
+      {members.map((member) => (
+        <ListItem
+          key={member.id}
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            borderBottom: `1px solid ${theme.palette.divider}`,
+          }}
+        >
+          <ListItemText
+            primary={
+              <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+                <Typography color="textPrimary" fontWeight="medium">
+                  {`${member.first_name} ${member.last_name}`}
+                </Typography>
+                {isPresident(member.id) && <Chip label="President" size="small" sx={{ bgcolor: 'green', color: 'white', fontWeight: 'bold' }} />}
+                {isVicePresident(member.id) && renderRoleChip("Vice President", "blue", () => handleRemoveRole('vice_president', member.id))}
+                {isEventManager(member.id) && renderRoleChip("Event Manager", "orange", () => handleRemoveRole('event_manager', member.id))}
+              </Box>
+            }
+            secondary={member.username}
+            secondaryTypographyProps={{ color: 'textSecondary' }}
+          />
+          <ListItemSecondaryAction sx={{ display: 'flex', gap: 1 }}>
+            <Button variant="contained" color="primary" size="small" onClick={() => handleViewProfile(member.id)}>View Profile</Button>
+            <Button variant="contained" color="secondary" size="small" onClick={() => handleGiveAward(member.id)}>Give Award</Button>
+            <Button
+              variant="contained"
+              color="info"
+              size="small"
+              onClick={() => handleAssignRole(member.id)}
+              disabled={isPresident(member.id) || isVicePresident(member.id) || isEventManager(member.id)}
+            >
+              Assign Role
+            </Button>
+          </ListItemSecondaryAction>
+        </ListItem>
+      ))}
+    </List>
+  );
 
-  const createRoleChip = (
-    label: string, 
-    color: string, 
-    onClick: () => void,
-    chipKey: string
-  ): React.ReactElement => {
-    return (
-      <Chip
-        key={chipKey}
-        label={label}
-        size="small"
-        sx={{ bgcolor: color, color: 'white', fontWeight: 'bold', cursor: 'pointer' }}
-        onClick={onClick}
-        onDelete={onClick}
-      />
-    );
-  };
-
-  const createPresidentChip = (memberId: number): React.ReactElement => {
-    return (
-      <Chip 
-        key={`president-chip-${memberId}`}
-        label="President" 
-        size="small" 
-        sx={{ bgcolor: 'green', color: 'white', fontWeight: 'bold' }} 
-      />
-    );
-  };
-
-  const createVicePresidentChip = (memberId: number): React.ReactElement => {
-    return createRoleChip(
-      "Vice President", 
-      "blue", 
-      () => handleRemoveRole('vice_president', memberId),
-      `vice-president-chip-${memberId}`
-    );
-  };
-
-  const createEventManagerChip = (memberId: number): React.ReactElement => {
-    return createRoleChip(
-      "Event Manager", 
-      "orange", 
-      () => handleRemoveRole('event_manager', memberId),
-      `event-manager-chip-${memberId}`
-    );
-  };
-
-  const createMemberRoleChips = (memberId: number): React.ReactElement[] => {
-    const chips = [];
-    
-    if (isPresident(memberId)) {
-      chips.push(createPresidentChip(memberId));
-    }
-    
-    if (isVicePresident(memberId)) {
-      chips.push(createVicePresidentChip(memberId));
-    }
-    
-    if (isEventManager(memberId)) {
-      chips.push(createEventManagerChip(memberId));
-    }
-    
-    return chips;
-  };
-
-  const createMemberNameDisplay = (member: Member): React.ReactElement => {
-    return (
-      <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
-        <Typography color="textPrimary" fontWeight="medium">
-          {`${member.first_name} ${member.last_name}`}
-        </Typography>
-        {createMemberRoleChips(member.id)}
-      </Box>
-    );
-  };
-
-  const createViewProfileButton = (memberId: number): React.ReactElement => {
-    return (
-      <Button 
-        variant="contained" 
-        color="primary" 
-        size="small" 
-        onClick={() => handleViewProfile(memberId)}
-      >
-        View Profile
-      </Button>
-    );
-  };
-
-  const createGiveAwardButton = (memberId: number): React.ReactElement => {
-    return (
-      <Button 
-        variant="contained" 
-        color="secondary" 
-        size="small" 
-        onClick={() => handleGiveAward(memberId)}
-      >
-        Give Award
-      </Button>
-    );
-  };
-
-  const createAssignRoleButton = (memberId: number): React.ReactElement => {
-    return (
-      <Button
-        variant="contained"
-        color="info"
-        size="small"
-        onClick={() => handleAssignRole(memberId)}
-        disabled={hasAnyRole(memberId)}
-      >
-        Assign Role
-      </Button>
-    );
-  };
-
-  const createMemberActionButtons = (memberId: number): React.ReactElement => {
-    return (
-      <ListItemSecondaryAction sx={{ display: 'flex', gap: 1 }}>
-        {createViewProfileButton(memberId)}
-        {createGiveAwardButton(memberId)}
-        {createAssignRoleButton(memberId)}
-      </ListItemSecondaryAction>
-    );
-  };
-
-  const createMemberListItem = (member: Member): React.ReactElement => {
-    return (
-      <ListItem
-        key={member.id}
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          borderBottom: `1px solid ${theme.palette.divider}`,
-        }}
-      >
-        <ListItemText
-          primary={createMemberNameDisplay(member)}
-          secondary={member.username}
-          secondaryTypographyProps={{ color: 'textSecondary' }}
-        />
-        {createMemberActionButtons(member.id)}
-      </ListItem>
-    );
-  };
-
-  const createMembersList = (): React.ReactElement => {
-    return (
-      <List>
-        {members.map(createMemberListItem)}
-      </List>
-    );
-  };
-
-  const createEmptyMembersMessage = (): React.ReactElement => {
-    return (
-      <Typography color="textSecondary" sx={{ textAlign: 'center' }}>
-        No members found.
-      </Typography>
-    );
-  };
-
-  const createMembersContent = (): React.ReactElement => {
-    if (members.length === 0) {
-      return createEmptyMembersMessage();
-    }
-    return createMembersList();
-  };
-
-  const navigateBack = (): void => {
-    navigate(-1);
-  };
-
-  const createBackButton = (): React.ReactElement => {
-    return (
-      <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
-        <Button variant="contained" color="primary" onClick={navigateBack}>
-          Back to Dashboard
-        </Button>
-      </Box>
-    );
-  };
-
-  const createDialogTitle = (): React.ReactElement => {
-    return <DialogTitle>Remove Role</DialogTitle>;
-  };
-
-  const createDialogContent = (): React.ReactElement => {
-    return (
+  const renderDialog = () => (
+    <Dialog open={confirmDialog.open} onClose={() => setConfirmDialog({ ...confirmDialog, open: false })}>
+      <DialogTitle>Remove Role</DialogTitle>
       <DialogContent>
         <Typography>
-          Are you sure you want to remove the {formatRoleName(confirmDialog.role)} role from this member?
+          Are you sure you want to remove the {confirmDialog.role?.replace('_', ' ')} role from this member?
         </Typography>
       </DialogContent>
-    );
-  };
-
-  const createCancelButton = (): React.ReactElement => {
-    return (
-      <Button 
-        onClick={closeRemoveRoleDialog} 
-        disabled={roleActionLoading}
-      >
-        Cancel
-      </Button>
-    );
-  };
-
-  const createRemoveButton = (): React.ReactElement => {
-    return (
-      <Button 
-        onClick={handleConfirmRemoveRole} 
-        color="error" 
-        disabled={roleActionLoading} 
-        variant="contained"
-      >
-        {roleActionLoading ? <CircularProgress size={24} /> : 'Remove'}
-      </Button>
-    );
-  };
-
-  const createDialogActions = (): React.ReactElement => {
-    return (
       <DialogActions>
-        {createCancelButton()}
-        {createRemoveButton()}
+        <Button onClick={() => setConfirmDialog({ ...confirmDialog, open: false })} disabled={roleActionLoading}>Cancel</Button>
+        <Button onClick={handleConfirmRemoveRole} color="error" disabled={roleActionLoading} variant="contained">
+          {roleActionLoading ? <CircularProgress size={24} /> : 'Remove'}
+        </Button>
       </DialogActions>
-    );
-  };
+    </Dialog>
+  );
 
-  const createRemoveRoleDialog = (): React.ReactElement => {
-    return (
-      <Dialog open={confirmDialog.open} onClose={closeRemoveRoleDialog}>
-        {createDialogTitle()}
-        {createDialogContent()}
-        {createDialogActions()}
-      </Dialog>
-    );
-  };
-
-  const createLoadingView = (): React.ReactElement => {
+  if (loading) {
     return (
       <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: theme.palette.background.default }}>
         <CircularProgress />
       </Box>
     );
-  };
+  }
 
-  const createPageTitle = (): React.ReactElement => {
-    return (
+  return (
+    <Box sx={{ minHeight: '100vh', backgroundColor: theme.palette.background.default, py: 4, px: 2 }}>
       <Box sx={{ textAlign: 'center', mb: 4 }}>
         <Typography variant="h1" sx={{ color: colors.grey[100], fontWeight: 'bold' }}>
           {society ? society.name : "Society"} Members
         </Typography>
       </Box>
-    );
-  };
-
-  const createMembersPaper = (): React.ReactElement => {
-    return (
       <Paper elevation={3} sx={{ maxWidth: 800, mx: 'auto', p: 3, backgroundColor: theme.palette.mode === 'dark' ? colors.primary[400] : theme.palette.background.paper }}>
-        {createMembersContent()}
-        {createBackButton()}
+        {members.length === 0 ? (
+          <Typography color="textSecondary" sx={{ textAlign: 'center' }}>
+            No members found.
+          </Typography>
+        ) : (
+          renderMemberList()
+        )}
+        <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
+          <Button variant="contained" color="primary" onClick={() => navigate(-1)}>
+            Back to Dashboard
+          </Button>
+        </Box>
       </Paper>
-    );
-  };
-
-  const createMainContent = (): React.ReactElement => {
-    return (
-      <Box sx={{ minHeight: '100vh', backgroundColor: theme.palette.background.default, py: 4, px: 2 }}>
-        {createPageTitle()}
-        {createMembersPaper()}
-        {createRemoveRoleDialog()}
-      </Box>
-    );
-  };
-
-  if (loading) {
-    return createLoadingView();
-  }
-
-  return createMainContent();
+      {renderDialog()}
+    </Box>
+  );
 };
 
 export default ViewSocietyMembers;
