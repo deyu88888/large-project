@@ -39,30 +39,56 @@ class AdminBaseView(APIView):
         
         serializable_data = {}
         for key, value in original_data.items():
-            if value is None:
-                serializable_data[key] = None
-            elif isinstance(value, (datetime, date)):
-                serializable_data[key] = value.isoformat()
-            elif isinstance(value, time):
-                serializable_data[key] = value.strftime("%H:%M:%S")
-            elif isinstance(value, timedelta):
-                serializable_data[key] = str(value)
-            elif isinstance(value, ImageFieldFile):
-                serializable_data[key] = value.url if value else None
-            elif isinstance(value, (list, tuple)) and value and hasattr(value[0], 'email'):
-                serializable_data[key] = [item.email if hasattr(item, 'email') else str(item) for item in value]
-            elif hasattr(value, 'email'):
-                serializable_data[key] = value.email
-            elif hasattr(value, 'all'):
-                related_items = list(value.all())
-                if related_items and hasattr(related_items[0], 'email'):
-                    serializable_data[key] = [item.email for item in related_items]
+            try:
+                if value is None:
+                    serializable_data[key] = None
+                elif isinstance(value, (datetime, date)):
+                    serializable_data[key] = value.isoformat()
+                elif isinstance(value, time):
+                    serializable_data[key] = value.strftime("%H:%M:%S")
+                elif isinstance(value, timedelta):
+                    serializable_data[key] = str(value)
+                elif isinstance(value, ImageFieldFile):
+                    serializable_data[key] = value.url if value else None
+                elif isinstance(value, (list, tuple, set)) and value and hasattr(next(iter(value), None), 'email'):
+                    serializable_data[key] = [item.email if hasattr(item, 'email') else str(item) for item in value]
+                elif hasattr(value, 'email'):
+                    serializable_data[key] = value.email
+                elif hasattr(value, 'all'):
+                    try:
+                        related_items = list(value.all())
+                        if related_items and hasattr(related_items[0], 'email'):
+                            serializable_data[key] = [item.email for item in related_items]
+                        else:
+                            serializable_data[key] = [str(item) for item in related_items]
+                    except Exception:
+                        # If accessing related items fails, just use a string representation
+                        serializable_data[key] = f"<Related {key} items>"
+                elif hasattr(value, 'pk'):
+                    serializable_data[key] = str(value)
+                # Handle dictionary values
+                elif isinstance(value, dict):
+                    try:
+                        # Recursively serialize dictionary values
+                        serializable_dict = {}
+                        for dict_key, dict_value in value.items():
+                            if isinstance(dict_value, (dict, list, tuple, set)):
+                                serializable_dict[dict_key] = str(dict_value)
+                            else:
+                                serializable_dict[dict_key] = dict_value
+                        serializable_data[key] = serializable_dict
+                    except Exception:
+                        serializable_data[key] = str(value)
+                # Default case - directly assign the value
                 else:
-                    serializable_data[key] = [str(item) for item in related_items]
-            elif hasattr(value, 'pk'):
+                    serializable_data[key] = value
+                    
+                # Final check: Test if the value is JSON serializable
+                json.dumps(serializable_data[key])
+                    
+            except (TypeError, OverflowError, ValueError):
+                # If any error occurs during serialization, convert to string
                 serializable_data[key] = str(value)
-            else:
-                serializable_data[key] = value
         
         return serializable_data
 
