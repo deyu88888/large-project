@@ -4,7 +4,7 @@ import { Box, Typography, Button, Select, MenuItem, TextField } from "@mui/mater
 import { useTheme } from "@mui/material/styles";
 import { apiClient } from "../../api";
 import { tokens } from "../../theme/theme.ts";
-import { ReportFormData, SelectChangeEvent } from "../../types/president/report.ts";
+import { ReportFormData, SelectChangeEvent } from "../../types/president/report";
 
 // Component for page header
 const PageHeader: React.FC<{ textColor: string }> = ({ textColor }) => (

@@ -6,14 +6,7 @@ import { tokens } from "../../theme/theme";
 import { useSettingsStore } from "../../stores/settings-store";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { SocietyPreview } from "../../components/SocietyPreview";
-import { SocietyDetailRequest } from "../../types/admin/society";
-
-
-interface AlertState {
-  open: boolean;
-  message: string;
-  severity: 'success' | 'error';
-}
+import { AlertState, SocietyDetailRequest} from "../../types/admin/PendingSocietyDetailRequest";
 
 const fetchPendingSocietyDetailRequests = async () => {
   try {

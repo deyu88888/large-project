@@ -17,19 +17,19 @@ import Header from "../../components/Header";
 import { tokens } from "../../theme/theme";
 import { getAllEvents } from "../../api";
 import "react-big-calendar/lib/css/react-big-calendar.css";
+import {
+  CalendarEvent,
+  CustomEventProps,
+  MoreEventsState,
+  TimeGroup,
+  EventWrapperProps,
+  ShowMoreProps,
+  EVENT_COLORS
+} from "../../types/admin/AdminCalendar";
 
-const EVENT_COLORS = [
-  "#6c5ce7",
-  "#00cec9",
-  "#fd79a8",
-  "#fdcb6e",
-  "#e17055",
-  "#0984e3",
-  "#00b894",
-];
 const localizer = momentLocalizer(moment);
 
-const CustomEvent = memo(({ event }: any) => (
+const CustomEvent = memo(({ event }: CustomEventProps) => (
   <div className="p-1 overflow-hidden text-ellipsis">
     <strong className="block text-sm whitespace-nowrap overflow-hidden text-ellipsis">
       {event.title}
@@ -40,7 +40,7 @@ const CustomEvent = memo(({ event }: any) => (
   </div>
 ));
 
-const formatEvents = (data: any) => {
+const formatEvents = (data: any): CalendarEvent[] => {
   if (!Array.isArray(data)) return [];
 
   return data
@@ -85,22 +85,22 @@ const formatEvents = (data: any) => {
         return null;
       }
     })
-    .filter(Boolean);
+    .filter(Boolean) as CalendarEvent[];
 };
 
 const AdminCalendar = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
 
-  const [events, setEvents] = useState<any[]>([]);
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedEvent, setSelectedEvent] = useState<any>(null);
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [moreEvents, setMoreEvents] = useState<{
-    open: boolean;
-    data: any[];
-  }>({ open: false, data: [] });
+  const [moreEvents, setMoreEvents] = useState<MoreEventsState>({ 
+    open: false, 
+    data: [] 
+  });
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -118,7 +118,7 @@ const AdminCalendar = () => {
     fetchEvents();
   }, []);
 
-  const handleSelectEvent = useCallback((event: any) => {
+  const handleSelectEvent = useCallback((event: CalendarEvent) => {
     setSelectedEvent(event);
     setDialogOpen(true);
   }, []);
@@ -128,7 +128,7 @@ const AdminCalendar = () => {
     setSelectedEvent(null);
   }, []);
 
-  const handleShowMore = useCallback((events: any) => {
+  const handleShowMore = useCallback((events: CalendarEvent[]) => {
     setMoreEvents({ open: true, data: events });
   }, []);
 
@@ -137,7 +137,7 @@ const AdminCalendar = () => {
   }, []);
 
   const eventStyleGetter = useCallback(
-    (event: any) => ({
+    (event: CalendarEvent) => ({
       style: {
         backgroundColor: EVENT_COLORS[Number(event.id) % EVENT_COLORS.length],
         borderRadius: "8px",
@@ -151,7 +151,7 @@ const AdminCalendar = () => {
 
   const components = {
     event: CustomEvent,
-    eventWrapper: ({ event, children }: any) => (
+    eventWrapper: ({ event, children }: EventWrapperProps) => (
       <Tooltip
         title={`${event.title}: ${moment(event.start).format("LT")} - ${moment(
           event.end
@@ -161,7 +161,7 @@ const AdminCalendar = () => {
         <div>{children}</div>
       </Tooltip>
     ),
-    showMore: ({ events }: any) => (
+    showMore: ({ events }: ShowMoreProps) => (
       <button
         type="button"
         onClick={(e) => {
@@ -179,13 +179,13 @@ const AdminCalendar = () => {
     if (!moreEvents.data.length) return null;
 
     const sorted = [...moreEvents.data].sort(
-      (a: any, b: any) => a.start.getTime() - b.start.getTime()
+      (a: CalendarEvent, b: CalendarEvent) => a.start.getTime() - b.start.getTime()
     );
     const date = moreEvents.data[0]?.start
       ? moment(moreEvents.data[0].start).format("MMM D, YYYY")
       : "";
 
-    const timeGroups = [
+    const timeGroups: TimeGroup[] = [
       {
         title: "MORNING",
         items: sorted.filter((e) => e.start.getHours() < 12),

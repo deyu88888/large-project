@@ -18,73 +18,22 @@ import {
   Switch,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import { apiClient, apiPaths } from "../../api.ts";
-import { useAuthStore } from "../../stores/auth-store.ts";
-import { tokens } from "../../theme/theme.ts";
-import { Student } from "../../types.ts";
-
-interface StudentFormState {
-  student: Student | null;
-  formData: Student | null;
-  loading: boolean;
-  saving: boolean;
-}
-
-interface SnackbarState {
-  open: boolean;
-  message: string;
-  severity: "success" | "error";
-}
-
-interface TextFieldProps {
-  label: string;
-  name: string;
-  value: string | number;
-  onChange: (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
-  fullWidth?: boolean;
-}
-
-interface SwitchFieldProps {
-  label: string;
-  name: string;
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-}
-
-interface SocietiesFieldProps {
-  value: number[];
-  onChange: (societies: number[]) => void;
-}
-
-interface PresidentFieldProps {
-  value: any;
-  onChange: (presidentOf: number[]) => void;
-}
-
-interface FormButtonsProps {
-  saving: boolean;
-}
-
-interface LoadingSpinnerProps {
-  color?: "primary" | "secondary";
-}
-
-interface BackButtonProps {
-  onClick: () => void;
-}
-
-interface StudentFormProps {
-  formData: Student;
-  saving: boolean;
-  onTextChange: (
-    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => void;
-  onSocietiesChange: (societies: number[]) => void;
-  onPresidentOfChange: (presidentOf: number[]) => void;
-  onActiveChange: (active: boolean) => void;
-  onIsPresidentChange: (isPresident: boolean) => void;
-  onSubmit: (e: FormEvent) => void;
-}
+import { apiClient, apiPaths } from "../../api";
+import { useAuthStore } from "../../stores/auth-store";
+import { tokens } from "../../theme/theme";
+import { Student } from "../../types";
+import {
+  StudentFormState,
+  SnackbarState,
+  TextFieldProps,
+  SwitchFieldProps,
+  SocietiesFieldProps,
+  PresidentFieldProps,
+  FormButtonsProps,
+  LoadingSpinnerProps,
+  BackButtonProps,
+  StudentFormProps
+} from "../../types/admin/ViewStudent";
 
 const fetchStudentData = async (studentId: number): Promise<Student> => {
   const response = await apiClient.get(

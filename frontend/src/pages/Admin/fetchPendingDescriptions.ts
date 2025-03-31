@@ -1,19 +1,9 @@
 import { apiClient, apiPaths } from "../../api";
-
-
-interface ApiResponse<T> {
-  data: T;
-}
-
-interface DescriptionRequest {
-  id: string;
-  
-}
+import { ApiResponse, DescriptionRequest } from "../../types/admin/PendingDescriptions";
 
 const handleApiError = (error: unknown, context: string): void => {
   console.error(`Error ${context}:`, error);
 };
-
 
 const makeGetRequest = async <T>(endpoint: string): Promise<ApiResponse<T> | undefined> => {
   try {
@@ -24,13 +14,10 @@ const makeGetRequest = async <T>(endpoint: string): Promise<ApiResponse<T> | und
   }
 };
 
-
 const fetchPendingDescriptions = async (): Promise<DescriptionRequest[] | undefined> => {
   const response = await makeGetRequest<DescriptionRequest[]>(apiPaths.USER.PENDINGDESCRIPTIONREQUEST);
   return response?.data;
 };
 
-
 export { fetchPendingDescriptions };
-
 export type { DescriptionRequest };

@@ -11,7 +11,7 @@ import {
   Alert,
   Snackbar
 } from "@mui/material";
-import { Formik, Form, FormikHelpers, FormikProps } from "formik";
+import { Formik, Form, FormikHelpers } from "formik";
 import * as yup from "yup";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import Header from "../../components/Header";
@@ -23,94 +23,21 @@ import { Admin } from "../../types";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { tokens } from "../../theme/theme";
 import TextFieldComponent from "../../components/TextFieldComponent";
-
-
-interface AdminFormValues {
-  first_name: string;
-  last_name: string;
-  username: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-}
-
-interface SnackbarState {
-  open: boolean;
-  message: string;
-  severity: "error" | "success" | "info" | "warning";
-}
-
-interface FormState {
-  loading: boolean;
-  isSuccess: boolean;
-  createdAdmin: Admin | null;
-  showPassword: boolean;
-  error: string | null;
-  snackbar: SnackbarState;
-}
-
-interface PasswordFieldProps {
-  name: string;
-  label: string;
-  value: string;
-  showPassword: boolean;
-  handleBlur: (e: React.FocusEvent) => void;
-  handleChange: (e: React.ChangeEvent) => void;
-  handleTogglePasswordVisibility: () => void;
-  error: boolean;
-  helperText: string | undefined;
-  disabled: boolean;
-}
-
-interface SuccessViewProps {
-  createdAdmin: Admin;
-  onCreateAnother: () => void;
-  colors: any;
-  theme: any;
-}
-
-interface UnauthorizedViewProps {
-  title: string;
-  subtitle: string;
-}
-
-interface FormViewProps {
-  formState: FormState;
-  onSubmit: (values: AdminFormValues, helpers: FormikHelpers<AdminFormValues>) => Promise<void>;
-  onTogglePasswordVisibility: () => void;
-  onErrorClose: () => void;
-  onSnackbarClose: () => void;
-  isNonMobile: boolean;
-  colors: any;
-  theme: any;
-  drawer: boolean;
-}
-
-interface FormFieldsProps {
-  formikProps: FormikProps<AdminFormValues>;
-  isNonMobile: boolean;
-  loading: boolean;
-  showPassword: boolean;
-  onTogglePasswordVisibility: () => void;
-}
-
-interface ErrorAlertProps {
-  error: string;
-  onClose: () => void;
-}
-
-interface SnackbarAlertProps {
-  open: boolean;
-  message: string;
-  severity: "error" | "success" | "info" | "warning";
-  onClose: () => void;
-}
-
-interface FormButtonsProps {
-  isValid: boolean;
-  dirty: boolean;
-  loading: boolean;
-}
+import {
+  AdminFormValues,
+  FormState,
+  PasswordFieldProps,
+  SuccessViewProps,
+  UnauthorizedViewProps,
+  FormViewProps,
+  FormFieldsProps,
+  ErrorAlertProps,
+  SnackbarAlertProps,
+  FormButtonsProps,
+  AdminInfoItemProps,
+  FormikWrapperProps,
+  FormContentProps
+} from "../../types/admin/CreateAdmin";
 
 
 const validationSchema = yup.object().shape({
@@ -157,6 +84,7 @@ const initialValues: AdminFormValues = {
   password: "",
   confirmPassword: "",
 };
+
 const ErrorAlert: FC<ErrorAlertProps> = ({ error, onClose }) => {
   if (!error) return null;
   
@@ -264,6 +192,7 @@ const PasswordField: FC<PasswordFieldProps> = ({
     />
   );
 };
+
 const FormFields: FC<FormFieldsProps> = ({ 
   formikProps, 
   isNonMobile, 
@@ -373,7 +302,7 @@ const UnauthorizedView: FC<UnauthorizedViewProps> = ({ title, subtitle }) => {
 };
 
 
-const AdminInfoItem: FC<{ label: string; value: string }> = ({ label, value }) => {
+const AdminInfoItem: FC<AdminInfoItemProps> = ({ label, value }) => {
   return (
     <Typography variant="body1">
       <strong>{label}:</strong> {value}
@@ -418,13 +347,14 @@ const SuccessView: FC<SuccessViewProps> = ({ createdAdmin, onCreateAnother, colo
     </Box>
   );
 };
-const FormikWrapper: FC<{
-  onSubmit: (values: AdminFormValues, helpers: FormikHelpers<AdminFormValues>) => Promise<void>;
-  isNonMobile: boolean;
-  loading: boolean;
-  showPassword: boolean;
-  onTogglePasswordVisibility: () => void;
-}> = ({ onSubmit, isNonMobile, loading, showPassword, onTogglePasswordVisibility }) => {
+
+const FormikWrapper: FC<FormikWrapperProps> = ({ 
+  onSubmit, 
+  isNonMobile, 
+  loading, 
+  showPassword, 
+  onTogglePasswordVisibility 
+}) => {
   return (
     <Formik
       onSubmit={onSubmit}
@@ -446,13 +376,13 @@ const FormikWrapper: FC<{
 };
 
 
-const FormContent: FC<{
-  formikProps: FormikProps<AdminFormValues>;
-  isNonMobile: boolean;
-  loading: boolean;
-  showPassword: boolean;
-  onTogglePasswordVisibility: () => void;
-}> = ({ formikProps, isNonMobile, loading, showPassword, onTogglePasswordVisibility }) => {
+const FormContent: FC<FormContentProps> = ({ 
+  formikProps, 
+  isNonMobile, 
+  loading, 
+  showPassword, 
+  onTogglePasswordVisibility 
+}) => {
   const { handleSubmit, isValid, dirty } = formikProps;
   
   return (
@@ -528,6 +458,7 @@ const createAdminRequest = async (values: AdminFormValues) => {
   const response = await apiClient.post(apiPaths.USER.ADMIN, values);
   return response.data.admin;
 };
+
 const CreateAdmin: FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);

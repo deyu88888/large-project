@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext, useRef, useCallback, FC } from "react";
+import React, { useEffect, useState, useContext, useCallback, FC } from "react";
 import {
   Box,
   useTheme,
@@ -16,36 +16,13 @@ import { tokens } from "../../theme/theme";
 import { useSettingsStore } from "../../stores/settings-store";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { EventPreview } from "../../components/EventPreview";
-import type { EventData, ExtraModule } from "../../types/event/event";
-import { getWebSocketUrl } from "../../utils/websocket";
-import {mapToEventRequestData} from "../../utils/mapper.ts";
-
-
-const WEBSOCKET_URL = getWebSocketUrl()
-const RECONNECT_TIMEOUT = 5000;
-
-interface DeleteDialogProps {
-  open: boolean;
-  event: EventData | null;
-  reason: string;
-  onReasonChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  onCancel: () => void;
-  onConfirm: () => void;
-}
-
-interface ActionButtonsProps {
-  eventId: number;
-  event: EventData;
-  onView: (event: EventData) => void;
-  onDelete: (event: EventData) => void;
-}
-
-interface DataGridContainerProps {
-  filteredEvents: EventData[];
-  columns: GridColDef[];
-  loading: boolean;
-  colors: any;
-}
+import type { EventData } from "../../types/event/event";
+import { mapToEventRequestData } from "../../utils/mapper.ts";
+import {
+  DeleteDialogProps,
+  ActionButtonsProps,
+  DataGridContainerProps
+} from "../../types/admin/AdminEventList";
 
 const ActionButtons: FC<ActionButtonsProps> = ({
   event,
@@ -168,31 +145,7 @@ const DataGridContainer: FC<DataGridContainerProps> = ({
   );
 };
 
-const createWebSocket = (
-  url: string,
-  onOpen: () => void,
-  onMessage: (data: any) => void,
-  onError: (event: globalThis.Event) => void,
-  onClose: (event: CloseEvent) => void
-): WebSocket => {
-  const socket = new WebSocket(url);
-  socket.onopen = onOpen;
-  socket.onmessage = onMessage;
-  socket.onerror = onError;
-  socket.onclose = onClose;
-  return socket;
-};
-
-const parseWebSocketMessage = (event: MessageEvent): any => {
-  try {
-    return JSON.parse(event.data);
-  } catch (error) {
-    console.error("Error parsing WebSocket message:", error);
-    return null;
-  }
-};
-
-const EventList: FC = () => {
+const AdminEventList: FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const { drawer } = useSettingsStore();
@@ -204,8 +157,6 @@ const EventList: FC = () => {
   const [reason, setReason] = useState('');
   const [loading, setLoading] = useState(true);
   const [previewOpen, setPreviewOpen] = useState(false);
-
-  const ws = useRef<WebSocket | null>(null);
 
   const fetchEvents = useCallback(async () => {
     try {
@@ -220,53 +171,9 @@ const EventList: FC = () => {
     }
   }, []);
   
-  const handleSocketOpen = useCallback(() => {
-    console.log("WebSocket Connected for Event List");
-  }, []);
-
-  const handleSocketMessage = useCallback((event: MessageEvent) => {
-    const data = parseWebSocketMessage(event);
-    if (data) {
-      console.log("WebSocket Update Received:", data);
-      fetchEvents();
-    }
-  }, [fetchEvents]);
-
-  const handleSocketError = useCallback((event: EventData) => {
-    console.error("WebSocket Error:", event);
-  }, []);
-
-  const handleSocketClose = useCallback((event: CloseEvent) => {
-    console.log("WebSocket Disconnected:", event.reason);
-    setTimeout(() => connectWebSocket(), RECONNECT_TIMEOUT);
-  }, []);
-
-  
-  const connectWebSocket = useCallback(() => {
-    if (ws.current?.readyState === WebSocket.OPEN) {
-      return;
-    }
-
-    ws.current = createWebSocket(
-      WEBSOCKET_URL,
-      handleSocketOpen,
-      handleSocketMessage,
-      handleSocketError as any,
-      handleSocketClose
-    );
-  }, [handleSocketOpen, handleSocketMessage, handleSocketError, handleSocketClose]);
-
-  
   useEffect(() => {
     fetchEvents();
-    connectWebSocket();
-
-    return () => {
-      if (ws.current) {
-        ws.current.close();
-      }
-    };
-  }, [fetchEvents, connectWebSocket]);
+  }, [fetchEvents]);
 
   const handleViewEvent = useCallback((event: EventData) => {
     setSelectedEvent(event);
@@ -382,4 +289,4 @@ const EventList: FC = () => {
   );
 };
 
-export default EventList;
+export default AdminEventList;

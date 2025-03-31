@@ -4,46 +4,16 @@ import { Box, Typography, Button, TextField, CircularProgress } from "@mui/mater
 import { useTheme } from "@mui/material/styles";
 import { apiClient } from "../../api";
 import { tokens } from "../../theme/theme";
-
-
-interface Report {
-  report_type: string;
-  subject: string;
-  details: string;
-  from_student_username: string;
-  requested_at: string;
-  [key: string]: any;
-}
-
-interface ReportState {
-  data: Report | null;
-  loading: boolean;
-  error: string | null;
-}
-
-interface ReplyState {
-  content: string;
-  error: string | null;
-}
-
-interface LoadingStateProps {
-  children?: React.ReactNode;
-}
-
-interface ErrorStateProps {
-  message: string;
-}
-
-interface ReportDetailsProps {
-  report: Report;
-}
-
-interface ReplyFormProps {
-  content: string;
-  onChange: (content: string) => void;
-  onSubmit: (e: React.FormEvent) => void;
-}
-
+import {
+  Report,
+  ReportState,
+  ReplyState,
+  LoadingStateProps,
+  ErrorStateProps,
+  ReportDetailsProps,
+  ReplyFormProps,
+  PageContainerProps
+} from "../../types/admin/ReportReply";
 
 const fetchReportById = async (reportId: string): Promise<Report> => {
   const response = await apiClient.get(`/api/reports/to-admin/${reportId}/`);
@@ -56,7 +26,6 @@ const submitReportReply = async (reportId: string, content: string): Promise<voi
     content: content,
   });
 };
-
 
 const LoadingState: React.FC<LoadingStateProps> = () => {
   return <CircularProgress />;
@@ -157,7 +126,7 @@ const ReplyForm: React.FC<ReplyFormProps> = ({ content, onChange, onSubmit }) =>
   );
 };
 
-const PageContainer: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const PageContainer: React.FC<PageContainerProps> = ({ children }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   
@@ -193,11 +162,9 @@ const PageTitle: React.FC = () => {
   );
 };
 
-
 const ReportReply: React.FC = () => {
   const navigate = useNavigate();
   const { reportId } = useParams<{ reportId: string }>();
-  
   
   const [reportState, setReportState] = useState<ReportState>({
     data: null,
@@ -210,7 +177,6 @@ const ReportReply: React.FC = () => {
     error: null
   });
 
-  
   const loadReportData = async () => {
     if (!reportId) {
       setReportState({
@@ -239,12 +205,10 @@ const ReportReply: React.FC = () => {
     }
   };
 
-  
   const handleReplyContentChange = (content: string) => {
     setReplyState(prev => ({ ...prev, content }));
   };
 
-  
   const handleSubmitReply = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -262,27 +226,22 @@ const ReportReply: React.FC = () => {
     }
   };
 
-  
   useEffect(() => {
     loadReportData();
   }, [reportId]);
 
-  
   if (reportState.loading) {
     return <LoadingState />;
   }
 
-  
   if (reportState.error) {
     return <ErrorState message={reportState.error} />;
   }
 
-  
   if (replyState.error) {
     return <ErrorState message={replyState.error} />;
   }
 
-  
   return (
     <PageContainer>
       <PageTitle />

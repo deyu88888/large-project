@@ -24,72 +24,18 @@ import { apiClient, apiPaths } from "../../api.ts";
 import { useAuthStore } from "../../stores/auth-store.ts";
 import { tokens } from "../../theme/theme.ts";
 import { Admin } from "../../types.ts";
-
-interface AdminFormData {
-  username: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  role: string;
-  is_active: boolean;
-  is_super_admin: boolean;
-}
-
-interface SnackbarState {
-  open: boolean;
-  message: string;
-  severity: "success" | "error";
-}
-
-interface TextFieldProps {
-  label: string;
-  name: string;
-  value: string;
-  onChange: (e: ChangeEvent<HTMLInputElement>) => void;
-  disabled: boolean;
-  fullWidth?: boolean;
-}
-
-interface SwitchFieldProps {
-  name: string;
-  label: string;
-  checked: boolean;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  disabled: boolean;
-}
-
-interface FormSubmitButtonProps {
-  saving: boolean;
-  canEdit: boolean;
-}
-
-interface SnackbarAlertProps {
-  state: SnackbarState;
-  onClose: () => void;
-}
-
-interface LoadingSpinnerProps {
-  color?: "primary" | "secondary";
-}
-
-interface InfoAlertProps {
-  message: string;
-}
-
-interface BackButtonProps {
-  onClick: () => void;
-}
-
-interface AdminDetailFormProps {
-  formData: AdminFormData;
-  canEdit: boolean;
-  saving: boolean;
-  onChange: (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
-  onSwitchChange: (
-    name: string
-  ) => (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onSubmit: (e: FormEvent) => void;
-}
+import {
+  AdminFormData,
+  SnackbarState,
+  TextFieldProps,
+  SwitchFieldProps,
+  FormSubmitButtonProps,
+  SnackbarAlertProps,
+  LoadingSpinnerProps,
+  InfoAlertProps,
+  BackButtonProps,
+  AdminDetailFormProps
+} from "../../types/admin/ViewAdmin";
 
 const fetchAdminData = async (adminId: number): Promise<Admin> => {
   const response = await apiClient.get(`${apiPaths.USER.ADMINVIEW(adminId)}`);

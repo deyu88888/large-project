@@ -7,22 +7,13 @@ import { useSettingsStore } from "../../stores/settings-store";
 import { fetchReports } from './fetchReports';
 import { Report } from '../../types/president/report';
 import { useNavigate } from 'react-router-dom';
-
-
-interface DataGridContainerProps {
-  filteredReports: Report[];
-  columns: GridColDef[];
-  loading: boolean;
-  colors: any;
-}
-
-interface ActionButtonProps {
-  reportId: string;
-  isPublic: boolean;
-  email: string;
-  subject: string;
-  onReply: (id: string) => void;
-}
+import {
+  DataGridContainerProps,
+  ActionButtonProps,
+  EmailCellProps,
+  ReporterCellProps,
+  DateCellProps
+} from '../../types/admin/AdminReportList';
 
 const formatDate = (dateString: string): string => {
   return new Date(dateString).toLocaleString();
@@ -116,7 +107,7 @@ const DataGridContainer: FC<DataGridContainerProps> = ({
 };
 
 
-const EmailCell: FC<{ email: string | null }> = ({ email }) => {
+const EmailCell: FC<EmailCellProps> = ({ email }) => {
   if (!email) return <>-</>;
   
   return (
@@ -127,12 +118,12 @@ const EmailCell: FC<{ email: string | null }> = ({ email }) => {
 };
 
 
-const ReporterCell: FC<{ reporter: string | null }> = ({ reporter }) => {
+const ReporterCell: FC<ReporterCellProps> = ({ reporter }) => {
   return <>{reporter || "Public User"}</>;
 };
 
 
-const DateCell: FC<{ date: string }> = ({ date }) => {
+const DateCell: FC<DateCellProps> = ({ date }) => {
   return <>{formatDate(date)}</>;
 };
 

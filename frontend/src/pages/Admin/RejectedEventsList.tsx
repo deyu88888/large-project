@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext, useRef, useCallback, FC } from "react";
+import React, { useEffect, useState, useContext, FC } from "react";
 import {
   Box,
   useTheme,
@@ -17,20 +17,8 @@ import { useSettingsStore } from "../../stores/settings-store";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { EventPreview } from "../../components/EventPreview";
 import type { EventData } from "../../types/event/event";
-import { getWebSocketUrl } from "../../utils/websocket";
-import {mapToEventRequestData} from "../../utils/mapper.ts";
-
-const WS_URL = getWebSocketUrl();
-const RECONNECT_DELAY = 5000;
-
-interface DeleteDialogProps {
-  open: boolean;
-  event: EventData | null;
-  reason: string;
-  onReasonChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  onCancel: () => void;
-  onConfirm: () => void;
-}
+import { mapToEventRequestData } from "../../utils/mapper.ts";
+import { DeleteDialogProps, ActionButtonsProps } from "../../types/admin/RejectedEventsList";
 
 const DeleteDialog: FC<DeleteDialogProps> = ({ open, event, reason, onReasonChange, onCancel, onConfirm }) => {
   return (
@@ -60,18 +48,14 @@ const DeleteDialog: FC<DeleteDialogProps> = ({ open, event, reason, onReasonChan
   );
 };
 
-const ActionButtons: FC<{
-  event: EventData;
-  onView: (event: EventData) => void;
-  onDelete: (event: EventData) => void;
-}> = ({ event, onView, onDelete }) => (
+const ActionButtons: FC<ActionButtonsProps> = ({ event, onView, onDelete }) => (
   <Box>
     <Button onClick={() => onView(event)} variant="contained" color="primary" sx={{ mr: 1 }}>View</Button>
     <Button onClick={() => onDelete(event)} variant="contained" color="error">Delete</Button>
   </Box>
 );
 
-const EventListRejected: React.FC = () => {
+const RejectedEventsList: React.FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const { searchTerm } = useContext(SearchContext);
@@ -85,10 +69,7 @@ const EventListRejected: React.FC = () => {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [reason, setReason] = useState("");
 
-  const ws = useRef<WebSocket | null>(null);
-  const reconnectRef = useRef<NodeJS.Timeout | null>(null);
-
-  const fetchRejectedEvents = useCallback(async () => {
+  const fetchRejectedEvents = async () => {
     try {
       setLoading(true);
       const res = await apiClient.get(apiPaths.EVENTS.REJECTEDEVENTLIST);
@@ -99,39 +80,11 @@ const EventListRejected: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
-
-  const connectWebSocket = useCallback(() => {
-    if (ws.current) ws.current.close();
-    if (reconnectRef.current) clearTimeout(reconnectRef.current);
-
-    ws.current = new WebSocket(WS_URL);
-
-    ws.current.onopen = () => console.log("WebSocket connected");
-    ws.current.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        console.log("Update received:", data);
-        fetchRejectedEvents();
-      } catch (err) {
-        console.error("Parse error:", err);
-      }
-    };
-    ws.current.onerror = (e) => console.error("WebSocket error:", e);
-    ws.current.onclose = (e) => {
-      console.log("WebSocket closed:", e.reason);
-      reconnectRef.current = setTimeout(() => connectWebSocket(), RECONNECT_DELAY);
-    };
-  }, [fetchRejectedEvents]);
+  };
 
   useEffect(() => {
     fetchRejectedEvents();
-    connectWebSocket();
-    return () => {
-      if (ws.current) ws.current.close();
-      if (reconnectRef.current) clearTimeout(reconnectRef.current);
-    };
-  }, [fetchRejectedEvents, connectWebSocket]);
+  }, []);
 
   const handleView = (event: EventData) => {
     setPreviewEvent(event);
@@ -252,4 +205,4 @@ const EventListRejected: React.FC = () => {
   );
 };
 
-export default EventListRejected;
+export default RejectedEventsList;

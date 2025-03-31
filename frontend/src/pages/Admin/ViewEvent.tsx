@@ -21,76 +21,17 @@ import { useTheme } from "@mui/material/styles";
 import { apiClient, apiPaths } from "../../api";
 import { tokens } from "../../theme/theme";
 import { Event } from "../../types";
-
-interface FormErrors {
-  title?: string;
-  main_description?: string;
-  date?: string;
-  start_time?: string;
-  duration?: string;
-  location?: string;
-  hosted_by?: string;
-  [key: string]: string | undefined;
-}
-
-interface Notification {
-  open: boolean;
-  message: string;
-  severity: "success" | "error" | "info" | "warning";
-}
-
-interface EventFormState {
-  event: Event | null;
-  formData: Event | null;
-  loading: boolean;
-  saving: boolean;
-  errors: FormErrors;
-}
-
-interface TextFieldProps {
-  label: string;
-  name: string;
-  value: string;
-  onChange: (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
-  error?: boolean;
-  helperText?: string;
-  required?: boolean;
-  multiline?: boolean;
-  rows?: number;
-  type?: string;
-  InputLabelProps?: {
-    shrink: boolean;
-  };
-  placeholder?: string;
-  fullWidth?: boolean;
-}
-
-interface ActionButtonsProps {
-  onReset: () => void;
-  saving: boolean;
-}
-
-interface NotificationProps {
-  notification: Notification;
-  onClose: () => void;
-}
-
-interface LoadingSpinnerProps {
-  color?: "primary" | "secondary";
-}
-
-interface BackButtonProps {
-  onClick: () => void;
-}
-
-interface EventFormProps {
-  formData: Event;
-  errors: FormErrors;
-  saving: boolean;
-  onChange: (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
-  onSubmit: (e: FormEvent) => void;
-  onReset: () => void;
-}
+import {
+  FormErrors,
+  Notification,
+  EventFormState,
+  TextFieldProps,
+  ActionButtonsProps,
+  NotificationProps,
+  LoadingSpinnerProps,
+  BackButtonProps,
+  EventFormProps
+} from "../../types/admin/ViewEvent";
 
 const createField = (
   formData: Event | null,

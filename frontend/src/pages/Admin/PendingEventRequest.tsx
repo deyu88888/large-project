@@ -1,4 +1,4 @@
-import React, { useContext, useCallback, useState, useMemo } from "react";
+import React, { useContext, useCallback, useState, useEffect, useMemo } from "react";
 import { Box, useTheme, Button, Snackbar, Alert } from "@mui/material";
 import {
   DataGrid,
@@ -9,38 +9,18 @@ import {
 import { tokens } from "../../theme/theme";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { useSettingsStore } from "../../stores/settings-store";
-import { useFetchWebSocket } from "../../hooks/useFetchWebSocket";
 import { fetchPendingRequests } from "./utils";
 import { apiPaths } from "../../api";
 import { updateRequestStatus } from "../../api/requestApi";
 import { EventPreview } from "../../components/EventPreview";
-import type { EventData, ExtraModule } from "../../types/event/event";
-import {mapToEventRequestData} from "../../utils/mapper.ts";
-
-interface AlertState {
-  open: boolean;
-  message: string;
-  severity: "success" | "error";
-}
-
-interface ActionButtonsProps {
-  id: number;
-  event: EventData;
-  onStatusChange: (id: number, status: "Approved" | "Rejected") => void;
-  onView: (event: EventData) => void;
-}
-
-interface EventNotificationProps {
-  alert: AlertState;
-  onClose: () => void;
-}
-
-interface DataGridCustomProps {
-  events: EventData[];
-  columns: GridColDef[];
-  drawer: boolean;
-  colors: ReturnType<typeof tokens>;
-}
+import type { EventData } from "../../types/event/event";
+import { mapToEventRequestData } from "../../utils/mapper.ts";
+import {
+  AlertState,
+  ActionButtonsProps,
+  EventNotificationProps,
+  DataGridCustomProps
+} from "../../types/admin/PendingEventRequest";
 
 const filterEventsBySearchTerm = (
   events: EventData[],
@@ -175,11 +155,24 @@ const PendingEventRequest: React.FC = () => {
     message: "",
     severity: "success",
   });
+  const [pendingData, setPendingData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const pendingData = useFetchWebSocket<any[]>(
-    () => fetchPendingRequests(apiPaths.EVENTS.PENDINGEVENTREQUEST),
-    "event"
-  );
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = await fetchPendingRequests(apiPaths.EVENTS.PENDINGEVENTREQUEST);
+      setPendingData(data);
+    } catch (error) {
+      console.error("Error fetching pending requests:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const events: EventData[] = useMemo(() => {
     return (pendingData ?? []).map(mapToEventRequestData);
@@ -195,12 +188,14 @@ const PendingEventRequest: React.FC = () => {
       try {
         await updateRequestStatus(id, status, apiPaths.EVENTS.UPDATEENEVENTREQUEST);
         setAlert(createSuccessAlert(`Event ${status.toLowerCase()} successfully.`));
+        // Refresh data after status change
+        fetchData();
       } catch (error) {
         console.error(`Error updating event status:`, error);
         setAlert(createErrorAlert(`Failed to ${status.toLowerCase()} event.`));
       }
     },
-    []
+    [fetchData]
   );
 
   const handleCloseAlert = useCallback(() => {

@@ -1,12 +1,9 @@
-# TODO: reomve this file? not used
-
 # api/consumer/echo_consumer.py
 import json
 import logging
 from channels.generic.websocket import WebsocketConsumer
 
 logger = logging.getLogger('websockets')
-
 
 class EchoConsumer(WebsocketConsumer):
     def connect(self):
@@ -17,10 +14,10 @@ class EchoConsumer(WebsocketConsumer):
             'type': 'connection_established',
             'message': 'Echo server connected'
         }))
-
+        
     def disconnect(self, close_code):
         logger.debug(f"Echo consumer disconnected: {close_code}")
-
+        
     def receive(self, text_data):
         logger.debug(f"Echo consumer received: {text_data}")
         # Echo the received data back
