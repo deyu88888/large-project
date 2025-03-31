@@ -24,8 +24,6 @@ class UserSerializer(serializers.ModelSerializer):
         ]
         extra_kwargs = {
             'password': {'write_only': True, 'min_length': 8},
-            'username': {'validators': [UniqueValidator(queryset=User.objects.all())]},
-            'email': {'validators': [UniqueValidator(queryset=User.objects.all())]},
         }
 
     def get_is_following(self, obj):
