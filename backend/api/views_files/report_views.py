@@ -190,7 +190,8 @@ class ReportThreadView(APIView):
             return error
 
         user = request.user
-        is_admin = hasattr(user, 'admin')
+        # Fix: Check for admin status using is_admin() method or is_super_admin attribute
+        is_admin = user.is_admin() if hasattr(user, 'is_admin') else getattr(user, 'is_super_admin', False) or user.role == 'admin'
         is_creator = hasattr(user, 'student') and user.student == report.from_student
 
         is_president = False
