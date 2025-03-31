@@ -21,60 +21,54 @@ class SocietyNewsListView(APIView):
     permission_classes = [IsAuthenticated]
     
     def get(self, request, society_id):
+        
+        society = get_object_or_404(Society, id=society_id)
+        
+        # Check if user is a member of the society
+        if not is_society_member(request.user, society_id):
+            return standard_error_response(
+                "You must be a member of this society to view its news.",
+                status.HTTP_403_FORBIDDEN
+            )
+
         try:
-            society = get_object_or_404(Society, id=society_id)
-            
-            # Check if user is a member of the society
-            if not is_society_member(request.user, society_id):
-                return standard_error_response(
-                    "You must be a member of this society to view its news.",
-                    status.HTTP_403_FORBIDDEN
-                )
-
             # Determine which posts to show based on permissions
-            try:
-                if has_society_management_permission(request.user.student, society):
-                    news_posts = SocietyNews.objects.filter(society=society)
-                else:
-                    news_posts = SocietyNews.objects.filter(society=society, status="Published")
+            if has_society_management_permission(request.user.student, society):
+                news_posts = SocietyNews.objects.filter(society=society)
+            else:
+                news_posts = SocietyNews.objects.filter(society=society, status="Published")
 
-                news_posts = news_posts.order_by('-is_pinned', '-created_at')
-                serializer = SocietyNewsSerializer(news_posts, many=True, context={'request': request})
-                
-                return Response(serializer.data, status=status.HTTP_200_OK)
-            except Exception:
-                traceback.print_exc()
-                return standard_error_response(
-                    "An error occurred processing news posts.",
-                    status.HTTP_500_INTERNAL_SERVER_ERROR
-                )
-        except Exception:
+            news_posts = news_posts.order_by('-is_pinned', '-created_at')
+            serializer = SocietyNewsSerializer(news_posts, many=True, context={'request': request})
+            
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
             traceback.print_exc()
             return standard_error_response(
-                "An unexpected error occurred.",
+                f"An error occurred processing news posts: {str(e)}",
                 status.HTTP_500_INTERNAL_SERVER_ERROR
             )
     
     def post(self, request, society_id):
-        request_data = request.data.copy()
+        
+        society = get_object_or_404(Society, id=society_id)
+        
+        # Verify user is a student
+        if not hasattr(request.user, 'student'):
+            return standard_error_response(
+                "Only society presidents and vice presidents can create news posts.",
+                status.HTTP_403_FORBIDDEN
+            )
+
+        # Verify user has management permissions
+        if not has_society_management_permission(request.user.student, society):
+            return standard_error_response(
+                "Only society presidents and vice presidents can create news posts.",
+                status.HTTP_403_FORBIDDEN
+            )
 
         try:
-            society = get_object_or_404(Society, id=society_id)
-            
-            # Verify user is a student
-            if not hasattr(request.user, 'student'):
-                return standard_error_response(
-                    "Only society presidents and vice presidents can create news posts.",
-                    status.HTTP_403_FORBIDDEN
-                )
-
-            # Verify user has management permissions
-            if not has_society_management_permission(request.user.student, society):
-                return standard_error_response(
-                    "Only society presidents and vice presidents can create news posts.",
-                    status.HTTP_403_FORBIDDEN
-                )
-
+            request_data = request.data.copy()
             data = request_data.copy()
             data._mutable = True
             data['society'] = society.id
@@ -101,6 +95,7 @@ class SocietyNewsListView(APIView):
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
                 
         except Exception as e:
+            traceback.print_exc()
             return standard_error_response(str(e), status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
