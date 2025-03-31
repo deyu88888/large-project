@@ -1,5 +1,5 @@
 import { FormikHelpers, FormikProps } from "formik";
-import { Admin } from "../index";
+import { Admin } from "../../types";
 import React from "react";
 
 export interface AdminFormValues {

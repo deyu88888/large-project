@@ -4,45 +4,19 @@ import { apiClient, getRecommendedSocieties, SocietyRecommendation } from "../..
 import RecommendationFeedback from "../../components/RecommendationFeedback";
 import { useTheme } from "@mui/material/styles";
 import { tokens } from "../../theme/theme";
-
-// Types and Interfaces
-interface StyleProps {
-  isLight: boolean;
-  colours: any;
-}
-
-interface CategoryGroup {
-  [key: string]: SocietyRecommendation[];
-}
-
-interface CardStyleProps extends StyleProps {
-  joining: number | null;
-}
-
-interface SocietyCardProps {
-  recommendation: SocietyRecommendation;
-  handleViewSociety: (societyId: number) => void;
-  joining: number | null;
-  joinSuccess: boolean;
-  isLight: boolean;
-  colours: any;
-}
-
-interface CategoryViewProps {
-  recommendations: SocietyRecommendation[];
-  handleViewSociety: (societyId: number) => void;
-  joining: number | null;
-  joinSuccess: boolean;
-  styleProps: StyleProps;
-}
-
-interface AllSocietiesViewProps {
-  recommendations: SocietyRecommendation[];
-  handleViewSociety: (societyId: number) => void;
-  joining: number | null;
-  joinSuccess: boolean;
-  styleProps: StyleProps;
-}
+import {
+  StyleProps,
+  CategoryGroup,
+  CardStyleProps,
+  SocietyCardProps,
+  CategoryViewProps,
+  AllSocietiesViewProps,
+  ViewToggleButtonsProps,
+  PageHeaderProps,
+  ErrorMessageProps,
+  LoadingStateProps,
+  EmptyStateProps
+} from "../../types/student/JoinSociety";
 
 // Style Helper Functions
 const getExplanationBadgeColor = (type: string, styleProps: StyleProps): string => {
@@ -458,12 +432,12 @@ const AllSocietiesView: React.FC<AllSocietiesViewProps> = ({
   );
 };
 
-const ViewToggleButtons: React.FC<{
-  viewByCategory: boolean;
-  setViewByCategory: (value: boolean) => void;
-  isLight: boolean;
-  colours: any;
-}> = ({ viewByCategory, setViewByCategory, isLight, colours }) => {
+const ViewToggleButtons: React.FC<ViewToggleButtonsProps> = ({ 
+  viewByCategory, 
+  setViewByCategory, 
+  isLight, 
+  colours 
+}) => {
   return (
     <div style={{ 
       display: "flex", 
@@ -515,11 +489,7 @@ const ViewToggleButtons: React.FC<{
   );
 };
 
-const PageHeader: React.FC<{
-  title: string;
-  subtitle: string;
-  colours: any;
-}> = ({ title, subtitle, colours }) => {
+const PageHeader: React.FC<PageHeaderProps> = ({ title, subtitle, colours }) => {
   return (
     <header style={{ textAlign: "center", marginBottom: "2.5rem" }}>
       <h1
@@ -547,11 +517,7 @@ const PageHeader: React.FC<{
   );
 };
 
-const ErrorMessage: React.FC<{
-  error: string;
-  isLight: boolean;
-  colours: any;
-}> = ({ error, isLight, colours }) => {
+const ErrorMessage: React.FC<ErrorMessageProps> = ({ error, isLight, colours }) => {
   return (
     <div
       style={{
@@ -577,9 +543,7 @@ const ErrorMessage: React.FC<{
   );
 };
 
-const LoadingState: React.FC<{
-  colours: any;
-}> = ({ colours }) => {
+const LoadingState: React.FC<LoadingStateProps> = ({ colours }) => {
   return (
     <div style={{
       display: "flex",
@@ -597,10 +561,7 @@ const LoadingState: React.FC<{
   );
 };
 
-const EmptyState: React.FC<{
-  isLight: boolean;
-  colours: any;
-}> = ({ isLight, colours }) => {
+const EmptyState: React.FC<EmptyStateProps> = ({ isLight, colours }) => {
   return (
     <div
       style={{

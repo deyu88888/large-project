@@ -1,59 +1,61 @@
 import { Box, Container, Typography, useTheme } from "@mui/material";
 import { tokens } from "../theme/theme";
-import { useWebSocketChannel } from "../hooks/useWebSocketChannel";
 import { getPopularSocieties, getUpcomingEvents } from "../api";
 import SocietyCard from "../components/SocietyCard";
 import EventCard from "../components/EventCard";
 import { Society, Event } from "../types";
 import { useNavigate } from "react-router-dom";
-import { useEffect, useState, useRef } from "react";
-import { useWebSocketManager, CONNECTION_STATES } from "../hooks/useWebSocketManager";
-import {EventData} from "../types/event/event.ts";
-import {mapToEventData} from "../utils/mapper.ts";
+import { useEffect, useState } from "react";
+import { EventData } from "../types/event/event.ts";
+import { mapToEventData } from "../utils/mapper.ts";
 
 export default function Dashboard() {
   const theme = useTheme();
   const navigate = useNavigate();
   const colors = tokens(theme.palette.mode);
   const isLight = theme.palette.mode === "light";
+  
+  // State for data
+  const [popularSocieties, setPopularSocieties] = useState<Society[]>([]);
+  const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
+  const [societiesLoading, setSocietiesLoading] = useState<boolean>(true);
+  const [eventsLoading, setEventsLoading] = useState<boolean>(true);
+  const [societiesError, setSocietiesError] = useState<string | null>(null);
+  const [eventsError, setEventsError] = useState<string | null>(null);
 
-  // Get WebSocket connection status
-  const { status, connect } = useWebSocketManager();
-  const prevStatus = useRef(status);
+  // Fetch data on component mount
+  useEffect(() => {
+    const fetchSocieties = async () => {
+      try {
+        setSocietiesLoading(true);
+        const societies = await getPopularSocieties();
+        setPopularSocieties(societies);
+        setSocietiesError(null);
+      } catch (error) {
+        setSocietiesError(error instanceof Error ? error.message : "Failed to fetch societies");
+      } finally {
+        setSocietiesLoading(false);
+      }
+    };
 
-  // Society data from WebSocket
-  const {
-    data: popularSocieties,
-    loading: societiesLoading,
-    error: societiesError,
-    refresh: refreshSocieties,
-  } = useWebSocketChannel("dashboard/popular-societies", getPopularSocieties);
+    const fetchEvents = async () => {
+      try {
+        setEventsLoading(true);
+        const events = await getUpcomingEvents();
+        setUpcomingEvents(events);
+        setEventsError(null);
+      } catch (error) {
+        setEventsError(error instanceof Error ? error.message : "Failed to fetch events");
+      } finally {
+        setEventsLoading(false);
+      }
+    };
 
-  // Upcoming events data from WebSocket
-  const {
-    data: upcomingEvents,
-    loading: eventsLoading,
-    error: eventsError,
-    refresh: refreshEvents,
-  } = useWebSocketChannel("dashboard/upcoming-events", getUpcomingEvents);
+    fetchSocieties();
+    fetchEvents();
+  }, []);
 
   const isLoading = societiesLoading;
-
-  // Initialize WebSocket connection on mount
-  useEffect(() => {
-    // On mount, if disconnected, connect once
-    if (status === CONNECTION_STATES.DISCONNECTED) {
-      connect();
-    }
-    
-    // On the first transition to AUTHENTICATED, refresh data
-    if (status === CONNECTION_STATES.AUTHENTICATED && prevStatus.current !== CONNECTION_STATES.AUTHENTICATED) {
-      refreshSocieties();
-      refreshEvents();
-    }
-    
-    prevStatus.current = status;
-  }, [status, connect, refreshSocieties, refreshEvents]);
 
   const handleViewSociety = (id: number): void => {
     navigate(`/view-society/${id}`);

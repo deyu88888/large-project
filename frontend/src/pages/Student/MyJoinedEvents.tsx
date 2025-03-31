@@ -5,32 +5,17 @@ import { useTheme } from "@mui/material/styles";
 import { tokens } from "../../theme/theme";
 import { CircularProgress } from "@mui/material";
 import EventCard from "../../components/EventCard";
-import {EventData} from "../../types/event/event.ts";
-import {mapToEventData} from "../../utils/mapper.ts";
-
-// Interfaces and Types
-interface StyleProps {
-  isLight: boolean;
-  colours: any;
-}
-
-interface HeaderProps {
-  styleProps: StyleProps;
-}
-
-interface LoadingStateProps {
-  styleProps: StyleProps;
-}
-
-interface EmptyStateProps {
-  styleProps: StyleProps;
-}
-
-interface EventsGridProps {
-  events: EventData[];
-  handleViewEvent: (eventId: number) => void;
-  styleProps: StyleProps;
-}
+import { EventData } from "../../types/event/event";
+import { mapToEventData } from "../../utils/mapper";
+import {
+  StyleProps,
+  HeaderProps,
+  LoadingStateProps,
+  EmptyStateProps,
+  EventsGridProps,
+  MainContainerProps,
+  ContentSwitcherProps
+} from "../../types/student/MyJoinedEvents";
 
 // Header Component
 const Header: React.FC<HeaderProps> = ({ styleProps }) => {
@@ -108,10 +93,7 @@ const EventsGrid: React.FC<EventsGridProps> = ({ events, handleViewEvent, styleP
 };
 
 // Main Container Component
-const MainContainer: React.FC<{
-  children: React.ReactNode;
-  styleProps: StyleProps;
-}> = ({ children, styleProps }) => {
+const MainContainer: React.FC<MainContainerProps> = ({ children, styleProps }) => {
   const { isLight, colours } = styleProps;
   
   return (
@@ -130,12 +112,12 @@ const MainContainer: React.FC<{
 };
 
 // Content Switcher Component
-const ContentSwitcher: React.FC<{
-  loading: boolean;
-  events: EventData[];
-  handleViewEvent: (eventId: number) => void;
-  styleProps: StyleProps;
-}> = ({ loading, events, handleViewEvent, styleProps }) => {
+const ContentSwitcher: React.FC<ContentSwitcherProps> = ({ 
+  loading, 
+  events, 
+  handleViewEvent, 
+  styleProps 
+}) => {
   if (loading) {
     return <LoadingState styleProps={styleProps} />;
   }

@@ -2,57 +2,18 @@ import React, { useState, useEffect } from "react";
 import { apiClient } from "../../api";
 import { useTheme } from "@mui/material/styles";
 import { tokens } from "../../theme/theme";
-
-// Interfaces and Types
-interface Notification {
-  id: number;
-  header: string;
-  body: string;
-  is_read: boolean;
-}
-
-interface StyleProps {
-  isLight: boolean;
-  colours: ReturnType<typeof tokens>;
-}
-
-interface PageContainerProps {
-  children: React.ReactNode;
-  styleProps: StyleProps;
-}
-
-interface HeaderProps {
-  styleProps: StyleProps;
-}
-
-interface LoadingStateProps {
-  styleProps: StyleProps;
-}
-
-interface EmptyStateProps {
-  styleProps: StyleProps;
-}
-
-interface MarkAsReadButtonProps {
-  onMarkAsRead: () => void;
-  styleProps: StyleProps;
-}
-
-interface ReadStatusProps {
-  styleProps: StyleProps;
-}
-
-interface NotificationItemProps {
-  notification: Notification;
-  onMarkAsRead: (id: number) => Promise<void>;
-  styleProps: StyleProps;
-}
-
-interface NotificationListProps {
-  notifications: Notification[];
-  onMarkAsRead: (id: number) => Promise<void>;
-  styleProps: StyleProps;
-}
+import {
+  Notification,
+  StyleProps,
+  PageContainerProps,
+  HeaderProps,
+  LoadingStateProps,
+  EmptyStateProps,
+  MarkAsReadButtonProps,
+  ReadStatusProps,
+  NotificationItemProps,
+  NotificationListProps
+} from "../../types/student/ViewNotifications";
 
 // Component Functions
 const PageContainer: React.FC<PageContainerProps> = ({ children, styleProps }) => {
