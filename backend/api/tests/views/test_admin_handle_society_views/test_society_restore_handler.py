@@ -107,6 +107,84 @@ class TestSocietyRestoreHandler(TestCase):
     def test_restore_failure_invalid_data(self):
         handler = SocietyRestoreHandler()
         invalid_data = "not-a-json-object"
+
         response = handler.handle(invalid_data, self.log_entry)
+
         self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
         self.assertIn("Failed to restore Society", response.data["error"])
+
+    def test_restore_uses_vice_president_as_president_when_president_missing(self):
+        handler = SocietyRestoreHandler()
+
+        data = self.original_data.copy()
+        data["president"] = None  # Simulate missing president
+        data["vice_president"] = self.student2.id
+        self.log_entry.original_data = json.dumps(data)
+        self.log_entry.save()
+
+        response = handler.handle(data, self.log_entry)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        restored_society = Society.objects.get(name="Tech Society")
+        self.assertEqual(restored_society.president.id, self.student2.id)
+
+    def test_restore_sets_admin_if_approved_by_missing(self):
+        handler = SocietyRestoreHandler()
+
+        data = self.original_data.copy()
+        data["approved_by"] = None
+        self.log_entry.original_data = json.dumps(data)
+        self.log_entry.save()
+
+        response = handler.handle(data, self.log_entry)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        restored_society = Society.objects.get(name="Tech Society")
+        self.assertEqual(restored_society.approved_by, self.admin)
+
+    def test_restore_fails_if_president_and_approved_by_missing(self):
+        handler = SocietyRestoreHandler()
+
+        data = self.original_data.copy()
+        data["president"] = None
+        data["approved_by"] = None
+        self.log_entry.original_data = json.dumps(data)
+        self.log_entry.save()
+
+        response = handler.handle(data, self.log_entry)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("Cannot restore society", response.data["error"])
+
+    def test_restore_foreign_keys_and_many_to_many(self):
+        handler = SocietyRestoreHandler()
+        data = json.loads(self.log_entry.original_data)
+
+        response = handler.handle(data, self.log_entry)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        society = Society.objects.get(name="Tech Society")
+        self.assertEqual(society.president, self.student1)
+        self.assertEqual(society.vice_president, self.student2)
+        self.assertIn(self.student1, society.members.all())
+        self.assertIn(self.student2, society.society_members.all())
+        self.assertIn(self.event, society.events.all())
+
+    def test_restore_skips_missing_president_and_approved_by(self):
+        handler = SocietyRestoreHandler()
+
+        data = self.original_data.copy()
+        data["president"] = 9999  # invalid ID
+        data["approved_by"] = 8888  # invalid ID
+        self.log_entry.original_data = json.dumps(data)
+        self.log_entry.save()
+
+        response = handler.handle(data, self.log_entry)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        society = Society.objects.get(name="Tech Society")
+
+        # Fallback logic kicks in
+        self.assertEqual(society.president, self.student2)  # From vice_president
+        self.assertEqual(society.approved_by, self.admin)   # Fallback admin
