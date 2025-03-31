@@ -58,17 +58,17 @@ const AssignSocietyRole: React.FC = () => {
     await apiClient.patch(`/api/society/${societyId}/roles/`, payload);
   };
 
-  const handleRoleAssignment = async (roleKey: string) => {
+  const handleAssignRole = async (roleKey: string): Promise<void> => {
     if (!societyId) {
       setError("Cannot assign role: Society ID is missing");
       return;
     }
-    
-    setLoading(true);
+
     try {
+      setLoading(true);
       await sendRoleAssignment(roleKey);
-      showSuccessMessage(roleKey);
-      navigateBack();
+      alert(`Assigned ${roleKey.replace("_", " ")} role to student ${memberId}`);
+      navigate(-1);
     } catch (err) {
       console.error("Error assigning role", err);
       handleError(err);
@@ -77,71 +77,25 @@ const AssignSocietyRole: React.FC = () => {
     }
   };
 
-  const showSuccessMessage = (roleKey: string) => {
-    alert(`Assigned ${roleKey.replace("_", " ")} role to student ${memberId}`);
-  };
-
-  const navigateBack = () => {
-    navigate(-1);
-  };
-
-  const createHeaderText = () => (
-    <Typography variant="h2" fontWeight="bold" sx={{ color: textColor }}>
-      Assign Society Role
-    </Typography>
-  );
-
-  const createSubtitleText = () => (
-    <Typography variant="body1" sx={{ color: subtitleColor }}>
-      Choose a role to assign to student with ID: {memberId}
-    </Typography>
-  );
-
-  const createHeader = () => (
+  const renderHeader = () => (
     <Box textAlign="center" mb={4}>
-      {createHeaderText()}
-      {createSubtitleText()}
+      <Typography variant="h2" fontWeight="bold" sx={{ color: textColor }}>
+        Assign Society Role
+      </Typography>
+      <Typography variant="body1" sx={{ color: subtitleColor }}>
+        Choose a role to assign to student with ID: {memberId}
+      </Typography>
     </Box>
   );
 
-  const createErrorMessage = () => {
-    if (!error) return null;
-    
-    return (
+  const renderError = () =>
+    error && (
       <Box mb={3} textAlign="center">
         <Typography color={colors.redAccent[500]}>{error}</Typography>
       </Box>
     );
-  };
 
-  const createRoleButton = (role: RoleOption) => (
-    <Button
-      key={role.key}
-      onClick={() => handleRoleAssignment(role.key)}
-      disabled={loading}
-      sx={{
-        backgroundColor: colors.blueAccent[500],
-        color: "#ffffff",
-        py: 1.5,
-        fontWeight: "bold",
-        "&:hover": { backgroundColor: colors.blueAccent[600] },
-        "&.Mui-disabled": {
-          backgroundColor: colors.blueAccent[300],
-          color: "#ffffff",
-        },
-      }}
-    >
-      {role.label}
-    </Button>
-  );
-
-  const createRoleButtonsList = () => (
-    <Stack spacing={2}>
-      {ROLE_OPTIONS.map((role) => createRoleButton(role))}
-    </Stack>
-  );
-
-  const createRoleButtonsContainer = () => (
+  const renderRoleButtons = () => (
     <Paper
       elevation={3}
       sx={{
@@ -154,14 +108,35 @@ const AssignSocietyRole: React.FC = () => {
         boxShadow: 3,
       }}
     >
-      {createRoleButtonsList()}
+      <Stack spacing={2}>
+        {ROLE_OPTIONS.map((role) => (
+          <Button
+            key={role.key}
+            onClick={() => handleAssignRole(role.key)}
+            disabled={loading}
+            sx={{
+              backgroundColor: colors.blueAccent[500],
+              color: "#ffffff",
+              py: 1.5,
+              fontWeight: "bold",
+              "&:hover": { backgroundColor: colors.blueAccent[600] },
+              "&.Mui-disabled": {
+                backgroundColor: colors.blueAccent[300],
+                color: "#ffffff",
+              },
+            }}
+          >
+            {role.label}
+          </Button>
+        ))}
+      </Stack>
     </Paper>
   );
 
-  const createBackButton = () => (
+  const renderBackButton = () => (
     <Box mt={3} textAlign="center">
       <Button
-        onClick={navigateBack}
+        onClick={() => navigate(-1)}
         disabled={loading}
         sx={{
           backgroundColor: colors.grey[500],
@@ -182,17 +157,14 @@ const AssignSocietyRole: React.FC = () => {
     </Box>
   );
 
-  const createLoader = () => {
-    if (!loading) return null;
-    
-    return (
+  const renderLoader = () =>
+    loading && (
       <Box display="flex" justifyContent="center" mt={4}>
         <CircularProgress color="secondary" />
       </Box>
     );
-  };
 
-  const createPageContainer = (children: React.ReactNode) => (
+  return (
     <Box
       minHeight="100vh"
       p={4}
@@ -201,18 +173,12 @@ const AssignSocietyRole: React.FC = () => {
         color: textColor,
       }}
     >
-      {children}
+      {renderHeader()}
+      {renderError()}
+      {renderRoleButtons()}
+      {renderBackButton()}
+      {renderLoader()}
     </Box>
-  );
-
-  return createPageContainer(
-    <>
-      {createHeader()}
-      {createErrorMessage()}
-      {createRoleButtonsContainer()}
-      {createBackButton()}
-      {createLoader()}
-    </>
   );
 };
 

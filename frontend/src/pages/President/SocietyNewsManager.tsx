@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from "react";
+
+
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Box,
@@ -11,6 +13,7 @@ import {
   Select,
   MenuItem,
   FormControl,
+  InputLabel,
   Chip,
   IconButton,
   CircularProgress,
@@ -22,6 +25,7 @@ import {
   Avatar,
   Tooltip,
   Card,
+  CardMedia,
   CardContent,
   CardActions,
 } from "@mui/material";
@@ -43,14 +47,39 @@ import {
   Person as PersonIcon,
   Comment as CommentIcon,
   CloudUpload as CloudUploadIcon,
+  Close as CloseIcon,
 } from "@mui/icons-material";
 import RichTextEditor from "../../components/RichTextEditor";
 import { apiClient } from "../../api";
 import NewsPublicationRequestButton from "../../components/NewsPublicationRequestButton";
-import {
-  NewsPost,
-  SocietyNewsManagerProps,
-} from "../../types/president/SocietyNewsManager";
+
+interface NewsPost {
+  id: number;
+  title: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+  published_at: string | null;
+  status: "Draft" | "PendingApproval" | "Rejected" | "Published" | "Archived";
+  admin_notes?: string | null;
+  is_featured: boolean;
+  is_pinned: boolean;
+  tags: string[];
+  view_count: number;
+  image_url: string | null;
+  attachment_name: string | null;
+  attachment_url: string | null;
+  author_data: {
+    id: number;
+    username: string;
+    full_name: string;
+  };
+  comment_count: number;
+}
+
+interface SocietyNewsManagerProps {
+  onBack?: () => void;
+}
 
 const SocietyNewsManager: React.FC<SocietyNewsManagerProps> = ({ onBack }) => {
   const { societyId } = useParams<{ societyId: string }>();

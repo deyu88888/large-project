@@ -132,161 +132,45 @@ const ReportToAdmin: React.FC = () => {
     details: "",
   });
 
-  const getReportTypes = (): Array<{ value: string; label: string }> => {
-    return [
-      { value: "Misconduct", label: "Misconduct" },
-      { value: "System Issue", label: "System Issue" },
-      { value: "Society Issue", label: "Society Issue" },
-      { value: "Event Issue", label: "Event Issue" },
-      { value: "Other", label: "Other" }
-    ];
-  };
-
-  const getThemeColors = () => {
-    return {
-      backgroundColor: theme.palette.mode === "dark" ? "#141b2d" : "#fcfcfc",
-      textColor: theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d",
-      formBackgroundColor: theme.palette.mode === "dark" ? colors.primary[500] : "#ffffff",
-      inputBackgroundColor: theme.palette.mode === "dark" ? colors.primary[600] : "#ffffff",
-      selectBackgroundColor: theme.palette.mode === "dark" ? colors.grey[300] : "#ffffff",
-      buttonColor: colors.redAccent[500],
-      buttonHoverColor: colors.redAccent[600]
-    };
-  };
-
-  const themeColors = getThemeColors();
-  const reportTypes = getReportTypes();
-
-  const updateFormField = (name: string, value: string): void => {
-    setFormData(prevData => ({ ...prevData, [name]: value }));
-  };
-
+  // Handle form field changes
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | SelectChangeEvent
   ): void => {
-    const { name, value } = e.target;
-    updateFormField(name, String(value));
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const showSuccessMessage = (): void => {
+  // Submit form data to API
+  const submitReport = async (formData: ReportFormData): Promise<void> => {
+    await apiClient.post("/api/reports/to-admin/", formData);
     alert("Report submitted successfully!");
-  };
-
-  const navigateBack = (): void => {
     navigate(-1);
   };
 
-  const sendReportToAPI = async (reportData: ReportFormData): Promise<void> => {
-    await apiClient.post("/api/reports/to-admin/", reportData);
-  };
-
-  const handleSubmitSuccess = async (): Promise<void> => {
-    showSuccessMessage();
-    navigateBack();
-  };
-
-  const logSubmitError = (error: unknown): void => {
-    console.error("Error submitting report:", error);
-  };
-
-  const submitReport = async (reportData: ReportFormData): Promise<void> => {
+  // Handle form submission
+  const handleSubmit = async (e: React.FormEvent): Promise<void> => {
+    e.preventDefault();
     try {
-      await sendReportToAPI(reportData);
-      await handleSubmitSuccess();
+      await submitReport(formData);
     } catch (error) {
-      logSubmitError(error);
+      console.error("Error submitting report:", error);
     }
   };
 
-  const preventDefaultFormBehavior = (e: React.FormEvent): void => {
-    e.preventDefault();
-  };
+  // Theme-related variables
+  const backgroundColor = theme.palette.mode === "dark" ? "#141b2d" : "#fcfcfc";
+  const textColor = theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d";
+  const formBackgroundColor = theme.palette.mode === "dark" ? colors.primary[500] : "#ffffff";
+  const inputBackgroundColor = theme.palette.mode === "dark" ? colors.primary[600] : "#ffffff";
+  const selectBackgroundColor = theme.palette.mode === "dark" ? colors.grey[300] : "#ffffff";
 
-  const handleSubmit = async (e: React.FormEvent): Promise<void> => {
-    preventDefaultFormBehavior(e);
-    await submitReport(formData);
-  };
-
-  const createTypeSection = (): React.ReactElement => {
-    return (
-      <>
-        <FieldLabel label="Type of Report" textColor={themeColors.textColor} />
-        <ReportTypeSelect 
-          value={formData.report_type}
-          onChange={handleChange}
-          selectBackgroundColor={themeColors.selectBackgroundColor}
-          reportTypes={reportTypes}
-        />
-      </>
-    );
-  };
-
-  const createSubjectSection = (): React.ReactElement => {
-    return (
-      <>
-        <FieldLabel label="Subject" textColor={themeColors.textColor} marginTop={3} />
-        <TextInputField
-          name="subject"
-          value={formData.subject}
-          onChange={handleChange}
-          label="Subject"
-          backgroundColor={themeColors.inputBackgroundColor}
-          textColor={themeColors.textColor}
-        />
-      </>
-    );
-  };
-
-  const createDetailsSection = (): React.ReactElement => {
-    return (
-      <>
-        <FieldLabel label="Report Details" textColor={themeColors.textColor} marginTop={3} />
-        <TextInputField
-          name="details"
-          value={formData.details}
-          onChange={handleChange}
-          label="Report Details"
-          multiline={true}
-          rows={5}
-          backgroundColor={themeColors.inputBackgroundColor}
-          textColor={themeColors.textColor}
-        />
-      </>
-    );
-  };
-
-  const createFormContent = (): React.ReactElement => {
-    return (
-      <>
-        {createTypeSection()}
-        {createSubjectSection()}
-        {createDetailsSection()}
-        <SubmitButton 
-          buttonColor={themeColors.buttonColor} 
-          hoverColor={themeColors.buttonHoverColor} 
-        />
-      </>
-    );
-  };
-
-  const createReportForm = (): React.ReactElement => {
-    return (
-      <Box
-        component="form"
-        onSubmit={handleSubmit}
-        sx={{
-          maxWidth: "600px",
-          width: "100%",
-          backgroundColor: themeColors.formBackgroundColor,
-          p: 4,
-          borderRadius: "8px",
-          boxShadow: 3,
-        }}
-      >
-        {createFormContent()}
-      </Box>
-    );
-  };
+  // Report type options
+  const reportTypes = [
+    { value: "Misconduct", label: "Misconduct" },
+    { value: "System Issue", label: "System Issue" },
+    { value: "Society Issue", label: "Society Issue" },
+    { value: "Event Issue", label: "Event Issue" },
+    { value: "Other", label: "Other" }
+  ];
 
   return (
     <Box
@@ -296,12 +180,59 @@ const ReportToAdmin: React.FC = () => {
       flexDirection="column"
       alignItems="center"
       sx={{
-        backgroundColor: themeColors.backgroundColor,
-        color: themeColors.textColor,
+        backgroundColor,
+        color: textColor,
       }}
     >
-      <PageHeader textColor={themeColors.textColor} />
-      {createReportForm()}
+      <PageHeader textColor={textColor} />
+
+      <Box
+        component="form"
+        onSubmit={handleSubmit}
+        sx={{
+          maxWidth: "600px",
+          width: "100%",
+          backgroundColor: formBackgroundColor,
+          p: 4,
+          borderRadius: "8px",
+          boxShadow: 3,
+        }}
+      >
+        <FieldLabel label="Type of Report" textColor={textColor} />
+        <ReportTypeSelect 
+          value={formData.report_type}
+          onChange={handleChange}
+          selectBackgroundColor={selectBackgroundColor}
+          reportTypes={reportTypes}
+        />
+
+        <FieldLabel label="Subject" textColor={textColor} marginTop={3} />
+        <TextInputField
+          name="subject"
+          value={formData.subject}
+          onChange={handleChange}
+          label="Subject"
+          backgroundColor={inputBackgroundColor}
+          textColor={textColor}
+        />
+
+        <FieldLabel label="Report Details" textColor={textColor} marginTop={3} />
+        <TextInputField
+          name="details"
+          value={formData.details}
+          onChange={handleChange}
+          label="Report Details"
+          multiline={true}
+          rows={5}
+          backgroundColor={inputBackgroundColor}
+          textColor={textColor}
+        />
+
+        <SubmitButton 
+          buttonColor={colors.redAccent[500]} 
+          hoverColor={colors.redAccent[600]} 
+        />
+      </Box>
     </Box>
   );
 };
