@@ -14,7 +14,7 @@ from api.serializers import (
     BroadcastSerializer, NewsPublicationRequestSerializer
 )
 from api.views_files.view_utility import (
-    has_society_management_permission, standard_error_response,
+    get_admin_if_user_is_admin, get_object_by_id_or_name, has_society_management_permission, standard_error_response,
     mark_previous_requests_superseded, cancel_pending_requests
     )
 
@@ -126,9 +126,8 @@ class NewsPublicationRequestView(APIView):
                 status.HTTP_400_BAD_REQUEST
             )
 
-        try:
-            news_post = SocietyNews.objects.get(id=news_post_id)
-        except SocietyNews.DoesNotExist:
+        news_post = get_object_by_id_or_name(SocietyNews, news_post_id)
+        if not news_post:
             return standard_error_response(
                 "News post not found",
                 status.HTTP_404_NOT_FOUND
@@ -206,11 +205,9 @@ class AdminNewsApprovalView(APIView):
 
     def get(self, request):
         """Get all pending news publication requests (admins only)"""
-        if not request.user.is_admin():
-            return standard_error_response(
-                "Only admins can view pending publication requests",
-                status.HTTP_403_FORBIDDEN
-            )
+        admin, error = get_admin_if_user_is_admin(request.user, "approve or reject publication requests")
+        if error:
+            return error
         
         # Get ALL pending requests without filtering by news post status
         requests_qs = NewsPublicationRequest.objects.filter(
@@ -235,20 +232,17 @@ class AdminNewsApprovalView(APIView):
 
     def put(self, request, request_id):
         """Approve or reject a news publication request"""
-        if not request.user.is_admin():
-            return standard_error_response(
-                "Only admins can approve or reject publication requests",
-                status.HTTP_403_FORBIDDEN
-            )
+        admin, error = get_admin_if_user_is_admin(request.user, "approve or reject publication requests")
+        if error:
+            return error
         
-        try:
-            publication_request = NewsPublicationRequest.objects.get(id=request_id)
-        except NewsPublicationRequest.DoesNotExist:
+        publication_request = get_object_by_id_or_name(NewsPublicationRequest, request_id)
+        if not publication_request:
             return standard_error_response(
                 "Publication request not found",
                 status.HTTP_404_NOT_FOUND
             )
-        
+                
         action = request.data.get('status')
         if action not in ['Approved', 'Rejected']:
             return standard_error_response(

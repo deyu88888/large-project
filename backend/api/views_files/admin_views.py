@@ -12,9 +12,10 @@ from api.serializers import AdminReportRequestSerializer, EventSerializer, \
     SocietySerializer, StudentSerializer, UserSerializer, AdminSerializer,\
     ActivityLogSerializer, ReportReplySerializer, SocietyRequestSerializer, \
     EventRequestSerializer
-from api.views_files.view_utility import get_admin_if_user_is_admin
+from api.views import get_admin_if_user_is_admin
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
+from api.views import AdminBaseView
 
 class AdminEventView(APIView):
     """
@@ -184,26 +185,8 @@ class AdminManageSocietyDetailsView(APIView):
         if not society:
             return Response({"error": "Society not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        original_data = {}
-
-        for field in society._meta.fields:
-            field_name = field.name
-            if field_name not in ['id', 'user_ptr']:  # Skip certain fields
-                value = getattr(society, field_name)
-
-                if isinstance(value, (date, datetime)):
-                    original_data[field_name] = value.isoformat()
-                elif hasattr(value, 'id') and not isinstance(value, (list, dict)):
-                    original_data[field_name] = value.id
-                elif hasattr(value, 'url') and hasattr(value, 'name'):
-                    original_data[field_name] = value.name if value.name else None
-                else:
-                    original_data[field_name] = value
-
-        for field in society._meta.many_to_many:
-            field_name = field.name
-            related_ids = [item.id for item in getattr(society, field_name).all()]
-            original_data[field_name] = related_ids
+        admin_base = AdminBaseView()
+        original_data = admin_base.serialize_model_data(society)
 
         try:
             original_data_json = json.dumps(original_data)
@@ -272,32 +255,8 @@ class AdminManageEventDetailsView(APIView):
         if not event:
             return Response({"error": "Event not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        original_data = {}
-
-        for field in event._meta.fields:
-            field_name = field.name
-            if field_name not in ['id', 'user_ptr']:  # Skip certain fields
-                value = getattr(event, field_name)
-
-                if isinstance(value, datetime):
-                    original_data[field_name] = value.isoformat()
-                elif isinstance(value, date) and not isinstance(value, datetime):
-                    original_data[field_name] = value.isoformat()
-                elif isinstance(value, time):
-                    original_data[field_name] = value.strftime('%H:%M:%S')
-                elif isinstance(value, timedelta):
-                    original_data[field_name] = value.total_seconds()
-                elif hasattr(value, 'id') and not isinstance(value, (list, dict)):
-                    original_data[field_name] = value.id
-                elif hasattr(value, 'url') and hasattr(value, 'name'):
-                    original_data[field_name] = value.name if value.name else None
-                else:
-                    original_data[field_name] = value
-
-        for field in event._meta.many_to_many:
-            field_name = field.name
-            related_ids = [item.id for item in getattr(event, field_name).all()]
-            original_data[field_name] = related_ids
+        admin_base = AdminBaseView()
+        original_data = admin_base.serialize_model_data(event)
 
         try:
             original_data_json = json.dumps(original_data)
@@ -369,32 +328,9 @@ class AdminManageAdminDetailsView(APIView):
         admin = User.objects.filter(id=admin_id, role="admin").first()
         if not admin:
             return Response({"error": "Admin user not found."}, status=status.HTTP_404_NOT_FOUND)
-        original_data = {}
         
-        for field in admin._meta.fields:
-            field_name = field.name
-            if field_name not in ['id', 'password']:
-                value = getattr(admin, field_name)
-                
-                if isinstance(value, datetime):
-                    original_data[field_name] = value.isoformat()
-                elif isinstance(value, date) and not isinstance(value, datetime):
-                    original_data[field_name] = value.isoformat()
-                elif isinstance(value, time):
-                    original_data[field_name] = value.strftime('%H:%M:%S')
-                elif isinstance(value, timedelta):
-                    original_data[field_name] = value.total_seconds()
-                elif hasattr(value, 'id') and not isinstance(value, (list, dict)):
-                    original_data[field_name] = value.id
-                elif hasattr(value, 'url') and hasattr(value, 'name'):
-                    original_data[field_name] = value.name if value.name else None
-                else:
-                    original_data[field_name] = value
-        
-        for field in admin._meta.many_to_many:
-            field_name = field.name
-            related_ids = [item.id for item in getattr(admin, field_name).all()]
-            original_data[field_name] = related_ids
+        admin_base = AdminBaseView()
+        original_data = admin_base.serialize_model_data(admin)
         
         try:
             original_data_json = json.dumps(original_data)

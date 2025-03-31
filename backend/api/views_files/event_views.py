@@ -59,10 +59,9 @@ class RSVPEventView(APIView):
         RSVP for an event.
         """
         event_id = request.data.get('event_id')
-        try:
-            event = Event.objects.get(id=event_id)
-        except Event.DoesNotExist:
-            return Response({"error": "Event not found."}, status=status.HTTP_404_NOT_FOUND)
+        event, error = get_event_if_exists(event_id)
+        if error:
+            return error
 
         serializer = RSVPEventSerializer(instance=event, data={}, context={
                                          'request': request, 'action': 'RSVP'})
@@ -76,10 +75,9 @@ class RSVPEventView(APIView):
         Cancel RSVP for an event.
         """
         event_id = request.data.get('event_id')
-        try:
-            event = Event.objects.get(id=event_id)
-        except Event.DoesNotExist:
-            return Response({"error": "Event not found."}, status=status.HTTP_404_NOT_FOUND)
+        event, error = get_event_if_exists(event_id)
+        if error:
+            return error
 
         serializer = RSVPEventSerializer(instance=event, data={}, context={
                                          'request': request, 'action': 'CANCEL'})
