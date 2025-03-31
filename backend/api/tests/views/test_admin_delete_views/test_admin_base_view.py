@@ -97,39 +97,38 @@ class TestAdminBaseView(TestCase):
         self.assertEqual(self.admin_view.model_mapping['Admin'], User)
 
     def test_serialize_model_data_with_student(self):
-        """Test serialization of Student model data."""
-        
-        
-        with patch.object(self.admin_view, 'serialize_model_data') as mock_serialize:
-            mock_serialize.return_value = {
-                'username': 'student_user',
-                'email': 'student@test.com',
-                'first_name': 'Student',
-                'last_name': 'User',
-                'major': 'Computer Science',
-                'status': 'Approved',
-                'societies': [],
-                'attended_events': [],
-                'president_of': None
-            }
-            
-            serialized_data = self.admin_view.serialize_model_data(self.student_user)
-            
-            
-            mock_serialize.assert_called_once_with(self.student_user)
-            
-            
-            self.assertEqual(serialized_data['username'], 'student_user')
-            self.assertEqual(serialized_data['email'], 'student@test.com')
-            self.assertEqual(serialized_data['first_name'], 'Student')
-            self.assertEqual(serialized_data['last_name'], 'User')
-            self.assertEqual(serialized_data['major'], 'Computer Science')
-            self.assertEqual(serialized_data['status'], 'Approved')
-            
-            
-            self.assertTrue(isinstance(serialized_data['societies'], list))
-            self.assertTrue(isinstance(serialized_data['attended_events'], list))
+        """Test serialization of Student model data using real model instance."""
 
+        user = User.objects.create_user(
+            username="student_user",
+            email="student@test.com",
+            password="testpass123",
+            first_name="Student",
+            last_name="User"
+        )
+
+        student_user = Student.objects.create(
+            id=user.id,
+            username=user.username,
+            email=user.email,
+            first_name=user.first_name,
+            last_name=user.last_name,
+            major="Computer Science",
+            status="Approved"
+        )
+        student_user.save_base(raw=True)
+        serialized_data = self.admin_view.serialize_model_data(student_user)
+
+        self.assertEqual(serialized_data['username'], 'student_user')
+        self.assertEqual(serialized_data['email'], 'student@test.com')
+        self.assertEqual(serialized_data['first_name'], 'Student')
+        self.assertEqual(serialized_data['last_name'], 'User')
+        self.assertEqual(serialized_data['major'], 'Computer Science')
+        self.assertEqual(serialized_data['status'], 'Approved')
+        self.assertIsInstance(serialized_data['societies'], list)
+        self.assertIsInstance(serialized_data['attended_events'], list)
+
+            
     def test_serialize_model_data_with_society(self):
         """Test serialization of Society model data."""
         
@@ -356,3 +355,9 @@ class TestAdminBaseView(TestCase):
         self.assertEqual(result['float_field'], 123.456)
         self.assertEqual(result['bool_field'], True)
         self.assertEqual(result['str_field'], 'test string')
+
+    @patch('api.views_files.admin_delete_views.model_to_dict')
+    def test_model_to_dict_called(self, mock_model_to_dict):
+        mock_model_to_dict.return_value = {'mock': 'data'}
+        result = self.admin_view.serialize_model_data(self.student_user)
+        mock_model_to_dict.assert_called_once_with(self.student_user)
