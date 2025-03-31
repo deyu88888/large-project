@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, Params } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -19,34 +19,45 @@ import { useTheme } from "@mui/material/styles";
 import { apiClient } from "../../api";
 import { tokens } from "../../theme/theme";
 import { Event } from "../../types/event/event";
+import {
+  FilterType,
+  FilterOption,
+  ThemeStyles
+} from "../../types/president/ManageSocietyEvents";
 
-type FilterType = "upcoming" | "previous" | "pending" | "rejected";
-
-interface FilterOption {
-  label: string;
-  value: FilterType;
-  color: string;
-}
-
-const formatDate = (dateString: string): string => {
-  const options: Intl.DateTimeFormatOptions = {
+const getDateOptions = (): Intl.DateTimeFormatOptions => {
+  return {
     weekday: "long",
     year: "numeric",
     month: "long",
     day: "numeric",
   };
+};
+
+const formatDate = (dateString: string): string => {
+  const options = getDateOptions();
   return new Date(dateString).toLocaleDateString(undefined, options);
 };
 
-const formatTime = (timeString: string): string => {
+const getTimeOptions = (): Intl.DateTimeFormatOptions => {
+  return {
+    hour: "2-digit",
+    minute: "2-digit",
+  };
+};
+
+const parseTimeString = (timeString: string): Date => {
   const [hours, minutes] = timeString.split(":");
   const date = new Date();
   date.setHours(parseInt(hours, 10));
   date.setMinutes(parseInt(minutes, 10));
-  return date.toLocaleTimeString(undefined, {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return date;
+};
+
+const formatTime = (timeString: string): string => {
+  const parsedTime = parseTimeString(timeString);
+  const options = getTimeOptions();
+  return parsedTime.toLocaleTimeString(undefined, options);
 };
 
 const isFilterType = (value: unknown): value is FilterType => {
@@ -55,31 +66,54 @@ const isFilterType = (value: unknown): value is FilterType => {
   );
 };
 
+const getUpcomingEvents = (events: Event[], societyId: number): Event[] => {
+  const currentDate = new Date();
+  return events
+    .filter((event) => event.hosted_by === societyId)
+    .filter(
+      (event) =>
+        new Date(`${event.date}T${event.start_time}`) > currentDate &&
+        event.status === "Approved"
+    );
+};
+
+const getPreviousEvents = (events: Event[], societyId: number): Event[] => {
+  const currentDate = new Date();
+  return events
+    .filter((event) => event.hosted_by === societyId)
+    .filter(
+      (event) =>
+        new Date(`${event.date}T${event.start_time}`) < currentDate &&
+        event.status === "Approved"
+    );
+};
+
+const getPendingEvents = (events: Event[], societyId: number): Event[] => {
+  return events
+    .filter((event) => event.hosted_by === societyId)
+    .filter((event) => event.status === "Pending");
+};
+
+const getRejectedEvents = (events: Event[], societyId: number): Event[] => {
+  return events
+    .filter((event) => event.hosted_by === societyId)
+    .filter((event) => event.status === "Rejected");
+};
+
 const getFilteredEvents = (
   events: Event[],
   filter: FilterType,
   societyId: number
 ): Event[] => {
-  const currentDate = new Date();
-  const filtered = events.filter((event) => event.hosted_by === societyId);
-
   switch (filter) {
     case "upcoming":
-      return filtered.filter(
-        (event) =>
-          new Date(`${event.date}T${event.start_time}`) > currentDate &&
-          event.status === "Approved"
-      );
+      return getUpcomingEvents(events, societyId);
     case "previous":
-      return filtered.filter(
-        (event) =>
-          new Date(`${event.date}T${event.start_time}`) < currentDate &&
-          event.status === "Approved"
-      );
+      return getPreviousEvents(events, societyId);
     case "pending":
-      return filtered.filter((event) => event.status === "Pending");
+      return getPendingEvents(events, societyId);
     case "rejected":
-      return filtered.filter((event) => event.status === "Rejected");
+      return getRejectedEvents(events, societyId);
     default:
       return [];
   }
@@ -89,10 +123,7 @@ export default function ManageSocietyEvents() {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const navigate = useNavigate();
-  const { societyId, filter: filterParam } = useParams<{
-    societyId: string;
-    filter?: string;
-  }>();
+  const { societyId, filter: filterParam } = useParams<Params>();
 
   const numericSocietyId = societyId ? parseInt(societyId, 10) : null;
   const [filter, setFilter] = useState<FilterType>(
@@ -113,108 +144,196 @@ export default function ManageSocietyEvents() {
     severity: "success",
   });
 
-  const filterOptions: FilterOption[] = [
-    { label: "Upcoming", value: "upcoming", color: colors.blueAccent[500] },
-    { label: "Previous", value: "previous", color: colors.greenAccent[500] },
-    {
-      label: "Pending Approval",
-      value: "pending",
-      color: colors.redAccent[500],
-    },
-    { label: "Rejected", value: "rejected", color: colors.grey[500] },
-  ];
+  const getThemeStyles = (): ThemeStyles => {
+    return {
+      backgroundColor: theme.palette.mode === "dark" ? "#141b2d" : "#fcfcfc",
+      textColor: theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d",
+      paperBackgroundColor: theme.palette.mode === "dark" ? colors.primary[500] : "#ffffff",
+      paperHoverBackgroundColor: theme.palette.mode === "dark" ? colors.primary[600] : "#f5f5f5"
+    };
+  };
+
+  const themeStyles = getThemeStyles();
+
+  const getFilterOptions = (): FilterOption[] => {
+    return [
+      { label: "Upcoming", value: "upcoming", color: colors.blueAccent[500] },
+      { label: "Previous", value: "previous", color: colors.greenAccent[500] },
+      {
+        label: "Pending Approval",
+        value: "pending",
+        color: colors.redAccent[500],
+      },
+      { label: "Rejected", value: "rejected", color: colors.grey[500] },
+    ];
+  };
+
+  const filterOptions = getFilterOptions();
+
+  const navigateToFilteredPage = () => {
+    if (!societyId || filter === filterParam) return;
+    
+    navigate(`/president-page/${societyId}/manage-society-events/${filter}`, {
+      replace: true,
+    });
+  };
 
   useEffect(() => {
-    if (!societyId) return;
-    if (filter !== filterParam) {
-      navigate(`/president-page/${societyId}/manage-society-events/${filter}`, {
-        replace: true,
-      });
-    }
-  }, [filter, filterParam, societyId, navigate]);
+    navigateToFilteredPage();
+  }, [filter, filterParam, societyId]);
 
-  useEffect(() => {
+  const validateSocietyId = (): boolean => {
     if (!numericSocietyId) {
       setError("Invalid society ID");
       setLoading(false);
-      return;
+      return false;
     }
-    fetchEvents(numericSocietyId);
-  }, [numericSocietyId, filter]);
+    return true;
+  };
+
+  const startLoading = () => {
+    setLoading(true);
+    setError(null);
+  };
+
+  const endLoading = () => {
+    setLoading(false);
+  };
+
+  const processEventsResponse = (data: Event[], societyId: number) => {
+    setEvents(getFilteredEvents(data, filter, societyId));
+  };
+
+  const handleFetchError = (err: unknown) => {
+    setError(`Failed to load ${filter} events. ${err}`);
+  };
 
   const fetchEvents = async (id: number) => {
+    startLoading();
     try {
-      setLoading(true);
-      setError(null);
       const response = await apiClient.get("/api/events/sorted/", {
         params: { society_id: id },
       });
-      setEvents(getFilteredEvents(response.data, filter, id));
+      processEventsResponse(response.data, id);
     } catch (error) {
-      setError(`Failed to load ${filter} events. ${error}`);
+      handleFetchError(error);
     } finally {
-      setLoading(false);
+      endLoading();
     }
   };
 
-  const handleEdit = (eventId: number) =>
-    navigate(`/president-page/${societyId}/edit-event/${eventId}`);
+  const initializeEventsFetch = () => {
+    if (!validateSocietyId()) return;
+    fetchEvents(numericSocietyId);
+  };
 
-  const confirmDelete = (eventId: number) => {
+  useEffect(() => {
+    initializeEventsFetch();
+  }, [numericSocietyId, filter]);
+
+  const navigateToEditEvent = (eventId: number) => {
+    navigate(`/president-page/${societyId}/edit-event/${eventId}`);
+  };
+
+  const handleEdit = (eventId: number) => {
+    navigateToEditEvent(eventId);
+  };
+
+  const openDeleteDialog = (eventId: number) => {
     setSelectedEventId(eventId);
     setOpenDialog(true);
   };
 
+  const confirmDelete = (eventId: number) => {
+    openDeleteDialog(eventId);
+  };
+
+  const closeDeleteDialog = () => {
+    setOpenDialog(false);
+    setSelectedEventId(null);
+  };
+
+  const removeEventFromList = (eventId: number) => {
+    setEvents((prev) => prev.filter((e) => e.id !== eventId));
+  };
+
+  const showSuccessSnackbar = (message: string) => {
+    setSnackbar({
+      open: true,
+      message,
+      severity: "success",
+    });
+  };
+
+  const showErrorSnackbar = (message: string) => {
+    setSnackbar({
+      open: true,
+      message,
+      severity: "error",
+    });
+  };
+
+  const deleteEvent = async (eventId: number) => {
+    await apiClient.delete(`/api/events/${eventId}/manage/`);
+  };
+
   const handleConfirmDelete = async () => {
     if (selectedEventId === null) return;
+    
     try {
-      await apiClient.delete(`/api/events/${selectedEventId}/manage/`);
-      setEvents((prev) => prev.filter((e) => e.id !== selectedEventId));
-      setSnackbar({
-        open: true,
-        message: "Event deleted successfully.",
-        severity: "success",
-      });
+      await deleteEvent(selectedEventId);
+      removeEventFromList(selectedEventId);
+      showSuccessSnackbar("Event deleted successfully.");
     } catch {
-      setSnackbar({
-        open: true,
-        message: "Failed to delete event.",
-        severity: "error",
-      });
+      showErrorSnackbar("Failed to delete event.");
     } finally {
-      setOpenDialog(false);
-      setSelectedEventId(null);
+      closeDeleteDialog();
     }
+  };
+
+  const isEventInFuture = (event: Event): boolean => {
+    return new Date(`${event.date}T${event.start_time}`) > new Date();
   };
 
   const isEditable = (event: Event): boolean => {
     if (event.status === "Pending" || event.status === "Rejected") return true;
-    return new Date(`${event.date}T${event.start_time}`) > new Date();
+    return isEventInFuture(event);
   };
 
-  const backgroundColor = theme.palette.mode === "dark" ? "#141b2d" : "#fcfcfc";
-  const textColor =
-    theme.palette.mode === "dark" ? colors.grey[100] : "#141b2d";
-  const paperBackgroundColor =
-    theme.palette.mode === "dark" ? colors.primary[500] : "#ffffff";
-  const paperHoverBackgroundColor =
-    theme.palette.mode === "dark" ? colors.primary[600] : "#f5f5f5";
+  const closeSnackbar = () => {
+    setSnackbar((prev) => ({ ...prev, open: false }));
+  };
 
-  return (
-    <Box minHeight="100vh" p={4} sx={{ backgroundColor, color: textColor }}>
+  const navigateToCreateEvent = () => {
+    navigate(`/president-page/${societyId}/create-event`);
+  };
+
+  const capitalizeFirstLetter = (str: string): string => {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  };
+
+  const getFilterTitle = (): string => {
+    return capitalizeFirstLetter(filter);
+  };
+
+  const createPageTitle = () => {
+    return (
       <Box textAlign="center" mb={4}>
-        <Typography variant="h2" fontWeight="bold" sx={{ color: textColor }}>
+        <Typography variant="h2" fontWeight="bold" sx={{ color: themeStyles.textColor }}>
           Manage Society Events
         </Typography>
         <Typography variant="h6" sx={{ color: colors.grey[500] }}>
-          {filter.charAt(0).toUpperCase() + filter.slice(1)} events for Society{" "}
-          {societyId}
+          {getFilterTitle()} events for Society {societyId}
         </Typography>
       </Box>
+    );
+  };
 
+  const createNewEventButton = () => {
+    return (
       <Box display="flex" justifyContent="center" mb={3}>
         <Button
-          onClick={() => navigate(`/president-page/${societyId}/create-event`)}
+          onClick={navigateToCreateEvent}
           sx={{
             backgroundColor: colors.blueAccent[500],
             color: theme.palette.mode === "dark" ? "#141b2d" : "#ffffff",
@@ -228,121 +347,204 @@ export default function ManageSocietyEvents() {
           Create a New Event
         </Button>
       </Box>
+    );
+  };
 
+  const handleFilterChange = (_: React.MouseEvent<HTMLElement>, newFilter: FilterType) => {
+    if (newFilter) setFilter(newFilter);
+  };
+
+  const createToggleButton = (option: FilterOption) => {
+    return (
+      <ToggleButton
+        key={option.value}
+        value={option.value}
+        sx={{
+          backgroundColor: filter === option.value ? option.color : colors.grey[600],
+          color: theme.palette.mode === "dark" ? "#ffffff" : "#141b2d",
+          fontWeight: "bold",
+          "&:hover": { backgroundColor: option.color, opacity: 0.8 },
+          transition: "0.3s",
+        }}
+      >
+        {option.label}
+      </ToggleButton>
+    );
+  };
+
+  const createFilterToggleGroup = () => {
+    return (
       <Box display="flex" justifyContent="center" mb={4}>
         <ToggleButtonGroup
           value={filter}
           exclusive
-          onChange={(_, newFilter) => newFilter && setFilter(newFilter)}
+          onChange={handleFilterChange}
           sx={{ backgroundColor: colors.primary[500], borderRadius: "8px" }}
         >
-          {filterOptions.map(({ label, value, color }) => (
-            <ToggleButton
-              key={value}
-              value={value}
-              sx={{
-                backgroundColor: filter === value ? color : colors.grey[600],
-                color: theme.palette.mode === "dark" ? "#ffffff" : "#141b2d",
-                fontWeight: "bold",
-                "&:hover": { backgroundColor: color, opacity: 0.8 },
-                transition: "0.3s",
-              }}
-            >
-              {label}
-            </ToggleButton>
-          ))}
+          {filterOptions.map(createToggleButton)}
         </ToggleButtonGroup>
       </Box>
+    );
+  };
 
-      {loading ? (
-        <Box display="flex" justifyContent="center">
-          <CircularProgress color="secondary" />
-        </Box>
-      ) : error ? (
-        <Typography color={colors.redAccent[500]} textAlign="center">
-          {error}
+  const createLoadingIndicator = () => {
+    return (
+      <Box display="flex" justifyContent="center">
+        <CircularProgress color="secondary" />
+      </Box>
+    );
+  };
+
+  const createErrorMessage = () => {
+    return (
+      <Typography color={colors.redAccent[500]} textAlign="center">
+        {error}
+      </Typography>
+    );
+  };
+
+  const createEmptyStateMessage = () => {
+    return (
+      <Typography textAlign="center" color={colors.grey[500]}>
+        No {filter} events found for society {societyId}.
+      </Typography>
+    );
+  };
+
+  const createEventButtons = (event: Event) => {
+    if (!isEditable(event)) return null;
+    
+    return (
+      <Box mt={2} display="flex" gap={2}>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={() => handleEdit(event.id)}
+        >
+          Edit
+        </Button>
+        <Button
+          variant="contained"
+          color="error"
+          onClick={() => confirmDelete(event.id)}
+        >
+          Delete
+        </Button>
+      </Box>
+    );
+  };
+
+  const createEventCard = (event: Event) => {
+    return (
+      <Paper
+        key={event.id}
+        elevation={3}
+        sx={{
+          p: 3,
+          mb: 2,
+          backgroundColor: themeStyles.paperBackgroundColor,
+          color: themeStyles.textColor,
+          borderRadius: "8px",
+          boxShadow: 3,
+          transition: "0.3s",
+          "&:hover": { backgroundColor: themeStyles.paperHoverBackgroundColor },
+        }}
+      >
+        <Typography variant="h5" fontWeight="bold">
+          {event.title}
         </Typography>
-      ) : events.length === 0 ? (
-        <Typography textAlign="center" color={colors.grey[500]}>
-          No {filter} events found for society {societyId}.
-        </Typography>
-      ) : (
-        <Box maxWidth="800px" mx="auto">
-          {events.map((event) => (
-            <Paper
-              key={event.id}
-              elevation={3}
-              sx={{
-                p: 3,
-                mb: 2,
-                backgroundColor: paperBackgroundColor,
-                color: textColor,
-                borderRadius: "8px",
-                boxShadow: 3,
-                transition: "0.3s",
-                "&:hover": { backgroundColor: paperHoverBackgroundColor },
-              }}
-            >
-              <Typography variant="h5" fontWeight="bold">
-                {event.title}
-              </Typography>
-              <Typography>Date: {formatDate(event.date)}</Typography>
-              <Typography>Time: {formatTime(event.start_time)}</Typography>
-              <Typography>Location: {event.location}</Typography>
-              <Typography>Status: {event.status}</Typography>
+        <Typography>Date: {formatDate(event.date)}</Typography>
+        <Typography>Time: {formatTime(event.start_time)}</Typography>
+        <Typography>Location: {event.location}</Typography>
+        <Typography>Status: {event.status}</Typography>
 
-              {isEditable(event) && (
-                <Box mt={2} display="flex" gap={2}>
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={() => handleEdit(event.id)}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    variant="contained"
-                    color="error"
-                    onClick={() => confirmDelete(event.id)}
-                  >
-                    Delete
-                  </Button>
-                </Box>
-              )}
-            </Paper>
-          ))}
-        </Box>
-      )}
+        {createEventButtons(event)}
+      </Paper>
+    );
+  };
 
-      <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
+  const createEventsList = () => {
+    return (
+      <Box maxWidth="800px" mx="auto">
+        {events.map(createEventCard)}
+      </Box>
+    );
+  };
+
+  const createDialogActions = () => {
+    return (
+      <DialogActions>
+        <Button onClick={closeDeleteDialog} color="secondary">
+          Cancel
+        </Button>
+        <Button onClick={handleConfirmDelete} color="error">
+          Delete
+        </Button>
+      </DialogActions>
+    );
+  };
+
+  const createConfirmationDialog = () => {
+    return (
+      <Dialog open={openDialog} onClose={closeDeleteDialog}>
         <DialogTitle>Confirm Deletion</DialogTitle>
         <DialogContent>
           <Typography>Are you sure you want to delete this event?</Typography>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenDialog(false)} color="secondary">
-            Cancel
-          </Button>
-          <Button onClick={handleConfirmDelete} color="error">
-            Delete
-          </Button>
-        </DialogActions>
+        {createDialogActions()}
       </Dialog>
+    );
+  };
 
+  const createSnackbarAlert = () => {
+    return (
+      <Alert
+        severity={snackbar.severity}
+        variant="filled"
+        onClose={closeSnackbar}
+      >
+        {snackbar.message}
+      </Alert>
+    );
+  };
+
+  const createSnackbar = () => {
+    return (
       <Snackbar
         open={snackbar.open}
         autoHideDuration={3000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        onClose={closeSnackbar}
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
-        <Alert
-          severity={snackbar.severity}
-          variant="filled"
-          onClose={() => setSnackbar({ ...snackbar, open: false })}
-        >
-          {snackbar.message}
-        </Alert>
+        {createSnackbarAlert()}
       </Snackbar>
+    );
+  };
+
+  const renderMainContent = () => {
+    if (loading) {
+      return createLoadingIndicator();
+    }
+    
+    if (error) {
+      return createErrorMessage();
+    }
+    
+    if (events.length === 0) {
+      return createEmptyStateMessage();
+    }
+    
+    return createEventsList();
+  };
+
+  return (
+    <Box minHeight="100vh" p={4} sx={{ backgroundColor: themeStyles.backgroundColor, color: themeStyles.textColor }}>
+      {createPageTitle()}
+      {createNewEventButton()}
+      {createFilterToggleGroup()}
+      {renderMainContent()}
+      {createConfirmationDialog()}
+      {createSnackbar()}
     </Box>
   );
 }

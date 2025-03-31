@@ -1,4 +1,4 @@
-import React, { useEffect, useState, forwardRef } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { apiClient } from "../../api";
 import { EventForm } from "../../components/EventForm";
@@ -7,8 +7,12 @@ import {
   ExtraModule,
   EventFormInitialData,
   RouteParams,
-} from "../../types/event/event.ts";
-import { Alert } from "../../components/Alert.tsx";
+} from "../../types/event/event";
+import {
+  EventDataResponse,
+  ModuleData,
+} from "../../types/president/EditEventDetails";
+import { Alert } from "../../components/Alert";
 
 export default function EditEventDetails() {
   const { eventId } = useParams<RouteParams>();
@@ -26,44 +30,77 @@ export default function EditEventDetails() {
     "success"
   );
 
-  const showSnackbar = (message: string, severity: "success" | "error") => {
+  const setSuccessSnackbar = (message: string) => {
     setSnackbarMessage(message);
-    setSnackbarSeverity(severity);
+    setSnackbarSeverity("success");
     setSnackbarOpen(true);
   };
 
-  const handleSnackbarClose = (
-    _event?: React.SyntheticEvent | Event,
-    reason?: string
-  ) => {
+  const setErrorSnackbar = (message: string) => {
+    setSnackbarMessage(message);
+    setSnackbarSeverity("error");
+    setSnackbarOpen(true);
+  };
+
+  const closeSnackbarIfNotClickAway = (reason?: string) => {
     if (reason === "clickaway") return;
     setSnackbarOpen(false);
   };
 
-  useEffect(() => {
-    if (eventId) {
-      fetchEventData(eventId);
-    }
-  }, [eventId]);
-
-  const fetchEventData = async (id: string) => {
-    try {
-      const response = await apiClient.get(`/api/events/${id}/manage/`);
-      const data = response.data;
-      const formattedData = formatInitialData(data);
-      setInitialData(formattedData);
-      setError(null);
-    } catch (error: unknown) {
-      console.error("Failed to fetch event data:", error);
-      setError("Failed to load event data");
-      showSnackbar("Failed to load event data.", "error");
-    } finally {
-      setLoading(false);
-    }
+  const handleSnackbarClose = (_event?: React.SyntheticEvent | Event, reason?: string) => {
+    closeSnackbarIfNotClickAway(reason);
   };
 
-  const formatInitialData = (data: any): EventFormInitialData => {
-    const event = data.event || data;
+  const navigateBack = () => {
+    navigate(-1);
+  };
+
+  const navigateBackWithDelay = (delay: number) => {
+    setTimeout(navigateBack, delay);
+  };
+
+  const isModuleTypeValid = (type: string | undefined): boolean => {
+    return Boolean(type && ["description", "image", "file", "subtitle"].includes(type));
+  };
+
+  const getValidModuleType = (type: string | undefined): "description" | "image" | "file" | "subtitle" => {
+    return isModuleTypeValid(type) 
+      ? (type as "description" | "image" | "file" | "subtitle") 
+      : "description";
+  };
+
+  const createBaseModule = (): ExtraModule => {
+    return { id: "0", type: "description", textValue: "" };
+  };
+
+  const mapModuleData = (mod: ModuleData): ExtraModule => {
+    if (!mod) return createBaseModule();
+    
+    return {
+      id: mod.id?.toString() || "0",
+      type: getValidModuleType(mod.type),
+      textValue: mod.text_value || "",
+      fileValue: mod.file_value || "",
+    };
+  };
+
+  const filterModulesByParticipantStatus = (modules: ModuleData[], isParticipantOnly: boolean): ModuleData[] => {
+    if (!Array.isArray(modules)) return [];
+    return modules.filter((mod) => mod && mod.is_participant_only === isParticipantOnly);
+  };
+
+  const extractModules = (modules: ModuleData[], isParticipantOnly: boolean): ExtraModule[] => {
+    const filteredModules = filterModulesByParticipantStatus(modules, isParticipantOnly);
+    return filteredModules.map(mapModuleData);
+  };
+
+  const extractEventData = (event: any): any => {
+    return event.event || event;
+  };
+
+  const formatInitialData = (data: EventDataResponse): EventFormInitialData => {
+    const event = extractEventData(data);
+    
     return {
       title: event.title ?? "",
       mainDescription: event.main_description ?? "",
@@ -80,95 +117,137 @@ export default function EditEventDetails() {
     };
   };
 
-  const extractModules = (
-    modules: unknown[],
-    isParticipantOnly: boolean
-  ): ExtraModule[] => {
-    if (!Array.isArray(modules)) return [];
-
-    return (modules as any[])
-      .filter((mod) => mod && mod.is_participant_only === isParticipantOnly)
-      .map(mapModule);
+  const processEventDataResponse = (data: EventDataResponse) => {
+    const formattedData = formatInitialData(data);
+    setInitialData(formattedData);
+    setError(null);
   };
 
-  const mapModule = (mod: any): ExtraModule => {
-    if (!mod) return { id: "0", type: "text" as any, textValue: "" };
-    return {
-      id: mod.id?.toString() || "0",
-      type: mod.type || "text",
-      textValue: mod.text_value || "",
-      fileValue: mod.file_value || "",
-    };
+  const handleFetchError = (error: unknown) => {
+    console.error("Failed to fetch event data:", error);
+    setError("Failed to load event data");
+    setErrorSnackbar("Failed to load event data.");
+  };
+
+  const completeDataFetch = () => {
+    setLoading(false);
+  };
+
+  const fetchEventData = async (id: string) => {
+    try {
+      const response = await apiClient.get(`/api/events/${id}/manage/`);
+      processEventDataResponse(response.data);
+    } catch (error: unknown) {
+      handleFetchError(error);
+    } finally {
+      completeDataFetch();
+    }
+  };
+
+  const initiateEventDataFetch = () => {
+    if (eventId) {
+      fetchEventData(eventId);
+    }
+  };
+
+  useEffect(() => {
+    initiateEventDataFetch();
+  }, [eventId]);
+
+  const handleSubmitSuccess = () => {
+    setSuccessSnackbar("Event update submitted. Awaiting admin approval.");
+    navigateBackWithDelay(2000);
+  };
+
+  const handleSubmitError = (error: unknown) => {
+    console.error("Error updating event:", error);
+    setErrorSnackbar("Failed to update event.");
+  };
+
+  const sendUpdateRequest = async (formData: FormData) => {
+    return await apiClient.patch(`/api/events/${eventId}/manage/`, formData);
+  };
+
+  const isSuccessResponse = (status: number): boolean => {
+    return status === 200;
   };
 
   const handleSubmit = async (formData: FormData): Promise<void> => {
     try {
-      const response = await apiClient.patch(
-        `/api/events/${eventId}/manage/`,
-        formData
-      );
+      const response = await sendUpdateRequest(formData);
 
-      if (response.status === 200) {
-        showSnackbar(
-          "Event update submitted. Awaiting admin approval.",
-          "success"
-        );
-        setTimeout(() => {
-          navigate(-1);
-        }, 2000);
+      if (isSuccessResponse(response.status)) {
+        handleSubmitSuccess();
         return;
       }
 
       throw new Error(`Server error: ${response.statusText}`);
     } catch (error: unknown) {
-      console.error("Error updating event:", error);
-      showSnackbar("Failed to update event.", "error");
+      handleSubmitError(error);
     }
   };
 
   const handleCancel = () => {
-    navigate(-1);
+    navigateBack();
   };
 
+  const createLoadingView = () => (
+    <Box display="flex" justifyContent="center" mt={4}>
+      <CircularProgress color="secondary" />
+    </Box>
+  );
+
+  const createErrorView = () => (
+    <Box display="flex" flexDirection="column" alignItems="center" mt={4}>
+      <p>{error || "Event not found."}</p>
+      <button onClick={navigateBack}>Go Back</button>
+    </Box>
+  );
+
+  const createAlertComponent = () => (
+    <Alert
+      onClose={handleSnackbarClose}
+      severity={snackbarSeverity}
+      sx={{ width: "100%" }}
+    >
+      {snackbarMessage}
+    </Alert>
+  );
+
+  const createSnackbarComponent = () => (
+    <Snackbar
+      open={snackbarOpen}
+      autoHideDuration={4000}
+      onClose={handleSnackbarClose}
+      anchorOrigin={{ vertical: "top", horizontal: "center" }}
+    >
+      {createAlertComponent()}
+    </Snackbar>
+  );
+
+  const createEventFormComponent = () => (
+    <EventForm
+      onSubmit={handleSubmit}
+      onCancel={handleCancel}
+      initialData={initialData}
+      isEditMode={true}
+    />
+  );
+
+  const createMainView = () => (
+    <>
+      {createEventFormComponent()}
+      {createSnackbarComponent()}
+    </>
+  );
+
   if (loading) {
-    return (
-      <Box display="flex" justifyContent="center" mt={4}>
-        <CircularProgress color="secondary" />
-      </Box>
-    );
+    return createLoadingView();
   }
 
   if (error || !initialData) {
-    return (
-      <Box display="flex" flexDirection="column" alignItems="center" mt={4}>
-        <p>{error || "Event not found."}</p>
-        <button onClick={() => navigate(-1)}>Go Back</button>
-      </Box>
-    );
+    return createErrorView();
   }
 
-  return (
-    <>
-      <EventForm
-        onSubmit={handleSubmit}
-        onCancel={handleCancel}
-        initialData={initialData}
-        isEditMode={true}
-      />
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={4000}
-        onClose={handleSnackbarClose}
-        anchorOrigin={{ vertical: "top", horizontal: "center" }}
-      >
-        <Alert
-          onClose={handleSnackbarClose}
-          severity={snackbarSeverity}
-          sx={{ width: "100%" }}
-        >
-          {snackbarMessage}
-        </Alert>
-      </Snackbar>
-    </>
-  );
+  return createMainView();
 }
