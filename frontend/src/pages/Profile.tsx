@@ -135,15 +135,17 @@ export default function ProfilePage() {
 
             <ProfileStaticInfo profile={profile} colors={colors} />
 
-            <ProfileUserInfo
-              major={profile.major}
-              isPresident={profile.is_president}
-              isVicePresident={profile.is_vice_president}
-              isEventManager={profile.is_event_manager}
-              presidentOf={profile.president_of}
-              vicePresidentOfSociety={profile.vice_president_of_society}
-              eventManagerOfSociety={profile.event_manager_of_society}
-            />
+            {!profile.is_staff && (
+              <ProfileUserInfo
+                major={profile.major}
+                isPresident={profile.is_president}
+                isVicePresident={profile.is_vice_president}
+                isEventManager={profile.is_event_manager}
+                presidentOf={profile.president_of}
+                vicePresidentOfSociety={profile.vice_president_of_society}
+                eventManagerOfSociety={profile.event_manager_of_society}
+              />
+            )}
 
             {isSelf && (
               <>
