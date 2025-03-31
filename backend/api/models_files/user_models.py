@@ -113,7 +113,7 @@ class Student(User):
 
     president_of = models.OneToOneField(
         "Society",
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name="society_president",
