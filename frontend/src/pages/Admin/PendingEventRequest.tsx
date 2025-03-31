@@ -1,4 +1,3 @@
-// Refactored
 import React, { useContext, useCallback, useState, useEffect, useMemo } from "react";
 import { Box, useTheme, Button, Snackbar, Alert } from "@mui/material";
 import {

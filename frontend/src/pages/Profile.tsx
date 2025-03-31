@@ -81,8 +81,11 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (isSelf) {
+      console.log(user.is_staff);
       setProfile(user);
-      fetchAwards(user.id)
+      if (!user.is_staff) {
+        fetchAwards(user.id)
+      }
     } else {
       apiClient
         .get(`${apiPaths.USER.BASE}/${student_id}`)
@@ -132,15 +135,17 @@ export default function ProfilePage() {
 
             <ProfileStaticInfo profile={profile} colors={colors} />
 
-            <ProfileUserInfo
-              major={profile.major}
-              isPresident={profile.is_president}
-              isVicePresident={profile.is_vice_president}
-              isEventManager={profile.is_event_manager}
-              presidentOf={profile.president_of}
-              vicePresidentOfSociety={profile.vice_president_of_society}
-              eventManagerOfSociety={profile.event_manager_of_society}
-            />
+            {!profile.is_staff && (
+              <ProfileUserInfo
+                major={profile.major}
+                isPresident={profile.is_president}
+                isVicePresident={profile.is_vice_president}
+                isEventManager={profile.is_event_manager}
+                presidentOf={profile.president_of}
+                vicePresidentOfSociety={profile.vice_president_of_society}
+                eventManagerOfSociety={profile.event_manager_of_society}
+              />
+            )}
 
             {isSelf && (
               <>
@@ -166,19 +171,21 @@ export default function ProfilePage() {
               </>
             )}
 
-            <AwardList
-              userId={profile.id}
-              isSelf={!!isSelf}
-              awards={awards.map((a) => ({
-                id: a.id,
-                award: {
-                  title: a.award.title,
-                  description: a.award.description,
-                  rank: a.award.rank as "Gold" | "Silver" | "Bronze",
-                },
-              }))}
-              colors={colors}
-            />
+            {!profile.is_staff && (
+              <AwardList
+                userId={profile.id}
+                isSelf={!!isSelf}
+                awards={awards.map((a) => ({
+                  id: a.id,
+                  award: {
+                    title: a.award.title,
+                    description: a.award.description,
+                    rank: a.award.rank as "Gold" | "Silver" | "Bronze",
+                  },
+                }))}
+                colors={colors}
+              />
+            )}
           </Box>
         )}
 

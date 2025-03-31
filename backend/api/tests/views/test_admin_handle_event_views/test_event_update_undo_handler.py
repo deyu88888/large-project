@@ -4,9 +4,13 @@ from django.utils import timezone
 from django.test import TestCase
 from rest_framework import status
 from rest_framework.response import Response
+from unittest.mock import MagicMock, patch
 from api.models import User, Student, Society, Event, ActivityLog
 from api.views import EventUpdateUndoHandler
+from api.views_files.view_utility import get_object_by_id_or_name
+from api.views import EventUpdateUndoHandler
 
+orig_hasattr = hasattr
 
 class TestEventUpdateUndoHandler(TestCase):
     def setUp(self):
@@ -106,3 +110,55 @@ class TestEventUpdateUndoHandler(TestCase):
 
         self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
         self.assertIn("Failed to undo Event update", response.data["error"])
+
+
+    def test_undo_sets_many_to_many_relationships(self):
+        student1 = Student.objects.create(
+            username="student1",
+            email="s1@example.com",
+            role="student",
+            first_name="Stu",
+            last_name="Dent"
+        )
+        student2 = Student.objects.create(
+            username="student2",
+            email="s2@example.com",
+            role="student",
+            first_name="More",
+            last_name="Student"
+        )
+
+        self.original_data.update({
+            "attendees": [student1.id],
+            "current_attendees": [student2.id],
+        })
+        self.log_entry.original_data = json.dumps(self.original_data)
+        self.log_entry.save()
+
+        handler = EventUpdateUndoHandler()
+        data = json.loads(self.log_entry.original_data)
+        response = handler.handle(data, self.log_entry)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        event = Event.objects.get(id=self.event.id)
+        self.assertIn(student1, event.attendees.all())
+        self.assertIn(student2, event.current_attendees.all())
+
+    def test_restore_parses_date_time_duration_fields(self):
+        self.original_data.update({
+            "date": "2025-04-15",
+            "start_time": "14:30:00",
+            "duration": "1:15:30",
+        })
+        self.log_entry.original_data = json.dumps(self.original_data)
+        self.log_entry.save()
+
+        handler = EventUpdateUndoHandler()
+        data = json.loads(self.log_entry.original_data)
+        response = handler.handle(data, self.log_entry)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        event = Event.objects.get(id=self.event.id)
+        self.assertEqual(str(event.date), "2025-04-15")
+        self.assertEqual(str(event.start_time), "14:30:00")
+        self.assertEqual(event.duration.total_seconds(), 4530)

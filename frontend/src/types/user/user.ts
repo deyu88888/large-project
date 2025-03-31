@@ -16,7 +16,7 @@ export interface User {
     vice_president_of?: number;
     vice_president_of_society?: number;
     event_manager_of_society?: number;
-    isStaff: boolean;
+    is_staff: boolean;
     following: number[];
     followers: number[];
     following_count?: number;

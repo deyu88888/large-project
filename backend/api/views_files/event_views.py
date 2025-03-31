@@ -29,7 +29,7 @@ class JoinedEventsView(APIView):
         if not student:
             return Response({"error": "Only students can access this endpoint."}, status=403)
 
-        events = Event.objects.filter(current_attendees__id=student.id).distinct()
+        events = Event.objects.filter(current_attendees__id=student.id, status='Approved').distinct()
 
         serializer = EventSerializer(events, many=True, context={'request': request})
         return Response(serializer.data)

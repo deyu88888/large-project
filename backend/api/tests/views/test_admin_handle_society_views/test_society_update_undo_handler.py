@@ -84,3 +84,14 @@ class TestSocietyUpdateUndoHandler(TestCase):
         response = handler.handle(data, self.log_entry)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertIn("Society not found", response.data["error"])
+
+
+    def test_restore_showreel_missing_image(self):
+        handler = SocietyUpdateUndoHandler()
+        self.original_data["showreel_images"] = [9999]  # Non-existent ID
+        self.log_entry.original_data = json.dumps(self.original_data)
+        self.log_entry.save()
+
+        response = handler.handle(json.loads(self.log_entry.original_data), self.log_entry)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+

@@ -43,7 +43,7 @@ export function EventPreview({ open, onClose, eventData }: Props) {
       </AppBar>
 
       <DialogContent dividers sx={{ p: 0 }}>
-        <EventDetailLayout eventData={eventData} />
+        <EventDetailLayout eventData={eventData} previewMode={true} />
       </DialogContent>
     </Dialog>
   );
