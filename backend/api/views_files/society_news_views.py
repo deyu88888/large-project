@@ -1,6 +1,6 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, BasePermission
 from rest_framework.response import Response
 from rest_framework.views import APIView
 import traceback
@@ -13,27 +13,50 @@ from api.serializers import SocietyNewsSerializer
 from api.views_files.view_utility import (
     has_society_management_permission, is_society_member, standard_error_response,
     parse_json_field, mark_previous_requests_superseded, cancel_pending_requests
-    )
+)
+
+
+class SocietyMemberOrOfficerPermission(BasePermission):
+    """Permission class that checks if a user is a member or officer of a society"""
+    
+    def has_permission(self, request, view):
+        society_id = view.kwargs.get('society_id')
+        if not society_id:
+            return False
+            
+        # Check if user is admin
+        if hasattr(request.user, 'is_admin') and callable(getattr(request.user, 'is_admin')) and request.user.is_admin():
+            return True
+            
+        # First check if user has management permission
+        try:
+            society = Society.objects.get(id=society_id)
+            if hasattr(request.user, 'student'):
+                if has_society_management_permission(request.user.student, society):
+                    return True
+        except Society.DoesNotExist:
+            return False
+            
+        # Then check regular membership
+        return is_society_member(request.user, society_id)
 
 
 class SocietyNewsListView(APIView):
     """API view for handling society news list operations, including viewing and creating news posts."""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, SocietyMemberOrOfficerPermission]
     
     def get(self, request, society_id):
-        
         society = get_object_or_404(Society, id=society_id)
         
-        # Check if user is a member of the society
-        if not is_society_member(request.user, society_id):
-            return standard_error_response(
-                "You must be a member of this society to view its news.",
-                status.HTTP_403_FORBIDDEN
-            )
-
         try:
             # Determine which posts to show based on permissions
-            if has_society_management_permission(request.user.student, society):
+            has_management = False
+            if hasattr(request.user, 'student'):
+                has_management = has_society_management_permission(request.user.student, society)
+            
+            is_admin = hasattr(request.user, 'is_admin') and callable(getattr(request.user, 'is_admin')) and request.user.is_admin()
+            
+            if has_management or is_admin:
                 news_posts = SocietyNews.objects.filter(society=society)
             else:
                 news_posts = SocietyNews.objects.filter(society=society, status="Published")
@@ -50,7 +73,6 @@ class SocietyNewsListView(APIView):
             )
     
     def post(self, request, society_id):
-        
         society = get_object_or_404(Society, id=society_id)
         
         # Verify user is a student
@@ -99,48 +121,61 @@ class SocietyNewsListView(APIView):
             return standard_error_response(str(e), status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+class NewsDetailPermission(BasePermission):
+    """Permission class for news detail view"""
+    
+    def has_permission(self, request, view):
+        # Check if user is authenticated first
+        if not request.user.is_authenticated:
+            return False
+            
+        # Admins can do anything
+        if hasattr(request.user, 'is_admin') and callable(getattr(request.user, 'is_admin')) and request.user.is_admin():
+            return True
+            
+        # Try to get the news post
+        news_id = view.kwargs.get('news_id')
+        if not news_id:
+            return False
+            
+        try:
+            news_post = SocietyNews.objects.get(id=news_id)
+            society = news_post.society
+            
+            # For GET requests, published posts are accessible to all members,
+            # while unpublished posts are only for management
+            if request.method == 'GET':
+                # Check if user is a member
+                if is_society_member(request.user, society.id):
+                    # Only managers can view unpublished posts
+                    if news_post.status != "Published":
+                        return (hasattr(request.user, 'student') and 
+                                has_society_management_permission(request.user.student, society))
+                    return True
+                return False
+                
+            # For other methods (PUT, DELETE), require management permission
+            if hasattr(request.user, 'student'):
+                return has_society_management_permission(request.user.student, society)
+                
+            return False
+        except SocietyNews.DoesNotExist:
+            return False
+
+
 class SocietyNewsDetailView(APIView):
     """API view for retrieving, updating, and deleting individual society news posts."""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, NewsDetailPermission]
     
     def get(self, request, news_id):
         news_post = get_object_or_404(SocietyNews, id=news_id)
-        society = news_post.society
-
-        # Admins can view all posts
-        if request.user.is_admin():
-            pass
-        else:
-            # Check if user is a member
-            if not is_society_member(request.user, society.id):
-                return standard_error_response(
-                    "You must be a member of this society to view its news.",
-                    status.HTTP_403_FORBIDDEN
-                )
-
-            # Only managers can view unpublished posts
-            if news_post.status != "Published":
-                if not hasattr(request.user, 'student') or not has_society_management_permission(request.user.student, society):
-                    return standard_error_response(
-                        "This news post is not published.",
-                        status.HTTP_403_FORBIDDEN
-                    )
-
         news_post.increment_view_count()
-
         serializer = SocietyNewsSerializer(news_post, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     def put(self, request, news_id):
         news_post = get_object_or_404(SocietyNews, id=news_id)
         society = news_post.society
-        
-        # Check permissions
-        if not hasattr(request.user, 'student') or not has_society_management_permission(request.user.student, society):
-            return standard_error_response(
-                "Only society presidents and vice presidents can update news posts.",
-                status.HTTP_403_FORBIDDEN
-            )
         
         data = {}
         files_present = False
@@ -263,14 +298,6 @@ class SocietyNewsDetailView(APIView):
     
     def delete(self, request, news_id):
         news_post = get_object_or_404(SocietyNews, id=news_id)
-        society = news_post.society
-        
-        if not hasattr(request.user, 'student') or not has_society_management_permission(request.user.student, society):
-            return standard_error_response(
-                "Only society presidents and vice presidents can delete news posts.",
-                status.HTTP_403_FORBIDDEN
-            )
-        
         news_post.delete()
         return Response({"message": "News post deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
 
