@@ -3,48 +3,19 @@ import { apiClient } from "../../api";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "@mui/material/styles";
 import { tokens } from "../../theme/theme";
-
-// Types and Interfaces
-interface Society {
-  id: number;
-  name: string;
-  description: string;
-  icon: string;
-}
-
-interface StyleProps {
-  isLight: boolean;
-  colours: any;
-}
-
-interface HeaderProps {
-  styleProps: StyleProps;
-}
-
-interface LoadingStateProps {
-  styleProps: StyleProps;
-}
-
-interface EmptyStateProps {
-  styleProps: StyleProps;
-}
-
-interface SocietyCardProps {
-  society: Society;
-  onViewSociety: (societyId: number) => void;
-  styleProps: StyleProps;
-}
-
-interface SocietyGridProps {
-  societies: Society[];
-  onViewSociety: (societyId: number) => void;
-  styleProps: StyleProps;
-}
-
-interface ContainerProps {
-  children: React.ReactNode;
-  styleProps: StyleProps;
-}
+import {
+  Society,
+  StyleProps,
+  HeaderProps,
+  LoadingStateProps,
+  EmptyStateProps,
+  SocietyCardProps,
+  SocietyGridProps,
+  ContainerProps,
+  SocietyIconProps,
+  ViewSocietyButtonProps,
+  ContentSwitcherProps
+} from "../../types/student/MyJoinedSocieties";
 
 // Component Functions
 const PageHeader: React.FC<HeaderProps> = ({ styleProps }) => {
@@ -105,7 +76,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({ styleProps }) => {
   );
 };
 
-const SocietyIcon: React.FC<{ name: string, iconUrl: string }> = ({ name, iconUrl }) => {
+const SocietyIcon: React.FC<SocietyIconProps> = ({ name, iconUrl }) => {
   return (
     <img
       src={iconUrl}
@@ -125,6 +96,32 @@ const truncateDescription = (description: string, maxLength: number = 160): stri
   return description.length > maxLength 
     ? description.slice(0, maxLength) + "..." 
     : description;
+};
+
+const ViewSocietyButton: React.FC<ViewSocietyButtonProps> = ({ 
+  societyId, 
+  onViewSociety, 
+  styleProps 
+}) => {
+  const { isLight, colours } = styleProps;
+  
+  return (
+    <button
+      onClick={() => onViewSociety(societyId)}
+      style={{
+        backgroundColor: isLight ? colours.blueAccent[400] : colours.blueAccent[500],
+        color: isLight ? "#ffffff" : colours.grey[100],
+        padding: "0.5rem 1.5rem",
+        borderRadius: "0.5rem",
+        transition: "all 0.2s ease",
+        border: "none",
+        cursor: "pointer",
+        marginLeft: "5.0rem",
+      }}
+    >
+      View Society
+    </button>
+  );
 };
 
 const SocietyCard: React.FC<SocietyCardProps> = ({ society, onViewSociety, styleProps }) => {
@@ -177,32 +174,6 @@ const SocietyCard: React.FC<SocietyCardProps> = ({ society, onViewSociety, style
   );
 };
 
-const ViewSocietyButton: React.FC<{
-  societyId: number;
-  onViewSociety: (societyId: number) => void;
-  styleProps: StyleProps;
-}> = ({ societyId, onViewSociety, styleProps }) => {
-  const { isLight, colours } = styleProps;
-  
-  return (
-    <button
-      onClick={() => onViewSociety(societyId)}
-      style={{
-        backgroundColor: isLight ? colours.blueAccent[400] : colours.blueAccent[500],
-        color: isLight ? "#ffffff" : colours.grey[100],
-        padding: "0.5rem 1.5rem",
-        borderRadius: "0.5rem",
-        transition: "all 0.2s ease",
-        border: "none",
-        cursor: "pointer",
-        marginLeft: "5.0rem",
-      }}
-    >
-      View Society
-    </button>
-  );
-};
-
 const SocietyGrid: React.FC<SocietyGridProps> = ({ societies, onViewSociety, styleProps }) => {
   return (
     <div
@@ -246,12 +217,12 @@ const Container: React.FC<ContainerProps> = ({ children, styleProps }) => {
   );
 };
 
-const ContentSwitcher: React.FC<{
-  loading: boolean;
-  societies: Society[];
-  onViewSociety: (societyId: number) => void;
-  styleProps: StyleProps;
-}> = ({ loading, societies, onViewSociety, styleProps }) => {
+const ContentSwitcher: React.FC<ContentSwitcherProps> = ({ 
+  loading, 
+  societies, 
+  onViewSociety, 
+  styleProps 
+}) => {
   if (loading) {
     return <LoadingState styleProps={styleProps} />;
   }

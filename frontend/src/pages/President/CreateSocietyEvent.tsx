@@ -1,8 +1,8 @@
 // Refactored
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, forwardRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTheme, Snackbar } from "@mui/material";
-import MuiAlert from "@mui/material/Alert";
+import MuiAlert, { AlertProps } from "@mui/material/Alert";
 import { EventForm } from "../../components/EventForm";
 import { apiClient } from "../../api";
 
@@ -10,7 +10,7 @@ interface FormData {
   [key: string]: any;
 }
 
-const Alert = React.forwardRef(function Alert(props, ref) {
+const Alert = forwardRef<HTMLDivElement, AlertProps>(function Alert(props, ref) {
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
 });
 
@@ -43,7 +43,6 @@ const CreateEvent: React.FC = () => {
   const theme = useTheme();
   const { societyId } = useParams<{ societyId: string }>();
   const navigate = useNavigate();
-
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
@@ -81,16 +80,13 @@ const CreateEvent: React.FC = () => {
         `/api/events/requests/${societyId}/`,
         formData
       );
-
       if (isSuccessful(response.status)) {
         showSnackbar("Event created successfully!", "success");
-
         setTimeout(() => {
           navigate(-1);
         }, 2000);
         return;
       }
-
       throw new Error(`Server error: ${response.statusText}`);
     } catch (error: unknown) {
       console.error("Error creating event:", error);

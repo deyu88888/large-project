@@ -1,9 +1,9 @@
-import React, { useState, useCallback } from "react";
-import { Box, Tabs, Tab, useTheme, Typography } from "@mui/material";
+import React, { useState, useCallback, lazy, Suspense } from "react";
+import { Box, Tabs, Tab, useTheme, Typography, CircularProgress } from "@mui/material";
 import { tokens } from "../../theme/theme";
-import AdminReportList from "./AdminReportList";
-import ReportRepliedList from "./ReportRepliedList";
-import ReportRepliesList from "./ReportRepliesList";
+const AdminReportList = lazy(() => import("./AdminReportList"));
+const ReportRepliedList = lazy(() => import("./ReportRepliedList"));
+const ReportRepliesList = lazy(() => import("./ReportRepliesList"));
 import {
   TabPanelProps,
   TabConfig,
@@ -13,14 +13,43 @@ import {
   PageTitleProps
 } from "../../types/admin/ManageReports";
 
-
 const STORAGE_KEY = "reportsActiveTab";
 
+// Loading component for Suspense fallback
+const LoadingComponent = () => (
+  <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+    <CircularProgress color="secondary" />
+  </Box>
+);
 
 const createTabConfigs = (): TabConfig[] => [
-  { label: "New reports", component: <AdminReportList />, ariaLabel: "New reports tab" },
-  { label: "New replies", component: <ReportRepliesList />, ariaLabel: "New replies tab" },
-  { label: "Replied", component: <ReportRepliedList />, ariaLabel: "Replied reports tab" },
+  { 
+    label: "New reports", 
+    component: (
+      <Suspense fallback={<LoadingComponent />}>
+        <AdminReportList />
+      </Suspense>
+    ), 
+    ariaLabel: "New reports tab" 
+  },
+  { 
+    label: "New replies", 
+    component: (
+      <Suspense fallback={<LoadingComponent />}>
+        <ReportRepliesList />
+      </Suspense>
+    ), 
+    ariaLabel: "New replies tab" 
+  },
+  { 
+    label: "Replied", 
+    component: (
+      <Suspense fallback={<LoadingComponent />}>
+        <ReportRepliedList />
+      </Suspense>
+    ), 
+    ariaLabel: "Replied reports tab" 
+  },
 ];
 
 const createStorageOperations = (): StorageOperations => {
@@ -33,7 +62,7 @@ const createStorageOperations = (): StorageOperations => {
       return 0;
     }
   };
-
+  
   const setActiveTab = (value: number): void => {
     try {
       localStorage.setItem(STORAGE_KEY, value.toString());
@@ -41,19 +70,17 @@ const createStorageOperations = (): StorageOperations => {
       console.error("Error writing to localStorage:", error);
     }
   };
-
+  
   return {
     getActiveTab,
     setActiveTab,
   };
 };
 
-
 const CustomTabPanel: React.FC<TabPanelProps> = ({ children, value, index }) => {
   if (value !== index) {
     return null;
   }
-  
   return (
     <Box
       role="tabpanel"
@@ -121,15 +148,12 @@ const PageTitle: React.FC<PageTitleProps> = ({ colors }) => {
   );
 };
 
-
 const ManageReports: React.FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const tabs = createTabConfigs();
   const storage = createStorageOperations();
-  
   const [activeTabIndex, setActiveTabIndex] = useState<number>(storage.getActiveTab);
-
   const handleTabChange = useCallback((_: React.SyntheticEvent, newValue: number) => {
     setActiveTabIndex(newValue);
     storage.setActiveTab(newValue);
@@ -143,10 +167,10 @@ const ManageReports: React.FC = () => {
       }}
     >
       <PageTitle colors={colors} />
-      <ReportTabs 
-        tabs={tabs} 
-        activeTabIndex={activeTabIndex} 
-        handleTabChange={handleTabChange} 
+      <ReportTabs
+        tabs={tabs}
+        activeTabIndex={activeTabIndex}
+        handleTabChange={handleTabChange}
       />
       <TabPanelContainer tabs={tabs} activeTabIndex={activeTabIndex} />
     </Box>

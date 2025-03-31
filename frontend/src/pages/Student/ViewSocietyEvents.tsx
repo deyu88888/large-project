@@ -13,80 +13,21 @@ import { tokens } from "../../theme/theme";
 import { apiClient } from "../../api";
 import { FaRegClock, FaMapMarkerAlt } from "react-icons/fa";
 import { EventData } from "../../types/student/event";
-
-// Interfaces and Types
-interface StyleProps {
-  colours: ReturnType<typeof tokens>;
-}
-
-interface Society {
-  id: number;
-  name: string;
-}
-
-interface ViewSocietyEventsState {
-  events: EventData[];
-  loading: boolean;
-  societyName: string;
-  error: string | null;
-}
-
-interface PageHeaderProps {
-  title: string;
-  onBack: () => void;
-  styleProps: StyleProps;
-}
-
-interface LoadingStateProps {
-  styleProps: StyleProps;
-}
-
-interface ErrorStateProps {
-  error: string;
-  styleProps: StyleProps;
-}
-
-interface EmptyStateProps {
-  styleProps: StyleProps;
-}
-
-interface EventStatusBadgeProps {
-  status: string;
-  styleProps: StyleProps;
-}
-
-interface EventTimeProps {
-  date: string;
-  startTime?: string;
-  duration?: string;
-  styleProps: StyleProps;
-}
-
-interface EventLocationProps {
-  location: string;
-  styleProps: StyleProps;
-}
-
-interface RsvpButtonProps {
-  eventId: number;
-  isRsvped: boolean;
-  onRsvp: (eventId: number, isAttending: boolean) => Promise<void>;
-  styleProps: StyleProps;
-}
-
-interface EventCardProps {
-  event: EventData;
-  onRsvp: (eventId: number, isAttending: boolean) => Promise<void>;
-  isUpcoming: (dateStr: string) => boolean;
-  styleProps: StyleProps;
-}
-
-interface EventListProps {
-  events: EventData[];
-  onRsvp: (eventId: number, isAttending: boolean) => Promise<void>;
-  isUpcoming: (dateStr: string) => boolean;
-  styleProps: StyleProps;
-}
+import {
+  StyleProps,
+  Society,
+  ViewSocietyEventsState,
+  PageHeaderProps,
+  LoadingStateProps,
+  ErrorStateProps,
+  EmptyStateProps,
+  EventStatusBadgeProps,
+  EventTimeProps,
+  EventLocationProps,
+  RsvpButtonProps,
+  EventCardProps,
+  EventListProps
+} from "../../types/student/ViewSocietyEvents";
 
 // Utility Functions
 const isUpcomingEvent = (dateStr: string): boolean => {

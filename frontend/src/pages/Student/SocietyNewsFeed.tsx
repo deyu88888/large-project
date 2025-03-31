@@ -17,121 +17,26 @@ import {
   ArrowBack as ArrowBackIcon
 } from '@mui/icons-material';
 import { motion, AnimatePresence } from 'framer-motion';
-
-
-interface Society {
-  id: number;
-  name: string;
-  icon: string | null;
-}
-
-interface Author {
-  id: number;
-  username: string;
-  full_name: string;
-}
-
-interface NewsPost {
-  id: number;
-  title: string;
-  content: string;
-  image_url: string | null;
-  attachment_name: string | null;
-  attachment_url: string | null;
-  society_data: Society;
-  author_data: Author;
-  created_at: string;
-  published_at: string;
-  is_pinned: boolean;
-  is_featured: boolean;
-  tags: string[];
-  view_count: number;
-  comment_count: number;
-}
-
-interface SocietyNewsFeedProps {
-  societyId?: number;
-}
-
-interface StyleProps {
-  colors: ReturnType<typeof tokens>;
-}
-
-interface SocietyAvatarProps {
-  society: Society;
-  size?: number;
-}
-
-interface PostTagsProps {
-  tags: string[];
-  isFeatured: boolean;
-  maxVisible?: number;
-  styleProps: StyleProps;
-}
-
-interface PostStatsProps {
-  viewCount: number;
-  commentCount: number;
-  size?: "small" | "medium";
-  styleProps: StyleProps;
-}
-
-interface BookmarkButtonProps {
-  postId: number;
-  bookmarked: number[];
-  onToggleBookmark: (id: number) => void;
-  size?: "small" | "medium";
-  styleProps: StyleProps;
-}
-
-interface DetailedPostViewProps {
-  post: NewsPost;
-  onBack: () => void;
-  onHide: (postId: number) => void;
-  bookmarked: number[];
-  toggleBookmark: (postId: number) => void;
-  styleProps: StyleProps;
-}
-
-interface NewsCardProps {
-  post: NewsPost;
-  onPostClick: (post: NewsPost) => void;
-  onHidePost: (postId: number) => void;
-  styleProps: StyleProps;
-}
-
-interface NewsFeedProps {
-  loading: boolean;
-  newsPosts: NewsPost[];
-  visiblePosts: NewsPost[];
-  hiddenPosts: number[];
-  societyId?: number;
-  onPostClick: (post: NewsPost) => void;
-  onHidePost: (postId: number) => void;
-  resetHidden: () => void;
-  styleProps: StyleProps;
-}
-
-interface PostImageProps {
-  imageUrl: string;
-  title: string;
-  height: string;
-  styleProps: StyleProps;
-  card?: boolean;
-}
-
-interface SocietyInfoProps {
-  post: NewsPost;
-  size?: "small" | "medium";
-  styleProps: StyleProps;
-}
-
-interface PostTitleProps {
-  title: string;
-  isPinned: boolean;
-  onClick?: () => void;
-  styleProps: StyleProps;
-}
+import {
+  NewsPost,
+  SocietyNewsFeedProps,
+  StyleProps,
+  SocietyAvatarProps,
+  PostTagsProps,
+  PostStatsProps,
+  BookmarkButtonProps,
+  DetailedPostViewProps,
+  NewsCardProps,
+  NewsFeedProps,
+  PostImageProps,
+  SocietyInfoProps,
+  PostTitleProps,
+  PostContentProps,
+  HidePostButtonProps,
+  AttachmentButtonProps,
+  LoadingIndicatorProps,
+  EmptyFeedProps
+} from '../../types/student/SocietyNewsFeed';
 
 
 const formatDateTime = (dateString: string): string => {
@@ -366,11 +271,7 @@ const PostTitle: React.FC<PostTitleProps> = ({ title, isPinned, onClick, stylePr
 };
 
 
-const PostContent: React.FC<{
-  content: string;
-  truncated?: boolean;
-  styleProps: StyleProps;
-}> = ({ content, truncated = false, styleProps }) => {
+const PostContent: React.FC<PostContentProps> = ({ content, truncated = false, styleProps }) => {
   const { colors } = styleProps;
   
   const processedContent = truncated 
@@ -423,12 +324,7 @@ const PostContent: React.FC<{
 };
 
 
-const HidePostButton: React.FC<{
-  postId: number;
-  onHidePost: (id: number) => void;
-  small?: boolean;
-  styleProps: StyleProps;
-}> = ({ postId, onHidePost, small = false, styleProps }) => {
+const HidePostButton: React.FC<HidePostButtonProps> = ({ postId, onHidePost, small = false, styleProps }) => {
   const { colors } = styleProps;
   
   return (
@@ -460,12 +356,7 @@ const HidePostButton: React.FC<{
 };
 
 
-const AttachmentButton: React.FC<{
-  fileName: string;
-  fileUrl: string;
-  icon: React.ReactNode;
-  styleProps: StyleProps;
-}> = ({ fileName, fileUrl, icon, styleProps }) => {
+const AttachmentButton: React.FC<AttachmentButtonProps> = ({ fileName, fileUrl, icon, styleProps }) => {
   const { colors } = styleProps;
   
   return (
@@ -701,7 +592,7 @@ const NewsCard: React.FC<NewsCardProps> = ({ post, onPostClick, onHidePost, styl
 };
 
 
-const LoadingIndicator: React.FC<{ styleProps: StyleProps }> = ({ styleProps }) => {
+const LoadingIndicator: React.FC<LoadingIndicatorProps> = ({ styleProps }) => {
   const { colors } = styleProps;
   
   return (
@@ -712,13 +603,13 @@ const LoadingIndicator: React.FC<{ styleProps: StyleProps }> = ({ styleProps }) 
 };
 
 
-const EmptyFeed: React.FC<{
-  newsPosts: NewsPost[];
-  hiddenPosts: number[];
-  societyId?: number;
-  onResetHidden: () => void;
-  styleProps: StyleProps;
-}> = ({ newsPosts, hiddenPosts, societyId, onResetHidden, styleProps }) => {
+const EmptyFeed: React.FC<EmptyFeedProps> = ({ 
+  newsPosts, 
+  hiddenPosts, 
+  societyId, 
+  onResetHidden, 
+  styleProps 
+}) => {
   const { colors } = styleProps;
   
   return (
@@ -814,16 +705,11 @@ const useBookmarks = () => {
 
   const toggleBookmark = useCallback((postId: number) => {
     setBookmarkedId(prev => {
-
-
       const newValue = prev === postId ? null : postId;
-      
-
       localStorage.setItem('newsBookmark', JSON.stringify(newValue));
       return newValue;
     });
   }, []);
-
 
   const bookmarked = bookmarkedId !== null ? [bookmarkedId] : [];
 
@@ -877,18 +763,15 @@ const useNewsPosts = (societyId?: number, bookmarkedPosts: number[] = []) => {
 
   const sortedPosts = useMemo(() => {
     return [...newsPosts].sort((a, b) => {
-
       const aIsBookmarked = bookmarkedPosts.includes(a.id);
       const bIsBookmarked = bookmarkedPosts.includes(b.id);
       
       if (aIsBookmarked && !bIsBookmarked) return -1;
       if (!aIsBookmarked && bIsBookmarked) return 1;
       
-
       if (a.is_pinned && !b.is_pinned) return -1;
       if (!a.is_pinned && b.is_pinned) return 1;
       
-
       return new Date(b.published_at).getTime() - new Date(a.published_at).getTime();
     });
   }, [newsPosts, bookmarkedPosts]);
@@ -905,14 +788,11 @@ const SocietyNewsFeed: React.FC<SocietyNewsFeedProps> = ({ societyId }) => {
   const { newsPosts, loading, sortedPosts } = useNewsPosts(societyId, bookmarked);
   const { hiddenPosts, handleHidePost, resetHidden } = useHiddenPosts();
   
-
   const [selectedPost, setSelectedPost] = useState<NewsPost | null>(null);
-
 
   const visiblePosts = useMemo(() => {
     return sortedPosts.filter(post => !hiddenPosts.includes(post.id));
   }, [sortedPosts, hiddenPosts]);
-
 
   const handlePostClick = useCallback((post: NewsPost) => {
     setSelectedPost(post);

@@ -163,7 +163,12 @@ const PendingEventRequest: React.FC = () => {
     try {
       setLoading(true);
       const data = await fetchPendingRequests(apiPaths.EVENTS.PENDINGEVENTREQUEST);
-      setPendingData(data);
+      if (Array.isArray(data)) {
+        setPendingData(data);
+      } else {
+        setPendingData([]);
+        console.error('Expected array data but received:', data);
+      }
     } catch (error) {
       console.error("Error fetching pending requests:", error);
     } finally {

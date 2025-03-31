@@ -1,17 +1,17 @@
 // Refactored
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, forwardRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { apiClient } from "../../api";
 import { EventForm } from "../../components/EventForm";
 import { CircularProgress, Box, Snackbar } from "@mui/material";
-import MuiAlert from "@mui/material/Alert";
+import MuiAlert, { AlertProps } from "@mui/material/Alert";
 import {
   ExtraModule,
   EventFormInitialData,
   RouteParams,
 } from "../../types/event/event.ts";
 
-const Alert = React.forwardRef(function Alert(props, ref) {
+const Alert = forwardRef<HTMLDivElement, AlertProps>(function Alert(props, ref) {
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
 });
 

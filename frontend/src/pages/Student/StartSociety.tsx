@@ -2,52 +2,17 @@ import React, { useState } from "react";
 import { useTheme } from "@mui/material/styles";
 import { tokens } from "../../theme/theme";
 import { apiClient } from "../../api";
-
-// Interfaces and Types
-interface StyleProps {
-  isLight: boolean;
-  colours: ReturnType<typeof tokens>;
-}
-
-interface FormData {
-  societyName: string;
-  description: string;
-}
-
-interface FormState {
-  error: string;
-  success: string;
-}
-
-interface HeaderProps {
-  styleProps: StyleProps;
-}
-
-interface FormContainerProps {
-  children: React.ReactNode;
-  styleProps: StyleProps;
-  onSubmit: (e: React.FormEvent) => void;
-}
-
-interface MessageProps {
-  error?: string;
-  success?: string;
-  styleProps: StyleProps;
-}
-
-interface InputFieldProps {
-  id: string;
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  multiline?: boolean;
-  rows?: number;
-  styleProps: StyleProps;
-}
-
-interface SubmitButtonProps {
-  styleProps: StyleProps;
-}
+import {
+  StyleProps,
+  FormData,
+  FormState,
+  HeaderProps,
+  FormContainerProps,
+  MessageProps,
+  InputFieldProps,
+  SubmitButtonProps,
+  PageContainerProps
+} from "../../types/student/StartSociety";
 
 // Component Functions
 const PageHeader: React.FC<HeaderProps> = ({ styleProps }) => {
@@ -202,10 +167,7 @@ const SubmitButton: React.FC<SubmitButtonProps> = ({ styleProps }) => {
   );
 };
 
-const PageContainer: React.FC<{
-  children: React.ReactNode;
-  styleProps: StyleProps;
-}> = ({ children, styleProps }) => {
+const PageContainer: React.FC<PageContainerProps> = ({ children, styleProps }) => {
   const { isLight, colours } = styleProps;
   
   return (
