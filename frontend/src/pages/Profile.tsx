@@ -81,8 +81,11 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (isSelf) {
+      console.log(user.is_staff);
       setProfile(user);
-      fetchAwards(user.id)
+      if (!user.is_staff) {
+        fetchAwards(user.id)
+      }
     } else {
       apiClient
         .get(`${apiPaths.USER.BASE}/${student_id}`)
@@ -166,19 +169,21 @@ export default function ProfilePage() {
               </>
             )}
 
-            <AwardList
-              userId={profile.id}
-              isSelf={!!isSelf}
-              awards={awards.map((a) => ({
-                id: a.id,
-                award: {
-                  title: a.award.title,
-                  description: a.award.description,
-                  rank: a.award.rank as "Gold" | "Silver" | "Bronze",
-                },
-              }))}
-              colors={colors}
-            />
+            {!profile.is_staff && (
+              <AwardList
+                userId={profile.id}
+                isSelf={!!isSelf}
+                awards={awards.map((a) => ({
+                  id: a.id,
+                  award: {
+                    title: a.award.title,
+                    description: a.award.description,
+                    rank: a.award.rank as "Gold" | "Silver" | "Bronze",
+                  },
+                }))}
+                colors={colors}
+              />
+            )}
           </Box>
         )}
 

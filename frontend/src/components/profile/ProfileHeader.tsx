@@ -31,6 +31,7 @@ interface ProfileHeaderProps {
     following_count?: number;
     followers_count?: number;
     icon?: string;
+    is_staff: boolean;
   };
   isFollowing: boolean;
   onToggleFollow: () => void;
@@ -44,8 +45,8 @@ export default function ProfileHeader({
   isFollowing,
   onToggleFollow,
   onAvatarUpdated,
-  setSnackbarData
 }: ProfileHeaderProps) {
+  console.log(profile.is_staff);
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -150,14 +151,16 @@ export default function ProfileHeader({
         )}
       </Box>
 
-      <Box sx={{ mt: -1, display: "flex", gap: 3, ml: 10 }}>
-        <Typography variant="subtitle1" sx={{ color: colors.grey[200] }}>
-          <span style={{ fontWeight: "bold" }}>Following:</span> {profile.following_count}
-        </Typography>
-        <Typography variant="subtitle1" sx={{ color: colors.grey[200] }}>
-          <span style={{ fontWeight: "bold" }}>Fans:</span> {profile.followers_count}
-        </Typography>
-      </Box>
+      {!profile.is_staff && (
+        <Box sx={{ mt: -1, display: "flex", gap: 3, ml: 10 }}>
+          <Typography variant="subtitle1" sx={{ color: colors.grey[200] }}>
+            <span style={{ fontWeight: "bold" }}>Following:</span> {profile.following_count}
+          </Typography>
+          <Typography variant="subtitle1" sx={{ color: colors.grey[200] }}>
+            <span style={{ fontWeight: "bold" }}>Fans:</span> {profile.followers_count}
+          </Typography>
+        </Box>
+      )}
 
       <Dialog open={cropModalOpen} onClose={() => setCropModalOpen(false)} fullWidth maxWidth="sm">
         <DialogTitle>Crop your avatar</DialogTitle>
