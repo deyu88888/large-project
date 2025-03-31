@@ -9,7 +9,13 @@ import { useSettingsStore } from "../stores/settings-store";
 import { tokens } from "../theme/theme";
 import { ExtraModule, EventData } from "../types/event/event.ts";
 
-export function EventDetailLayout({ eventData }: { eventData: EventData }) {
+export function EventDetailLayout({
+  eventData,
+  previewMode = false
+}: {
+  eventData: EventData;
+  previewMode?: boolean;
+}) {
   const {
     title,
     mainDescription,
@@ -287,27 +293,34 @@ export function EventDetailLayout({ eventData }: { eventData: EventData }) {
             <Box sx={{ mt: 2 }}>
               {!isMember ? (
                 <Button variant="outlined"
-                        onClick={handleJoinSociety}
-                        sx={{
-                          color: "white",
-                          backgroundColor: "greenAccent.main",
-                          border: "1px auto",
-                        }}
+                  disabled={previewMode}
+                  onClick={previewMode ? undefined : handleJoinSociety}
+                  sx={{
+                    color: "white",
+                    backgroundColor: "greenAccent.main",
+                    border: "1px auto",
+                  }}
                 >
                   Join Society to RSVP
                 </Button>
               ) : isParticipant ? (
-                <Button variant="contained" color="error" onClick={handleCancelRSVP}>
+                <Button
+                  variant="contained"
+                  color="error"
+                  disabled={previewMode}
+                  onClick={previewMode ? undefined : handleCancelRSVP}
+                >
                   Cancel RSVP
                 </Button>
               ) : (
                 <Button variant="contained"
-                        onClick={handleJoinEvent}
-                        sx={{
-                            color: "white",
-                            backgroundColor: "green",
-                            border: "1px auto"
-                        }}
+                  disabled={previewMode}
+                  onClick={previewMode ? undefined : handleJoinEvent}
+                  sx={{
+                    color: "white",
+                    backgroundColor: "green",
+                    border: "1px auto"
+                  }}
                 >
                   Join Event
                 </Button>
