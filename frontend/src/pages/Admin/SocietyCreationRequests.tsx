@@ -4,60 +4,19 @@ import { DataGrid, GridColDef, GridToolbar, GridRenderCellParams } from "@mui/x-
 import { tokens } from "../../theme/theme";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { useSettingsStore } from "../../stores/settings-store";
-import { useFetchWebSocket } from "../../hooks/useFetchWebSocket";
 import { updateRequestStatus } from "../../api/requestApi";
 import { apiPaths } from "../../api";
 import { fetchPendingRequests } from "./utils";
-
-
-interface Society {
-  id: number;
-  name: string;
-  description: string;
-  president: string;
-  society_members: string[] | string;
-  category: string;
-  membershipRequirements: string;
-  upcomingProjectsOrPlans: string;
-  [key: string]: any;
-}
-
-interface ProcessedSociety extends Omit<Society, 'society_members'> {
-  society_members: string;
-}
-
-interface NotificationState {
-  open: boolean;
-  message: string;
-  severity: 'success' | 'error';
-}
-
-interface ActionButtonsProps {
-  societyId: number;
-  onStatusChange: (id: number, status: "Approved" | "Rejected") => void;
-}
-
-interface NotificationProps {
-  notification: NotificationState;
-  onClose: () => void;
-}
-
-interface TruncatedCellProps {
-  value: string;
-}
-
-interface EmptyStateProps {
-  colors: ReturnType<typeof tokens>;
-}
-
-interface DataGridContainerProps {
-  societies: ProcessedSociety[];
-  columns: GridColDef[];
-  colors: ReturnType<typeof tokens>;
-  loading: boolean;
-  drawer: boolean;
-}
-
+import {
+  Society,
+  ProcessedSociety,
+  NotificationState,
+  ActionButtonsProps,
+  NotificationProps,
+  TruncatedCellProps,
+  EmptyStateProps,
+  DataGridContainerProps
+} from "../../types/admin/SocietyCreationRequests";
 
 const processSocietyMembers = (society: Society): ProcessedSociety => {
   return {
@@ -87,7 +46,6 @@ const filterSocietiesBySearchTerm = (societies: ProcessedSociety[], searchTerm: 
     return searchString.includes(normalizedSearchTerm);
   });
 };
-
 
 const TruncatedCell: React.FC<TruncatedCellProps> = ({ value }) => {
   return (
@@ -207,7 +165,6 @@ const DataGridContainer: React.FC<DataGridContainerProps> = ({
   );
 };
 
-
 const createSocietyColumns = (
   handleStatusChange: (id: number, status: "Approved" | "Rejected") => void
 ): GridColDef[] => {
@@ -266,27 +223,37 @@ const createSocietyColumns = (
   ];
 };
 
-
-const PendingSocietyRequest: React.FC = () => {
+const SocietyCreationRequests: React.FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const { searchTerm } = useContext(SearchContext);
   const { drawer } = useSettingsStore();
   
-  
   const [societies, setSocieties] = useState<Society[]>([]);
+  const [loading, setLoading] = useState(true);
   const [notification, setNotification] = useState<NotificationState>({
     open: false,
     message: '',
     severity: 'success'
   });
   
+  const fetchSocieties = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = await fetchPendingRequests(apiPaths.USER.PENDINGSOCIETYREQUEST);
+      if (Array.isArray(data)) {
+        setSocieties(data);
+      }
+    } catch (error) {
+      console.error("Error fetching pending society requests:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
   
-  const fetchedSocieties = useFetchWebSocket<Society[]>(
-    () => fetchPendingRequests(apiPaths.USER.PENDINGSOCIETYREQUEST), 
-    'society'
-  ).flatMap;
-  
+  useEffect(() => {
+    fetchSocieties();
+  }, [fetchSocieties]);
   
   const handleCloseNotification = useCallback(() => {
     setNotification(prev => ({ ...prev, open: false }));
@@ -308,13 +275,13 @@ const PendingSocietyRequest: React.FC = () => {
 
   const handleStatusChange = useCallback(async (id: number, status: "Approved" | "Rejected") => {
     try {
-      
+      // Optimistically update UI
       updateSocietiesAfterStatusChange(id);
       
-      
+      // Make API call
       await updateRequestStatus(id, status, apiPaths.USER.PENDINGSOCIETYREQUEST);
       
-      
+      // Show success notification
       showNotification(
         `Society ${status === "Approved" ? "approved" : "rejected"} successfully.`, 
         'success'
@@ -322,32 +289,18 @@ const PendingSocietyRequest: React.FC = () => {
     } catch (error) {
       console.error(`Error updating society status:`, error);
       
-      
+      // Show error notification
       showNotification(
         `Failed to ${status.toLowerCase()} society request.`, 
         'error'
       );
       
-      
-      recoverSocietyData();
+      // Recover data if there was an error
+      fetchSocieties();
     }
-  }, [updateSocietiesAfterStatusChange, showNotification]);
+  }, [updateSocietiesAfterStatusChange, showNotification, fetchSocieties]);
 
-  const recoverSocietyData = useCallback(async () => {
-    const data = await fetchPendingRequests(apiPaths.USER.PENDINGSOCIETYREQUEST);
-    if (Array.isArray(data)) {
-      setSocieties(data);
-    }
-  }, []);
-
-  
-  useEffect(() => {
-    if (Array.isArray(fetchedSocieties)) {
-      setSocieties(fetchedSocieties);
-    }
-  }, [fetchedSocieties]);
-
-  
+  // Derived states using memoization
   const processedSocieties = useMemo(() => 
     processSocieties(societies),
     [societies]
@@ -363,14 +316,14 @@ const PendingSocietyRequest: React.FC = () => {
     [handleStatusChange]
   );
 
-  
+  // Render component
   return (
     <>
       <DataGridContainer 
         societies={filteredSocieties}
         columns={columns}
         colors={colors}
-        loading={societies.length === 0}
+        loading={loading}
         drawer={drawer}
       />
 
@@ -382,4 +335,4 @@ const PendingSocietyRequest: React.FC = () => {
   );
 };
 
-export default PendingSocietyRequest;
+export default SocietyCreationRequests;

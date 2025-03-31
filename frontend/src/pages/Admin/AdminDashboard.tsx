@@ -22,9 +22,9 @@ import { useSettingsStore } from "../../stores/settings-store";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../stores/auth-store";
 import {
+  UserStats,
   Event,
   Notification,
-  UserStats,
   Publication,
   StatCardProps,
   NotificationCardProps,
@@ -32,7 +32,8 @@ import {
   NotificationsSectionProps,
   DashboardContentProps,
   StatsSectionProps,
-} from "../../types/admin/dashboard";
+  LoadingStateProps
+} from "../../types/admin/Dashboard";
 import { color } from "framer-motion";
 
 const StatCard: FC<StatCardProps> = ({ icon, title, value }) => {
@@ -252,7 +253,7 @@ const StatsSection: FC<StatsSectionProps> = ({
   );
 };
 
-const LoadingState: FC<{ color: string }> = ({ color }) => {
+const LoadingState: FC<LoadingStateProps> = ({ color }) => {
   return (
     <div className="text-center">
       <Typography variant="h4" color={color}>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useContext, useMemo, useCallback } from "react";
+import { useState, useEffect, useContext, useMemo, useCallback } from "react";
 import { Box, 
   Typography, 
   useTheme, 
@@ -16,55 +16,14 @@ import { useSettingsStore } from "../../stores/settings-store";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { Society } from '../../types';
 import { useNavigate } from "react-router-dom";
-import { getWebSocketUrl } from "../../utils/websocket";
-
-
-const WS_URL = getWebSocketUrl()
-const RECONNECT_DELAY = 5000;
-
-
-interface SocietyDialogState {
-  open: boolean;
-  reason: string;
-  selectedSociety: Society | null;
-}
-
-interface WebSocketRef {
-  current: WebSocket | null;
-}
-
-interface ActionButtonsProps {
-  societyId: string | number;
-  onView: (id: string) => void;
-  onDelete: (society: Society) => void;
-  society: Society;
-}
-
-interface DataGridContainerProps {
-  societies: Society[];
-  columns: GridColDef[];
-  colors: ReturnType<typeof tokens>;
-  drawer: boolean;
-}
-
-interface DeleteDialogProps {
-  state: SocietyDialogState;
-  onClose: () => void;
-  onReasonChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  onConfirm: () => void;
-}
-
-interface PresidentCellProps {
-  president: {
-    first_name: string;
-    last_name: string;
-  } | null;
-}
-
-interface MembersCellProps {
-  members: any[] | null;
-}
-
+import {
+  SocietyDialogState,
+  ActionButtonsProps,
+  DataGridContainerProps,
+  DeleteDialogProps,
+  PresidentCellProps,
+  MembersCellProps
+} from "../../types/admin/SocietyList";
 
 const filterSocietiesBySearchTerm = (societies: Society[], searchTerm: string): Society[] => {
   if (!searchTerm) return societies;
@@ -79,7 +38,6 @@ const filterSocietiesBySearchTerm = (societies: Society[], searchTerm: string): 
   );
 };
 
-
 const fetchSocietyList = async (): Promise<Society[]> => {
   const res = await apiClient.get(apiPaths.USER.SOCIETY);
   return res.data;
@@ -92,47 +50,6 @@ const deleteSociety = async (societyId: number | string, reason: string): Promis
     data: { reason },
   });
 };
-
-
-const setupWebSocketHandlers = (
-  socket: WebSocket,
-  onMessage: () => void
-): void => {
-  socket.onopen = () => {
-    console.log("WebSocket Connected for Society List");
-  };
-
-  socket.onmessage = (event) => {
-    try {
-      const data = JSON.parse(event.data);
-      console.log("WebSocket Update Received:", data);
-      onMessage();
-    } catch (error) {
-      console.error("Error parsing WebSocket message:", error);
-    }
-  };
-
-  socket.onerror = (event) => {
-    console.error("WebSocket Error:", event);
-  };
-};
-
-const createWebSocketConnection = (
-  url: string,
-  onMessage: () => void,
-  onClose: () => void
-): WebSocket => {
-  const socket = new WebSocket(url);
-  setupWebSocketHandlers(socket, onMessage);
-  
-  socket.onclose = (event) => {
-    console.log("WebSocket Disconnected:", event.reason);
-    onClose();
-  };
-  
-  return socket;
-};
-
 
 const PresidentCell: React.FC<PresidentCellProps> = ({ president }) => {
   return (
@@ -274,7 +191,6 @@ const DeleteDialog: React.FC<DeleteDialogProps> = ({
   );
 };
 
-
 const createSocietyColumns = (
   handleViewSociety: (id: string) => void,
   handleOpenDialog: (society: Society) => void
@@ -331,8 +247,6 @@ const SocietyList: React.FC = () => {
   const navigate = useNavigate();
   const { drawer } = useSettingsStore();
   const { searchTerm } = useContext(SearchContext);
-  const ws = useRef<WebSocket | null>(null);
-  
   
   const [societies, setSocieties] = useState<Society[]>([]);
   const [dialogState, setDialogState] = useState<SocietyDialogState>({
@@ -341,7 +255,6 @@ const SocietyList: React.FC = () => {
     selectedSociety: null
   });
 
-  
   const loadSocieties = useCallback(async () => {
     try {
       const data = await fetchSocietyList();
@@ -351,43 +264,10 @@ const SocietyList: React.FC = () => {
     }
   }, []);
 
-  
-  const handleWebSocketMessage = useCallback(() => {
+  useEffect(() => {
     loadSocieties();
   }, [loadSocieties]);
 
-  const reconnectWebSocket = useCallback(() => {
-    setTimeout(() => {
-      connectWebSocket();
-    }, RECONNECT_DELAY);
-  }, []);
-
-  const connectWebSocket = useCallback(() => {
-    if (ws.current) {
-      ws.current.close();
-    }
-    
-    ws.current = createWebSocketConnection(
-      WS_URL,
-      handleWebSocketMessage,
-      reconnectWebSocket
-    );
-  }, [handleWebSocketMessage, reconnectWebSocket]);
-
-  
-  useEffect(() => {
-    loadSocieties();
-    connectWebSocket();
-
-    
-    return () => {
-      if (ws.current) {
-        ws.current.close();
-      }
-    };
-  }, [connectWebSocket, loadSocieties]);
-
-  
   const handleViewSociety = useCallback((societyId: string) => {
     navigate(`/admin/view-society/${societyId}`);
   }, [navigate]);
@@ -430,7 +310,6 @@ const SocietyList: React.FC = () => {
     handleCloseDialog();
   }, [dialogState, loadSocieties, handleCloseDialog]);
 
-  
   const filteredSocieties = useMemo(() => 
     filterSocietiesBySearchTerm(societies, searchTerm || ''),
     [societies, searchTerm]

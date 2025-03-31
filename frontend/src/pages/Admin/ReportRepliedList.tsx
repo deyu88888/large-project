@@ -11,36 +11,13 @@ import { SearchContext } from "../../components/layout/SearchContext";
 import { useSettingsStore } from "../../stores/settings-store";
 import { apiClient } from "../../api";
 import { useNavigate } from 'react-router-dom';
-
-
-interface ReportWithReplies {
-  id: number | string;
-  from_student_username: string;
-  report_type: string;
-  subject: string;
-  latest_reply: string;
-  reply_count: number;
-  latest_reply_date: string;
-  [key: string]: any; 
-}
-
-interface ReportState {
-  items: ReportWithReplies[];
-  loading: boolean;
-  error: string | null;
-}
-
-interface DataGridContainerProps {
-  reports: ReportWithReplies[];
-  columns: GridColDef[];
-  loading: boolean;
-  colors: ReturnType<typeof tokens>;
-}
-
-interface ErrorAlertProps {
-  message: string;
-}
-
+import {
+  ReportWithReplies,
+  ReportState,
+  DataGridContainerProps,
+  ErrorAlertProps,
+  ActionButtonProps
+} from "../../types/admin/ReportRepliedList";
 
 const filterReportsBySearchTerm = (reports: ReportWithReplies[], searchTerm: string): ReportWithReplies[] => {
   if (!searchTerm) return reports;
@@ -85,7 +62,7 @@ const FullPageErrorAlert: React.FC<ErrorAlertProps> = ({ message }) => {
   );
 };
 
-const ActionButton: React.FC<{ reportId: string | number; onClick: (id: string | number) => void }> = ({ reportId, onClick }) => {
+const ActionButton: React.FC<ActionButtonProps> = ({ reportId, onClick }) => {
   return (
     <Button
       variant="contained"
@@ -163,7 +140,10 @@ const createReportColumns = (
       field: "latest_reply_date",
       headerName: "Latest Reply Date",
       flex: 1.5,
-      valueFormatter: (params: { value: string }) => formatDateString(params.value),
+      valueFormatter: (params) => {
+        if (!params) return '-';
+        return params.value ? formatDateString(params.value) : '-';
+      },
     },
     {
       field: "action",

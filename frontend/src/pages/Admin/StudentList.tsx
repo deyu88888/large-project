@@ -18,55 +18,16 @@ import { SearchContext } from "../../components/layout/SearchContext";
 import { useSettingsStore } from "../../stores/settings-store";
 import { Student } from "../../types";
 import { useNavigate } from "react-router-dom";
-
-
-interface StudentListState {
-  students: Student[];
-  loading: boolean;
-}
-
-interface DialogState {
-  open: boolean;
-  selectedStudent: Student | null;
-  reason: string;
-}
-
-interface ActionButtonsProps {
-  studentId: number | string;
-  student: Student;
-  onView: (id: string) => void;
-  onDelete: (student: Student) => void;
-}
-
-interface DeleteDialogProps {
-  dialogState: DialogState;
-  onClose: () => void;
-  onReasonChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  onConfirm: () => void;
-}
-
-interface DataGridContainerProps {
-  students: Student[];
-  columns: GridColDef[];
-  loading: boolean;
-  colors: ReturnType<typeof tokens>;
-  drawer: boolean;
-}
-
-interface PageTitleProps {
-  title: string;
-  colors: ReturnType<typeof tokens>;
-}
-
-interface PresidentCellProps {
-  isPresident: boolean;
-  presidentOf: string[] | string | null;
-}
-
-interface BooleanCellProps {
-  value: boolean;
-}
-
+import {
+  StudentListState,
+  DialogState,
+  ActionButtonsProps,
+  DeleteDialogProps,
+  DataGridContainerProps,
+  PageTitleProps,
+  PresidentCellProps,
+  BooleanCellProps
+} from "../../types/admin/StudentList";
 
 const filterStudentsBySearchTerm = (students: Student[], searchTerm: string): Student[] => {
   if (!searchTerm) return students;
@@ -81,7 +42,6 @@ const filterStudentsBySearchTerm = (students: Student[], searchTerm: string): St
   );
 };
 
-
 const fetchStudentList = async (): Promise<Student[]> => {
   const res = await apiClient.get(apiPaths.USER.STUDENTS);
   return res.data || [];
@@ -94,7 +54,6 @@ const deleteStudent = async (studentId: number | string, reason: string): Promis
     data: { reason },
   });
 };
-
 
 const PageTitle: React.FC<PageTitleProps> = ({ title, colors }) => {
   return (
@@ -250,7 +209,6 @@ const DataGridContainer: React.FC<DataGridContainerProps> = ({
   );
 };
 
-
 const createStudentColumns = (
   handleViewStudent: (id: string) => void,
   handleOpenDialog: (student: Student) => void
@@ -319,7 +277,6 @@ const StudentList: React.FC = () => {
   const { searchTerm } = useContext(SearchContext);
   const { drawer } = useSettingsStore();
   
-  
   const [studentState, setStudentState] = useState<StudentListState>({
     students: [],
     loading: true
@@ -331,7 +288,6 @@ const StudentList: React.FC = () => {
     reason: ''
   });
 
-  
   const loadStudents = useCallback(async () => {
     setStudentState(prev => ({ ...prev, loading: true }));
     
@@ -347,12 +303,10 @@ const StudentList: React.FC = () => {
     }
   }, []);
 
-  
   useEffect(() => {
     loadStudents();
   }, [loadStudents]);
 
-  
   const handleViewStudent = useCallback((studentId: string) => {
     navigate(`/admin/view-student/${studentId}`);
   }, [navigate]);
@@ -395,7 +349,6 @@ const StudentList: React.FC = () => {
     handleCloseDialog();
   }, [dialogState, loadStudents, handleCloseDialog]);
 
-  
   const filteredStudents = useMemo(() => 
     filterStudentsBySearchTerm(studentState.students, searchTerm || ''),
     [studentState.students, searchTerm]

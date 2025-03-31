@@ -18,48 +18,13 @@ import { SearchContext } from "../../components/layout/SearchContext";
 import { useSettingsStore } from "../../stores/settings-store";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../stores/auth-store";
-
-
-interface AdminUser {
-  id: number;
-  username: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  is_active: boolean;
-  role: string;
-  is_super_admin: boolean;
-  [key: string]: any;
-}
-
-interface DeleteDialogProps {
-  open: boolean;
-  admin: AdminUser | null;
-  reason: string;
-  onReasonChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  onClose: () => void;
-  onConfirm: () => void;
-}
-
-interface HeaderProps {
-  colors: any;
-  theme: any;
-}
-
-interface DataGridContainerProps {
-  filteredAdmins: AdminUser[];
-  columns: GridColDef[];
-  colors: any;
-  drawer: boolean;
-}
-
-interface ActionButtonsProps {
-  adminId: string;
-  admin: AdminUser;
-  isSuperAdmin: boolean;
-  onView: (id: string) => void;
-  onDelete: (admin: AdminUser) => void;
-}
+import {
+  AdminUser,
+  DeleteDialogProps,
+  HeaderProps,
+  DataGridContainerProps,
+  ActionButtonsProps
+} from "../../types/admin/AdminList";
 
 
 const Header: FC<HeaderProps> = ({ colors, theme }) => {

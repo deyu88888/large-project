@@ -19,8 +19,6 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
-  Avatar,
-  Grid,
 } from '@mui/material';
 import {
   CheckCircle as ApproveIcon,
@@ -29,7 +27,6 @@ import {
   ArrowBack as BackIcon,
   Person as PersonIcon,
   AccessTime as TimeIcon,
-  Image as ImageIcon,
   AttachFile as AttachFileIcon,
   LocalOffer as TagIcon,
   PushPin as PushPinIcon,
@@ -40,70 +37,26 @@ import { apiClient } from '../../api';
 import { useTheme } from '@mui/material/styles';
 import { tokens } from '../../theme/theme';
 import { alpha } from '@mui/material/styles';
-
-
-interface NewsContent {
-  id: number;
-  title: string;
-  content: string;
-  status: string;
-  is_featured: boolean;
-  is_pinned: boolean;
-  tags: string[];
-  image_url: string | null;
-  attachment_name: string | null;
-  attachment_url: string | null;
-  society_data?: {
-    id: number;
-    name: string;
-  };
-  author_data: {
-    id: number;
-    username: string;
-    full_name: string;
-  };
-  created_at: string;
-  comment_count: number;
-  view_count: number;
-}
-
-interface PublicationRequest {
-  id: number;
-  news_post: number;
-  news_post_title: string;
-  society_name: string;
-  requested_by: number;
-  requester_name: string;
-  status: string;
-  requested_at: string;
-  reviewed_at: string | null;
-  admin_notes: string | null;
-  author_data: {
-    id: number;
-    username: string;
-    full_name: string;
-  };
-}
-
-interface DialogState {
-  open: boolean;
-  action: 'approve' | 'reject' | null;
-  notes: string;
-  processing: boolean;
-  currentRequest: PublicationRequest | null;
-}
-
-interface RequestsState {
-  items: PublicationRequest[];
-  loading: boolean;
-  tabValue: number;
-  expandedRequestId: number | null;
-}
-
-interface ContentsState {
-  items: Record<number, NewsContent>;
-  loading: Record<number, boolean>;
-}
+import {
+  NewsContent,
+  PublicationRequest,
+  DialogState,
+  RequestsState,
+  ContentsState,
+  PageHeaderProps,
+  StatusTabsProps,
+  EmptyStateProps,
+  RequestHeaderProps,
+  FeaturedImageProps,
+  TagsDisplayProps,
+  AttachmentDisplayProps,
+  MetadataDisplayProps,
+  ContentPreviewProps,
+  ActionButtonsProps,
+  StatusMessageProps,
+  RequestCardProps,
+  ActionDialogProps
+} from '../../types/admin/NewsApproval';
 
 
 const fetchAllRequests = async (): Promise<PublicationRequest[]> => {
@@ -152,7 +105,7 @@ const formatDateTime = (dateString: string): string => {
 };
 
 
-const PageHeader: React.FC<{ onBack: () => void }> = ({ onBack }) => {
+const PageHeader: React.FC<PageHeaderProps> = ({ onBack }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   
@@ -178,13 +131,7 @@ const PageHeader: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   );
 };
 
-const StatusTabs: React.FC<{
-  value: number;
-  onChange: (event: React.SyntheticEvent, newValue: number) => void;
-  pendingCount: number;
-  approvedCount: number;
-  rejectedCount: number;
-}> = ({ value, onChange, pendingCount, approvedCount, rejectedCount }) => {
+const StatusTabs: React.FC<StatusTabsProps> = ({ value, onChange, pendingCount, approvedCount, rejectedCount }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   
@@ -221,7 +168,7 @@ const LoadingIndicator: React.FC = () => {
   );
 };
 
-const EmptyState: React.FC<{ tabValue: number }> = ({ tabValue }) => {
+const EmptyState: React.FC<EmptyStateProps> = ({ tabValue }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   
@@ -242,10 +189,7 @@ const EmptyState: React.FC<{ tabValue: number }> = ({ tabValue }) => {
   );
 };
 
-const RequestHeader: React.FC<{
-  request: PublicationRequest;
-  isExpanded: boolean;
-}> = ({ request, isExpanded }) => {
+const RequestHeader: React.FC<RequestHeaderProps> = ({ request, isExpanded }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   
@@ -294,9 +238,7 @@ const RequestHeader: React.FC<{
 };
 
 
-const FeaturedImage: React.FC<{
-  imageUrl: string | null;
-}> = ({ imageUrl }) => {
+const FeaturedImage: React.FC<FeaturedImageProps> = ({ imageUrl }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   
@@ -329,9 +271,7 @@ const FeaturedImage: React.FC<{
   );
 };
 
-const TagsDisplay: React.FC<{
-  tags: string[];
-}> = ({ tags }) => {
+const TagsDisplay: React.FC<TagsDisplayProps> = ({ tags }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   
@@ -362,10 +302,7 @@ const TagsDisplay: React.FC<{
   );
 };
 
-const AttachmentDisplay: React.FC<{
-  attachmentName: string | null;
-  attachmentUrl: string | null;
-}> = ({ attachmentName, attachmentUrl }) => {
+const AttachmentDisplay: React.FC<AttachmentDisplayProps> = ({ attachmentName, attachmentUrl }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   
@@ -396,9 +333,7 @@ const AttachmentDisplay: React.FC<{
   );
 };
 
-const MetadataDisplay: React.FC<{
-  newsContent: NewsContent;
-}> = ({ newsContent }) => {
+const MetadataDisplay: React.FC<MetadataDisplayProps> = ({ newsContent }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   
@@ -456,9 +391,7 @@ const MetadataDisplay: React.FC<{
   );
 };
 
-const ContentPreview: React.FC<{
-  content: string;
-}> = ({ content }) => {
+const ContentPreview: React.FC<ContentPreviewProps> = ({ content }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   
@@ -480,10 +413,7 @@ const ContentPreview: React.FC<{
   );
 };
 
-const ActionButtons: React.FC<{
-  onApprove: () => void;
-  onReject: () => void;
-}> = ({ onApprove, onReject }) => {
+const ActionButtons: React.FC<ActionButtonsProps> = ({ onApprove, onReject }) => {
   return (
     <Box display="flex" gap={2} mt={3}>
       <Button
@@ -518,10 +448,7 @@ const ActionButtons: React.FC<{
   );
 };
 
-const StatusMessage: React.FC<{
-  status: string;
-  notes: string | null;
-}> = ({ status, notes }) => {
+const StatusMessage: React.FC<StatusMessageProps> = ({ status, notes }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   
@@ -564,15 +491,7 @@ const StatusMessage: React.FC<{
   );
 };
 
-const RequestCard: React.FC<{
-  request: PublicationRequest;
-  isExpanded: boolean;
-  newsContent: NewsContent | undefined;
-  isLoadingContent: boolean;
-  onToggleExpand: () => void;
-  onApprove: () => void;
-  onReject: () => void;
-}> = ({
+const RequestCard: React.FC<RequestCardProps> = ({
   request,
   isExpanded,
   newsContent,
@@ -663,12 +582,7 @@ const RequestCard: React.FC<{
   );
 };
 
-const ActionDialog: React.FC<{
-  dialogState: DialogState;
-  onClose: () => void;
-  onProcess: () => void;
-  onNotesChange: (notes: string) => void;
-}> = ({ dialogState, onClose, onProcess, onNotesChange }) => {
+const ActionDialog: React.FC<ActionDialogProps> = ({ dialogState, onClose, onProcess, onNotesChange }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   
@@ -927,30 +841,30 @@ const NewsApprovalDashboard: React.FC = () => {
     setDialogState(prev => ({ ...prev, processing: true }));
     
     try {
-      
+      // Set the new status based on the action
       const newStatus = action === 'approve' ? 'Approved' : 'Rejected';
       
-      
+      // Optimistically update the UI
       const updatedRequest = optimisticallyUpdateRequest(currentRequest, newStatus);
       
-      
+      // Switch to the appropriate tab
       setTabValue(action === 'approve' ? 1 : 2);
       
-      
+      // Close the dialog immediately for better UX
       handleCloseDialog();
       
-      
+      // Keep the current request expanded
       setExpandedRequestId(updatedRequest.id);
       
-      
+      // Make the actual API call
       await updateRequestStatus(currentRequest.id, newStatus, notes);
       
-      
+      // Refresh data to ensure UI is in sync with backend
       await refreshAllData(currentRequest.news_post);
     } catch (error) {
       console.error('Error processing request:', error);
       
-      
+      // If there was an error, reload all data
       loadAllRequests();
     } finally {
       setDialogState(prev => ({ ...prev, processing: false }));
@@ -958,11 +872,11 @@ const NewsApprovalDashboard: React.FC = () => {
   };
 
   const refreshAllData = async (newsPostId: number): Promise<void> => {
-    
+    // Refresh the list of requests
     const updatedRequests = await fetchAllRequests();
     setRequests(updatedRequests);
     
-    
+    // Refresh the content if it's loaded
     if (contentsState.items[newsPostId]) {
       const updatedContent = await fetchNewsContent(newsPostId);
       setNewsContent(newsPostId, updatedContent);

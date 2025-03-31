@@ -28,7 +28,47 @@ export interface User {
   is_active: boolean;
   is_following?: boolean;
   icon?: string;
-};
+}
+
+export interface UserStats {
+  totalUsers: number;
+  [key: string]: any;
+}
+
+export interface Event {
+  id: number | string;
+  title?: string;
+  date?: string;
+  start_date?: string;
+  end_date?: string;
+  start_time?: string;
+  status?: string;
+  hosted_by?: number;
+  main_description?: string;
+  description?: string;
+  location?: string;
+  duration?: string;
+  max_capacity?: number;
+  current_attendees?: number[];
+  [key: string]: any;
+}
+
+export interface Notification {
+  id: number | string;
+  header?: string;
+  body?: string;
+  is_read?: boolean;
+  [key: string]: any;
+}
+
+export interface Publication {
+  id: number | string;
+  news_post_title?: string;
+  society_name?: string;
+  requester_name?: string;
+  status?: string;
+  [key: string]: any;
+}
 
 export interface StatCardProps {
   icon: React.ReactNode;
@@ -41,29 +81,15 @@ export interface NotificationCardProps {
   isRead: boolean;
 }
 
-export interface UserStats {
-  totalUsers: number;
-  [key: string]: any;
-}
-
-export interface Publication {
-  id: number;
-  news_post_title: string;
-  society_name: string;
-  requester_name: string;
-  status: string;
-  [key: string]: any;
-}
-
 export interface PublicationSectionProps {
   publications: Publication[];
-  colors: ColorTokens;
+  colors: ColorTokens | any;
   onNavigate: (path: string) => void;
 }
 
 export interface NotificationsSectionProps {
   notifications: Notification[];
-  colors: ColorTokens;
+  colors: ColorTokens | any;
 }
 
 export interface StatsSectionProps {
@@ -71,7 +97,7 @@ export interface StatsSectionProps {
   eventsCount: number;
   notificationsCount: number;
   publicationsCount: number;
-  colors: ColorTokens;
+  colors: ColorTokens | any;
 }
 
 export interface DashboardContentProps {
@@ -80,29 +106,11 @@ export interface DashboardContentProps {
   events: Event[];
   notifications: Notification[];
   pendingPublications: Publication[];
-  user: User | null;
-  colors: ColorTokens;
+  user: User | any;
+  colors: ColorTokens | any;
   onNavigate: (path: string) => void;
 }
 
-export interface Notification {
-  id: number;
-  header: string;
-  body: string;
-  is_read: boolean;
-}
-
-export interface Event {
-  id: number;
-  title: string;
-  date: string;
-  start_time: string;
-  status: string;
-  hosted_by: number;
-  main_description: string;
-  description: string;
-  location: string;
-  duration: string;
-  max_capacity: number;
-  current_attendees: number[];
+export interface LoadingStateProps {
+  color: string;
 }

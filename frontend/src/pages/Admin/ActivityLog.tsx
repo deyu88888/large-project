@@ -22,27 +22,16 @@ import { tokens } from "../../theme/theme";
 import { useSettingsStore } from "../../stores/settings-store";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { fetchPendingRequests } from "./utils";
+import { 
+  NotificationState, 
+  ActivityLogListProps, 
+  ProcessingState, 
+  ActionButtonsProps, 
+  ConfirmDeleteDialogProps, 
+  NotificationAlertProps 
+} from "../../types/admin/ActivityLog";
 
-
-interface NotificationState {
-  open: boolean;
-  message: string;
-  severity: "success" | "error" | "info" | "warning";
-}
-
-interface ActivityLogListProps {}
-
-interface ProcessingState {
-  id: number | null;
-  isProcessing: boolean;
-}
-
-const ActionButtons: React.FC<{
-  row: ActivityLog;
-  processing: ProcessingState;
-  onUndo: (id: number) => void;
-  onDelete: (log: ActivityLog) => void;
-}> = ({ row, processing, onUndo, onDelete }) => {
+const ActionButtons: React.FC<ActionButtonsProps> = ({ row, processing, onUndo, onDelete }) => {
   const isProcessing = processing.id === row.id && processing.isProcessing;
   
   return (
@@ -73,14 +62,7 @@ const ActionButtons: React.FC<{
   );
 };
 
-const ConfirmDeleteDialog: React.FC<{
-  open: boolean;
-  log: ActivityLog | null;
-  processing: ProcessingState;
-  onClose: () => void;
-  onConfirm: () => void;
-  colors: any;
-}> = ({ open, log, processing, onClose, onConfirm, colors }) => {
+const ConfirmDeleteDialog: React.FC<ConfirmDeleteDialogProps> = ({ open, log, processing, onClose, onConfirm, colors }) => {
   const isProcessing = processing.id === log?.id && processing.isProcessing;
   
   return (
@@ -128,10 +110,7 @@ const ConfirmDeleteDialog: React.FC<{
   );
 };
 
-const NotificationAlert: React.FC<{
-  notification: NotificationState;
-  onClose: () => void;
-}> = ({ notification, onClose }) => {
+const NotificationAlert: React.FC<NotificationAlertProps> = ({ notification, onClose }) => {
   return (
     <Snackbar
       open={notification.open}

@@ -1,17 +1,6 @@
 import { useState } from "react";
 import { apiClient } from "../../api";
-
-
-interface ApiResponse<T> {
-  data: T;
-}
-
-interface ApiError {
-  message: string;
-  path: string;
-  error: unknown;
-}
-
+import { ApiResponse, ApiError } from "../../types/admin/Utils";
 
 const logApiError = (error: ApiError): void => {
   console.error(`Error from ${error.path}:`, error.error);
@@ -25,11 +14,9 @@ const createApiError = (path: string, error: unknown): ApiError => {
   };
 };
 
-
 const makeGetRequest = async <T>(path: string): Promise<ApiResponse<T> | undefined> => {
   return await apiClient.get(path);
 };
-
 
 export const fetchPendingRequests = async <T>(path: string): Promise<T | undefined> => {
   try {

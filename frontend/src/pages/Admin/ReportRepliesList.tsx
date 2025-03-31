@@ -6,50 +6,18 @@ import { SearchContext } from "../../components/layout/SearchContext";
 import { useSettingsStore } from "../../stores/settings-store";
 import { fetchReportsWithReplies } from './fetchReports';
 import { useNavigate } from 'react-router-dom';
-
+import { Report } from "../../types/president/report";
+import {
+  ReportState,
+  LatestReplyProps,
+  DateCellProps,
+  ActionButtonsProps,
+  ErrorAlertProps,
+  LoadingStateProps,
+  DataGridContainerProps
+} from "../../types/admin/ReportRepliesList";
 
 const REFRESH_INTERVAL = 5 * 60 * 1000; 
-
-
-interface ReportState {
-  items: Report[];
-  loading: boolean;
-  error: string | null;
-}
-
-interface LatestReplyProps {
-  repliedBy: string;
-  content: string;
-}
-
-interface DateCellProps {
-  dateString: string;
-  formatter: (dateString: string) => string;
-}
-
-interface ActionButtonsProps {
-  reportId: number | string;
-  onViewThread: (id: number | string) => void;
-  onReply: (id: number | string) => void;
-}
-
-interface ErrorAlertProps {
-  message: string;
-  onClose: () => void;
-}
-
-interface LoadingStateProps {
-  message: string;
-}
-
-interface DataGridContainerProps {
-  reports: Report[];
-  columns: GridColDef[];
-  loading: boolean;
-  colors: ReturnType<typeof tokens>;
-  drawer: boolean;
-}
-
 
 const formatDateToLocale = (dateString: string): string => {
   try {
@@ -71,7 +39,6 @@ const filterReportsBySearchTerm = (reports: Report[], searchTerm: string): Repor
       .includes(normalizedSearchTerm)
   );
 };
-
 
 const LatestReplyCell: React.FC<LatestReplyProps> = ({ repliedBy, content }) => {
   return (
@@ -202,7 +169,6 @@ const DataGridContainer: React.FC<DataGridContainerProps> = ({ reports, columns,
   );
 };
 
-
 const createReportColumns = (
   handleViewThread: (id: number | string) => void,
   handleReply: (id: number | string) => void,
@@ -266,11 +232,9 @@ const createReportColumns = (
   ];
 };
 
-
 const loadReportData = async (): Promise<Report[]> => {
   return await fetchReportsWithReplies() as any;
 };
-
 
 const ReportRepliesList: React.FC = () => {
   const theme = useTheme();
@@ -279,14 +243,12 @@ const ReportRepliesList: React.FC = () => {
   const { drawer } = useSettingsStore();
   const navigate = useNavigate();
   
-  
   const [reportState, setReportState] = useState<ReportState>({
     items: [],
     loading: true,
     error: null
   });
 
-  
   const handleViewThread = useCallback((reportId: number | string) => {
     navigate(`/admin/report-thread/${reportId}`);
   }, [navigate]);
@@ -299,7 +261,6 @@ const ReportRepliesList: React.FC = () => {
     setReportState(prev => ({ ...prev, error: null }));
   }, []);
 
-  
   const fetchReports = useCallback(async () => {
     setReportState(prev => ({ ...prev, loading: true }));
     
@@ -320,7 +281,6 @@ const ReportRepliesList: React.FC = () => {
     }
   }, []);
 
-  
   useEffect(() => {
     fetchReports();
     
@@ -329,27 +289,22 @@ const ReportRepliesList: React.FC = () => {
     return () => clearInterval(intervalId);
   }, [fetchReports]);
 
-  
   const formatDate = useCallback(formatDateToLocale, []);
 
-  
   const filteredReports = useMemo(() => 
     filterReportsBySearchTerm(reportState.items, searchTerm || ''),
     [reportState.items, searchTerm]
   );
 
-  
   const columns = useMemo(() => 
     createReportColumns(handleViewThread, handleReply, formatDate),
     [handleViewThread, handleReply, formatDate]
   );
 
-  
   if (reportState.loading && reportState.items.length === 0) {
     return <LoadingState message="Loading reports..." />;
   }
 
-  
   return (
     <>
       {reportState.error && (

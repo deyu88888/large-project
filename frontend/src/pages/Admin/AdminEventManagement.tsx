@@ -1,42 +1,17 @@
-import React, { ReactNode, useState, useCallback, FC } from "react";
+import React, { useState, useCallback, FC } from "react";
 import { Box, Tabs, Tab, useTheme, Typography } from "@mui/material";
 import { tokens } from "../../theme/theme";
 import EventList from "./AdminEventList";
 import EventListRejected from "./RejectedEventsList";
 import PendingEventRequest from "./PendingEventRequest";
-
-
-interface TabPanelProps {
-  children: ReactNode;
-  value: number;
-  index: number;
-}
-
-interface TabConfig {
-  label: string;
-  component: ReactNode;
-}
-
-interface TabAccessibilityProps {
-  id: string;
-  'aria-controls': string;
-}
-
-interface TabContainerProps {
-  activeTab: number;
-  handleTabChange: (event: React.SyntheticEvent, newValue: number) => void;
-  tabs: TabConfig[];
-}
-
-interface TabPanelsProps {
-  activeTab: number;
-  tabs: TabConfig[];
-}
-
-interface PageHeaderProps {
-  colors: any;
-}
-
+import {
+  TabPanelProps,
+  TabConfig,
+  TabAccessibilityProps,
+  TabContainerProps,
+  TabPanelsProps,
+  PageHeaderProps
+} from "../../types/admin/AdminEventManagement";
 
 const ACTIVE_TAB_KEY = "activeEventTab";
 
@@ -46,14 +21,12 @@ const TABS: TabConfig[] = [
   { label: "Rejected events", component: <EventListRejected /> },
 ];
 
-
 const getTabAccessibilityProps = (index: number): TabAccessibilityProps => {
   return {
     id: `event-tab-${index}`,
     'aria-controls': `event-tabpanel-${index}`,
   };
 };
-
 
 const getInitialTabState = (): number => {
   try {
@@ -73,10 +46,8 @@ const saveTabState = (newValue: number): void => {
   }
 };
 
-
 const CustomTabPanel: FC<TabPanelProps> = ({ children, value, index }) => {
   if (value !== index) return null;
-  
   return (
     <Box
       role="tabpanel"
@@ -87,7 +58,6 @@ const CustomTabPanel: FC<TabPanelProps> = ({ children, value, index }) => {
     </Box>
   );
 };
-
 
 const PageHeader: FC<PageHeaderProps> = ({ colors }) => {
   return (
@@ -104,7 +74,6 @@ const PageHeader: FC<PageHeaderProps> = ({ colors }) => {
     </Typography>
   );
 };
-
 
 const TabContainer: FC<TabContainerProps> = ({ activeTab, handleTabChange, tabs }) => {
   return (
@@ -133,7 +102,6 @@ const TabContainer: FC<TabContainerProps> = ({ activeTab, handleTabChange, tabs 
   );
 };
 
-
 const TabPanels: FC<TabPanelsProps> = ({ activeTab, tabs }) => {
   return (
     <>
@@ -150,33 +118,29 @@ const TabPanels: FC<TabPanelsProps> = ({ activeTab, tabs }) => {
   );
 };
 
-
-const ManageEvents: FC = () => {
+const AdminEventManagement: FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
-  
   const [activeTab, setActiveTab] = useState<number>(getInitialTabState);
-  
+
   const handleTabChange = useCallback((_: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
     saveTabState(newValue);
   }, []);
-  
+
   const containerStyle = {
     height: "calc(100vh - 64px)",
   };
-  
+
   return (
     <Box sx={containerStyle}>
       <PageHeader colors={colors} />
-      
-      <TabContainer 
+      <TabContainer
         activeTab={activeTab}
         handleTabChange={handleTabChange}
         tabs={TABS}
       />
-      
-      <TabPanels 
+      <TabPanels
         activeTab={activeTab}
         tabs={TABS}
       />
@@ -184,4 +148,4 @@ const ManageEvents: FC = () => {
   );
 };
 
-export default ManageEvents;
+export default AdminEventManagement;

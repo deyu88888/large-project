@@ -1,42 +1,18 @@
-import React, { ReactNode, useEffect, useState, useCallback, FC } from "react";
+import React, { useEffect, useState, useCallback, FC } from "react";
 import { Box, Tabs, Tab, useTheme, Typography } from "@mui/material";
 import { tokens } from "../../theme/theme";
 import SocietyList from "./SocietyList";
 import SocietyListRejected from "./RejectedSocietiesList";
 import PendingSocietyRequest from "./SocietyCreationRequests";
 import PendingSocietyDetailRequests from "./PendingSocietyDetailRequest";
-
-
-interface TabPanelProps {
-  children: ReactNode;
-  value: number;
-  index: number;
-}
-
-interface TabConfig {
-  label: string;
-  component: ReactNode;
-}
-
-interface TabAccessibilityProps {
-  id: string;
-  'aria-controls': string;
-}
-
-interface TabsContainerProps {
-  activeTab: number;
-  onTabChange: (event: React.SyntheticEvent, newValue: number) => void;
-  tabs: TabConfig[];
-}
-
-interface TabPanelsProps {
-  activeTab: number;
-  tabs: TabConfig[];
-}
-
-interface HeaderProps {
-  colors: any;
-}
+import {
+  TabPanelProps,
+  TabConfig,
+  TabAccessibilityProps,
+  TabsContainerProps,
+  TabPanelsProps,
+  HeaderProps
+} from "../../types/admin/AdminSocietyManagement";
 
 
 const ACTIVE_TAB_KEY = "activeTab";
@@ -152,7 +128,7 @@ const TabPanels: FC<TabPanelsProps> = ({ activeTab, tabs }) => {
 };
 
 
-const ManageSocieties: FC = () => {
+const AdminSocietyManagement: FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   
@@ -199,4 +175,4 @@ const ManageSocieties: FC = () => {
   );
 };
 
-export default ManageSocieties;
+export default AdminSocietyManagement;

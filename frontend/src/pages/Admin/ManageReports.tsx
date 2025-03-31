@@ -1,28 +1,17 @@
-
-import React, { ReactNode, useState, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import { Box, Tabs, Tab, useTheme, Typography } from "@mui/material";
 import { tokens } from "../../theme/theme";
 import AdminReportList from "./AdminReportList";
 import ReportRepliedList from "./ReportRepliedList";
 import ReportRepliesList from "./ReportRepliesList";
-
-
-interface TabPanelProps {
-  children: ReactNode;
-  value: number;
-  index: number;
-}
-
-interface TabConfig {
-  label: string;
-  component: ReactNode;
-  ariaLabel?: string;
-}
-
-interface StorageOperations {
-  getActiveTab: () => number;
-  setActiveTab: (value: number) => void;
-}
+import {
+  TabPanelProps,
+  TabConfig,
+  StorageOperations,
+  ReportTabsProps,
+  TabPanelContainerProps,
+  PageTitleProps
+} from "../../types/admin/ManageReports";
 
 
 const STORAGE_KEY = "reportsActiveTab";
@@ -76,11 +65,7 @@ const CustomTabPanel: React.FC<TabPanelProps> = ({ children, value, index }) => 
   );
 };
 
-const ReportTabs: React.FC<{
-  tabs: TabConfig[];
-  activeTabIndex: number;
-  handleTabChange: (event: React.SyntheticEvent, newValue: number) => void;
-}> = ({ tabs, activeTabIndex, handleTabChange }) => {
+const ReportTabs: React.FC<ReportTabsProps> = ({ tabs, activeTabIndex, handleTabChange }) => {
   return (
     <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
       <Tabs
@@ -104,10 +89,7 @@ const ReportTabs: React.FC<{
   );
 };
 
-const TabPanelContainer: React.FC<{
-  tabs: TabConfig[];
-  activeTabIndex: number;
-}> = ({ tabs, activeTabIndex }) => {
+const TabPanelContainer: React.FC<TabPanelContainerProps> = ({ tabs, activeTabIndex }) => {
   return (
     <>
       {tabs.map((tab, index) => (
@@ -123,7 +105,7 @@ const TabPanelContainer: React.FC<{
   );
 };
 
-const PageTitle: React.FC<{ colors: ReturnType<typeof tokens> }> = ({ colors }) => {
+const PageTitle: React.FC<PageTitleProps> = ({ colors }) => {
   return (
     <Typography
       variant="h1"
