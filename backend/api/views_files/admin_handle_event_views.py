@@ -13,8 +13,12 @@ class EventRestoreHandler(RestoreHandler):
         """Restore a deleted event."""
         try:
             event_data = {k: v for k, v in original_data.items() if k not in [
-                'id', 'hosted_by', 'current_attendees', 'duration'
+                'id', 'hosted_by', 'society', 'approved_by', 'organizer', 
+                'current_attendees', 'attendees', 'images', 'tags', 'duration'
             ]}
+
+            if 'status' not in event_data or not event_data['status']:
+                event_data['status'] = original_data.get('status', 'Approved')
             
             for field in ['date', 'start_time', 'end_time']:
                 if field in event_data:
@@ -31,30 +35,33 @@ class EventRestoreHandler(RestoreHandler):
                                 event_data[field] = None
             
             event = Event.objects.create(**event_data)
-            duration_str = original_data.get('duration')
-            if duration_str:
+            
+            duration_value = original_data.get('duration')
+            if duration_value:
                 try:
-                    if isinstance(duration_str, str):
-                        if ',' in duration_str:
-                            days_part, time_part = duration_str.split(',', 1)
+                    if isinstance(duration_value, str):
+                        if ',' in duration_value:
+                            days_part, time_part = duration_value.split(',', 1)
                             days = int(days_part.strip().split()[0])
                             hours, minutes, seconds = map(int, time_part.strip().split(':'))
                             duration = timedelta(days=days, hours=hours, minutes=minutes, seconds=seconds)
                         else:
-                            time_parts = duration_str.strip().split(':')
+                            time_parts = duration_value.strip().split(':')
                             if len(time_parts) == 3:
                                 hours, minutes, seconds = map(int, time_parts)
                                 duration = timedelta(hours=hours, minutes=minutes, seconds=seconds)
                             else:
                                 duration = timedelta(hours=1)
-                        
-                        event.duration = duration
-                        event.save()
-                except Exception:
+                    elif isinstance(duration_value, (int, float)):
+                        duration = timedelta(seconds=duration_value)
+                    else:
+                        duration = timedelta(hours=1)
+                    
+                    event.duration = duration
+                except Exception as e:
+                    print(f"Error setting duration: {str(e)}")
                     event.duration = timedelta(hours=1)
-                    event.save()
             
-            set_foreign_key_relationship(event, 'hosted_by', original_data.get('hosted_by'), Society)
             event.save()
             
             for field_name, model_class in [
@@ -107,11 +114,18 @@ class EventRestoreHandler(RestoreHandler):
             #         )
             
             log_entry.delete()
-            return Response({"message": "Event restored successfully!"}, status=status.HTTP_200_OK)
+            
+            return Response({
+                "message": "Event restored successfully!",
+                "event_id": event.id,
+                "event_status": event.status
+            }, status=status.HTTP_200_OK)
             
         except Exception as e:
-            return Response({"error": f"Failed to restore Event: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
+            return Response({
+                "error": f"Failed to restore Event: {str(e)}",
+                "details": str(original_data)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class EventStatusChangeUndoHandler(RestoreHandler):
@@ -124,14 +138,12 @@ class EventStatusChangeUndoHandler(RestoreHandler):
                 return Response({"error": "Event not found."}, status=status.HTTP_404_NOT_FOUND)
             event.status = "Pending"
             
-            # If there was an approved_by field and we're undoing an approval, clear it
             if log_entry.action_type == "Approve" and hasattr(event, 'approved_by'):
                 event.approved_by = None
             
             event.save()
             reason = log_entry.reason if log_entry.reason else "Admin update of event details"
             
-            # Create a new activity log for this undo action
             ActivityLog.objects.create(
                 action_type="Update",
                 target_type="Event",

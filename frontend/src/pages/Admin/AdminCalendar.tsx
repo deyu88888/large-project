@@ -412,7 +412,7 @@ const AdminCalendar = () => {
           endAccessor="end"
           style={{ height: 600 }}
           eventPropGetter={eventStyleGetter}
-          components={components}
+          components={components as any}
           views={["month", "week", "day", "agenda"]}
           min={new Date()}
           max={new Date()}

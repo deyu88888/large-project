@@ -112,6 +112,42 @@ class AdminManageStudentDetailsView(APIView):
         student = Student.objects.filter(id=student_id).first()
         if not student:
             return Response({"error": "Student not found."}, status=status.HTTP_404_NOT_FOUND)
+        
+        original_data = {}
+
+        for field in student._meta.fields:
+            field_name = field.name
+            if field_name not in ['id', 'user_ptr']:
+                value = getattr(student, field_name)
+
+                if isinstance(value, (date, datetime)):
+                    original_data[field_name] = value.isoformat()
+                elif hasattr(value, 'id') and not isinstance(value, (list, dict)):
+                    original_data[field_name] = value.id
+                elif hasattr(value, 'url') and hasattr(value, 'name'):
+                    original_data[field_name] = value.name if value.name else None
+                else:
+                    original_data[field_name] = value
+
+        for field in student._meta.many_to_many:
+            field_name = field.name
+            related_ids = [item.id for item in getattr(student, field_name).all()]
+            original_data[field_name] = related_ids
+
+        try:
+            original_data_json = json.dumps(original_data)
+        except TypeError as e:
+            problematic_fields = {}
+            for key, value in original_data.items():
+                try:
+                    json.dumps({key: value})
+                except TypeError:
+                    problematic_fields[key] = str(type(value))
+
+            return Response({
+                "error": f"JSON serialization error: {str(e)}",
+                "problematic_fields": problematic_fields
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         data = request.data.copy()
         original_societies = None
@@ -132,7 +168,7 @@ class AdminManageStudentDetailsView(APIView):
                             society = Society.objects.get(id=society_id)
                             student.societies.add(society)
                         except (ValueError, Society.DoesNotExist):
-                            pass  # Skip invalid IDs
+                            pass 
                 
                 student.save()
             
@@ -145,15 +181,15 @@ class AdminManageStudentDetailsView(APIView):
                 target_name=student.full_name,
                 target_email=student.email,
                 performed_by=request.user,
-                reason=data.get('reason', 'Admin update of student details')
+                reason=data.get('reason', 'Admin update of student details'),
+                expiration_date=timezone.now() + timedelta(days=30),
+                original_data=original_data_json
             )
             
+            ActivityLog.delete_expired_logs()
+            
             return Response({"message": "Student details updated successfully.", "data": updated_serializer.data}, 
-                           status=status.HTTP_200_OK)
-            return Response(
-                {"message": "Student details updated successfully.",
-                "data": serializer.data}, status=status.HTTP_200_OK
-            )
+                        status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -361,6 +397,7 @@ class AdminManageAdminDetailsView(APIView):
                 target_id=admin.id,
                 target_name=f"{admin.first_name} {admin.last_name}",
                 performed_by=user,
+                reason=data.get('reason', 'Admin update of admin details'),
                 timestamp=timezone.now(),
                 expiration_date=timezone.now() + timedelta(days=30),
                 original_data=original_data_json
@@ -527,6 +564,13 @@ class AdminActivityLogView(APIView):
                 {"error": "Activity log not found."},
                 status=status.HTTP_404_NOT_FOUND
             )
+        
+        if activity_log.target_type == "Admin" and not request.user.is_super_admin:
+            return Response(
+                {"error": "Only super admins can delete activity logs related to admin users."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
         activity_log.delete()
         return Response(
             {"message": "Activity log deleted successfully."},

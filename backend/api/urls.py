@@ -88,7 +88,7 @@ admin_patterns = [
     path("delete-activity-log/<int:log_id>", AdminActivityLogView.as_view(), name="delete_activity_log"),
     path('delete/<str:target_type>/<int:target_id>', AdminDeleteView.as_view(), name='delete'),
     path('restore/<int:log_id>', AdminRestoreView.as_view(), name='restore'),
-    path('undo-delete/<int:log_id>', AdminDeleteView.as_view(), name='undo-delete'),
+    path('undo-delete/<int:log_id>', AdminRestoreView.as_view(), name='undo-delete'),
 
     # Student societies endpoints
     path("student-societies/", JoinedSocietiesView.as_view(), name="student_societies"),
