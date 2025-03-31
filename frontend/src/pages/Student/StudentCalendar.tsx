@@ -32,65 +32,23 @@ import {
   CalendarEvent,
   StudentCalendarProps,
 } from "../../types/shared/calendar";
-
-// ----------------- INTERFACES -----------------
-interface StyleProps {
-  colours: ReturnType<typeof tokens>;
-}
-
-interface CustomEventProps {
-  event: CalendarEvent;
-}
-
-interface EventStyleProps {
-  event: CalendarEvent;
-}
-
-interface DialogContentProps {
-  selectedEvent: CalendarEvent;
-  timezone: string;
-}
-
-interface DialogActionProps {
-  selectedEvent: CalendarEvent;
-  handleCloseDialog: () => void;
-  handleRSVP: (eventId: number, isAttending: boolean) => void;
-  rsvpLoading: boolean;
-  styleProps: StyleProps;
-}
-
-interface CalendarHeaderProps {
-  timezone: string;
-  fetchEvents: () => void;
-  loading: boolean;
-  styleProps: StyleProps;
-}
-
-interface AlertMessageProps {
-  error: string | null;
-  onClear: () => void;
-}
-
-interface CalendarContainerProps {
-  events: CalendarEvent[];
-  handleSelectEvent: (event: CalendarEvent) => void;
-  eventStyleGetter: (event: CalendarEvent) => { style: React.CSSProperties };
-  CustomEvent: React.FC<CustomEventProps>;
-}
-
-interface EventDialogProps {
-  openDialog: boolean;
-  handleCloseDialog: () => void;
-  selectedEvent: CalendarEvent | null;
-  handleRSVP: (eventId: number, isAttending: boolean) => void;
-  rsvpLoading: boolean;
-  timezone: string;
-  styleProps: StyleProps;
-}
-
-interface NoEventsMessageProps {
-  styleProps: StyleProps;
-}
+import {
+  StyleProps,
+  CustomEventProps,
+  DialogContentProps,
+  DialogActionProps,
+  CalendarHeaderProps,
+  AlertMessageProps,
+  CalendarContainerProps,
+  EventDialogProps,
+  NoEventsMessageProps,
+  EventDateTimeInfoProps,
+  EventLocationInfoProps,
+  EventSocietyInfoProps,
+  EventDescriptionInfoProps,
+  EventDialogTitleProps,
+  LoadingIndicatorProps
+} from "../../types/student/StudentCalendar";
 
 // ----------------- UTILITY FUNCTIONS -----------------
 const parseDateTime = (dateStr: string, timeStr: string, tz: string): Date => {
@@ -195,10 +153,10 @@ const CustomEvent: React.FC<CustomEventProps> = ({ event }) => {
 };
 
 // --- Dialog Title ---
-const EventDialogTitle: React.FC<{
-  selectedEvent: CalendarEvent;
-  eventStyleGetter: (event: CalendarEvent) => { style: React.CSSProperties };
-}> = ({ selectedEvent, eventStyleGetter }) => {
+const EventDialogTitle: React.FC<EventDialogTitleProps> = ({ 
+  selectedEvent, 
+  eventStyleGetter 
+}) => {
   const backgroundColor = eventStyleGetter(selectedEvent).style.backgroundColor;
 
   return (
@@ -225,11 +183,7 @@ const EventDialogTitle: React.FC<{
 };
 
 // --- Dialog Content Info (Time, Location, Society, Description) ---
-const EventDateTimeInfo: React.FC<{
-  start: Date;
-  end: Date;
-  timezone: string;
-}> = ({ start, end, timezone }) => {
+const EventDateTimeInfo: React.FC<EventDateTimeInfoProps> = ({ start, end, timezone }) => {
   return (
     <Box mb={2}>
       <Typography
@@ -254,9 +208,7 @@ const EventDateTimeInfo: React.FC<{
   );
 };
 
-const EventLocationInfo: React.FC<{
-  location: string;
-}> = ({ location }) => {
+const EventLocationInfo: React.FC<EventLocationInfoProps> = ({ location }) => {
   if (!location) return null;
 
   return (
@@ -275,9 +227,7 @@ const EventLocationInfo: React.FC<{
   );
 };
 
-const EventSocietyInfo: React.FC<{
-  societyName: string;
-}> = ({ societyName }) => {
+const EventSocietyInfo: React.FC<EventSocietyInfoProps> = ({ societyName }) => {
   if (!societyName) return null;
 
   return (
@@ -296,9 +246,7 @@ const EventSocietyInfo: React.FC<{
   );
 };
 
-const EventDescriptionInfo: React.FC<{
-  description: string;
-}> = ({ description }) => {
+const EventDescriptionInfo: React.FC<EventDescriptionInfoProps> = ({ description }) => {
   if (!description) return null;
 
   return (
@@ -351,7 +299,7 @@ const EventDialogActions: React.FC<DialogActionProps> = ({
         Close
       </Button>
 
-      {/* If already RSVP’d → show Cancel RSVP; otherwise → show RSVP */}
+      {/* If already RSVP'd → show Cancel RSVP; otherwise → show RSVP */}
       {selectedEvent.rsvp ? (
         <Button
           variant="contained"
@@ -432,9 +380,7 @@ const AlertMessage: React.FC<AlertMessageProps> = ({ error, onClear }) => {
 };
 
 // --- Loading Indicator ---
-const LoadingIndicator: React.FC<{ colours: ReturnType<typeof tokens> }> = ({
-  colours,
-}) => {
+const LoadingIndicator: React.FC<LoadingIndicatorProps> = ({ colours }) => {
   return (
     <Box
       display="flex"

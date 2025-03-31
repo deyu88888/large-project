@@ -4,76 +4,19 @@ import { useTheme } from "@mui/material/styles";
 import { tokens } from "../../theme/theme";
 import { useNavigate } from "react-router-dom";
 import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined';
-
-// Interfaces and Types
-interface StyleProps {
-  isLight: boolean;
-  colours: ReturnType<typeof tokens>;
-}
-
-interface Notification {
-  id: number;
-  header: string;
-  body: string;
-  is_read: boolean;
-  created_at?: string;
-  send_time?: string;
-  type?: string;
-  report_id?: number;
-}
-
-interface HeaderProps {
-  styleProps: StyleProps;
-}
-
-interface LoadingStateProps {
-  styleProps: StyleProps;
-}
-
-interface EmptyStateProps {
-  styleProps: StyleProps;
-}
-
-interface MarkAsReadButtonProps {
-  notificationId: number;
-  notificationType?: string;
-  onMarkAsRead: (id: number, type?: string) => Promise<void>;
-  styleProps: StyleProps;
-}
-
-interface DeleteButtonProps {
-  notificationId: number;
-  notificationType?: string;
-  onDelete: (id: number, type?: string) => Promise<void>;
-  styleProps: StyleProps;
-}
-
-interface ViewReplyButtonProps {
-  reportId: number;
-  onNavigate: (path: string) => void;
-  styleProps: StyleProps;
-}
-
-interface NotificationItemProps {
-  notification: Notification;
-  onMarkAsRead: (id: number, type?: string) => Promise<void>;
-  onDelete: (id: number, type?: string) => Promise<void>;
-  onNavigate: (path: string) => void;
-  styleProps: StyleProps;
-}
-
-interface NotificationListProps {
-  notifications: Notification[];
-  onMarkAsRead: (id: number, type?: string) => Promise<void>;
-  onDelete: (id: number, type?: string) => Promise<void>;
-  onNavigate: (path: string) => void;
-  styleProps: StyleProps;
-}
-
-interface PageContainerProps {
-  children: React.ReactNode;
-  styleProps: StyleProps;
-}
+import {
+  StyleProps,
+  Notification,
+  HeaderProps,
+  LoadingStateProps,
+  EmptyStateProps,
+  MarkAsReadButtonProps,
+  DeleteButtonProps,
+  ViewReplyButtonProps,
+  NotificationItemProps,
+  NotificationListProps,
+  PageContainerProps
+} from "../../types/student/ViewInbox";
 
 // Component Functions
 const PageHeader: React.FC<HeaderProps> = ({ styleProps }) => {

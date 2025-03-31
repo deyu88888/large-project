@@ -35,6 +35,29 @@ import { Notification } from "../../types/student/notification";
 import { AwardAssignment } from "../../types/student/award";
 import AwardCard from "../../components/AwardCard";
 import { User } from "../../types/user/user";
+import {
+  StyleProps,
+  StudentDashboardProps,
+  Student,
+  StatCardProps,
+  SnackbarState,
+  DashboardData,
+  HeaderProps,
+  StatCardsProps,
+  SocietyTabProps,
+  EventTabProps,
+  NotificationTabProps,
+  AwardTabProps,
+  StartSocietySectionProps,
+  CalendarSectionProps,
+  EventDateProps,
+  EventLocationProps,
+  EventHostProps,
+  EventCardProps,
+  NotificationItemProps,
+  EventManagerButtonProps,
+  TabsContainerProps,
+} from "../../types/student/StudentDashboard";
 
 // Styled Components
 const CustomTabs = styled(Tabs)<{ activecolor: string }>(({ activecolor }) => ({
@@ -42,102 +65,6 @@ const CustomTabs = styled(Tabs)<{ activecolor: string }>(({ activecolor }) => ({
     backgroundColor: activecolor,
   },
 }));
-
-// Interfaces
-interface StudentDashboardProps {}
-
-interface StyleProps {
-  colours: ReturnType<typeof tokens>;
-}
-
-interface Student {
-  id?: number;
-  is_president?: boolean;
-  is_vice_president?: boolean;
-  is_event_manager?: boolean;
-  president_of?: number;
-  president_of_society_name?: string;
-  vice_president_of_society?: number;
-  vice_president_of_society_name?: string;
-  event_manager_of_society?: number;
-}
-
-interface StatCardProps {
-  icon: React.ReactNode;
-  title: string;
-  value: number;
-  color: string;
-}
-
-interface SnackbarState {
-  open: boolean;
-  message: string;
-  severity: "error" | "warning" | "info" | "success";
-}
-
-interface DashboardData {
-  societies: Society[];
-  events: TransformedEvent[];
-  notifications: Notification[];
-  awards: AwardAssignment[];
-  student: Student | null;
-}
-
-interface HeaderProps {
-  student: Student | null;
-  navigate: ReturnType<typeof useNavigate>;
-  styleProps: StyleProps;
-}
-
-interface StatCardsProps {
-  societies: Society[];
-  events: TransformedEvent[];
-  notifications: Notification[];
-  awards: AwardAssignment[];
-  styleProps: StyleProps;
-  getMyEventsCount: () => number;
-}
-
-interface SocietyTabProps {
-  societies: Society[];
-  handleLeaveSociety: (societyId: number) => Promise<void>;
-  styleProps: StyleProps;
-}
-
-interface EventTabProps {
-  events: TransformedEvent[];
-  societies: Society[];
-  userId?: number;
-  handleRSVP: (eventId: number, isAttending: boolean) => Promise<void>;
-  styleProps: StyleProps;
-}
-
-interface NotificationTabProps {
-  notifications: Notification[];
-  markNotificationAsRead: (id: number) => Promise<void>;
-  styleProps: StyleProps;
-}
-
-interface AwardTabProps {
-  awards: AwardAssignment[];
-  styleProps: StyleProps;
-}
-
-interface StartSocietySectionProps {
-  navigate: ReturnType<typeof useNavigate>;
-  student: Student | null;
-  styleProps: StyleProps;
-}
-
-interface CalendarSectionProps {
-  showCalendar: boolean;
-  toggleCalendar: () => void;
-  student: Student | null;
-  navigate: ReturnType<typeof useNavigate>;
-  societies: Society[];
-  events: TransformedEvent[];
-  styleProps: StyleProps;
-}
 
 // Utility Functions
 const getSocietyName = (
@@ -450,7 +377,7 @@ const renderLeaveButton = (
   );
 };
 
-const EventDate: React.FC<{ date: string; startTime?: string }> = ({
+const EventDate: React.FC<EventDateProps> = ({
   date,
   startTime,
 }) => {
@@ -467,7 +394,7 @@ const EventDate: React.FC<{ date: string; startTime?: string }> = ({
   );
 };
 
-const EventLocation: React.FC<{ location?: string }> = ({ location }) => {
+const EventLocation: React.FC<EventLocationProps> = ({ location }) => {
   if (!location) return null;
 
   const theme = useTheme();
@@ -480,7 +407,7 @@ const EventLocation: React.FC<{ location?: string }> = ({ location }) => {
   );
 };
 
-const EventHost: React.FC<{ hostName: string }> = ({ hostName }) => {
+const EventHost: React.FC<EventHostProps> = ({ hostName }) => {
   const theme = useTheme();
   const colours = tokens(theme.palette.mode);
 
@@ -491,12 +418,7 @@ const EventHost: React.FC<{ hostName: string }> = ({ hostName }) => {
   );
 };
 
-const EventCard: React.FC<{
-  event: TransformedEvent;
-  hostName: string;
-  onRSVP: () => void;
-  styleProps: StyleProps;
-}> = ({ event, hostName, onRSVP, styleProps }) => {
+const EventCard: React.FC<EventCardProps> = ({ event, hostName, onRSVP, styleProps }) => {
   const { colours } = styleProps;
 
   return (
@@ -593,11 +515,11 @@ const EventsTab: React.FC<EventTabProps> = ({
   );
 };
 
-const NotificationItem: React.FC<{
-  notification: Notification;
-  onMarkAsRead: () => void;
-  styleProps: StyleProps;
-}> = ({ notification, onMarkAsRead, styleProps }) => {
+const NotificationItem: React.FC<NotificationItemProps> = ({ 
+  notification, 
+  onMarkAsRead, 
+  styleProps 
+}) => {
   const { colours } = styleProps;
 
   return (
@@ -615,16 +537,28 @@ const NotificationItem: React.FC<{
       }}
     >
       <Box display="flex" justifyContent="space-between" alignItems="center">
-        <Typography
-          variant="body1"
-          sx={{
-            color: colours.grey[100],
-            fontSize: "1rem",
-          }}
-        >
-          <b>{notification.header}</b>
-          <p>{notification.body}</p>
-        </Typography>
+        <Box>
+          <Typography
+            variant="body1"
+            sx={{
+              color: colours.grey[100],
+              fontSize: "1rem",
+              fontWeight: "bold",
+              mb: 1
+            }}
+          >
+            {notification.header}
+          </Typography>
+          <Typography
+            variant="body2"
+            sx={{
+              color: colours.grey[100],
+              fontSize: "0.9rem"
+            }}
+          >
+            {notification.body}
+          </Typography>
+        </Box>
         <Box sx={{ display: "flex", gap: "1rem" }}>
           {notification.is_read ? (
             <Typography
@@ -684,7 +618,7 @@ const NotificationsTab: React.FC<NotificationTabProps> = ({
         <NotificationItem
           key={notification.id}
           notification={notification}
-          onMarkAsRead={() => markNotificationAsRead(notification.id, )}
+          onMarkAsRead={() => markNotificationAsRead(notification.id)}
           styleProps={styleProps}
         />
       ))}
@@ -783,11 +717,11 @@ const StartSocietySection: React.FC<StartSocietySectionProps> = ({
   );
 };
 
-const EventManagerButton: React.FC<{
-  student: Student | null;
-  navigate: ReturnType<typeof useNavigate>;
-  styleProps: StyleProps;
-}> = ({ student, navigate, styleProps }) => {
+const EventManagerButton: React.FC<EventManagerButtonProps> = ({ 
+  student, 
+  navigate, 
+  styleProps 
+}) => {
   const { colours } = styleProps;
 
   if (!student?.is_event_manager) {
@@ -896,12 +830,12 @@ const CalendarSection: React.FC<CalendarSectionProps> = ({
   );
 };
 
-const TabsContainer: React.FC<{
-  activeTab: number;
-  handleTabChange: (event: React.SyntheticEvent, newValue: number) => void;
-  tabColors: string[];
-  children: React.ReactNode;
-}> = ({ activeTab, handleTabChange, tabColors, children }) => {
+const TabsContainer: React.FC<TabsContainerProps> = ({ 
+  activeTab, 
+  handleTabChange, 
+  tabColors, 
+  children 
+}) => {
   return (
     <Paper
       elevation={3}
@@ -1149,13 +1083,8 @@ const StudentDashboard: React.FC<StudentDashboardProps> = () => {
       });
 
       if (response.status === 200) {
-        // setDashboardData((prev) => ({
-        //   ...prev,
-        //   notifications: prev.notifications.map((n) =>
-        //     n.id === id ? { ...n, is_read: true } : n
-        //   ),
-        // }));
         showSnackbar("Notification marked as read", "success");
+        fetchData();
       } else {
         showSnackbar("Failed to mark notification as read", "error");
       }

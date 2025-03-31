@@ -1,4 +1,3 @@
-// Refactored
 import React, { useContext, useCallback, useState, useEffect, useMemo } from "react";
 import { Box, useTheme, Button, Snackbar, Alert } from "@mui/material";
 import {
@@ -162,8 +161,13 @@ const PendingEventRequest: React.FC = () => {
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      const data = (await fetchPendingRequests(apiPaths.EVENTS.PENDINGEVENTREQUEST)) as any[];
-      setPendingData(data);
+      const data = await fetchPendingRequests(apiPaths.EVENTS.PENDINGEVENTREQUEST);
+      if (Array.isArray(data)) {
+        setPendingData(data);
+      } else {
+        setPendingData([]);
+        console.error('Expected array data but received:', data);
+      }
     } catch (error) {
       console.error("Error fetching pending requests:", error);
     } finally {

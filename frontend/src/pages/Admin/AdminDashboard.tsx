@@ -33,7 +33,7 @@ import {
   DashboardContentProps,
   StatsSectionProps,
   LoadingStateProps
-} from "../../types/admin/Dashboard";
+} from "../../types/admin/dashboard";
 import { color } from "framer-motion";
 
 const StatCard: FC<StatCardProps> = ({ icon, title, value }) => {

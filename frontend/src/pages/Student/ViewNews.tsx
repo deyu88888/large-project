@@ -1,52 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { useTheme } from "@mui/material/styles";
 import { tokens } from "../../theme/theme";
-import { News } from "../../types"; 
 import { apiClient } from "../../api";
-
-// Interfaces and Types
-interface StyleProps {
-  isLight: boolean;
-  colours: ReturnType<typeof tokens>;
-}
-
-interface NewsItem extends News {
-  is_read?: boolean;
-}
-
-interface PageContainerProps {
-  children: React.ReactNode;
-  styleProps: StyleProps;
-}
-
-interface HeaderProps {
-  styleProps: StyleProps;
-}
-
-interface LoadingStateProps {
-  styleProps: StyleProps;
-}
-
-interface EmptyStateProps {
-  styleProps: StyleProps;
-}
-
-interface MarkAsReadButtonProps {
-  onMarkAsRead: () => void;
-  styleProps: StyleProps;
-}
-
-interface NewsItemProps {
-  item: NewsItem;
-  onMarkAsRead: (id: number) => Promise<void>;
-  styleProps: StyleProps;
-}
-
-interface NewsListProps {
-  news: NewsItem[];
-  onMarkAsRead: (id: number) => Promise<void>;
-  styleProps: StyleProps;
-}
+import {
+  StyleProps,
+  NewsItem,
+  PageContainerProps,
+  HeaderProps,
+  LoadingStateProps,
+  EmptyStateProps,
+  MarkAsReadButtonProps,
+  ReadStatusProps,
+  NewsItemProps,
+  NewsListProps
+} from "../../types/student/ViewNews";
 
 // Component Functions
 const PageContainer: React.FC<PageContainerProps> = ({ children, styleProps }) => {
@@ -157,7 +124,7 @@ const MarkAsReadButton: React.FC<MarkAsReadButtonProps> = ({ onMarkAsRead, style
   );
 };
 
-const ReadStatus: React.FC<{ styleProps: StyleProps }> = ({ styleProps }) => {
+const ReadStatus: React.FC<ReadStatusProps> = ({ styleProps }) => {
   const { colours } = styleProps;
   
   return (
