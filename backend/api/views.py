@@ -36,11 +36,13 @@ from api.views_files.society_views import *
 from api.views_files.user_views import *
 from api.views_files.recommendation_feedback_views import *
 from api.views_files.recommendation_views import *
-from django.http import FileResponse, HttpResponse
+from api.views_files.comment_views import *
+from api.views_files.society_news_views import *
+from django.http import FileResponse
 from django.conf import settings
 from django.views.static import serve
 import os
-import mimetypes
+
 
 
 @api_view(['GET'])

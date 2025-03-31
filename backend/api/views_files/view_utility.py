@@ -1,7 +1,9 @@
 from datetime import datetime, timedelta, time
+import json
 from api.models import Society
 from rest_framework import status
 from rest_framework.response import Response
+from api.serializers import NewsPublicationRequest
 
 def student_has_no_role(student, start=False, society_id=None):
     """
@@ -190,3 +192,51 @@ class RestoreHandler:
     def handle(self, original_data, log_entry):
         """Handle restoration logic."""
         raise NotImplementedError("Subclasses must implement this method")
+    
+def is_society_member(user, society_id):
+    """
+    Check if a user is a member of a society with thorough verification.
+    Returns True if the user is a member, False otherwise.
+    """
+    if not hasattr(user, 'student'):
+        return False   
+    student = user.student
+    try:
+        if student.societies.filter(id=society_id).exists():
+            return True
+    except Exception:
+        pass
+    return False
+
+
+def standard_error_response(message, code=status.HTTP_400_BAD_REQUEST):
+    """Standard format for error responses"""
+    return Response({"error": message}, status=code)
+
+def parse_json_field(data, field_name):
+    """Safely parse a JSON string from request data"""
+    if field_name in data and isinstance(data[field_name], str):
+        try:
+            return json.loads(data[field_name])
+        except json.JSONDecodeError:
+            return data[field_name]
+    return data.get(field_name)
+
+def mark_previous_requests_superseded(news_post):
+    """Mark any previous requests as superseded to maintain history"""
+    NewsPublicationRequest.objects.filter(
+        news_post=news_post,
+        status="Approved"
+    ).update(status="Superseded_Approved")
+    
+    NewsPublicationRequest.objects.filter(
+        news_post=news_post,
+        status="Rejected"
+    ).update(status="Superseded_Rejected")
+
+def cancel_pending_requests(news_post):
+    """Cancel any pending publication requests"""
+    NewsPublicationRequest.objects.filter(
+        news_post=news_post,
+        status="Pending"
+    ).update(status="Cancelled")

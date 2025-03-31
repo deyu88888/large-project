@@ -16,8 +16,7 @@ from api.views import (
     JoinedSocietiesView, RequestJoinSocietyView, StartSocietyRequestView,
     ManageSocietyDetailsView, StudentSocietyDataView, SocietyMembersListView,
     PendingMembersView, SocietyRoleManagementView, get_popular_societies, get_upcoming_events,
-    RecommendedSocietiesView, SocietyRecommendationExplanationView,
-    RecommendationFeedbackView, RecommendationFeedbackAnalyticsView, PublicSocietiesView,
+    PublicSocietiesView,
 
     # Events
     ManageEventListView, CreateEventRequestView, RSVPEventView, EventHistoryView,
@@ -42,16 +41,19 @@ from api.views import (
 
     # Recommendation System
     RecommendedSocietiesView, SocietyRecommendationExplanationView, RecommendationFeedbackView,
-    RecommendationFeedbackAnalyticsView
+    RecommendationFeedbackAnalyticsView,
+    
+    # News 
+    NewsView, BroadcastListAPIView, NewsPublicationRequestView, AdminNewsApprovalView,
+    
+    # Society News
+    SocietyNewsListView, SocietyNewsDetailView, MemberNewsView,
+    
+    # Comment
+    NewsCommentView, NewsCommentDetailView, NewsCommentLikeView, NewsCommentDislikeView
 )
 from .utils import request_otp, verify_otp
 
-# Import from the new consolidated news_views.py file
-from api.views_files.news_views import (
-    NewsView, BroadcastListAPIView, NewsPublicationRequestView, AdminNewsApprovalView,
-    SocietyNewsListView, SocietyNewsDetailView, NewsCommentView,
-    NewsCommentDetailView, NewsCommentLikeView, NewsCommentDislikeView, MemberNewsView
-)
 
 # Authentication & User management
 auth_patterns = [
