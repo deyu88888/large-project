@@ -17,7 +17,9 @@ class StartSocietyRequestView(APIView):
 
     def post(self, request):
         """Post request for a student to start a society"""
-        student, error = get_student_if_user_is_student(request.user, "request")
+        print("xxx: ", request.data)
+        student, error = get_student_if_user_is_student(
+            request.user, "request")
         if error:
             return error
 
@@ -39,9 +41,11 @@ class StartSocietyRequestView(APIView):
 class AdminSocietyRequestView(APIView):
     """View for admin to interact with SocietyRequests"""
     permission_classes = [IsAdminUser]
+
     def get(self, request, society_status):
         """Get request for all the pending society requests for admins."""
-        _, error = get_admin_if_user_is_admin(request.user, "view society requests")
+        _, error = get_admin_if_user_is_admin(
+            request.user, "view society requests")
         if error:
             return error
 
@@ -52,7 +56,8 @@ class AdminSocietyRequestView(APIView):
 
     def put(self, request, society_id):
         """PUT request to update the approve/reject a society request - for admins."""
-        user, error = get_admin_if_user_is_admin(request.user, "approve or reject society requests")
+        user, error = get_admin_if_user_is_admin(
+            request.user, "approve or reject society requests")
         if error:
             return error
 
@@ -63,7 +68,8 @@ class AdminSocietyRequestView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        serializer = SocietySerializer(society, data=request.data, partial=True)
+        serializer = SocietySerializer(
+            society, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
 
@@ -102,7 +108,8 @@ class AdminSocietyRequestView(APIView):
                 )
 
             return Response(
-                {"message": "Society request updated successfully.", "data": serializer.data},
+                {"message": "Society request updated successfully.",
+                    "data": serializer.data},
                 status=status.HTTP_200_OK
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -183,11 +190,13 @@ class AdminEventRequestView(APIView):
     """
     Event view to show upcoming approved events.
     """
+
     def put(self, request, event_id):
         """
         Update event request from pending to approved/rejected - for admins
         """
-        _, error = get_admin_if_user_is_admin(request.user, "approve or reject society requests")
+        _, error = get_admin_if_user_is_admin(
+            request.user, "approve or reject society requests")
         if error:
             return error
 
@@ -213,7 +222,8 @@ class AdminEventRequestView(APIView):
             )
 
             return Response(
-                {"message": "Event request updated successfully.", "data": serializer.data},
+                {"message": "Event request updated successfully.",
+                    "data": serializer.data},
                 status=status.HTTP_200_OK
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

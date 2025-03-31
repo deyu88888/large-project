@@ -577,7 +577,103 @@
         "source": "recommendation",
         "feedback_id": null
       }
+    },
+    {
+      "student_id": 158,
+      "society_id": 36,
+      "feedback_type": "rating",
+      "timestamp": "2025-03-31T15:24:08.311475",
+      "value": 5,
+      "metadata": {
+        "comment": "",
+        "source": "recommendation",
+        "feedback_id": null
+      }
+    },
+    {
+      "student_id": 158,
+      "society_id": 36,
+      "feedback_type": "relevance",
+      "timestamp": "2025-03-31T15:24:08.314106",
+      "value": 3,
+      "metadata": {
+        "comment": "",
+        "source": "recommendation",
+        "feedback_id": null
+      }
+    },
+    {
+      "student_id": 158,
+      "society_id": 36,
+      "feedback_type": "rating",
+      "timestamp": "2025-03-31T15:24:24.041988",
+      "value": 5,
+      "metadata": {
+        "comment": "",
+        "source": "recommendation",
+        "feedback_id": null
+      }
+    },
+    {
+      "student_id": 158,
+      "society_id": 36,
+      "feedback_type": "relevance",
+      "timestamp": "2025-03-31T15:24:24.043244",
+      "value": 4,
+      "metadata": {
+        "comment": "",
+        "source": "recommendation",
+        "feedback_id": null
+      }
+    },
+    {
+      "student_id": 158,
+      "society_id": 17,
+      "feedback_type": "rating",
+      "timestamp": "2025-03-31T15:24:39.612779",
+      "value": 5,
+      "metadata": {
+        "comment": "",
+        "source": "recommendation",
+        "feedback_id": null
+      }
+    },
+    {
+      "student_id": 158,
+      "society_id": 17,
+      "feedback_type": "relevance",
+      "timestamp": "2025-03-31T15:24:39.614308",
+      "value": 5,
+      "metadata": {
+        "comment": "",
+        "source": "recommendation",
+        "feedback_id": null
+      }
+    },
+    {
+      "student_id": 158,
+      "society_id": 19,
+      "feedback_type": "rating",
+      "timestamp": "2025-03-31T15:24:48.059435",
+      "value": 5,
+      "metadata": {
+        "comment": "",
+        "source": "recommendation",
+        "feedback_id": null
+      }
+    },
+    {
+      "student_id": 158,
+      "society_id": 19,
+      "feedback_type": "relevance",
+      "timestamp": "2025-03-31T15:24:48.060882",
+      "value": 3,
+      "metadata": {
+        "comment": "",
+        "source": "recommendation",
+        "feedback_id": null
+      }
     }
   ],
-  "last_updated": "2025-03-30T18:38:27.146872"
+  "last_updated": "2025-03-31T15:24:48.060917"
 }
