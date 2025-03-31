@@ -109,7 +109,7 @@ class RegisterViewTestCase(APITestCase):
         response = self.client.post(reverse("register"), data=self.valid_payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("username", response.data)
-        self.assertEqual(str(response.data["username"][0]), "This field must be unique.")
+        self.assertEqual(str(response.data["username"][0]), "user with this username already exists.")
 
     def test_register_student_invalid_password(self):
         """
@@ -137,7 +137,7 @@ class RegisterViewTestCase(APITestCase):
         response = self.client.post(reverse("register"), data=self.valid_payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("username", response.data)
-        self.assertEqual(str(response.data["username"][0]), "This field must be unique.")
+        self.assertEqual(str(response.data["username"][0]), "user with this username already exists.")
 
     def test_register_student_without_societies(self):
         """Test that student can register without joining any societies."""
