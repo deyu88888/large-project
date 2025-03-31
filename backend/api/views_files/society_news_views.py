@@ -212,9 +212,12 @@ class SocietyNewsDetailView(APIView):
             # Check for content changes
             content_changed = 'content' in data and data['content'] != news_post.content
             
-            # If content has changed or any files are present, we need approval
-            if content_changed or files_present:
-                print(f"Content changed: {content_changed}, Files present: {files_present}")
+            # Check if explicitly requesting resubmission for a rejected post
+            resubmit_rejected = current_status == "Rejected" and data.get('resubmit', 'false').lower() == 'true'
+            
+            # If content has changed or any files are present or explicitly resubmitting rejected, we need approval
+            if content_changed or files_present or resubmit_rejected:
+                print(f"Content changed: {content_changed}, Files present: {files_present}, Resubmit: {resubmit_rejected}")
                 print("Setting status to PendingApproval")
                 
                 # Set the status to PendingApproval
