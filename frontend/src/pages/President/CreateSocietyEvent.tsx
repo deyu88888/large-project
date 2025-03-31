@@ -1,17 +1,13 @@
 import React, { useState, useEffect, forwardRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTheme, Snackbar } from "@mui/material";
-import MuiAlert, { AlertProps } from "@mui/material/Alert";
 import { EventForm } from "../../components/EventForm";
 import { apiClient } from "../../api";
+import { Alert } from "../../components/Alert";
 
 interface FormData {
   [key: string]: any;
 }
-
-const Alert = forwardRef<HTMLDivElement, AlertProps>(function Alert(props, ref) {
-  return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
-});
 
 const createStyleTag = (isDarkMode: boolean) => {
   const existingStyle = document.getElementById("event-form-styles");
@@ -44,7 +40,9 @@ const CreateEvent: React.FC = () => {
   const navigate = useNavigate();
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
-  const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
+  const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">(
+    "success"
+  );
 
   const showSnackbar = (message: string, severity: "success" | "error") => {
     setSnackbarMessage(message);
@@ -102,7 +100,11 @@ const CreateEvent: React.FC = () => {
         onClose={handleSnackbarClose}
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
-        <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: "100%" }}>
+        <Alert
+          onClose={handleSnackbarClose}
+          severity={snackbarSeverity}
+          sx={{ width: "100%" }}
+        >
           {snackbarMessage}
         </Alert>
       </Snackbar>

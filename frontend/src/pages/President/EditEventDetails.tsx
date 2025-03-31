@@ -3,28 +3,28 @@ import { useNavigate, useParams } from "react-router-dom";
 import { apiClient } from "../../api";
 import { EventForm } from "../../components/EventForm";
 import { CircularProgress, Box, Snackbar } from "@mui/material";
-import MuiAlert, { AlertProps } from "@mui/material/Alert";
 import {
   ExtraModule,
   EventFormInitialData,
   RouteParams,
 } from "../../types/event/event.ts";
-
-const Alert = forwardRef<HTMLDivElement, AlertProps>(function Alert(props, ref) {
-  return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
-});
+import { Alert } from "../../components/Alert.tsx";
 
 export default function EditEventDetails() {
   const { eventId } = useParams<RouteParams>();
   const navigate = useNavigate();
 
-  const [initialData, setInitialData] = useState<EventFormInitialData | null>(null);
+  const [initialData, setInitialData] = useState<EventFormInitialData | null>(
+    null
+  );
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
-  const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
+  const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">(
+    "success"
+  );
 
   const showSnackbar = (message: string, severity: "success" | "error") => {
     setSnackbarMessage(message);
@@ -32,7 +32,10 @@ export default function EditEventDetails() {
     setSnackbarOpen(true);
   };
 
-  const handleSnackbarClose = (_event?: React.SyntheticEvent | Event, reason?: string) => {
+  const handleSnackbarClose = (
+    _event?: React.SyntheticEvent | Event,
+    reason?: string
+  ) => {
     if (reason === "clickaway") return;
     setSnackbarOpen(false);
   };
@@ -77,7 +80,10 @@ export default function EditEventDetails() {
     };
   };
 
-  const extractModules = (modules: unknown[], isParticipantOnly: boolean): ExtraModule[] => {
+  const extractModules = (
+    modules: unknown[],
+    isParticipantOnly: boolean
+  ): ExtraModule[] => {
     if (!Array.isArray(modules)) return [];
 
     return (modules as any[])
@@ -97,10 +103,16 @@ export default function EditEventDetails() {
 
   const handleSubmit = async (formData: FormData): Promise<void> => {
     try {
-      const response = await apiClient.patch(`/api/events/${eventId}/manage/`, formData);
+      const response = await apiClient.patch(
+        `/api/events/${eventId}/manage/`,
+        formData
+      );
 
       if (response.status === 200) {
-        showSnackbar("Event update submitted. Awaiting admin approval.", "success");
+        showSnackbar(
+          "Event update submitted. Awaiting admin approval.",
+          "success"
+        );
         setTimeout(() => {
           navigate(-1);
         }, 2000);

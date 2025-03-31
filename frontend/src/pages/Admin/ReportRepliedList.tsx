@@ -140,9 +140,9 @@ const createReportColumns = (
       field: "latest_reply_date",
       headerName: "Latest Reply Date",
       flex: 1.5,
-      renderCell: (params: GridRenderCellParams<any, any, any>) => {
-        const value = params.row.latest_reply_date;
-        return <div>{value ? formatDateString(value) : '-'}</div>;
+      valueFormatter: (params: any) => {
+        if (!params) return '-';
+        return params.value ? formatDateString(params.value) : '-';
       },
     },
     {
