@@ -57,9 +57,54 @@ class EventRestoreHandler(RestoreHandler):
             set_foreign_key_relationship(event, 'hosted_by', original_data.get('hosted_by'), Society)
             event.save()
             
-            attendee_ids = original_data.get('current_attendees', [])
-            if attendee_ids:
-                set_many_to_many_relationship(event, 'current_attendees', attendee_ids, Student)
+            for field_name, model_class in [
+                ('hosted_by', Society),
+                ('society', Society),
+                ('approved_by', User),
+                ('organizer', Student)
+            ]:
+                if field_name in original_data and original_data[field_name]:
+                    field_value = original_data[field_name]
+                    set_foreign_key_relationship(event, field_name, field_value, model_class)
+            
+            event.save()
+            
+            for field_name, model_class in [
+                ('attendees', Student),
+            ]:
+                if field_name in original_data and original_data[field_name]:
+                    set_many_to_many_relationship(event, field_name, original_data[field_name], model_class)
+
+            if 'current_attendees' in original_data and original_data['current_attendees']:
+                try:
+                    attendee_emails = original_data['current_attendees']
+                    for email in attendee_emails:
+                        student = Student.objects.filter(email=email).first()
+                        if student:
+                            event.current_attendees.add(student)
+                        else:
+                            print(f"Student with email {email} not found")
+                except Exception as e:
+                    print(f"Error setting current_attendees: {str(e)}")
+            
+            if 'tags' in original_data and original_data['tags']:
+                event.tags = original_data['tags']
+            
+            if 'images' in original_data and original_data['images']:
+                try:
+                    for image_id in original_data['images']:
+                        event.images.add(image_id)
+                except Exception as e:
+                    print(f"Error setting images: {str(e)}")
+            
+            event.save()
+
+            # if 'event_requests' in original_data and original_data['event_requests']:
+            #     for request_data in original_data['event_requests']:
+            #         EventRequest.objects.create(
+            #             event=event,
+            #             **{k: v for k, v in request_data.items() if k != 'id' and k != 'event'}
+            #         )
             
             log_entry.delete()
             return Response({"message": "Event restored successfully!"}, status=status.HTTP_200_OK)

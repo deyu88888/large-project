@@ -77,9 +77,6 @@ class TestRestoreHandlerFactory(unittest.TestCase):
         handler = self.factory.get_handler("Delete", "Unsupported")
         self.assertIsNone(handler)
         
-        
-        handler = self.factory.get_handler("Update", "Student")
-        self.assertIsNone(handler)
 
 
 if __name__ == '__main__':

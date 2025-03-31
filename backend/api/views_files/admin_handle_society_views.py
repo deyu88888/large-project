@@ -40,7 +40,10 @@ class SocietyRestoreHandler(RestoreHandler):
             return Response({"message": "Society restored successfully!"}, status=status.HTTP_200_OK)
             
         except Exception as e:
-            return Response({"error": f"Failed to restore Society: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({
+                "error": f"Failed to restore Society: {str(e)}",
+                "details": f"Original data contains: {', '.join(original_data.keys())}" if isinstance(original_data, dict) else str(original_data)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class SocietyUpdateUndoHandler(RestoreHandler):
