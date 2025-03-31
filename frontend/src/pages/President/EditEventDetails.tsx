@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { apiClient } from "../../api";
 import { EventForm } from "../../components/EventForm";
-import { CircularProgress, Box, Snackbar } from "@mui/material";
+import {CircularProgress, Box, Snackbar, AlertProps} from "@mui/material";
 import MuiAlert from "@mui/material/Alert";
 import {
   ExtraModule,
@@ -11,7 +11,7 @@ import {
   RouteParams,
 } from "../../types/event/event.ts";
 
-const Alert = React.forwardRef(function Alert(props, ref) {
+const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(props, ref) {
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
 });
 

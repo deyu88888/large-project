@@ -1,7 +1,7 @@
 // Refactored
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useTheme, Snackbar } from "@mui/material";
+import {useTheme, Snackbar, AlertProps} from "@mui/material";
 import MuiAlert from "@mui/material/Alert";
 import { EventForm } from "../../components/EventForm";
 import { apiClient } from "../../api";
@@ -10,7 +10,7 @@ interface FormData {
   [key: string]: any;
 }
 
-const Alert = React.forwardRef(function Alert(props, ref) {
+const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(props, ref) {
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
 });
 
