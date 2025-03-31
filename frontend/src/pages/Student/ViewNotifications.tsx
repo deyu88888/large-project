@@ -241,7 +241,7 @@ const fetchNotificationsFromAPI = async (): Promise<Notification[]> => {
 };
 
 const markNotificationAsReadAPI = async (id: number): Promise<boolean> => {
-  const response = await apiClient.patch(`/api/notifications/${id}`, { is_read: true });
+  const response = await apiClient.patch(`/api/notifications/${id}/`, { is_read: true });
   return response.status === 200;
 };
 
