@@ -23,7 +23,7 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no root@${{ secrets.VPS_SSH_HOST }} << 'EOF'
             set -e
-            cd /home/user/app
+            cd /root/large-project
 
             echo "Pulling latest code..."
             git pull origin main
