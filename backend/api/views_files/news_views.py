@@ -5,7 +5,6 @@ from rest_framework.permissions import IsAuthenticated, BasePermission
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-
 from api.models import (
     BroadcastMessage, User, Society, Event, SocietyNews,
     NewsPublicationRequest, Notification
@@ -111,8 +110,8 @@ class NewsMarkReadView(APIView):
             )
 
         try:
-            notification = News.objects.get(id=pk, for_user=request.user.student)
-        except News.DoesNotExist:
+            notification = SocietyNews.objects.get(id=pk, for_user=request.user.student)
+        except SocietyNews.DoesNotExist:
             return Response({"error": "news not found."}, status=status.HTTP_404_NOT_FOUND)
 
         notification.is_read = True

@@ -54,7 +54,7 @@ const SocietyCard: React.FC<SocietyCardProps> = ({
       <Box
         sx={{
           height: "120px",
-          backgroundColor: isLight ? colors.grey[300] : colors.grey[700],
+          backgroundColor: isLight ? colors.blueAccent[600] : colors.blueAccent[700],
           mb: 2,
           display: "flex",
           alignItems: "center",
@@ -67,8 +67,8 @@ const SocietyCard: React.FC<SocietyCardProps> = ({
           src={typeof society.icon !== "string" ? society.icon.name : society.icon}
           alt={`${society.name} icon`}
           style={{
-            width: "50px",
-            height: "50px",
+            width: "100px",
+            height: "100px",
             borderRadius: "50%",
             verticalAlign: "middle",
           }}

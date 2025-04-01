@@ -7,7 +7,8 @@ export interface DeleteDialogProps {
   reason: string;
   onReasonChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onCancel: () => void;
-  onConfirm: () => void;
+  onConfirm: () => Promise<void>;
+  isSubmitting: boolean;
 }
 
 export interface ActionButtonsProps {
