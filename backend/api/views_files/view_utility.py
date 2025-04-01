@@ -199,12 +199,30 @@ def is_society_member(user, society_id):
     """
     if not hasattr(user, 'student'):
         return False   
+    
     student = user.student
+    society = None
+    
     try:
+        # Check regular membership
         if student.societies.filter(id=society_id).exists():
             return True
+            
+        # Check belongs_to relationship
+        if student.societies_belongs_to.filter(id=society_id).exists():
+            return True
+            
+        # Check if user is an officer
+        try:
+            society = Society.objects.get(id=society_id)
+            if has_society_management_permission(student, society):
+                return True
+        except Society.DoesNotExist:
+            pass
+            
     except Exception:
         pass
+        
     return False
 
 

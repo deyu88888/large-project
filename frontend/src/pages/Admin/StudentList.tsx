@@ -47,12 +47,28 @@ const fetchStudentList = async (): Promise<Student[]> => {
   return res.data || [];
 };
 
+// const deleteStudent = async (studentId: number | string, reason: string): Promise<void> => {
+//   console.log(`Attempting to delete student ${studentId} with reason: ${reason}`);
+//   await apiClient.request({
+//     method: "DELETE",
+//     url: apiPaths.USER.DELETE("Student", Number(studentId)),
+//     data: { reason },
+//   });
+// };
+
 const deleteStudent = async (studentId: number | string, reason: string): Promise<void> => {
-  await apiClient.request({
-    method: "DELETE",
-    url: apiPaths.USER.DELETE("Student", Number(studentId)),
-    data: { reason },
-  });
+  try {
+    console.log(`Attempting to delete student ${studentId} with reason: ${reason}`);
+    const response = await apiClient.request({
+      method: "DELETE",
+      url: apiPaths.USER.DELETE("Student", Number(studentId)),
+      data: { reason },
+    });
+    console.log("Delete successful:", response);
+  } catch (error) {
+    console.error("Delete error details:", error.response?.data || error);
+    throw error;
+  }
 };
 
 const PageTitle: React.FC<PageTitleProps> = ({ title, colors }) => {
@@ -340,7 +356,9 @@ const StudentList: React.FC = () => {
     if (!selectedStudent) return;
     
     try {
+      console.log(`Confirming deletion of student ${selectedStudent.id}`);
       await deleteStudent(selectedStudent.id, reason);
+      console.log("Deletion successful, reloading students");
       loadStudents();
     } catch (error) {
       console.error("Error deleting student:", error);

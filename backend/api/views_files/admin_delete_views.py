@@ -39,30 +39,56 @@ class AdminBaseView(APIView):
         
         serializable_data = {}
         for key, value in original_data.items():
-            if value is None:
-                serializable_data[key] = None
-            elif isinstance(value, (datetime, date)):
-                serializable_data[key] = value.isoformat()
-            elif isinstance(value, time):
-                serializable_data[key] = value.strftime("%H:%M:%S")
-            elif isinstance(value, timedelta):
-                serializable_data[key] = str(value)
-            elif isinstance(value, ImageFieldFile):
-                serializable_data[key] = value.url if value else None
-            elif isinstance(value, (list, tuple)) and value and hasattr(value[0], 'email'):
-                serializable_data[key] = [item.email if hasattr(item, 'email') else str(item) for item in value]
-            elif hasattr(value, 'email'):
-                serializable_data[key] = value.email
-            elif hasattr(value, 'all'):
-                related_items = list(value.all())
-                if related_items and hasattr(related_items[0], 'email'):
-                    serializable_data[key] = [item.email for item in related_items]
+            try:
+                if value is None:
+                    serializable_data[key] = None
+                elif isinstance(value, (datetime, date)):
+                    serializable_data[key] = value.isoformat()
+                elif isinstance(value, time):
+                    serializable_data[key] = value.strftime("%H:%M:%S")
+                elif isinstance(value, timedelta):
+                    serializable_data[key] = str(value)
+                elif isinstance(value, ImageFieldFile):
+                    serializable_data[key] = value.url if value else None
+                elif isinstance(value, (list, tuple, set)) and value and hasattr(next(iter(value), None), 'email'):
+                    serializable_data[key] = [item.email if hasattr(item, 'email') else str(item) for item in value]
+                elif hasattr(value, 'email'):
+                    serializable_data[key] = value.email
+                elif hasattr(value, 'all'):
+                    try:
+                        related_items = list(value.all())
+                        if related_items and hasattr(related_items[0], 'email'):
+                            serializable_data[key] = [item.email for item in related_items]
+                        else:
+                            serializable_data[key] = [str(item) for item in related_items]
+                    except Exception:
+                        # If accessing related items fails, just use a string representation
+                        serializable_data[key] = f"<Related {key} items>"
+                elif hasattr(value, 'pk'):
+                    serializable_data[key] = str(value)
+                # Handle dictionary values
+                elif isinstance(value, dict):
+                    try:
+                        # Recursively serialize dictionary values
+                        serializable_dict = {}
+                        for dict_key, dict_value in value.items():
+                            if isinstance(dict_value, (dict, list, tuple, set)):
+                                serializable_dict[dict_key] = str(dict_value)
+                            else:
+                                serializable_dict[dict_key] = dict_value
+                        serializable_data[key] = serializable_dict
+                    except Exception:
+                        serializable_data[key] = str(value)
+                # Default case - directly assign the value
                 else:
-                    serializable_data[key] = [str(item) for item in related_items]
-            elif hasattr(value, 'pk'):
+                    serializable_data[key] = value
+                    
+                # Final check: Test if the value is JSON serializable
+                json.dumps(serializable_data[key])
+                    
+            except (TypeError, OverflowError, ValueError):
+                # If any error occurs during serialization, convert to string
                 serializable_data[key] = str(value)
-            else:
-                serializable_data[key] = value
         
         return serializable_data
 
@@ -94,7 +120,7 @@ class AdminDeleteView(AdminBaseView):
                 {"error": "Invalid target type."}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
-
+            
         if target_type == "Admin":
             target = model.objects.filter(id=target_id, role="admin").first()
         else:
@@ -139,13 +165,51 @@ class AdminDeleteView(AdminBaseView):
             original_data=original_data_json,
         )
         
-        target.delete()
-        ActivityLog.delete_expired_logs()
-
-        return Response(
-            {"message": f"Deleted {target_type.lower()} moved to Activity Log."}, 
-            status=status.HTTP_200_OK
-        )
+        try:
+            # Handle special case for Student deletion to avoid foreign key constraints
+            if target_type == "Student":
+                self.handle_student_deletion(target)
+            else:
+                # This is the line that was commented out and needs to be active
+                target.delete()
+                
+            ActivityLog.delete_expired_logs()
+            
+            return Response(
+                {"message": f"Deleted {target_type.lower()} moved to Activity Log."}, 
+                status=status.HTTP_200_OK
+            )
+        except Exception as e:
+            return Response(
+                {"error": f"Failed to delete {target_type}: {str(e)}"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    def handle_student_deletion(self, student):
+        """
+        Handle special deletion logic for Student model to prevent foreign key constraint errors.
+        """
+        from django.db import transaction
+        
+        with transaction.atomic():
+            if hasattr(student, 'president_of') and student.president_of:
+                society = student.president_of
+                society.president = None
+                society.save()
+            
+            if hasattr(student, 'societies'):
+                student.societies.clear()
+            
+            if hasattr(student, 'attended_events'):
+                student.attended_events.clear()
+            
+            if hasattr(student, 'follower'):
+                student.follower.clear()
+                
+            if hasattr(student, 'following'):
+                student.following.clear()
+            
+            student.delete()
 
 
 class AdminRestoreView(AdminBaseView):

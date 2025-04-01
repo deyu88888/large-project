@@ -248,7 +248,7 @@ const StartSociety: React.FC = () => {
     try {
       updateFormState({ error: "", success: "" });
       
-      const response = await apiClient.post("/api/start-society/", {
+      const response = await apiClient.post("/api/society/start/", {
         name: formData.societyName,
         description: formData.description,
       });
@@ -260,8 +260,7 @@ const StartSociety: React.FC = () => {
         updateFormState({ error: "Something went wrong. Please try again." });
       }
     } catch (err) {
-      console.error("Error creating society:", err);
-      updateFormState({ error: "Failed to create society. Please try again later." });
+      updateFormState({ error: "Failed to create society. " + err.response.data.error });
     }
   };
 

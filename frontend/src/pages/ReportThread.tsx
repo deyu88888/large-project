@@ -31,17 +31,60 @@ const ReportThread: React.FC = () => {
   useEffect(() => {
     const fetchReportThread = async () => {
       try {
-        const response = await apiClient.get(`/api/admin/report-thread/${reportId}`);
-        setReport(response.data);
-        
-        // Check if user is admin or president - this should be replaced with your actual auth logic
+        // First get user information to determine role
         const userResponse = await apiClient.get("/api/user/current");
-        setIsAdmin(userResponse.data.is_admin);
-        setIsPresident(userResponse.data.is_president);
+        const isUserAdmin = userResponse.data.is_admin;
+        const isUserPresident = userResponse.data.is_president;
         
-        setLoading(false);
+        setIsAdmin(isUserAdmin);
+        setIsPresident(isUserPresident);
+        
+        // Try both endpoints with better error handling
+        let response = null;
+        let errorObj = null;
+        
+        try {
+          // Always try the admin endpoint first if admin
+          if (isUserAdmin) {
+            response = await apiClient.get(`/api/admin/report-thread/${reportId}`);
+          } else {
+            // Throw an error to skip to the next endpoint
+            throw new Error("Not admin");
+          }
+        } catch (err) {
+          // Only store error if it's a real server error (not our custom error)
+          if (err.message !== "Not admin") {
+            errorObj = err;
+          }
+          
+          // If admin endpoint failed or user is not admin, try the regular endpoint
+          try {
+            response = await apiClient.get(`/api/reports/thread/${reportId}/`);
+          } catch (e) {
+            // If we already have an error, keep it; otherwise store this one
+            if (!errorObj) {
+              errorObj = e;
+            }
+          }
+        }
+
+        // Handle the result
+        if (response) {
+          setReport(response.data);
+          setLoading(false);
+        } else {
+          // Provide a more helpful error message
+          if (errorObj?.response?.status === 403) {
+            setError(
+              "You don't have permission to view this report thread. You must be an admin, the creator of this report, a president, or have previously replied to this thread."
+            );
+          } else {
+            setError("Failed to fetch report thread. Please try again later.");
+          }
+          setLoading(false);
+        }
       } catch (err) {
-        setError("Failed to fetch report thread");
+        setError("An unexpected error occurred. Please try again later.");
         setLoading(false);
       }
     };
@@ -58,25 +101,65 @@ const ReportThread: React.FC = () => {
   const handleReplySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await apiClient.post("/api/admin/report-replies", {
+      // Determine the appropriate endpoint for submitting replies
+      let replyEndpoint;
+      if (isAdmin) {
+        replyEndpoint = "/api/admin/report-replies";
+      } else {
+        replyEndpoint = "/api/reports/replies/";
+      }
+        
+      await apiClient.post(replyEndpoint, {
         report: reportId,
         parent_reply: selectedReplyId,
         content: replyContent,
       });
       
-      // Refresh the thread data
-      const response = await apiClient.get(`/api/admin/report-thread/${reportId}`);
-      setReport(response.data);
+      // After successful reply, we can view the thread (the user now meets the "has_replied" criteria)
+      // Try both endpoints for refreshing data
+      let response = null;
+      let refreshError = null;
       
-      // Reset form
-      setReplyContent("");
-      setSelectedReplyId(null);
-      setReplying(false);
-    } catch (err: any) {
+      try {
+        if (isAdmin) {
+          response = await apiClient.get(`/api/admin/report-thread/${reportId}`);
+        } else {
+          // For non-admins who just replied, they should now have access
+          response = await apiClient.get(`/api/reports/thread/${reportId}/`);
+        }
+      } catch (err) {
+        refreshError = err;
+        
+        // If the first attempt failed, try the other endpoint
+        try {
+          if (isAdmin) {
+            response = await apiClient.get(`/api/reports/thread/${reportId}/`);
+          } else {
+            response = await apiClient.get(`/api/admin/report-thread/${reportId}`);
+          }
+        } catch (e) {
+          // Keep the original error if both failed
+        }
+      }
+      
+      if (response) {
+        setReport(response.data);
+        // Reset form
+        setReplyContent("");
+        setSelectedReplyId(null);
+        setReplying(false);
+      } else if (refreshError) {
+        if (refreshError.response && refreshError.response.data && refreshError.response.data.error) {
+          setError(refreshError.response.data.error);
+        } else {
+          setError("Your reply was sent, but we couldn't refresh the conversation. Please reload the page.");
+        }
+      }
+    } catch (err) {
       if (err.response && err.response.data && err.response.data.error) {
         setError(err.response.data.error);
       } else {
-        setError("Failed to submit reply");
+        setError("Failed to submit reply. Please try again.");
       }
     }
   };

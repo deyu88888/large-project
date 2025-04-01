@@ -17,7 +17,6 @@ import {
 } from '@mui/material';
 import { tokens } from '../theme/theme';
 import { FaCalendarAlt, FaSearch } from 'react-icons/fa';
-import axios from 'axios'
 import useAuthCheck from "../hooks/useAuthCheck";
 import { apiClient } from '../api';
 
@@ -31,7 +30,7 @@ const SearchResultsPage = () => {
   const [results, setResults] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('all');
   const [loading, setLoading] = useState(false);
-  const { isAuthenticated } = useAuthCheck();
+  const { isAuthenticated, isLoading } = useAuthCheck();
 
   useEffect(() => {
     setQuery(queryParam);
@@ -46,7 +45,10 @@ const SearchResultsPage = () => {
         const res = await apiClient.get(`/api/search/?q=${encodeURIComponent(queryParam)}`);
         setResults(res.data);
       } catch (err) {
-        console.error("Search failed", err);
+        // Only log non-401 errors
+        if (err.response?.status !== 401) {
+          console.error("Search failed", err);
+        }
       } finally {
         setLoading(false);
       }
@@ -285,6 +287,15 @@ const SearchResultsPage = () => {
         return null;
     }
   };
+
+  // Show loading spinner while auth check is in progress
+  if (isLoading) {
+    return (
+      <Box display="flex" justifyContent="center" mt={4}>
+        <CircularProgress color="secondary" />
+      </Box>
+    );
+  }
 
   return (
     <Box 

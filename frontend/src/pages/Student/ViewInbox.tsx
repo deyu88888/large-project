@@ -301,7 +301,7 @@ const useNotifications = () => {
           updateNotificationReadStatus(id, type);
         }
       } else {
-        const response = await apiClient.patch(`/api/notifications/${id}`, { is_read: true });
+        const response = await apiClient.patch(`/api/notifications/${id}/`, { is_read: true });
         if (response.status === 200) {
           updateNotificationReadStatus(id);
         }

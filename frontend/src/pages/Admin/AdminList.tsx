@@ -231,6 +231,11 @@ const AdminList: FC = () => {
   };
 
   const handleOpenDialog = (admin: AdminUser) => {
+    if (admin.id === user?.id) {
+      alert("You cannot delete your own account.");
+      return;
+    }
+    
     setSelectedAdmin(admin);
     setOpenDialog(true);
   };
@@ -248,17 +253,40 @@ const AdminList: FC = () => {
   const handleConfirmDelete = async () => {
     if (selectedAdmin === null) return;
     
+    // Validate that reason is not empty
+    if (!reason.trim()) {
+      alert("Please provide a reason for deletion");
+      return;
+    }
+    
     try {
-      await apiClient.request({
-        method: "DELETE",
-        url: apiPaths.USER.DELETE("Admin", selectedAdmin.id),
-        data: { reason },
-      });
+      // Using axios delete with data configuration - this is the key change
+      await apiClient.delete(
+        apiPaths.USER.DELETE("Admin", selectedAdmin.id),
+        { 
+          data: { reason: reason.trim() }  // The 'data' property is important here
+        }
+      );
+      
       await fetchAdmins();
+      handleCloseDialog();
     } catch (error) {
       console.error("Error deleting admin:", error);
+      
+      // Better error handling
+      if (error.response) {
+        console.error("Response data:", error.response.data);
+        
+        // Show the specific error message from the server if available
+        if (error.response.data && error.response.data.error) {
+          alert(`Error: ${error.response.data.error}`);
+        } else {
+          alert("Failed to delete admin. Please try again.");
+        }
+      } else {
+        alert("Error deleting admin. Please try again.");
+      }
     }
-    handleCloseDialog();
   };
   
   const getColumns = (): GridColDef[] => [

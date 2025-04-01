@@ -1,4 +1,4 @@
-// Refactored
+// Refactored with useAuthCheck
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiClient } from "../api";
@@ -10,45 +10,23 @@ import { useAuthStore } from "../stores/auth-store";
 import { User } from "../types/user/user";
 import { EventData, Attendee } from "../types/event/event";
 import { mapToEventData } from "../utils/mapper.ts";
+import useAuthCheck from "../hooks/useAuthCheck";
 
 export default function AllEventsPage() {
     const navigate = useNavigate();
     const theme = useTheme();
     const colours = tokens(theme.palette.mode);
     const isLight = theme.palette.mode === "light";
-    const { user, setUser } = useAuthStore();
+    const { user } = useAuthStore();
+    
+    // Use the useAuthCheck hook instead of direct API calls
+    const { isAuthenticated, isLoading: authLoading } = useAuthCheck();
 
-    const [currentUser, setCurrentUser] = useState<User | null>(user);
     const [events, setEvents] = useState<EventData[]>([]);
-    const [userLoading, setUserLoading] = useState(true);
     const [eventsLoading, setEventsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        if (!user) {
-            apiClient
-                .get("/api/user/current")
-                .then((res) => {
-                    setCurrentUser(res.data);
-                    setUser && setUser(res.data);
-                })
-                .catch((err) => {
-                    if (err.response?.status === 401) {
-                        console.log("User not logged in, that's okay.");
-                    } else {
-                        console.error("Error fetching current user:", err);
-                        setError("Failed to fetch user information.");
-                    }
-                })
-                .finally(() => {
-                    setUserLoading(false);
-                });
-        } else {
-            setCurrentUser(user);
-            setUserLoading(false);
-        }
-    }, [user, setUser]);
-
+    // Load events data
     useEffect(() => {
         setEventsLoading(true);
         setError(null);
@@ -59,8 +37,11 @@ export default function AllEventsPage() {
                 setEvents(mappedEvents);
             })
             .catch((error) => {
-                console.error("Error fetching events:", error);
-                setError("Failed to load events. Please try again later.");
+                // Only log non-401 errors
+                if (error.response?.status !== 401) {
+                    console.error("Error fetching events:", error);
+                    setError("Failed to load events. Please try again later.");
+                }
             })
             .finally(() => {
                 setEventsLoading(false);
@@ -72,6 +53,8 @@ export default function AllEventsPage() {
         navigate(`${isStudentPage ? "/student" : ""}/event/${eventId}`);
     };
 
+    // Determine if we're in a loading state
+    const isLoading = authLoading || eventsLoading;
 
     return (
         <div
@@ -132,7 +115,7 @@ export default function AllEventsPage() {
                     </div>
                 )}
 
-                {eventsLoading && (
+                {isLoading && (
                     <div style={{
                         display: "flex",
                         justifyContent: "center",
@@ -150,7 +133,7 @@ export default function AllEventsPage() {
                     </div>
                 )}
 
-                {!eventsLoading && events.length > 0 && (
+                {!isLoading && events.length > 0 && (
                     <div
                         style={{
                             display: "grid",
@@ -163,13 +146,13 @@ export default function AllEventsPage() {
                         {events.map((event) => {
                             let followingsAttending: Attendee[] = [];
                             if (
-                                !userLoading &&
-                                currentUser &&
-                                currentUser.following &&
+                                isAuthenticated &&
+                                user &&
+                                user.following &&
                                 event.currentAttendees
                             ) {
                                 followingsAttending = event.currentAttendees.filter((attendee) =>
-                                    currentUser.following!.includes(attendee.id)
+                                    user.following!.includes(attendee.id)
                                 );
                             }
 
@@ -187,7 +170,7 @@ export default function AllEventsPage() {
                     </div>
                 )}
 
-                {!eventsLoading && events.length === 0 && (
+                {!isLoading && events.length === 0 && (
                     <div
                         style={{
                             display: "flex",

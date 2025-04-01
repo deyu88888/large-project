@@ -108,16 +108,9 @@ class AdminSocietyDetailRequestViewTests(TestCase):
         mock_get_admin.assert_called_once_with(self.regular_user, 'view pending society detail requests')
 
     @patch('api.views_files.admin_views.get_admin_if_user_is_admin')
-    @patch('api.views_files.admin_views.get_channel_layer')
-    @patch('api.views_files.admin_views.async_to_sync')
-    def test_approve_society_detail_request(self, mock_async_to_sync, mock_get_channel_layer, mock_get_admin):
+    def test_approve_society_detail_request(self, mock_get_admin):
         """Test approving a society detail request."""
         mock_get_admin.return_value = (self.admin_user, None)
-        
-        mock_channel = MagicMock()
-        mock_get_channel_layer.return_value = mock_channel
-        mock_channel_send = MagicMock()
-        mock_async_to_sync.return_value = mock_channel_send
         
         self.client.force_authenticate(user=self.admin_user)
         
@@ -142,7 +135,6 @@ class AdminSocietyDetailRequestViewTests(TestCase):
         
         self.society_request.refresh_from_db()
         self.assertTrue(self.society_request.approved)
-        mock_channel_send.assert_called_once()
         mock_get_admin.assert_called_once_with(self.admin_user, 'approve or reject society detail requests')
 
     def test_update_request_as_non_admin(self):
@@ -153,16 +145,9 @@ class AdminSocietyDetailRequestViewTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     @patch('api.views_files.admin_views.get_admin_if_user_is_admin')
-    @patch('api.views_files.admin_views.get_channel_layer')
-    @patch('api.views_files.admin_views.async_to_sync')
-    def test_approve_partial_update_request(self, mock_async_to_sync, mock_get_channel_layer, mock_get_admin):
+    def test_approve_partial_update_request(self, mock_get_admin):
         """Test approving a society detail request with partial updates."""
         mock_get_admin.return_value = (self.admin_user, None)
-        mock_channel_layer = MagicMock()
-        mock_get_channel_layer.return_value = mock_channel_layer
-        
-        mock_channel_send = MagicMock()
-        mock_async_to_sync.return_value = mock_channel_send
         
         partial_request = SocietyRequest.objects.create(
             society=self.society,

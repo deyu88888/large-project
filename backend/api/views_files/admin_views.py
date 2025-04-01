@@ -13,8 +13,6 @@ from api.serializers import AdminReportRequestSerializer, EventSerializer, \
     ActivityLogSerializer, ReportReplySerializer, SocietyRequestSerializer, \
     EventRequestSerializer
 from api.views import get_admin_if_user_is_admin
-from channels.layers import get_channel_layer
-from asgiref.sync import async_to_sync
 from api.views import AdminBaseView
 
 class AdminEventView(APIView):
@@ -525,16 +523,7 @@ class AdminSocietyDetailRequestView(APIView):
 
         society_request.save()
 
-        channel_layer = get_channel_layer()
-        async_to_sync(channel_layer.group_send)(
-            "society_updates",
-            {
-                "type": "society_list_update",
-                "message": f"Society detail request for {society_request.society.name} has been {status_update.lower()}.",
-                "data": SocietyRequestSerializer(society_request).data,
-                "status": status_update
-            }
-        )
+        # Websocket code removed
 
         return Response(
             {"message": f"Society detail request {status_update.lower()} successfully."},
