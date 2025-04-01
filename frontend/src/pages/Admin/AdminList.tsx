@@ -9,7 +9,8 @@ import {
   Dialog, 
   DialogContentText, 
   DialogActions, 
-  TextField 
+  TextField, 
+  Snackbar
 } from "@mui/material";
 import { DataGrid, GridToolbar, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 import { apiClient, apiPaths } from "../../api";
@@ -25,6 +26,7 @@ import {
   DataGridContainerProps,
   ActionButtonsProps
 } from "../../types/admin/AdminList";
+import { NotificationState } from "../../types/admin/StudentList";
 
 
 const Header: FC<HeaderProps> = ({ colors, theme }) => {
@@ -134,7 +136,7 @@ const DeleteDialog: FC<DeleteDialogProps> = ({
         />
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} color="primary">
+        <Button onClick={onClose} color="secondary">
           Cancel
         </Button>
         <Button onClick={onConfirm} color="error">
@@ -189,6 +191,12 @@ const AdminList: FC = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedAdmin, setSelectedAdmin] = useState<AdminUser | null>(null);
   const [reason, setReason] = useState('');
+
+  const [notification, setNotification] = useState<NotificationState>({
+    open: false,
+    message: "",
+    severity: "info"
+  });
   
   const isSuperAdmin = user?.is_super_admin === true;
   const actionsColumnWidth = isSuperAdmin ? 170 : 85;
@@ -250,34 +258,42 @@ const AdminList: FC = () => {
     setReason(event.target.value);
   };
 
+  const handleNotificationClose = (event?: React.SyntheticEvent | Event, reason?: string) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setNotification(prev => ({ ...prev, open: false }));
+  };
+
   const handleConfirmDelete = async () => {
     if (selectedAdmin === null) return;
     
-    // Validate that reason is not empty
     if (!reason.trim()) {
       alert("Please provide a reason for deletion");
       return;
     }
     
     try {
-      // Using axios delete with data configuration - this is the key change
       await apiClient.delete(
         apiPaths.USER.DELETE("Admin", selectedAdmin.id),
         { 
-          data: { reason: reason.trim() }  // The 'data' property is important here
+          data: { reason: reason.trim() }  
         }
       );
       
       await fetchAdmins();
+      setNotification({
+        open: true,
+        message: `Admin ${selectedAdmin.first_name} ${selectedAdmin.last_name} was successfully deleted.`,
+        severity: "success"
+      });
       handleCloseDialog();
     } catch (error) {
       console.error("Error deleting admin:", error);
       
-      // Better error handling
       if (error.response) {
         console.error("Response data:", error.response.data);
         
-        // Show the specific error message from the server if available
         if (error.response.data && error.response.data.error) {
           alert(`Error: ${error.response.data.error}`);
         } else {
@@ -353,6 +369,21 @@ const AdminList: FC = () => {
         onReasonChange={handleReasonChange}
         onClose={handleCloseDialog}
         onConfirm={handleConfirmDelete}
+      />
+
+      <Snackbar
+        open={notification.open}
+        autoHideDuration={6000}
+        onClose={handleNotificationClose}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+        message={notification.message}
+        ContentProps={{
+          sx: {
+            backgroundColor: notification.severity === "success" ? "green" : 
+                            notification.severity === "error" ? "red" : 
+                            notification.severity === "warning" ? "orange" : "blue"
+          }
+        }}
       />
     </Box>
   );

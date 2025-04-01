@@ -48,3 +48,9 @@ export interface PresidentCellProps {
 export interface BooleanCellProps {
   value: boolean;
 }
+
+export interface NotificationState {
+  open: boolean;
+  message: string;
+  severity: "success" | "error" | "info" | "warning";
+}

@@ -16,6 +16,7 @@ import {
   Grid,
   FormControlLabel,
   Switch,
+  Snackbar,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { apiClient, apiPaths } from "../../api";
@@ -320,6 +321,13 @@ const ViewStudent: React.FC = () => {
     severity: "success",
   });
 
+  const handleSnackbarClose = useCallback((event?: React.SyntheticEvent | Event, reason?: string) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setSnackbar(prev => ({ ...prev, open: false }));
+  }, []);
+
   const handleTextChange = useCallback(
     (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       const { name, value } = e.target;
@@ -399,7 +407,7 @@ const ViewStudent: React.FC = () => {
 
       setSnackbar({
         open: true,
-        message: "Student updated successfully!",
+        message: "Student details loaded successfully!",
         severity: "success",
       });
     } catch (error) {
@@ -409,6 +417,11 @@ const ViewStudent: React.FC = () => {
         ...prev,
         loading: false,
       }));
+      setSnackbar({
+        open: true,
+        message: "Error fetching student details",
+        severity: "error",
+      });
     }
   }, [studentId]);
 
@@ -427,11 +440,19 @@ const ViewStudent: React.FC = () => {
 
         const formDataToSend = createFormDataFromStudent(formState.formData);
         await updateStudentData(studentId, formDataToSend);
+        setSnackbar({
+          open: true,
+          message: "Student updated successfully!",
+          severity: "success",
+        });
 
-        alert("Student updated successfully!");
       } catch (error) {
         console.error("Error updating student", error);
-        alert("There was an error updating the student.");
+        setSnackbar({
+          open: true,
+          message: `Failed to update student: ${error.response?.data?.message || "Unknown error"}`,
+          severity: "error",
+        });
       } finally {
         setFormState((prev) => ({ ...prev, saving: false }));
       }
@@ -460,6 +481,22 @@ const ViewStudent: React.FC = () => {
         onActiveChange={handleActiveChange}
         onIsPresidentChange={handleIsPresidentChange}
         onSubmit={handleSubmit}
+      />
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+        message={snackbar.message}
+        ContentProps={{
+          sx: {
+            backgroundColor: 
+              snackbar.severity === "success" ? "green" : 
+              snackbar.severity === "error" ? "red" : 
+              snackbar.severity === "warning" ? "orange" : "blue"
+          }
+        }}
       />
     </Box>
   );
