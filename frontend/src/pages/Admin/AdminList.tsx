@@ -268,18 +268,16 @@ const AdminList: FC = () => {
   const handleConfirmDelete = async () => {
     if (selectedAdmin === null) return;
     
-    // Validate that reason is not empty
     if (!reason.trim()) {
       alert("Please provide a reason for deletion");
       return;
     }
     
     try {
-      // Using axios delete with data configuration - this is the key change
       await apiClient.delete(
         apiPaths.USER.DELETE("Admin", selectedAdmin.id),
         { 
-          data: { reason: reason.trim() }  // The 'data' property is important here
+          data: { reason: reason.trim() }  
         }
       );
       
@@ -293,11 +291,9 @@ const AdminList: FC = () => {
     } catch (error) {
       console.error("Error deleting admin:", error);
       
-      // Better error handling
       if (error.response) {
         console.error("Response data:", error.response.data);
         
-        // Show the specific error message from the server if available
         if (error.response.data && error.response.data.error) {
           alert(`Error: ${error.response.data.error}`);
         } else {

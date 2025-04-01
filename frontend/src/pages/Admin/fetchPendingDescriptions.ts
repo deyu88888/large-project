@@ -14,10 +14,9 @@ const makeGetRequest = async <T>(endpoint: string): Promise<ApiResponse<T> | und
   }
 };
 
-const fetchPendingDescriptions = async (): Promise<DescriptionRequest[] | undefined> => {
+export const fetchPendingDescriptions = async (): Promise<DescriptionRequest[] | undefined> => {
   const response = await makeGetRequest<DescriptionRequest[]>(apiPaths.USER.PENDINGDESCRIPTIONREQUEST);
   return response?.data;
 };
 
-export { fetchPendingDescriptions };
 export type { DescriptionRequest };
