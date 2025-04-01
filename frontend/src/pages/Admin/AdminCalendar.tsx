@@ -1,5 +1,5 @@
 import { useState, useEffect, memo, useCallback, useRef } from "react";
-import { Calendar, momentLocalizer } from "react-big-calendar";
+import { Calendar, momentLocalizer, View } from "react-big-calendar"; // Added View import
 import moment from "moment";
 import {
   Box,
@@ -128,7 +128,8 @@ const AdminCalendar = () => {
     open: false, 
     data: [] 
   });
-  const [currentView, setCurrentView] = useState('month');
+  // Fix: Changed the type from string to View
+  const [currentView, setCurrentView] = useState<View>('month');
 
   const requestRef = useRef<number | null>(null);
   const refreshTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -338,7 +339,8 @@ const AdminCalendar = () => {
     ),
   };
 
-  const handleViewChange = useCallback((view) => {
+  // Fix: Updated handleViewChange to accept a View type parameter
+  const handleViewChange = useCallback((view: View) => {
     setCurrentView(view);
   }, []);
 
