@@ -13,7 +13,7 @@ function isTokenValid(token: string): boolean {
 
 const getApiUrl = (): string => {
   const protocol = window.location.protocol;
-  const host = import.meta.env.VITE_API_URL || window.location.host;
+  const host = import.meta.env.VITE_API_URL || "localhost:8000";
   return `${protocol}//${host}`;
 };
 
