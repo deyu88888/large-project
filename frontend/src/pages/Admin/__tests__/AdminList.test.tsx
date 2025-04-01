@@ -25,6 +25,7 @@ vi.mock('../../../api', () => {
     apiClient: {
       get: vi.fn(),
       request: vi.fn(),
+      delete: vi.fn(),
     },
     apiPaths: {
       USER: {
@@ -75,6 +76,9 @@ vi.mock('../../../theme/theme', () => ({
     blueAccent: { 400: '#2196f3', 500: '#1976d2', 700: '#1565c0' },
   }),
 }));
+
+// Mock window.alert
+global.alert = vi.fn();
 
 describe('AdminList Component', () => {
   const mockAdmins = [
@@ -311,7 +315,13 @@ describe('AdminList Component', () => {
     
     // We need to ensure the error occurs when clicking confirm,
     // so we'll mock the request to fail
-    apiClient.request.mockRejectedValueOnce(new Error('Failed to delete admin'));
+    apiClient.request.mockRejectedValueOnce({
+      response: {
+        data: {
+          error: 'Failed to delete admin'
+        }
+      }
+    });
     
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     
@@ -337,7 +347,8 @@ describe('AdminList Component', () => {
     });
     
     // Now verify the console.error was called
-    expect(consoleErrorSpy).toHaveBeenCalledWith('Error deleting admin:', expect.any(Error));
+    expect(consoleErrorSpy).toHaveBeenCalled();
+    expect(global.alert).toHaveBeenCalledWith('Error: Failed to delete admin');
     
     consoleErrorSpy.mockRestore();
   });
