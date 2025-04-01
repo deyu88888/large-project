@@ -41,7 +41,7 @@ const DeleteDialog: FC<DeleteDialogProps> = ({ open, event, reason, onReasonChan
         />
       </DialogContent>
       <DialogActions>
-        <Button onClick={onCancel}>Cancel</Button>
+        <Button onClick={onCancel} color="secondary">Cancel</Button>
         <Button onClick={onConfirm} color="error" disabled={!reason.trim()}>Confirm</Button>
       </DialogActions>
     </Dialog>
@@ -132,6 +132,8 @@ const RejectedEventsList: React.FC = () => {
       field: "actions",
       headerName: "Actions",
       flex: 1.4,
+      width: 170,
+      minWidth: 170,
       sortable: false,
       filterable: false,
       renderCell: (params: GridRenderCellParams<EventData>) => (

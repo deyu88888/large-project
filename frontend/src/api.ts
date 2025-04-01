@@ -44,6 +44,34 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+apiClient.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+      
+      try {
+        const refreshResponse = await axios.post(apiPaths.USER.REFRESH, {
+          refresh_token: localStorage.getItem('REFRESH_TOKEN')
+        });
+        
+        const { access } = refreshResponse.data;
+        localStorage.setItem(ACCESS_TOKEN, access);
+        
+        originalRequest.headers.Authorization = `Bearer ${access}`;
+        
+        return axios(originalRequest);
+      } catch (refreshError) {
+        console.error("Token refresh failed:", refreshError);
+        return Promise.reject(refreshError);
+      }
+    }
+    
+    return Promise.reject(error);
+  }
+);
+
 export const apiPaths = {
   USER: {
     LOGIN: "/api/user/login",
@@ -73,7 +101,7 @@ export const apiPaths = {
       `/api/admin/manage-society/${societyId}`,
     ADMINEVENTVIEW: (eventId: number) => `/api/admin/manage-event/${eventId}`,
     DELETE: (targetType: string, targetId: number) =>
-      `/api/admin/delete/${targetType}/${targetId}`,
+      `/api/admin/delete/${targetType.toLowerCase()}/${targetId}`,
     UNDO_DELETE: (logId: number) => `/api/admin/undo-delete/${logId}`,
     ACTIVITYLOG: "/api/admin/activity-log",
     DELETEACTIVITYLOG: (logId: number) =>

@@ -184,17 +184,22 @@ const AdminReportList: FC = () => {
       field: "from_student",
       headerName: "Reporter",
       flex: 1,
-      renderCell: (params: GridRenderCellParams) => (
-        <ReporterCell reporter={params.row.from_student} />
-      ),
+      renderCell: (params: any) => {
+        return params.row.from_student || "Public User";
+      },
     },
     {
       field: "email",
       headerName: "Email",
       flex: 1,
-      renderCell: (params: GridRenderCellParams) => (
-        <EmailCell email={params.row.email} />
-      ),
+      renderCell: (params: any) =>
+        params.row.email ? (
+          <a href={`mailto:${params.row.email}`}>
+            {params.row.email}
+          </a>
+        ) : (
+          "-"
+        ),
     },    
     { field: "report_type", headerName: "Report Type", flex: 1 },
     { field: "subject", headerName: "Subject", flex: 1.5 },
@@ -203,25 +208,44 @@ const AdminReportList: FC = () => {
       field: "requested_at",
       headerName: "Requested At",
       flex: 1.5,
-      renderCell: (params: GridRenderCellParams) => (
-        <DateCell date={params.row.created_at} />
-      ),
+      renderCell: (params: GridRenderCellParams) => formatDate(params.row.requested_at),
     },
     {
       field: "action", 
       headerName: "Actions",
       flex: 1,
-      renderCell: (params: GridRenderCellParams) => (
-        <ActionButton
-          reportId={params.row.id}
-          isPublic={!params.row.from_student}
-          email={params.row.email}
-          subject={params.row.subject}
-          onReply={handleReplyClick}
-        />
-      ),
+      filterable: false,
+      sortable: false,
+      minWidth: 130,
+      width: 130,
+      renderCell: (params: GridRenderCellParams) => {
+        const reportId = params.row.id;
+        const isPublic = !params.row.from_student;
+        const email = params.row.email;
+        if (isPublic && email) {
+          return (
+            <Button
+              variant="contained"
+              color="secondary"
+              href={`mailto:${email}?subject=${encodeURIComponent(`Response to your report: "${params.row.subject}"`)}&body=${encodeURIComponent("Hi,\n\nRegarding your report, we would like to get in touch with you.\n\nKind regards,\nAdmin Team")}`}
+              >
+              Email Reply
+            </Button>
+          );
+        }
+        return (
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => handleReplyClick(reportId)}
+          >
+            Reply
+          </Button>
+        );
+      },
     }
   ], [handleReplyClick]);
+
 
   
   const getContainerStyles = useCallback(() => ({

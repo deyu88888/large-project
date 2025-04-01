@@ -73,7 +73,7 @@ class Society(models.Model):
         "User",
         on_delete=models.SET_NULL,
         related_name="approved_societies",
-        blank=False,
+        blank=True,
         null=True,
     )
 

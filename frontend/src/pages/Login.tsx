@@ -143,7 +143,7 @@ export default function LoginPage() {
 
         <Typography sx={{ marginTop: 2, textAlign: "center", color: colors.grey[100] }}>
           Need to sign up?{" "}
-          <a href="/Register" style={{ color: colors.blueAccent[300], textDecoration: "underline" }}>
+          <a href="/register" style={{ color: colors.blueAccent[300], textDecoration: "underline" }}>
             Please register.
           </a>
         </Typography>

@@ -11,26 +11,6 @@ from api.serializers import SocietySerializer, SocietyRequestSerializer,\
     PendingMemberSerializer, EventSerializer, EventRequestSerializer
 from api.views_files.view_utility import has_society_management_permission
 
-
-def get_society_if_exists(society_id):
-    """Returns a society by society_id and error message if caused"""
-    society = Society.objects.filter(id=society_id).first()
-    if not society:
-        return None, Response(
-            {"error": "Society not found."},
-            status=status.HTTP_404_NOT_FOUND
-        )
-    return society, None
-
-def get_management_error(student, society, **kwargs):
-    """Gets error if one is caused by lacking permissions"""
-    if not has_society_management_permission(student, society, **kwargs):
-        return Response({"error": "Only the society president or vice "
-            "president can manage members."},
-            status=status.HTTP_403_FORBIDDEN
-        )
-    return None
-
 def get_society_and_management_error(society_id, student):
     """
     Gets a society by ID and checks if the student has management permissions.

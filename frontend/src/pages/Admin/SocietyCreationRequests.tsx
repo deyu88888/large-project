@@ -175,41 +175,16 @@ const createSocietyColumns = (
       field: "description", 
       headerName: "Description", 
       flex: 1,
-      renderCell: (params: GridRenderCellParams) => (
-        <TruncatedCell value={params.value as string} />
-      )
     },
-    {      
-      field: "society_members",
-      headerName: "Members",
-      flex: 1,
-      renderCell: (params: GridRenderCellParams) => (
-        <TruncatedCell value={params.value as string} />
-      )
+    { field: "president", headerName: "President", flex: 1 ,
+      renderCell: (params) => `${params.value.first_name} ${params.value.last_name}`,
     },
-    { field: "president", headerName: "President", flex: 1 },
     { field: "category", headerName: "Category", flex: 1 },
-    { 
-      field: "membershipRequirements", 
-      headerName: "Membership Requirements", 
-      flex: 1,
-      renderCell: (params: GridRenderCellParams) => (
-        <TruncatedCell value={params.value as string} />
-      )
-    },
-    { 
-      field: "upcomingProjectsOrPlans", 
-      headerName: "Upcoming Projects", 
-      flex: 1,
-      renderCell: (params: GridRenderCellParams) => (
-        <TruncatedCell value={params.value as string} />
-      )
-    },
     {
       field: "actions",
       headerName: "Actions",
-      width: 188,
-      minWidth: 188,
+      width: 170,
+      minWidth: 170,
       sortable: false,
       filterable: false, 
       renderCell: (params: GridRenderCellParams<any, Society>) => (
@@ -218,7 +193,6 @@ const createSocietyColumns = (
           onStatusChange={handleStatusChange} 
         />
       ),
-      flex: 1.6,
     },
   ];
 };
