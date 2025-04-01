@@ -2,8 +2,10 @@ import { Box, Typography, CircularProgress, useTheme } from "@mui/material";
 import EventCalendar from "../components/EventCalendar";
 import { useEffect, useState, useRef, useMemo } from "react";
 import { getAllEvents } from "../api";
+import { useWebSocketManager, CONNECTION_STATES } from "../hooks/useWebSocketManager";
 import { tokens } from "../theme/theme";
 
+// Global cache for events data
 const eventsCache = {
   data: null,
   timestamp: 0
@@ -14,13 +16,17 @@ export default function Calendar() {
   const colors = tokens(theme.palette.mode);
   
   const [events, setEvents] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false); // Start with false to show calendar immediately
   const [error, setError] = useState(null);
   
   const calendarRef = useRef(null);
   const initialized = useRef(false);
   const requestRef = useRef(null);
 
+  const { status, connect } = useWebSocketManager();
+  const prevStatus = useRef(status);
+
+  // Apply no-hover styles once on mount
   useEffect(() => {
     const style = document.createElement('style');
     style.innerHTML = `
@@ -44,13 +50,22 @@ export default function Calendar() {
     };
   }, []);
 
+  // Check for cached data immediately
   useEffect(() => {
+    // If we have cached data and it's less than 5 minutes old, use it immediately
     const now = Date.now();
     if (eventsCache.data && now - eventsCache.timestamp < 5 * 60 * 1000) {
       setEvents(eventsCache.data);
+      // Still fetch in background to refresh cache
       fetchEvents(false);
     } else {
+      // No cache or expired cache - fetch but show calendar immediately
       fetchEvents(true);
+    }
+    
+    // Connect WebSocket if needed
+    if (status === CONNECTION_STATES.DISCONNECTED) {
+      connect();
     }
     
     return () => {
@@ -59,6 +74,15 @@ export default function Calendar() {
       }
     };
   }, []);
+
+  // Handle WebSocket status changes
+  useEffect(() => {
+    if (status === CONNECTION_STATES.AUTHENTICATED && prevStatus.current !== CONNECTION_STATES.AUTHENTICATED) {
+      fetchEvents(false); // Quiet refresh when WebSocket connects
+    }
+    
+    prevStatus.current = status;
+  }, [status]);
 
   const fetchEvents = async (showLoading = true) => {
     if (showLoading) {
@@ -72,6 +96,7 @@ export default function Calendar() {
         requestRef.current = requestAnimationFrame(() => {
           const processedEvents = processEvents(rawEvents);
           
+          // Update cache
           eventsCache.data = processedEvents;
           eventsCache.timestamp = Date.now();
           
@@ -79,10 +104,12 @@ export default function Calendar() {
           setError(null);
         });
       } else {
+        // No events - still update the state
         setEvents([]);
         setError(null);
       }
     } catch (err) {
+      // Only show error if we don't have cached events to display
       if (!events.length) {
         setError("Failed to load events");
       }
@@ -182,6 +209,7 @@ export default function Calendar() {
         }
       }}
     >
+      {/* Always render the calendar immediately to avoid layout shifts */}
       <Box 
         ref={calendarRef}
         sx={{ 
@@ -196,6 +224,7 @@ export default function Calendar() {
       >
         <EventCalendar 
           events={events} 
+          // @ts-expect-error:
           height="100%"
           forceEventDuration={true}
           eventTimeFormat={{
@@ -206,6 +235,7 @@ export default function Calendar() {
         />
       </Box>
       
+      {/* Loading overlay */}
       {isLoading && !events.length && (
         <Box 
           sx={{
@@ -226,6 +256,7 @@ export default function Calendar() {
         </Box>
       )}
       
+      {/* Error message overlay */}
       {error && (
         <Box 
           sx={{

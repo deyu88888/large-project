@@ -1,5 +1,7 @@
 from datetime import timedelta
 from django.utils import timezone
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
@@ -19,6 +21,7 @@ class StartSocietyRequestView(APIView):
         if error:
             return error
 
+        # Validates a student doesn't already have a role in a society
         error = student_has_no_role(student, True)
         if error:
             return error
@@ -63,6 +66,11 @@ class AdminSocietyRequestView(APIView):
         serializer = SocietySerializer(society, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
+
+            # Notify WebSocket clients about the update
+            channel_layer = get_channel_layer()
+
+            # If society was approved, notify the society view WebSocket clients
             society_status = serializer.validated_data.get("status")
             action_type_map = {
                 "Approved": "Approve",
@@ -81,6 +89,18 @@ class AdminSocietyRequestView(APIView):
                 expiration_date=timezone.now() + timedelta(days=30),
             )
             ActivityLog.delete_expired_logs()
+
+            if society_status in ["Approved", "Rejected", "Pending"]:
+                async_to_sync(channel_layer.group_send)(
+                    "society_updates",
+                    {
+                        "type": "society_list_update",
+                        "message": f"A new society has been {society_status}.",
+                        "data": serializer.data,
+                        "status": society_status,
+                    }
+                )
+
             return Response(
                 {"message": "Society request updated successfully.", "data": serializer.data},
                 status=status.HTTP_200_OK
@@ -124,12 +144,14 @@ class RequestJoinSocietyView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
+        # Check if the student is already a member
         if society.members.filter(id=student.id).exists():
             return Response(
                 {"error": "You are already a member of this society."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        # Check for existing pending request
         existing_request = SocietyRequest.objects.filter(
             from_student=student,
             society=society,
@@ -143,6 +165,7 @@ class RequestJoinSocietyView(APIView):
                 "request_id": existing_request.id
             }, status=status.HTTP_400_BAD_REQUEST)
 
+        # Create new society request
         society_request = SocietyRequest.objects.create(
             intent="JoinSoc",
             from_student=student,
@@ -175,6 +198,20 @@ class AdminEventRequestView(APIView):
         serializer = EventSerializer(event, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
+
+        channel_layer = get_channel_layer()
+
+        if serializer.validated_data.get("status"):
+            async_to_sync(channel_layer.group_send)(
+                "events_updates",
+                {
+                    "type": "event_update",
+                    "message": "A new event has been approved.",
+                    "data": serializer.data,
+                    "status": serializer.validated_data.get("status")
+                }
+            )
+
             return Response(
                 {"message": "Event request updated successfully.", "data": serializer.data},
                 status=status.HTTP_200_OK

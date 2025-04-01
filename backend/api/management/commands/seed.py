@@ -2,6 +2,7 @@ from random import choice, random
 from django.contrib.auth.hashers import make_password
 from django.core.management.base import BaseCommand
 
+from api.signals import broadcast_dashboard_update
 from api.management.commands.seeding.generators import (
     RandomEventDataGenerator,
     RandomSocietyDataGenerator,
@@ -40,6 +41,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         """Handles database seeding"""
+        # Create/Get Admin using create_admin, to avoid code duplication
         quantity = kwargs.get("quantity", [5, 150, 40, 50, 5, 200, 10, 15])
         self.admin_generator.create_admin(quantity[0])
         self.admin_generator.create_super_admins()
@@ -59,8 +61,14 @@ class Command(BaseCommand):
 
         self.admin_generator.create_admin_reports(quantity[6])
         self.create_society_news(quantity[7])
+
+        self.broadcast_updates()
+
         print(self.style.SUCCESS("Seeding complete!"))
 
+    def broadcast_updates(self):
+        """Broadcast updates to the WebSocket"""
+        broadcast_dashboard_update()
 
     def create_default_students(self):
         """Seeds all the default example students"""

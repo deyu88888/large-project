@@ -8,6 +8,10 @@ export interface SocietyDialogState {
   selectedSociety: Society | null;
 }
 
+export interface WebSocketRef {
+  current: WebSocket | null;
+}
+
 export interface ActionButtonsProps {
   societyId: string | number;
   onView: (id: string) => void;
