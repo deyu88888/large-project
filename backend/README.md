@@ -1,6 +1,6 @@
 # Backend
 
-This is a **Django** backend application using **ASGI**, **Daphne**, **WebSockets**, and **SQLite** (by default). The project is structured for real-time features and includes a startup script to automate setup and server start.
+This is a **Django** backend application using **SQLite** (by default). The project is structured for real-time features and includes a startup script to automate setup and server start.
 
 ---
 
@@ -12,7 +12,6 @@ This is a **Django** backend application using **ASGI**, **Daphne**, **WebSocket
 - [pip](https://pip.pypa.io/en/stable/)
 - [virtualenv](https://virtualenv.pypa.io/) (recommended)
 - [Django](https://www.djangoproject.com/)
-- [Daphne](https://github.com/django/daphne)
 
 ### Install Dependencies
 
@@ -51,8 +50,8 @@ pip install -r requirements.txt
 │   └── urls.py             # Root URL config
 │   ├── wsgi.py             # WSGI application entrypoint
 ├── db.sqlite3              # SQLite DB (auto-generated)
-├── start.sh                # Startup script (DB reset + Daphne)
-├── run.sh                  # Startup script (DB reset + Daphne)
+├── start.sh                # Startup script (DB reset + django run)
+├── run.sh                  # Startup script (DB reset + django run)
 ├── manage.py
 └── requirements.txt        # Python dependencies
 └── requirements.prod.txt   # Prod Python dependencies

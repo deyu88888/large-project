@@ -48,7 +48,7 @@ RUN chmod +x /app/server.sh
 # Switch to non-root user
 USER appuser
 
-# Expose Daphne port
+# Expose port
 EXPOSE 8000
 
 CMD ["/app/server.sh"]
