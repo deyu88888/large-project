@@ -469,7 +469,14 @@ const EventsTab: React.FC<EventTabProps> = ({
 }) => {
   const { colours } = styleProps;
 
-  const filteredEvents = filterEventsBySocieties(events, societies);
+  // Filter out events that have already started
+  const now = new Date();
+  const upcomingEvents = events.filter(event => {
+    const eventDate = new Date(`${event.date} ${event.start_time || '00:00'}`);
+    return eventDate > now;
+  });
+
+  const filteredEvents = filterEventsBySocieties(upcomingEvents, societies);
   const eventsUserNotAttending = filterEventsUserNotAttending(
     filteredEvents,
     userId
@@ -483,7 +490,7 @@ const EventsTab: React.FC<EventTabProps> = ({
         textAlign="center"
       >
         <Typography variant="body1" sx={{ color: colours.grey[300] }}>
-          No events from your societies
+          No upcoming events from your societies
         </Typography>
       </Box>
     );
@@ -1056,22 +1063,58 @@ const StudentDashboard: React.FC<StudentDashboardProps> = () => {
   };
 
   const handleRSVP = async (eventId: number, isAttending: boolean) => {
+    console.log(`RSVP Function Called - Event ID: ${eventId}, Attending: ${isAttending}`);
+    
     try {
+      // Check if the event has already started
+      const event = dashboardData.events.find(e => e.id === eventId);
+      
+      if (event && isAttending) {
+        const eventDate = new Date(`${event.date} ${event.start_time || '00:00'}`);
+        const now = new Date();
+        
+        if (eventDate < now) {
+          showSnackbar("You cannot RSVP for an event that has already started.", "error");
+          return;
+        }
+      }
+  
       if (isAttending) {
-        await apiClient.post("/api/events/rsvp/", { event_id: eventId });
+        console.log('Sending POST request with payload:', { event_id: eventId });
+        const response = await apiClient.post("/api/events/rsvp/", { event_id: eventId });
+        
+        console.log('RSVP response received:', response);
         showSnackbar("Successfully RSVP'd to the event", "success");
       } else {
-        await apiClient.delete("/api/events/rsvp/", {
+        console.log('Sending DELETE request with payload:', { event_id: eventId });
+        const response = await apiClient.delete("/api/events/rsvp/", {
           data: { event_id: eventId },
         });
+        
+        console.log('RSVP cancellation response received:', response);
         showSnackbar("Successfully cancelled your RSVP", "success");
       }
+      
       fetchData();
     } catch (error: any) {
+      console.error("==== RSVP ERROR DETAILS ====");
       console.error("Error updating RSVP:", error);
-      const errorMessage =
-        error.response?.data?.error ||
-        "An error occurred while updating your RSVP.";
+      
+      // Extract and display the specific error message
+      let errorMessage = "An error occurred while updating your RSVP.";
+      
+      if (error.response?.data?.non_field_errors && 
+          error.response.data.non_field_errors.length > 0) {
+        errorMessage = error.response.data.non_field_errors[0];
+      } else if (error.response?.data?.detail) {
+        errorMessage = error.response.data.detail;
+      } else if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      console.error("Showing error message to user:", errorMessage);
       showSnackbar(errorMessage, "error");
     }
   };
