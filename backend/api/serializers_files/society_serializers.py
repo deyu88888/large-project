@@ -1,6 +1,6 @@
 from api.models import Student, Society, SocietyRequest, SocietyShowreel, UserRequest
 from api.serializers import StudentSerializer
-from api.serializers_files.serializers_utility import get_society_if_exists, is_user_student
+from api.serializers import get_society_if_exists, is_user_student
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
 
