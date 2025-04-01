@@ -8,7 +8,14 @@ import {
   EventFormInitialData,
   RouteParams,
 } from "../../types/event/event.ts";
-import { Alert } from "../../components/Alert.tsx";
+import MuiAlert from "@mui/material/Alert"; // Import directly from MUI
+
+// Create a proper ref-forwarding Alert component
+const Alert = React.forwardRef<HTMLDivElement, React.ComponentProps<typeof MuiAlert>>(
+  function Alert(props, ref) {
+    return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
+  }
+);
 
 export default function EditEventDetails() {
   const { eventId } = useParams<RouteParams>();
@@ -29,7 +36,10 @@ export default function EditEventDetails() {
   const showSnackbar = (message: string, severity: "success" | "error") => {
     setSnackbarMessage(message);
     setSnackbarSeverity(severity);
-    setSnackbarOpen(true);
+    // We'll set it with a small delay to ensure everything is mounted
+    setTimeout(() => {
+      setSnackbarOpen(true);
+    }, 100);
   };
 
   const handleSnackbarClose = (
@@ -148,18 +158,25 @@ export default function EditEventDetails() {
   }
 
   return (
-    <>
+    <Box sx={{ position: 'relative' }}>
       <EventForm
         onSubmit={handleSubmit}
         onCancel={handleCancel}
         initialData={initialData}
         isEditMode={true}
       />
+      
+      {/* Use the ref-forwarded Alert component */}
       <Snackbar
         open={snackbarOpen}
         autoHideDuration={4000}
         onClose={handleSnackbarClose}
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        sx={{ 
+          '& .MuiSnackbar-root': { 
+            top: '24px'
+          }
+        }}
       >
         <Alert
           onClose={handleSnackbarClose}
@@ -169,6 +186,6 @@ export default function EditEventDetails() {
           {snackbarMessage}
         </Alert>
       </Snackbar>
-    </>
+    </Box>
   );
 }
