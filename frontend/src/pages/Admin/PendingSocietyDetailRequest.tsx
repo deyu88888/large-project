@@ -118,17 +118,10 @@ const PendingSocietyDetailRequests: React.FC = () => {
     },
     { 
       field: "name", 
-      headerName: "New Name", 
+      headerName: "Name", 
       flex: 1,
       renderCell: (params: GridRenderCellParams) => 
         params.row.name || "No name change",
-    },
-    { 
-      field: "description", 
-      headerName: "New Description", 
-      flex: 2,
-      renderCell: (params: GridRenderCellParams) => 
-        params.row.description || "No description change",
     },
     {
       field: "requested_at",

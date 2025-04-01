@@ -175,60 +175,53 @@ const createReportColumns = (
   formatDate: (dateString: string) => string
 ): GridColDef[] => {
   return [
-    { field: "id", headerName: "ID", flex: 0.5 },
-    { field: "subject", headerName: "Subject", flex: 1.5 },
-    { field: "from_student_name", headerName: "From", flex: 1 },
-    { 
-      field: "latest_reply_content", 
-      headerName: "Latest Reply", 
-      flex: 2,
-      renderCell: (params: GridRenderCellParams) => (
-        <LatestReplyCell 
-          repliedBy={params.row.latest_reply.replied_by}
-          content={params.row.latest_reply.content}
-        />
-      )
-    },
-    { 
-      field: "status", 
-      headerName: "Status", 
-      flex: 0.8,
-      renderCell: () => <StatusCell />
-    },
-    { 
-      field: "latest_reply_date", 
-      headerName: "Latest Reply Date", 
-      flex: 1.2,
-      renderCell: (params: GridRenderCellParams) => (
-        <DateCell 
-          dateString={params.row.latest_reply.created_at}
-          formatter={formatDate}
-        />
-      )
-    },
-    { 
-      field: "requested_at", 
-      headerName: "Report Date", 
-      flex: 1.2,
-      renderCell: (params: GridRenderCellParams) => (
-        <DateCell 
-          dateString={params.row.requested_at}
-          formatter={formatDate}
-        />
-      )
-    },
-    {
-      field: "actions",
-      headerName: "Actions",
-      flex: 1,
-      renderCell: (params: GridRenderCellParams) => (
-        <ActionButtons 
-          reportId={params.row.id} 
-          onViewThread={handleViewThread}
-          onReply={handleReply}
-        />
-      )
-    }
+      { field: "id", headerName: "ID", flex: 0.5 },
+      { field: "subject", headerName: "Subject", flex: 1.0 },
+      { field: "from_student_name", headerName: "From", flex: 1 },
+      { 
+        field: "latest_reply_date", 
+        headerName: "Latest Reply Date", 
+        flex: 1.2,
+        renderCell: (params: GridRenderCellParams) => (
+            formatDate(params.row.latest_reply.created_at)
+        )
+      },
+      { 
+        field: "requested_at", 
+        headerName: "Report Date", 
+        flex: 1.2,
+        renderCell: (params: GridRenderCellParams) => (
+            formatDate(params.row.requested_at)
+        )
+      },
+      {
+        field: "actions",
+        headerName: "Actions",
+        flex: 1,
+        filterable: false,
+        sortable: false,
+        minWidth: 165,
+        width: 165,
+        renderCell: (params: GridRenderCellParams) => (
+          <Box>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => handleViewThread(params.row.id)}
+              sx={{ marginRight: "8px" }}
+            >
+              View
+            </Button>
+            <Button
+              variant="contained"
+              color="error"
+              onClick={() => handleReply(params.row.id)}
+            >
+              Reply
+            </Button>
+          </Box>
+        )
+      }
   ];
 };
 
