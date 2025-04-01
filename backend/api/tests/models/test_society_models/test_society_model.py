@@ -56,7 +56,6 @@ class SocietyModelTestCase(TestCase):
 
     def test_required_fields(self):
         """Test required fields validation."""
-        # Test blank approved_by
         test_society = Society(
             name='TestNoAdmin',
             president=self.student1,
@@ -64,12 +63,15 @@ class SocietyModelTestCase(TestCase):
             category='Technology',
             social_media_links={"Email": "test@example.com"},
         )
-        with self.assertRaises(ValidationError):
+        try:
             test_society.full_clean()
+        except ValidationError:
+            self.fail("Society.full_clean() raised ValidationError unexpectedly for optional approved_by.")
 
-        # Test blank president
+        # Test blank president (still required)
         self.society.president = None
         self._assert_society_is_invalid()
+
 
     def test_string_representation(self):
         """Test string representation."""
