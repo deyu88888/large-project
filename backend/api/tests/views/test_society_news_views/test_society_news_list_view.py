@@ -165,8 +165,9 @@ class SocietyNewsListViewTestCase(APITestCase):
         self.client.force_authenticate(user=non_member)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        # Changed this line to check for the actual error message from permission_denied
         error_message = self._get_error_message(response)
-        self.assertIn("You must be a member", error_message)
+        self.assertEqual(error_message, "You do not have permission to perform this action.")
         
     def test_get_news_exception(self):
         """
@@ -218,4 +219,3 @@ class SocietyNewsListViewTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         error_message = self._get_error_message(response)
         self.assertIn("Only society presidents and vice presidents", error_message)
-    

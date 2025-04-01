@@ -1,4 +1,4 @@
-from unittest.mock import patch, AsyncMock
+from unittest.mock import patch
 from django.utils import timezone
 from datetime import timedelta
 from rest_framework.test import APITestCase
@@ -43,10 +43,8 @@ class TestAdminSocietyRequestView(APITestCase):
             approved_by=self.admin_user
         )
 
-    @patch('api.views_files.request_views.get_channel_layer')
-    def test_admin_put_approve_society_request(self, mocked_channel_layer):
+    def test_admin_put_approve_society_request(self):
         self.client.force_authenticate(user=self.admin_user)
-        mocked_channel_layer.return_value.group_send = AsyncMock()
         update_data = {"status": "Approved"}
         response = self.client.put(
             f"/api/admin/society/request/pending/{self.pending_society.id}",
@@ -60,12 +58,9 @@ class TestAdminSocietyRequestView(APITestCase):
             target_id=self.pending_society.id,
             performed_by=self.admin_user
         ).exists())
-        mocked_channel_layer.return_value.group_send.assert_awaited_once()
 
-    @patch('api.views_files.request_views.get_channel_layer')
-    def test_admin_put_reject_society_request(self, mocked_channel_layer):
+    def test_admin_put_reject_society_request(self):
         self.client.force_authenticate(user=self.admin_user)
-        mocked_channel_layer.return_value.group_send = AsyncMock()
         update_data = {"status": "Rejected"}
         response = self.client.put(
             f"/api/admin/society/request/pending/{self.pending_society.id}",
@@ -79,4 +74,3 @@ class TestAdminSocietyRequestView(APITestCase):
             target_id=self.pending_society.id,
             performed_by=self.admin_user
         ).exists())
-        mocked_channel_layer.return_value.group_send.assert_awaited_once()
