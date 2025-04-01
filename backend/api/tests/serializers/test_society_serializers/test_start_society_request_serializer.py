@@ -1,6 +1,7 @@
 from django.test import TestCase
 from rest_framework.exceptions import ValidationError
 from unittest.mock import patch, MagicMock
+from types import SimpleNamespace
 
 from api.serializers import StartSocietyRequestSerializer
 from api.models import Society, Student
@@ -9,8 +10,7 @@ class StartSocietyRequestSerializerTest(TestCase):
     """Tests for StartSocietyRequestSerializer."""
 
     def setUp(self):
-        """Set up a requester student for tests."""
-        
+        """Set up a requester student for tests."""        
         self.student = Student.objects.create(
             username="student1",
             email="student1@example.com",
@@ -31,6 +31,8 @@ class StartSocietyRequestSerializerTest(TestCase):
             status="Approved"
         )
 
+        self.mock_request = SimpleNamespace(user=SimpleNamespace(student=self.student))
+
     def test_successful_creation(self):
         """
         Test that valid data creates a Society instance with:
@@ -44,7 +46,7 @@ class StartSocietyRequestSerializerTest(TestCase):
             "category": "Academic",
             "requested_by": self.student.id
         }
-        serializer = StartSocietyRequestSerializer(data=data)
+        serializer = StartSocietyRequestSerializer(data=data, context={"request": self.mock_request})
         self.assertTrue(serializer.is_valid(), serializer.errors)
         
         with patch('api.serializers.Society.objects.create') as mock_create:
@@ -61,7 +63,8 @@ class StartSocietyRequestSerializerTest(TestCase):
             society = serializer.save()
             mock_create.assert_called_once_with(
                 name=data["name"],
-                roles={"description": data["description"], "category": data["category"]},
+                description=data["description"],
+                category=data["category"],
                 president=self.student,
                 status="Pending"
             )
@@ -88,7 +91,7 @@ class StartSocietyRequestSerializerTest(TestCase):
             "category": "Cultural",
             "requested_by": self.student.id
         }
-        serializer = StartSocietyRequestSerializer(data=data)
+        serializer = StartSocietyRequestSerializer(data=data, context={"request": self.mock_request})
         self.assertFalse(serializer.is_valid())
         errors = serializer.errors.get("non_field_errors", [])
         self.assertTrue(any("already exists" in str(e) for e in errors))
@@ -98,7 +101,7 @@ class StartSocietyRequestSerializerTest(TestCase):
         Test that errors are returned when required fields are missing.
         """
         data = {}  
-        serializer = StartSocietyRequestSerializer(data=data)
+        serializer = StartSocietyRequestSerializer(data=data, context={"request": self.mock_request})
         self.assertFalse(serializer.is_valid())
         
         self.assertIn("description", serializer.errors)
@@ -116,7 +119,7 @@ class StartSocietyRequestSerializerTest(TestCase):
             "requested_by": self.student.id,
             "status": "Approved"  
         }
-        serializer = StartSocietyRequestSerializer(data=data)
+        serializer = StartSocietyRequestSerializer(data=data, context={"request": self.mock_request})
         self.assertTrue(serializer.is_valid(), serializer.errors)
         
         with patch('api.serializers.Society.objects.create') as mock_create:
@@ -131,7 +134,8 @@ class StartSocietyRequestSerializerTest(TestCase):
             society = serializer.save()
             mock_create.assert_called_once_with(
                 name=data["name"],
-                roles={"description": data["description"], "category": data["category"]},
+                description=data["description"],
+                category=data["category"],
                 president=self.student,
                 status="Pending"
             )
@@ -149,7 +153,7 @@ class StartSocietyRequestSerializerTest(TestCase):
             "category": too_long_category,
             "requested_by": self.student.id
         }
-        serializer = StartSocietyRequestSerializer(data=data)
+        serializer = StartSocietyRequestSerializer(data=data, context={"request": self.mock_request})
         self.assertFalse(serializer.is_valid())
         self.assertIn("Ensure this field has no more than 500 characters",
                       str(serializer.errors.get("description", [])))
