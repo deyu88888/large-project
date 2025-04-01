@@ -16,7 +16,7 @@ import {
   Typography,
   useTheme,
 } from "@mui/material";
-import { useContext, useState, useEffect } from "react";
+import { useContext, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import MenuIcon from "@mui/icons-material/Menu";
 import SearchIcon from "@mui/icons-material/Search";
@@ -25,6 +25,7 @@ import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
 import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
 import { useSettingsStore } from "../../stores/settings-store";
 import React from "react";
+import { InfinityLogo } from "../InfinityLogo";
 
 const pages = [
   { name: "Home", path: "/" },
@@ -115,8 +116,10 @@ export const DashboardNavbar = () => {
 
   // Determine text colors based on theme to ensure visibility
   const navTextColor = theme.palette.mode === "dark" ? "#ffffff" : "#000000";
-  const highlightColor = theme.palette.mode === "dark" ? "greenAccent.main" : "greenAccent.dark";
-  const hoverColor = theme.palette.mode === "dark" ? "greenAccent.main" : "greenAccent.dark";
+  const highlightColor =
+    theme.palette.mode === "dark" ? "greenAccent.main" : "greenAccent.dark";
+  const hoverColor =
+    theme.palette.mode === "dark" ? "greenAccent.main" : "greenAccent.dark";
 
   return (
     <AppBar
@@ -124,7 +127,7 @@ export const DashboardNavbar = () => {
       elevation={0}
       sx={{
         bgcolor: (theme: any) =>
-          theme.palette.mode === "dark" ? "secondary.dark" : "secondary.light"
+          theme.palette.mode === "dark" ? "secondary.dark" : "secondary.light",
       }}
     >
       <Container maxWidth="xl">
@@ -137,6 +140,7 @@ export const DashboardNavbar = () => {
             },
           }}
         >
+          <InfinityLogo />
           <Box sx={{ flexGrow: 1, display: { xs: "none", md: "flex" } }}>
             {pages.map((page) => {
               const isActive = location.pathname === page.path;
@@ -169,9 +173,9 @@ export const DashboardNavbar = () => {
                       color: hoverColor,
                       bgcolor: "transparent",
                     },
-                    "&:hover::after": { 
-                      width: "100%", 
-                      backgroundColor: hoverColor 
+                    "&:hover::after": {
+                      width: "100%",
+                      backgroundColor: hoverColor,
                     },
                   }}
                 >
@@ -214,11 +218,13 @@ export const DashboardNavbar = () => {
                         navigate(page.path);
                       }}
                     >
-                      <Typography sx={{ 
-                        textAlign: "center", 
-                        color: isActive ? highlightColor : navTextColor,
-                        fontWeight: isActive ? "bold" : "normal"
-                      }}>
+                      <Typography
+                        sx={{
+                          textAlign: "center",
+                          color: isActive ? highlightColor : navTextColor,
+                          fontWeight: isActive ? "bold" : "normal",
+                        }}
+                      >
                         {page.name}
                       </Typography>
                     </MenuItem>
