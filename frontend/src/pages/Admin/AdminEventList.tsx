@@ -59,7 +59,8 @@ const DeleteDialog: FC<DeleteDialogProps> = ({
   reason,
   onReasonChange,
   onCancel,
-  onConfirm
+  onConfirm,
+  isSubmitting
 }) => {
   const title = event ? `Please confirm that you would like to delete ${event.title}.` : 'Confirm Deletion';
 
@@ -83,15 +84,19 @@ const DeleteDialog: FC<DeleteDialogProps> = ({
         />
       </DialogContent>
       <DialogActions>
-        <Button onClick={onCancel} color="secondary">
+        <Button 
+          onClick={onCancel} 
+          color="secondary"
+          disabled={isSubmitting}
+        >
           Cancel
         </Button>
         <Button 
           onClick={onConfirm} 
           color="error"
-          disabled={!reason.trim()}
+          disabled={!reason.trim() || isSubmitting}
         >
-          Confirm
+          {isSubmitting ? "Processing..." : "Confirm"}
         </Button>
       </DialogActions>
     </Dialog>
@@ -159,6 +164,7 @@ const AdminEventList: FC = () => {
   const [reason, setReason] = useState('');
   const [loading, setLoading] = useState(true);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [notification, setNotification] = useState<NotificationState>({
     open: false,
@@ -202,6 +208,8 @@ const AdminEventList: FC = () => {
     setOpenDialog(false);
     setSelectedEvent(null);
     setReason('');
+    // Make sure to reset the submitting state when closing the dialog
+    setIsSubmitting(false);
   }, []);
 
   const handleReasonChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
@@ -216,14 +224,17 @@ const AdminEventList: FC = () => {
   }, []);
 
   const handleConfirmDelete = useCallback(async () => {
-    if (!selectedEvent || !reason.trim()) {
+    if (!selectedEvent || !reason.trim() || isSubmitting) {
       return;
     }
 
     try {
+      // Set submitting state to true immediately to prevent multiple clicks
+      setIsSubmitting(true);
+      
       await apiClient.request({
         method: "DELETE",
-        url: apiPaths.USER.DELETE("Event", selectedEvent.eventId),
+        url: apiPaths.USER.DELETE("event", selectedEvent.eventId),
         data: { reason },
       });
       await fetchEvents();
@@ -234,15 +245,16 @@ const AdminEventList: FC = () => {
       });
     } catch (error) {
       console.error("Error deleting event:", error);
+      console.error("Error response data:", error.response?.data);
       setNotification({
         open: true,
-        message: `Failed to delete event: ${error.response?.data?.message || "Unknown error"}`,
+        message: `Failed to delete event: ${error.response?.data?.error || error.response?.data?.message || error.message || "Unknown error"}`,
         severity: "error"
       });
     } finally {
       handleCloseDialog();
     }
-  }, [selectedEvent, reason, fetchEvents, handleCloseDialog]);
+  }, [selectedEvent, reason, fetchEvents, handleCloseDialog, isSubmitting]);
 
   
   const getFilteredEvents = useCallback(() => {
@@ -307,6 +319,7 @@ const AdminEventList: FC = () => {
         onReasonChange={handleReasonChange}
         onCancel={handleCloseDialog}
         onConfirm={handleConfirmDelete}
+        isSubmitting={isSubmitting}
       />
 
       {selectedEvent && (
