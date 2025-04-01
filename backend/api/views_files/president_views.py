@@ -184,12 +184,14 @@ class ManageEventDetailsView(APIView):
         """
         Determines if an event is editable.
         Editable if:
-         - status is "Pending", OR
-         - status is "Approved" and event is in the future
+        - status is "Pending", OR
+        - status is "Approved" and event is in the future, OR
+        - status is "Rejected" (to allow resubmission)
         """
+        # CHANGE THIS PART: Allow rejected events to be edited
         if event.status == "Rejected":
-            return False
-
+            return True  # Changed from False to True
+        
         current_datetime = now()
         # If event is pending, allow edits regardless of date/time.
         if event.status == "Pending":

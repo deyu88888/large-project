@@ -1,9 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useTheme, Snackbar } from "@mui/material";
+import { useTheme, Snackbar, Box } from "@mui/material";
 import { EventForm } from "../../components/EventForm";
 import { apiClient } from "../../api";
-import { Alert } from "../../components/Alert";
+import MuiAlert from "@mui/material/Alert"; // Import directly from MUI
+
+// Create a proper ref-forwarding Alert component
+const Alert = React.forwardRef<HTMLDivElement, React.ComponentProps<typeof MuiAlert>>(
+  function Alert(props, ref) {
+    return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
+  }
+);
 
 interface FormData {
   [key: string]: any;
@@ -47,7 +54,10 @@ const CreateEvent: React.FC = () => {
   const showSnackbar = (message: string, severity: "success" | "error") => {
     setSnackbarMessage(message);
     setSnackbarSeverity(severity);
-    setSnackbarOpen(true);
+    // Add a slight delay to ensure DOM is ready
+    setTimeout(() => {
+      setSnackbarOpen(true);
+    }, 100);
   };
 
   const handleSnackbarClose = (
@@ -92,13 +102,18 @@ const CreateEvent: React.FC = () => {
   };
 
   return (
-    <>
+    <Box sx={{ position: 'relative' }}>
       <EventForm onSubmit={handleSubmit} />
       <Snackbar
         open={snackbarOpen}
         autoHideDuration={4000}
         onClose={handleSnackbarClose}
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        sx={{ 
+          '& .MuiSnackbar-root': { 
+            top: '24px'
+          }
+        }}
       >
         <Alert
           onClose={handleSnackbarClose}
@@ -108,7 +123,7 @@ const CreateEvent: React.FC = () => {
           {snackbarMessage}
         </Alert>
       </Snackbar>
-    </>
+    </Box>
   );
 };
 
