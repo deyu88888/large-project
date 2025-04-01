@@ -9,7 +9,8 @@ import {
   Dialog, 
   DialogContentText, 
   DialogActions, 
-  TextField 
+  TextField,
+  Alert
 } from "@mui/material";
 import { DataGrid, GridColDef, GridRenderCellParams, GridToolbar } from "@mui/x-data-grid";
 import { apiClient, apiPaths } from "../../api";
@@ -46,15 +47,6 @@ const fetchStudentList = async (): Promise<Student[]> => {
   const res = await apiClient.get(apiPaths.USER.STUDENTS);
   return res.data || [];
 };
-
-// const deleteStudent = async (studentId: number | string, reason: string): Promise<void> => {
-//   console.log(`Attempting to delete student ${studentId} with reason: ${reason}`);
-//   await apiClient.request({
-//     method: "DELETE",
-//     url: apiPaths.USER.DELETE("Student", Number(studentId)),
-//     data: { reason },
-//   });
-// };
 
 const deleteStudent = async (studentId: number | string, reason: string): Promise<void> => {
   try {
@@ -130,6 +122,54 @@ const PresidentCell: React.FC<PresidentCellProps> = ({ isPresident, presidentOf 
   return <>{presidentOf || "N/A"}</>;
 };
 
+interface PresidentWarningDialogProps {
+  open: boolean;
+  student: Student | null;
+  onClose: () => void;
+}
+
+const PresidentWarningDialog: React.FC<PresidentWarningDialogProps> = ({
+  open,
+  student,
+  onClose
+}) => {
+  return (
+    <Dialog 
+      open={open} 
+      onClose={onClose}
+      maxWidth="sm"
+      fullWidth
+    >
+      <DialogTitle sx={{ bgcolor: "#f8d7da", color: "#721c24" }}>
+        President Cannot Be Deleted
+      </DialogTitle>
+      <DialogContent>
+        <Alert severity="error" sx={{ mt: 1, mb: 2 }}>
+          This action cannot be completed due to role restrictions.
+        </Alert>
+        <DialogContentText>
+          {student?.first_name} {student?.last_name} is currently a president of{" "}
+          <strong>{student?.president_of}</strong>.
+        </DialogContentText>
+        <DialogContentText sx={{ mt: 2 }}>
+          Presidents cannot be deleted until their presidency is transferred to another student.
+          Please contact this student to arrange for presidency transfer before attempting deletion.
+        </DialogContentText>
+      </DialogContent>
+      <DialogActions sx={{ px: 3, pb: 3 }}>
+        <Button 
+          onClick={onClose} 
+          variant="contained" 
+          color="primary" 
+          autoFocus
+        >
+          Understood
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
+
 const DeleteDialog: React.FC<DeleteDialogProps> = ({ 
   dialogState, 
   onClose, 
@@ -139,11 +179,14 @@ const DeleteDialog: React.FC<DeleteDialogProps> = ({
   const { open, selectedStudent, reason } = dialogState;
   
   return (
-    <Dialog open={open} onClose={onClose}>
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>
-        Please confirm that you would like to delete {selectedStudent?.first_name} {selectedStudent?.last_name}.
+        Confirm Student Deletion
       </DialogTitle>
       <DialogContent>
+        <Alert severity="warning" sx={{ mt: 1, mb: 2 }}>
+          You are about to delete {selectedStudent?.first_name} {selectedStudent?.last_name}.
+        </Alert>
         <DialogContentText>
           You may undo this action in the Activity Log. <br />
           <strong>Compulsory:</strong> Provide a reason for deleting this student.
@@ -152,21 +195,23 @@ const DeleteDialog: React.FC<DeleteDialogProps> = ({
           autoFocus
           label="Reason for Deletion"
           fullWidth
-          variant="standard"
+          variant="outlined"
           value={reason}
           onChange={onReasonChange}
+          margin="normal"
         />
       </DialogContent>
-      <DialogActions>
+      <DialogActions sx={{ px: 3, pb: 3 }}>
         <Button onClick={onClose} color="primary">
           Cancel
         </Button>
         <Button 
           onClick={onConfirm} 
+          variant="contained"
           color="error"
           disabled={!reason.trim()}
         >
-          Confirm
+          Delete Student
         </Button>
       </DialogActions>
     </Dialog>
@@ -283,9 +328,6 @@ const createStudentColumns = (
   ];
 };
 
-/**
- * StudentList component displays a list of all students with filtering and actions
- */
 const StudentList: React.FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
@@ -302,6 +344,11 @@ const StudentList: React.FC = () => {
     open: false,
     selectedStudent: null,
     reason: ''
+  });
+
+  const [presidentWarningDialog, setPresidentWarningDialog] = useState({
+    open: false,
+    student: null as Student | null
   });
 
   const loadStudents = useCallback(async () => {
@@ -328,10 +375,25 @@ const StudentList: React.FC = () => {
   }, [navigate]);
 
   const handleOpenDialog = useCallback((student: Student) => {
+    if (student.is_president) {
+      setPresidentWarningDialog({
+        open: true,
+        student
+      });
+      return;
+    }
+    
     setDialogState({
       open: true,
       selectedStudent: student,
       reason: ''
+    });
+  }, []);
+
+  const handleCloseWarningDialog = useCallback(() => {
+    setPresidentWarningDialog({
+      open: false,
+      student: null
     });
   }, []);
 
@@ -356,9 +418,7 @@ const StudentList: React.FC = () => {
     if (!selectedStudent) return;
     
     try {
-      console.log(`Confirming deletion of student ${selectedStudent.id}`);
       await deleteStudent(selectedStudent.id, reason);
-      console.log("Deletion successful, reloading students");
       loadStudents();
     } catch (error) {
       console.error("Error deleting student:", error);
@@ -392,6 +452,12 @@ const StudentList: React.FC = () => {
         loading={studentState.loading}
         colors={colors}
         drawer={drawer}
+      />
+      
+      <PresidentWarningDialog 
+        open={presidentWarningDialog.open}
+        student={presidentWarningDialog.student}
+        onClose={handleCloseWarningDialog}
       />
       
       <DeleteDialog 
