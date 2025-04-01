@@ -526,15 +526,16 @@ class AdminSocietyDetailRequestView(APIView):
         society_request.save()
 
         channel_layer = get_channel_layer()
-        async_to_sync(channel_layer.group_send)(
-            "society_updates",
-            {
-                "type": "society_list_update",
-                "message": f"Society detail request for {society_request.society.name} has been {status_update.lower()}.",
-                "data": SocietyRequestSerializer(society_request).data,
-                "status": status_update
-            }
-        )
+        if channel_layer:
+            async_to_sync(channel_layer.group_send)(
+                "society_updates",
+                {
+                    "type": "society_list_update",
+                    "message": f"Society detail request for {society_request.society.name} has been {status_update.lower()}.",
+                    "data": SocietyRequestSerializer(society_request).data,
+                    "status": status_update
+                }
+            )
 
         return Response(
             {"message": f"Society detail request {status_update.lower()} successfully."},
