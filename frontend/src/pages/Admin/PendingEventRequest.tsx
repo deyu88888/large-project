@@ -214,7 +214,8 @@ const PendingEventRequest: React.FC = () => {
       field: "actions",
       headerName: "Actions",
       flex: 1.4,
-      minWidth: 250,
+      width: 255,
+      minWidth: 255,
       sortable: false,
       filterable: false,
       renderCell: (params: GridRenderCellParams<EventData>) => (

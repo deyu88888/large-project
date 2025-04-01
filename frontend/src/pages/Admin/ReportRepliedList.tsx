@@ -130,21 +130,6 @@ const createReportColumns = (
     { field: "from_student_username", headerName: "Reporter", flex: 1 },
     { field: "report_type", headerName: "Report Type", flex: 1 },
     { field: "subject", headerName: "Subject", flex: 1.5 },
-    { 
-      field: "latest_reply", 
-      headerName: "Latest Reply", 
-      flex: 2,
-    },
-    { field: "reply_count", headerName: "Total Replies", flex: 0.8 },
-    {
-      field: "latest_reply_date",
-      headerName: "Latest Reply Date",
-      flex: 1.5,
-      valueFormatter: (params: any) => {
-        if (!params) return '-';
-        return params.value ? formatDateString(params.value) : '-';
-      },
-    },
     {
       field: "action",
       headerName: "Actions",
@@ -154,7 +139,13 @@ const createReportColumns = (
       minWidth: 140,
       width: 140,
       renderCell: (params: GridRenderCellParams) => (
-        <ActionButton reportId={params.row.id} onClick={handleViewThread} />
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={() => handleViewThread(params.row.id)}
+        >
+          View Thread
+        </Button>
       ),
     }
   ];

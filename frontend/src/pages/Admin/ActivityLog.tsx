@@ -91,7 +91,7 @@ const ConfirmDeleteDialog: React.FC<ConfirmDeleteDialogProps> = ({ open, log, pr
         </DialogContentText>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} color="primary">
+        <Button onClick={onClose} color="secondary">
           Cancel
         </Button>
         <Button 
