@@ -125,15 +125,12 @@ class NewsDetailPermission(BasePermission):
     """Permission class for news detail view"""
     
     def has_permission(self, request, view):
-        # Check if user is authenticated first
         if not request.user.is_authenticated:
             return False
             
-        # Admins can do anything
         if hasattr(request.user, 'is_admin') and callable(getattr(request.user, 'is_admin')) and request.user.is_admin():
             return True
             
-        # Try to get the news post
         news_id = view.kwargs.get('news_id')
         if not news_id:
             return False
@@ -142,19 +139,14 @@ class NewsDetailPermission(BasePermission):
             news_post = SocietyNews.objects.get(id=news_id)
             society = news_post.society
             
-            # For GET requests, published posts are accessible to all members,
-            # while unpublished posts are only for management
             if request.method == 'GET':
-                # Check if user is a member
                 if is_society_member(request.user, society.id):
-                    # Only managers can view unpublished posts
                     if news_post.status != "Published":
                         return (hasattr(request.user, 'student') and 
                                 has_society_management_permission(request.user.student, society))
                     return True
                 return False
                 
-            # For other methods (PUT, DELETE), require management permission
             if hasattr(request.user, 'student'):
                 return has_society_management_permission(request.user.student, society)
                 
