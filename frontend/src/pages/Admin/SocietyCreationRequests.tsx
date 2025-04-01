@@ -275,13 +275,10 @@ const SocietyCreationRequests: React.FC = () => {
 
   const handleStatusChange = useCallback(async (id: number, status: "Approved" | "Rejected") => {
     try {
-      // Optimistically update UI
       updateSocietiesAfterStatusChange(id);
       
-      // Make API call
       await updateRequestStatus(id, status, apiPaths.USER.PENDINGSOCIETYREQUEST);
       
-      // Show success notification
       showNotification(
         `Society ${status === "Approved" ? "approved" : "rejected"} successfully.`, 
         'success'
@@ -289,18 +286,15 @@ const SocietyCreationRequests: React.FC = () => {
     } catch (error) {
       console.error(`Error updating society status:`, error);
       
-      // Show error notification
       showNotification(
         `Failed to ${status.toLowerCase()} society request.`, 
         'error'
       );
       
-      // Recover data if there was an error
       fetchSocieties();
     }
   }, [updateSocietiesAfterStatusChange, showNotification, fetchSocieties]);
 
-  // Derived states using memoization
   const processedSocieties = useMemo(() => 
     processSocieties(societies),
     [societies]
@@ -316,7 +310,6 @@ const SocietyCreationRequests: React.FC = () => {
     [handleStatusChange]
   );
 
-  // Render component
   return (
     <>
       <DataGridContainer 

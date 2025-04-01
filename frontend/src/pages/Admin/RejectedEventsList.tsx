@@ -1,4 +1,3 @@
-// Refactored
 import React, { useEffect, useState, useContext, FC } from "react";
 import {
   Box,
