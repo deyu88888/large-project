@@ -172,22 +172,16 @@ class SocietyNewsDetailView(APIView):
         data = {}
         files_present = False
         
-        # Check both FILES and DATA
-        print("Request FILES:", request.FILES)
-        print("Request DATA keys:", request.data.keys())
-        
         # Process both regular data and file data
         for key in request.data:
             # Check if this is a file field
             if hasattr(request.data[key], 'read'):
                 data[key] = request.data[key]
                 files_present = True
-                print(f"File field detected: {key}")
             else:
                 data[key] = request.data[key]
                 # Check if we're clearing a file field
                 if key in ['image', 'attachment'] and data[key] == '':
-                    print(f"Clearing file field: {key}")
                     files_present = True
         
         # Check if there are files in request.FILES that weren't caught
@@ -195,7 +189,6 @@ class SocietyNewsDetailView(APIView):
             if key not in data:
                 data[key] = request.FILES[key]
                 files_present = True
-                print(f"File from request.FILES: {key}")
         
         current_status = news_post.status
         
@@ -209,8 +202,6 @@ class SocietyNewsDetailView(APIView):
             
             # If content has changed or any files are present or explicitly resubmitting rejected, we need approval
             if content_changed or files_present or resubmit_rejected:
-                print(f"Content changed: {content_changed}, Files present: {files_present}, Resubmit: {resubmit_rejected}")
-                print("Setting status to PendingApproval")
                 
                 # Set the status to PendingApproval
                 data['status'] = "PendingApproval"
@@ -254,11 +245,8 @@ class SocietyNewsDetailView(APIView):
                     
                     # Create the new publication request
                     publication_request = NewsPublicationRequest.objects.create(**request_data)
-                    print(f"Created new publication request: {publication_request.id} for news post: {news_post.id}")
-                    
                     return Response(serializer.data, status=status.HTTP_200_OK)
                 else:
-                    print(f"Serializer errors: {serializer.errors}")
                     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
         # Handle other status transitions
@@ -288,7 +276,6 @@ class SocietyNewsDetailView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
-            print(f"Serializer errors: {serializer.errors}")
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     def delete(self, request, news_id):
