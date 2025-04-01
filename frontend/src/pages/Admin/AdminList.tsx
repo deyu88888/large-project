@@ -9,7 +9,8 @@ import {
   Dialog, 
   DialogContentText, 
   DialogActions, 
-  TextField 
+  TextField, 
+  Snackbar
 } from "@mui/material";
 import { DataGrid, GridToolbar, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 import { apiClient, apiPaths } from "../../api";
@@ -25,6 +26,7 @@ import {
   DataGridContainerProps,
   ActionButtonsProps
 } from "../../types/admin/AdminList";
+import { NotificationState } from "../../types/admin/StudentList";
 
 
 const Header: FC<HeaderProps> = ({ colors, theme }) => {
@@ -189,6 +191,12 @@ const AdminList: FC = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedAdmin, setSelectedAdmin] = useState<AdminUser | null>(null);
   const [reason, setReason] = useState('');
+
+  const [notification, setNotification] = useState<NotificationState>({
+    open: false,
+    message: "",
+    severity: "info"
+  });
   
   const isSuperAdmin = user?.is_super_admin === true;
   const actionsColumnWidth = isSuperAdmin ? 170 : 85;
@@ -250,6 +258,13 @@ const AdminList: FC = () => {
     setReason(event.target.value);
   };
 
+  const handleNotificationClose = (event?: React.SyntheticEvent | Event, reason?: string) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setNotification(prev => ({ ...prev, open: false }));
+  };
+
   const handleConfirmDelete = async () => {
     if (selectedAdmin === null) return;
     
@@ -269,6 +284,11 @@ const AdminList: FC = () => {
       );
       
       await fetchAdmins();
+      setNotification({
+        open: true,
+        message: `Admin ${selectedAdmin.first_name} ${selectedAdmin.last_name} was successfully deleted.`,
+        severity: "success"
+      });
       handleCloseDialog();
     } catch (error) {
       console.error("Error deleting admin:", error);
@@ -353,6 +373,21 @@ const AdminList: FC = () => {
         onReasonChange={handleReasonChange}
         onClose={handleCloseDialog}
         onConfirm={handleConfirmDelete}
+      />
+
+      <Snackbar
+        open={notification.open}
+        autoHideDuration={6000}
+        onClose={handleNotificationClose}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+        message={notification.message}
+        ContentProps={{
+          sx: {
+            backgroundColor: notification.severity === "success" ? "green" : 
+                            notification.severity === "error" ? "red" : 
+                            notification.severity === "warning" ? "orange" : "blue"
+          }
+        }}
       />
     </Box>
   );

@@ -9,7 +9,8 @@ import {
   DialogContentText,
   Dialog,
   DialogActions,
-  TextField
+  TextField,
+  Snackbar
 } from "@mui/material";
 import { DataGrid, GridColDef, GridToolbar, GridRenderCellParams } from "@mui/x-data-grid";
 import { apiClient, apiPaths } from "../../api";
@@ -24,6 +25,7 @@ import {
   ActionButtonsProps,
   DataGridContainerProps
 } from "../../types/admin/AdminEventList";
+import { NotificationState } from "../../types/admin/StudentList.ts";
 
 const ActionButtons: FC<ActionButtonsProps> = ({
   event,
@@ -159,6 +161,12 @@ const AdminEventList: FC = () => {
   const [loading, setLoading] = useState(true);
   const [previewOpen, setPreviewOpen] = useState(false);
 
+  const [notification, setNotification] = useState<NotificationState>({
+    open: false,
+    message: "",
+    severity: "info"
+  });
+
   const fetchEvents = useCallback(async () => {
     try {
       setLoading(true);
@@ -167,6 +175,11 @@ const AdminEventList: FC = () => {
       setEvents(mapped);
     } catch (error) {
       console.error("Error fetching events:", error);
+      setNotification({
+        open: true,
+        message: `Failed to load events: ${error.response?.data?.message || "Unknown error"}`,
+        severity: "error"
+      });
     } finally {
       setLoading(false);
     }
@@ -196,6 +209,13 @@ const AdminEventList: FC = () => {
     setReason(event.target.value);
   }, []);
 
+  const handleNotificationClose = useCallback((event?: React.SyntheticEvent | Event, reason?: string) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setNotification(prev => ({ ...prev, open: false }));
+  }, []);
+
   const handleConfirmDelete = useCallback(async () => {
     if (!selectedEvent || !reason.trim()) {
       return;
@@ -208,8 +228,18 @@ const AdminEventList: FC = () => {
         data: { reason },
       });
       await fetchEvents();
+      setNotification({
+        open: true,
+        message: `Event "${selectedEvent.title}" was successfully deleted.`,
+        severity: "success"
+      });
     } catch (error) {
       console.error("Error deleting event:", error);
+      setNotification({
+        open: true,
+        message: `Failed to delete event: ${error.response?.data?.message || "Unknown error"}`,
+        severity: "error"
+      });
     } finally {
       handleCloseDialog();
     }
@@ -287,6 +317,21 @@ const AdminEventList: FC = () => {
           eventData={selectedEvent}
         />
       )}
+
+      <Snackbar
+        open={notification.open}
+        autoHideDuration={6000}
+        onClose={handleNotificationClose}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+        message={notification.message}
+        ContentProps={{
+          sx: {
+            backgroundColor: notification.severity === "success" ? "green" : 
+                            notification.severity === "error" ? "red" : 
+                            notification.severity === "warning" ? "orange" : "blue"
+          }
+        }}
+      />
     </Box>
   );
 };
