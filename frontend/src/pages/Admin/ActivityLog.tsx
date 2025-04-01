@@ -245,7 +245,6 @@ const ActivityLogList: React.FC<ActivityLogListProps> = () => {
     [data, searchTerm]
   );
 
-  // Using the refactored code from local branch
   const getColumns = (): GridColDef[] => [
     { field: "id", headerName: "ID", flex: 0.3 },
     { field: "action_type", headerName: "Action Type", flex: 1 },
