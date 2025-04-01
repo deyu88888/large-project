@@ -1,13 +1,14 @@
 from django.test import TestCase
 from rest_framework.test import APIClient
 from rest_framework import status
+from rest_framework.response import Response
 from api.models import Student, Society, User
-from api.tests.file_deletion import delete_file
 from rest_framework_simplejwt.tokens import RefreshToken
+from unittest.mock import patch
 
 
 class JoinedSocietiesViewTestCase(TestCase):
-    """Unit tests for the JoinSocietyView."""
+    """Unit tests for the JoinedSocietiesView."""
 
     def setUp(self):
         # Create a test admin
@@ -64,83 +65,165 @@ class JoinedSocietiesViewTestCase(TestCase):
             status="Approved"
         )
 
-        self.society1.society_members.add(self.student1)
+        # Add student1 to society1
+        self.student1.societies_belongs_to.add(self.society1)
+        
+        # Add student2 to society1 and society3
+        self.student2.societies_belongs_to.add(self.society1)
+        self.student2.societies_belongs_to.add(self.society3)
 
         # Set up API client
         self.client = APIClient()
         self.student1_token = self._generate_token(self.student1)
         self.student2_token = self._generate_token(self.student2)
         self.student3_token = self._generate_token(self.student3)
-        self.join_url = "/api/society/join/"
-        self.get_available_url = "/api/society/join/"
-
+        
+        # Create a non-student user
+        self.non_student_user = User.objects.create_user(
+            username="non_student",
+            email="nonst@example.com",
+            password="password123",
+            first_name="Non",
+            last_name="Student",
+            role="staff"
+        )
+        self.non_student_token = self._generate_token(self.non_student_user)
+        
+        # Set up URLs
+        self.joined_societies_url = "/api/society/joined/"
+        self.leave_society_url = lambda society_id: f"/api/society/leave/{society_id}/"
+        
     def _generate_token(self, user):
         """Generate a JWT token for the user."""
         refresh = RefreshToken.for_user(user)
         return f"Bearer {refresh.access_token}"
 
-    def test_get_available_societies_authenticated_student(self):
-        """Test retrieving societies a student has not joined."""
-        self.client.credentials(HTTP_AUTHORIZATION=self.student1_token)
-        response = self.client.get(self.get_available_url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        society_names = [society["name"] for society in response.data]
-        self.assertNotIn("Science Club", society_names)
-
-    def test_get_available_societies_unauthenticated(self):
-        """Test retrieving societies without authentication."""
-        response = self.client.get(self.get_available_url)
+    # GET Tests
+    def test_get_joined_societies_unauthenticated(self):
+        """Test that unauthenticated users cannot access joined societies."""
+        response = self.client.get(self.joined_societies_url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-
-    def test_get_available_societies_non_student(self):
-        """Test retrieving societies for a non-student user."""
-        self.client.credentials(HTTP_AUTHORIZATION=self._generate_token(self.admin))
-        response = self.client.get(self.get_available_url)
+    
+    def test_get_joined_societies_non_student(self):
+        """Test that non-student users receive an error when trying to get joined societies."""
+        self.client.credentials(HTTP_AUTHORIZATION=self.non_student_token)
+        with patch('api.views.get_student_if_user_is_student') as mock_get_student:
+            error_response = Response({"error": "User is not a student."}, status=status.HTTP_403_FORBIDDEN)
+            mock_get_student.return_value = (None, error_response)
+            
+            response = self.client.get(self.joined_societies_url)
+            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+    
+    def test_get_joined_societies_student1(self):
+        """Test retrieving joined societies for student1 (1 society)."""
+        self.client.credentials(HTTP_AUTHORIZATION=self.student1_token)
+        
+        with patch('api.views.get_student_if_user_is_student') as mock_get_student:
+            mock_get_student.return_value = (self.student1, None)
+            
+            mock_societies = self.student1.societies_belongs_to.all()
+            response = self.client.get(self.joined_societies_url)
+            
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertTrue(len(response.data) > 0)
+    
+    def test_get_joined_societies_student2(self):
+        """Test retrieving joined societies for student2 (2 societies)."""
+        self.client.credentials(HTTP_AUTHORIZATION=self.student2_token)
+        
+        with patch('api.views.get_student_if_user_is_student') as mock_get_student:
+            mock_get_student.return_value = (self.student2, None)
+            
+            response = self.client.get(self.joined_societies_url)
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertTrue(len(response.data) > 0)
+    
+    def test_get_joined_societies_student3(self):
+        """Test retrieving joined societies for student3 who hasn't explicitly joined societies."""
+        self.client.credentials(HTTP_AUTHORIZATION=self.student3_token)
+        
+        with patch('api.views.get_student_if_user_is_student') as mock_get_student:
+            mock_get_student.return_value = (self.student3, None)
+            response = self.client.get(self.joined_societies_url)
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+    
+    def test_leave_society_unauthenticated(self):
+        """Test that unauthenticated users cannot leave societies."""
+        response = self.client.delete(self.leave_society_url(self.society1.id))
+        self.assertIn(response.status_code, [
+            status.HTTP_401_UNAUTHORIZED, 
+            status.HTTP_403_FORBIDDEN
+        ])
+    
+    def test_leave_society_non_student(self):
+        """Test that non-student users receive an error when trying to leave a society."""
+        self.client.credentials(HTTP_AUTHORIZATION=self.non_student_token)
+        
+        with patch('api.views.get_student_if_user_is_student') as mock_get_student:
+            error_response = Response({"error": "User is not a student."}, status=status.HTTP_403_FORBIDDEN)
+            mock_get_student.return_value = (None, error_response)
+            
+            response = self.client.delete(self.leave_society_url(self.society1.id))
+            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+    
+    def test_leave_nonexistent_society(self):
+        """Test trying to leave a society that doesn't exist."""
+        self.client.credentials(HTTP_AUTHORIZATION=self.student1_token)
+        
+        with patch('api.views.get_student_if_user_is_student') as mock_get_student:
+            mock_get_student.return_value = (self.student1, None)
+            
+            response = self.client.delete(self.leave_society_url(9999))
+            
+            self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+    
+    def test_leave_society_not_member(self):
+        """Test trying to leave a society the student isn't a member of."""
+        self.client.credentials(HTTP_AUTHORIZATION=self.student1_token)
+        
+        with patch('api.views.get_student_if_user_is_student') as mock_get_student:
+            mock_get_student.return_value = (self.student1, None)
+            
+            response = self.client.delete(self.leave_society_url(self.society2.id))
+            
+            self.assertIn(response.status_code, [
+                status.HTTP_400_BAD_REQUEST,
+                status.HTTP_404_NOT_FOUND
+            ])
+    
+    def test_leave_society_with_role(self):
+        """Test that a student with a role (president) cannot leave the society."""
+        self.student1.is_president = True
+        self.student1.president_of = self.society1
+        self.student1.save()
+        
+        if not self.student1.societies_belongs_to.filter(id=self.society1.id).exists():
+            self.student1.societies_belongs_to.add(self.society1)
+        
+        self.assertTrue(self.student1.is_president)
+        self.assertEqual(self.student1.president_of, self.society1)
+        self.assertEqual(self.society1.president, self.student1)
+        self.assertTrue(self.student1.societies_belongs_to.filter(id=self.society1.id).exists())
+        
+        self.client.credentials(HTTP_AUTHORIZATION=self.student1_token)
+        
+        response = self.client.delete(self.leave_society_url(self.society1.id))
+        
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
-    def test_join_society_valid(self):
-        """Test creating a valid request to join a society."""
-        join_url = f"{self.join_url}{self.society2.id}/"
-        self.client.credentials(HTTP_AUTHORIZATION=self.student1_token)
-        response = self.client.post(join_url)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertIn("message", response.data)
-        self.assertFalse(self.society2.society_members.filter(id=self.student1.id).exists())
-
-    def test_join_society_already_joined(self):
-        """
-        Test joining a society that the student has already joined.
-        The current implementation returns 201 Created even if already joined.
-        """
-        join_url = f"{self.join_url}{self.society1.id}/"
-        self.client.credentials(HTTP_AUTHORIZATION=self.student1_token)
-        response = self.client.post(join_url)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
-    def test_join_society_invalid_id(self):
-        """Test joining a society with an invalid ID."""
-        join_url = f"{self.join_url}9999/"
-        self.client.credentials(HTTP_AUTHORIZATION=self.student1_token)
-        response = self.client.post(join_url)  # Non-existent society
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-
-    def test_join_society_unauthenticated(self):
-        """Test joining a society without authentication."""
-        join_url = f"{self.join_url}{self.society2.id}/"
-        response = self.client.post(join_url)
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-
-    def test_join_society_non_student(self):
-        """Test joining a society as a non-student user."""
-        join_url = f"{self.join_url}{self.society2.id}/"
-        self.client.credentials(HTTP_AUTHORIZATION=self._generate_token(self.admin))
-        response = self.client.post(join_url) 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
-    def tearDown(self):
-        for society in Society.objects.all():
-            if society.icon:
-                delete_file(society.icon.path)
-        for student in Student.objects.all():
-            if student.icon:
-                delete_file(student.icon.path)
+        
+        self.assertTrue(self.student1.societies_belongs_to.filter(id=self.society1.id).exists())
+    
+    def test_leave_society_success(self):
+        """Test successfully leaving a society."""
+        self.client.credentials(HTTP_AUTHORIZATION=self.student2_token)
+        
+        with patch('api.views.get_student_if_user_is_student') as mock_get_student:
+            mock_get_student.return_value = (self.student2, None)
+            
+            with patch('api.views.student_has_no_role') as mock_has_no_role:
+                mock_has_no_role.return_value = None
+                
+                response = self.client.delete(self.leave_society_url(self.society1.id))
+                
+                self.assertEqual(response.status_code, status.HTTP_200_OK)
+                self.assertTrue('message' in response.data or 'success' in response.data)

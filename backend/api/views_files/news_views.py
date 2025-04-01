@@ -200,6 +200,7 @@ class NewsPublicationRequestView(APIView):
                 status.HTTP_400_BAD_REQUEST
             )
 
+        # Mark previous requests as superseded (especially important for rejected posts)
         mark_previous_requests_superseded(news_post)
 
         cancel_pending_requests(news_post)
@@ -207,10 +208,26 @@ class NewsPublicationRequestView(APIView):
         news_post.status = "PendingApproval"
         news_post.save()
 
+        # Add note about resubmission if this was a rejected post
+        admin_notes = ""
+        if hasattr(news_post, 'last_rejection_date') and news_post.last_rejection_date:
+            admin_notes = f"Resubmission of previously rejected post (rejected on {news_post.last_rejection_date.strftime('%Y-%m-%d %H:%M')})"
+        else:
+            # Try to find the latest rejection from publication requests
+            latest_rejected = NewsPublicationRequest.objects.filter(
+                news_post=news_post,
+                status__in=["Rejected", "Superseded_Rejected"]
+            ).order_by('-reviewed_at').first()
+            
+            if latest_rejected:
+                admin_notes = f"Resubmission of previously rejected post (rejected on {latest_rejected.reviewed_at.strftime('%Y-%m-%d %H:%M')})"
+
+        # Create the new publication request
         publication_request = NewsPublicationRequest.objects.create(
             news_post=news_post,
             requested_by=user.student,
-            status="Pending"
+            status="Pending",
+            admin_notes=admin_notes
         )
 
         serializer = NewsPublicationRequestSerializer(publication_request)

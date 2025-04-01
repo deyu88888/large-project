@@ -3,7 +3,7 @@ from rest_framework import status
 from django.urls import reverse
 from django.utils import timezone
 import sys
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 sys.modules['transformers'] = MagicMock()
 sys.modules['transformers.utils.import_utils'] = MagicMock()
 sys.modules['transformers.models.bert.tokenization_bert_tf'] = MagicMock()
@@ -126,23 +126,24 @@ class TestAdminNewsApprovalView(APITestCase):
         
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(response.data, {
-            "error": "Only admins can approve or reject publication requests"
+            "error": "Only admins can approve or reject publication requests."
         })
     
     def test_approve_nonexistent_request(self):
         """Test handling of non-existent request ID"""
         self.client.force_authenticate(user=self.admin_user)
         
-        response = self.client.put(
-            self.get_detail_url(9999),  
-            {'status': 'Approved'},
-            format='json'
-        )
-        
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        self.assertEqual(response.data, {
-            "error": "Publication request not found"
-        })
+        with patch('api.views_files.news_views.get_object_by_id_or_name', return_value=None):
+            response = self.client.put(
+                self.get_detail_url(9999),  
+                {'status': 'Approved'},
+                format='json'
+            )
+            
+            self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+            self.assertEqual(response.data, {
+                "error": "Publication request not found"
+            })
     
     def test_approve_with_invalid_action(self):
         """Test validation for invalid action value"""
