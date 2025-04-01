@@ -9,7 +9,8 @@ import {
   Dialog, 
   DialogContentText, 
   DialogActions, 
-  TextField 
+  TextField, 
+  Snackbar
 } from "@mui/material";
 import { DataGrid, GridColDef, GridRenderCellParams, GridToolbar } from "@mui/x-data-grid";
 import { apiClient, apiPaths } from "../../api";
@@ -26,8 +27,10 @@ import {
   DataGridContainerProps,
   PageTitleProps,
   PresidentCellProps,
-  BooleanCellProps
+  BooleanCellProps,
+  NotificationState
 } from "../../types/admin/StudentList";
+import { Alert as MuiAlert } from "../../components/Alert";
 
 const filterStudentsBySearchTerm = (students: Student[], searchTerm: string): Student[] => {
   if (!searchTerm) return students;
@@ -46,15 +49,6 @@ const fetchStudentList = async (): Promise<Student[]> => {
   const res = await apiClient.get(apiPaths.USER.STUDENTS);
   return res.data || [];
 };
-
-// const deleteStudent = async (studentId: number | string, reason: string): Promise<void> => {
-//   console.log(`Attempting to delete student ${studentId} with reason: ${reason}`);
-//   await apiClient.request({
-//     method: "DELETE",
-//     url: apiPaths.USER.DELETE("Student", Number(studentId)),
-//     data: { reason },
-//   });
-// };
 
 const deleteStudent = async (studentId: number | string, reason: string): Promise<void> => {
   try {
@@ -158,7 +152,7 @@ const DeleteDialog: React.FC<DeleteDialogProps> = ({
         />
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} color="primary">
+        <Button onClick={onClose} color="secondary">
           Cancel
         </Button>
         <Button 
@@ -292,6 +286,11 @@ const StudentList: React.FC = () => {
   const navigate = useNavigate();
   const { searchTerm } = useContext(SearchContext);
   const { drawer } = useSettingsStore();
+  const [notification, setNotification] = useState<NotificationState>({
+    open: false,
+    message: "",
+    severity: "info"
+  });
   
   const [studentState, setStudentState] = useState<StudentListState>({
     students: [],
@@ -350,6 +349,13 @@ const StudentList: React.FC = () => {
     }));
   }, []);
 
+  const handleNotificationClose = useCallback((event?: React.SyntheticEvent | Event, reason?: string) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setNotification(prev => ({ ...prev, open: false }));
+  }, []);
+
   const handleDeleteConfirmed = useCallback(async () => {
     const { selectedStudent, reason } = dialogState;
     
@@ -359,9 +365,19 @@ const StudentList: React.FC = () => {
       console.log(`Confirming deletion of student ${selectedStudent.id}`);
       await deleteStudent(selectedStudent.id, reason);
       console.log("Deletion successful, reloading students");
+      setNotification({
+        open: true,
+        message: `Student ${selectedStudent.first_name} ${selectedStudent.last_name} was successfully deleted.`,
+        severity: "success"
+      });
       loadStudents();
     } catch (error) {
       console.error("Error deleting student:", error);
+      setNotification({
+        open: true,
+        message: `Failed to delete student: ${error.response?.data?.message || "Unknown error"}`,
+        severity: "error"
+      });
     }
     
     handleCloseDialog();
@@ -399,6 +415,21 @@ const StudentList: React.FC = () => {
         onClose={handleCloseDialog}
         onReasonChange={handleReasonChange}
         onConfirm={handleDeleteConfirmed}
+      />
+
+      <Snackbar
+        open={notification.open}
+        autoHideDuration={6000}
+        onClose={handleNotificationClose}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+        message={notification.message}
+        ContentProps={{
+          sx: {
+            backgroundColor: notification.severity === "success" ? "green" : 
+                            notification.severity === "error" ? "red" : 
+                            notification.severity === "warning" ? "orange" : "blue"
+          }
+        }}
       />
     </Box>
   );

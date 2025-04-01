@@ -82,7 +82,7 @@ const DeleteDialog: FC<DeleteDialogProps> = ({
         />
       </DialogContent>
       <DialogActions>
-        <Button onClick={onCancel} color="primary">
+        <Button onClick={onCancel} color="secondary">
           Cancel
         </Button>
         <Button 
@@ -238,7 +238,8 @@ const AdminEventList: FC = () => {
       field: "actions",
       headerName: "Actions",
       flex: 1.4,
-      minWidth: 250,
+      width: 170,
+      minWidth: 170,
       sortable: false,
       filterable: false,
       renderCell: (params: GridRenderCellParams<EventData>) => (
