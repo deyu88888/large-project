@@ -61,21 +61,28 @@ class Event(models.Model):
 
     def save(self, *args, **kwargs):
         now = timezone.now()
+        
+        # Handle date string conversion
         if isinstance(self.date, str):
             self.date = datetime.strptime(self.date, "%Y-%m-%d").date()
+        
+        # Handle time string conversion - fix redundant check
         if isinstance(self.start_time, str):
-            if isinstance(self.start_time, str):
-                parts = self.start_time.split(":")
-                if len(parts) == 2:
-                    self.start_time = datetime.strptime(self.start_time, "%H:%M").time()
-                elif len(parts) == 3:
-                    self.start_time = datetime.strptime(self.start_time, "%H:%M:%S").time()
-                else:
-                    raise ValueError(f"Invalid time format: {self.start_time}")
-        event_start = datetime.combine(self.date, self.start_time, tzinfo=dt_timezone.utc)
-
-        if self.status == "Pending" and now >= event_start:
-            self.status = "Rejected"
+            parts = self.start_time.split(":")
+            if len(parts) == 2:
+                self.start_time = datetime.strptime(self.start_time, "%H:%M").time()
+            elif len(parts) == 3:
+                self.start_time = datetime.strptime(self.start_time, "%H:%M:%S").time()
+            else:
+                raise ValueError(f"Invalid time format: {self.start_time}")
+        
+        # Make sure both date and time are not None before combining
+        if self.date is not None and self.start_time is not None:
+            event_start = datetime.combine(self.date, self.start_time, tzinfo=dt_timezone.utc)
+            
+            if self.status == "Pending" and now >= event_start:
+                self.status = "Rejected"
+        
         super().save(*args, **kwargs)
 
 class EventModule(models.Model):

@@ -169,17 +169,33 @@ class EventRequestSerializer(serializers.ModelSerializer):
             "location": request_obj.data.get("location", ""),
             "date": request_obj.data.get("date"),
             "start_time": request_obj.data.get("start_time"),
-            "duration": request_obj.data.get("duration"),
             "hosted_by": hosted_by,
             "status": "Pending"
         }
-        duration_str = event_data.get("duration")
+        
+        # Handle duration separately - improved parsing
+        duration_str = request_obj.data.get("duration")
         if duration_str and isinstance(duration_str, str):
             try:
-                h, m, s = map(int, duration_str.split(":"))
-                event_data["duration"] = datetime.timedelta(hours=h, minutes=m, seconds=s)
-            except ValueError:
-                raise serializers.ValidationError({"duration": "Invalid duration format. Expected HH:MM:SS."})
+                parts = duration_str.split(":")
+                if len(parts) == 3:
+                    h, m, s = map(int, parts)
+                    event_data["duration"] = datetime.timedelta(hours=h, minutes=m, seconds=s)
+                elif len(parts) == 2:
+                    h, m = map(int, parts)
+                    event_data["duration"] = datetime.timedelta(hours=h, minutes=m)
+                else:
+                    # Try to interpret as hours
+                    h = float(duration_str)
+                    event_data["duration"] = datetime.timedelta(hours=h)
+            except (ValueError, TypeError):
+                raise serializers.ValidationError({"duration": "Invalid duration format. Expected HH:MM:SS, HH:MM, or hours value."})
+
+        # Validate date and time are present
+        if not event_data.get("date"):
+            raise serializers.ValidationError({"date": "Date is required."})
+        if not event_data.get("start_time"):
+            raise serializers.ValidationError({"start_time": "Start time is required."})
 
         event = Event.objects.create(**event_data)
 
@@ -194,7 +210,7 @@ class EventRequestSerializer(serializers.ModelSerializer):
             intent="CreateEve",
             approved=None,
             event=event,
-            admin_reason = request_obj.data.get("admin_reason", "")
+            admin_reason=request_obj.data.get("admin_reason", "")
         )
         return event_request
 
