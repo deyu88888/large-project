@@ -259,12 +259,11 @@ const AdminList: FC = () => {
     }
     
     try {
-      await apiClient.delete(
-        apiPaths.USER.DELETE("Admin", selectedAdmin.id),
-        { 
-          data: { reason: reason.trim() }  
-        }
-      );
+      await apiClient.request({
+        method: 'DELETE',
+        url: apiPaths.USER.DELETE("Admin", selectedAdmin.id),
+        data: { reason: reason.trim() }
+      });
       
       await fetchAdmins();
       handleCloseDialog();
