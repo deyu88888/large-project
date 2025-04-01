@@ -26,7 +26,7 @@ class StartSocietyRequestView(APIView):
         if error:
             return error
 
-        serializer = StartSocietyRequestSerializer(data=request.data)
+        serializer = StartSocietyRequestSerializer(data=request.data, context={"request": request})
         if serializer.is_valid():
             serializer.save(requested_by=student)
             return Response(

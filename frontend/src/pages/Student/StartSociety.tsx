@@ -13,6 +13,7 @@ import {
   SubmitButtonProps,
   PageContainerProps
 } from "../../types/student/StartSociety";
+import { useAuthStore } from "../../stores/auth-store";
 
 // Component Functions
 const PageHeader: React.FC<HeaderProps> = ({ styleProps }) => {
@@ -138,6 +139,56 @@ const InputField: React.FC<InputFieldProps> = ({
   );
 };
 
+const SelectField: React.FC<any> = ({ 
+  id, 
+  label, 
+  value, 
+  onChange, 
+  options = [],
+  styleProps 
+}) => {
+  const { isLight, colours } = styleProps;
+  
+  return (
+    <div style={{ marginBottom: "1.5rem" }}>
+      <label
+        htmlFor={id}
+        style={{
+          display: "block",
+          color: isLight ? "#000" : "#fff",
+          fontWeight: 500,
+          marginBottom: "0.5rem",
+        }}
+      >
+        {label}
+      </label>
+      <select
+        id={id}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        style={{
+          width: "100%",
+          padding: "0.5rem 1rem",
+          border: `1px solid ${colours.grey[300]}`,
+          borderRadius: "4px",
+          boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+          outline: "none",
+          fontSize: "1rem",
+          color: isLight ? "#000" : "#fff",
+          backgroundColor: isLight ? "#fcfcfc" : "#141b2d",
+        }}
+      >
+        <option value="">Select a category</option>
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+};
+
 const SubmitButton: React.FC<SubmitButtonProps> = ({ styleProps }) => {
   const { colours } = styleProps;
   
@@ -191,6 +242,7 @@ const useFormFields = (): [FormData, (field: keyof FormData, value: string) => v
   const [formData, setFormData] = useState<FormData>({
     societyName: "",
     description: "",
+    category: "",
   });
   
   const updateField = (field: keyof FormData, value: string) => {
@@ -204,6 +256,7 @@ const useFormFields = (): [FormData, (field: keyof FormData, value: string) => v
     setFormData({
       societyName: "",
       description: "",
+      category: "",
     });
   };
   
@@ -226,8 +279,18 @@ const useFormState = (): [FormState, (updates: Partial<FormState>) => void] => {
   return [formState, updateFormState];
 };
 
-// Main Component
+const societyCategories = [
+  { value: "academic", label: "Academic" },
+  { value: "cultural", label: "Cultural" },
+  { value: "sports", label: "Sports" },
+  { value: "arts", label: "Arts & Creative" },
+  { value: "community", label: "Community Service" },
+  { value: "technology", label: "Technology" },
+  { value: "other", label: "Other" },
+];
+
 const StartSociety: React.FC = () => {
+  const { user } = useAuthStore();
   const theme = useTheme();
   const colours = tokens(theme.palette.mode);
   const isLight = theme.palette.mode === "light";
@@ -237,7 +300,7 @@ const StartSociety: React.FC = () => {
   const [formState, updateFormState] = useFormState();
 
   const validateForm = (): boolean => {
-    if (!formData.societyName || !formData.description) {
+    if (!formData.societyName || !formData.description || !formData.category) {
       updateFormState({ error: "Please fill out all fields.", success: "" });
       return false;
     }
@@ -248,9 +311,11 @@ const StartSociety: React.FC = () => {
     try {
       updateFormState({ error: "", success: "" });
       
-      const response = await apiClient.post("/api/society/start/", {
+      const response = await apiClient.post("/api/society/start", {
         name: formData.societyName,
         description: formData.description,
+        category: formData.category,
+        requested_by: user?.id,
       });
       
       if (response.status === 201) {
@@ -260,7 +325,7 @@ const StartSociety: React.FC = () => {
         updateFormState({ error: "Something went wrong. Please try again." });
       }
     } catch (err) {
-      updateFormState({ error: "Failed to create society. " + err.response.data.error });
+      updateFormState({ error: "Failed to create society. " + err.response?.data?.error || err.message });
     }
   };
 
@@ -299,6 +364,16 @@ const StartSociety: React.FC = () => {
           rows={5}
           styleProps={styleProps}
         />
+        
+        <SelectField
+          id="category"
+          label="Society Category"
+          value={formData.category}
+          onChange={(value) => updateField("category", value)}
+          options={societyCategories}
+          styleProps={styleProps}
+        />
+  
         
         <SubmitButton styleProps={styleProps} />
       </FormContainer>
