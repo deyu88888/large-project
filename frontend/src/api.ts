@@ -7,7 +7,7 @@
 
 import axios from "axios";
 import { ACCESS_TOKEN } from "./constants";
-import { getApiUrl } from "./utils/websocket";
+
 function isTokenValid(token: string): boolean {
   try {
     const payload = JSON.parse(atob(token.split(".")[1]));
@@ -21,6 +21,21 @@ function isTokenValid(token: string): boolean {
 // ---------------------------------------------------------------------------
 // 1) BASE API CONFIGURATION
 // ---------------------------------------------------------------------------
+// Direct API URL configuration without relying on process.env
+// Uses window.location.hostname to determine the environment
+const getApiUrl = () => {
+  const hostname = window.location.hostname;
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return 'http://localhost:8000';
+  } else if (hostname.includes('infiniteloop.space')) {
+    // Production environment - modify this URL as needed
+    return 'https://infiniteloop.space';
+  } else {
+    // Default fallback URL
+    return 'http://localhost:8000';
+  }
+};
+
 const apiUrl = getApiUrl();
 
 export const apiClient = axios.create({
