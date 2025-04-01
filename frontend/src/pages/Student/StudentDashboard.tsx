@@ -13,6 +13,7 @@ import {
   styled,
   Snackbar,
   Alert,
+  Chip,
 } from "@mui/material";
 import { tokens } from "../../theme/theme";
 import {
@@ -24,6 +25,8 @@ import {
   FaRegClock,
   FaNewspaper,
   FaTrophy,
+  FaCalendarCheck,
+  FaCalendarTimes,
 } from "react-icons/fa";
 import { apiClient } from "../../api";
 import { useAuthStore } from "../../stores/auth-store";
@@ -418,44 +421,110 @@ const EventHost: React.FC<EventHostProps> = ({ hostName }) => {
   );
 };
 
-const EventCard: React.FC<EventCardProps> = ({ event, hostName, onRSVP, styleProps }) => {
+const EventCard: React.FC<EventCardProps> = ({ 
+  event, 
+  hostName, 
+  onRSVP, 
+  styleProps 
+}) => {
   const { colours } = styleProps;
+  const { user } = useAuthStore();
+  
+  // Check if user is attending this event
+  const userAttending = isUserAttendingEvent(event, user?.id);
+  
+  // Check if event has already started
+  const eventDate = new Date(`${event.date} ${event.start_time || '00:00'}`);
+  const now = new Date();
+  const eventStarted = eventDate < now;
 
   return (
     <Paper
       elevation={2}
       sx={{
         backgroundColor: colours.primary[400],
-        border: `1px solid ${colours.grey[800]}`,
+        border: userAttending 
+          ? `2px solid ${colours.greenAccent[500]}` 
+          : `1px solid ${colours.grey[800]}`,
         p: 2,
+        opacity: eventStarted && !userAttending ? 0.7 : 1,
       }}
     >
       <Box
         display="flex"
-        justifyContent="space-between"
-        alignItems="center"
+        flexDirection="column"
         mb={2}
       >
-        <Box>
-          <Typography variant="h6" sx={{ color: colours.grey[100] }}>
+        <Box display="flex" alignItems="center" mb={1}>
+          <Typography variant="h6" sx={{ color: colours.grey[100], mr: 1 }}>
             {event.title}
           </Typography>
-          <EventDate date={event.date} startTime={event.start_time} />
-          <EventLocation location={event.location} />
-          <EventHost hostName={hostName} />
+          {userAttending && (
+            <Chip
+              size="small"
+              icon={<FaCalendarCheck size={12} />}
+              label="Attending"
+              color="success"
+              sx={{ backgroundColor: colours.greenAccent[800], color: colours.grey[100] }}
+            />
+          )}
         </Box>
+        <EventDate date={event.date} startTime={event.start_time} />
+        <EventLocation location={event.location} />
+        <EventHost hostName={hostName} />
+        {eventStarted && (
+          <Typography 
+            variant="caption" 
+            sx={{ 
+              color: userAttending ? colours.greenAccent[400] : colours.redAccent[400], 
+              display: 'block',
+              mt: 1,
+              fontWeight: 'bold'
+            }}
+          >
+            {userAttending 
+              ? "This event has started. You are attending." 
+              : "This event has already started."}
+          </Typography>
+        )}
       </Box>
-      <Button
-        fullWidth
-        variant="contained"
-        onClick={onRSVP}
-        sx={{
-          backgroundColor: colours.blueAccent[500],
-          color: colours.grey[100],
-        }}
-      >
-        RSVP Now
-      </Button>
+      
+      {userAttending ? (
+        <Button
+          fullWidth
+          variant="outlined"
+          onClick={onRSVP}
+          disabled={eventStarted}
+          sx={{
+            borderColor: colours.redAccent[500],
+            color: colours.redAccent[500],
+            "&:hover": {
+              backgroundColor: colours.redAccent[900],
+              borderColor: colours.redAccent[600],
+            },
+          }}
+          startIcon={<FaCalendarTimes />}
+        >
+          {eventStarted ? "Already Attending" : "Cancel RSVP"}
+        </Button>
+      ) : (
+        <Button
+          fullWidth
+          variant="contained"
+          onClick={onRSVP}
+          disabled={eventStarted}
+          sx={{
+            backgroundColor: colours.blueAccent[500],
+            color: colours.grey[100],
+            "&:hover": {
+              backgroundColor: colours.blueAccent[600],
+            },
+          }}
+          startIcon={<FaCalendarCheck />}
+        >
+          {eventStarted ? "Event Started" : "RSVP Now"}
+        </Button>
+      )}
     </Paper>
   );
 };
@@ -469,13 +538,19 @@ const EventsTab: React.FC<EventTabProps> = ({
 }) => {
   const { colours } = styleProps;
 
-  const filteredEvents = filterEventsBySocieties(events, societies);
-  const eventsUserNotAttending = filterEventsUserNotAttending(
-    filteredEvents,
-    userId
-  );
+  // Filter out events that have already started, but keep those you've RSVPd to
+  const now = new Date();
+  const upcomingEvents = events.filter(event => {
+    const eventDate = new Date(`${event.date} ${event.start_time || '00:00'}`);
+    const userAttending = isUserAttendingEvent(event, userId);
+    
+    // Keep if event is in the future OR the user is already attending
+    return eventDate > now || userAttending;
+  });
 
-  if (eventsUserNotAttending.length === 0) {
+  const filteredEvents = filterEventsBySocieties(upcomingEvents, societies);
+
+  if (filteredEvents.length === 0) {
     return (
       <Box
         gridColumn={{ xs: "1", md: "1 / span 2", lg: "1 / span 3" }}
@@ -483,7 +558,7 @@ const EventsTab: React.FC<EventTabProps> = ({
         textAlign="center"
       >
         <Typography variant="body1" sx={{ color: colours.grey[300] }}>
-          No events from your societies
+          No upcoming events from your societies
         </Typography>
       </Box>
     );
@@ -499,15 +574,21 @@ const EventsTab: React.FC<EventTabProps> = ({
       }}
       gap={3}
     >
-      {eventsUserNotAttending.map((event) => {
+      {filteredEvents.map((event) => {
         const hostName = getSocietyName(event, societies);
+        const userAttending = isUserAttendingEvent(event, userId);
+        const eventDate = new Date(`${event.date} ${event.start_time || '00:00'}`);
+        const eventStarted = eventDate < now;
+        
         return (
           <EventCard
             key={event.id}
             event={event}
             hostName={hostName}
-            onRSVP={() => handleRSVP(event.id, true)}
+            onRSVP={() => handleRSVP(event.id, !userAttending)}
             styleProps={styleProps}
+            userAttending={userAttending}
+            eventStarted={eventStarted}
           />
         );
       })}
@@ -1056,22 +1137,58 @@ const StudentDashboard: React.FC<StudentDashboardProps> = () => {
   };
 
   const handleRSVP = async (eventId: number, isAttending: boolean) => {
+    console.log(`RSVP Function Called - Event ID: ${eventId}, Attending: ${isAttending}`);
+    
     try {
+      // Check if the event has already started
+      const event = dashboardData.events.find(e => e.id === eventId);
+      
+      if (event && isAttending) {
+        const eventDate = new Date(`${event.date} ${event.start_time || '00:00'}`);
+        const now = new Date();
+        
+        if (eventDate < now) {
+          showSnackbar("You cannot RSVP for an event that has already started.", "error");
+          return;
+        }
+      }
+  
       if (isAttending) {
-        await apiClient.post("/api/events/rsvp/", { event_id: eventId });
+        console.log('Sending POST request with payload:', { event_id: eventId });
+        const response = await apiClient.post("/api/events/rsvp/", { event_id: eventId });
+        
+        console.log('RSVP response received:', response);
         showSnackbar("Successfully RSVP'd to the event", "success");
       } else {
-        await apiClient.delete("/api/events/rsvp/", {
+        console.log('Sending DELETE request with payload:', { event_id: eventId });
+        const response = await apiClient.delete("/api/events/rsvp/", {
           data: { event_id: eventId },
         });
+        
+        console.log('RSVP cancellation response received:', response);
         showSnackbar("Successfully cancelled your RSVP", "success");
       }
+      
       fetchData();
     } catch (error: any) {
+      console.error("==== RSVP ERROR DETAILS ====");
       console.error("Error updating RSVP:", error);
-      const errorMessage =
-        error.response?.data?.error ||
-        "An error occurred while updating your RSVP.";
+      
+      // Extract and display the specific error message
+      let errorMessage = "An error occurred while updating your RSVP.";
+      
+      if (error.response?.data?.non_field_errors && 
+          error.response.data.non_field_errors.length > 0) {
+        errorMessage = error.response.data.non_field_errors[0];
+      } else if (error.response?.data?.detail) {
+        errorMessage = error.response.data.detail;
+      } else if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      console.error("Showing error message to user:", errorMessage);
       showSnackbar(errorMessage, "error");
     }
   };
