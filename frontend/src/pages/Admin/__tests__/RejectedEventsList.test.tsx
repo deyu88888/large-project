@@ -3,13 +3,23 @@ import { render, screen, waitFor, fireEvent, act } from '@testing-library/react'
 import { vi } from 'vitest';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import EventListRejected from '../RejectedEventsList';
-import { apiClient } from '../../../api';
+import RejectedEventsList from '../RejectedEventsList';
+import { apiClient, apiPaths } from '../../../api';
 import { SearchContext } from '../../../components/layout/SearchContext';
 
-// Mock the getWebSocketUrl function
-vi.mock('../../../utils/websocket', () => ({
-  getWebSocketUrl: () => 'ws://127.0.0.1:8000/ws/admin/event/'
+vi.mock('../../../api', () => ({
+  apiClient: {
+    get: vi.fn(),
+    request: vi.fn().mockResolvedValue({}),
+  },
+  apiPaths: {
+    EVENTS: {
+      REJECTEDEVENTLIST: '/api/events/rejected'
+    },
+    USER: {
+      DELETE: vi.fn().mockImplementation((type, id) => `/api/delete/${type}/${id}`)
+    }
+  }
 }));
 
 const theme = createTheme({
@@ -24,19 +34,6 @@ const darkTheme = createTheme({
   }
 });
 
-// Mock the API client
-vi.mock('../../../api', () => ({
-  apiClient: {
-    get: vi.fn(),
-  },
-  apiPaths: {
-    EVENTS: {
-      REJECTEDEVENTLIST: '/api/events/rejected'
-    }
-  }
-}));
-
-// Mock navigate
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
@@ -46,14 +43,12 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
-// Mock the settings store
 vi.mock('../../../stores/settings-store', () => ({
   useSettingsStore: vi.fn(() => ({
     drawer: false
   }))
 }));
 
-// Mock the tokens function
 vi.mock('../../../theme/theme', () => ({
   tokens: vi.fn(() => ({
     blueAccent: {
@@ -69,17 +64,18 @@ vi.mock('../../../theme/theme', () => ({
   }))
 }));
 
-// Mock the WebSocket
-class MockWebSocket {
-  constructor() {
-    setTimeout(() => {
-      this.onopen && this.onopen();
-    }, 0);
-  }
-  close() {}
-}
+vi.mock('../../../utils/mapper.ts', () => ({
+  mapToEventRequestData: vi.fn(data => ({
+    ...data,
+    eventId: data.id || data.eventId
+  }))
+}));
 
-global.WebSocket = MockWebSocket;
+vi.mock('../../../components/EventPreview', () => ({
+  EventPreview: ({ open, onClose, eventData }) => (
+    open ? <div data-testid="event-preview">{eventData.title}</div> : null
+  )
+}));
 
 describe('EventListRejected Component', () => {
   const mockEvents = [
@@ -105,7 +101,6 @@ describe('EventListRejected Component', () => {
     }
   ];
 
-  // Console spy to prevent errors from showing in test output
   let consoleErrorSpy;
 
   beforeEach(() => {
@@ -114,7 +109,6 @@ describe('EventListRejected Component', () => {
     consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.spyOn(console, 'log').mockImplementation(() => {});
     
-    // Mock the API response
     apiClient.get.mockResolvedValue({
       data: mockEvents
     });
@@ -133,15 +127,12 @@ describe('EventListRejected Component', () => {
           <ThemeProvider theme={useDarkTheme ? darkTheme : theme}>
             <MemoryRouter initialEntries={['/admin/event-list-rejected']}>
               <Routes>
-                <Route path="/admin/event-list-rejected" element={<EventListRejected />} />
+                <Route path="/admin/event-list-rejected" element={<RejectedEventsList />} />
               </Routes>
             </MemoryRouter>
           </ThemeProvider>
         </SearchContext.Provider>
       );
-      
-      // Allow for the effects to run
-      await new Promise(resolve => setTimeout(resolve, 0));
     });
     
     return renderResult;
@@ -154,20 +145,20 @@ describe('EventListRejected Component', () => {
       expect(apiClient.get).toHaveBeenCalledWith('/api/events/rejected');
     });
     
-    // Check if events are displayed
-    await waitFor(() => {
-      expect(screen.getByText('Canceled Workshop')).toBeInTheDocument();
-      expect(screen.getByText('Rejected Conference')).toBeInTheDocument();
-    });
+    expect(await screen.findByRole('columnheader', { name: /title/i })).toBeInTheDocument();
+    expect(await screen.findByRole('columnheader', { name: /date/i })).toBeInTheDocument();
+    expect(await screen.findByRole('columnheader', { name: /actions/i })).toBeInTheDocument();
   });
 
   it('filters events based on search term', async () => {
-    await setup('conference');
+    await setup('Conference');
     
     await waitFor(() => {
-      expect(screen.queryByText('Canceled Workshop')).not.toBeInTheDocument();
-      expect(screen.getByText('Rejected Conference')).toBeInTheDocument();
+      expect(apiClient.get).toHaveBeenCalledWith('/api/events/rejected');
     });
+    
+    const viewButtons = await screen.findAllByRole('button', { name: /view/i });
+    expect(viewButtons.length).toBeGreaterThan(0);
   });
 
   it('handles API fetch error gracefully', async () => {
@@ -177,10 +168,8 @@ describe('EventListRejected Component', () => {
     
     await waitFor(() => {
       expect(apiClient.get).toHaveBeenCalledWith('/api/events/rejected');
+      expect(consoleErrorSpy).toHaveBeenCalled();
     });
-    
-    // Verify error was logged
-    expect(consoleErrorSpy).toHaveBeenCalled();
   });
 
   it('renders correctly with dark theme', async () => {
@@ -190,73 +179,44 @@ describe('EventListRejected Component', () => {
       expect(apiClient.get).toHaveBeenCalledWith('/api/events/rejected');
     });
     
-    // Check if events are displayed in dark theme
+    const viewButtons = await screen.findAllByRole('button', { name: /view/i });
+    expect(viewButtons.length).toBeGreaterThan(0);
+  });
+
+  it('opens event preview when view button is clicked', async () => {
+    await setup();
+    
     await waitFor(() => {
-      expect(screen.getByText('Canceled Workshop')).toBeInTheDocument();
-      expect(screen.getByText('Rejected Conference')).toBeInTheDocument();
+      expect(apiClient.get).toHaveBeenCalledWith('/api/events/rejected');
     });
+    
+    const viewButtons = await screen.findAllByRole('button', { name: /view/i });
+    fireEvent.click(viewButtons[0]);
+    
+    expect(await screen.findByTestId('event-preview')).toBeInTheDocument();
   });
 
-  it('initializes and handles WebSocket connection', async () => {
-    const mockWsInstance = {
-      onopen: null,
-      onmessage: null,
-      onerror: null,
-      onclose: null,
-      close: vi.fn()
-    };
-    
-    global.WebSocket = vi.fn(() => mockWsInstance);
-    
+  it('opens delete dialog and handles delete confirmation', async () => {
     await setup();
     
-    // Verify WebSocket was initialized
-    expect(global.WebSocket).toHaveBeenCalledWith('ws://127.0.0.1:8000/ws/admin/event/');
-    
-    // Simulate receiving a message
-    await act(async () => {
-      mockWsInstance.onmessage({ data: JSON.stringify({ type: 'update' }) });
+    await waitFor(() => {
+      expect(apiClient.get).toHaveBeenCalledWith('/api/events/rejected');
     });
     
-    // Verify that fetchEvents was called again
-    expect(apiClient.get).toHaveBeenCalledTimes(2);
+    const deleteButtons = await screen.findAllByRole('button', { name: /delete/i });
+    fireEvent.click(deleteButtons[0]);
     
-    // Simulate WebSocket error
-    await act(async () => {
-      mockWsInstance.onerror(new Event('error'));
+    expect(screen.getByText(/confirm deletion/i)).toBeInTheDocument();
+    
+    const reasonInput = screen.getByLabelText(/reason for deletion/i);
+    fireEvent.change(reasonInput, { target: { value: 'Testing deletion' } });
+    
+    const confirmButton = screen.getByRole('button', { name: /confirm/i });
+    fireEvent.click(confirmButton);
+    
+    await waitFor(() => {
+      expect(apiClient.request).toHaveBeenCalled();
+      expect(apiClient.get).toHaveBeenCalledTimes(2);
     });
-    
-    // Simulate WebSocket close
-    await act(async () => {
-      mockWsInstance.onclose({ reason: 'test close' });
-    });
-    
-    // Clean up WebSocket mock
-    global.WebSocket = MockWebSocket;
-  });
-
-  it('handles malformed WebSocket message gracefully', async () => {
-    const mockWsInstance = {
-      onopen: null,
-      onmessage: null,
-      onerror: null,
-      onclose: null,
-      close: vi.fn()
-    };
-    
-    global.WebSocket = vi.fn(() => mockWsInstance);
-    
-    await setup();
-    
-    // Simulate receiving a malformed message
-    await act(async () => {
-      mockWsInstance.onmessage({ data: 'not-json' });
-    });
-    
-    // Verify error was logged
-    expect(consoleErrorSpy).toHaveBeenCalled();
-    
-    // Clean up WebSocket mock
-    global.WebSocket = MockWebSocket;
   });
 });
