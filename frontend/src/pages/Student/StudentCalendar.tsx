@@ -126,12 +126,19 @@ const transformEvent = (
   };
 };
 
+// Helper to check if an event has already started
+const hasEventStarted = (event: CalendarEvent): boolean => {
+  const now = new Date();
+  return event.start < now;
+};
+
 // ----------------- COMPONENTS -----------------
 
 // --- Calendar event display in the calendar view ---
 const CustomEvent: React.FC<CustomEventProps> = ({ event }) => {
   const start = moment(event.start);
   const end = moment(event.end);
+  const eventStarted = hasEventStarted(event);
 
   return (
     <div className="p-1">
@@ -147,6 +154,11 @@ const CustomEvent: React.FC<CustomEventProps> = ({ event }) => {
             RSVP
           </span>
         )}
+        {eventStarted && !event.rsvp && (
+          <span className="ml-2" style={{ color: "#ff9999" }}>
+            (Started)
+          </span>
+        )}
       </span>
     </div>
   );
@@ -158,6 +170,7 @@ const EventDialogTitle: React.FC<EventDialogTitleProps> = ({
   eventStyleGetter 
 }) => {
   const backgroundColor = eventStyleGetter(selectedEvent).style.backgroundColor;
+  const eventStarted = hasEventStarted(selectedEvent);
 
   return (
     <DialogTitle
@@ -178,12 +191,24 @@ const EventDialogTitle: React.FC<EventDialogTitleProps> = ({
           sx={{ ml: 2, backgroundColor: "rgba(0,255,0,0.2)" }}
         />
       )}
+      {eventStarted && !selectedEvent.rsvp && (
+        <Chip
+          icon={<FaCalendarTimes size={14} />}
+          label="Already started"
+          size="small"
+          color="error"
+          sx={{ ml: 2, backgroundColor: "rgba(255,0,0,0.2)" }}
+        />
+      )}
     </DialogTitle>
   );
 };
 
 // --- Dialog Content Info (Time, Location, Society, Description) ---
 const EventDateTimeInfo: React.FC<EventDateTimeInfoProps> = ({ start, end, timezone }) => {
+  const now = new Date();
+  const hasStarted = start < now;
+  
   return (
     <Box mb={2}>
       <Typography
@@ -203,6 +228,11 @@ const EventDateTimeInfo: React.FC<EventDateTimeInfoProps> = ({ start, end, timez
         <Typography variant="caption" component="span" color="text.secondary">
           ({timezone})
         </Typography>
+        {hasStarted && (
+          <Typography variant="caption" component="span" color="error" sx={{ ml: 1, fontWeight: 'bold' }}>
+            This event has already started
+          </Typography>
+        )}
       </Typography>
     </Box>
   );
@@ -283,7 +313,6 @@ const EventDialogContent: React.FC<DialogContentProps> = ({
   );
 };
 
-// --- DIALOG ACTIONS: separate buttons for RSVP vs Cancel RSVP ---
 const EventDialogActions: React.FC<DialogActionProps> = ({
   selectedEvent,
   handleCloseDialog,
@@ -292,6 +321,7 @@ const EventDialogActions: React.FC<DialogActionProps> = ({
   styleProps,
 }) => {
   const { colours } = styleProps;
+  const eventStarted = hasEventStarted(selectedEvent);
 
   return (
     <DialogActions sx={{ p: 2, display: "flex", justifyContent: "space-between" }}>
@@ -299,29 +329,53 @@ const EventDialogActions: React.FC<DialogActionProps> = ({
         Close
       </Button>
 
-      {/* If already RSVP'd → show Cancel RSVP; otherwise → show RSVP */}
       {selectedEvent.rsvp ? (
-        <Button
-          variant="contained"
-          startIcon={<FaCalendarTimes />}
-          onClick={() => handleRSVP(selectedEvent.id, false)}
-          disabled={rsvpLoading}
+        // Already RSVP'd
+        <Box display="flex" alignItems="center">
+          <Chip
+            icon={<FaCalendarCheck />}
+            label="You're attending this event"
+            color="success"
+            variant="outlined"
+            sx={{ mr: 2, border: `1px solid ${colours.greenAccent[500]}`, color: colours.greenAccent[400] }}
+          />
+          {!eventStarted && (
+            <Button
+              variant="outlined"
+              startIcon={<FaCalendarTimes />}
+              onClick={() => handleRSVP(selectedEvent.id, false)}
+              disabled={rsvpLoading}
+              color="error"
+              size="small"
+              sx={{
+                borderColor: colours.redAccent[500],
+                color: colours.redAccent[500],
+                "&:hover": {
+                  backgroundColor: colours.redAccent[900],
+                  borderColor: colours.redAccent[600],
+                },
+              }}
+            >
+              {rsvpLoading ? "Updating..." : "Cancel"}
+            </Button>
+          )}
+        </Box>
+      ) : eventStarted ? (
+        // Event has started and not RSVP'd
+        <Chip
+          icon={<FaCalendarTimes />}
+          label="You cannot RSVP for an event that has already started"
           color="error"
-          sx={{
-            backgroundColor: colours.redAccent[500],
-            "&:hover": {
-              backgroundColor: colours.redAccent[600],
-            },
-          }}
-        >
-          {rsvpLoading ? "Updating..." : "Cancel RSVP"}
-        </Button>
+          variant="outlined"
+          sx={{ borderColor: colours.redAccent[500], color: colours.redAccent[400] }}
+        />
       ) : (
+        // Not RSVP'd and event hasn't started
         <Button
           variant="contained"
           startIcon={<FaCalendarCheck />}
           onClick={() => handleRSVP(selectedEvent.id, true)}
-          disabled={rsvpLoading}
+          disabled={rsvpLoading || eventStarted}
           color="primary"
           sx={{
             backgroundColor: colours.blueAccent[500],
@@ -482,11 +536,15 @@ const EventDialog: React.FC<EventDialogProps> = ({
     ];
     const colorIndex = Math.abs(event.societyId % colorOptions.length);
     const backgroundColor = colorOptions[colorIndex];
+    
+    const eventStarted = hasEventStarted(event);
+    const opacity = eventStarted && !event.rsvp ? 0.6 : 0.9;
+    
     return {
       style: {
         backgroundColor,
         borderRadius: "8px",
-        opacity: 0.9,
+        opacity,
         color: "white",
         border: event.rsvp ? "2px solid #00ff00" : "1px solid #fff",
         padding: "2px 4px",
@@ -553,7 +611,6 @@ const useCalendarEvents = (
     setLoading(true);
     setError(null);
     try {
-      // Updated API endpoint from "/api/events/" to "/api/events/all/"
       const response = await apiClient.get<EventData[]>("/api/events/all/");
       if (!response.data) {
         throw new Error("No data received from API");
@@ -615,13 +672,25 @@ const useEventSelection = () => {
 
 const useRsvpHandler = (
   setEvents: React.Dispatch<React.SetStateAction<CalendarEvent[]>>,
-  setSelectedEvent: React.Dispatch<React.SetStateAction<CalendarEvent | null>>
+  setSelectedEvent: React.Dispatch<React.SetStateAction<CalendarEvent | null>>,
+  events: CalendarEvent[]
 ) => {
   const [rsvpLoading, setRsvpLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleRSVP = async (eventId: number, isAttending: boolean) => {
     try {
+      // Find the event to check if it has started
+      const event = events.find(e => e.id === eventId);
+      
+      if (event && isAttending) {
+        // Check if the event has already started
+        if (hasEventStarted(event)) {
+          setError("You cannot RSVP for an event that has already started.");
+          return;
+        }
+      }
+      
       setRsvpLoading(true);
 
       if (isAttending) {
@@ -639,12 +708,20 @@ const useRsvpHandler = (
     } catch (err: any) {
       console.error("Error updating RSVP:", err);
 
-      // More detailed error logging
-      if (err.response) {
-        console.error("Server response data:", err.response.data);
+      // Extract detailed error message
+      let errorMessage = "Failed to update RSVP status. Please try again.";
+      if (err.response?.data?.non_field_errors && 
+          err.response.data.non_field_errors.length > 0) {
+        errorMessage = err.response.data.non_field_errors[0];
+      } else if (err.response?.data?.detail) {
+        errorMessage = err.response.data.detail;
+      } else if (err.response?.data?.error) {
+        errorMessage = err.response.data.error;
+      } else if (err.message) {
+        errorMessage = err.message;
       }
-
-      setError("Failed to update RSVP status. Please try again.");
+      
+      setError(errorMessage);
     } finally {
       setRsvpLoading(false);
     }
@@ -676,13 +753,13 @@ function StudentCalendar({
     handleCloseDialog,
   } = useEventSelection();
 
-  // 3) Handle RSVP state changes
+  // 3) Handle RSVP state changes (pass events array to the hook)
   const {
     rsvpLoading,
     error: rsvpError,
     setError: setRsvpError,
     handleRSVP,
-  } = useRsvpHandler(setEvents, setSelectedEvent);
+  } = useRsvpHandler(setEvents, setSelectedEvent, events);
 
   // 4) Calendar event style
   function eventStyleGetter(event: CalendarEvent) {
@@ -697,11 +774,16 @@ function StudentCalendar({
     ];
     const colorIndex = Math.abs(event.societyId % colorOptions.length);
     const backgroundColor = colorOptions[colorIndex];
+    
+    // Fade out events that have already started and aren't RSVP'd
+    const eventStarted = hasEventStarted(event);
+    const opacity = eventStarted && !event.rsvp ? 0.6 : 0.9;
+    
     return {
       style: {
         backgroundColor,
         borderRadius: "8px",
-        opacity: 0.9,
+        opacity,
         color: "white",
         border: event.rsvp ? "2px solid #00ff00" : "1px solid #fff",
         padding: "2px 4px",
