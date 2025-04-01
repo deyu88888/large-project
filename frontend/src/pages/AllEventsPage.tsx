@@ -1,10 +1,10 @@
-// Refactored with useAuthCheck
+// Refactored
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiClient } from "../api";
 import { useTheme } from "@mui/material/styles";
 import { tokens } from "../theme/theme";
-import { CircularProgress } from "@mui/material";
+import { CircularProgress, Pagination } from "@mui/material";
 import EventCard from "../components/EventCard";
 import { useAuthStore } from "../stores/auth-store";
 import { User } from "../types/user/user";
@@ -25,6 +25,9 @@ export default function AllEventsPage() {
     const [events, setEvents] = useState<EventData[]>([]);
     const [eventsLoading, setEventsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    
+    const [page, setPage] = useState(1);
+    const EVENTS_PER_PAGE = 36;
 
     // Load events data
     useEffect(() => {
@@ -51,6 +54,18 @@ export default function AllEventsPage() {
     const handleViewEvent = (eventId: number) => {
         const isStudentPage = location.pathname.includes("/student");
         navigate(`${isStudentPage ? "/student" : ""}/event/${eventId}`);
+    };
+
+    const totalPages = Math.ceil(events.length / EVENTS_PER_PAGE);
+    
+    const currentEvents = events.slice(
+        (page - 1) * EVENTS_PER_PAGE,
+        page * EVENTS_PER_PAGE
+    );
+
+    const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
+        setPage(value);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     // Determine if we're in a loading state
@@ -133,41 +148,71 @@ export default function AllEventsPage() {
                     </div>
                 )}
 
-                {!isLoading && events.length > 0 && (
-                    <div
-                        style={{
-                            display: "grid",
-                            gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-                            gap: "1.25rem",
-                            perspective: "1000px",
-                            maxWidth: "100%"
-                        }}
-                    >
-                        {events.map((event) => {
-                            let followingsAttending: Attendee[] = [];
-                            if (
-                                isAuthenticated &&
-                                user &&
-                                user.following &&
-                                event.currentAttendees
-                            ) {
-                                followingsAttending = event.currentAttendees.filter((attendee) =>
-                                    user.following!.includes(attendee.id)
-                                );
-                            }
+                {!isLoading && currentEvents.length > 0 && (
+                    <>
+                        <div
+                            style={{
+                                display: "grid",
+                                gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+                                gap: "1.25rem",
+                                perspective: "1000px",
+                                maxWidth: "100%",
+                                marginBottom: "2rem"
+                            }}
+                        >
+                            {currentEvents.map((event) => {
+                                let followingsAttending: Attendee[] = [];
+                                if (
+                                    isAuthenticated &&
+                                    user &&
+                                    user.following &&
+                                    event.currentAttendees
+                                ) {
+                                    followingsAttending = event.currentAttendees.filter((attendee) =>
+                                        user.following!.includes(attendee.id)
+                                    );
+                                }
 
-                            return (
-                                <EventCard
-                                    key={event.eventId}
-                                    event={event}
-                                    followingsAttending={followingsAttending}
-                                    isLight={isLight}
-                                    colors={colours}
-                                    onViewEvent={handleViewEvent}
+                                return (
+                                    <EventCard
+                                        key={event.eventId}
+                                        event={event}
+                                        followingsAttending={followingsAttending}
+                                        isLight={isLight}
+                                        colors={colours}
+                                        onViewEvent={handleViewEvent}
+                                    />
+                                );
+                            })}
+                        </div>
+                        
+                        {totalPages > 1 && (
+                            <div style={{
+                                display: "flex",
+                                justifyContent: "center",
+                                marginTop: "2rem",
+                                marginBottom: "2rem"
+                            }}>
+                                <Pagination 
+                                    count={totalPages} 
+                                    page={page} 
+                                    onChange={handlePageChange}
+                                    color="primary"
+                                    size="large"
+                                    sx={{
+                                        '& .MuiPaginationItem-root': {
+                                            color: colours.grey[100],
+                                        },
+                                        '& .MuiPaginationItem-page.Mui-selected': {
+                                            backgroundColor: isLight ? colours.greenAccent[400] : colours.greenAccent[700],
+                                            color: isLight ? colours.primary[900] : colours.primary[100],
+                                            fontWeight: 'bold',
+                                        }
+                                    }}
                                 />
-                            );
-                        })}
-                    </div>
+                            </div>
+                        )}
+                    </>
                 )}
 
                 {!isLoading && events.length === 0 && (
