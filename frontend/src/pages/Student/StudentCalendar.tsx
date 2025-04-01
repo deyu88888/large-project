@@ -50,7 +50,6 @@ import {
   LoadingIndicatorProps
 } from "../../types/student/StudentCalendar";
 
-// ----------------- UTILITY FUNCTIONS -----------------
 const parseDateTime = (dateStr: string, timeStr: string, tz: string): Date => {
   if (!dateStr || !timeStr) {
     throw new Error("Invalid date or time");
@@ -126,15 +125,11 @@ const transformEvent = (
   };
 };
 
-// Helper to check if an event has already started
 const hasEventStarted = (event: CalendarEvent): boolean => {
   const now = new Date();
   return event.start < now;
 };
 
-// ----------------- COMPONENTS -----------------
-
-// --- Calendar event display in the calendar view ---
 const CustomEvent: React.FC<CustomEventProps> = ({ event }) => {
   const start = moment(event.start);
   const end = moment(event.end);
@@ -164,7 +159,6 @@ const CustomEvent: React.FC<CustomEventProps> = ({ event }) => {
   );
 };
 
-// --- Dialog Title ---
 const EventDialogTitle: React.FC<EventDialogTitleProps> = ({ 
   selectedEvent, 
   eventStyleGetter 
@@ -204,7 +198,6 @@ const EventDialogTitle: React.FC<EventDialogTitleProps> = ({
   );
 };
 
-// --- Dialog Content Info (Time, Location, Society, Description) ---
 const EventDateTimeInfo: React.FC<EventDateTimeInfoProps> = ({ start, end, timezone }) => {
   const now = new Date();
   const hasStarted = start < now;
@@ -330,7 +323,6 @@ const EventDialogActions: React.FC<DialogActionProps> = ({
       </Button>
 
       {selectedEvent.rsvp ? (
-        // Already RSVP'd
         <Box display="flex" alignItems="center">
           <Chip
             icon={<FaCalendarCheck />}
@@ -361,7 +353,6 @@ const EventDialogActions: React.FC<DialogActionProps> = ({
           )}
         </Box>
       ) : eventStarted ? (
-        // Event has started and not RSVP'd
         <Chip
           icon={<FaCalendarTimes />}
           label="You cannot RSVP for an event that has already started"
@@ -370,7 +361,6 @@ const EventDialogActions: React.FC<DialogActionProps> = ({
           sx={{ borderColor: colours.redAccent[500], color: colours.redAccent[400] }}
         />
       ) : (
-        // Not RSVP'd and event hasn't started
         <Button
           variant="contained"
           startIcon={<FaCalendarCheck />}
@@ -391,7 +381,6 @@ const EventDialogActions: React.FC<DialogActionProps> = ({
   );
 };
 
-// --- Top Header: Timezone, Refresh Button ---
 const CalendarHeader: React.FC<CalendarHeaderProps> = ({
   timezone,
   fetchEvents,
@@ -422,7 +411,6 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
   );
 };
 
-// --- Alert for Errors ---
 const AlertMessage: React.FC<AlertMessageProps> = ({ error, onClear }) => {
   if (!error) return null;
 
@@ -433,7 +421,6 @@ const AlertMessage: React.FC<AlertMessageProps> = ({ error, onClear }) => {
   );
 };
 
-// --- Loading Indicator ---
 const LoadingIndicator: React.FC<LoadingIndicatorProps> = ({ colours }) => {
   return (
     <Box
@@ -451,7 +438,6 @@ const LoadingIndicator: React.FC<LoadingIndicatorProps> = ({ colours }) => {
   );
 };
 
-// --- When there are no events to show ---
 const NoEventsMessage: React.FC<NoEventsMessageProps> = ({ styleProps }) => {
   const { colours } = styleProps;
 
@@ -466,7 +452,6 @@ const NoEventsMessage: React.FC<NoEventsMessageProps> = ({ styleProps }) => {
   );
 };
 
-// --- Calendar Container ---
 const CalendarContainer: React.FC<CalendarContainerProps> = ({
   events,
   handleSelectEvent,
@@ -510,7 +495,6 @@ const CalendarContainer: React.FC<CalendarContainerProps> = ({
   );
 };
 
-// --- Event Dialog ---
 const EventDialog: React.FC<EventDialogProps> = ({
   openDialog,
   handleCloseDialog,
@@ -583,7 +567,6 @@ const EventDialog: React.FC<EventDialogProps> = ({
   );
 };
 
-// ----------------- CUSTOM HOOKS -----------------
 const useCalendarEvents = (
   societies: StudentCalendarProps["societies"] = [],
   userEvents: EventData[] | undefined,
@@ -680,11 +663,9 @@ const useRsvpHandler = (
 
   const handleRSVP = async (eventId: number, isAttending: boolean) => {
     try {
-      // Find the event to check if it has started
       const event = events.find(e => e.id === eventId);
       
       if (event && isAttending) {
-        // Check if the event has already started
         if (hasEventStarted(event)) {
           setError("You cannot RSVP for an event that has already started.");
           return;
@@ -708,7 +689,6 @@ const useRsvpHandler = (
     } catch (err: any) {
       console.error("Error updating RSVP:", err);
 
-      // Extract detailed error message
       let errorMessage = "Failed to update RSVP status. Please try again.";
       if (err.response?.data?.non_field_errors && 
           err.response.data.non_field_errors.length > 0) {
@@ -730,7 +710,6 @@ const useRsvpHandler = (
   return { rsvpLoading, error, setError, handleRSVP };
 };
 
-// ----------------- MAIN COMPONENT -----------------
 function StudentCalendar({
   societies = [],
   userEvents,
@@ -740,20 +719,18 @@ function StudentCalendar({
   const colours = tokens(theme.palette.mode);
   const styleProps = { colours };
 
-  // 1) Load / transform events
   const { events, loading, error, setError, fetchEvents, setEvents } =
     useCalendarEvents(societies, userEvents, timezone);
 
-  // 2) Track selected event & open/close the dialog
   const {
     selectedEvent,
     setSelectedEvent,
     openDialog,
+    setOpenDialog,
     handleSelectEvent,
     handleCloseDialog,
   } = useEventSelection();
 
-  // 3) Handle RSVP state changes (pass events array to the hook)
   const {
     rsvpLoading,
     error: rsvpError,
@@ -761,7 +738,6 @@ function StudentCalendar({
     handleRSVP,
   } = useRsvpHandler(setEvents, setSelectedEvent, events);
 
-  // 4) Calendar event style
   function eventStyleGetter(event: CalendarEvent) {
     const colorOptions = [
       "#6c5ce7",
@@ -775,7 +751,6 @@ function StudentCalendar({
     const colorIndex = Math.abs(event.societyId % colorOptions.length);
     const backgroundColor = colorOptions[colorIndex];
     
-    // Fade out events that have already started and aren't RSVP'd
     const eventStarted = hasEventStarted(event);
     const opacity = eventStarted && !event.rsvp ? 0.6 : 0.9;
     
@@ -792,10 +767,8 @@ function StudentCalendar({
     };
   }
 
-  // Memoize the events array
   const memoizedEvents = useMemo(() => events, [events]);
 
-  // Combine errors
   const combinedError = error || rsvpError;
   const clearError = () => {
     setError(null);
