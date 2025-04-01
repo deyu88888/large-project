@@ -606,3 +606,26 @@ class SocietyNewsSerializerTest(TestCase):
         )
         with self.assertRaises(ValidationError):
             serializer.validate(serializer.data)
+    
+    def test_get_published_at(self):
+        """Test get_published_at functions correctly"""
+        request = self.factory.get("/")
+        request.user = self.student
+        serializer = SocietyNewsSerializer(
+            instance=self.news_post,
+            context={"request": request}
+        )
+        at = serializer.get_published_at(self.news_post)
+        self.assertIsNotNone(at)
+
+    def test_get_published_at_none(self):
+        """Test get_published_at functions correctly when object is none"""
+        request = self.factory.get("/")
+        request.user = self.student
+        self.news_post.published_at = None
+        serializer = SocietyNewsSerializer(
+            instance=self.news_post,
+            context={"request": request}
+        )
+        at = serializer.get_published_at(self.news_post)
+        self.assertIsNone(at)
