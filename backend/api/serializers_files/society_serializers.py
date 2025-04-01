@@ -196,9 +196,16 @@ class StartSocietyRequestSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         """Handle creating a society request (save as a draft society)."""
+        request = self.context.get("request")
+        student = getattr(request.user, "student", None)
+
+        if not student:
+            raise serializers.ValidationError("Only students can start societies.")
+
         return Society.objects.create(
             name=validated_data["name"],
-            roles={"description": validated_data["description"], "category": validated_data["category"]},
+            description=validated_data["description"],
+            category=validated_data["category"],
             president=validated_data["requested_by"],
             status="Pending"
         )
