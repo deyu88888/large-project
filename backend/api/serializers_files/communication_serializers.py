@@ -75,11 +75,8 @@ class SocietyNewsSerializer(serializers.ModelSerializer):
 
     def get_comment_count(self, obj):
         """Get total comment count including replies."""
-        try:
-            count = NewsComment.objects.filter(news_post=obj).count()
-            return count
-        except NewsComment.DoesNotExist:
-            return 0
+        count = NewsComment.objects.filter(news_post=obj).count()
+        return count
 
     def get_is_author(self, obj):
         """Check if the current user is the author of this post."""
@@ -125,7 +122,6 @@ class SocietyNewsSerializer(serializers.ModelSerializer):
                 return url
             return None
         except Exception as e:
-            print(f"Error getting attachment URL: {e}")
             return None
 
     def get_comments(self, obj):
