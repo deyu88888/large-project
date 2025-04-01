@@ -2,6 +2,9 @@ import { Box, Breadcrumbs, Container, Link, Typography, useTheme } from "@mui/ma
 import Carousel from "react-material-ui-carousel";
 import { tokens } from "../../theme/theme";
 import NavigateNextIcon from "@mui/icons-material/NavigateNext";
+import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
+import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
+
 
 export default function HeroSection({ showCarousel = false, title, subtitle, breadcrumbs }) {
   const theme = useTheme();
@@ -49,13 +52,12 @@ export default function HeroSection({ showCarousel = false, title, subtitle, bre
     >
       {showCarousel ? (
         <Carousel
-          NextIcon={<div>{">"}</div>}
-          PrevIcon={<div>{"<"}</div>}
+          NextIcon={<ArrowForwardIosIcon />}
+          PrevIcon={<ArrowBackIosIcon />}
           navButtonsProps={{
             style: {
-              backgroundColor: theme.palette.mode === "dark" ? "secondary.dark" : "secondary.light",
-              color: "#ffffff",
-              boxShadow: "0 2px 5px rgba(0,0,0,0.15)",
+              width: "50px",
+              height: "50px",
             },
           }}
           indicatorContainerProps={{
