@@ -98,6 +98,8 @@ class AdminDeleteView(AdminBaseView):
 
     def delete(self, request, target_type, target_id):
         """Handle resource deletion and log the action."""
+
+        target_type = target_type.capitalize()
         admin, error = get_admin_if_user_is_admin(request.user, "delete resources")
         if error:
             return error
