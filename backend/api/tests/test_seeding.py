@@ -231,7 +231,7 @@ class SeedingTestCase(TransactionTestCase):
 
 
     @patch("api.management.commands.seeding.event_generator.choice")
-    def test_handle_event_request_not_approval_rejected(self, mock_choice):
+    def test_handle_event_request_not_approval_pending(self, mock_choice):
         """Test handle_event_request_not_approval creates an EventRequest for 'Pending' status."""
         generator = self.command_instance.event_generator
         def side_effect(seq):
@@ -288,12 +288,7 @@ class SeedingTestCase(TransactionTestCase):
         self.assertTrue(event.date <= date.today())
         self.assertEqual(Event.objects.count(), initial_objects+1)
 
-    @patch("api.management.commands.seed.broadcast_dashboard_update")
-    @patch("builtins.print")  # Avoid printing during test
-    def test_broadcast_updates(self, mock_print, mock_broadcast):
-        """Test that broadcast_updates calls broadcast_dashboard_update."""
-        self.command_instance.broadcast_updates()
-        mock_broadcast.assert_called_once()
+    # REMOVED: test_broadcast_updates - websocket functionality is being removed
 
     def test_initialise_society_awards(self):
         """Test that initialise_society_awards creates 3 society awards."""
