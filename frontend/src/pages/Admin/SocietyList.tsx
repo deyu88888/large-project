@@ -8,7 +8,8 @@ import { Box,
   Dialog, 
   DialogContentText, 
   DialogActions, 
-  TextField } from "@mui/material";
+  TextField, 
+  Snackbar} from "@mui/material";
 import { DataGrid, GridColDef, GridToolbar, GridRenderCellParams } from "@mui/x-data-grid";
 import { apiClient, apiPaths } from "../../api";
 import { tokens } from "../../theme/theme";
@@ -24,6 +25,7 @@ import {
   PresidentCellProps,
   MembersCellProps
 } from "../../types/admin/SocietyList";
+import { NotificationState } from "../../types/admin/StudentList";
 
 const filterSocietiesBySearchTerm = (societies: Society[], searchTerm: string): Society[] => {
   if (!searchTerm) return societies;
@@ -176,7 +178,7 @@ const DeleteDialog: React.FC<DeleteDialogProps> = ({
         />
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} color="primary">
+        <Button onClick={onClose} color="secondary">
           Cancel
         </Button>
         <Button 
@@ -198,22 +200,17 @@ const createSocietyColumns = (
   return [
     { field: "id", headerName: "ID", flex: 0.3 },
     { field: "name", headerName: "Name", flex: 1 },
-    { field: "description", headerName: "Description", flex: 1 },
     {
       field: "president",
       headerName: "President",
       flex: 0.8,
-      renderCell: (params: GridRenderCellParams) => (
-        <PresidentCell president={params.value} />
-      ),
+      renderCell: (params) => `${params.value.first_name} ${params.value.last_name}`,
     },
     {
       field: "society_members",
       headerName: "Members",
       flex: 0.5,
-      renderCell: (params: GridRenderCellParams) => (
-        <MembersCell members={params.value} />
-      ),
+      renderCell: (params) => `${params.value.length}`,
     },
     { field: "approved_by", headerName: "Approved By", flex: 0.5 },
     { field: "category", headerName: "Category", flex: 1.3 },
@@ -247,7 +244,11 @@ const SocietyList: React.FC = () => {
   const navigate = useNavigate();
   const { drawer } = useSettingsStore();
   const { searchTerm } = useContext(SearchContext);
-  
+  const [notification, setNotification] = useState<NotificationState>({
+    open: false,
+    message: "",
+    severity: "info"
+  });
   const [societies, setSocieties] = useState<Society[]>([]);
   const [dialogState, setDialogState] = useState<SocietyDialogState>({
     open: false,
@@ -261,6 +262,11 @@ const SocietyList: React.FC = () => {
       setSocieties(data);
     } catch (error) {
       console.error("Error fetching societies:", error);
+      setNotification({
+        open: true,
+        message: `Failed to load societies: ${error.response?.data?.message || "Unknown error"}`,
+        severity: "error"
+      });
     }
   }, []);
 
@@ -295,6 +301,13 @@ const SocietyList: React.FC = () => {
     }));
   }, []);
 
+  const handleNotificationClose = useCallback((event?: React.SyntheticEvent | Event, reason?: string) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setNotification(prev => ({ ...prev, open: false }));
+  }, []);
+
   const handleDeleteConfirmed = useCallback(async () => {
     const { selectedSociety, reason } = dialogState;
     
@@ -302,9 +315,19 @@ const SocietyList: React.FC = () => {
     
     try {
       await deleteSociety(selectedSociety.id, reason);
+      setNotification({
+        open: true,
+        message: `Society "${selectedSociety.name}" was successfully deleted.`,
+        severity: "success"
+      });
       loadSocieties();
     } catch (error) {
       console.error("Error deleting society:", error);
+      setNotification({
+        open: true,
+        message: `Failed to delete society: ${error.response?.data?.message || "Unknown error"}`,
+        severity: "error"
+      });
     }
     
     handleCloseDialog();
@@ -334,6 +357,21 @@ const SocietyList: React.FC = () => {
         onClose={handleCloseDialog}
         onReasonChange={handleReasonChange}
         onConfirm={handleDeleteConfirmed}
+      />
+
+      <Snackbar
+        open={notification.open}
+        autoHideDuration={6000}
+        onClose={handleNotificationClose}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+        message={notification.message}
+        ContentProps={{
+          sx: {
+            backgroundColor: notification.severity === "success" ? "green" : 
+                            notification.severity === "error" ? "red" : 
+                            notification.severity === "warning" ? "orange" : "blue"
+          }
+        }}
       />
     </>
   );
