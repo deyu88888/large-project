@@ -1,6 +1,6 @@
 import axios from "axios";
 import { ACCESS_TOKEN } from "./constants";
-
+export const REFRESH_TOKEN = 'REFRESH_TOKEN';
 function isTokenValid(token: string): boolean {
   try {
     const payload = JSON.parse(atob(token.split(".")[1]));
@@ -52,7 +52,7 @@ apiClient.interceptors.response.use(
       originalRequest._retry = true;
       
       try {
-        const refreshResponse = await axios.post(apiPaths.USER.REFRESH, {
+        const refreshResponse = await axios.post(`${apiUrl}${apiPaths.USER.REFRESH}`, {
           refresh_token: localStorage.getItem('REFRESH_TOKEN')
         });
         
