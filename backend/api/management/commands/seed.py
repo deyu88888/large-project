@@ -25,6 +25,7 @@ from api.models import (
     NewsComment,
 )
 
+
 class Command(BaseCommand):
     """Seeds the database with super admins, admins, students, societies, and events"""
     help = "Seed the database with super admins, normal admins, students, societies, and events"

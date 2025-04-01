@@ -98,9 +98,11 @@ class AdminDeleteView(AdminBaseView):
 
     def delete(self, request, target_type, target_id):
         """Handle resource deletion and log the action."""
+        print("inside delete")
         admin, error = get_admin_if_user_is_admin(request.user, "delete resources")
         if error:
             return error
+        print("after initial return error")
 
         if target_type == "Admin":
             if not request.user.is_super_admin:
@@ -114,24 +116,27 @@ class AdminDeleteView(AdminBaseView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
+        print("after if statement")
         model = self.model_mapping.get(target_type)
         if not model:
             return Response(
                 {"error": "Invalid target type."}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
-
+        print("after 2nd if statement")
         if target_type == "Admin":
             target = model.objects.filter(id=target_id, role="admin").first()
         else:
             target = model.objects.filter(id=target_id).first()
 
+        print("if not target")
         if not target:
             return Response(
                 {"error": f"{target_type} not found."}, 
                 status=status.HTTP_404_NOT_FOUND
             )
 
+        print("reason")
         reason = request.data.get('reason')
         if not reason:
             return Response(
@@ -139,15 +144,18 @@ class AdminDeleteView(AdminBaseView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        print("try block")
         try:
             serializable_data = self.serialize_model_data(target)
             original_data_json = json.dumps(serializable_data)
+            print("except")
         except TypeError as e:
             return Response({
                 "error": f"Serialization error: {str(e)}",
                 "details": "Cannot serialize data for activity log"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+        print("target_type")
         if target_type == "Admin":
             target_name = f"{target.first_name} {target.last_name}".strip()
         else:
@@ -165,13 +173,106 @@ class AdminDeleteView(AdminBaseView):
             original_data=original_data_json,
         )
         
-        target.delete()
-        ActivityLog.delete_expired_logs()
+        # target.delete()
+        # ActivityLog.delete_expired_logs()
 
-        return Response(
-            {"message": f"Deleted {target_type.lower()} moved to Activity Log."}, 
-            status=status.HTTP_200_OK
-        )
+        # return Response(
+        #     {"message": f"Deleted {target_type.lower()} moved to Activity Log."}, 
+        #     status=status.HTTP_200_OK
+        # )
+        print("above try")
+        try:
+            # Handle special case for Student deletion to avoid foreign key constraints
+            if target_type == "Student":
+                print("1")
+                print(f"About to call handle_student_deletion for student {target.id}")
+            #     self.handle_student_deletion(target)
+            # else:
+            #     target.delete()
+                try:
+                    self.handle_student_deletion(target)
+                except Exception as e:
+                    print(f"Error in handle_student_deletion: {str(e)}")
+                    print(f"Exception type: {type(e)}")
+                    import traceback
+                    print(traceback.format_exc())
+                    raise
+                
+            ActivityLog.delete_expired_logs()
+            print("2")
+            
+            return Response(
+                {"message": f"Deleted {target_type.lower()} moved to Activity Log."}, 
+                status=status.HTTP_200_OK
+            )
+        except Exception as e:
+            print(f"Exception in delete method: {str(e)}")
+            # return Response(
+            #     {"error": f"Failed to delete {target_type}: {str(e)}"}, 
+            #     status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            # )
+            import traceback
+            print(traceback.format_exc())
+            return Response(
+                {"error": f"Failed to delete {target_type}: {str(e)}"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+    )
+    
+    # def handle_student_deletion(self, student):
+    #     """
+    #     Handle special deletion logic for Student model to prevent foreign key constraint errors.
+    #     """
+    #     from django.db import transaction
+        
+    #     with transaction.atomic():
+    #         if hasattr(student, 'president_of') and student.president_of:
+    #             society = student.president_of
+    #             society.society_president = None
+    #             society.save()
+            
+    #         if hasattr(student, 'societies'):
+    #             student.societies.clear()
+            
+    #         if hasattr(student, 'attended_events'):
+    #             student.attended_events.clear()
+            
+    #         if hasattr(student, 'follower'):
+    #             student.follower.clear()
+    #         if hasattr(student, 'following'):
+    #             student.following.clear()
+            
+    #         student.delete()
+
+    def handle_student_deletion(self, student):
+        """
+        Handle special deletion logic for Student model to prevent foreign key constraint errors.
+        """
+        from django.db import transaction
+        
+        with transaction.atomic():
+            print(f"Checking if student {student.id} has president_of attribute")
+            if hasattr(student, 'president_of') and student.president_of:
+                society = student.president_of
+                society.society_president = None
+                society.save()
+            
+            print(f"Checking if student {student.id} has societies attribute")
+            if hasattr(student, 'societies'):
+                student.societies.clear()
+            
+            print(f"Checking if student {student.id} has attended_events attribute")
+            if hasattr(student, 'attended_events'):
+                student.attended_events.clear()
+            
+            print(f"Checking if student {student.id} has follower attribute")
+            if hasattr(student, 'follower'):
+                student.follower.clear()
+                
+            print(f"Checking if student {student.id} has following attribute")
+            if hasattr(student, 'following'):
+                student.following.clear()
+            
+            student.delete()
 
 
 class AdminRestoreView(AdminBaseView):

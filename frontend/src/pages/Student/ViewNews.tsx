@@ -246,7 +246,7 @@ const useNews = () => {
   
   const markNewsAsRead = async (id: number) => {
     try {
-      await apiClient.post(`/api/news/${id}/mark-read`);
+      await apiClient.post(`/api/news/${id}/mark_as_read/`);
       updateNewsReadStatus(id);
     } catch (error) {
       console.error("Failed to mark news as read:", error);

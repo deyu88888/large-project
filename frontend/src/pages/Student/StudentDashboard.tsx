@@ -1078,7 +1078,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = () => {
 
   const markNotificationAsRead = async (id: number) => {
     try {
-      const response = await apiClient.patch(`/api/notifications/${id}`, {
+      const response = await apiClient.patch(`/api/notifications/${id}/`, {
         is_read: true,
       });
 

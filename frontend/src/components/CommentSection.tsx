@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { CommentItem } from "./CommentItem";
 import { apiClient } from "../api";
-import { Box, Button, Pagination, Typography } from "@mui/material";
+import { Box, Button, Pagination, TextField, Typography } from "@mui/material";
 import { TextToggle } from "./TextToggle";
 import { CommentType } from "../types/event/comment.ts";
 
@@ -113,8 +113,8 @@ export function CommentSection({ eventId }: { eventId: number }) {
       </Typography>
 
       <div style={{ marginBottom: "20px" }}>
-        <textarea
-          ref={textAreaRef}
+        <TextField
+          inputRef={textAreaRef}
           rows={1}
           value={newComment}
           onChange={(e) => {
