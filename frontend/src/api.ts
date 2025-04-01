@@ -44,6 +44,34 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+apiClient.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+      
+      try {
+        const refreshResponse = await axios.post(apiPaths.USER.REFRESH, {
+          refresh_token: localStorage.getItem('REFRESH_TOKEN')
+        });
+        
+        const { access } = refreshResponse.data;
+        localStorage.setItem(ACCESS_TOKEN, access);
+        
+        originalRequest.headers.Authorization = `Bearer ${access}`;
+        
+        return axios(originalRequest);
+      } catch (refreshError) {
+        console.error("Token refresh failed:", refreshError);
+        return Promise.reject(refreshError);
+      }
+    }
+    
+    return Promise.reject(error);
+  }
+);
+
 export const apiPaths = {
   USER: {
     LOGIN: "/api/user/login",
