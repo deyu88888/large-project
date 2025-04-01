@@ -30,7 +30,7 @@ import {
   BooleanCellProps,
   NotificationState
 } from "../../types/admin/StudentList";
-import { Alert as MuiAlert } from "../../components/Alert";
+import { Alert, Alert as MuiAlert } from "../../components/Alert";
 
 const filterStudentsBySearchTerm = (students: Student[], searchTerm: string): Student[] => {
   if (!searchTerm) return students;
