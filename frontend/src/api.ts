@@ -1,13 +1,6 @@
-/******************************************************************************
- * src/api.ts
- *
- * This file merges your existing code (axios instance, constants, society
- * recommendation, events, etc.) with new News/Comments APIs in one place.
- ******************************************************************************/
-
 import axios from "axios";
 import { ACCESS_TOKEN } from "./constants";
-import { getApiUrl } from "./utils/websocket";
+
 function isTokenValid(token: string): boolean {
   try {
     const payload = JSON.parse(atob(token.split(".")[1]));
@@ -18,9 +11,12 @@ function isTokenValid(token: string): boolean {
   }
 }
 
-// ---------------------------------------------------------------------------
-// 1) BASE API CONFIGURATION
-// ---------------------------------------------------------------------------
+const getApiUrl = (): string => {
+  const protocol = window.location.protocol;
+  const host = import.meta.env.VITE_API_URL || window.location.host;
+  return `${protocol}//${host}`;
+};
+
 const apiUrl = getApiUrl();
 
 export const apiClient = axios.create({
@@ -30,7 +26,6 @@ export const apiClient = axios.create({
   },
 });
 
-// Attach Authorization token for every request (only if it exists)
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem(ACCESS_TOKEN);
@@ -49,9 +44,6 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// ---------------------------------------------------------------------------
-// 2) PATHS & INTERFACES
-// ---------------------------------------------------------------------------
 export const apiPaths = {
   USER: {
     LOGIN: "/api/user/login",
@@ -122,7 +114,6 @@ export interface Society {
   event_count?: number;
 }
 
-// Recommendation Explanation
 export interface RecommendationExplanation {
   type: "popular" | "category" | "tags" | "content" | "semantic" | "general";
   message: string;
@@ -133,7 +124,6 @@ export interface SocietyRecommendation {
   explanation: RecommendationExplanation;
 }
 
-// Types for recommendation feedback
 export interface RecommendationFeedback {
   id?: number;
   society_id: number;
@@ -152,14 +142,6 @@ export interface FeedbackAnalytics {
   conversion_rate: number;
 }
 
-// ---------------------------------------------------------------------------
-// 3) NEWS/COMMENTS API TYPES & ENDPOINTS
-// ---------------------------------------------------------------------------
-
-/**
- * Data structure for a single news comment.
- * Adjust to match your `NewsCommentSerializer` in the backend exactly.
- */
 export interface NewsCommentData {
   id: number;
   content: string;
@@ -193,22 +175,23 @@ export interface NewsPostDetail {
   is_featured: boolean;
   is_pinned: boolean;
   tags: string[];
-  // etc.
 }
 
-// ---------------------------------------------------------------------------
-// 4) SOCIETY RECOMMENDATION API CALLS
-// ---------------------------------------------------------------------------
 export const getPopularSocieties = async () => {
   try {
     const response = await apiClient.get(apiPaths.SOCIETY.POPULAR_SOCIETIES);
-    return response.data;
+    if (response.data && Array.isArray(response.data)) {
+      return response.data;
+    } else if (response.data && typeof response.data === 'object') {
+      return Array.isArray(response.data.results) ? response.data.results : [];
+    }
+    return [];
   } catch (error: any) {
     console.error(
       "Error fetching popular societies:",
       error.response?.data || error.message
     );
-    throw error;
+    return [];
   }
 };
 
@@ -217,9 +200,8 @@ export const getRecommendedSocieties = async (limit: number = 5) => {
     const response = await apiClient.get(
       `${apiPaths.SOCIETY.RECOMMENDED_SOCIETIES}?limit=${limit}`
     );
-    return response.data as SocietyRecommendation[];
+    return Array.isArray(response.data) ? response.data : [];
   } catch (error: any) {
-    // For 404/405 errors (no recommendations available)
     if (
       error.response &&
       (error.response.status === 404 || error.response.status === 405)
@@ -228,29 +210,27 @@ export const getRecommendedSocieties = async (limit: number = 5) => {
         "No specific recommendations available - showing default societies instead."
       );
 
-      // Try to fetch fallback societies immediately
       try {
         const fallbackResponse = await apiClient.get("/api/society/join");
-        return fallbackResponse.data.map((society: any) => ({
-          society,
-          explanation: {
-            type: "popular",
-            message: "Suggested society for new members",
-          },
-        }));
+        if (Array.isArray(fallbackResponse.data)) {
+          return fallbackResponse.data.map((society: any) => ({
+            society,
+            explanation: {
+              type: "popular",
+              message: "Suggested society for new members",
+            },
+          }));
+        }
       } catch (fallbackErr) {
         console.error("Fallback fetch failed:", fallbackErr);
-        // Return empty array if fallback fails
-        return [];
       }
     }
 
-    // For other errors, log and throw as before
     console.error(
       "Error fetching recommended societies:",
       error.response?.data || error.message
     );
-    throw error;
+    return [];
   }
 };
 
@@ -259,13 +239,13 @@ export const getRecommendationExplanation = async (societyId: number) => {
     const response = await apiClient.get(
       apiPaths.SOCIETY.RECOMMENDATION_EXPLANATION(societyId)
     );
-    return response.data as RecommendationExplanation;
+    return response.data;
   } catch (error: any) {
     console.error(
       "Error fetching recommendation explanation:",
       error.response?.data || error.message
     );
-    throw error;
+    return { type: "general", message: "No explanation available" };
   }
 };
 
@@ -284,7 +264,7 @@ export const submitRecommendationFeedback = async (
       "Error submitting recommendation feedback:",
       error.response?.data || error.message
     );
-    throw error;
+    return null;
   }
 };
 
@@ -303,21 +283,17 @@ export const updateRecommendationFeedback = async (
       "Error updating recommendation feedback:",
       error.response?.data || error.message
     );
-    throw error;
+    return null;
   }
 };
 
-
 export const getRecommendationFeedback = async (societyId: number) => {
   try {
-    // Instead of trying to access the individual feedback endpoint,
-    // let's use the feedback list endpoint which might be more permissive
     const response = await apiClient.get(
       apiPaths.SOCIETY.RECOMMENDATION_FEEDBACK_LIST
     );
     
     if (response.data && Array.isArray(response.data)) {
-      // Find the feedback for this specific society in the list
       const feedback = response.data.find(item => item.society_id === societyId);
       
       if (feedback) {
@@ -326,11 +302,9 @@ export const getRecommendationFeedback = async (societyId: number) => {
       }
     }
     
-    // No feedback found for this society
     console.log(`No existing feedback found for society ${societyId}`);
     return null;
   } catch (error: any) {
-    // If even the list endpoint fails, we'll assume no feedback exists
     console.log(`Could not check for feedback for society ${societyId}: ${error.message}`);
     return null;
   }
@@ -341,13 +315,13 @@ export const getAllRecommendationFeedback = async () => {
     const response = await apiClient.get(
       apiPaths.SOCIETY.RECOMMENDATION_FEEDBACK_LIST
     );
-    return response.data as RecommendationFeedback[];
+    return Array.isArray(response.data) ? response.data : [];
   } catch (error: any) {
     console.error(
       "Error fetching all recommendation feedback:",
       error.response?.data || error.message
     );
-    throw error;
+    return [];
   }
 };
 
@@ -356,124 +330,146 @@ export const getRecommendationFeedbackAnalytics = async () => {
     const response = await apiClient.get(
       apiPaths.SOCIETY.RECOMMENDATION_FEEDBACK_ANALYTICS
     );
-    return response.data as FeedbackAnalytics;
+    return response.data;
   } catch (error: any) {
     console.error(
       "Error fetching recommendation feedback analytics:",
       error.response?.data || error.message
     );
-    throw error;
+    return {
+      total_feedback: 0,
+      average_rating: 0,
+      join_count: 0,
+      conversion_rate: 0,
+    };
   }
 };
 
-// ---------------------------------------------------------------------------
-// 5) EVENTS API CALLS
-// ---------------------------------------------------------------------------
 export const getAllEvents = async () => {
   try {
     const response = await apiClient.get("/api/events/all");
-    return response.data;
+    if (response.data && Array.isArray(response.data)) {
+      return response.data;
+    } else if (response.data && typeof response.data === 'object') {
+      return Array.isArray(response.data.results) ? response.data.results : [];
+    }
+    return [];
   } catch (error: any) {
     console.error(
       "Error fetching events:",
       error.response?.data || error.message
     );
-    throw error;
+    return [];
   }
 };
 
 export const getUpcomingEvents = async () => {
   try {
     const response = await apiClient.get("/api/dashboard/events/upcoming/");
-    return response.data;
+    if (response.data && Array.isArray(response.data)) {
+      return response.data;
+    } else if (response.data && typeof response.data === 'object') {
+      return Array.isArray(response.data.results) ? response.data.results : [];
+    }
+    return [];
   } catch (error) {
     console.error("Error fetching upcoming events:", error);
-    throw error;
+    return [];
   }
 };
 
-// ---------------------------------------------------------------------------
-// 6) NEWS / COMMENTS API CALLS
-// ---------------------------------------------------------------------------
-
-/**
- * Fetch detail of a single news post by ID.
- * According to your backend, this also increments view count automatically.
- */
 export async function getNewsPostDetail(
   newsId: number
-): Promise<NewsPostDetail> {
-  const response = await apiClient.get<NewsPostDetail>(`/api/news/${newsId}/`);
-  return response.data;
+): Promise<NewsPostDetail | null> {
+  try {
+    const response = await apiClient.get<NewsPostDetail>(`/api/news/${newsId}/`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching news post detail:", error);
+    return null;
+  }
 }
 
-/**
- * Fetch top-level (and nested) comments for a specific news post.
- */
 export async function getNewsComments(
   newsId: number
 ): Promise<NewsCommentData[]> {
-  const response = await apiClient.get<NewsCommentData[]>(
-    `/api/news/${newsId}/comments/`
-  );
-  return response.data;
+  try {
+    const response = await apiClient.get<NewsCommentData[]>(
+      `/api/news/${newsId}/comments/`
+    );
+    return Array.isArray(response.data) ? response.data : [];
+  } catch (error) {
+    console.error("Error fetching news comments:", error);
+    return [];
+  }
 }
 
-/**
- * Create a new comment on a specific news post (top-level or reply).
- */
 export async function createNewsComment(
   newsId: number,
   payload: CommentPayload
-): Promise<NewsCommentData> {
-  const response = await apiClient.post<NewsCommentData>(
-    `/api/news/${newsId}/comments/`,
-    payload
-  );
-  return response.data;
+): Promise<NewsCommentData | null> {
+  try {
+    const response = await apiClient.post<NewsCommentData>(
+      `/api/news/${newsId}/comments/`,
+      payload
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error creating news comment:", error);
+    return null;
+  }
 }
 
-/**
- * Update an existing comment by its ID (only author can do this).
- */
 export async function updateNewsComment(
   commentId: number,
   payload: Partial<CommentPayload>
-): Promise<NewsCommentData> {
-  const response = await apiClient.put<NewsCommentData>(
-    `/api/news/comments/${commentId}/`,
-    payload
-  );
-  return response.data;
+): Promise<NewsCommentData | null> {
+  try {
+    const response = await apiClient.put<NewsCommentData>(
+      `/api/news/comments/${commentId}/`,
+      payload
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error updating news comment:", error);
+    return null;
+  }
 }
 
-/**
- * Delete an existing comment by ID (author or officer).
- */
-export async function deleteNewsComment(commentId: number): Promise<void> {
-  await apiClient.delete(`/api/news/comments/${commentId}/`);
+export async function deleteNewsComment(commentId: number): Promise<boolean> {
+  try {
+    await apiClient.delete(`/api/news/comments/${commentId}/`);
+    return true;
+  } catch (error) {
+    console.error("Error deleting news comment:", error);
+    return false;
+  }
 }
 
-/**
- * Toggle like/unlike on a specific news comment.
- */
 export async function toggleLikeOnNewsComment(
   commentId: number
-): Promise<NewsCommentData> {
-  const response = await apiClient.post<NewsCommentData>(
-    `/api/news/comments/${commentId}/like/`
-  );
-  return response.data;
+): Promise<NewsCommentData | null> {
+  try {
+    const response = await apiClient.post<NewsCommentData>(
+      `/api/news/comments/${commentId}/like/`
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error toggling like on news comment:", error);
+    return null;
+  }
 }
 
-/**
- * Toggle dislike/undislike on a specific news comment.
- */
 export async function toggleDislikeOnNewsComment(
   commentId: number
-): Promise<NewsCommentData> {
-  const response = await apiClient.post<NewsCommentData>(
-    `/api/news/comments/${commentId}/dislike/`
-  );
-  return response.data;
+): Promise<NewsCommentData | null> {
+  try {
+    const response = await apiClient.post<NewsCommentData>(
+      `/api/news/comments/${commentId}/dislike/`
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error toggling dislike on news comment:", error);
+    return null;
+  }
 }

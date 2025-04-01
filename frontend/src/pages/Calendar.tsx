@@ -2,7 +2,6 @@ import { Box, Typography, CircularProgress, useTheme } from "@mui/material";
 import EventCalendar from "../components/EventCalendar";
 import { useEffect, useState, useRef, useMemo } from "react";
 import { getAllEvents } from "../api";
-import { useWebSocketManager, CONNECTION_STATES } from "../hooks/useWebSocketManager";
 import { tokens } from "../theme/theme";
 
 // Global cache for events data
@@ -20,11 +19,8 @@ export default function Calendar() {
   const [error, setError] = useState(null);
   
   const calendarRef = useRef(null);
-  const initialized = useRef(false);
   const requestRef = useRef(null);
-
-  const { status, connect } = useWebSocketManager();
-  const prevStatus = useRef(status);
+  const refreshTimerRef = useRef(null);
 
   // Apply no-hover styles once on mount
   useEffect(() => {
@@ -63,26 +59,20 @@ export default function Calendar() {
       fetchEvents(true);
     }
     
-    // Connect WebSocket if needed
-    if (status === CONNECTION_STATES.DISCONNECTED) {
-      connect();
-    }
+    // Set up periodic refresh (every 5 minutes)
+    refreshTimerRef.current = setInterval(() => {
+      fetchEvents(false); // Silent refresh
+    }, 5 * 60 * 1000);
     
     return () => {
       if (requestRef.current) {
         cancelAnimationFrame(requestRef.current);
       }
+      if (refreshTimerRef.current) {
+        clearInterval(refreshTimerRef.current);
+      }
     };
   }, []);
-
-  // Handle WebSocket status changes
-  useEffect(() => {
-    if (status === CONNECTION_STATES.AUTHENTICATED && prevStatus.current !== CONNECTION_STATES.AUTHENTICATED) {
-      fetchEvents(false); // Quiet refresh when WebSocket connects
-    }
-    
-    prevStatus.current = status;
-  }, [status]);
 
   const fetchEvents = async (showLoading = true) => {
     if (showLoading) {
@@ -109,6 +99,11 @@ export default function Calendar() {
         setError(null);
       }
     } catch (err) {
+      // Only log non-401 errors
+      if (err.response?.status !== 401) {
+        console.error("Error fetching events:", err);
+      }
+      
       // Only show error if we don't have cached events to display
       if (!events.length) {
         setError("Failed to load events");

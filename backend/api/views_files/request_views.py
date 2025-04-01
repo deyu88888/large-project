@@ -1,7 +1,5 @@
 from datetime import timedelta
 from django.utils import timezone
-from asgiref.sync import async_to_sync
-from channels.layers import get_channel_layer
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
@@ -73,10 +71,7 @@ class AdminSocietyRequestView(APIView):
         if serializer.is_valid():
             serializer.save()
 
-            # Notify WebSocket clients about the update
-            channel_layer = get_channel_layer()
-
-            # If society was approved, notify the society view WebSocket clients
+            # Get society status for activity logging
             society_status = serializer.validated_data.get("status")
             action_type_map = {
                 "Approved": "Approve",
@@ -85,6 +80,7 @@ class AdminSocietyRequestView(APIView):
             }
             action_type = action_type_map.get(society_status, "Update")
 
+            # Create activity log entry
             ActivityLog.objects.create(
                 action_type=action_type,
                 target_type="Society",
@@ -95,17 +91,6 @@ class AdminSocietyRequestView(APIView):
                 expiration_date=timezone.now() + timedelta(days=30),
             )
             ActivityLog.delete_expired_logs()
-
-            if society_status in ["Approved", "Rejected", "Pending"]:
-                async_to_sync(channel_layer.group_send)(
-                    "society_updates",
-                    {
-                        "type": "society_list_update",
-                        "message": f"A new society has been {society_status}.",
-                        "data": serializer.data,
-                        "status": society_status,
-                    }
-                )
 
             return Response(
                 {"message": "Society request updated successfully.",
@@ -195,7 +180,7 @@ class AdminEventRequestView(APIView):
         """
         Update event request from pending to approved/rejected - for admins
         """
-        _, error = get_admin_if_user_is_admin(
+        user, error = get_admin_if_user_is_admin(
             request.user, "approve or reject society requests")
         if error:
             return error
@@ -208,17 +193,24 @@ class AdminEventRequestView(APIView):
         if serializer.is_valid():
             serializer.save()
 
-        channel_layer = get_channel_layer()
+            # Get event status for activity logging
+            event_status = serializer.validated_data.get("status")
+            action_type_map = {
+                "Approved": "Approve",
+                "Rejected": "Reject",
+                "Pending": "Update",
+            }
+            action_type = action_type_map.get(event_status, "Update")
 
-        if serializer.validated_data.get("status"):
-            async_to_sync(channel_layer.group_send)(
-                "events_updates",
-                {
-                    "type": "event_update",
-                    "message": "A new event has been approved.",
-                    "data": serializer.data,
-                    "status": serializer.validated_data.get("status")
-                }
+            # Create activity log entry for event update
+            ActivityLog.objects.create(
+                action_type=action_type,
+                target_type="Event",
+                target_id=event.id,
+                target_name=event.title if hasattr(event, 'title') else f"Event {event.id}",
+                performed_by=user,
+                timestamp=timezone.now(),
+                expiration_date=timezone.now() + timedelta(days=30),
             )
 
             return Response(

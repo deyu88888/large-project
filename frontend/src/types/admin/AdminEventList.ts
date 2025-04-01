@@ -23,10 +23,3 @@ export interface DataGridContainerProps {
   loading: boolean;
   colors: any;
 }
-
-export interface WebSocketCallbacks {
-  onOpen: () => void;
-  onMessage: (event: MessageEvent) => void;
-  onError: (event: Event) => void;
-  onClose: (event: CloseEvent) => void;
-}
