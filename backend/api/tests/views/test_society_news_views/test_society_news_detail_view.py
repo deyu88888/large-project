@@ -1,5 +1,6 @@
 import tempfile
 from datetime import datetime, timedelta
+from django.utils import timezone
 from PIL import Image
 from unittest.mock import patch, MagicMock
 from django.test import TestCase
@@ -201,7 +202,7 @@ class SocietyNewsDetailViewTests(TestCase):
     def test_admin_notes_both_exist_approved_later(self):
         self.published_post.status = "Published"
         self.published_post.save()
-        now = datetime.now()
+        now = timezone.now()
 
         NewsPublicationRequest.objects.create(
             news_post=self.published_post, status="Superseded_Approved",
@@ -227,7 +228,7 @@ class SocietyNewsDetailViewTests(TestCase):
     def test_admin_notes_both_exist_rejected_later(self):
         self.published_post.status = "Published"
         self.published_post.save()
-        now = datetime.now()
+        now = timezone.now()
 
         NewsPublicationRequest.objects.create(
             news_post=self.published_post, status="Superseded_Approved",
@@ -253,7 +254,7 @@ class SocietyNewsDetailViewTests(TestCase):
     def test_admin_notes_only_approved(self):
         self.published_post.status = "Published"
         self.published_post.save()
-        now = datetime.now()
+        now = timezone.now()
 
         NewsPublicationRequest.objects.create(
             news_post=self.published_post, status="Superseded_Approved",
@@ -275,7 +276,7 @@ class SocietyNewsDetailViewTests(TestCase):
     def test_admin_notes_only_rejected(self):
         self.published_post.status = "Published"
         self.published_post.save()
-        now = datetime.now()
+        now = timezone.now()
 
         NewsPublicationRequest.objects.create(
             news_post=self.published_post, status="Superseded_Rejected",
