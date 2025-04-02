@@ -6,7 +6,7 @@ import { SearchContext } from "../../components/layout/SearchContext";
 import { useSettingsStore } from "../../stores/settings-store";
 import { updateRequestStatus } from "../../api/requestApi";
 import { apiPaths } from "../../api";
-import { fetchPendingRequests } from "./utils";
+import { fetchPendingRequests } from "../../utils/utils";
 import { SocietyPreview } from "../../components/SocietyPreview";
 import {
   Society,

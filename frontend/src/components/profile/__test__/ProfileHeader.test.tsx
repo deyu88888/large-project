@@ -1,8 +1,12 @@
-import React from "react";
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import ProfileHeader from "../ProfileHeader";
-import { apiClient } from "../../../api";
+import React from 'react';
+import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { describe, it, test, expect, vi, beforeEach } from 'vitest';
+import '@testing-library/jest-dom';
+import ProfileHeader from '../ProfileHeader';
+import { apiClient } from '../../../api';
+import { ThemeProvider, createTheme } from '@mui/material';
+import { act } from 'react-dom/test-utils';
 
 vi.mock("react-easy-crop", () => ({
   default: (props: any) => {

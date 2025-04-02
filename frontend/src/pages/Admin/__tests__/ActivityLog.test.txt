@@ -1,0 +1,397 @@
+// failing
+
+import React from 'react';
+import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
+import { vi } from 'vitest';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+import ActivityLogList from '../ActivityLog';
+import { apiClient, apiPaths } from '../../../api';
+import { SearchContext } from '../../../components/layout/SearchContext';
+
+// Mock the modules before importing component
+vi.mock('../../../api', () => {
+  return {
+    apiClient: {
+      get: vi.fn(),
+      delete: vi.fn(),
+      post: vi.fn(),
+    },
+    apiPaths: {
+      USER: {
+        ACTIVITYLOG: '/api/activity-logs',
+        DELETEACTIVITYLOG: (id) => `/api/activity-logs/${id}`,
+        UNDO_DELETE: (id) => `/api/activity-logs/${id}/undo`,
+      },
+    },
+  };
+});
+
+// Mock the useSettingsStore
+vi.mock('../../../stores/settings-store', () => ({
+  useSettingsStore: () => ({ drawer: false }),
+}));
+
+// Mock fetchPendingRequests
+vi.mock('../utils', () => ({
+  fetchPendingRequests: vi.fn(),
+}));
+
+// Import the mocked fetchPendingRequests
+import { fetchPendingRequests } from '../../../utils/utils.ts';
+
+// Create light and dark themes for testing
+const lightTheme = createTheme({
+  palette: {
+    mode: 'light',
+  }
+});
+
+const darkTheme = createTheme({
+  palette: {
+    mode: 'dark',
+  }
+});
+
+// Mock data for testing - keeping the original structure
+const mockActivityLogs = [
+  {
+    id: 2, // This will appear first in the UI due to sorting
+    action_type: 'DELETE',
+    target_type: 'EVENT',
+    target_name: 'Annual Meeting',
+    performed_by: {
+      id: 456,
+      first_name: 'John',
+      last_name: 'Doe'
+    },
+    timestamp: '2025-03-16T14:20:00Z',
+    reason: 'Event canceled',
+  },
+  {
+    id: 1,
+    action_type: 'CREATE',
+    target_type: 'SOCIETY',
+    target_name: 'Chess Club',
+    performed_by: {
+      id: 123,
+      first_name: 'Admin',
+      last_name: 'User'
+    },
+    timestamp: '2025-03-15T10:30:00Z',
+    reason: 'New society creation',
+  }
+];
+
+describe('ActivityLogList Component', () => {
+  // Setup for each test
+  beforeEach(() => {
+    vi.clearAllMocks();
+    
+    // Mock fetchPendingRequests to return our mock data
+    fetchPendingRequests.mockResolvedValue(mockActivityLogs);
+    
+    // Default API mock responses
+    apiClient.get.mockResolvedValue({
+      data: mockActivityLogs
+    });
+    
+    apiClient.delete.mockResolvedValue({
+      data: { success: true }
+    });
+    
+    apiClient.post.mockResolvedValue({
+      data: { success: true }
+    });
+    
+    // Mock global alert
+    global.alert = vi.fn();
+  });
+
+  const renderComponent = (searchTerm = '') => {
+    return render(
+      <ThemeProvider theme={lightTheme}>
+        <SearchContext.Provider value={{ searchTerm, setSearchTerm: vi.fn() }}>
+          <ActivityLogList />
+        </SearchContext.Provider>
+      </ThemeProvider>
+    );
+  };
+
+  it('renders loading state initially', async () => {
+    // Mock delay for the API response
+    fetchPendingRequests.mockImplementation(() => 
+      new Promise(resolve => setTimeout(() => resolve(mockActivityLogs), 100))
+    );
+
+    render(
+      <ThemeProvider theme={lightTheme}>
+        <SearchContext.Provider value={{ searchTerm: '', setSearchTerm: vi.fn() }}>
+          <ActivityLogList />
+        </SearchContext.Provider>
+      </ThemeProvider>
+    );
+    
+    expect(screen.getByRole('progressbar')).toBeInTheDocument();
+  });
+
+  it('fetches and displays activity logs correctly', async () => {
+    await act(async () => {
+      renderComponent();
+    });
+    
+    // Wait for loading to complete
+    await waitFor(() => {
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    });
+    
+    // Check if fetchPendingRequests was called
+    expect(fetchPendingRequests).toHaveBeenCalledWith('/api/activity-logs');
+    
+    // Check if activity log header is displayed
+    expect(screen.getByText('Activity Log')).toBeInTheDocument();
+    
+    // Check if table headers are displayed
+    expect(screen.getByText('Action Type')).toBeInTheDocument();
+    
+    // Check if data is displayed
+    expect(screen.getByText('DELETE')).toBeInTheDocument();
+    expect(screen.getByText('EVENT')).toBeInTheDocument();
+    
+    // Check if Delete and Undo buttons are displayed
+    const deleteButtons = screen.getAllByText('Delete');
+    const undoButtons = screen.getAllByText('Undo');
+    expect(deleteButtons.length).toBe(mockActivityLogs.length);
+    expect(undoButtons.length).toBe(mockActivityLogs.length);
+  });
+
+  it('handles search filtering correctly', async () => {
+    await act(async () => {
+      renderComponent('chess');
+    });
+    
+    await waitFor(() => {
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    });
+    
+    // Should show Chess Club but not Annual Meeting
+    expect(screen.getByText('Chess Club')).toBeInTheDocument();
+    expect(screen.queryByText('Annual Meeting')).not.toBeInTheDocument();
+  });
+
+  it('handles the delete action with dialog confirmation', async () => {
+    await act(async () => {
+      renderComponent();
+    });
+    
+    await waitFor(() => {
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    });
+
+    // Reset the mock counts after initial rendering is complete
+    fetchPendingRequests.mockClear();
+    
+    // Click delete button for the first item visible in the UI
+    const deleteButtons = screen.getAllByText('Delete');
+    await act(async () => {
+      fireEvent.click(deleteButtons[0]);
+    });
+    
+    // Check if confirmation dialog appears
+    await waitFor(() => {
+      const dialog = screen.getByRole('dialog');
+      expect(dialog).toBeInTheDocument();
+      expect(screen.getByText(/Confirm Permanent Deletion/i)).toBeInTheDocument();
+    });
+    
+    // Click confirm button - use exact button text from component
+    const confirmButton = screen.getByText('Delete Permanently');
+    await act(async () => {
+      fireEvent.click(confirmButton);
+    });
+    
+    // Verify API was called - don't check specific ID
+    expect(apiClient.delete).toHaveBeenCalled();
+    
+    // Check if fetchPendingRequests was called again to refresh data
+    expect(fetchPendingRequests).toHaveBeenCalledTimes(1);
+  });
+
+  it('cancels delete action when cancel button is clicked', async () => {
+    await act(async () => {
+      renderComponent();
+    });
+    
+    await waitFor(() => {
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    });
+    
+    // Click delete button for the first item
+    const deleteButtons = screen.getAllByText('Delete');
+    await act(async () => {
+      fireEvent.click(deleteButtons[0]);
+    });
+    
+    // Verify the dialog is open
+    await waitFor(() => {
+      const dialog = screen.getByRole('dialog');
+      expect(dialog).toBeInTheDocument();
+    });
+    
+    // Click cancel button
+    const cancelButton = screen.getByText('Cancel');
+    await act(async () => {
+      fireEvent.click(cancelButton);
+    });
+    
+    // Delete API should not be called - this is the important assertion
+    expect(apiClient.delete).not.toHaveBeenCalled();
+  });
+
+  it('handles the undo action correctly', async () => {
+    await act(async () => {
+      renderComponent();
+    });
+    
+    await waitFor(() => {
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    });
+    
+    // Click undo button for the first item visible in the UI
+    const undoButtons = screen.getAllByText('Undo');
+    await act(async () => {
+      fireEvent.click(undoButtons[0]);
+    });
+    
+    // Check that the API was called (without checking the specific ID)
+    expect(apiClient.post).toHaveBeenCalled();
+    expect(apiClient.post.mock.calls[0][0]).toMatch(/\/api\/activity-logs\/\d+\/undo/);
+  });
+
+  it('handles error when fetching data', async () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    
+    // Mock API error
+    fetchPendingRequests.mockRejectedValueOnce(new Error('API error'));
+    
+    await act(async () => {
+      renderComponent();
+    });
+    
+    // Wait for loading to complete
+    await waitFor(() => {
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    });
+    
+    // Check if error was logged
+    expect(consoleErrorSpy).toHaveBeenCalled();
+    
+    consoleErrorSpy.mockRestore();
+  });
+
+  it('handles error when deleting log', async () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    
+    // Mock successful initial fetch but error on delete
+    apiClient.delete.mockRejectedValueOnce(new Error('Delete error'));
+    
+    await act(async () => {
+      renderComponent();
+    });
+    
+    await waitFor(() => {
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    });
+    
+    // Click delete button for the first item
+    const deleteButtons = screen.getAllByText('Delete');
+    await act(async () => {
+      fireEvent.click(deleteButtons[0]);
+    });
+    
+    // Check if dialog is open
+    await waitFor(() => {
+      const dialog = screen.getByRole('dialog');
+      expect(dialog).toBeInTheDocument();
+    });
+    
+    // Click confirm button
+    const confirmButton = screen.getByText('Delete Permanently');
+    await act(async () => {
+      fireEvent.click(confirmButton);
+    });
+    
+    // Check if error was logged
+    expect(consoleErrorSpy).toHaveBeenCalled();
+    
+    // Check if API was called but don't check for notification
+    expect(apiClient.delete).toHaveBeenCalledWith('/api/activity-logs/2');
+    
+    consoleErrorSpy.mockRestore();
+  });
+
+  it('handles error when undoing action', async () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    
+    // Mock error on undo
+    apiClient.post.mockRejectedValueOnce(new Error('Undo error'));
+    
+    await act(async () => {
+      renderComponent();
+    });
+    
+    await waitFor(() => {
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    });
+    
+    // Click undo button for the first item specifically
+    const undoButtons = screen.getAllByText('Undo');
+    await act(async () => {
+      fireEvent.click(undoButtons[0]);
+    });
+    
+    // Check if error was logged
+    expect(consoleErrorSpy).toHaveBeenCalled();
+    
+    // Check if API was called with the right parameters
+    expect(apiClient.post).toHaveBeenCalledWith('/api/activity-logs/2/undo');
+    
+    consoleErrorSpy.mockRestore();
+  });
+
+  it('renders correctly in dark mode', async () => {
+    await act(async () => {
+      render(
+        <ThemeProvider theme={darkTheme}>
+          <SearchContext.Provider value={{ searchTerm: '', setSearchTerm: vi.fn() }}>
+            <ActivityLogList />
+          </SearchContext.Provider>
+        </ThemeProvider>
+      );
+    });
+    
+    await waitFor(() => {
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    });
+    
+    // Check if the component renders with dark theme
+    expect(screen.getByText('Activity Log')).toBeInTheDocument();
+  });
+
+  // Test for notification system with less specific assertions
+  it('tests API call for undo action', async () => {
+    renderComponent();
+    
+    await waitFor(() => {
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    });
+    
+    // Clicking undo
+    const undoButtons = screen.getAllByText('Undo');
+    await act(async () => {
+      fireEvent.click(undoButtons[0]);
+    });
+    
+    // Verify the API call was made (without checking specific ID)
+    expect(apiClient.post).toHaveBeenCalled();
+  });
+});

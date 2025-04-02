@@ -128,6 +128,7 @@ const AdminCalendar = () => {
     open: false, 
     data: [] 
   });
+  // Fix: Changed the type from string to View
   const [currentView, setCurrentView] = useState<View>('month');
 
   const requestRef = useRef<number | null>(null);
@@ -567,14 +568,14 @@ const AdminCalendar = () => {
   };
 
   return (
-    <Box m="20px">
+    <Box m="30px">
       <Box
         display="flex"
         justifyContent="space-between"
         alignItems="center"
         mb={3}
       >
-        <Header title="Admin Calendar" subtitle="View All Events" />
+        <Header title="View All Scheduled Events!" subtitle="" />
         <Button
           variant="contained"
           color="secondary"
@@ -686,13 +687,13 @@ const AdminCalendar = () => {
         <Box 
           sx={{
             position: "absolute",
-            top: "50%",
+            top: "115%",
             left: "50%",
             transform: "translate(-50%, -50%)",
             zIndex: 10
           }}
         >
-          <CircularProgress size={30} sx={{ color: colors.primary[500] }} />
+          <CircularProgress size={50} sx={{ color: colors.primary[500] }} />
         </Box>
       )}
 
