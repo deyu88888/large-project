@@ -16,6 +16,6 @@ python manage.py migrate
 echo "Seeding data..."
 python manage.py seed
 
-# Start the Daphne server
-echo "Starting Daphne server..."
-exec daphne -b 0.0.0.0 -p 8000 backend.asgi:application
+# Start server
+echo "Starting server..."
+exec python3 manage.py runserver 0.0.0.0:8000

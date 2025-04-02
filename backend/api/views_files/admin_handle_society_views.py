@@ -1,5 +1,6 @@
 from django.utils import timezone
 from datetime import timedelta
+from api.models_files.request_models import SocietyRequest
 from rest_framework import status
 from rest_framework.response import Response
 from api.models import Event, Society, Student, ActivityLog, User, SocietyShowreel
@@ -163,22 +164,22 @@ class SocietyStatusChangeUndoHandler(RestoreHandler):
     def handle(self, original_data, log_entry):
         """Undo a society status change (approve/reject)."""
         try:
-            society = get_object_by_id_or_name(Society, log_entry.target_id, name_value=log_entry.target_name)
-            if not society:
-                return Response({"error": "Society not found."}, status=status.HTTP_404_NOT_FOUND)
-            society.status = "Pending"
+            society_request = get_object_by_id_or_name(SocietyRequest, log_entry.target_id, name_value=log_entry.target_name)
+            if not society_request:
+                return Response({"error": "Society Request not found."}, status=status.HTTP_404_NOT_FOUND)
+            society_request.status = "Pending"
             
-            if log_entry.action_type == "Approve" and hasattr(society, 'approved_by'):
-                society.approved_by = None
+            if log_entry.action_type == "Approve" and hasattr(society_request, 'approved_by'):
+                society_request.approved_by = None
             
-            society.save()
+            society_request.save()
             reason = log_entry.reason if log_entry.reason else "Admin update of society details"
             
             ActivityLog.objects.create(
                 action_type="Update",
                 target_type="Society",
-                target_id=society.id,
-                target_name=society.name,
+                target_id=society_request.id,
+                target_name=society_request.name,
                 performed_by=log_entry.performed_by,
                 timestamp=timezone.now(),
                 reason=reason,

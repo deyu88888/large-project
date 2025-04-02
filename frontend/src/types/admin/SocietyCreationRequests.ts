@@ -5,11 +5,70 @@ export interface Society {
   id: number;
   name: string;
   description: string;
-  president: string;
+  president: {
+    first_name: string;
+    last_name: string;
+  };
   society_members: string[] | string;
   category: string;
   membershipRequirements: string;
   upcomingProjectsOrPlans: string;
+  [key: string]: any;
+}
+
+export interface SocietyData {
+  id: number;
+  name: string;
+  description: string;
+  president: {
+    id: number;
+    firstName: string;
+    lastName: string;
+    email?: string;
+    [key: string]: any;
+  };
+  vicePresident?: {
+    id: number;
+    firstName: string;
+    lastName: string;
+    email?: string;
+    [key: string]: any;
+  } | null;
+  eventManager?: {
+    id: number;
+    firstName: string;
+    lastName: string;
+    email?: string;
+    [key: string]: any;
+  } | null;
+  societyMembers: number[] | string[];
+  category: string;
+  membershipRequirements?: string;
+  upcomingProjectsOrPlans?: string;
+  tags?: string[];
+  icon?: string;
+  approvedBy?: {
+    id: number;
+    firstName: string;
+    lastName: string;
+    email?: string;
+  } | null;
+  status?: "Approved" | "Pending" | "Rejected" | string;
+  showreelImages?: {
+    photo: string;
+    caption: string;
+  }[];
+  socialMediaLinks?: {
+    facebook?: string;
+    instagram?: string;
+    x?: string;
+    whatsApp?: string;
+    other?: string;
+    [key: string]: string;
+  };
+  timetable?: any[];
+  leader?: any;
+  roles?: Record<string, any>;
   [key: string]: any;
 }
 
@@ -25,7 +84,9 @@ export interface NotificationState {
 
 export interface ActionButtonsProps {
   societyId: number;
+  society: SocietyData;
   onStatusChange: (id: number, status: "Approved" | "Rejected") => void;
+  onView: (society: SocietyData) => void;
 }
 
 export interface NotificationProps {

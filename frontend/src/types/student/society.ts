@@ -8,8 +8,6 @@ export interface Society {
   category: string;
   social_media_links: SocialMediaLinks;
   showreel_images: ShowreelImage[];
-  membership_requirements: string | null;
-  upcoming_projects_or_plans: string | null;
   icon: string;
   tags: string[];
   vice_president: Member;

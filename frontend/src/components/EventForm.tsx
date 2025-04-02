@@ -163,12 +163,12 @@ export const EventForm: React.FC<EventFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-  
+
     if (isPastEvent) {
       setSnackbarOpen(true);
       return;
     }
-  
+
     const formData = new FormData();
     formData.append("title", title);
     formData.append("main_description", mainDescription);
@@ -178,82 +178,35 @@ export const EventForm: React.FC<EventFormProps> = ({
     formData.append("location", location);
     formData.append("max_capacity", String(maxCapacity));
     formData.append("admin_reason", adminReason);
-  
-    // Handle cover image
+
     if (coverImageFile) {
       formData.append("cover_image", coverImageFile);
-    } else if (initialData?.coverImageUrl) {
-      // If we're editing and no new file was selected, pass the existing URL
-      formData.append("cover_image_url", initialData.coverImageUrl);
     }
-  
-    // Process extra modules
-    const extraModulesData = extraModules.map((mod, index) => {
-      const moduleData: any = {
-        type: mod.type,
-        textValue: mod.textValue || "",
-      };
-      
-      // For existing modules, preserve their ID
-      if (mod.id && !mod.id.includes("_") && !isNaN(Number(mod.id))) {
-        moduleData.id = mod.id;
-      }
-      
-      // For file/image modules with no new file but existing URL
-      if ((mod.type === "image" || mod.type === "file") && 
-          typeof mod.fileValue === "string" && 
-          !mod.fileValue.startsWith("blob:")) {
-        moduleData.fileUrl = mod.fileValue;
-      }
-      
-      return moduleData;
-    });
-    
+
+    const extraModulesData = extraModules.map((mod) => ({
+      type: mod.type,
+      textValue: mod.textValue || "",
+    }));
     formData.append("extra_modules", JSON.stringify(extraModulesData));
-  
-    // Upload new files for extra modules
+
     extraModules.forEach((mod, index) => {
-      if ((mod.type === "image" || mod.type === "file") && 
-          mod.fileValue instanceof File) {
+      if ((mod.type === "image" || mod.type === "file") && mod.fileValue) {
         formData.append(`extra_module_file_${index}`, mod.fileValue);
       }
     });
-  
-    // Process participant modules
-    const participantModulesData = participantModules.map((mod, index) => {
-      const moduleData: any = {
-        type: mod.type,
-        textValue: mod.textValue || "",
-      };
-      
-      // For existing modules, preserve their ID
-      if (mod.id && !mod.id.includes("_") && !isNaN(Number(mod.id))) {
-        moduleData.id = mod.id;
-      }
-      
-      // For file/image modules with no new file but existing URL
-      if ((mod.type === "image" || mod.type === "file") && 
-          typeof mod.fileValue === "string" && 
-          !mod.fileValue.startsWith("blob:")) {
-        moduleData.fileUrl = mod.fileValue;
-      }
-      
-      return moduleData;
-    });
-    
+
+    const participantModulesData = participantModules.map((mod) => ({
+      type: mod.type,
+      textValue: mod.textValue || "",
+    }));
     formData.append("participant_modules", JSON.stringify(participantModulesData));
-  
-    // Upload new files for participant modules
+
     participantModules.forEach((mod, index) => {
-      if ((mod.type === "image" || mod.type === "file") && 
-          mod.fileValue instanceof File) {
+      if ((mod.type === "image" || mod.type === "file") && mod.fileValue) {
         formData.append(`participant_module_file_${index}`, mod.fileValue);
       }
     });
-  
-    // Add a flag to indicate this is an edit
-    formData.append("is_edit", "true");
-  
+
     await onSubmit(formData);
   };
 

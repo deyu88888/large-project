@@ -120,6 +120,8 @@ export interface EventCardProps {
   hostName: string;
   onRSVP: () => void;
   styleProps: StyleProps;
+  userAttending?: boolean;
+  eventStarted?: boolean;
 }
 
 export interface NotificationItemProps {

@@ -1,90 +1,96 @@
+from django.urls import reverse
+from rest_framework import status
+from rest_framework.response import Response
 from rest_framework.test import APITestCase
-from api.models import Student, Society, User
-from rest_framework_simplejwt.tokens import AccessToken
+from unittest.mock import patch, MagicMock
+from api.models import Student
+from django.contrib.auth import get_user_model
 
-class StartSocietyRequestViewTest(APITestCase):
+User = get_user_model()
+
+class StartSocietyRequestViewTests(APITestCase):
     def setUp(self):
-        self.regular_student = Student.objects.create_user(
-            username="regular_user",
-            password="test1234",
-            email="regular@example.com",
-            is_president=False,
-            president_of=None,
-            major="Test Major"
+        self.student = Student.objects.create_user(
+            username="student1",
+            password="password123",
+            email="student@example.com",
+            first_name="Stu",
+            last_name="Dent",
+            major="CS"
         )
-        
-        self.president_student = Student.objects.create_user(
-            username="president_user",
-            password="test1234",
-            email="president@example.com",
-            is_president=True,
-            major="Test Major"
-        )
-        self.admin = User.objects.create_user(
-            username="existing_admin",
-            password="Password123",
-            first_name="Admin",
-            last_name="User",
-            email="existing_email@example.com",
-            role="admin",
-        )
-        
-        self.society = Society.objects.create(
-            id=1,
-            name="Test Society",
-            approved_by=self.admin,
-            status="Approved",
-            category="General",
-            social_media_links={},
-            president=self.president_student
-        )
-        
-        self.president_student.president_of = self.society
-        self.president_student.save()
-        
-        self.society.refresh_from_db()
-        
-        self.base_url = "/api/admin/society/request/pending"
-        self.regular_user_token = str(AccessToken.for_user(self.regular_student))
-        self.president_user_token = str(AccessToken.for_user(self.president_student))
-        self.admin_user_token = str(AccessToken.for_user(self.admin))
+        self.url = reverse("start_society")
 
-    def test_society_request_by_student_user(self):
-        """
-        If a student user tries to access the society request endpoint, they should get a 403 Forbidden response.
-        """
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.regular_user_token}")
-        response = self.client.get(self.base_url)
+    @patch("api.views_files.request_views.get_student_if_user_is_student")
+    def test_not_student_returns_error(self, mock_get_student):
+        error_response = Response(
+            {"error": "You must be a student"},
+            status=status.HTTP_403_FORBIDDEN
+        )
+        error_response.__bool__ = lambda self: True
+        mock_get_student.return_value = (None, error_response)
+
+        self.client.force_authenticate(user=self.student)
+        response = self.client.post(self.url, {})
+
         self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.data["error"], "You must be a student")
 
-    def test_society_request_view_by_admin_user(self):
-        """
-        If an admin user tries to access the society request endpoint, they should get a 200 OK response.
-        """
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.admin_user_token}")
-        response = self.client.get(self.base_url)
-        self.assertEqual(response.status_code, 200)
-    
-    def test_society_request_put_method_by_student_user(self):
-        """
-        Test that the PUT method is not allowed on the society request endpoint.
-        """
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.regular_user_token}")
-        response = self.client.put(self.base_url+"/1")
-        self.assertEqual(response.status_code, 403)
 
-    def test_society_request_put_404_by_admin_user(self):
-        """
-        Test that the PUT method is not allowed on the society request endpoint.
-        """
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.admin_user_token}")
-        response = self.client.put(self.base_url+"/9999999")
-        self.assertEqual(response.status_code, 404)
-    
-    def test_society_request_put_200(self):
-        """
-        Test that the PUT method is not allowed on the society request endpoint.
-        """
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.admin_user_token}")
-        response = self.client.put(f"{self.base_url}/1", {"status": "Pending"}, format="json")
-        self.assertEqual(response.status_code, 200)
+    @patch("api.views_files.view_utility.get_student_if_user_is_student")
+    @patch("api.views_files.request_views.student_has_no_role")
+
+    def test_student_has_role_returns_error(self, mock_no_role, mock_get_student):
+        mock_get_student.return_value = (self.student, None)
+        mock_no_role.return_value = Response(
+            {"error": "You already have a role"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+        self.client.force_authenticate(user=self.student)
+        response = self.client.post(self.url, {})
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["error"], "You already have a role")
+
+    @patch("api.views_files.request_views.StartSocietyRequestSerializer")
+    @patch("api.views_files.view_utility.get_student_if_user_is_student")
+    @patch("api.views_files.view_utility.student_has_no_role")
+    def test_invalid_serializer_returns_400(self, mock_no_role, mock_get_student, mock_serializer_class):
+        mock_get_student.return_value = (self.student, None)
+        mock_no_role.return_value = None
+
+        mock_serializer = MagicMock()
+        mock_serializer.is_valid.return_value = False
+        mock_serializer.errors = {"name": ["This field is required."]}
+        mock_serializer_class.return_value = mock_serializer
+
+        self.client.force_authenticate(user=self.student)
+        response = self.client.post(self.url, {"description": "A test"})
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("name", response.data)
+
+    @patch("api.views_files.request_views.StartSocietyRequestSerializer")
+    @patch("api.views_files.view_utility.get_student_if_user_is_student")
+    @patch("api.views_files.view_utility.student_has_no_role")
+    def test_successful_request_returns_201(self, mock_no_role, mock_get_student, mock_serializer_class):
+        mock_get_student.return_value = (self.student, None)
+        mock_no_role.return_value = None
+
+        mock_serializer = MagicMock()
+        mock_serializer.is_valid.return_value = True
+        mock_serializer.validated_data = {
+            "name": "Robotics Club",
+            "description": "We build robots!",
+            "category": "Technology"
+        }
+        mock_serializer.save.return_value = None
+        mock_serializer_class.return_value = mock_serializer
+
+        self.client.force_authenticate(user=self.student)
+        data = {
+            "name": "Robotics Club",
+            "description": "We build robots!",
+            "category": "Technology"
+        }
+        response = self.client.post(self.url, data)
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data["message"], "Your request has been submitted for review.")
