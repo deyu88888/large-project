@@ -1,107 +1,103 @@
 \chapter{Specifications}
 
-This chapter outlines the functional and non-functional specifications of our student society management platform. All features described below have been successfully implemented and deployed in the final system.
+This chapter outlines the functional and non-functional specifications of our student society management platform. As follows are all out implementation features
 
 \section{Functional Specifications}
 
 \subsection{User Authentication and Profile Management}
 \begin{itemize}
-    \item \textbf{University-Restricted Registration}: System validates that email addresses end with the university domain (e.g., @kcl.ac.uk) to ensure only legitimate university students can register.
-    \item \textbf{Two-Step Verification}: Registration process includes email verification through OTP (One-Time Password) to confirm email ownership.
-    \item \textbf{Profile Customization}: Users can set their username once during registration, and can set and modify their password and academic major later.
-    \item \textbf{Social Connections}: Students can search for, follow, and view profiles of other students, facilitating community building.
+    \item \textbf{University Email Validation}: The system currently checks that email addresses end with the university domain (e.g., @kcl.ac.uk) so only university students can register.
+    \item \textbf{Email Verification}: Registration includes an OTP (One-Time Password) step to confirm email ownership.
+    \item \textbf{Profile Management}: Users can set their username once during registration, and can set and change their password and academic major later.
+    \item \textbf{Student Connections}: Students can search, follow and view other students' profiles.
 \end{itemize}
 
-\subsection{Personalized Student Dashboard}
+\subsection{Student Dashboard}
 \begin{itemize}
-    \item \textbf{Activity Overview}: Dashboard displays membership counts, upcoming events, and unread notifications.
-    \item \textbf{Society Management}: Students can view societies they've joined with options to leave if desired.
-    \item \textbf{Event Tracking}: Comprehensive display of all events with RSVP functionality and attendance management.
-    \item \textbf{Notification System}: Centralizes all society-related communications with read/unread status tracking.
-    \item \textbf{News Feed}: Displays news published by societies the student has joined.
-    \item \textbf{Calendar Integration}: Visual calendar interface showing all events for better planning.
-    \item \textbf{Society Application}: Interface for students to propose new societies, requiring administrative approval.
-    \item \textbf{Search Functionality}: Allows searching for events and societies across the platform.
+    \item \textbf{Activity Summary}: The dashboard shows society memberships, upcoming events and notifications.
+    \item \textbf{Society Management}: Students can see societies they've joined and leave them whenever they want, unless they hold a societal role, which in this case they have to resign first.
+    \item \textbf{Event Management}: Students can view events and RSVP to attend them.
+    \item \textbf{Notifications}: The system groups all society communications and tracks read/unread status.
+    \item \textbf{News}: Students can see news from societies they've joined.
+    \item \textbf{Society Creation}: Students can propose new societies for admin approval.
+    \item \textbf{Search}: Users can search for events and societies.
 \end{itemize}
 
 \subsection{Society Management Tools}
 \begin{itemize}
-    \item \textbf{Society Detail Management}: The society managers can edit the name, description, category, social media links, images, icons, and tags of the society (subject to admin approval).
-    \item \textbf{Event Creation and Management}: Interface for creating, editing, and managing society events with approval workflows.
-    \item \textbf{Membership Administration}: Tools for reviewing pending membership requests and managing existing members.
-    \item \textbf{News Publication System}: Functionality to create, draft, publish, and manage society news posts.
-    \item \textbf{Member Recognition}: System for assigning awards and roles to society members.
-    \item \textbf{Preview Functionality}: Live preview of the society page and events before submission for approval.
-    \item \textbf{Administrative Communication}: Direct reporting channel to university administrators for issue resolution.
+    \item \textbf{Society Details}: Society managers can edit the name, description, category, social media links, images, icons and tags (subject to admin approval).
+    \item \textbf{Event Management}: Managers can create, edit and manage society events through an approval process.
+    \item \textbf{Member Management}: Tools to review membership requests and manage existing members and assign roles to them.
+    \item \textbf{News System}: Managers can create, draft, publish and manage news posts.
+    \item \textbf{Awards}: System for giving awards to members.
+    \item \textbf{Preview}: Managers can preview society pages and events before submitting for approval.
+    \item \textbf{Admin Communication}: Direct channel to report issues to university administrators.
 \end{itemize}
 
-\subsection{Administrative Oversight Dashboard}
+\subsection{Admin Dashboard}
 \begin{itemize}
-    \item \textbf{Platform Analytics}: Real-time metrics showing active users, events, and pending requests.
-    \item \textbf{Student Management}: Comprehensive student database with filtering, search, and administrative actions.
-    \item \textbf{Society Approval Workflow}: Tools for reviewing and approving new societies and society modification requests.
-    \item \textbf{Event Approval System}: Interface for reviewing event requests to ensure compliance with university policies.
-    \item \textbf{Report Management}: System for handling and responding to reports from users.
-    \item \textbf{Administrative Team Management}: Tools for managing admin permissions and responsibilities.
-    \item \textbf{Activity Logging}: Comprehensive tracking of administrative actions with undo functionality.
+    \item \textbf{Platform Stats}: Graphs showing active users, events and pending requests.
+    \item \textbf{Student Management}: A student database with filtering, search and admin actions.
+    \item \textbf{Society Approval}: Tools to review and approve new societies and changes to existing ones.
+    \item \textbf{Event Approval}: Interface to review event requests and check they comply with university policies.
+    \item \textbf{Report Handling}: System to handle and respond to user reports.
+    \item \textbf{Admin Team}: Tools to manage admin permissions and roles.
+    \item \textbf{Activity Log}: Tracking of admin actions with undo option.
 \end{itemize}
 
-\subsection{AI-Powered Recommendation System}
+\subsection{Recommendation System}
 \begin{itemize}
-    \item \textbf{Multi-faceted Similarity Scoring}: Combines neural embeddings (35\%), TF-IDF cosine similarity (25\%), keyword overlap (15\%), basic word overlap (5\%), and domain-specific semantic relationships (20\%).
-    \item \textbf{Diversity Algorithm}: Implements Maximal Marginal Relevance to balance relevance with variety in recommendations.
-    \item \textbf{Temporal Awareness}: Prioritizes societies with recent activity in recommendations.
-    \item \textbf{Adaptive Feedback System}: Collects and processes both explicit ratings and implicit user behavior signals.
-    \item \textbf{Personalization}: Recommendations improve over time based on user interactions and preferences.
+    \item \textbf{Similarity Scoring}: Combines neural embeddings (35\%), TF-IDF cosine similarity (25\%), keyword overlap (15\%), word overlap (5\%), and domain relationships (20\%).
+    \item \textbf{Diversity}: Uses Maximal Marginal Relevance to balance relevance with variety.
+    \item \textbf{Activity Weighting}: Gives priority to societies with recent activity.
+    \item \textbf{Feedback Processing}: Collects explicit ratings and implicit behaviour signals.
+    \item \textbf{Learning}: Recommendations improve based on user interactions.
 \end{itemize}
 
 \section{Non-functional Specifications}
 
 \subsection{Usability}
 \begin{itemize}
-    \item \textbf{Desktop-Optimized Design}: Platform is designed primarily for desktop use, with limited mobile responsiveness. 
-    \item \textbf{Accessibility Features}: Interface follows accessibility best practices for inclusive user experience.
-    \item \textbf{Appearance Customization}: Users can switch between light and dark modes to enhance readability.
-    \item \textbf{Consistent Navigation}: Intuitive navigation patterns maintained across all system interfaces.
+    \item \textbf{Desktop Design}: Platform works best on desktop, with basic mobile support.
+    \item \textbf{Display Options}: Users can switch between light and dark modes.
+    \item \textbf{Navigation}: Common navigation patterns across the system.
 \end{itemize}
 
 \subsection{Security and Privacy}
 \begin{itemize}
-    \item \textbf{Role-Based Access Control}: Multi-tiered permission structure ensuring users only access appropriate functionality.
-    \item \textbf{Data Protection}: Personal information is securely stored with multiple protection measures: user profiles are not searchable by non-logged-in users, email addresses are hidden from other users, authentication tokens are encrypted, and sensitive data is appropriately anonymized where necessary.
-    \item \textbf{Approval Workflows}: Multi-step approval processes for society creation, event scheduling, and content publication.
-    \item \textbf{Activity Monitoring}: Administrative logging of system actions.
+    \item \textbf{Permission Levels}: Users can only access functions appropriate to their role.
+    \item \textbf{Data Protection}: We protect personal information by hiding user profiles from non-logged-in users, concealing email addresses, encrypting tokens, and anonymising sensitive data where needed.
+    \item \textbf{Content Approval}:  Approval for society creation, events and content.
+    \item \textbf{Action Tracking}: Admin system logs important actions.
 \end{itemize}
 
 \subsection{Performance and Reliability}
 \begin{itemize}
-    \item \textbf{Real-time Updates}: WebSocket integration for immediate notification delivery and content updates.
-    \item \textbf{Concurrency Management}: System handles multiple simultaneous users without degradation.
-    \item \textbf{Data Integrity}: Robust data validation and error handling throughout the system.
+    \item \textbf{Update Mechanism}: System provides content updates with minimal delay.
+    \item \textbf{Multiple Users}: System handles many users at once without slowing down.
+    \item \textbf{Error Handling}: Data validation and error handling throughout.
 \end{itemize}
 
 \subsection{Scalability}
 \begin{itemize}
-    \item \textbf{User Capacity}: Architecture designed to accommodate the entire university student population.
-    \item \textbf{Society Growth}: No artificial limits on the number of societies or events the system can manage.
-    \item \textbf{Data Retention}: Historical events and society information maintained with appropriate archiving.
+    \item \textbf{User Numbers}: Architecture supports the entire university student population.
+    \item \textbf{Content Growth}: No limits on the number of societies or events.
+    \item \textbf{History}: Past events and society information kept with suitable archiving.
 \end{itemize}
 
 \subsection{Maintainability}
 \begin{itemize}
-    \item \textbf{Component Modularity}: System designed with clear separation of concerns for easier updates.
-    \item \textbf{Technology Stack Standardization}: Consistent use of Django and React frameworks across the application.
-    \item \textbf{Code Organization}: Logical structure facilitating future extensions and modifications.
+    \item \textbf{Components}: System built with separate components for easier updates.
+    \item \textbf{Technology}: Django and React used consistently across the application.
+    \item \textbf{Code Structure}: Designed with cohesion and coupling in mind to aid future development
 \end{itemize}
 
 \section{Out of Scope}
-While the implemented system provides comprehensive society management capabilities, the following features were considered but determined to be outside the project scope:
+While our system covers society management thoroughly, we decided these features were outside our project scope:
 
 \begin{itemize}
-    \item \textbf{Financial Management}: Tools for society budget tracking and financial reporting.
-    \item \textbf{External Event Ticketing}: Integration with third-party ticketing platforms for paid events.
-    \item \textbf{Mobile Applications}: Native mobile applications for iOS and Android platforms.
-    \item \textbf{Integration with University Learning Management Systems}: Direct connection with academic course platforms.
+    \item \textbf{Financial Tools}: Budget tracking and financial reporting for societies.
+    \item \textbf{Ticketing}: Integration with ticket platforms for paid events.
+    \item \textbf{Mobile Apps}: Native applications for iOS and Android.
+    \item \textbf{Learning Systems}: Connection with university course platforms.
 \end{itemize}
-
-These features represent potential future enhancements that would build upon the current system capabilities while maintaining alignment with the core project objectives.
