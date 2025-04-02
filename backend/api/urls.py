@@ -44,7 +44,7 @@ from api.views import (
     RecommendationFeedbackAnalyticsView,
     
     # News 
-    NewsView, BroadcastListAPIView, NewsPublicationRequestView, AdminNewsApprovalView, NewsMarkReadView,
+    NewsView, BroadcastListAPIView, NewsPublicationRequestView, AdminNewsApprovalView,
     
     # Society News
     SocietyNewsListView, SocietyNewsDetailView, MemberNewsView,
@@ -184,7 +184,6 @@ comment_patterns = [
 # News patterns
 news_patterns = [
     path("", NewsView.as_view(), name="news"),
-    path("<int:news_id>/mark_as_read/", NewsMarkReadView.as_view(), name="mark_news_read"),
     path("get/", BroadcastListAPIView.as_view(), name="get-news"),
     path("<int:news_id>/detail/", SocietyNewsDetailView.as_view(), name="society_news_detail"),
     path("<int:news_id>/comments/", NewsCommentView.as_view(), name="news_comments"),

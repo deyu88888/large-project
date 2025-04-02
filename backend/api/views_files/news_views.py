@@ -84,45 +84,6 @@ class NewsView(APIView):
 
         return Response(BroadcastSerializer(broadcast).data, status=status.HTTP_201_CREATED)
 
-
-class NewsMarkReadView(APIView):
-    """View to mark a broadcast message as read"""
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request, news_id):
-        """Marks a broadcast message as read"""
-        user = request.user
-        news = get_object_by_id_or_name(BroadcastMessage, news_id)
-        if not news:
-            return standard_error_response("News not found", status.HTTP_404_NOT_FOUND)
-
-        news.read_by.add(user)
-        news.save()
-
-        return Response(NewsMarkAsReadSerializer(news).data)
-    
-    def patch(self, request, pk):
-        """Marks a news as read"""
-        if not hasattr(request.user, 'student'):
-            return Response(
-                {"error": "Only students can mark news as read."},
-                status=status.HTTP_403_FORBIDDEN
-            )
-
-        try:
-            notification = SocietyNews.objects.get(id=pk, for_user=request.user.student)
-        except SocietyNews.DoesNotExist:
-            return Response({"error": "news not found."}, status=status.HTTP_404_NOT_FOUND)
-
-        notification.is_read = True
-        notification.save()
-
-        return Response(
-            {"message": "Notification marked as read.", "id": pk},
-            status=status.HTTP_200_OK
-        )
-
-
 class BroadcastListAPIView(APIView):
     """View to list BroadcastMessages"""
     permission_classes = [IsAuthenticated]
