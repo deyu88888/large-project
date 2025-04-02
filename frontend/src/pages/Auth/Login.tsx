@@ -5,18 +5,20 @@ import {
   Box, Typography, TextField, Button, CircularProgress, useTheme, InputAdornment, IconButton
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
-import { ACCESS_TOKEN, REFRESH_TOKEN } from "../../constants";
 import { apiClient, apiPaths } from "../../api";
 import { tokens } from "../../theme/theme";
 import { jwtDecode } from "jwt-decode";
+import { useAuth } from "../../context/AuthContext";
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
+  const { login } = useAuth();
 
   const loginFormik = useFormik({
     initialValues: {
@@ -25,15 +27,18 @@ export default function LoginPage() {
     },
     onSubmit: async (data) => {
       setLoading(true);
+      setError("");
       try {
         const res = await apiClient.post(apiPaths.USER.LOGIN, data);
 
-        // Save tokens
-        localStorage.setItem(ACCESS_TOKEN, res.data.access);
-        localStorage.setItem(REFRESH_TOKEN, res.data.refresh);
+        // Extract tokens from response
+        const { access, refresh } = res.data;
+        
+        // Use the auth context login method to store tokens
+        login(access, refresh);
 
         // Decode token to get user role
-        const decoded = jwtDecode<{ user_id: number; role: "admin" | "student" }>(res.data.access);
+        const decoded = jwtDecode<{ user_id: number; role: "admin" | "student" }>(access);
         const userRole = decoded.role || "student";
 
         // Check if user was trying to visit a protected page before login
@@ -41,7 +46,7 @@ export default function LoginPage() {
         navigate(from, { replace: true });
 
       } catch (error) {
-        alert("Login failed. Please check your username and password.");
+        setError("Login failed. Please check your username and password.");
         console.error(error);
       } finally {
         setLoading(false);
@@ -84,6 +89,16 @@ export default function LoginPage() {
         >
           Login
         </Typography>
+
+        {error && (
+          <Typography 
+            color="error" 
+            sx={{ marginBottom: 2, textAlign: "center" }}
+            data-testid="error-message"
+          >
+            {error}
+          </Typography>
+        )}
 
         <TextField
           fullWidth
@@ -137,6 +152,7 @@ export default function LoginPage() {
             "&:hover": { backgroundColor: colors.blueAccent[700] },
           }}
           data-testid="login-button"
+          disabled={loading}
         >
           Login
         </Button>
