@@ -4,7 +4,7 @@ import { DataGrid, GridToolbar, GridColDef, GridRenderCellParams } from "@mui/x-
 import { tokens } from "../../theme/theme";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { useSettingsStore } from "../../stores/settings-store";
-import { fetchReportsWithReplies } from './fetchReports';
+import { fetchReportsWithReplies } from '../../utils/fetchReports';
 import { useNavigate } from 'react-router-dom';
 import { Report } from "../../types/president/report";
 import {
