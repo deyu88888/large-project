@@ -75,14 +75,12 @@ class SocietyNewsListView(APIView):
     def post(self, request, society_id):
         society = get_object_or_404(Society, id=society_id)
         
-        # Verify user is a student
         if not hasattr(request.user, 'student'):
             return standard_error_response(
                 "Only society presidents and vice presidents can create news posts.",
                 status.HTTP_403_FORBIDDEN
             )
 
-        # Verify user has management permissions
         if not has_society_management_permission(request.user.student, society):
             return standard_error_response(
                 "Only society presidents and vice presidents can create news posts.",
@@ -90,29 +88,45 @@ class SocietyNewsListView(APIView):
             )
 
         try:
-            request_data = request.data.copy()
-            data = request_data.copy()
-            data._mutable = True
+            data = {}
+            
+            for key in request.data:
+                if key not in ['image', 'attachment']:
+                    data[key] = request.data[key]
+                    
             data['society'] = society.id
 
-            # Ensure posts start as Draft
             if 'status' in data and data['status'] == 'Published':
                 data['status'] = 'Draft'
 
             for field in ['is_pinned', 'is_featured']:
                 if field in data:
-                    data[field] = data[field].lower() == 'true'
+                    data[field] = str(data[field]).lower() == 'true'
 
             if 'tags' in data and isinstance(data['tags'], str):
                 data['tags'] = parse_json_field(data, 'tags')
-
-            data._mutable = False
             
-            # Create the news post
-            serializer = SocietyNewsSerializer(data=data, context={'request': request})
+            serializer = SocietyNewsSerializer(
+                data=data, 
+                context={'request': request}
+            )
+            
             if serializer.is_valid():
                 news_post = serializer.save(author=request.user.student)
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
+                
+                if 'image' in request.FILES:
+                    news_post.image = request.FILES['image']
+                    
+                if 'attachment' in request.FILES:
+                    news_post.attachment = request.FILES['attachment']
+                    
+                if 'image' in request.FILES or 'attachment' in request.FILES:
+                    news_post.save()
+                    
+                return Response(
+                    SocietyNewsSerializer(news_post, context={'request': request}).data, 
+                    status=status.HTTP_201_CREATED
+                )
             else:
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
                 
