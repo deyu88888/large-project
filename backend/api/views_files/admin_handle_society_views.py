@@ -164,17 +164,28 @@ class SocietyStatusChangeUndoHandler(RestoreHandler):
     def handle(self, original_data, log_entry):
         """Undo a society status change (approve/reject)."""
         try:
-            society_request = get_object_by_id_or_name(SocietyRequest, log_entry.target_id, name_value=log_entry.target_name)
+            society_request = get_object_by_id_or_name(
+                SocietyRequest,
+                log_entry.target_id,
+                name_value=log_entry.target_name
+            )
             if not society_request:
-                return Response({"error": "Society Request not found."}, status=status.HTTP_404_NOT_FOUND)
-            society_request.status = "Pending"
-            
+                return Response(
+                    {"error": "Society Request not found."},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
+            # Only reset status if the field exists
+            if hasattr(society_request, 'status'):
+                society_request.status = "Pending"
+
             if log_entry.action_type == "Approve" and hasattr(society_request, 'approved_by'):
                 society_request.approved_by = None
-            
+
             society_request.save()
-            reason = log_entry.reason if log_entry.reason else "Admin update of society details"
-            
+
+            reason = log_entry.reason or "Admin update of society details"
+
             ActivityLog.objects.create(
                 action_type="Update",
                 target_type="Society",
@@ -185,13 +196,15 @@ class SocietyStatusChangeUndoHandler(RestoreHandler):
                 reason=reason,
                 expiration_date=timezone.now() + timedelta(days=30),
             )
-            
+
             log_entry.delete()
-            
+
             return Response({
                 "message": "Society status change undone successfully. Status set back to Pending."
             }, status=status.HTTP_200_OK)
-        
+
         except Exception as e:
-            return Response({"error": f"Failed to undo society status change: {str(e)}"}, 
-                        status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {"error": f"Failed to undo society status change: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

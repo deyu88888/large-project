@@ -47,22 +47,19 @@ class TestRestoreHandlerFactory(unittest.TestCase):
         
     def test_get_status_change_handlers(self):
         """Test that the factory returns the correct status change handlers."""
-        
-        handler = self.factory.get_handler("Approve", "Society")
+
+        handler = self.factory.get_handler("Approve", "SocietyRequest")
         self.assertIsNotNone(handler)
         self.assertTrue(handler.__class__.__name__.endswith('SocietyStatusChangeUndoHandler'))
-        
-        
-        handler = self.factory.get_handler("Reject", "Society")
+
+        handler = self.factory.get_handler("Reject", "SocietyRequest")
         self.assertIsNotNone(handler)
         self.assertTrue(handler.__class__.__name__.endswith('SocietyStatusChangeUndoHandler'))
-        
-        
+
         handler = self.factory.get_handler("Approve", "Event")
         self.assertIsNotNone(handler)
         self.assertTrue(handler.__class__.__name__.endswith('EventStatusChangeUndoHandler'))
-        
-        
+
         handler = self.factory.get_handler("Reject", "Event")
         self.assertIsNotNone(handler)
         self.assertTrue(handler.__class__.__name__.endswith('EventStatusChangeUndoHandler'))
