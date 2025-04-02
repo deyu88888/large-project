@@ -50,8 +50,7 @@ const GiveAwardPage: React.FC = () => {
   const handleGiveAward = async (awardId: number): Promise<void> => {
     try {
       const studentIdNumber = Number(studentId);
-      // Changed to match test expectations - using '/api/award-students' instead of '/api/awards/students/'
-      await apiClient.post("/api/award-students", {
+      await apiClient.post("/api/awards/students/", {
         student_id: studentIdNumber,
         award_id: awardId,
       });
