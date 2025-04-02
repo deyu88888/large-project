@@ -1,17 +1,11 @@
 [run]
+source = api
 omit =
-    */site-packages/*
-    */tests/*
+    *_remote_module_non_scriptable.py
     */migrations/*
+    */venv/*
     manage.py
-    */__init__.py
 
 [report]
-exclude_lines =
-    pragma: no cover
-    def __str__
-    if self\.debug
-    raise NotImplementedError
-
-[html]
-directory = htmlcov
+show_missing = True
+skip_covered = True

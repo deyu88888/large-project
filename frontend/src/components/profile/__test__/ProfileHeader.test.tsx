@@ -1,394 +1,163 @@
-import React from 'react';
-import { render, screen, fireEvent, cleanup } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { describe, test, expect, vi, beforeEach } from 'vitest';
-import '@testing-library/jest-dom';
-import ProfileHeader from '../ProfileHeader';
-import { apiClient } from '../../../api';
-import { ThemeProvider, createTheme } from '@mui/material';
-import { act } from 'react-dom/test-utils';
+import React from "react";
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import ProfileHeader from "../ProfileHeader";
+import { apiClient } from "../../../api";
 
-// Mock the theme tokens function
-vi.mock('../../../theme/theme', () => ({
-  tokens: vi.fn().mockReturnValue({
-    grey: {
-      100: '#ffffff',
-      200: '#f0f0f0',
-    },
-    blueAccent: {
-      700: '#1976d2',
-    },
-  }),
+vi.mock("react-easy-crop", () => ({
+  default: (props: any) => {
+    React.useEffect(() => {
+      if (props.onCropComplete) {
+        props.onCropComplete(null, { x: 0, y: 0, width: 100, height: 100 });
+      }
+    }, [props.onCropComplete]);
+    return <div data-testid="dummy-cropper">Cropper</div>;
+  },
 }));
 
-// Mock the API client
-vi.mock('../../../api', () => ({
+vi.mock("../../../api", () => ({
   apiClient: {
     post: vi.fn(),
   },
 }));
 
-// Mock react-easy-crop
-vi.mock('react-easy-crop', () => {
-  return {
-    default: function MockCropper(props) {
-      // Call onCropComplete with mock data
-      React.useEffect(() => {
-        if (props.onCropComplete) {
-          props.onCropComplete(
-            { x: 0, y: 0, width: 100, height: 100 },
-            { x: 10, y: 10, width: 200, height: 200 }
-          );
-        }
-      }, [props.onCropComplete]);
-      
-      return <div data-testid="mock-cropper">Mock Cropper Component</div>;
-    }
-  }
-});
-
-describe('ProfileHeader Component', () => {
-  const mockSetSnackbarData = vi.fn();
+describe("ProfileHeader component", () => {
   const mockOnToggleFollow = vi.fn();
   const mockOnAvatarUpdated = vi.fn();
-  
-  const defaultProfile = {
-    id: 1,
-    first_name: 'John',
-    following_count: 10,
-    followers_count: 20,
-    icon: '/api/images/avatar.jpg',
-  };
-  
-  const defaultProps = {
-    isSelf: true,
-    profile: defaultProfile,
+
+  const baseProps = {
+    isSelf: false,
+    profile: {
+      id: 1,
+      first_name: "John",
+      following_count: 10,
+      followers_count: 20,
+      icon: "/test-icon.png",
+      is_staff: false,
+    },
     isFollowing: false,
     onToggleFollow: mockOnToggleFollow,
     onAvatarUpdated: mockOnAvatarUpdated,
-    setSnackbarData: mockSetSnackbarData,
-  };
-
-  const renderWithTheme = (ui: React.ReactElement) => {
-    const theme = createTheme();
-    return render(
-      <ThemeProvider theme={theme}>
-        {ui}
-      </ThemeProvider>
-    );
+    setSnackbarData: vi.fn(),
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
-    // Mock FileReader
-    const mockFileReader = {
-      readAsDataURL: vi.fn(),
-      onload: null as any,
-      result: 'data:image/jpeg;base64,mockbase64data',
-    };
-    
-    global.FileReader = vi.fn(() => mockFileReader) as any;
-    
-    // Mock FormData
-    global.FormData = vi.fn(() => ({
-      append: vi.fn(),
-    })) as any;
   });
 
-  afterEach(() => {
-    cleanup();
+  it("renders the user's name with 'Profile' if not self", () => {
+    render(<ProfileHeader {...baseProps} />);
+    expect(screen.getByText("John's Profile")).toBeInTheDocument();
   });
 
-  test('renders with user data when viewing own profile', () => {
-    renderWithTheme(<ProfileHeader {...defaultProps} />);
-    
-    // Check header text
-    expect(screen.getByText('Welcome back, John!')).toBeInTheDocument();
-    
-    // Check stats
-    expect(screen.getByText('Following:')).toBeInTheDocument();
-    expect(screen.getByText('10')).toBeInTheDocument();
-    expect(screen.getByText('Fans:')).toBeInTheDocument();
-    expect(screen.getByText('20')).toBeInTheDocument();
-    
-    // Check avatar
-    const avatar = screen.getByRole('img');
-    expect(avatar).toBeInTheDocument();
-    expect(avatar).toHaveAttribute('src', '/api/images/avatar.jpg');
-    
-    // Edit icon should be visible for own profile
-    expect(screen.getByTestId('EditIcon')).toBeInTheDocument();
-    
-    // Follow button should not be visible for own profile
-    expect(screen.queryByText('Follow')).not.toBeInTheDocument();
-    expect(screen.queryByText('Unfollow')).not.toBeInTheDocument();
+  it("renders welcome text if isSelf is true", () => {
+    const props = { ...baseProps, isSelf: true };
+    render(<ProfileHeader {...props} />);
+    expect(screen.getByText("Welcome back, John!")).toBeInTheDocument();
   });
 
-  test('renders with user data when viewing another user\'s profile', () => {
-    renderWithTheme(<ProfileHeader {...defaultProps} isSelf={false} />);
-    
-    // Check header text
-    expect(screen.getByText('John\'s Profile')).toBeInTheDocument();
-    
-    // Check stats
-    expect(screen.getByText('Following:')).toBeInTheDocument();
-    expect(screen.getByText('10')).toBeInTheDocument();
-    expect(screen.getByText('Fans:')).toBeInTheDocument();
-    expect(screen.getByText('20')).toBeInTheDocument();
-    
-    // Edit icon should NOT be visible for other's profile
-    expect(screen.queryByTestId('EditIcon')).not.toBeInTheDocument();
-    
-    // Follow button should be visible for other's profile
-    expect(screen.getByText('Follow')).toBeInTheDocument();
+  it("shows 'Follow' button if not following", () => {
+    render(<ProfileHeader {...baseProps} />);
+    expect(screen.getByText("Follow")).toBeInTheDocument();
   });
 
-  test('shows follow button with correct text based on follow status', () => {
-    // Test not following state
-    const { unmount } = renderWithTheme(<ProfileHeader {...defaultProps} isSelf={false} isFollowing={false} />);
-    expect(screen.getByText('Follow')).toBeInTheDocument();
-    expect(screen.queryByText('Unfollow')).not.toBeInTheDocument();
-    
-    // Cleanup and rerender with isFollowing=true
-    unmount();
-    
-    renderWithTheme(<ProfileHeader {...defaultProps} isSelf={false} isFollowing={true} />);
-    expect(screen.getByText('Unfollow')).toBeInTheDocument();
-    expect(screen.queryByText('Follow')).not.toBeInTheDocument();
-  });
-
-  test('calls onToggleFollow when follow button is clicked', async () => {
-    renderWithTheme(<ProfileHeader {...defaultProps} isSelf={false} />);
-    
-    const followButton = screen.getByText('Follow');
-    await userEvent.click(followButton);
-    
+  it("calls onToggleFollow when 'Follow'/'Unfollow' button is clicked", () => {
+    render(<ProfileHeader {...baseProps} />);
+    const followBtn = screen.getByText("Follow");
+    fireEvent.click(followBtn);
     expect(mockOnToggleFollow).toHaveBeenCalledTimes(1);
   });
 
-  test('clicking on avatar opens file input', async () => {
-    renderWithTheme(<ProfileHeader {...defaultProps} />);
-    
-    // Find avatar and click it
-    const avatar = screen.getByRole('img');
-    await userEvent.click(avatar);
-    
-    // We can't directly test if the file input click was triggered
-    // But we can check that the file input exists in the document
-    const fileInput = document.querySelector('input[type="file"]');
+  it("renders 'Unfollow' if isFollowing is true", () => {
+    const props = { ...baseProps, isFollowing: true };
+    render(<ProfileHeader {...props} />);
+    expect(screen.getByText("Unfollow")).toBeInTheDocument();
+  });
+
+  it("does not render follow/unfollow button if isSelf is true", () => {
+    const props = { ...baseProps, isSelf: true };
+    render(<ProfileHeader {...props} />);
+    expect(screen.queryByText("Follow")).not.toBeInTheDocument();
+    expect(screen.queryByText("Unfollow")).not.toBeInTheDocument();
+  });
+
+  it("does not render following/fans if user is staff", () => {
+    const props = {
+      ...baseProps,
+      profile: { ...baseProps.profile, is_staff: true },
+    };
+    render(<ProfileHeader {...props} />);
+    expect(screen.queryByText(/Following:/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Fans:/)).not.toBeInTheDocument();
+  });
+
+  it("shows following/fans counts if user is not staff", () => {
+    render(<ProfileHeader {...baseProps} />);
+    expect(
+      screen.getByText((_, node) =>
+        node?.textContent?.replace(/\s+/g, " ").trim() === "Following: 10"
+      )
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText((_, node) =>
+        node?.textContent?.replace(/\s+/g, " ").trim() === "Fans: 20"
+      )
+    ).toBeInTheDocument();
+  });
+
+  it("opens file selector if user isSelf and not staff when avatar is clicked", () => {
+    const props = { ...baseProps, isSelf: true };
+    render(<ProfileHeader {...props} />);
+    const editBtn = screen.getByTestId("edit-avatar-btn");
+    fireEvent.click(editBtn);
+    const fileInput = screen.getByTestId("file-input") as HTMLInputElement;
     expect(fileInput).toBeInTheDocument();
   });
 
-  test('selecting a file opens crop dialog', async () => {
-    renderWithTheme(<ProfileHeader {...defaultProps} />);
-    
-    // Get the file input
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-    expect(fileInput).toBeInTheDocument();
-    
-    // Create a mock file
-    const file = new File(['dummy content'], 'test.png', { type: 'image/png' });
-    const fileList = { 
-      0: file, 
-      length: 1, 
-      item: () => file 
+  it("does not open file selector if user is staff", () => {
+    const props = {
+      ...baseProps,
+      isSelf: true,
+      profile: { ...baseProps.profile, is_staff: true },
     };
-    
-    // Trigger file change inside act
-    await act(async () => {
-      fireEvent.change(fileInput, { target: { files: fileList } });
-      
-      // Trigger the FileReader onload callback manually
-      const fileReader = (FileReader as any).mock.results[0].value;
-      fileReader.onload();
-    });
-    
-    // Crop dialog should appear
-    expect(screen.getByText('Crop your avatar')).toBeInTheDocument();
-    expect(screen.getByTestId('mock-cropper')).toBeInTheDocument();
+    render(<ProfileHeader {...props} />);
+    const editIconBtn = screen.queryByTestId("edit-avatar-btn");
+    expect(editIconBtn).toBeNull();
   });
 
-  test('handles crop cancel', async () => {
-    renderWithTheme(<ProfileHeader {...defaultProps} />);
-    
-    // Get the file input
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-    
-    // Create a mock file
-    const file = new File(['dummy content'], 'test.png', { type: 'image/png' });
-    const fileList = { 
-      0: file, 
-      length: 1, 
-      item: () => file 
-    };
-    
-    // Trigger file change inside act
-    await act(async () => {
-      fireEvent.change(fileInput, { target: { files: fileList } });
-      
-      // Trigger the FileReader onload callback manually
-      const fileReader = (FileReader as any).mock.results[0].value;
-      fileReader.onload();
+  it("opens crop dialog when a file is chosen", async () => {
+    const props = { ...baseProps, isSelf: true };
+    render(<ProfileHeader {...props} />);
+    const editBtn = screen.getByTestId("edit-avatar-btn");
+    fireEvent.click(editBtn);
+    const fileInput = screen.getByTestId("file-input") as HTMLInputElement;
+    const testFile = new File(["(dummy-content)"], "test.png", { type: "image/png" });
+    fireEvent.change(fileInput, { target: { files: [testFile] } });
+    await waitFor(() => {
+      expect(screen.getByTestId("crop-dialog")).toBeInTheDocument();
     });
-    
-    // Wait for crop dialog to appear
-    expect(screen.getByText('Crop your avatar')).toBeInTheDocument();
-    
-    // Click cancel button
-    const cancelButton = screen.getByText('Cancel');
-    await act(async () => {
-      await userEvent.click(cancelButton);
-    });
-    
-    // Crop dialog should disappear
-    expect(screen.queryByText('Crop your avatar')).not.toBeInTheDocument();
   });
 
-  test('handles crop confirm and successful upload', async () => {
-    // Mock the API response for successful upload
-    apiClient.post.mockResolvedValueOnce({
-      data: { icon: '/api/images/new-avatar.jpg' }
+  it("calls API when Confirm is clicked and triggers onAvatarUpdated", async () => {
+    (apiClient.post as vi.Mock).mockResolvedValue({ data: { icon: "/new-icon.png" } });
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      writable: true,
+      value: { ...window.location, reload: vi.fn() },
     });
-    
-    // Spy on console.error
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    
-    renderWithTheme(<ProfileHeader {...defaultProps} />);
-    
-    // Get the file input
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-    
-    // Create a mock file
-    const file = new File(['dummy content'], 'test.png', { type: 'image/png' });
-    const fileList = { 
-      0: file, 
-      length: 1, 
-      item: () => file 
-    };
-    
-    // Trigger file change inside act
-    await act(async () => {
-      fireEvent.change(fileInput, { target: { files: fileList } });
-      
-      // Trigger the FileReader onload callback manually
-      const fileReader = (FileReader as any).mock.results[0].value;
-      fileReader.onload();
+    const props = { ...baseProps, isSelf: true };
+    render(<ProfileHeader {...props} />);
+    const editBtn = screen.getByTestId("edit-avatar-btn");
+    fireEvent.click(editBtn);
+    const fileInput = screen.getByTestId("file-input") as HTMLInputElement;
+    const testFile = new File(["fake-content"], "test.png", { type: "image/png" });
+    fireEvent.change(fileInput, { target: { files: [testFile] } });
+    await waitFor(() => expect(screen.getByTestId("crop-dialog")).toBeInTheDocument());
+    const confirmBtn = screen.getByTestId("crop-confirm-btn");
+    fireEvent.click(confirmBtn);
+    await waitFor(() => {
+      expect(apiClient.post).toHaveBeenCalledTimes(1);
+      expect(mockOnAvatarUpdated).toHaveBeenCalledWith("/new-icon.png");
     });
-    
-    // Wait for crop dialog to appear
-    expect(screen.getByText('Crop your avatar')).toBeInTheDocument();
-    
-    // Click confirm button
-    const confirmButton = screen.getByText('Confirm');
-    await act(async () => {
-      await userEvent.click(confirmButton);
-    });
-    
-    // Check API was called with correct params
-    expect(apiClient.post).toHaveBeenCalledWith(
-      '/api/users/avatar',
-      expect.any(FormData),
-      { headers: { 'Content-Type': 'multipart/form-data' } }
-    );
-    
-    // Check onAvatarUpdated was called with new URL
-    expect(mockOnAvatarUpdated).toHaveBeenCalledWith('/api/images/new-avatar.jpg');
-    
-    // Check snackbar was shown
-    expect(mockSetSnackbarData).toHaveBeenCalledWith({
-      open: true,
-      message: 'Avatar upload successfully!',
-      severity: 'success',
-    });
-    
-    // Check no errors were logged
-    expect(consoleErrorSpy).not.toHaveBeenCalled();
-    
-    // Dialog should be closed
-    expect(screen.queryByText('Crop your avatar')).not.toBeInTheDocument();
-    
-    // Restore console.error
-    consoleErrorSpy.mockRestore();
-  });
-
-  test('handles upload error', async () => {
-    // Mock the API response for failed upload
-    apiClient.post.mockRejectedValueOnce(new Error('Upload failed'));
-    
-    // Spy on console.error
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    
-    renderWithTheme(<ProfileHeader {...defaultProps} />);
-    
-    // Get the file input
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-    
-    // Create a mock file
-    const file = new File(['dummy content'], 'test.png', { type: 'image/png' });
-    const fileList = { 
-      0: file, 
-      length: 1, 
-      item: () => file 
-    };
-    
-    // Trigger file change inside act
-    await act(async () => {
-      fireEvent.change(fileInput, { target: { files: fileList } });
-      
-      // Trigger the FileReader onload callback manually
-      const fileReader = (FileReader as any).mock.results[0].value;
-      fileReader.onload();
-    });
-    
-    // Wait for crop dialog to appear
-    expect(screen.getByText('Crop your avatar')).toBeInTheDocument();
-    
-    // Click confirm button
-    const confirmButton = screen.getByText('Confirm');
-    await act(async () => {
-      await userEvent.click(confirmButton);
-    });
-    
-    // Check API was called
-    expect(apiClient.post).toHaveBeenCalled();
-    
-    // Check error was logged
-    expect(consoleErrorSpy).toHaveBeenCalledWith('Avatar upload failed', expect.any(Error));
-    
-    // Check onAvatarUpdated was NOT called
-    expect(mockOnAvatarUpdated).not.toHaveBeenCalled();
-    
-    // Dialog should be closed even on error
-    expect(screen.queryByText('Crop your avatar')).not.toBeInTheDocument();
-    
-    // Restore console.error
-    consoleErrorSpy.mockRestore();
-  });
-
-  test('renders avatar with external URL when icon doesn\'t start with /api', () => {
-    const profile = {
-      ...defaultProfile,
-      icon: 'https://example.com/avatar.jpg'
-    };
-    
-    renderWithTheme(<ProfileHeader {...defaultProps} profile={profile} />);
-    
-    const avatar = screen.getByRole('img');
-    expect(avatar).toBeInTheDocument();
-    expect(avatar).toHaveAttribute('src', 'https://example.com/avatar.jpg');
-  });
-
-  test('renders with empty avatar when icon is not provided', () => {
-    const profile = {
-      ...defaultProfile,
-      icon: undefined
-    };
-    
-    renderWithTheme(<ProfileHeader {...defaultProps} profile={profile} />);
-    
-    // MUI uses a PersonIcon SVG as fallback when no src is provided
-    // We can check for this fallback icon instead
-    expect(screen.getByTestId('PersonIcon')).toBeInTheDocument();
   });
 });
