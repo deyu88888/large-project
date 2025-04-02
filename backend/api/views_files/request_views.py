@@ -1,5 +1,7 @@
+import json
 from datetime import timedelta
 from django.utils import timezone
+from api.serializers_files.request_serializers import SocietyRequestSerializer
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
@@ -15,7 +17,6 @@ class StartSocietyRequestView(APIView):
 
     def post(self, request):
         """Post request for a student to start a society"""
-        print("xxx: ", request.data)
         student, error = get_student_if_user_is_student(
             request.user, "request")
         if error:
@@ -48,9 +49,14 @@ class AdminSocietyRequestView(APIView):
             return error
 
         society_status = society_status.capitalize()
-        pending_societies = Society.objects.filter(status=society_status)
-        serializer = SocietySerializer(pending_societies, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+
+        if society_status in ["Pending", "Rejected"]:
+            queryset = SocietyRequest.objects.filter(intent="CreateSoc", approved=False if society_status == "Pending" else None)
+            serializer = SocietyRequestSerializer(queryset, many=True)
+        else:
+            queryset = Society.objects.filter(status=society_status)
+            serializer = SocietySerializer(queryset, many=True)
+        return Response(serializer.data, status=200)
 
     def put(self, request, society_id):
         """PUT request to update the approve/reject a society request - for admins."""
@@ -59,36 +65,36 @@ class AdminSocietyRequestView(APIView):
         if error:
             return error
 
-        society = Society.objects.filter(id=society_id).first()
-        if not society:
+        society_request = SocietyRequest.objects.filter(id=society_id, intent="CreateSoc").first()
+        if not society_request:
             return Response(
                 {"error": "Society request not found."},
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        serializer = SocietySerializer(
-            society, data=request.data, partial=True)
+        serializer = SocietyRequestSerializer(society_request, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
 
-            # Get society status for activity logging
-            society_status = serializer.validated_data.get("status")
-            action_type_map = {
-                "Approved": "Approve",
-                "Rejected": "Reject",
-                "Pending": "Update",
-            }
-            action_type = action_type_map.get(society_status, "Update")
+            approved_status = serializer.validated_data.get("approved")
 
-            # Create activity log entry
+            action_type_map = {
+                True: "Approve",
+                False: "Reject",
+                None: "Update",
+            }
+            action_type = action_type_map.get(approved_status, "Update")
+
             ActivityLog.objects.create(
                 action_type=action_type,
-                target_type="Society",
-                target_id=society.id,
-                target_name=society.name,
+                target_type="SocietyRequest",
+                target_id=society_request.id,
+                target_name=society_request.name,
                 performed_by=user,
                 timestamp=timezone.now(),
+                reason=f"{action_type}d by admin",
                 expiration_date=timezone.now() + timedelta(days=30),
+                original_data=json.dumps({"approved": approved_status}),
             )
             ActivityLog.delete_expired_logs()
 

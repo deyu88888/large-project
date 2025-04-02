@@ -3,7 +3,7 @@
 This is a **fullstack monorepo** containing:
 
 - **Frontend**: Vite + React + TypeScript + TailwindCSS + MUI
-- **Backend**: Django + ASGI + WebSockets + Daphne + SQLDB
+- **Backend**: Django + SQLDB
 - **Docker**: Development setup with Docker Compose
 - **CI/CD**: GitHub Actions in `.github/workflows/`
 - **Developer Manual**: Frontend in `frontend/README.md` and Backend in `backend/README.md`
@@ -54,7 +54,7 @@ make help
            ▼                                                   ▼
 ┌──────────────────────┐                      ┌────────────────────────┐
 │    Frontend (Vite)   │                      │   Backend (Django)     │
-│     React + Nginx    │                      │   ASGI + Daphne + WS   │
+│     React + Nginx    │                      │   
 └──────────────────────┘                      └────────────────────────┘
                                                         │
                                                         ▼

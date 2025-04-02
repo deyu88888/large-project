@@ -3,6 +3,7 @@ from django.utils import timezone
 from datetime import datetime, date, timedelta, time
 from django.db.models.fields.files import ImageFieldFile
 from django.forms.models import model_to_dict
+from api.models_files.request_models import SocietyRequest
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -23,6 +24,7 @@ class AdminBaseView(APIView):
     model_mapping = {
         "Student": Student,
         "Society": Society,
+        "SocietyRequest": SocietyRequest,
         "Event": Event,
         "Admin": User,
     }
@@ -234,26 +236,19 @@ class AdminRestoreView(AdminBaseView):
                     )
 
             supported_actions = ["Delete", "Approve", "Reject", "Update"]
-            if log_entry.action_type not in supported_actions:
-                return Response({"error": "Invalid action type."}, status=status.HTTP_400_BAD_REQUEST)
-            
+            original_data = {}
             if log_entry.action_type in ["Delete", "Update"]:
-                original_data_json = log_entry.original_data
-
-                if not original_data_json:
+                if not log_entry.original_data:
                     return Response({"error": "No original data found for restoration."}, status=status.HTTP_400_BAD_REQUEST)
-
                 try:
-                    original_data = json.loads(original_data_json)
+                    original_data = json.loads(log_entry.original_data)
                 except json.JSONDecodeError:
                     return Response({"error": "Error decoding original data."}, status=status.HTTP_400_BAD_REQUEST)
-            else:
-                original_data = {}
-                if log_entry.original_data:
-                    try:
-                        original_data = json.loads(log_entry.original_data)
-                    except json.JSONDecodeError:
-                        pass
+            elif log_entry.original_data:
+                try:
+                    original_data = json.loads(log_entry.original_data)
+                except json.JSONDecodeError:
+                    pass
 
             model = self.model_mapping.get(target_type)
             if not model:
@@ -291,8 +286,9 @@ class RestoreHandlerFactory:
             ("Update", "Event"): EventUpdateUndoHandler(),
             ("Update", "Admin"): AdminUpdateUndoHandler(),
             
-            ("Approve", "Society"): SocietyStatusChangeUndoHandler(),
-            ("Reject", "Society"): SocietyStatusChangeUndoHandler(),
+            ("Approve", "SocietyRequest"): SocietyStatusChangeUndoHandler(),
+            ("Reject", "SocietyRequest"): SocietyStatusChangeUndoHandler(),
+            ("Update", "SocietyRequest"): SocietyStatusChangeUndoHandler(),
             ("Approve", "Event"): EventStatusChangeUndoHandler(),
             ("Reject", "Event"): EventStatusChangeUndoHandler(),
         }

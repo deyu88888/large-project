@@ -1,9 +1,12 @@
 export type Society = {
     id: number;
     name: string;
-    societyMembers: number[];
+    society_members: number[];
     // roles: {};
-    president: number;
+    president: {
+      first_name: string;
+      last_name: string;
+    };
     description: string;
     category: string;
     social_media_links: Record<string, string>;

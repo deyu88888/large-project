@@ -1,288 +1,235 @@
-from rest_framework.test import APITestCase, APIClient
-from rest_framework import status
+import json
+import logging
 from django.urls import reverse
-from django.utils import timezone
-import sys
-from unittest.mock import MagicMock, patch
-sys.modules['transformers'] = MagicMock()
-sys.modules['transformers.utils.import_utils'] = MagicMock()
-sys.modules['transformers.models.bert.tokenization_bert_tf'] = MagicMock()
+from django.contrib.auth import get_user_model
+from rest_framework import status
+from rest_framework.test import APITestCase
+from unittest.mock import patch, MagicMock
 
-from api.models import (
-    User, Student, Society, SocietyNews, NewsPublicationRequest, Notification
-)
-import datetime
+from api.models import SocietyNews, NewsPublicationRequest, Society, Student
 
-class TestAdminNewsApprovalView(APITestCase):
+logger = logging.getLogger(__name__)
+
+class NewsPublicationRequestViewTests(APITestCase):
     def setUp(self):
-        self.client = APIClient()
-        
-        # Create admin user
-        self.admin_user = User.objects.create_user(
-            username="admin_user",
-            email="admin@example.com",
-            password="password123",
-            role="admin",
-            first_name="Admin",
-            last_name="User"
+        User = get_user_model()
+
+        self.user = User.objects.create_user(
+            username="normaluser",
+            password="normalpass",
+            email="normal@example.com"
         )
-        
-        # Create second admin user
-        self.admin_user2 = User.objects.create_user(
-            username="admin_user2",
-            email="admin2@example.com",
-            password="password123",
-            role="admin",
-            first_name="Admin2",
-            last_name="User"
-        )
-        
-        # Create regular user
-        self.regular_user = User.objects.create_user(
-            username="regular_user",
-            email="regular@example.com",
-            password="password123",
-            role="student",
-            first_name="Regular",
-            last_name="User"
-        )
-        
-        # Create student user
+
         self.student = Student.objects.create_user(
-            username="student_user",
+            username="studentuser",
+            password="studentpass",
             email="student@example.com",
-            password="password123",
-            first_name="Student",
-            last_name="User",
             major="Computer Science"
         )
-        
-        # Create society
+
+        self.admin = User.objects.create_user(
+            username="adminuser",
+            password="adminpass",
+            email="admin@example.com"
+        )
+        self.admin.role = "admin"
+        self.admin.save()
+
         self.society = Society.objects.create(
             name="Test Society",
-            description="A test society",
+            description="Test society",
             president=self.student,
-            approved_by=self.admin_user,
-            social_media_links={"Email": "society@example.com"}
+            social_media_links={}
         )
-        
-        self.student.president_of = self.society
-        self.student.save()
-        
-        # Create news posts
         self.news_post = SocietyNews.objects.create(
-            title="Test News",
-            content="This is test news content",
             society=self.society,
-            author=self.student,
+            title="Test News Post",
+            content="Some content",
             status="Draft"
         )
-        
-        self.news_post2 = SocietyNews.objects.create(
-            title="Another News",
-            content="More news content",
+        self.news_post.author = self.student
+        self.news_post.save()
+
+        pending_news = SocietyNews.objects.create(
             society=self.society,
-            author=self.student,
-            status="Draft"
+            title="Pending News",
+            content="Content pending",
+            status="PendingApproval"
         )
-        
-        # Create publication requests
-        self.pending_request = NewsPublicationRequest.objects.create(
-            news_post=self.news_post,
+        self.npr_pending = NewsPublicationRequest.objects.create(
+            news_post=pending_news,
             requested_by=self.student,
-            status="Pending"
+            status="Pending",
+            admin_notes=""
         )
-        
-        self.approved_request = NewsPublicationRequest.objects.create(
-            news_post=self.news_post2,
+
+        approved_news = SocietyNews.objects.create(
+            society=self.society,
+            title="Approved News",
+            content="Content approved",
+            status="Published"
+        )
+        self.npr_approved = NewsPublicationRequest.objects.create(
+            news_post=approved_news,
             requested_by=self.student,
             status="Approved",
-            reviewed_by=self.admin_user2,
-            admin_notes="Looks good!"
+            admin_notes="Approved by admin"
         )
-        
-        self.get_detail_url = lambda request_id: reverse('admin_news_approval', args=[request_id])
-    
-    def test_approve_request_unauthorized(self):
-        """Test that unauthorized users cannot approve requests"""
-        
-        response = self.client.put(
-            self.get_detail_url(self.pending_request.id),
-            {'status': 'Approved'},
-            format='json'
-        )
-        
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-    
-    def test_approve_request_non_admin(self):
-        """Test that non-admin users cannot approve requests"""
-        self.client.force_authenticate(user=self.regular_user)
-        
-        response = self.client.put(
-            self.get_detail_url(self.pending_request.id),
-            {'status': 'Approved'},
-            format='json'
-        )
-        
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertEqual(response.data, {
-            "error": "Only admins can approve or reject publication requests."
-        })
-    
-    def test_approve_nonexistent_request(self):
-        """Test handling of non-existent request ID"""
-        self.client.force_authenticate(user=self.admin_user)
-        
-        with patch('api.views_files.news_views.get_object_by_id_or_name', return_value=None):
-            response = self.client.put(
-                self.get_detail_url(9999),  
-                {'status': 'Approved'},
-                format='json'
-            )
-            
-            self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-            self.assertEqual(response.data, {
-                "error": "Publication request not found"
-            })
-    
-    def test_approve_with_invalid_action(self):
-        """Test validation for invalid action value"""
-        self.client.force_authenticate(user=self.admin_user)
-        
-        response = self.client.put(
-            self.get_detail_url(self.pending_request.id),
-            {'status': 'Invalid_Action'},  
-            format='json'
-        )
-        
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data, {
-            "error": "Invalid action. Must be 'Approved' or 'Rejected'"
-        })
-    
-    def test_approve_publication_request(self):
-        """Test successful approval of a publication request"""
-        self.client.force_authenticate(user=self.admin_user)
-        
-        fixed_time = datetime.datetime(2025, 3, 27, 12, 0, 0, tzinfo=datetime.timezone.utc)
-        original_now = timezone.now
-        
-        try:
-            timezone.now = lambda: fixed_time
-            
-            self.assertEqual(self.pending_request.status, "Pending")
-            self.assertEqual(self.news_post.status, "Draft")
-            
-            response = self.client.put(
-                self.get_detail_url(self.pending_request.id),
-                {
-                    'status': 'Approved',
-                    'admin_notes': 'Excellent news post!'
-                },
-                format='json'
-            )
-            
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
-            
-            self.pending_request.refresh_from_db()
-            self.news_post.refresh_from_db()
-            
-            self.assertEqual(self.pending_request.status, "Approved")
-            self.assertEqual(self.pending_request.reviewed_by, self.admin_user)
-            self.assertEqual(self.pending_request.admin_notes, "Excellent news post!")
-            self.assertIsNotNone(self.pending_request.reviewed_at)
-            
-            self.assertEqual(self.news_post.status, "Published")
-            self.assertIsNotNone(self.news_post.published_at)
-            
-            notification = Notification.objects.filter(
-                header="News Publication Approved",
-                for_user=self.student
-            ).first()
-            
-            self.assertIsNotNone(notification)
-            self.assertTrue(notification.is_important)
-            expected_body = f"Your news publication request for '{self.news_post.title}' has been approved."
-            self.assertEqual(notification.body, expected_body)
-            
-        finally:
-            timezone.now = original_now
-    
-    def test_reject_publication_request(self):
-        self.client.force_authenticate(user=self.admin_user)
-        
-        fixed_time = datetime.datetime(2025, 3, 27, 12, 0, 0, tzinfo=datetime.timezone.utc)
-        original_now = timezone.now
-        
-        try:
-            timezone.now = lambda: fixed_time
-            
-            response = self.client.put(
-                self.get_detail_url(self.pending_request.id),
-                {
-                    'status': 'Rejected',
-                    'admin_notes': 'Needs more details'
-                },
-                format='json'
-            )
-            
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
-            
-            self.pending_request.refresh_from_db()
-            self.news_post.refresh_from_db()
-            
-            self.assertEqual(self.pending_request.status, "Rejected")
-            self.assertEqual(self.pending_request.reviewed_by, self.admin_user)
-            self.assertEqual(self.pending_request.admin_notes, "Needs more details")
-            
-            self.assertEqual(self.news_post.status, "Rejected")
-            
-            notification = Notification.objects.filter(
-                header="News Publication Rejected",
-                for_user=self.student
-            ).first()
-            
-            self.assertIsNotNone(notification)
-            self.assertTrue(notification.is_important)
-            expected_body = f"Your news publication request for '{self.news_post.title}' has been rejected. Admin notes: Needs more details"
-            self.assertEqual(notification.body, expected_body)
-            
-        finally:
-            timezone.now = original_now
-    
-    def test_reject_without_admin_notes(self):
-        """Test rejection without admin notes"""
-        self.client.force_authenticate(user=self.admin_user)
-        
-        response = self.client.put(
-            self.get_detail_url(self.pending_request.id),
-            {'status': 'Rejected'},  
-            format='json'
-        )
-        
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        
-        notification = Notification.objects.filter(
-            header="News Publication Rejected",
-            for_user=self.student
-        ).first()
-        
-        self.assertIsNotNone(notification)
-        expected_body = f"Your news publication request for '{self.news_post.title}' has been rejected."
-        self.assertEqual(notification.body, expected_body)
 
-    def tearDown(self):
-        # Clean up files
-        for society in Society.objects.all():
-            if society.icon:
-                try:
-                    society.icon.delete(save=False)
-                except:
-                    pass
-        
-        for student in Student.objects.all():
-            if student.icon:
-                try:
-                    student.icon.delete(save=False)
-                except:
-                    pass
+        superseded_news = SocietyNews.objects.create(
+            society=self.society,
+            title="Superseded News",
+            content="Content superseded",
+            status="Rejected"
+        )
+        self.npr_superseded = NewsPublicationRequest.objects.create(
+            news_post=superseded_news,
+            requested_by=self.student,
+            status="Superseded_Approved",
+            admin_notes="Superseded request"
+        )
+
+        self.url = reverse("news_publication_request")
+        logger.debug("Setup: news_post id=%s, title=%s", self.news_post.id, self.news_post.title)
+
+    def test_post_not_student(self):
+        self.client.force_authenticate(user=self.user)
+        data = {"news_post": self.news_post.id}
+        response = self.client.post(self.url, data, format="json")
+        logger.debug("test_post_not_student response: %s", response.data)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data.get("error"), "Only students can submit publication requests")
+
+    def test_post_missing_news_post_id(self):
+        self.client.force_authenticate(user=self.student)
+        response = self.client.post(self.url, {}, format="json")
+        logger.debug("test_post_missing_news_post_id response: %s", response.data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data.get("error"), "News post ID is required")
+
+    @patch("api.views_files.news_views.get_object_by_id_or_name")
+    def test_post_news_not_found(self, mock_get_object):
+        self.client.force_authenticate(user=self.student)
+        mock_get_object.return_value = None
+        data = {"news_post": 9999}
+        response = self.client.post(self.url, data, format="json")
+        logger.debug("test_post_news_not_found response: %s", response.data)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.data.get("error"), "News post not found")
+
+    @patch("api.views_files.news_views.has_society_management_permission")
+    @patch("api.views_files.news_views.get_object_by_id_or_name")
+    def test_post_no_permission(self, mock_get_object, mock_has_permission):
+        self.client.force_authenticate(user=self.student)
+        self.news_post.author = None
+        self.news_post.save()
+        mock_get_object.return_value = self.news_post
+        mock_has_permission.return_value = False
+
+        data = {"news_post": self.news_post.id}
+        response = self.client.post(self.url, data, format="json")
+        logger.debug("test_post_no_permission response: %s", response.data)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data.get("error"), "You do not have permission to publish this news post")
+
+    @patch("api.views_files.news_views.NewsPublicationRequest.objects.filter")
+    @patch("api.views_files.news_views.cancel_pending_requests")
+    @patch("api.views_files.news_views.mark_previous_requests_superseded")
+    @patch("api.views_files.news_views.has_society_management_permission")
+    @patch("api.views_files.news_views.get_object_by_id_or_name")
+    def test_post_existing_pending_request(self, mock_get_object, mock_has_permission, mock_mark_prev, mock_cancel_pending, mock_filter):
+        self.client.force_authenticate(user=self.student)
+        mock_get_object.return_value = self.news_post
+        mock_qs = MagicMock()
+        mock_qs.exists.return_value = True
+        mock_filter.return_value = mock_qs
+
+        data = {"news_post": self.news_post.id}
+        response = self.client.post(self.url, data, format="json")
+        logger.debug("test_post_existing_pending_request response: %s", response.data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data.get("error"), "A publication request for this news post is already pending")
+
+    @patch("api.views_files.news_views.cancel_pending_requests")
+    @patch("api.views_files.news_views.mark_previous_requests_superseded")
+    @patch("api.views_files.news_views.has_society_management_permission")
+    @patch("api.views_files.news_views.get_object_by_id_or_name")
+    @patch("api.views_files.news_views.NewsPublicationRequest.objects.filter")
+    def test_post_success(self, mock_filter, mock_get_object, mock_has_permission, mock_mark_prev, mock_cancel_pending):
+        self.client.force_authenticate(user=self.student)
+        mock_get_object.return_value = self.news_post
+        mock_has_permission.return_value = True
+        mock_mark_prev.return_value = None
+        mock_cancel_pending.return_value = None
+
+        mock_qs = MagicMock()
+        mock_qs.exists.return_value = False
+        mock_filter.return_value = mock_qs
+
+        data = {"news_post": self.news_post.id}
+        response = self.client.post(self.url, data, format="json")
+        logger.debug("test_post_success response: %s", response.data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertIn("id", response.data)
+        self.assertEqual(response.data.get("news_post"), self.news_post.id)
+        self.assertEqual(response.data.get("status"), "Pending")
+
+    def test_get_requests_as_student(self):
+        self.client.force_authenticate(user=self.student)
+        response = self.client.get(self.url)
+        logger.debug("test_get_requests_as_student response: %s", response.data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        requests = response.data
+        for req in requests:
+            self.assertNotIn(req["status"], ["Superseded_Approved", "Superseded_Rejected"])
+        self.assertEqual(len(requests), 2)
+
+    def test_get_requests_as_admin_default(self):
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(self.url)
+        logger.debug("test_get_requests_as_admin_default response: %s", response.data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for req in response.data:
+            self.assertEqual(req["status"], "Pending")
+        self.assertEqual(len(response.data), 1)
+
+    def test_get_requests_as_admin_all_statuses(self):
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(self.url + "?all_statuses=true")
+        logger.debug("test_get_requests_as_admin_all_statuses response: %s", response.data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 3)
+
+    def test_get_requests_unauthorized(self):
+        self.client.force_authenticate(user=self.user)
+        response = self.client.get(self.url)
+        logger.debug("test_get_requests_unauthorized response: %s", response.data)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data.get("error"), "Unauthorized")
+
+    @patch("api.views_files.news_views.cancel_pending_requests")
+    @patch("api.views_files.news_views.mark_previous_requests_superseded")
+    @patch("api.views_files.news_views.has_society_management_permission")
+    @patch("api.views_files.news_views.get_object_by_id_or_name")
+    @patch("api.views_files.news_views.NewsPublicationRequest.objects.filter")
+    def test_post_with_last_rejection_date(self, mock_filter, mock_get_object, mock_has_permission, mock_mark_prev, mock_cancel_pending):
+        self.client.force_authenticate(user=self.student)
+        from datetime import datetime
+        dt = datetime(2025, 4, 1, 15, 30)
+        self.news_post.last_rejection_date = dt
+
+        mock_get_object.return_value = self.news_post
+        mock_has_permission.return_value = True
+        mock_mark_prev.return_value = None
+        mock_cancel_pending.return_value = None
+        mock_qs = MagicMock()
+        mock_qs.exists.return_value = False
+        mock_filter.return_value = mock_qs
+
+        data = {"news_post": self.news_post.id}
+        response = self.client.post(self.url, data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        expected_notes = f"Resubmission of previously rejected post (rejected on {dt.strftime('%Y-%m-%d %H:%M')})"
+        self.assertEqual(response.data.get("admin_notes"), expected_notes)
+

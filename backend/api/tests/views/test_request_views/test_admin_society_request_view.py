@@ -1,76 +1,108 @@
+import json
+from django.urls import reverse
 from unittest.mock import patch
-from django.utils import timezone
-from datetime import timedelta
-from rest_framework.test import APITestCase
-from rest_framework import status
-from api.models import Society, User, ActivityLog, Student
-import uuid
 
-class TestAdminSocietyRequestView(APITestCase):
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.test import APITestCase
+from api.models import SocietyRequest, Society, Student, User
+
+
+class AdminSocietyRequestViewTests(APITestCase):
     def setUp(self):
-        self.admin_user = User.objects.create_user(
+        self.admin = User.objects.create_user(
             username="admin",
-            email=f"admin_{uuid.uuid4().hex}@example.com",
             password="adminpass",
             role="admin",
-            is_super_admin=True,
+            email="admin@example.com",
             is_staff=True
         )
-        self.regular_user = User.objects.create_user(
+        self.student = Student.objects.create_user(
             username="student",
-            email=f"student_{uuid.uuid4().hex}@example.com",
             password="studentpass",
-            role="student"
+            email="student@example.com",
+            major="CS"
         )
-        self.president_user = Student.objects.create_user(
-            username="president",
-            email=f"president_{uuid.uuid4().hex}@example.com",
-            password="presidentpass",
-            role="student"
+        self.pending_request = SocietyRequest.objects.create(
+            name="New Society",
+            description="test",
+            from_student=self.student,
+            intent="CreateSoc",
+            approved=False
         )
-        self.pending_society = Society.objects.create(
-            name="Pending Society",
-            description="Pending society",
-            status="Pending",
-            president=self.president_user,
-            approved_by=self.admin_user
-        )
-        self.approved_society = Society.objects.create(
-            name="Approved Society",
-            description="Approved society",
+        self.society = Society.objects.create(
+            name="ApprovedSoc",
+            description="desc",
+            president=self.student,
             status="Approved",
-            president=self.president_user,
-            approved_by=self.admin_user
+            social_media_links={}
         )
+        self.get_url = reverse("request_society", args=["Pending"])
+        self.put_url = reverse("request_society", args=[self.pending_request.id])
 
-    def test_admin_put_approve_society_request(self):
-        self.client.force_authenticate(user=self.admin_user)
-        update_data = {"status": "Approved"}
-        response = self.client.put(
-            f"/api/admin/society/request/pending/{self.pending_society.id}",
-            update_data,
-            format="json"
-        )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["data"]["status"], "Approved")
-        self.assertTrue(ActivityLog.objects.filter(
-            action_type="Approve",
-            target_id=self.pending_society.id,
-            performed_by=self.admin_user
-        ).exists())
+    @patch("api.views_files.request_views.get_admin_if_user_is_admin")
+    def test_get_pending_requests_as_admin(self, mock_get_admin):
+        mock_get_admin.return_value = (self.admin, None)
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(self.get_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertGreaterEqual(len(response.data), 1)
 
-    def test_admin_put_reject_society_request(self):
-        self.client.force_authenticate(user=self.admin_user)
-        update_data = {"status": "Rejected"}
-        response = self.client.put(
-            f"/api/admin/society/request/pending/{self.pending_society.id}",
-            update_data,
-            format="json"
+    @patch("api.views_files.request_views.get_admin_if_user_is_admin")
+    def test_get_societies_by_status(self, mock_get_admin):
+        approved_url = reverse("request_society", args=["Approved"])
+        mock_get_admin.return_value = (self.admin, None)
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(approved_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertGreaterEqual(len(response.data), 1)
+
+    @patch("api.views_files.request_views.get_admin_if_user_is_admin")
+    def test_get_permission_denied(self, mock_get_admin):
+        mock_get_admin.return_value = (None, Response({"error": "Unauthorized"}, status=403))
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(self.get_url)
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.data["error"], "Unauthorized")
+
+    @patch("api.views_files.request_views.get_admin_if_user_is_admin")
+    def test_put_update_success(self, mock_get_admin):
+        mock_get_admin.return_value = (self.admin, None)
+        self.client.force_authenticate(user=self.admin)
+        data = {"approved": True}
+        response = self.client.put(self.put_url, data=json.dumps(data), content_type="application/json")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["message"], "Society request updated successfully.")
+        self.assertEqual(response.data["data"]["approved"], True)
+
+    @patch("api.views_files.request_views.get_admin_if_user_is_admin")
+    def test_put_request_not_found(self, mock_get_admin):
+        mock_get_admin.return_value = (self.admin, None)
+        self.client.force_authenticate(user=self.admin)
+        bad_url = reverse("request_society", args=[9999])
+        response = self.client.put(bad_url, {"approved": True})
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.data["error"], "Society request not found.")
+
+    @patch("api.views_files.request_views.get_admin_if_user_is_admin")
+    def test_put_invalid_data(self, mock_get_admin):
+        mock_get_admin.return_value = (self.admin, None)
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.put(self.put_url, {"approved": "not_a_boolean"})
+        self.assertEqual(response.status_code, 400)
+
+    @patch("api.views_files.request_views.get_admin_if_user_is_admin")
+    def test_put_permission_denied(self, mock_get_admin):
+        error_response = Response(
+            {"error": "You are not authorized to approve."},
+            status=status.HTTP_403_FORBIDDEN
         )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["data"]["status"], "Rejected")
-        self.assertTrue(ActivityLog.objects.filter(
-            action_type="Reject",
-            target_id=self.pending_society.id,
-            performed_by=self.admin_user
-        ).exists())
+        error_response.__bool__ = lambda self: True
+        mock_get_admin.return_value = (None, error_response)
+
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.put(f"/api/admin/society/request/pending/{self.pending_request.id}", {"approved": True})
+
+        print("DEBUG put permission denied:", response.data)
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.data["error"], "You are not authorized to approve.")

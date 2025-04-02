@@ -1,3 +1,6 @@
+from unittest.mock import patch
+
+from rest_framework.response import Response
 from rest_framework.test import APITestCase
 from rest_framework import status
 from django.contrib.auth import get_user_model
@@ -113,3 +116,43 @@ class RequestJoinSocietyViewTests(APITestCase):
         self.client.force_authenticate(user=None)
         response = self.client.post(f"/api/society/join/{self.society1.id}/")
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    @patch("api.views_files.request_views.get_student_if_user_is_student")
+    def test_get_joinable_societies_student_check_failed(self, mock_get_student):
+        mock_response = Response(
+            {"error": "You must be a student to join."},
+            status=status.HTTP_403_FORBIDDEN
+        )
+        mock_response.__bool__ = lambda self: True
+        mock_get_student.return_value = (None, mock_response)
+
+        self.client.force_authenticate(user=self.student)
+        response = self.client.get("/api/society/join/")
+
+        print("DEBUG get error response:", response.data)
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.data["error"], "You must be a student to join.")
+
+    @patch("api.views_files.request_views.get_student_if_user_is_student")
+    def test_post_join_society_student_check_failed(self, mock_get_student):
+        error_response = Response(
+            {"error": "You must be a student to join."},
+            status=status.HTTP_403_FORBIDDEN
+        )
+        error_response.__bool__ = lambda self: True
+        mock_get_student.return_value = (None, error_response)
+
+        self.client.force_authenticate(user=self.student)
+        response = self.client.post(f"/api/society/join/{self.society1.id}/")
+
+        print("DEBUG post error response:", response.data)
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.data["error"], "You must be a student to join.")
+
+    def test_post_join_society_already_member_returns_400(self):
+        self.society1.members.add(self.student)
+
+        self.client.force_authenticate(user=self.student)
+        response = self.client.post(f"/api/society/join/{self.society1.id}/")
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["error"], "You are already a member of this society.")
