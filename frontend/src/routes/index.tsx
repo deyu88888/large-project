@@ -19,7 +19,6 @@ const ProfilePage = lazy(() => import("../pages/Profile.tsx"));
 const StudentDashboard = lazy(() => import("../pages/Student/StudentDashboard"));
 const MySocieties = lazy(() => import("../pages/Student/MyJoinedSocieties"));
 const ViewEvents = lazy(() => import("../pages/Student/MyJoinedEvents"));
-const ViewNews = lazy(() => import("../pages/Student/ViewNews"));
 const ViewNotifications = lazy(() => import("../pages/Student/ViewNotifications"));
 const ViewInbox = lazy(() => import("../pages/Student/ViewInbox"));
 const StartSociety = lazy(() => import("../pages/Student/StartSociety"));
@@ -139,7 +138,6 @@ const routes = [
           { path: "profile", element: <PageWithTitle title="My Profile"><ProfilePage /></PageWithTitle> },
           { path: "my-societies", element: <PageWithTitle title="My Societies"><MySocieties /></PageWithTitle> },
           { path: "view-events", element: <PageWithTitle title="Upcoming Events"><ViewEvents /></PageWithTitle> },
-          { path: "view-news", element: <PageWithTitle title="News"><ViewNews /></PageWithTitle> },
           { path: "view-notifications", element: <PageWithTitle title="Notifications"><ViewNotifications /></PageWithTitle> },
           { path: "view-inbox", element: <PageWithTitle title="Inbox"><ViewInbox /></PageWithTitle> },
           { path: "start-society", element: <PageWithTitle title="Start a Society"><StartSociety /></PageWithTitle> },

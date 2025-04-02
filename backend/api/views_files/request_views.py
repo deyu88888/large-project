@@ -17,7 +17,6 @@ class StartSocietyRequestView(APIView):
 
     def post(self, request):
         """Post request for a student to start a society"""
-        print("xxx: ", request.data)
         student, error = get_student_if_user_is_student(
             request.user, "request")
         if error:
