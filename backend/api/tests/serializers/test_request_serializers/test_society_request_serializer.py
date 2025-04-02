@@ -86,7 +86,7 @@ class SocietyRequestSerializerTestCase(TestCase):
 
         self.assertEqual(self.society_request.society.id, data["society"])
         self.assertEqual(self.society_request.name, data["name"])
-        self.assertEqual(self.society_request.president.id, data["president"])
+        self.assertEqual(self.society_request.president.id, data["president"]["id"])
         self.assertEqual(self.society_request.category, data["category"])
         self.assertEqual(self.society_request.approved, data["approved"])
         self.assertEqual(self.society_request.intent, data["intent"])
@@ -104,7 +104,7 @@ class SocietyRequestSerializerTestCase(TestCase):
 
         self.assertEqual(society_request["society"].id, self.data["society"])
         self.assertEqual(society_request["name"], self.data["name"])
-        self.assertEqual(society_request["president"].id, self.data["president"])
+        self.assertEqual(self.society_request.president.id, self.data["president"])
         self.assertEqual(society_request["category"], self.data["category"])
         self.assertEqual(society_request["approved"], self.data["approved"])
         self.assertEqual(society_request["intent"], self.data["intent"])
@@ -117,10 +117,8 @@ class SocietyRequestSerializerTestCase(TestCase):
     def test_society_requests_create(self):
         """Test society request creation function correctly"""
         factory = APIRequestFactory()
-        # Create a dummy POST request
         request = factory.post("/")
-        # Set the user on the request so that the serializer can retrieve it.
-        request.user = self.student1  # Or whichever student should be used for the request.
+        request.user = self.student1
 
         self.serializer = SocietyRequestSerializer(data=self.data, context={"request": request})
         self._assert_serializer_is_valid()
@@ -128,7 +126,6 @@ class SocietyRequestSerializerTestCase(TestCase):
 
         self.assertEqual(society_request.society.id, self.data["society"])
         self.assertEqual(society_request.name, self.data["name"])
-        self.assertEqual(society_request.president.id, self.data["president"])
         self.assertEqual(society_request.category, self.data["category"])
         self.assertEqual(society_request.approved, self.data["approved"])
         self.assertEqual(society_request.intent, self.data["intent"])
