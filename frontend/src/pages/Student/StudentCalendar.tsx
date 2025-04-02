@@ -793,11 +793,24 @@ function StudentCalendar({
           {memoizedEvents.length === 0 ? (
             <NoEventsMessage styleProps={styleProps} />
           ) : (
-            <div className="relative p-1 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-400 rounded-3xl shadow-2xl transition-transform duration-500 hover:scale-105 hover:shadow-3xl">
+            <div className="relative p-1 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-400 rounded-3xl shadow-2xl transition-transform duration-500">
               <div
                 className="bg-white/90 backdrop-blur-sm rounded-3xl p-6"
                 style={{ backgroundColor: colours.primary[400] }}
               >
+                <style
+                  dangerouslySetInnerHTML={{
+                    __html: `
+                      .rbc-event {
+                        transition: all 0.2s ease-in-out;
+                      }
+                      .rbc-event:hover {
+                        transform: translateY(-1px);
+                        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+                      }
+                    `,
+                  }}
+                />
                 <CalendarContainer
                   events={memoizedEvents}
                   handleSelectEvent={handleSelectEvent}
