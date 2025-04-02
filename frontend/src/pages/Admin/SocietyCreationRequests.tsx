@@ -7,6 +7,7 @@ import { useSettingsStore } from "../../stores/settings-store";
 import { updateRequestStatus } from "../../api/requestApi";
 import { apiPaths } from "../../api";
 import { fetchPendingRequests } from "./utils";
+import { SocietyPreview } from "../../components/SocietyPreview";
 import {
   Society,
   ProcessedSociety,
@@ -15,15 +16,17 @@ import {
   NotificationProps,
   TruncatedCellProps,
   EmptyStateProps,
-  DataGridContainerProps
+  DataGridContainerProps,
+  SocietyData
 } from "../../types/admin/SocietyCreationRequests";
+import { mapSocietyRequestToSociety } from "../../utils/mapper";
 
 const processSocietyMembers = (society: Society): ProcessedSociety => {
   return {
     ...society,
     society_members: Array.isArray(society.society_members)
       ? society.society_members.join(", ")
-      : society.society_members as string,
+      : String(society.society_members),
   };
 };
 
@@ -55,14 +58,22 @@ const TruncatedCell: React.FC<TruncatedCellProps> = ({ value }) => {
   );
 };
 
-const ActionButtons: React.FC<ActionButtonsProps> = ({ societyId, onStatusChange }) => {
+const ActionButtons: React.FC<ActionButtonsProps> = ({ societyId, society, onStatusChange, onView }) => {
   return (
-    <Box sx={{ display: 'flex', gap: 1 }}>
+    <Box>
+      <Button
+        variant="contained"
+        color="primary"
+        onClick={() => onView(society)}
+        sx={{ marginRight: "8px" }}
+      >
+        View
+      </Button>
       <Button
         variant="contained"
         color="success"
         onClick={() => onStatusChange(societyId, "Approved")}
-        size="small"
+        sx={{ marginRight: "8px" }}
       >
         Accept
       </Button>
@@ -70,7 +81,6 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({ societyId, onStatusChange
         variant="contained" 
         color="error" 
         onClick={() => onStatusChange(societyId, "Rejected")}
-        size="small"
       >
         Reject
       </Button>
@@ -166,36 +176,39 @@ const DataGridContainer: React.FC<DataGridContainerProps> = ({
 };
 
 const createSocietyColumns = (
-  handleStatusChange: (id: number, status: "Approved" | "Rejected") => void
-): GridColDef[] => {
-  return [
-    { field: "id", headerName: "ID", flex: 0.3 },
-    { field: "name", headerName: "Name", flex: 1 },
-    { 
-      field: "description", 
-      headerName: "Description", 
-      flex: 1,
+  handleStatusChange: (id: number, status: "Approved" | "Rejected") => Promise<void>,
+  handleViewSociety: (society: SocietyData) => void
+): GridColDef[] => [
+  { field: "id", headerName: "ID", flex: 0.3 },
+  { field: "name", headerName: "Name", flex: 1 },
+  { 
+    field: "president", 
+    headerName: "President", 
+    flex: 1,
+    renderCell: (params) => {
+      const president = params.value;
+      return president ? `${president.first_name} ${president.last_name}` : "Unassigned";
     },
-    { field: "president", headerName: "President", flex: 1 ,
-      renderCell: (params) => `${params.value.first_name} ${params.value.last_name}`,
-    },
-    { field: "category", headerName: "Category", flex: 1 },
-    {
-      field: "actions",
-      headerName: "Actions",
-      width: 170,
-      minWidth: 170,
-      sortable: false,
-      filterable: false, 
-      renderCell: (params: GridRenderCellParams<any, Society>) => (
-        <ActionButtons 
-          societyId={params.row.id} 
-          onStatusChange={handleStatusChange} 
-        />
-      ),
-    },
-  ];
-};
+  },
+  { field: "category", headerName: "Category", flex: 1 },
+  {
+    field: "actions",
+    headerName: "Actions",
+    flex: 1.4,
+    width: 255,
+    minWidth: 255,
+    sortable: false,
+    filterable: false,
+    renderCell: (params: GridRenderCellParams<any>) => (
+      <ActionButtons
+        societyId={params.row.id}
+        society={params.row}
+        onStatusChange={handleStatusChange}
+        onView={handleViewSociety}
+      />
+    ),
+  },
+];
 
 const SocietyCreationRequests: React.FC = () => {
   const theme = useTheme();
@@ -210,6 +223,9 @@ const SocietyCreationRequests: React.FC = () => {
     message: '',
     severity: 'success'
   });
+
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [selectedSociety, setSelectedSociety] = useState<SocietyData | null>(null);
   
   const fetchSocieties = useCallback(async () => {
     try {
@@ -247,6 +263,15 @@ const SocietyCreationRequests: React.FC = () => {
     );
   }, []);
 
+  const handleViewSociety = useCallback((society: SocietyData) => {
+    setSelectedSociety(society);
+    setPreviewOpen(true);
+  }, []);
+
+  const handleClosePreview = useCallback(() => {
+    setPreviewOpen(false);
+  }, []);
+
   const handleStatusChange = useCallback(async (id: number, status: "Approved" | "Rejected") => {
     try {
       updateSocietiesAfterStatusChange(id);
@@ -279,20 +304,34 @@ const SocietyCreationRequests: React.FC = () => {
     [processedSocieties, searchTerm]
   );
 
+  const societyData = useMemo(() => {
+    return (filteredSocieties ?? []).map(mapSocietyRequestToSociety);
+  }, [filteredSocieties]);
+
   const columns = useMemo(() => 
-    createSocietyColumns(handleStatusChange),
-    [handleStatusChange]
+    createSocietyColumns(handleStatusChange, handleViewSociety),
+    [handleStatusChange, handleViewSociety]
   );
 
   return (
     <>
       <DataGridContainer 
-        societies={filteredSocieties}
+        societies={processedSocieties}
         columns={columns}
         colors={colors}
         loading={loading}
         drawer={drawer}
       />
+
+      {selectedSociety && (
+        <SocietyPreview
+          open={previewOpen}
+          onClose={handleClosePreview}
+          society={mapSocietyRequestToSociety(selectedSociety)} loading={false} joined={0} onJoinSociety={function (societyId: number): void {
+            throw new Error("Function not implemented.");
+          }}               
+        />
+      )}
 
       <NotificationAlert 
         notification={notification}

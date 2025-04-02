@@ -387,7 +387,6 @@ const SocietyForm: React.FC<SocietyFormProps> = ({
                 name="president"
                 value={
                   formData.president
-                  // @ts-expect-error:
                     ? `${formData.president.first_name} ${formData.president.last_name}`
                     : ""
                 }

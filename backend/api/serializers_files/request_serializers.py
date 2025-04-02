@@ -4,6 +4,7 @@ import json
 from api.models import AdminReportRequest, Society, Event, EventModule, Request, SocietyRequest, SocietyShowreelRequest, \
     EventRequest, UserRequest, ReportReply, NewsPublicationRequest
 from api.serializers_files.serializers_utility import is_user_student, get_report_reply_chain
+from api.serializers_files.user_serializers import StudentSerializer
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
 from api.serializers import EventSerializer
@@ -56,6 +57,7 @@ class SocietyRequestSerializer(RequestSerializer):
     Serializer for the SocietyRequest model
     """
     showreel_images_request = SocietyShowreelRequestSerializer(many=True, required=False)
+    president = StudentSerializer(source="from_student", read_only=True)
 
     class Meta:
         """SocietyRequestSerializer meta data"""
