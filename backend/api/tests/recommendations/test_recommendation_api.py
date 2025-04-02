@@ -146,11 +146,20 @@ class RecommendationAPITestCase(TestCase):
             feedback_data,
             format='json'
         )
-
-        self.assertEqual(response.status_code, 200)
-        self.assertIn('message', response.data)
-        self.assertIn('society_id', response.data)
-        self.assertIn('timestamp', response.data)
-        
-        self.assertEqual(response.data['society_id'], non_member_society.id)
+        self.assertEqual(response.status_code, 201)
+        self.assertIn('id', response.data)
+        self.assertIn('student', response.data)
+        self.assertIn('society', response.data)
+        self.assertIn('rating', response.data)
+        self.assertIn('relevance', response.data)
+        self.assertIn('comment', response.data)
+        self.assertIn('is_joined', response.data)
+        self.assertIn('created_at', response.data)
+        self.assertIn('updated_at', response.data)
+        self.assertEqual(response.data['student'], self.student.id)
+        self.assertEqual(response.data['society'], non_member_society.id)
+        self.assertEqual(response.data['rating'], 4)
+        self.assertEqual(response.data['relevance'], 5)
+        self.assertEqual(response.data['comment'], 'This is a great recommendation!')
+        self.assertEqual(response.data['is_joined'], True)
 
