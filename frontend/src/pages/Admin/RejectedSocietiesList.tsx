@@ -38,9 +38,14 @@ const RejectedSocietiesList: React.FC = () => {
   const columns: GridColDef[] = [
     { field: "id", headerName: "ID", flex: 0.5 },
     { field: "name", headerName: "Name", flex: 1 },
+    { field: "president", headerName: "Student", flex: 1 ,
+      renderCell: (params) => {
+        const president = params.value;
+        return president ? `${president.first_name} ${president.last_name}` : "Unassigned";
+      },
+    },
     { field: "description", headerName: "Description", flex: 1 },
     { field: "category", headerName: "Category", flex: 1 },
-    { field: "membershipRequirements", headerName: "Membership Requirements", flex: 1 },
   ];
 
   const filteredSocieties = useMemo(
