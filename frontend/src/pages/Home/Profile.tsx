@@ -1,4 +1,3 @@
-// Refactored
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Container, Paper, Box, Button } from "@mui/material";
