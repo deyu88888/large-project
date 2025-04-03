@@ -1,258 +1,205 @@
 \chapter{Design and Implementation}
 \label{chap:design-and-implementation}
 
-This chapter discusses the key design and implementation decisions made during the 
-development of our university society management platform. We explore the architectural
-choices, component organization, and significant implementation strategies that shaped
-our system.
+This chapter covers the main design and implementation choices we made while building our university society platform. We'll look at our system architecture, key design decisions, and how we tackled various technical challenges.
 
 \section{Architecture}
 
 \subsection{Overall System Architecture}
 
-We implemented a modern client-server architecture using a clear separation between
-frontend and backend components. This separation follows the principles of the 
-Model-View-Controller (MVC) pattern, which promotes modularity and maintainability
-by isolating different aspects of the application. Our system architecture consists of:
+We built our system using a client-server architecture that keeps the frontend and backend separate. This follows the Model-View-Controller (MVC) pattern, which makes the system more modular and easier to maintain. Our architecture has three main parts:
 
 \begin{itemize}
-    \item \textbf{Frontend Layer}: A React-based single-page application that handles
-    user interface rendering and client-side logic
-    \item \textbf{Backend Layer}: A Django-based REST API that provides data services,
-    business logic, and database interactions
-    \item \textbf{Database Layer}: Persistent storage for all application data
+    \item \textbf{Frontend}: A dynamic React application that handles the user interface
+    \item \textbf{Backend}: A Django REST API that provides data and handles business logic
+    \item \textbf{Database}: SQLite storage for all our application data
 \end{itemize}
 
-This architecture was chosen for several reasons:
+We chose this setup for several practical reasons:
 
 \begin{itemize}
-    \item \textbf{Scalability}: The separation of concerns allows independent scaling of frontend and backend components
-    \item \textbf{Development Efficiency}: Different team members could work on frontend and backend components simultaneously
-    \item \textbf{Maintainability}: Changes to one layer have minimal impact on other layers when interfaces remain stable
-    \item \textbf{Modern Web Standards}: Alignment with industry best practices for web application development
+    \item It allowed team members to work on different parts at the same time
+    \item Changes to one part had minimal impact on others
+    \item It followed current industry practices for web applications
 \end{itemize}
 
 \subsection{Backend Architecture}
 
-Our backend follows Django's recommended project structure with significant customizations to better support our application's requirements:
+Our backend uses Django's project structure with some important customisations:
 
 \begin{itemize}
-    \item \textbf{API-First Design}: All functionality is exposed through a comprehensive REST API
-    \item \textbf{Model-Driven Development}: Database schema and relationships defined through Django's ORM models
-    \item \textbf{Domain-Driven Organization}: Functionality organized into logical modules based on domain responsibilities
-    \item \textbf{File Separation by Function Type}: Rather than large monolithic files, we separated models, views, serializers, and tests into dedicated directories with domain-specific files
+    \item \textbf{API-First Approach}: All functions are available through a REST API
+    \item \textbf{Model-Driven Development}: Database structure defined through Django's ORM
+    \item \textbf{Domain-Focused Organisation}: Functions organised by what they do rather than how they do it
+    \item \textbf{Separated Files}: Instead of large files, we split models, views, serializers, and tests into separate directories
 \end{itemize}
 
-This organization is evident in our project structure:
+This organisation is clear in our file structure:
 
 \begin{itemize}
-    \item \texttt{models\_files/}: Contains domain-specific model definitions (\texttt{user\_models.py}, 
-    
-    \texttt{society\_models.py}, \texttt{event\_models.py}, etc.)
-    \item \texttt{views\_files/}: Contains endpoint implementations categorized by functionality (\texttt{admin\_views.py}, \texttt{president\_views.py}, \texttt{event\_views.py}, etc.)
-    \item \texttt{serializers\_files/}: Contains domain-specific serializers for API data transformation
-    \item \texttt{tests/}: Contains hierarchically organized test files mirroring the application structure
+    \item \texttt{models\_files/}, \texttt{views\_files/}, and \texttt{serializers\_files/}: Each directory contains files organized by feature or entity type (e.g., \texttt{user\_models.py} for user-related models, \texttt{society\_views.py} for society-related views), keeping related code together for easier maintenance
+    \item \texttt{tests/}: Contains organized test files matching the application structure.
 \end{itemize}
 
-The backend architecture employs several key design patterns:
+
+We used several key design patterns in the backend:
 
 \begin{itemize}
-    \item \textbf{Service Layer Pattern}: Complex business logic encapsulated in service classes (e.g., \texttt{recommendation\_service.py})
-    \item \textbf{Repository Pattern}: Data access logic separated from business logic
-    \item \textbf{Signals Architecture}: Django signals used for event-driven functionality (as seen in \texttt{signals.py})
-    \item \textbf{Resource-Oriented Design}: API endpoints organized around domain resources following RESTful principles
+    \item \textbf{Utility Abstraction}: We created utility files for models, views, and serializers to extract common operations like permission checks and error responses, reducing code duplication
+    \item \textbf{Signals Architecture}: Django signals used for event-driven functionality
 \end{itemize}
 
 \subsection{Frontend Architecture}
 
-The frontend architecture employs a component-based design using React and follows these key principles:
+Our frontend uses React with a component-based design following these principles:
 
 \begin{itemize}
-    \item \textbf{Component Hierarchy}: UI organized into reusable components with clear parent-child relationships
-    \item \textbf{State Management}: Application state managed through React hooks and context
-    \item \textbf{Route-Based Code Organization}: Features organized around application routes
-    \item \textbf{Responsive Design Approach}: UI components designed to function across different viewport sizes
+    \item \textbf{Component Hierarchy}: UI built from reusable components with clear relationships
+    \item \textbf{State Management}: Application state handled through React hooks and context
+    \item \textbf{Route-Based Organisation}: Features organised around application routes
+    \item \textbf{Responsive Design}: UI components that work across different screen sizes
+\end{itemize}
+
+\subsection{Deployment Architecture}
+
+We set up an automated deployment system to host our application on a Virtual Private Server (VPS):
+
+\begin{itemize}
+    \item \textbf{GitHub Integration}: Automated deployment triggered by GitHub pushes
+    \item \textbf{Traefik Reverse Proxy}: Handles routing, SSL certificates, and HTTPS connections
+    \item \textbf{Containerised Services}: Frontend and backend run as separate services
+    \item \textbf{SQLite Database}: Stores all persistent application data
 \end{itemize}
 
 \section{Key Design Decisions}
 
 \subsection{Multi-Tiered Dashboard Design}
 
-One of the most significant design decisions was implementing a multi-tiered dashboard system to serve different user roles. This approach required careful consideration of:
+One of our most important design decisions was creating different dashboards for different user roles. This required:
 
 \begin{itemize}
-    \item \textbf{Role-Based Access Control}: Each dashboard provides access only to appropriate functionality
-    \item \textbf{Component Reusability}: Shared components across dashboards where functionality overlaps
-    \item \textbf{Consistent User Experience}: Maintaining design consistency while accommodating different functionality
+    \item \textbf{Role-Based Access}: Each dashboard only shows functions that role can use
+    \item \textbf{Shared Components}: Common parts reused across dashboards
+    \item \textbf{Consistent Look}: Similar design across all dashboards despite different functions
 \end{itemize}
 
-We considered two alternative approaches:
+We took an approach that was a balance between:
 
 \begin{enumerate}
-    \item \textbf{Single Dashboard with Conditional Elements}: This would have simplified routing but created more complex components with numerous conditional rendering branches.
-    \item \textbf{Completely Separate Dashboards}: This would have eliminated shared code but led to significant duplication.
+    \item One dashboard with conditional elements based on role
+    \item Completely separate dashboards with no shared code
 \end{enumerate}
 
-Our chosen approach balances these considerations by implementing role-specific dashboards while extracting common functionality into shared components. This decision improved maintainability by reducing duplicated code while preserving clear separation between role-specific functionality.
+This in practice meant separate dashboards for different roles, but with shared components where possible. This reduced duplicate code while keeping the role-specific functions clearly separated.
 
 \subsection{Data Model Design}
 
-Our data model design focused on capturing the complex relationships between users, societies, events, and administrative functions. Key design decisions included:
+Our data model focused on the relationships between users, societies, events, and admin functions:
 
 \begin{itemize}
-    \item \textbf{Role Flexibility}: Rather than creating separate user types, we implemented a role-based system where a single user can have multiple relationships with societies (member, president, event manager)
-    \item \textbf{Content Approval Workflow}: Integrated approval states for societies, events, and news to support administrative oversight
-    \item \textbf{Temporal Modeling}: Proper datetime handling for events and activities to support calendar functionality
+    \item \textbf{Flexible Roles}: A single user can have different and simultaneous relationships with societies (member, society manager)
+    \item \textbf{Approval Workflows}: Built-in states for societies, events, and news that need admin approval
+    \item \textbf{Date and Time Handling}: Proper datetime management for events and calendar features
 \end{itemize}
 
-This design supports the complex relationships inherent in university societies while maintaining data integrity and facilitating administrative oversight. The approach is evident in our \texttt{models.py} file, which defines clear relationships between entities.
+This design supports the complex relationships in university societies while keeping data consistent and securing access.
 
-\subsection{Real-Time Notifications}
+\subsection{Notification System}
 
-To enhance user experience, we implemented real-time notifications using WebSockets through Django Channels. This design decision required:
+To keep users informed, we implemented a notification system:
 
 \begin{itemize}
-    \item \textbf{Asynchronous Communication}: Integration of asynchronous processing with Django's synchronous environment
-    \item \textbf{Channel Layer Design}: Implementation of message routing and consumer patterns as seen in the \texttt{consumer} directory
-    \item \textbf{Event-Driven Architecture}: Using Django signals to trigger notifications based on system events
+    \item \textbf{User Alerts}: Notifications for society updates, event changes, and membership status
+    \item \textbf{Notification Centre}: Central location for users to view all their notifications
+    \item \textbf{Read/Unread Status}: Tracking which notifications have been seen
 \end{itemize}
 
-We considered a polling-based approach as an alternative, but rejected it due to increased server load and potential delays in notification delivery. The WebSocket implementation provides immediate updates to users while being more resource-efficient despite its increased implementation complexity.
+This system helps users stay updated on society activities without needing to constantly check for changes.
 
 \section{Implementation Strategies}
 
-\subsection{Authentication and Authorization}
+\subsection{Authentication and Authorisation}
 
-The implementation of authentication and authorization was critical for our multi-role system. Our approach included:
-
-\begin{itemize}
-    \item \textbf{Token-Based Authentication}: Secure authentication using JWT tokens
-    \item \textbf{University Email Verification}: OTP-based verification to ensure only university students can register
-    \item \textbf{Permission Granularity}: Fine-grained permissions for different actions rather than broad role-based access
-\end{itemize}
-
-This implementation supports our security requirements while providing a streamlined user experience. The token-based approach facilitates authentication across our separated frontend and backend architecture.
-
-\subsection{Society and Event Management}
-
-The society and event management functionality required careful implementation to support various user roles:
+Implementing authentication and authorisation was critical for our multi-role system:
 
 \begin{itemize}
-    \item \textbf{Administrative Approval Flow}: Implementation of multi-step approval processes for societies, events, and content
-    \item \textbf{Role-Specific Interfaces}: Tailored interfaces for society presidents, event managers, and regular members
-    \item \textbf{Moderation Controls}: Tools for administrators to monitor and moderate content
+    \item \textbf{Token-Based Authentication}: JWT tokens for secure login
+    \item \textbf{University Email Verification}: OTP verification ensures only university students can register
+    \item \textbf{Detailed Permissions}: Specific permissions for different actions rather than broad role access
 \end{itemize}
 
-The implementation uses a state machine pattern for managing content status (draft, pending, approved, rejected), providing a consistent approach to approval workflows across different content types.
+This approach secures our system while keeping the user experience smooth. The token system works well with our separate frontend and backend.
 
 \subsection{API Design and Frontend Integration}
 
-Our API design focused on creating intuitive, resource-oriented endpoints that aligned with frontend requirements:
+Our API design focused on creating intuitive endpoints that matched frontend needs:
 
 \begin{itemize}
-    \item \textbf{RESTful Resource Modeling}: API endpoints organized around resources with appropriate HTTP methods
-    \item \textbf{Comprehensive Serialization}: Detailed serializers to transform complex Django models into appropriate JSON representations
-    \item \textbf{Nested Resource Access}: Endpoints structured to minimize client-side data assembly
+    \item \textbf{Data Transformation}: Serializers to convert between Django models and JSON
+    \item \textbf{Nested Resources}: Endpoints structured to reduce the need for multiple requests
 \end{itemize}
 
-This design is evident in our \texttt{urls.py} and \texttt{serializers.py} files, which show a consistent pattern of resource mapping and data transformation. The approach simplified frontend development by providing properly structured data that matched component requirements.
+This design made frontend development easier by providing well-structured data that matched what components needed.
 
 \section{Technical Challenges and Solutions}
 
-\subsection{Managing Complex User Permissions}
+\subsection{Code Organisation for Maintainability}
 
-Implementing the multi-tiered permission system presented significant challenges:
-
-\begin{itemize}
-    \item \textbf{Challenge}: Ensuring users could only access appropriate functionality while minimizing permission checks
-    \item \textbf{Solution}: Implementation of a permission caching system and hierarchical permission structure
-\end{itemize}
-
-Our solution, visible in the views and permissions implementations, provides efficient permission checking without compromising security. We used Django's built-in permission system as a foundation but extended it with custom permission classes to handle our specific requirements.
-
-\subsection{Code Organization for Maintainability}
-
-As the codebase grew, maintaining organization became increasingly important:
+As our code grew, keeping it organised became important:
 
 \begin{itemize}
-    \item \textbf{Challenge}: Keeping related functionality together while preventing files from becoming unmanageably large
-    \item \textbf{Solution}: Implementation of a modular file structure with domain-specific directories
+    \item \textbf{Challenge}: Keeping related classes together while preventing files from becoming too large
+    \item \textbf{Solution}: A modular file structure with directories grouped by function
 \end{itemize}
 
-Our backend structure shows this approach with the separation of views, serializers, and models into dedicated files and directories (e.g., \texttt{views\_files}, \texttt{serializers\_files}, \texttt{models\_files}). This organization improved maintainability by making code locations predictable and keeping related functionality together.
+Our approach of separating views, serializers, and models into dedicated files and directories made code easier to find and maintain.
 
 \subsection{Testing and Quality Assurance}
 
-Ensuring system quality required a comprehensive testing approach:
+Ensuring system quality required thorough testing:
 
 \begin{itemize}
     \item \textbf{Challenge}: Testing complex interactions between components and user roles
-    \item \textbf{Solution}: Implementation of multi-layered testing strategy including unit tests and manual testing
+    \item \textbf{Solution}: Layered testing strategy with unit tests, Postman and manual testing
 \end{itemize}
 
-The \texttt{tests} directory structure shows our approach to organizing tests by functionality rather than by file structure, improving test discoverability and maintenance.
+Our tests are organised in the same way as our model, serializer and views directories making tests easier to find.
 
 \subsection{Code Structure and Function Length}
-
-While we generally aimed for concise, single-responsibility functions throughout our codebase, certain view methods were intentionally implemented as longer functions due to the complex nature of the operations they handle. Several patterns emerged where longer functions were justified by specific technical considerations:
+While we aimed for short, focused functions, some view methods were naturally longer due to the complex roles they handle:
 
 \begin{itemize}
-    \item \textbf{Complex Workflow Management}: Functions handling complete business processes needed to maintain the integrity of multi-step workflows.
+
+    \item \textbf{Permission Handling}: Functions dealing with complex permission checking and role assignments needed comprehensive logic in one place
     
-    \item \textbf{Transaction Coherence}: Operations requiring database consistency across multiple models benefited from being contained within a single method.
-    
-    \item \textbf{Permission and Role Management}: Functions dealing with intricate permission checking and role assignments required comprehensive logic in one place.
-    
-    \item \textbf{Real-time Notification Integration}: Methods that both perform database operations and trigger WebSocket notifications needed to handle both concerns to ensure synchronization.
+    \item \textbf{AI Recommendation System}: Our recommendation-related files contain longer functions due to the complexity of the AI implementation, which was outside our usual scope of expertise. With limited time to explore these techniques in depth, we prioritised functionality over code structure refinement
 \end{itemize}
 
-Consider the following examples from our codebase:
+For example, the membership approval function in \texttt{president\_views.py}, where the \texttt{Pending
+MembersView.post} method handles permission verification, request validation, society membership updates, and appropriate response generation – all functions that should be grouped together as they belong exclusively to this view.
 
-\textbf{Society Approval Workflow} (\texttt{api.view\_files.request\_views.AdminSocietyRequestView.put}):
-This method handles society approval/rejection by an administrator. Its length is justified because it must perform authorization checks, validate and update society records, create activity log entries for audit purposes, clean up expired logs, send real-time WebSocket notifications, and construct appropriate responses. Breaking this function into smaller pieces would require passing state between functions and potentially complicate error handling.
-
-\textbf{Society Role Management} (\texttt{api.view\_files.president\_views.SocietyRoleManagementView
-.patch}):
-This method handles the complex task of assigning or removing leadership roles within societies. Its length is necessary because it handles multiple roles (vice president and event manager) with parallel logic, requires complex verification to maintain data integrity, must update both society and student models atomically, and implements different logic paths for role removal and assignment that share context.
-
-\textbf{Joining Society Requests} (\texttt{api.view\_files.request\_views.RequestJoinSocietyView.post}):
-This method processes student requests to join societies. The function length is appropriate because it must verify student existence, check society existence, validate that the student isn't already a member, check for existing pending requests, and create new requests when appropriate—all within a single transaction to maintain data consistency.
-
-\textbf{Recommendation Feedback Collection} (\texttt{api.view\_files.recommendation\_views.
-RecommendationFeedbackView.post}):
-This method handles multiple types of recommendation feedback (ratings, relevance scores, and join indicators). Its length is justified by the need to validate different combinations of feedback types, process each type appropriately, and maintain consistent processing of metadata across feedback types.
-
-\textbf{News Publication Approval} (\texttt{api.view\_files.news\_views.AdminNewsApprovalView.put}):
-This method handles the approval or rejection of news publication requests. Its complexity stems from the need to update multiple related models (publication requests and news posts) in a single transaction, create notifications based on approval decisions, construct dynamic notification content, and maintain a complete audit trail.
-
-\textbf{News Publication Request Creation} (\texttt{api.view\_files.news\_views.NewsPublication
-RequestView.post}):
-This method handles creating requests to publish society news. Its length is necessary to verify user permissions (including complex checks for society management rights), validate news post existence, check for existing requests, and create new publication requests with appropriate metadata.
-
-While we could have decomposed these methods into smaller functions, doing so would have introduced additional complexity through state management between functions. The current approach provides better readability by keeping related operations together, ensures transaction integrity by handling all database operations in a single context, and facilitates debugging by making the complete workflow visible in one place.
-
-For future development, we would consider implementing a more systematic approach to managing complex operations, potentially through workflow patterns or service classes, while maintaining the benefits of our current approach to function organization.
+Similarly, recommendation-related functions like those in \texttt{recommendation\_views.py} manage complex data processing for generating personalised society suggestions, tracking user interactions, and processing feedback to improve future recommendations.
 
 \section{Evolution of Implementation}
 
-Throughout the project, our implementation approach evolved in response to challenges and changing requirements:
+Our implementation evolved throughout the project:
 
 \begin{itemize}
-    \item \textbf{Initial Phase (First 5 Weeks)}: Focus on core entity models, basic CRUD operations, and role-specific dashboards, establishing the foundation of the system with rapid feature development
-    \item \textbf{Middle Phase}: Refinement of existing features and implementation of complex business logic and approval workflows
-    \item \textbf{Final Phase}: Refinement of user experience, performance optimization, and bug fixing
+    \item \textbf{Initial Phase}: Built core models, basic operations, and role-specific dashboards
+    \item \textbf{Middle Phase}: Refined existing features and added complex business logic and approval workflows
+    \item \textbf{Final Phase}: Polished the user experience, optimised performance, and fixed bugs
 \end{itemize}
 
-This phased approach allowed us to deliver a functional system early while progressively adding sophistication. The evolution is visible in our code structure, which shows a progression from basic functionality to more complex implementations.
+This approach let us deliver a working system early while adding more sophisticated features over time.
 
 \section{Reflections on Design and Implementation}
 
-In retrospect, several key decisions significantly influenced our project's outcome:
+There were several key decisions that shaped our project:
 
 \begin{itemize}
-    \item \textbf{Positive Impact}: The separation of front-end and backend allowed parallel development and clear boundaries between concerns
-    \item \textbf{Challenge}: The implementation of real-time features added complexity but significantly enhanced user experience
-    \item \textbf{Learning}: An earlier focus on directory organization would have reduced late-stage adjustments.
+    \item \textbf{Positive Impact}: Separating frontend and backend allowed parallel development and clear boundaries
+    \item \textbf{Challenge}: Some features added complexity but significantly improved the user experience
+    \item \textbf{Learning}: Earlier focus on file organisation would have reduced later refactoring work
 \end{itemize}
 
-These reflections inform our understanding of effective design and implementation strategies for future projects, particularly the importance of early architectural decisions on the overall project trajectory.
+These insights will help us approach future projects more effectively, particularly in making architectural decisions that support the entire project.

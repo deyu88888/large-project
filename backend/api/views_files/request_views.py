@@ -36,18 +36,34 @@ class StudentSocietyStatusView(APIView):
             approved__isnull=True  # Only get ones where approved is NULL (pending)
         ).first()
         
+        # Check if the student has any recently rejected society creation requests
+        rejected_request = SocietyRequest.objects.filter(
+            from_student=student,
+            intent="CreateSoc",
+            approved=False  # Get ones where approved is False (rejected)
+        ).order_by('-requested_at').first()  # Get the most recent rejection using requested_at
+        
         has_pending_request = pending_request is not None
+        has_rejected_request = rejected_request is not None
         
         # Prepare the response data
         response_data = {
             "hasPendingRequest": has_pending_request,
-            "isPresident": is_president
+            "isPresident": is_president,
+            "hasRejectedRequest": has_rejected_request
         }
         
         # Add the pending request ID if there is one
         if has_pending_request:
             response_data["pendingRequestId"] = pending_request.id
             response_data["pendingRequestName"] = pending_request.name
+            
+        # Add the rejected request details if there is one
+        if has_rejected_request:
+            response_data["rejectedRequestId"] = rejected_request.id
+            response_data["rejectedRequestName"] = rejected_request.name
+            response_data["rejectionReason"] = rejected_request.rejection_reason if hasattr(rejected_request, 'rejection_reason') else "No reason provided"
+            response_data["rejectedAt"] = rejected_request.requested_at.isoformat() if hasattr(rejected_request, 'requested_at') else None
 
         return Response(response_data, status=status.HTTP_200_OK)
 
@@ -132,6 +148,18 @@ class AdminSocietyRequestView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
+        # Check if we're rejecting and require a reason
+        if 'approved' in request.data and request.data['approved'] is False:
+            rejection_reason = request.data.get('rejection_reason')
+            if not rejection_reason:
+                return Response(
+                    {"error": "A reason must be provided when rejecting a society request."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            # Store the rejection reason directly
+            society_request.rejection_reason = rejection_reason
+            society_request.save(update_fields=['rejection_reason'])
+
         serializer = SocietyRequestSerializer(society_request, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -185,6 +213,11 @@ class AdminSocietyRequestView(APIView):
             }
             action_type = action_type_map.get(approved_status, "Update")
 
+            # Include rejection reason in activity log if it's a rejection
+            activity_data = {"approved": approved_status}
+            if approved_status is False and hasattr(society_request, 'rejection_reason'):
+                activity_data["rejection_reason"] = society_request.rejection_reason
+
             ActivityLog.objects.create(
                 action_type=action_type,
                 target_type="SocietyRequest",
@@ -194,7 +227,7 @@ class AdminSocietyRequestView(APIView):
                 timestamp=timezone.now(),
                 reason=f"{action_type}d by admin",
                 expiration_date=timezone.now() + timedelta(days=30),
-                original_data=json.dumps({"approved": approved_status}),
+                original_data=json.dumps(activity_data),
             )
             ActivityLog.delete_expired_logs()
 

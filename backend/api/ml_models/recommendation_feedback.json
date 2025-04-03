@@ -1837,7 +1837,27 @@
       "metadata": {
         "explanation_request": true
       }
+    },
+    {
+      "student_id": 2,
+      "society_id": 2,
+      "feedback_type": "view_details",
+      "timestamp": "2025-04-03T01:06:02.188930",
+      "value": null,
+      "metadata": {
+        "explanation_request": true
+      }
+    },
+    {
+      "student_id": 2,
+      "society_id": 2,
+      "feedback_type": "view_details",
+      "timestamp": "2025-04-03T02:14:11.971547",
+      "value": null,
+      "metadata": {
+        "explanation_request": true
+      }
     }
   ],
-  "last_updated": "2025-04-02T14:55:18.109923"
+  "last_updated": "2025-04-03T02:14:11.971547"
 }

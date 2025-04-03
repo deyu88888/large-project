@@ -85,8 +85,9 @@ export interface NotificationState {
 export interface ActionButtonsProps {
   societyId: number;
   society: SocietyData;
-  onStatusChange: (id: number, status: "Approved" | "Rejected") => void;
+  onStatusChange: (id: number, status: "Approved") => void;
   onView: (society: SocietyData) => void;
+  onReject: (societyId: number) => void;
 }
 
 export interface NotificationProps {
@@ -108,4 +109,26 @@ export interface DataGridContainerProps {
   colors: ReturnType<typeof tokens>;
   loading: boolean;
   drawer: boolean;
+}
+
+// New interface for rejection dialog
+export interface RejectionDialogProps {
+  open: boolean;
+  societyId: number;
+  societyName: string;
+  onClose: () => void;
+  onConfirm: (societyId: number, reason: string) => Promise<void>;
+}
+
+// User status with rejection information
+export interface UserStatusResponse {
+  hasPendingRequest: boolean;
+  isPresident: boolean;
+  hasRejectedRequest: boolean;
+  pendingRequestId?: string;
+  pendingRequestName?: string;
+  rejectedRequestId?: string;
+  rejectedRequestName?: string;
+  rejectionReason?: string;
+  rejectedAt?: string;
 }

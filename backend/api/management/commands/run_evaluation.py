@@ -1,5 +1,3 @@
-# backend/api/management/commands/run_evaluation.py
-
 from django.core.management.base import BaseCommand
 from django.db.models import Count
 from api.recommendation_service import SocietyRecommender

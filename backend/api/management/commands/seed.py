@@ -56,6 +56,9 @@ class Command(BaseCommand):
         self.event_generator.create_event_requests(quantity[3], past=False)
         self.event_generator.create_event_requests(quantity[4], past=True)
 
+        robotics_soc =  Society.objects.get(name="Robotics Club")
+        self.create_unassigned_student(robotics_soc)
+
         self.pre_define_awards()
         self.randomly_assign_awards(quantity[5])
 
@@ -64,38 +67,26 @@ class Command(BaseCommand):
 
         print(self.style.SUCCESS("Seeding complete!"))
 
-    def create_default_students(self):
-        """Seeds all the default example students"""
-        def get_or_create_user(model, username, email, first_name, last_name, defaults):
-            user, created = model.objects.get_or_create(
-                email=email,
-                defaults={
-                    "username": username,
-                    "first_name": first_name,
-                    "last_name": last_name,
-                    **defaults,
-                },
-            )
-            if created:
-                print(self.style.SUCCESS(f"{model.__name__} created: {user.username}"))
-            else:
-                print(f"{model.__name__} already exists: {user.username}")
-            return user, created
-
-        student, _ = get_or_create_user(
-            Student,
-            username="student_user",
-            email="student@example.com",
-            first_name="John",
-            last_name="Smith",
+    def get_or_create_user(self, model, username, email, first_name, last_name, defaults):
+        """Create a user object"""
+        user, created = model.objects.get_or_create(
+            email=email,
             defaults={
-                "password": make_password("studentpassword"),
-                "major": "Computer Science",
+                "username": username,
+                "first_name": first_name,
+                "last_name": last_name,
+                **defaults,
             },
         )
-        student.save()
+        if created:
+            print(self.style.SUCCESS(f"{model.__name__} created: {user.username}"))
+        else:
+            print(f"{model.__name__} already exists: {user.username}")
+        return user, created
 
-        president, _ = get_or_create_user(
+    def create_default_students(self):
+        """Seeds all the default example students"""
+        president, _ = self.get_or_create_user(
             Student,
             username="president_user",
             email="president@example.com",
@@ -108,7 +99,7 @@ class Command(BaseCommand):
             },
         )
 
-        vice_president, _ = get_or_create_user(
+        vice_president, _ = self.get_or_create_user(
              Student,
              username="vice_president_user",
              email="vicepresident@example.com",
@@ -119,7 +110,7 @@ class Command(BaseCommand):
                  "major": "Electrical Engineering"
              },
          )
-        event_manager, _ = get_or_create_user(
+        event_manager, _ = self.get_or_create_user(
             Student,
             username="event_manager_user",
             email="eventmanager@example.com",
@@ -133,12 +124,11 @@ class Command(BaseCommand):
 
         self.create_robotics_society(
             president=president,
-            student=student,
             vice_president=vice_president,
             event_manager=event_manager,
         )
 
-    def create_robotics_society(self, president, student, vice_president, event_manager):
+    def create_robotics_society(self, president, vice_president, event_manager):
         """Seeds the example society, Robotics Society"""
         if president.is_event_manager or president.is_vice_president:
             president.is_event_manager = False
@@ -161,7 +151,7 @@ class Command(BaseCommand):
         society.vice_president = vice_president
         society.event_manager = event_manager
         society.icon = "pre-seed-icons/robotics.jpg"
-        society.society_members.add(student, president, vice_president, event_manager)
+        society.society_members.add(president, vice_president, event_manager)
 
         vice_president.is_vice_president = True
         event_manager.is_event_manager = True
@@ -170,6 +160,22 @@ class Command(BaseCommand):
         vice_president.save()
         event_manager.save()
         society.save()
+
+    def create_unassigned_student(self, society):
+        """Create student_user who is unassigned as a role"""
+        student, _ = self.get_or_create_user(
+            Student,
+            username="student_user",
+            email="student@example.com",
+            first_name="John",
+            last_name="Smith",
+            defaults={
+                "password": make_password("studentpassword"),
+                "major": "Computer Science",
+            },
+        )
+        student.save()
+        society.society_members.add(student)
 
     def pre_define_awards(self):
         """Pre-define automatic awards"""
