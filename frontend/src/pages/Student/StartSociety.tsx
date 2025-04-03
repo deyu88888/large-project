@@ -84,6 +84,73 @@ const StatusMessages: React.FC<MessageProps> = ({ error, success, styleProps }) 
   );
 };
 
+// Rejection Notice Component
+const RejectionNotice = ({ 
+  rejectedRequestName, 
+  rejectionReason, 
+  styleProps,
+  onDismiss
+}) => {
+  const { isLight, colours } = styleProps;
+  
+  return (
+    <div style={{ 
+      backgroundColor: isLight ? colours.redAccent[100] : colours.redAccent[900], 
+      padding: "1.25rem", 
+      borderRadius: "8px", 
+      marginBottom: "1.5rem",
+      color: isLight ? colours.grey[900] : "#fff",
+      border: `1px solid ${isLight ? colours.redAccent[300] : colours.redAccent[700]}`,
+      position: "relative"
+    }}>
+      <button 
+        onClick={onDismiss}
+        style={{
+          position: "absolute",
+          top: "0.75rem",
+          right: "0.75rem",
+          background: "transparent",
+          border: "none",
+          cursor: "pointer",
+          fontSize: "1rem",
+          color: isLight ? colours.grey[500] : colours.grey[300],
+        }}
+      >
+        ✕
+      </button>
+      <h3 style={{ 
+        color: isLight ? colours.redAccent[700] : colours.grey[100],
+        marginTop: 0,
+        marginBottom: "0.75rem",
+        fontSize: "1.25rem"
+      }}>
+        Your Society Request Was Rejected
+      </h3>
+      <p style={{ marginBottom: "0.75rem", fontWeight: 500 }}>
+        Your request for "{rejectedRequestName}" was not approved.
+      </p>
+      <div style={{ 
+        backgroundColor: isLight ? "rgba(0,0,0,0.05)" : "rgba(255,255,255,0.1)",
+        padding: "0.75rem",
+        borderRadius: "4px",
+        marginBottom: "0.75rem"
+      }}>
+        <p style={{ 
+          fontWeight: 500, 
+          marginBottom: "0.5rem",
+          color: isLight ? colours.grey[800] : colours.grey[100]
+        }}>
+          Reason for rejection:
+        </p>
+        <p style={{ margin: 0 }}>{rejectionReason}</p>
+      </div>
+      <p style={{ margin: 0 }}>
+        You can submit a new request addressing the issues mentioned above.
+      </p>
+    </div>
+  );
+};
+
 const InputField: React.FC<InputFieldProps> = ({ 
   id, 
   label, 
@@ -380,6 +447,12 @@ const StartSociety: React.FC = () => {
   const [pendingRequestName, setPendingRequestName] = useState<string | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
   const [justSubmitted, setJustSubmitted] = useState(false);
+  
+  // New state for rejection information
+  const [hasRejectedRequest, setHasRejectedRequest] = useState(false);
+  const [rejectedRequestName, setRejectedRequestName] = useState<string | undefined>(undefined);
+  const [rejectionReason, setRejectionReason] = useState<string | undefined>(undefined);
+  const [showRejectionNotice, setShowRejectionNotice] = useState(true);
 
   // Check if user already has a pending request or is a society president
   useEffect(() => {
@@ -397,6 +470,11 @@ const StartSociety: React.FC = () => {
         }
         
         setIsPresident(response.data.isPresident);
+        
+        // Set rejection information
+        setHasRejectedRequest(response.data.hasRejectedRequest || false);
+        setRejectedRequestName(response.data.rejectedRequestName);
+        setRejectionReason(response.data.rejectionReason);
       } catch (err) {
         console.error("Failed to check user status:", err);
         updateFormState({ 
@@ -450,6 +528,9 @@ const StartSociety: React.FC = () => {
         // Set flag to prevent showing pending message after submission
         setJustSubmitted(true);
         
+        // Hide rejection notice if visible
+        setShowRejectionNotice(false);
+        
         // Update the form state
         updateFormState({ success: "Society creation request submitted successfully!" });
         resetForm();
@@ -484,6 +565,10 @@ const StartSociety: React.FC = () => {
 
   const closeModal = () => {
     setIsModalOpen(false);
+  };
+  
+  const dismissRejectionNotice = () => {
+    setShowRejectionNotice(false);
   };
 
   const getPendingRequestMessage = () => {
@@ -533,6 +618,16 @@ const StartSociety: React.FC = () => {
             success={formState.success} 
             styleProps={styleProps} 
           />
+          
+          {/* Rejection Notice */}
+          {hasRejectedRequest && showRejectionNotice && rejectedRequestName && rejectionReason && (
+            <RejectionNotice
+              rejectedRequestName={rejectedRequestName}
+              rejectionReason={rejectionReason}
+              styleProps={styleProps}
+              onDismiss={dismissRejectionNotice}
+            />
+          )}
           
           {/* Only show pending request banner if actually pending and not just submitted */}
           {hasPendingRequest && !justSubmitted && (

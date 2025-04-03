@@ -1,11 +1,11 @@
 import React, { useContext, useEffect, useState, useCallback, useMemo } from "react";
-import { Box, useTheme, Button, Typography, Alert, Snackbar } from "@mui/material";
+import { Box, useTheme, Button, Typography, Alert, Snackbar, Dialog, DialogTitle, DialogContent, DialogActions, TextField } from "@mui/material";
 import { DataGrid, GridColDef, GridToolbar, GridRenderCellParams } from "@mui/x-data-grid";
 import { tokens } from "../../theme/theme";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { useSettingsStore } from "../../stores/settings-store";
 import { updateRequestStatus } from "../../api/requestApi";
-import { apiPaths } from "../../api";
+import { apiClient, apiPaths } from "../../api";
 import { fetchPendingRequests } from "../../utils/utils";
 import { SocietyPreview } from "../../components/SocietyPreview";
 import {
@@ -17,7 +17,8 @@ import {
   TruncatedCellProps,
   EmptyStateProps,
   DataGridContainerProps,
-  SocietyData
+  SocietyData,
+  RejectionDialogProps
 } from "../../types/admin/SocietyCreationRequests";
 import { mapSocietyRequestToSociety } from "../../utils/mapper";
 
@@ -58,7 +59,7 @@ const TruncatedCell: React.FC<TruncatedCellProps> = ({ value }) => {
   );
 };
 
-const ActionButtons: React.FC<ActionButtonsProps> = ({ societyId, society, onStatusChange, onView }) => {
+const ActionButtons: React.FC<ActionButtonsProps> = ({ societyId, society, onStatusChange, onView, onReject }) => {
   return (
     <Box>
       <Button
@@ -80,11 +81,76 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({ societyId, society, onSta
       <Button 
         variant="contained" 
         color="error" 
-        onClick={() => onStatusChange(societyId, "Rejected")}
+        onClick={() => onReject(societyId)}
       >
         Reject
       </Button>
     </Box>
+  );
+};
+
+const RejectionDialog: React.FC<RejectionDialogProps> = ({ 
+  open, 
+  societyId, 
+  societyName,
+  onClose, 
+  onConfirm
+}) => {
+  const [reason, setReason] = useState("");
+  const [error, setError] = useState(false);
+
+  const handleClose = () => {
+    setReason("");
+    setError(false);
+    onClose();
+  };
+
+  const handleConfirm = () => {
+    if (!reason.trim()) {
+      setError(true);
+      return;
+    }
+    onConfirm(societyId, reason);
+    handleClose();
+  };
+
+  return (
+    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+      <DialogTitle>
+        Reject Society Request
+      </DialogTitle>
+      <DialogContent>
+        <Typography variant="body1" sx={{ mb: 2 }}>
+          Please provide a reason for rejecting the request for "{societyName}".
+        </Typography>
+        <TextField
+          autoFocus
+          label="Rejection Reason"
+          fullWidth
+          multiline
+          rows={4}
+          value={reason}
+          onChange={(e) => {
+            setReason(e.target.value);
+            if (e.target.value.trim()) {
+              setError(false);
+            }
+          }}
+          error={error}
+          helperText={error ? "A rejection reason is required" : ""}
+          sx={{ mt: 1 }}
+          placeholder="Please explain why this society request is being rejected..."
+        />
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={handleClose} color="inherit">
+          Cancel
+        </Button>
+        <Button onClick={handleConfirm} color="error" variant="contained">
+          Reject Request
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 };
 
@@ -175,41 +241,6 @@ const DataGridContainer: React.FC<DataGridContainerProps> = ({
   );
 };
 
-const createSocietyColumns = (
-  handleStatusChange: (id: number, status: "Approved" | "Rejected") => Promise<void>,
-  handleViewSociety: (society: SocietyData) => void
-): GridColDef[] => [
-  { field: "id", headerName: "ID", flex: 0.3 },
-  { field: "name", headerName: "Name", flex: 1 },
-  { 
-    field: "president", 
-    headerName: "President", 
-    flex: 1,
-    renderCell: (params) => {
-      const president = params.value;
-      return president ? `${president.first_name} ${president.last_name}` : "Unassigned";
-    },
-  },
-  { field: "category", headerName: "Category", flex: 1 },
-  {
-    field: "actions",
-    headerName: "Actions",
-    flex: 1.4,
-    width: 255,
-    minWidth: 255,
-    sortable: false,
-    filterable: false,
-    renderCell: (params: GridRenderCellParams<any>) => (
-      <ActionButtons
-        societyId={params.row.id}
-        society={params.row}
-        onStatusChange={handleStatusChange}
-        onView={handleViewSociety}
-      />
-    ),
-  },
-];
-
 const SocietyCreationRequests: React.FC = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
@@ -226,6 +257,10 @@ const SocietyCreationRequests: React.FC = () => {
 
   const [previewOpen, setPreviewOpen] = useState(false);
   const [selectedSociety, setSelectedSociety] = useState<SocietyData | null>(null);
+  
+  // Rejection dialog state
+  const [rejectionDialogOpen, setRejectionDialogOpen] = useState(false);
+  const [societyToReject, setSocietyToReject] = useState<{id: number, name: string} | null>(null);
   
   const fetchSocieties = useCallback(async () => {
     try {
@@ -271,8 +306,21 @@ const SocietyCreationRequests: React.FC = () => {
   const handleClosePreview = useCallback(() => {
     setPreviewOpen(false);
   }, []);
+  
+  const handleOpenRejectDialog = useCallback((societyId: number) => {
+    const society = societies.find(s => s.id === societyId);
+    if (society) {
+      setSocietyToReject({ id: societyId, name: society.name });
+      setRejectionDialogOpen(true);
+    }
+  }, [societies]);
+  
+  const handleCloseRejectDialog = useCallback(() => {
+    setRejectionDialogOpen(false);
+    setSocietyToReject(null);
+  }, []);
 
-  const handleStatusChange = useCallback(async (id: number, status: "Approved" | "Rejected") => {
+  const handleStatusChange = useCallback(async (id: number, status: "Approved") => {
     try {
       updateSocietiesAfterStatusChange(id);
       
@@ -293,6 +341,25 @@ const SocietyCreationRequests: React.FC = () => {
       fetchSocieties();
     }
   }, [updateSocietiesAfterStatusChange, showNotification, fetchSocieties]);
+  
+  const handleRejectWithReason = useCallback(async (id: number, reason: string) => {
+    try {
+      updateSocietiesAfterStatusChange(id);
+      
+      // Send rejection with reason to backend
+      await apiClient.put(`${apiPaths.USER.PENDINGSOCIETYREQUEST}/${id}`, {
+        approved: false,
+        rejection_reason: reason
+      });
+      
+      showNotification("Society rejected successfully.", 'success');
+    } catch (error) {
+      console.error("Error rejecting society:", error);
+      
+      showNotification("Failed to reject society request.", 'error');
+      fetchSocieties();
+    }
+  }, [updateSocietiesAfterStatusChange, showNotification, fetchSocieties]);
 
   const processedSocieties = useMemo(() => 
     processSocieties(societies),
@@ -308,10 +375,38 @@ const SocietyCreationRequests: React.FC = () => {
     return (filteredSocieties ?? []).map(mapSocietyRequestToSociety);
   }, [filteredSocieties]);
 
-  const columns = useMemo(() => 
-    createSocietyColumns(handleStatusChange, handleViewSociety),
-    [handleStatusChange, handleViewSociety]
-  );
+  const columns = useMemo(() => [
+    { field: "id", headerName: "ID", flex: 0.3 },
+    { field: "name", headerName: "Name", flex: 1 },
+    { 
+      field: "president", 
+      headerName: "President", 
+      flex: 1,
+      renderCell: (params) => {
+        const president = params.value;
+        return president ? `${president.first_name} ${president.last_name}` : "Unassigned";
+      },
+    },
+    { field: "category", headerName: "Category", flex: 1 },
+    {
+      field: "actions",
+      headerName: "Actions",
+      flex: 1.4,
+      width: 255,
+      minWidth: 255,
+      sortable: false,
+      filterable: false,
+      renderCell: (params: GridRenderCellParams<any>) => (
+        <ActionButtons
+          societyId={params.row.id}
+          society={params.row}
+          onStatusChange={handleStatusChange}
+          onView={handleViewSociety}
+          onReject={handleOpenRejectDialog}
+        />
+      ),
+    },
+  ], [handleStatusChange, handleViewSociety, handleOpenRejectDialog]);
 
   return (
     <>
@@ -327,9 +422,22 @@ const SocietyCreationRequests: React.FC = () => {
         <SocietyPreview
           open={previewOpen}
           onClose={handleClosePreview}
-          society={mapSocietyRequestToSociety(selectedSociety)} loading={false} joined={0} onJoinSociety={function (societyId: number): void {
+          society={mapSocietyRequestToSociety(selectedSociety)} 
+          loading={false} 
+          joined={0} 
+          onJoinSociety={function (societyId: number): void {
             throw new Error("Function not implemented.");
           }}               
+        />
+      )}
+      
+      {societyToReject && (
+        <RejectionDialog
+          open={rejectionDialogOpen}
+          societyId={societyToReject.id}
+          societyName={societyToReject.name}
+          onClose={handleCloseRejectDialog}
+          onConfirm={handleRejectWithReason}
         />
       )}
 
