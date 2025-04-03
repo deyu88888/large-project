@@ -16,12 +16,14 @@ from api.management.commands.seeding.seeding_utility import (
     assign_comment_parent,
 )
 from api.models import (
+    User,
     Student,
     Society,
     Award,
     AwardStudent,
     SocietyNews,
     NewsComment,
+    NewsPublicationRequest,
 )
 
 
@@ -64,6 +66,7 @@ class Command(BaseCommand):
 
         self.admin_generator.create_admin_reports(quantity[6])
         self.create_society_news(quantity[7])
+        self.create_news_publication_requests(quantity[7])  
 
 
     def get_or_create_user(self, model, username, email, first_name, last_name, defaults):
@@ -285,3 +288,35 @@ class Command(BaseCommand):
 
         if random() < 0.60:
             self.create_news_comments(news, choice((comment, parent)))
+
+    def create_news_publication_requests(self, n: int):
+        """Seeds news publication requests"""
+        news_posts = list(SocietyNews.objects.filter(status="Draft"))
+        students = list(Student.objects.filter(is_president=True))
+        admins = list(User.objects.filter(is_staff=True))
+
+        statuses = [
+            "Pending", "Approved", "Rejected", "Cancelled", 
+            "Superseded_Approved", "Superseded_Rejected"
+        ]
+
+        for i in range(n):
+            if not news_posts or not students:
+                break
+
+            news_post = choice(news_posts)
+            requested_by = choice(students)
+            status = choice(statuses)
+
+            pub_request = NewsPublicationRequest.objects.create(
+                news_post=news_post,
+                requested_by=requested_by,
+                status="Pending",
+            )
+
+            if status != "Pending":
+                pub_request.status = status
+                pub_request.reviewed_by = choice(admins)
+                if status in ["Rejected", "Superseded_Rejected"]:
+                    pub_request.admin_notes = f"Auto-rejected: Reason XYZ"
+                pub_request.save()
