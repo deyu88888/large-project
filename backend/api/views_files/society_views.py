@@ -20,7 +20,7 @@ class JoinedSocietiesView(APIView):
         if error:
             return error
 
-        societies = student.societies_belongs_to.all()
+        societies = student.societies_belongs_to.exclude(status="Pending")
         serializer = SocietySerializer(societies, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
