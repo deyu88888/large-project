@@ -73,7 +73,6 @@ export interface PageContainerProps {
   styleProps: StyleProps;
 }
 
-// New interfaces for the user status feature
 export interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -82,9 +81,19 @@ export interface ModalProps {
   styleProps: StyleProps;
 }
 
+// export interface UserStatusResponse {
+//   hasPendingRequest: boolean;
+//   isPresident: boolean;
+//   pendingRequestId?: string;
+//   pendingRequestName?: string;
+// }
+
 export interface UserStatusResponse {
   hasPendingRequest: boolean;
+  pendingRequestName?: string;
   isPresident: boolean;
   pendingRequestId?: string;
-  pendingRequestName?: string;
+  hasRejectedRequest?: boolean;
+  rejectedRequestName?: string;
+  rejectionReason?: string;
 }
