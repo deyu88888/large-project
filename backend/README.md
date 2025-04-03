@@ -38,7 +38,6 @@ pip install -r requirements.txt
 ```bash
 ├── api/                    # Core Django app
 │   ├── migrations/         # Django migrations
-│   ├── consumers.py        # WebSocket consumers
 │   ├── models.py           # Data models
 │   ├── middleware.py       # Middleware
 │   ├── views.py            # HTTP views
