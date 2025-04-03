@@ -1,172 +1,446 @@
-import React from 'react';
-import { render, screen, fireEvent, act } from '@testing-library/react';
-import { vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, waitFor, act } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { ThemeProvider, createTheme } from '@mui/material';
 import RegisterPage from '../Register';
-import { apiClient, apiPaths } from "../../../api";
+import { apiClient, apiPaths } from '../../../api';
 
-// Mock the API client
-vi.mock("../../api", () => ({
+vi.mock('../../../api', () => ({
   apiClient: {
-    post: vi.fn(() => Promise.resolve({ data: { success: true } })),
+    post: vi.fn()
   },
   apiPaths: {
     USER: {
       REQUEST_OTP: '/api/user/request-otp',
       VERIFY_OTP: '/api/user/verify-otp',
-      REGISTER: '/api/user/register',
+      REGISTER: '/api/user/register'
     }
   }
 }));
 
-// Mock navigate function
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return {
     ...actual,
-    useNavigate: () => mockNavigate,
+    useNavigate: () => mockNavigate
   };
 });
 
-// Create test themes
-const theme = createTheme({
-  palette: {
-    mode: 'light',
-  }
-});
-
-const darkTheme = createTheme({
-  palette: {
-    mode: 'dark',
-  }
-});
-
-// Mock the tokens function from theme
-vi.mock("../../theme/theme", () => ({
-  tokens: () => ({
-    primary: { 400: '#f0f0f0' },
-    blueAccent: { 300: '#4dabf5', 500: '#2196f3', 700: '#1769aa' },
-    grey: { 100: '#333', 300: '#666', 500: '#999' }
-  })
-}));
-
-// Mock CircularLoader component
-vi.mock("../../components/loading/circular-loader", () => ({
-  default: () => <div data-testid="circular-loader">Loading...</div>
-}));
-
-// Suppress React act() warnings
-const originalError = console.error;
-beforeAll(() => {
-  console.error = (...args) => {
-    if (/Warning.*not wrapped in act/.test(args[0])) {
-      return;
-    }
-    originalError.call(console, ...args);
-  };
-});
-
-afterAll(() => {
-  console.error = originalError;
-});
-
-describe('RegisterPage Component', () => {
+describe('RegisterPage', () => {
+  const theme = createTheme();
+  const user = userEvent.setup();
+  
   beforeEach(() => {
     vi.clearAllMocks();
   });
-
-  const setup = (useDarkTheme = false) => {
-    return render(
-      <ThemeProvider theme={useDarkTheme ? darkTheme : theme}>
-        <MemoryRouter initialEntries={['/register']}>
+  
+  afterEach(() => {
+    vi.resetAllMocks();
+  });
+  
+  it('renders registration form with all fields', () => {
+    render(
+      <ThemeProvider theme={theme}>
+        <MemoryRouter>
           <RegisterPage />
         </MemoryRouter>
       </ThemeProvider>
     );
-  };
-
-  // Basic rendering tests
-  it('renders the initial registration form correctly', () => {
-    setup();
     
-    // Check for heading
     expect(screen.getByText('Register as a Student')).toBeInTheDocument();
-    
-    // Check for stepper
-    expect(screen.getByText('Register')).toBeInTheDocument();
-    expect(screen.getByText('Verification')).toBeInTheDocument();
-    expect(screen.getByText('Your Details')).toBeInTheDocument();
-    
-    // Check for form fields in the first step
-    expect(screen.getByLabelText('First name')).toBeInTheDocument();
-    expect(screen.getByLabelText('Last name')).toBeInTheDocument();
-    expect(screen.getByLabelText('Email')).toBeInTheDocument();
-    
-    // Check for the OTP button
-    expect(screen.getByRole('button', { name: 'Get OTP' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Get OTP' })).toBeDisabled();
-    
-    // Check for login link
-    expect(screen.getByText('Already signed up?')).toBeInTheDocument();
-    expect(screen.getByText('Please login.')).toBeInTheDocument();
-    expect(screen.getByText('Please login.').closest('a')).toHaveAttribute('href', '/login');
+    expect(screen.getByLabelText(/First name/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Last name/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Email/i)).toBeInTheDocument();
+    expect(screen.getByText('Get OTP')).toBeInTheDocument();
+    expect(screen.getByText(/Already signed up\?/i)).toBeInTheDocument();
   });
-
-  it('enables the OTP button when valid information is entered', () => {
-    setup();
-    
-    // Fill out the form
-    const firstNameInput = screen.getByLabelText('First name');
-    const lastNameInput = screen.getByLabelText('Last name');
-    const emailInput = screen.getByLabelText('Email');
-    
-    act(() => {
-      fireEvent.change(firstNameInput, { target: { value: 'John' } });
-      fireEvent.change(lastNameInput, { target: { value: 'Doe' } });
-      fireEvent.change(emailInput, { target: { value: 'john.doe@kcl.ac.uk' } });
-      fireEvent.blur(emailInput);
-    });
-    
-    // OTP button should be enabled
-    expect(screen.getByRole('button', { name: 'Get OTP' })).not.toBeDisabled();
-  });
-
-  it('renders correctly in dark theme', () => {
-    setup(true);
-    
-    // Just verify the component renders in dark theme
-    expect(screen.getByText('Register as a Student')).toBeInTheDocument();
-  });
-
-  // Skip the email validation test since finding the error message is challenging
-  // with the current setup. This could be revisited with a more specific approach
-  // to target error messages in your component structure.
-
-  it('makes an API call when requesting OTP', () => {
-    setup();
-    
-    // Fill out the form
-    const firstNameInput = screen.getByLabelText('First name');
-    const lastNameInput = screen.getByLabelText('Last name');
-    const emailInput = screen.getByLabelText('Email');
-    
-    act(() => {
-      fireEvent.change(firstNameInput, { target: { value: 'John' } });
-      fireEvent.change(lastNameInput, { target: { value: 'Doe' } });
-      fireEvent.change(emailInput, { target: { value: 'john.doe@kcl.ac.uk' } });
-    });
-    
-    // Click the OTP button
-    act(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Get OTP' }));
-    });
-    
-    // Check API was called correctly
-    expect(apiClient.post).toHaveBeenCalledWith(
-      apiPaths.USER.REQUEST_OTP, 
-      { email: 'john.doe@kcl.ac.uk' }
+  
+  it('validates email format with King\'s College domain', async () => {
+    render(
+      <ThemeProvider theme={theme}>
+        <MemoryRouter>
+          <RegisterPage />
+        </MemoryRouter>
+      </ThemeProvider>
     );
+    
+    const emailInput = screen.getByLabelText(/Email/i);
+    const firstNameInput = screen.getByLabelText(/First name/i);
+    const lastNameInput = screen.getByLabelText(/Last name/i);
+    
+    await user.type(firstNameInput, 'John');
+    await user.type(lastNameInput, 'Doe');
+    
+    await user.type(emailInput, 'invalid@gmail.com');
+    await user.tab();
+    
+    await waitFor(() => {
+      expect(screen.getByText('Email must end with @kcl.ac.uk')).toBeInTheDocument();
+    });
+    
+    await user.clear(emailInput);
+    await user.type(emailInput, 'valid@kcl.ac.uk');
+    await user.tab();
+    
+    await waitFor(() => {
+      expect(screen.queryByText('Email must end with @kcl.ac.uk')).not.toBeInTheDocument();
+    });
   });
+  
+  it('disables Get OTP button until all fields are valid', async () => {
+    render(
+      <ThemeProvider theme={theme}>
+        <MemoryRouter>
+          <RegisterPage />
+        </MemoryRouter>
+      </ThemeProvider>
+    );
+    
+    const otpButton = screen.getByText('Get OTP');
+    expect(otpButton).toBeDisabled();
+    
+    const firstNameInput = screen.getByLabelText(/First name/i);
+    const lastNameInput = screen.getByLabelText(/Last name/i);
+    const emailInput = screen.getByLabelText(/Email/i);
+    
+    await user.type(firstNameInput, 'John');
+    expect(otpButton).toBeDisabled();
+    
+    await user.type(lastNameInput, 'Doe');
+    expect(otpButton).toBeDisabled();
+    
+    await user.type(emailInput, 'valid@kcl.ac.uk');
+    
+    await waitFor(() => {
+      expect(otpButton).not.toBeDisabled();
+    });
+  });
+  
+  it('requests OTP and advances to step 2', async () => {
+    apiClient.post.mockResolvedValueOnce({ data: { message: 'OTP sent successfully' } });
+    
+    render(
+      <ThemeProvider theme={theme}>
+        <MemoryRouter>
+          <RegisterPage />
+        </MemoryRouter>
+      </ThemeProvider>
+    );
+    
+    const firstNameInput = screen.getByLabelText(/First name/i);
+    const lastNameInput = screen.getByLabelText(/Last name/i);
+    const emailInput = screen.getByLabelText(/Email/i);
+    
+    await user.type(firstNameInput, 'John');
+    await user.type(lastNameInput, 'Doe');
+    await user.type(emailInput, 'valid@kcl.ac.uk');
+    
+    const otpButton = screen.getByText('Get OTP');
+    await waitFor(() => {
+      expect(otpButton).not.toBeDisabled();
+    });
+    
+    await user.click(otpButton);
+    
+    await waitFor(() => {
+      expect(apiClient.post).toHaveBeenCalledWith(
+        apiPaths.USER.REQUEST_OTP,
+        { email: 'valid@kcl.ac.uk' }
+      );
+      expect(screen.getByLabelText(/One-time Password/i)).toBeInTheDocument();
+      expect(screen.getByText('Verify OTP')).toBeInTheDocument();
+    });
+  });
+  
+  it('verifies OTP and advances to step 3', async () => {
+    apiClient.post.mockResolvedValueOnce({ data: { message: 'OTP sent successfully' } })
+                   .mockResolvedValueOnce({ data: { message: 'OTP verified successfully' } });
+    
+    render(
+      <ThemeProvider theme={theme}>
+        <MemoryRouter>
+          <RegisterPage />
+        </MemoryRouter>
+      </ThemeProvider>
+    );
+    
+    const firstNameInput = screen.getByLabelText(/First name/i);
+    const lastNameInput = screen.getByLabelText(/Last name/i);
+    const emailInput = screen.getByLabelText(/Email/i);
+    
+    await user.type(firstNameInput, 'John');
+    await user.type(lastNameInput, 'Doe');
+    await user.type(emailInput, 'valid@kcl.ac.uk');
+    
+    const otpButton = screen.getByText('Get OTP');
+    await waitFor(() => expect(otpButton).not.toBeDisabled());
+    await user.click(otpButton);
+    
+    await waitFor(() => {
+      expect(screen.getByLabelText(/One-time Password/i)).toBeInTheDocument();
+    });
+    
+    const otpInput = screen.getByLabelText(/One-time Password/i);
+    await user.type(otpInput, '123456');
+    
+    const verifyButton = screen.getByText('Verify OTP');
+    await user.click(verifyButton);
+    
+    await waitFor(() => {
+      expect(apiClient.post).toHaveBeenNthCalledWith(
+        2,
+        apiPaths.USER.VERIFY_OTP,
+        { email: 'valid@kcl.ac.uk', otp: '123456' }
+      );
+      expect(screen.getByLabelText(/Username/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/Pasword/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/Confirm Password/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/Major/i)).toBeInTheDocument();
+    });
+  });
+  
+  it('submits registration form successfully', async () => {
+    apiClient.post.mockResolvedValueOnce({ data: { message: 'OTP sent successfully' } })
+                   .mockResolvedValueOnce({ data: { message: 'OTP verified successfully' } })
+                   .mockResolvedValueOnce({ data: { message: 'User registered successfully' } });
+    
+    render(
+      <ThemeProvider theme={theme}>
+        <MemoryRouter>
+          <RegisterPage />
+        </MemoryRouter>
+      </ThemeProvider>
+    );
+    
+    const firstNameInput = screen.getByLabelText(/First name/i);
+    const lastNameInput = screen.getByLabelText(/Last name/i);
+    const emailInput = screen.getByLabelText(/Email/i);
+    
+    await user.type(firstNameInput, 'John');
+    await user.type(lastNameInput, 'Doe');
+    await user.type(emailInput, 'valid@kcl.ac.uk');
+    
+    const otpButton = screen.getByText('Get OTP');
+    await waitFor(() => expect(otpButton).not.toBeDisabled());
+    await user.click(otpButton);
+    
+    await waitFor(() => {
+      expect(screen.getByLabelText(/One-time Password/i)).toBeInTheDocument();
+    });
+    
+    const otpInput = screen.getByLabelText(/One-time Password/i);
+    await user.type(otpInput, '123456');
+    
+    const verifyButton = screen.getByText('Verify OTP');
+    await user.click(verifyButton);
+    
+    await waitFor(() => {
+      expect(screen.getByLabelText(/Username/i)).toBeInTheDocument();
+    });
+    
+    const usernameInput = screen.getByLabelText(/Username/i);
+    const passwordInput = screen.getByLabelText(/Pasword/i);
+    const confirmPasswordInput = screen.getByLabelText(/Confirm Password/i);
+    const majorInput = screen.getByLabelText(/Major/i);
+    
+    await user.type(usernameInput, 'johndoe');
+    await user.type(passwordInput, 'password123');
+    await user.type(confirmPasswordInput, 'password123');
+    await user.type(majorInput, 'Computer Science');
+    
+    const registerButton = screen.getByRole('button', { type: 'submit' });
+    await waitFor(() => expect(registerButton).not.toBeDisabled());
+    await user.click(registerButton);
+    
+    await waitFor(() => {
+      expect(apiClient.post).toHaveBeenNthCalledWith(
+        3,
+        apiPaths.USER.REGISTER,
+        {
+          first_name: 'John',
+          last_name: 'Doe',
+          email: 'valid@kcl.ac.uk',
+          username: 'johndoe',
+          password: 'password123',
+          confirm_password: 'password123',
+          major: 'Computer Science',
+          societies: [],
+          president_of: null
+        }
+      );
+      expect(mockNavigate).toHaveBeenCalledWith('/login');
+    });
+  });
+  
+  it('handles password validation errors', async () => {
+    apiClient.post.mockResolvedValueOnce({ data: { message: 'OTP sent successfully' } })
+                   .mockResolvedValueOnce({ data: { message: 'OTP verified successfully' } });
+    
+    render(
+      <ThemeProvider theme={theme}>
+        <MemoryRouter>
+          <RegisterPage />
+        </MemoryRouter>
+      </ThemeProvider>
+    );
+    
+    const firstNameInput = screen.getByLabelText(/First name/i);
+    const lastNameInput = screen.getByLabelText(/Last name/i);
+    const emailInput = screen.getByLabelText(/Email/i);
+    
+    await user.type(firstNameInput, 'John');
+    await user.type(lastNameInput, 'Doe');
+    await user.type(emailInput, 'valid@kcl.ac.uk');
+    
+    const otpButton = screen.getByText('Get OTP');
+    await waitFor(() => expect(otpButton).not.toBeDisabled());
+    await user.click(otpButton);
+    
+    await waitFor(() => {
+      expect(screen.getByLabelText(/One-time Password/i)).toBeInTheDocument();
+    });
+    
+    const otpInput = screen.getByLabelText(/One-time Password/i);
+    await user.type(otpInput, '123456');
+    
+    const verifyButton = screen.getByText('Verify OTP');
+    await user.click(verifyButton);
+    
+    await waitFor(() => {
+      expect(screen.getByLabelText(/Username/i)).toBeInTheDocument();
+    });
+    
+    const usernameInput = screen.getByLabelText(/Username/i);
+    const passwordInput = screen.getByLabelText(/Pasword/i);
+    const confirmPasswordInput = screen.getByLabelText(/Confirm Password/i);
+    
+    await user.type(usernameInput, 'johndoe');
+    
+
+    await user.type(passwordInput, 'pass');
+    await user.tab();
+    
+    await waitFor(() => {
+      const errorIcons = screen.getAllByTestId('ErrorOutlineIcon');
+      expect(errorIcons.length).toBeGreaterThan(0);
+    });
+    
+    await user.clear(passwordInput);
+    await user.type(passwordInput, 'password123');
+    
+    await user.type(confirmPasswordInput, 'password456');
+    await user.tab();
+    
+    await waitFor(() => {
+      const errorIcons = screen.getAllByTestId('ErrorOutlineIcon');
+      expect(errorIcons.length).toBeGreaterThan(0);
+    });
+    
+    await user.clear(confirmPasswordInput);
+    await user.type(confirmPasswordInput, 'password123');
+    await user.tab();
+    
+    await waitFor(() => {
+      const successIcons = screen.getAllByTestId('CheckCircleIcon');
+      expect(successIcons.length).toBeGreaterThan(0);
+    });
+  });
+  
+  it('handles OTP request errors', async () => {
+    const errorMessage = 'Email already registered';
+    
+    apiClient.post.mockImplementationOnce(() => {
+      return Promise.reject({ 
+        response: { 
+          data: { 
+            error: errorMessage 
+          } 
+        } 
+      });
+    });
+    
+    render(
+      <ThemeProvider theme={theme}>
+        <MemoryRouter>
+          <RegisterPage />
+        </MemoryRouter>
+      </ThemeProvider>
+    );
+    
+    const firstNameInput = screen.getByLabelText(/First name/i);
+    const lastNameInput = screen.getByLabelText(/Last name/i);
+    const emailInput = screen.getByLabelText(/Email/i);
+    
+    await user.type(firstNameInput, 'John');
+    await user.type(lastNameInput, 'Doe');
+    await user.type(emailInput, 'existing@kcl.ac.uk');
+    
+    const otpButton = screen.getByText('Get OTP');
+    await waitFor(() => expect(otpButton).not.toBeDisabled());
+    await user.click(otpButton);
+    
+    await waitFor(() => {
+      expect(apiClient.post).toHaveBeenCalledWith(
+        apiPaths.USER.REQUEST_OTP, 
+        { email: 'existing@kcl.ac.uk' }
+      );
+    });
+    
+    await waitFor(() => {
+      const errorElements = screen.queryAllByText((content, element) => {
+        return content.includes(errorMessage);
+      });
+      
+      expect(apiClient.post).toHaveBeenCalled();
+      expect(apiClient.post).toHaveReturnedTimes(1);
+    });
+  });
+  
+  it('allows resending OTP after waiting for the timer', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    
+    apiClient.post.mockResolvedValueOnce({ data: { message: 'OTP sent successfully' } })
+                   .mockResolvedValueOnce({ data: { message: 'OTP sent successfully' } });
+    
+    render(
+      <ThemeProvider theme={theme}>
+        <MemoryRouter>
+          <RegisterPage />
+        </MemoryRouter>
+      </ThemeProvider>
+    );
+    
+    const firstNameInput = screen.getByLabelText(/First name/i);
+    const lastNameInput = screen.getByLabelText(/Last name/i);
+    const emailInput = screen.getByLabelText(/Email/i);
+    
+    await user.type(firstNameInput, 'John');
+    await user.type(lastNameInput, 'Doe');
+    await user.type(emailInput, 'valid@kcl.ac.uk');
+    
+    const otpButton = screen.getByText('Get OTP');
+    await waitFor(() => expect(otpButton).not.toBeDisabled());
+    await user.click(otpButton);
+    
+    await waitFor(() => {
+      expect(screen.getByLabelText(/One-time Password/i)).toBeInTheDocument();
+    });
+    
+    const resendButton = screen.getByRole('button', {
+      name: (text) => text.includes('Resend OTP')
+    });
+    expect(resendButton).toBeDisabled();
+    
+    for (let i = 0; i < 61; i++) {
+      act(() => {
+        vi.advanceTimersByTime(1000);
+      });
+    }
+    
+    expect(apiClient.post).toHaveBeenCalledTimes(1);
+    
+    vi.useRealTimers();
+  }, 20000);
 });

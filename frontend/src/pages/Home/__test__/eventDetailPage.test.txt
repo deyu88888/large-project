@@ -6,8 +6,8 @@ import { vi } from 'vitest';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import EventDetailPage from '../eventDetailPage';
-import { apiClient } from '../../api';
-import { CommentSection } from '../../components/CommentSection';
+import { apiClient } from '../../../api';
+import { CommentSection } from '../../../components/CommentSection';
 
 const theme = createTheme({
   palette: {

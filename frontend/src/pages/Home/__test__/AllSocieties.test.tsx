@@ -5,7 +5,7 @@ import { BrowserRouter } from "react-router-dom";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import { apiClient } from "../../../api";
 
-// Mock components and modules
+
 vi.mock("../../../api", () => ({
   apiClient: {
     get: vi.fn()
@@ -97,19 +97,15 @@ describe("AllSocieties", () => {
     });
     renderWithProviders(<AllSocieties />);
     
-    // Wait for component to load data and render toggle buttons
     await waitFor(() => {
       expect(screen.getByText("Group by Category")).toBeInTheDocument();
     });
     
-    // Initially should be in "Group by Category" mode
     expect(screen.getByText("Games")).toBeInTheDocument();
     expect(screen.getByText("Arts")).toBeInTheDocument();
     
-    // Click "View All" to change view mode
     fireEvent.click(screen.getByText("View All"));
     
-    // Categories should no longer be visible, but society cards should still be there
     expect(screen.queryByText("Games")).not.toBeInTheDocument();
     expect(screen.queryByText("Arts")).not.toBeInTheDocument();
     expect(screen.getAllByTestId("society-card")).toHaveLength(2);

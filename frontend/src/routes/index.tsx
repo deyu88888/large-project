@@ -1,7 +1,7 @@
 import { lazy, Suspense } from "react";
 import { Outlet, Navigate, useRoutes } from "react-router-dom";
 
-import NotFound from "../pages/Home/404.tsx";
+import NotFound from "../pages/Home/404";
 import { LoadingView } from "../components/loading/LoadingView";
 import { PublicGuard } from "../components/guards/public-guard";
 import { PrivateGuard } from "../components/guards/private-guard";
@@ -14,7 +14,7 @@ import PublicLayout from "../components/home/PublicLayout";
 // Lazy-loaded pages
 const LoginPage = lazy(() => import("../pages/Auth/Login.tsx"));
 const RegisterPage = lazy(() => import("../pages/Auth/Register.tsx"));
-const SearchResultsPage = lazy(() => import("../pages/Home/SearchResultsPage.tsx"))
+const SearchResultsPage = lazy(() => import("../pages/Home/SearchResultsPage"))
 const ProfilePage = lazy(() => import("../pages/Home/Profile.tsx"));
 const StudentDashboard = lazy(() => import("../pages/Student/StudentDashboard"));
 const MySocieties = lazy(() => import("../pages/Student/MyJoinedSocieties"));
@@ -23,7 +23,7 @@ const ViewNotifications = lazy(() => import("../pages/Student/ViewNotifications"
 const ViewInbox = lazy(() => import("../pages/Student/ViewInbox"));
 const StartSociety = lazy(() => import("../pages/Student/StartSociety"));
 const JoinSocietiesPage = lazy(() => import("../pages/Student/JoinSociety"));
-const ViewSocietyPage = lazy(() => import("../pages/Home/ViewSociety.tsx"));
+const ViewSocietyPage = lazy(() => import("../pages/Home/ViewSociety"));
 const PresidentPage = lazy(() => import("../pages/President/PresidentPage"));
 const ManageSocietyDetails = lazy(() => import("../pages/President/ManageSocietyDetails"));
 //const SocietyPreviewModal = lazy(() => import("../pages/President/SocietyPreviewModal"));
@@ -36,14 +36,14 @@ const PendingMembers = lazy(() => import("../pages/President/PendingMembers"));
 const GiveAwardPage = lazy(() => import("../pages/President/GiveAwardPage"));
 const AssignRolePage = lazy(() => import("../pages/President/AssignSocietyRole"));
 const SocietyNewsManager = lazy(() => import("../pages/President/SocietyNewsManager"));
-const ReportThread = lazy(() => import("../pages/Home/ReportThread.tsx"));
+const ReportThread = lazy(() => import("../pages/Home/ReportThread"));
 
 // Public event pages
-const AllEventsPage = lazy(() => import("../pages/Home/AllEventsPage.tsx"));
-const EventDetailPage = lazy(() => import("../pages/Home/EventDetailPage.tsx"));
-const AllSocietiesPage = lazy(() => import("../pages/Home/AllSocieties.tsx"));
-const PublicCalendarPage = lazy(() => import("../pages/Home/Calendar.tsx"));
-const SupportPage = lazy(() => import("../pages/Home/Support.tsx"));
+const AllEventsPage = lazy(() => import("../pages/Home/AllEventsPage"));
+const EventDetailPage = lazy(() => import("../pages/Home/EventDetailPage"));
+const AllSocietiesPage = lazy(() => import("../pages/Home/AllSocieties"));
+const PublicCalendarPage = lazy(() => import("../pages/Home/Calendar"));
+const SupportPage = lazy(() => import("../pages/Home/Support"));
 
 // Admin pages
 const EventListPage = lazy(() => import("../pages/Admin/AdminEventList"));
@@ -53,7 +53,7 @@ const EventListRejectPage = lazy(() => import("../pages/Admin/RejectedEventsList
 const AdminDashboardPage = lazy(() => import("../pages/Admin/AdminDashboard"));
 const CalendarPage = lazy(() => import("../pages/Admin/AdminCalendar"));
 const StudentListPage = lazy(() => import("../pages/Admin/StudentList"));
-const DashboardPage = lazy(() => import("../pages/Home/Dashboard.tsx"));
+const DashboardPage = lazy(() => import("../pages/Home/Dashboard"));
 const CreateAdminPage = lazy(() => import("../pages/Admin/CreateAdmin"));
 const AdminListPage = lazy(() => import("../pages/Admin/AdminList"));
 const RequestSocietyPage = lazy(() => import("../pages/Admin/SocietyCreationRequests"));
