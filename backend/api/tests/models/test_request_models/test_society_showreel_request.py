@@ -84,7 +84,7 @@ class SocietyShowreelRequestModelTest(TransactionTestCase):
                 if os.path.exists(file_path):
                     os.remove(file_path)
         except Exception as e:
-            print(f"Error cleaning up files: {e}")
+            pass
     
     def test_showreel_request_creation(self):
         """Test that a showreel request can be created with valid data."""

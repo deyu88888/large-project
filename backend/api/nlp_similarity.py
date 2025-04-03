@@ -1,21 +1,15 @@
-# backend/api/nlp_similarity.py
-
 import numpy as np
 import re
 import os
 import pickle
 import functools
-
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-
 from django.conf import settings
-
 import nltk
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
-
 from .semantic_enhancer import semantic_enhancer
 
 try:

@@ -5,7 +5,7 @@ from rest_framework import status
 from unittest.mock import patch, MagicMock
 
 from api.models import User, Student, Society, SocietyNews, NewsComment
-from api.views import has_society_management_permission  # Import the actual function
+from api.views import has_society_management_permission
 
 class TestNewsCommentDetailView(APITestCase):
     def setUp(self):

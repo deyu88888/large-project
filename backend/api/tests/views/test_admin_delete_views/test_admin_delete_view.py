@@ -14,18 +14,6 @@ from api.views import AdminDeleteView, get_admin_if_user_is_admin
 
 class TestAdminDeleteView(APITestCase, URLPatternsTestCase):
     """Tests for the AdminDeleteView class.
-    
-    This test suite validates the functionality of the AdminDeleteView which handles
-    deletion of various resource types (Students, Societies, Events, Admins).
-    
-    Key functionalities tested:
-    - Authorization (only admins can delete, super admins needed for admin deletion)
-    - Validation (reason required, can't delete self)
-    - Error handling (invalid types, non-existent targets)
-    - Activity logging (log entries created correctly)
-    
-    Note: Special care is taken to avoid foreign key constraint issues, particularly
-    when deleting Student objects that might be referenced as presidents of societies.
     """
     
     urlpatterns = [

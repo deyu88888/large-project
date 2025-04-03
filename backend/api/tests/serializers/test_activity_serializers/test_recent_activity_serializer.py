@@ -2,7 +2,7 @@ from django.test import TestCase
 from api.serializers import RecentActivitySerializer
 from datetime import datetime, timedelta
 from rest_framework.exceptions import ValidationError
-import pytz  # To handle timezone normalization
+import pytz
 
 class TestRecentActivitySerializer(TestCase):
     def test_valid_recent_activity(self):

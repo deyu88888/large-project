@@ -1,3 +1,5 @@
+import json
+
 class OptionsAuthExemptMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
@@ -19,7 +21,6 @@ class TokenDebugMiddleware:
         # Check if this is a token refresh attempt
         if request.path == '/api/user/token/refresh':
             try:
-                import json
                 body = json.loads(request.body.decode('utf-8'))
                 if 'refresh' not in body:
                     print(f"WARNING: Token refresh missing 'refresh' key. Received: {body.keys()}")

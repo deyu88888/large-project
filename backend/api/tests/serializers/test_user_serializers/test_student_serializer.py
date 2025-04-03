@@ -6,6 +6,8 @@ from api.tests.file_deletion import delete_file
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.conf import settings
 import os
+from django.test.client import RequestFactory
+
         
 
 User = get_user_model()
@@ -270,7 +272,6 @@ class StudentSerializerTestCase(TestCase):
             self.student.save()
         
         # Create a mock request with a domain
-        from django.test.client import RequestFactory
         request = RequestFactory().get('/')
         
         # The serializer needs request.user for the is_following method
@@ -290,11 +291,7 @@ class StudentSerializerTestCase(TestCase):
 
     def test_get_icon_without_request(self):
         """Test that icon URL works without request in context."""
-        # Add an icon to the student
-        from django.core.files.uploadedfile import SimpleUploadedFile
-        from django.conf import settings
-        import os
-        
+
         # Create a simple test image file
         test_image_path = os.path.join(settings.MEDIA_ROOT, 'test_icon.png')
         with open(test_image_path, 'wb') as f:

@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from django.db.models import Avg, F, Max
 from django.utils import timezone
 from django.conf import settings
+from .models import Society
 
 class FeedbackProcessor:
     """
@@ -123,8 +124,6 @@ class FeedbackProcessor:
         
         if not student_feedback:
             return adjustments
-        
-        from .models import Society
         
         society_ids = set(item['society_id'] for item in student_feedback)
         societies = Society.objects.filter(id__in=society_ids)

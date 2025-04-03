@@ -1,5 +1,3 @@
-# TODO: initial refactoring complete
-
 from random import randint
 from api.models import AdminReportRequest, Student
 from api.management.commands.seeding.comment_generator import RandomCommentDataGenerator

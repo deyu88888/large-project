@@ -17,7 +17,7 @@ import django
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "backend.settings")
 django.setup()
 
-# Now you can import models
+# Now we can import models
 from api.models import Society, Student, Event
 
 class RecommendationEvaluator:

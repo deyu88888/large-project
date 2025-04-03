@@ -5,10 +5,9 @@ from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.test import APITestCase
 from unittest.mock import patch, MagicMock
-
+from datetime import datetime
 from api.models import SocietyNews, NewsPublicationRequest, Society, Student
 
-logger = logging.getLogger(__name__)
 
 class NewsPublicationRequestViewTests(APITestCase):
     def setUp(self):
@@ -88,22 +87,18 @@ class NewsPublicationRequestViewTests(APITestCase):
             status="Superseded_Approved",
             admin_notes="Superseded request"
         )
-
         self.url = reverse("news_publication_request")
-        logger.debug("Setup: news_post id=%s, title=%s", self.news_post.id, self.news_post.title)
 
     def test_post_not_student(self):
         self.client.force_authenticate(user=self.user)
         data = {"news_post": self.news_post.id}
         response = self.client.post(self.url, data, format="json")
-        logger.debug("test_post_not_student response: %s", response.data)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(response.data.get("error"), "Only students can submit publication requests")
 
     def test_post_missing_news_post_id(self):
         self.client.force_authenticate(user=self.student)
         response = self.client.post(self.url, {}, format="json")
-        logger.debug("test_post_missing_news_post_id response: %s", response.data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data.get("error"), "News post ID is required")
 
@@ -113,7 +108,6 @@ class NewsPublicationRequestViewTests(APITestCase):
         mock_get_object.return_value = None
         data = {"news_post": 9999}
         response = self.client.post(self.url, data, format="json")
-        logger.debug("test_post_news_not_found response: %s", response.data)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertEqual(response.data.get("error"), "News post not found")
 
@@ -128,7 +122,6 @@ class NewsPublicationRequestViewTests(APITestCase):
 
         data = {"news_post": self.news_post.id}
         response = self.client.post(self.url, data, format="json")
-        logger.debug("test_post_no_permission response: %s", response.data)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(response.data.get("error"), "You do not have permission to publish this news post")
 
@@ -146,7 +139,6 @@ class NewsPublicationRequestViewTests(APITestCase):
 
         data = {"news_post": self.news_post.id}
         response = self.client.post(self.url, data, format="json")
-        logger.debug("test_post_existing_pending_request response: %s", response.data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data.get("error"), "A publication request for this news post is already pending")
 
@@ -168,7 +160,6 @@ class NewsPublicationRequestViewTests(APITestCase):
 
         data = {"news_post": self.news_post.id}
         response = self.client.post(self.url, data, format="json")
-        logger.debug("test_post_success response: %s", response.data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertIn("id", response.data)
         self.assertEqual(response.data.get("news_post"), self.news_post.id)
@@ -177,7 +168,6 @@ class NewsPublicationRequestViewTests(APITestCase):
     def test_get_requests_as_student(self):
         self.client.force_authenticate(user=self.student)
         response = self.client.get(self.url)
-        logger.debug("test_get_requests_as_student response: %s", response.data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         requests = response.data
         for req in requests:
@@ -187,7 +177,6 @@ class NewsPublicationRequestViewTests(APITestCase):
     def test_get_requests_as_admin_default(self):
         self.client.force_authenticate(user=self.admin)
         response = self.client.get(self.url)
-        logger.debug("test_get_requests_as_admin_default response: %s", response.data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         for req in response.data:
             self.assertEqual(req["status"], "Pending")
@@ -196,14 +185,12 @@ class NewsPublicationRequestViewTests(APITestCase):
     def test_get_requests_as_admin_all_statuses(self):
         self.client.force_authenticate(user=self.admin)
         response = self.client.get(self.url + "?all_statuses=true")
-        logger.debug("test_get_requests_as_admin_all_statuses response: %s", response.data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 3)
 
     def test_get_requests_unauthorized(self):
         self.client.force_authenticate(user=self.user)
         response = self.client.get(self.url)
-        logger.debug("test_get_requests_unauthorized response: %s", response.data)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(response.data.get("error"), "Unauthorized")
 
@@ -214,7 +201,6 @@ class NewsPublicationRequestViewTests(APITestCase):
     @patch("api.views_files.news_views.NewsPublicationRequest.objects.filter")
     def test_post_with_last_rejection_date(self, mock_filter, mock_get_object, mock_has_permission, mock_mark_prev, mock_cancel_pending):
         self.client.force_authenticate(user=self.student)
-        from datetime import datetime
         dt = datetime(2025, 4, 1, 15, 30)
         self.news_post.last_rejection_date = dt
 

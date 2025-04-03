@@ -12,16 +12,8 @@ from api.views import AdminRestoreView, get_admin_if_user_is_admin
 
 
 class TestAdminRestoreView(APITestCase, URLPatternsTestCase):
-    """Tests for the AdminRestoreView class.
-
-    This test suite validates the functionality of the AdminRestoreView which handles
-    restoring resources that were previously deleted or modified, based on activity logs.
-
-    Key functionalities tested:
-    - Authorization (only admins can restore, super admins needed for admin restoration)
-    - Validation (supported action types, log entry existence)
-    - Error handling (invalid data, unsupported operations)
-    - Restoration handlers (proper delegation to appropriate handlers)
+    """
+    Tests for the AdminRestoreView class.
     """
 
     urlpatterns = [

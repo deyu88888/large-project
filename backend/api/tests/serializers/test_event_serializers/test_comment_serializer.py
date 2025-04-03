@@ -1,6 +1,7 @@
 from django.test import TestCase
 from api.models import User, Event, Comment
 from api.serializers import CommentSerializer
+from rest_framework.test import APIRequestFactory
 
 
 class CommentSerializerTestCase(TestCase):
@@ -50,7 +51,6 @@ class CommentSerializerTestCase(TestCase):
 
     def get_request_with_user(self):
         """Mock a request with an authenticated user."""
-        from rest_framework.test import APIRequestFactory
         request = APIRequestFactory().post("/")
         request.user = self.user
         return request

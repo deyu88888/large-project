@@ -5,10 +5,8 @@ from api.views import RestoreHandlerFactory
 
 
 class TestRestoreHandlerFactory(unittest.TestCase):
-    """Tests for the RestoreHandlerFactory class.
-    
-    This test suite verifies that the RestoreHandlerFactory correctly returns
-    the appropriate handler based on the action type and target type.
+    """
+    Tests for the RestoreHandlerFactory class.
     """
 
     def setUp(self):

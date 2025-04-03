@@ -1,4 +1,3 @@
-# api/apps.py
 import sys
 from django.apps import AppConfig
 

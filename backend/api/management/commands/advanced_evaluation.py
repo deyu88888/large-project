@@ -1,5 +1,3 @@
-# backend/api/management/commands/advanced_evaluation.py
-
 from django.core.management.base import BaseCommand
 from django.db.models import Count, Q, Avg
 from django.utils import timezone

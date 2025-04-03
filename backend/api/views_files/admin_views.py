@@ -523,8 +523,6 @@ class AdminSocietyDetailRequestView(APIView):
 
         society_request.save()
 
-        # Websocket code removed
-
         return Response(
             {"message": f"Society detail request {status_update.lower()} successfully."},
             status=status.HTTP_200_OK

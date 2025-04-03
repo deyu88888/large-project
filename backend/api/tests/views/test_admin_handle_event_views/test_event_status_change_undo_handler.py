@@ -7,6 +7,9 @@ from rest_framework import status
 from rest_framework.response import Response
 
 from api.models import User, Student, Society, Event, ActivityLog
+from api.views import EventStatusChangeUndoHandler
+
+
 
 
 class TestEventStatusChangeUndoHandler(TestCase):
@@ -91,10 +94,7 @@ class TestEventStatusChangeUndoHandler(TestCase):
     @patch('api.views.get_object_by_id_or_name')
     @patch('api.views.EventStatusChangeUndoHandler.handle')    
     def test_undo_approve_status(self, mock_handle, mock_get_object):
-        """Test undoing an approve status change."""
-        from api.views import EventStatusChangeUndoHandler
-        
-        
+        """Test undoing an approve status change."""        
         mock_get_object.return_value = self.event
         mock_handle.return_value = Response(
             {"message": "Event status change undone successfully. Status set back to Pending."}, 
@@ -118,10 +118,7 @@ class TestEventStatusChangeUndoHandler(TestCase):
     @patch('api.views.get_object_by_id_or_name')
     @patch('api.views.EventStatusChangeUndoHandler.handle')    
     def test_undo_reject_status(self, mock_handle, mock_get_object):
-        """Test undoing a reject status change."""
-        from api.views import EventStatusChangeUndoHandler
-        
-        
+        """Test undoing a reject status change."""        
         mock_get_object.return_value = self.event
         mock_handle.return_value = Response(
             {"message": "Event status change undone successfully. Status set back to Pending."}, 
@@ -146,9 +143,6 @@ class TestEventStatusChangeUndoHandler(TestCase):
     @patch('api.views.EventStatusChangeUndoHandler.handle')    
     def test_event_not_found(self, mock_handle, mock_get_object):
         """Test handling when event is not found."""
-        from api.views import EventStatusChangeUndoHandler
-        
-        
         mock_get_object.return_value = None
         mock_handle.return_value = Response(
             {"error": "Event not found."}, 
@@ -173,9 +167,6 @@ class TestEventStatusChangeUndoHandler(TestCase):
     @patch('api.views.EventStatusChangeUndoHandler.handle')    
     def test_error_handling(self, mock_handle, mock_get_object):
         """Test error handling during status change undo."""
-        from api.views import EventStatusChangeUndoHandler
-        
-        
         mock_get_object.return_value = self.event
         mock_handle.return_value = Response(
             {"error": "Failed to undo event status change: Test error"}, 
@@ -200,9 +191,6 @@ class TestEventStatusChangeUndoHandler(TestCase):
     @patch('api.views.EventStatusChangeUndoHandler.handle')    
     def test_log_entry_deletion_and_creation(self, mock_handle, mock_get_object):
         """Test that log entry is deleted and a new one is created."""
-        from api.views import EventStatusChangeUndoHandler
-        
-        
         def simulate_handler_behavior(original_data, log_entry):
             
             ActivityLog.objects.create(
@@ -263,29 +251,20 @@ class TestEventStatusChangeUndoHandler(TestCase):
     @patch('api.views.ActivityLog.objects.create')
     def test_full_integration(self, mock_activity_log_create, mock_get_object):
         """Test a more integrated approach with fewer mocks."""
-        from api.views import EventStatusChangeUndoHandler
-        
-        
         mock_get_object.return_value = self.event
-        
-        
+    
         mock_log = MagicMock()
         mock_activity_log_create.return_value = mock_log
         
-        
         handler = EventStatusChangeUndoHandler()
-        
-        
+    
         original_data = json.loads(self.approve_log_entry.original_data)
         response = handler.handle(original_data, self.approve_log_entry)
         
-        
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("Event status change undone successfully", response.data["message"])
-        
-        
+    
         self.event.refresh_from_db()
         self.assertEqual(self.event.status, "Pending")
-        
         
         mock_activity_log_create.assert_called_once()

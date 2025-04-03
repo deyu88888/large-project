@@ -6,7 +6,7 @@ from django.test import TestCase
 from rest_framework import status
 from rest_framework.response import Response
 from api.models import User, Student, Society, Event, ActivityLog
-
+from api.views import EventRestoreHandler
 
 class TestEventRestoreHandler(TestCase):
     """Tests for the EventRestoreHandler class."""
@@ -66,8 +66,6 @@ class TestEventRestoreHandler(TestCase):
     @patch('api.views.EventRestoreHandler.handle')
     def test_basic_restoration(self, mock_handle):
         """Test basic event restoration."""
-        from api.views import EventRestoreHandler
-
         mock_handle.return_value = Response(
             {"message": "Event restored successfully!"},
             status=status.HTTP_200_OK
@@ -87,8 +85,6 @@ class TestEventRestoreHandler(TestCase):
     @patch('api.views.EventRestoreHandler.handle')
     def test_with_complex_date(self, mock_handle):
         """Test with complex date format."""
-        from api.views import EventRestoreHandler
-
         mock_handle.return_value = Response(
             {"message": "Event restored successfully!"},
             status=status.HTTP_200_OK
@@ -110,8 +106,6 @@ class TestEventRestoreHandler(TestCase):
     @patch('api.views.EventRestoreHandler.handle')
     def test_with_attendees(self, mock_handle):
         """Test with attendees."""
-        from api.views import EventRestoreHandler
-
         mock_handle.return_value = Response(
             {"message": "Event restored successfully!"},
             status=status.HTTP_200_OK
@@ -148,8 +142,6 @@ class TestEventRestoreHandler(TestCase):
     @patch('api.views.EventRestoreHandler.handle')
     def test_with_complex_duration(self, mock_handle):
         """Test with complex duration format."""
-        from api.views import EventRestoreHandler
-
         mock_handle.return_value = Response(
             {"message": "Event restored successfully!"},
             status=status.HTTP_200_OK
@@ -171,8 +163,6 @@ class TestEventRestoreHandler(TestCase):
     @patch('api.views.EventRestoreHandler.handle')
     def test_with_simple_duration(self, mock_handle):
         """Test with simple duration format."""
-        from api.views import EventRestoreHandler
-
         mock_handle.return_value = Response(
             {"message": "Event restored successfully!"},
             status=status.HTTP_200_OK
@@ -194,8 +184,6 @@ class TestEventRestoreHandler(TestCase):
     @patch('api.views.EventRestoreHandler.handle')
     def test_error_handling(self, mock_handle):
         """Test error handling."""
-        from api.views import EventRestoreHandler
-
         mock_handle.return_value = Response(
             {"error": "Failed to restore Event: Test error"},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -216,8 +204,6 @@ class TestEventRestoreHandler(TestCase):
     @patch('api.views.EventRestoreHandler.handle')
     def test_log_entry_deletion(self, mock_handle):
         """Test that the log entry is deleted on success."""
-        from api.views import EventRestoreHandler
-
         def delete_log_entry_side_effect(original_data, log_entry):
             log_entry.delete()
             return Response({"message": "Event restored successfully!"}, status=status.HTTP_200_OK)
@@ -236,8 +222,6 @@ class TestEventRestoreHandler(TestCase):
 
     def test_restore_minimal_event(self):
         """Test restoring a minimal valid event."""
-        from api.views_files.admin_handle_event_views import EventRestoreHandler
-
         original_data = json.loads(self.log_entry.original_data)
 
         handler = EventRestoreHandler()
@@ -252,8 +236,6 @@ class TestEventRestoreHandler(TestCase):
 
     def test_restore_with_attendees_and_current_attendees(self):
         """Test restoration with attendees and current_attendees by email."""
-        from api.views_files.admin_handle_event_views import EventRestoreHandler
-
         s1 = Student.objects.create(
             username="s1", email="s1@test.com", first_name="S", last_name="One"
         )
@@ -278,8 +260,6 @@ class TestEventRestoreHandler(TestCase):
 
     def test_restore_with_duration_formats(self):
         """Test parsing of multiple duration formats."""
-        from api.views_files.admin_handle_event_views import EventRestoreHandler
-
         durations = ["2 days, 3:45:30", "1:30:00", 5400]
 
         for duration in durations:
@@ -314,8 +294,6 @@ class TestEventRestoreHandler(TestCase):
     @patch("api.views_files.admin_handle_event_views.Event.objects.create", side_effect=Exception("Simulated failure"))
     def test_restore_fails_on_exception(self, mock_create):
         """Ensure exceptions are caught and returned as 500."""
-        from api.views_files.admin_handle_event_views import EventRestoreHandler
-
         original_data = json.loads(self.log_entry.original_data)
         handler = EventRestoreHandler()
         response = handler.handle(original_data, self.log_entry)
@@ -326,8 +304,6 @@ class TestEventRestoreHandler(TestCase):
 
     def test_restore_sets_status_to_default_if_missing(self):
         """Ensure 'status' is set to 'Approved' if missing in original data."""
-        from api.views_files.admin_handle_event_views import EventRestoreHandler
-
         original_data = json.loads(self.log_entry.original_data)
         original_data.pop("status", None)
 
@@ -341,8 +317,6 @@ class TestEventRestoreHandler(TestCase):
 
     def test_restore_prints_on_invalid_current_attendees(self):
         """Ensure print occurs on missing student emails in current_attendees."""
-        from api.views_files.admin_handle_event_views import EventRestoreHandler
-
         original_data = json.loads(self.log_entry.original_data)
         original_data["current_attendees"] = ["nonexistent@example.com"]
 
@@ -356,8 +330,6 @@ class TestEventRestoreHandler(TestCase):
 
     def test_restore_handles_images_field_exception(self):
         """Ensure image handling block catches errors and continues."""
-        from api.views_files.admin_handle_event_views import EventRestoreHandler
-
         original_data = json.loads(self.log_entry.original_data)
         original_data["images"] = ["invalid-image-id"]  # not a valid ID
 

@@ -288,8 +288,6 @@ class SeedingTestCase(TransactionTestCase):
         self.assertTrue(event.date <= date.today())
         self.assertEqual(Event.objects.count(), initial_objects+1)
 
-    # REMOVED: test_broadcast_updates - websocket functionality is being removed
-
     def test_initialise_society_awards(self):
         """Test that initialise_society_awards creates 3 society awards."""
         rank_to_name = {"Bronze": "Novice", "Silver": "Enthusiast", "Gold": "Veteran"}

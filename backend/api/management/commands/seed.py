@@ -65,7 +65,6 @@ class Command(BaseCommand):
         self.admin_generator.create_admin_reports(quantity[6])
         self.create_society_news(quantity[7])
 
-        print(self.style.SUCCESS("Seeding complete!"))
 
     def get_or_create_user(self, model, username, email, first_name, last_name, defaults):
         """Create a user object"""
@@ -78,10 +77,6 @@ class Command(BaseCommand):
                 **defaults,
             },
         )
-        if created:
-            print(self.style.SUCCESS(f"{model.__name__} created: {user.username}"))
-        else:
-            print(f"{model.__name__} already exists: {user.username}")
         return user, created
 
     def create_default_students(self):
