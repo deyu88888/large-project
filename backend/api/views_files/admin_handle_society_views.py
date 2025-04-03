@@ -146,7 +146,7 @@ class SocietyUpdateUndoHandler(RestoreHandler):
                             showreel.society = society
                             showreel.save()
                     except Exception as e:
-                        print(f"Error handling showreel image: {str(e)}")
+                        pass
             
             society.save()
             log_entry.delete()

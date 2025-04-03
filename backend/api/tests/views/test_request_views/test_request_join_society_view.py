@@ -129,7 +129,6 @@ class RequestJoinSocietyViewTests(APITestCase):
         self.client.force_authenticate(user=self.student)
         response = self.client.get("/api/society/join/")
 
-        print("DEBUG get error response:", response.data)
         self.assertEqual(response.status_code, 403)
         self.assertEqual(response.data["error"], "You must be a student to join.")
 
@@ -145,7 +144,6 @@ class RequestJoinSocietyViewTests(APITestCase):
         self.client.force_authenticate(user=self.student)
         response = self.client.post(f"/api/society/join/{self.society1.id}/")
 
-        print("DEBUG post error response:", response.data)
         self.assertEqual(response.status_code, 403)
         self.assertEqual(response.data["error"], "You must be a student to join.")
 

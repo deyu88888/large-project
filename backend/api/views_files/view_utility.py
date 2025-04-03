@@ -131,7 +131,7 @@ def process_date_field(obj, field_name, date_str):
         date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
         setattr(obj, field_name, date_obj)
     except Exception as e:
-        print(f"Error processing date field {field_name}: {str(e)}")
+        pass
 
 def process_time_field(obj, field_name, time_str):
     """Convert string time to time object and set on object."""
@@ -140,7 +140,7 @@ def process_time_field(obj, field_name, time_str):
         time_obj = time(hour, minute, second)
         setattr(obj, field_name, time_obj)
     except Exception as e:
-        print(f"Error processing time field {field_name}: {str(e)}")
+        pass
 
 def process_timedelta_field(obj, field_name, delta_str):
     """Convert string representation of timedelta to timedelta object."""
@@ -163,14 +163,11 @@ def process_timedelta_field(obj, field_name, delta_str):
         
 def set_many_to_many_relationship(obj, field_name, id_list, model_class):
     """Set a many-to-many relationship from a list of IDs."""
-    if not obj.pk:
-        print(f"Skipping M2M relationship for '{field_name}' because object has no primary key yet.")
-        return
     try:
         m2m_field = getattr(obj, field_name)
         m2m_field.set(model_class.objects.filter(id__in=id_list))
     except Exception as e:
-        print(f"Error setting M2M field '{field_name}': {str(e)}")
+        pass
     
 
 def set_foreign_key_relationship(obj, field_name, id_value, model_class):
@@ -183,7 +180,7 @@ def set_foreign_key_relationship(obj, field_name, id_value, model_class):
         item = model_class.objects.get(id=int(id_value))
         setattr(obj, field_name, item)
     except (model_class.DoesNotExist, ValueError, TypeError) as e:
-        print(f"Error setting {field_name} with ID {id_value}: {str(e)}")
+        pass
 
 
 class RestoreHandler:

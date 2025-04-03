@@ -16,7 +16,7 @@ Production app is at [https://infiniteloop.space](https://infiniteloop.space)
 ## Directory Overview
 
 ```bash
-├── backend/                 # Django backend (ASGI, WebSockets, REST API)
+├── backend/                 # Django backend (ASGI, REST API)
 ├── frontend/                # React frontend (Vite, Tailwind, MUI)
 ├── docker/                  # Docker-specific configs
 │   ├── docker.base.yml      # Base Compose config used for extending

@@ -4,11 +4,9 @@ from django.dispatch import receiver
 from django.utils import timezone
 from .models import AwardStudent, Student, Society, Notification, EventRequest, SocietyRequest, Event, User
 
-# Add this function for the tests
 def broadcast_dashboard_update():
     """
     Placeholder function to satisfy the tests.
-    No websocket functionality is implemented.
     """
     pass
 
@@ -67,7 +65,6 @@ def notify_on_event_requested(sender, instance, created, **kwargs):
         return
 
     try:
-        # Fixed: Use the User.get_admins() method
         all_admins = User.get_admins()
         for admin in all_admins:
             Notification.objects.create(
@@ -77,8 +74,7 @@ def notify_on_event_requested(sender, instance, created, **kwargs):
                 for_user=admin,
             )
     except Exception as e:
-        # Print the error instead of silently passing
-        print(f"Error in notify_on_event_requested: {e}")
+        pass
 
 @receiver(post_save, sender=EventRequest)
 def notify_on_event_status_update(sender, instance, created, **kwargs):
@@ -113,8 +109,7 @@ def notify_on_event_status_update(sender, instance, created, **kwargs):
             # Call the broadcast function
             broadcast_dashboard_update()
     except Exception as e:
-        # Print the error instead of silently passing
-        print(f"Error in notify_on_event_status_update: {e}")
+        pass
 
 @receiver(post_save, sender=SocietyRequest)
 def notify_on_society_requested(sender, instance, created, **kwargs):
@@ -132,8 +127,7 @@ def notify_on_society_requested(sender, instance, created, **kwargs):
                 for_user=admin,
             )
     except Exception as e:
-        # Print the error instead of silently passing
-        print(f"Error in notify_on_society_requested: {e}")
+        pass
 
 @receiver(post_save, sender=SocietyRequest)
 def notify_on_society_creation_update(sender, instance, created, **kwargs):
@@ -170,8 +164,7 @@ def notify_on_society_creation_update(sender, instance, created, **kwargs):
             # Call the broadcast function
             broadcast_dashboard_update()
     except Exception as e:
-        # Print the error instead of silently passing
-        print(f"Error in notify_on_society_creation_update: {e}")
+        pass
 
 @receiver(post_save, sender=SocietyRequest)
 def notify_on_society_join_request(sender, instance, created, **kwargs):
@@ -200,8 +193,7 @@ def notify_on_society_join_request(sender, instance, created, **kwargs):
                 f"'{instance.society.name}' has been rejected.",
             )
     except Exception as e:
-        # Print the error instead of silently passing
-        print(f"Error in notify_on_society_join_request: {e}")
+        pass
 
 @receiver(post_save, sender=Event)
 def notify_society_members_of_event(sender, instance, created, **kwargs):
@@ -217,8 +209,7 @@ def notify_society_members_of_event(sender, instance, created, **kwargs):
                 for_user=member,
             )
     except Exception as e:
-        # Print the error instead of silently passing
-        print(f"Error in notify_society_members_of_event: {e}")
+        pass
 
 @receiver(m2m_changed, sender=Event.current_attendees.through)
 def notify_society_members_of_event_time(sender, instance, action, pk_set, **kwargs):
@@ -237,8 +228,7 @@ def notify_society_members_of_event_time(sender, instance, action, pk_set, **kwa
                     send_time=send_time,
                 )
     except Exception as e:
-        # Print the error instead of silently passing
-        print(f"Error in notify_society_members_of_event_time: {e}")
+        pass
 
 @receiver(post_save, sender=AwardStudent)
 def notify_student_award(sender, instance, created, **kwargs):
@@ -254,5 +244,4 @@ def notify_student_award(sender, instance, created, **kwargs):
                 is_important=True,
             )
         except Exception as e:
-            # Print the error instead of silently passing
-            print(f"Error in notify_student_award: {e}")
+            pass

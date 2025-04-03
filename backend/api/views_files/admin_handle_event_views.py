@@ -59,7 +59,6 @@ class EventRestoreHandler(RestoreHandler):
                     
                     event.duration = duration
                 except Exception as e:
-                    print(f"Error setting duration: {str(e)}")
                     event.duration = timedelta(hours=1)
             
             event.save()
@@ -89,10 +88,8 @@ class EventRestoreHandler(RestoreHandler):
                         student = Student.objects.filter(email=email).first()
                         if student:
                             event.current_attendees.add(student)
-                        else:
-                            print(f"Student with email {email} not found")
                 except Exception as e:
-                    print(f"Error setting current_attendees: {str(e)}")
+                    pass
             
             if 'tags' in original_data and original_data['tags']:
                 event.tags = original_data['tags']
@@ -102,17 +99,9 @@ class EventRestoreHandler(RestoreHandler):
                     for image_id in original_data['images']:
                         event.images.add(image_id)
                 except Exception as e:
-                    print(f"Error setting images: {str(e)}")
+                    pass
             
             event.save()
-
-            # if 'event_requests' in original_data and original_data['event_requests']:
-            #     for request_data in original_data['event_requests']:
-            #         EventRequest.objects.create(
-            #             event=event,
-            #             **{k: v for k, v in request_data.items() if k != 'id' and k != 'event'}
-            #         )
-            
             log_entry.delete()
             
             return Response({
@@ -243,7 +232,7 @@ class EventUpdateUndoHandler(RestoreHandler):
                         for image in data['images']:
                             event.images.add(image)
                 except Exception as e:
-                    print(f"Error handling images: {str(e)}")
+                    pass
             
             event.save()
             

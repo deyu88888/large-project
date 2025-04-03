@@ -238,18 +238,8 @@ class AdminNewsApprovalView(APIView):
             status="Pending"
         ).order_by('-requested_at')
 
-        # Log details for debugging
-        print(f"Found {requests_qs.count()} pending publication requests")
-        for req in requests_qs:
-            news_post = req.news_post
-            print(
-                f"Request ID: {req.id}, News ID: {news_post.id}, News Title: {news_post.title}, News Status: {news_post.status}")
-
-        # Fix any status mismatches - ensure news posts have PendingApproval status
         for req in requests_qs:
             if req.news_post.status != "PendingApproval":
-                print(
-                    f"Status mismatch for news post {req.news_post.id}: {req.news_post.status} -> PendingApproval")
                 req.news_post.status = "PendingApproval"
                 req.news_post.save()
 

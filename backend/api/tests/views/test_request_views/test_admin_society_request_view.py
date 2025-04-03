@@ -103,6 +103,5 @@ class AdminSocietyRequestViewTests(APITestCase):
         self.client.force_authenticate(user=self.admin)
         response = self.client.put(f"/api/admin/society/request/pending/{self.pending_request.id}", {"approved": True})
 
-        print("DEBUG put permission denied:", response.data)
         self.assertEqual(response.status_code, 403)
         self.assertEqual(response.data["error"], "You are not authorized to approve.")
