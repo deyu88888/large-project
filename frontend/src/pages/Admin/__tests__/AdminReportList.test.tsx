@@ -1,12 +1,10 @@
-// failing
 import React from 'react';
 import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
 import { vi } from 'vitest';
-import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import { MemoryRouter } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import AdminReportList from '../AdminReportList';
 import { SearchContext } from '../../../components/layout/SearchContext';
-import { fetchReports } from '../../../utils/fetchReports';
 
 // Mock theme
 const theme = createTheme({
@@ -40,15 +38,16 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
-// Mock fetchReports function
-vi.mock('../fetchReports', () => ({
-  fetchReports: vi.fn(),
+// Mock the fetchReports function directly
+const mockFetchReports = vi.fn();
+vi.mock('../../../utils/fetchReports', () => ({
+  fetchReports: () => mockFetchReports()
 }));
 
 describe('AdminReportList Component', () => {
   const mockReports = [
     {
-      id: 1,
+      id: '1',
       from_student: 'John Doe',
       email: 'john@example.com',
       report_type: 'Academic',
@@ -57,8 +56,8 @@ describe('AdminReportList Component', () => {
       requested_at: '2023-01-01T12:00:00Z'
     },
     {
-      id: 2,
-      from_student: 'Jane Smith',
+      id: '2',
+      from_student: '',
       email: 'jane@example.com',
       report_type: 'Behavior',
       subject: 'Test Subject 2',
@@ -74,9 +73,7 @@ describe('AdminReportList Component', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
-    // Reset fetchReports mock
-    fetchReports.mockResolvedValue(mockReports);
+    mockFetchReports.mockResolvedValue(mockReports);
   });
 
   const setup = async (searchTerm = '', useDarkTheme = false) => {
@@ -97,19 +94,15 @@ describe('AdminReportList Component', () => {
           </SearchContext.Provider>
         </ThemeProvider>
       );
-      
-      await new Promise(resolve => setTimeout(resolve, 0));
     });
+    
+    await waitFor(() => expect(mockFetchReports).toHaveBeenCalled());
     
     return renderResult;
   };
 
   it('fetches and displays reports correctly', async () => {
     await setup();
-    
-    await waitFor(() => {
-      expect(fetchReports).toHaveBeenCalled();
-    });
     
     // Check for table headers
     expect(screen.getByText('ID')).toBeInTheDocument();
@@ -121,85 +114,70 @@ describe('AdminReportList Component', () => {
     
     // Check for report data
     expect(screen.getByText('John Doe')).toBeInTheDocument();
+    expect(screen.getByText('Public User')).toBeInTheDocument();
     expect(screen.getByText('Academic')).toBeInTheDocument();
     expect(screen.getByText('Test Subject 1')).toBeInTheDocument();
     expect(screen.getByText('This is a test report detail')).toBeInTheDocument();
     
     // Check if there are Reply buttons
     const replyButtons = screen.getAllByText('Reply');
-    expect(replyButtons.length).toBeGreaterThan(0);
+    expect(replyButtons.length).toBe(1);
+    
+    // Check if there are Email Reply buttons
+    const emailReplyButtons = screen.getAllByText('Email Reply');
+    expect(emailReplyButtons.length).toBe(1);
   });
 
   it('handles error when fetching reports fails', async () => {
-    fetchReports.mockRejectedValueOnce(new Error('Failed to fetch reports'));
+    mockFetchReports.mockRejectedValueOnce(new Error('Failed to fetch reports'));
     
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     
     await setup();
     
-    // Check for the error state in a more flexible way
     await waitFor(() => {
       expect(consoleSpy).toHaveBeenCalled();
     });
     
-    // Clean up the spy
     consoleSpy.mockRestore();
   });
 
   it('filters reports based on search term', async () => {
-    // Create a mock implementation that respects the search filter
-    const mockFilteredReports = async () => {
-      // We'll directly return filtered data in the component's code
-      // by returning the full data and letting the component do the filtering
-      return mockReports;
-    };
-    
-    fetchReports.mockImplementation(mockFilteredReports);
-    
-    // Use a spy on Array.prototype.filter to verify filtering happens
-    const filterSpy = vi.spyOn(Array.prototype, 'filter');
-    
     await setup('John');
     
-    await waitFor(() => {
-      expect(fetchReports).toHaveBeenCalled();
-    });
-    
-    // Verify that filter was called 
-    expect(filterSpy).toHaveBeenCalled();
-    
-    // Instead of checking DOM directly (which might be unpredictable),
-    // we'll just verify the filter was called with the right data
+    // Verify that the filtered report is in the document
     expect(screen.getByText('John Doe')).toBeInTheDocument();
     
-    filterSpy.mockRestore();
+    // The other report should not be visible when filtered
+    expect(screen.queryByText('Test Subject 2')).not.toBeInTheDocument();
   });
 
   it('navigates to reply page when Reply button is clicked', async () => {
     await setup();
     
-    await waitFor(() => {
-      expect(fetchReports).toHaveBeenCalled();
-    });
-    
     const replyButtons = screen.getAllByText('Reply');
     
-    await act(async () => {
-      fireEvent.click(replyButtons[0]);
-    });
+    fireEvent.click(replyButtons[0]);
     
     expect(mockNavigate).toHaveBeenCalledWith('/admin/report-list/1/reply');
+  });
+
+  it('has mailto link for public users with email', async () => {
+    await setup();
+    
+    const emailReplyButtons = screen.getAllByText('Email Reply');
+    
+    expect(emailReplyButtons[0].closest('a')).toHaveAttribute(
+      'href',
+      expect.stringContaining('mailto:jane@example.com')
+    );
   });
 
   it('renders correctly in dark theme', async () => {
     await setup('', true);
 
-    await waitFor(() => {
-      expect(fetchReports).toHaveBeenCalled();
-    });
-
     // Verify content is displayed
     expect(screen.getByText('John Doe')).toBeInTheDocument();
-    expect(screen.getByText('Jane Smith')).toBeInTheDocument();
+    expect(screen.getByText('Public User')).toBeInTheDocument();
   });
 });

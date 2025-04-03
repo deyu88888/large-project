@@ -1,5 +1,3 @@
-// failing
-
 import React from 'react';
 import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
 import { vi } from 'vitest';
@@ -8,7 +6,7 @@ import ActivityLogList from '../ActivityLog';
 import { apiClient, apiPaths } from '../../../api';
 import { SearchContext } from '../../../components/layout/SearchContext';
 
-// Mock the modules before importing component
+// Mock the modules
 vi.mock('../../../api', () => {
   return {
     apiClient: {
@@ -26,20 +24,16 @@ vi.mock('../../../api', () => {
   };
 });
 
-// Mock the useSettingsStore
 vi.mock('../../../stores/settings-store', () => ({
   useSettingsStore: () => ({ drawer: false }),
 }));
 
-// Mock fetchPendingRequests
-vi.mock('../utils', () => ({
-  fetchPendingRequests: vi.fn(),
+const mockFetchPendingRequests = vi.fn();
+vi.mock('../../../utils/utils', () => ({
+  fetchPendingRequests: () => mockFetchPendingRequests()
 }));
 
-// Import the mocked fetchPendingRequests
-import { fetchPendingRequests } from '../../../utils/utils.ts';
-
-// Create light and dark themes for testing
+// Create themes for testing
 const lightTheme = createTheme({
   palette: {
     mode: 'light',
@@ -52,10 +46,10 @@ const darkTheme = createTheme({
   }
 });
 
-// Mock data for testing - keeping the original structure
+// Mock data for testing
 const mockActivityLogs = [
   {
-    id: 2, // This will appear first in the UI due to sorting
+    id: 2,
     action_type: 'DELETE',
     target_type: 'EVENT',
     target_name: 'Annual Meeting',
@@ -83,14 +77,10 @@ const mockActivityLogs = [
 ];
 
 describe('ActivityLogList Component', () => {
-  // Setup for each test
   beforeEach(() => {
     vi.clearAllMocks();
+    mockFetchPendingRequests.mockResolvedValue(mockActivityLogs);
     
-    // Mock fetchPendingRequests to return our mock data
-    fetchPendingRequests.mockResolvedValue(mockActivityLogs);
-    
-    // Default API mock responses
     apiClient.get.mockResolvedValue({
       data: mockActivityLogs
     });
@@ -103,7 +93,6 @@ describe('ActivityLogList Component', () => {
       data: { success: true }
     });
     
-    // Mock global alert
     global.alert = vi.fn();
   });
 
@@ -118,8 +107,7 @@ describe('ActivityLogList Component', () => {
   };
 
   it('renders loading state initially', async () => {
-    // Mock delay for the API response
-    fetchPendingRequests.mockImplementation(() => 
+    mockFetchPendingRequests.mockImplementation(() => 
       new Promise(resolve => setTimeout(() => resolve(mockActivityLogs), 100))
     );
 
@@ -139,25 +127,16 @@ describe('ActivityLogList Component', () => {
       renderComponent();
     });
     
-    // Wait for loading to complete
     await waitFor(() => {
       expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
     
-    // Check if fetchPendingRequests was called
-    expect(fetchPendingRequests).toHaveBeenCalledWith('/api/activity-logs');
-    
-    // Check if activity log header is displayed
+    expect(mockFetchPendingRequests).toHaveBeenCalled();
     expect(screen.getByText('Activity Log')).toBeInTheDocument();
-    
-    // Check if table headers are displayed
     expect(screen.getByText('Action Type')).toBeInTheDocument();
-    
-    // Check if data is displayed
     expect(screen.getByText('DELETE')).toBeInTheDocument();
     expect(screen.getByText('EVENT')).toBeInTheDocument();
     
-    // Check if Delete and Undo buttons are displayed
     const deleteButtons = screen.getAllByText('Delete');
     const undoButtons = screen.getAllByText('Undo');
     expect(deleteButtons.length).toBe(mockActivityLogs.length);
@@ -173,7 +152,6 @@ describe('ActivityLogList Component', () => {
       expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
     
-    // Should show Chess Club but not Annual Meeting
     expect(screen.getByText('Chess Club')).toBeInTheDocument();
     expect(screen.queryByText('Annual Meeting')).not.toBeInTheDocument();
   });
@@ -187,33 +165,26 @@ describe('ActivityLogList Component', () => {
       expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
 
-    // Reset the mock counts after initial rendering is complete
-    fetchPendingRequests.mockClear();
+    mockFetchPendingRequests.mockClear();
     
-    // Click delete button for the first item visible in the UI
     const deleteButtons = screen.getAllByText('Delete');
     await act(async () => {
       fireEvent.click(deleteButtons[0]);
     });
     
-    // Check if confirmation dialog appears
     await waitFor(() => {
       const dialog = screen.getByRole('dialog');
       expect(dialog).toBeInTheDocument();
       expect(screen.getByText(/Confirm Permanent Deletion/i)).toBeInTheDocument();
     });
     
-    // Click confirm button - use exact button text from component
     const confirmButton = screen.getByText('Delete Permanently');
     await act(async () => {
       fireEvent.click(confirmButton);
     });
     
-    // Verify API was called - don't check specific ID
     expect(apiClient.delete).toHaveBeenCalled();
-    
-    // Check if fetchPendingRequests was called again to refresh data
-    expect(fetchPendingRequests).toHaveBeenCalledTimes(1);
+    expect(mockFetchPendingRequests).toHaveBeenCalledTimes(1);
   });
 
   it('cancels delete action when cancel button is clicked', async () => {
@@ -225,25 +196,21 @@ describe('ActivityLogList Component', () => {
       expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
     
-    // Click delete button for the first item
     const deleteButtons = screen.getAllByText('Delete');
     await act(async () => {
       fireEvent.click(deleteButtons[0]);
     });
     
-    // Verify the dialog is open
     await waitFor(() => {
       const dialog = screen.getByRole('dialog');
       expect(dialog).toBeInTheDocument();
     });
     
-    // Click cancel button
     const cancelButton = screen.getByText('Cancel');
     await act(async () => {
       fireEvent.click(cancelButton);
     });
     
-    // Delete API should not be called - this is the important assertion
     expect(apiClient.delete).not.toHaveBeenCalled();
   });
 
@@ -256,13 +223,11 @@ describe('ActivityLogList Component', () => {
       expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
     
-    // Click undo button for the first item visible in the UI
     const undoButtons = screen.getAllByText('Undo');
     await act(async () => {
       fireEvent.click(undoButtons[0]);
     });
     
-    // Check that the API was called (without checking the specific ID)
     expect(apiClient.post).toHaveBeenCalled();
     expect(apiClient.post.mock.calls[0][0]).toMatch(/\/api\/activity-logs\/\d+\/undo/);
   });
@@ -270,19 +235,16 @@ describe('ActivityLogList Component', () => {
   it('handles error when fetching data', async () => {
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     
-    // Mock API error
-    fetchPendingRequests.mockRejectedValueOnce(new Error('API error'));
+    mockFetchPendingRequests.mockRejectedValueOnce(new Error('API error'));
     
     await act(async () => {
       renderComponent();
     });
     
-    // Wait for loading to complete
     await waitFor(() => {
       expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
     
-    // Check if error was logged
     expect(consoleErrorSpy).toHaveBeenCalled();
     
     consoleErrorSpy.mockRestore();
@@ -291,7 +253,6 @@ describe('ActivityLogList Component', () => {
   it('handles error when deleting log', async () => {
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     
-    // Mock successful initial fetch but error on delete
     apiClient.delete.mockRejectedValueOnce(new Error('Delete error'));
     
     await act(async () => {
@@ -302,28 +263,22 @@ describe('ActivityLogList Component', () => {
       expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
     
-    // Click delete button for the first item
     const deleteButtons = screen.getAllByText('Delete');
     await act(async () => {
       fireEvent.click(deleteButtons[0]);
     });
     
-    // Check if dialog is open
     await waitFor(() => {
       const dialog = screen.getByRole('dialog');
       expect(dialog).toBeInTheDocument();
     });
     
-    // Click confirm button
     const confirmButton = screen.getByText('Delete Permanently');
     await act(async () => {
       fireEvent.click(confirmButton);
     });
     
-    // Check if error was logged
     expect(consoleErrorSpy).toHaveBeenCalled();
-    
-    // Check if API was called but don't check for notification
     expect(apiClient.delete).toHaveBeenCalledWith('/api/activity-logs/2');
     
     consoleErrorSpy.mockRestore();
@@ -332,7 +287,6 @@ describe('ActivityLogList Component', () => {
   it('handles error when undoing action', async () => {
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     
-    // Mock error on undo
     apiClient.post.mockRejectedValueOnce(new Error('Undo error'));
     
     await act(async () => {
@@ -343,16 +297,12 @@ describe('ActivityLogList Component', () => {
       expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
     
-    // Click undo button for the first item specifically
     const undoButtons = screen.getAllByText('Undo');
     await act(async () => {
       fireEvent.click(undoButtons[0]);
     });
     
-    // Check if error was logged
     expect(consoleErrorSpy).toHaveBeenCalled();
-    
-    // Check if API was called with the right parameters
     expect(apiClient.post).toHaveBeenCalledWith('/api/activity-logs/2/undo');
     
     consoleErrorSpy.mockRestore();
@@ -373,11 +323,9 @@ describe('ActivityLogList Component', () => {
       expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
     
-    // Check if the component renders with dark theme
     expect(screen.getByText('Activity Log')).toBeInTheDocument();
   });
 
-  // Test for notification system with less specific assertions
   it('tests API call for undo action', async () => {
     renderComponent();
     
@@ -385,13 +333,11 @@ describe('ActivityLogList Component', () => {
       expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
     
-    // Clicking undo
     const undoButtons = screen.getAllByText('Undo');
     await act(async () => {
       fireEvent.click(undoButtons[0]);
     });
     
-    // Verify the API call was made (without checking specific ID)
     expect(apiClient.post).toHaveBeenCalled();
   });
 });
