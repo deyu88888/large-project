@@ -87,4 +87,9 @@ export interface UserStatusResponse {
   isPresident: boolean;
   pendingRequestId?: string;
   pendingRequestName?: string;
+  hasRejectedRequest: boolean;
+  rejectedRequestId?: string;
+  rejectedRequestName?: string;
+  rejectionReason?: string;
+  rejectedAt?: string;
 }
