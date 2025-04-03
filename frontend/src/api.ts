@@ -133,7 +133,7 @@ export const apiPaths = {
   EVENTS: {
     ALL: "/api/events",
     PENDINGEVENTREQUEST: "api/admin/society/event/pending",
-    UPDATEENEVENTREQUEST: "api/admin/society/event/request",
+    UPDATEENEVENTREQUEST: "/api/admin/society/event/request",
     APPROVEDEVENTLIST: "api/admin/society/event/approved",
     REJECTEDEVENTLIST: "api/admin/society/event/rejected",
   },
