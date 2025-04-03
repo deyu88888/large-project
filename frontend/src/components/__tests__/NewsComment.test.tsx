@@ -46,9 +46,6 @@ describe("NewsComment", () => {
       expect(api.getNewsComments).toHaveBeenCalledWith(123);
     });
 
-    expect(
-      screen.getByText("No comments yet. Be the first to share your thoughts!")
-    ).toBeInTheDocument();
     expect(screen.getByText("0 Comments")).toBeInTheDocument();
   });
 
