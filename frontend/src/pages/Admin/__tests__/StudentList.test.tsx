@@ -7,21 +7,18 @@ import StudentList from '../StudentList';
 import { SearchContext } from '../../../components/layout/SearchContext';
 import { apiClient, apiPaths } from '../../../api';
 
-// Create a light theme for testing
 const theme = createTheme({
   palette: {
     mode: 'light',
   }
 });
 
-// Mock the useSettingsStore
 vi.mock('../../../stores/settings-store', () => ({
   useSettingsStore: () => ({
     drawer: false,
   }),
 }));
 
-// Mock the apiClient
 vi.mock('../../../api', () => {
   const apiClientMock = {
     get: vi.fn(),
@@ -39,7 +36,6 @@ vi.mock('../../../api', () => {
   };
 });
 
-// Mock the navigate function
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
@@ -49,7 +45,6 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
-// Mock the tokens function
 vi.mock('../../../theme/theme', () => ({
   tokens: () => ({
     grey: {
@@ -67,7 +62,6 @@ vi.mock('../../../theme/theme', () => ({
 }));
 
 describe('StudentList Component', () => {
-  // Using snake_case for property names to match the component's expectations
   const mockStudents = [
     {
       id: '1',
@@ -100,7 +94,6 @@ describe('StudentList Component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     
-    // Mock successful API responses
     apiClient.get.mockResolvedValue({ data: mockStudents });
     apiClient.request.mockResolvedValue({ data: { success: true } });
   });
@@ -134,18 +127,10 @@ describe('StudentList Component', () => {
       expect(apiClient.get).toHaveBeenCalledWith('/api/students');
     });
 
-    // Using findByRole to ensure DataGrid has time to render fully
     await waitFor(() => {
-      // Check for View buttons which should be present regardless of cell rendering
       const viewButtons = screen.getAllByText('View');
       expect(viewButtons.length).toBeGreaterThan(0);
     });
-  });
-
-  it('should skip the filter test since filter is not working properly in test environment', () => {
-    // This test is skipped until we can find a better way to test filtering
-    // in the DataGrid component
-    expect(true).toBe(true);
   });
 
   it('navigates to student view page when View button is clicked', async () => {
@@ -153,7 +138,6 @@ describe('StudentList Component', () => {
       renderWithProviders();
     });
 
-    // Wait for buttons to be available
     await waitFor(() => {
       const viewButtons = screen.getAllByText('View');
       expect(viewButtons.length).toBeGreaterThan(0);
@@ -168,12 +152,11 @@ describe('StudentList Component', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/admin/view-student/1');
   });
 
-  it('opens delete dialog when Delete button is clicked', async () => {
+  it('opens and closes delete dialog', async () => {
     await act(async () => {
       renderWithProviders();
     });
 
-    // Wait for buttons to be available
     await waitFor(() => {
       const deleteButtons = screen.getAllByText('Delete');
       expect(deleteButtons.length).toBeGreaterThan(0);
@@ -182,84 +165,46 @@ describe('StudentList Component', () => {
     const deleteButtons = screen.getAllByText('Delete');
     
     await act(async () => {
-      fireEvent.click(deleteButtons[0]);
+      fireEvent.click(deleteButtons[1]);
     });
 
-    // Look for the dialog content text that will definitely be there
     await waitFor(() => {
-      const dialogText = screen.getByText(/Provide a reason for deleting this student/i);
-      expect(dialogText).toBeInTheDocument();
-    });
-  });
-
-  it('closes delete dialog when Cancel button is clicked', async () => {
-    await act(async () => {
-      renderWithProviders();
+      const dialog = screen.getByRole('dialog');
+      expect(dialog).toBeInTheDocument();
     });
 
-    // Wait for buttons to be available
-    await waitFor(() => {
-      const deleteButtons = screen.getAllByText('Delete');
-      expect(deleteButtons.length).toBeGreaterThan(0);
-    });
-
-    // Open dialog
-    const deleteButtons = screen.getAllByText('Delete');
-    await act(async () => {
-      fireEvent.click(deleteButtons[0]);
-    });
-
-    // Verify dialog is open by looking for the text input field
-    await waitFor(() => {
-      const reasonInput = screen.getByLabelText('Reason for Deletion');
-      expect(reasonInput).toBeInTheDocument();
-    });
-
-    // Click Cancel
     const cancelButton = screen.getByText('Cancel');
+    
     await act(async () => {
       fireEvent.click(cancelButton);
     });
 
-    // Check that the input field is no longer present
     await waitFor(() => {
-      expect(screen.queryByLabelText('Reason for Deletion')).not.toBeInTheDocument();
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
   });
 
   it('deletes student when Confirm button is clicked with reason', async () => {
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    
     await act(async () => {
       renderWithProviders();
     });
 
-    // Wait for buttons to be available
     await waitFor(() => {
       const deleteButtons = screen.getAllByText('Delete');
       expect(deleteButtons.length).toBeGreaterThan(0);
     });
 
-    // Open dialog
     const deleteButtons = screen.getAllByText('Delete');
     await act(async () => {
-      fireEvent.click(deleteButtons[0]);
+      fireEvent.click(deleteButtons[1]);
     });
 
-    // Verify dialog is open
-    await waitFor(() => {
-      const reasonInput = screen.getByLabelText('Reason for Deletion');
-      expect(reasonInput).toBeInTheDocument();
-    });
-
-    // Enter reason
     const reasonInput = screen.getByLabelText('Reason for Deletion');
     await act(async () => {
       fireEvent.change(reasonInput, { target: { value: 'Graduated' } });
     });
 
-    // Click Confirm
-    const confirmButton = screen.getByText('Confirm');
+    const confirmButton = screen.getByText('Delete Student');
     await act(async () => {
       fireEvent.click(confirmButton);
     });
@@ -267,12 +212,10 @@ describe('StudentList Component', () => {
     await waitFor(() => {
       expect(apiClient.request).toHaveBeenCalledWith({
         method: 'DELETE',
-        url: '/api/users/Student/1/delete',
+        url: '/api/users/Student/2/delete',
         data: { reason: 'Graduated' },
       });
     });
-    
-    consoleSpy.mockRestore();
   });
 
   it('handles API error when fetching students', async () => {
@@ -292,39 +235,28 @@ describe('StudentList Component', () => {
   it('handles API error when deleting student', async () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     
-    // Set up the request mock to reject for the delete operation
     apiClient.request.mockRejectedValueOnce(new Error('Failed to delete student'));
 
     await act(async () => {
       renderWithProviders();
     });
 
-    // Wait for buttons to be available
     await waitFor(() => {
       const deleteButtons = screen.getAllByText('Delete');
       expect(deleteButtons.length).toBeGreaterThan(0);
     });
 
-    // Open dialog
     const deleteButtons = screen.getAllByText('Delete');
     await act(async () => {
-      fireEvent.click(deleteButtons[0]);
+      fireEvent.click(deleteButtons[1]);
     });
 
-    // Verify dialog is open using a different approach - check for the reason input
-    await waitFor(() => {
-      const reasonInput = screen.getByLabelText('Reason for Deletion');
-      expect(reasonInput).toBeInTheDocument();
-    });
-
-    // Enter reason
     const reasonInput = screen.getByLabelText('Reason for Deletion');
     await act(async () => {
       fireEvent.change(reasonInput, { target: { value: 'Testing error' } });
     });
 
-    // Click Confirm
-    const confirmButton = screen.getByText('Confirm');
+    const confirmButton = screen.getByText('Delete Student');
     await act(async () => {
       fireEvent.click(confirmButton);
     });

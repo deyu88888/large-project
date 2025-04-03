@@ -32,7 +32,7 @@ describe("ViewNotifications", () => {
     });
 
     (apiClient.patch).mockImplementation((url) => {
-      if (url === "/api/notifications/1") {
+      if (url === "/api/notifications/1/") {
         return Promise.resolve({ status: 200 });
       }
       return Promise.resolve({ status: 200 });
@@ -93,7 +93,7 @@ describe("ViewNotifications", () => {
     await act(async () => {
       fireEvent.click(markAsReadButton);
     });
-    expect(apiClient.patch).toHaveBeenCalledWith("/api/notifications/1", { is_read: true });
+    expect(apiClient.patch).toHaveBeenCalledWith("/api/notifications/1/", { is_read: true });
   });
 
   it("logs an error if marking a notification as read fails", async () => {

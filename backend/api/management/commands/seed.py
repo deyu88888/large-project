@@ -89,7 +89,8 @@ class Command(BaseCommand):
             last_name="Doe",
             defaults={
                 "password": make_password("presidentpassword"),
-                "major": "Mechanical Engineering"
+                "major": "Mechanical Engineering",
+                "is_president": True
             },
         )
 
@@ -129,6 +130,9 @@ class Command(BaseCommand):
             president.is_vice_president = False
             president.save()
 
+            president.is_president = True
+            president.save()
+
         self.society_generator.create_society(
             name="Robotics Club",
             president_force=president
@@ -142,7 +146,7 @@ class Command(BaseCommand):
         society.vice_president = vice_president
         society.event_manager = event_manager
         society.icon = "pre-seed-icons/robotics.jpg"
-        society.society_members.add(vice_president, event_manager)
+        society.society_members.add(president, vice_president, event_manager)
 
         vice_president.is_vice_president = True
         event_manager.is_event_manager = True

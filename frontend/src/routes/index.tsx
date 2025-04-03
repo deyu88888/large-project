@@ -1,7 +1,7 @@
 import { lazy, Suspense } from "react";
 import { Outlet, Navigate, useRoutes } from "react-router-dom";
 
-import NotFound from "../pages/404";
+import NotFound from "../pages/Home/404";
 import { LoadingView } from "../components/loading/LoadingView";
 import { PublicGuard } from "../components/guards/public-guard";
 import { PrivateGuard } from "../components/guards/private-guard";
@@ -12,10 +12,10 @@ import ManageReports from "../pages/Admin/ManageReports";
 import PublicLayout from "../components/home/PublicLayout";
 
 // Lazy-loaded pages
-const LoginPage = lazy(() => import("../pages/Login.tsx"));
-const RegisterPage = lazy(() => import("../pages/Register.tsx"));
-const SearchResultsPage = lazy(() => import("../pages/SearchResultsPage"))
-const ProfilePage = lazy(() => import("../pages/Profile.tsx"));
+const LoginPage = lazy(() => import("../pages/Auth/Login.tsx"));
+const RegisterPage = lazy(() => import("../pages/Auth/Register.tsx"));
+const SearchResultsPage = lazy(() => import("../pages/Home/SearchResultsPage"))
+const ProfilePage = lazy(() => import("../pages/Home/Profile.tsx"));
 const StudentDashboard = lazy(() => import("../pages/Student/StudentDashboard"));
 const MySocieties = lazy(() => import("../pages/Student/MyJoinedSocieties"));
 const ViewEvents = lazy(() => import("../pages/Student/MyJoinedEvents"));
@@ -23,7 +23,7 @@ const ViewNotifications = lazy(() => import("../pages/Student/ViewNotifications"
 const ViewInbox = lazy(() => import("../pages/Student/ViewInbox"));
 const StartSociety = lazy(() => import("../pages/Student/StartSociety"));
 const JoinSocietiesPage = lazy(() => import("../pages/Student/JoinSociety"));
-const ViewSocietyPage = lazy(() => import("../pages/ViewSociety"));
+const ViewSocietyPage = lazy(() => import("../pages/Home/ViewSociety"));
 const PresidentPage = lazy(() => import("../pages/President/PresidentPage"));
 const ManageSocietyDetails = lazy(() => import("../pages/President/ManageSocietyDetails"));
 //const SocietyPreviewModal = lazy(() => import("../pages/President/SocietyPreviewModal"));
@@ -36,14 +36,14 @@ const PendingMembers = lazy(() => import("../pages/President/PendingMembers"));
 const GiveAwardPage = lazy(() => import("../pages/President/GiveAwardPage"));
 const AssignRolePage = lazy(() => import("../pages/President/AssignSocietyRole"));
 const SocietyNewsManager = lazy(() => import("../pages/President/SocietyNewsManager"));
-const ReportThread = lazy(() => import("../pages/ReportThread"));
+const ReportThread = lazy(() => import("../pages/Home/ReportThread"));
 
 // Public event pages
-const AllEventsPage = lazy(() => import("../pages/AllEventsPage"));
-const EventDetailPage = lazy(() => import("../pages/EventDetailPage"));
-const AllSocietiesPage = lazy(() => import("../pages/AllSocieties"));
-const PublicCalendarPage = lazy(() => import("../pages/Calendar"));
-const SupportPage = lazy(() => import("../pages/Support"));
+const AllEventsPage = lazy(() => import("../pages/Home/AllEventsPage"));
+const EventDetailPage = lazy(() => import("../pages/Home/EventDetailPage"));
+const AllSocietiesPage = lazy(() => import("../pages/Home/AllSocieties"));
+const PublicCalendarPage = lazy(() => import("../pages/Home/Calendar"));
+const SupportPage = lazy(() => import("../pages/Home/Support"));
 
 // Admin pages
 const EventListPage = lazy(() => import("../pages/Admin/AdminEventList"));
@@ -53,7 +53,7 @@ const EventListRejectPage = lazy(() => import("../pages/Admin/RejectedEventsList
 const AdminDashboardPage = lazy(() => import("../pages/Admin/AdminDashboard"));
 const CalendarPage = lazy(() => import("../pages/Admin/AdminCalendar"));
 const StudentListPage = lazy(() => import("../pages/Admin/StudentList"));
-const DashboardPage = lazy(() => import("../pages/Dashboard"));
+const DashboardPage = lazy(() => import("../pages/Home/Dashboard"));
 const CreateAdminPage = lazy(() => import("../pages/Admin/CreateAdmin"));
 const AdminListPage = lazy(() => import("../pages/Admin/AdminList"));
 const RequestSocietyPage = lazy(() => import("../pages/Admin/SocietyCreationRequests"));
@@ -104,7 +104,7 @@ const routes = [
           // { path: "society-list-rejected", element: <PageWithTitle title="Rejected Societies"><SocietyListRejectPage /></PageWithTitle> },
           { path: "event-list-rejected", element: <PageWithTitle title="Rejected Events"><EventListRejectPage /></PageWithTitle> },
           { path: "student-list", element: <PageWithTitle title="Student List"><StudentListPage /></PageWithTitle> },
-          { path: "admin-list", element: <PageWithTitle title="Admin List"><AdminListPage /></PageWithTitle> },
+          // { path: "admin-list", element: <PageWithTitle title="Admin List"><AdminListPage /></PageWithTitle> },
           { path: "create-admin", element: <PageWithTitle title="Create Admin"><CreateAdminPage /></PageWithTitle> },
           { path: "calendar", element: <PageWithTitle title="Admin Calendar"><CalendarPage /></PageWithTitle> },
           { path: "request-society", element: <PageWithTitle title="Society Creation Requests"><RequestSocietyPage /></PageWithTitle> },
@@ -138,6 +138,7 @@ const routes = [
           { path: "profile", element: <PageWithTitle title="My Profile"><ProfilePage /></PageWithTitle> },
           { path: "my-societies", element: <PageWithTitle title="My Societies"><MySocieties /></PageWithTitle> },
           { path: "view-events", element: <PageWithTitle title="Upcoming Events"><ViewEvents /></PageWithTitle> },
+          // { path: "view-news", element: <PageWithTitle title="News"><ViewNews /></PageWithTitle> },
           { path: "view-notifications", element: <PageWithTitle title="Notifications"><ViewNotifications /></PageWithTitle> },
           { path: "view-inbox", element: <PageWithTitle title="Inbox"><ViewInbox /></PageWithTitle> },
           { path: "start-society", element: <PageWithTitle title="Start a Society"><StartSociety /></PageWithTitle> },

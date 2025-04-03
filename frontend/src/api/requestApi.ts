@@ -1,10 +1,12 @@
 import { apiClient } from "../api";
 
-export const updateRequestStatus = async (id: number, status: "Approved" | "Rejected", apiPath: string) => {
+export const updateRequestStatus = async (id: number, status: "Approved" | "Rejected", endpointPath: string) => {
   try {
-    await apiClient.put(`${apiPath}/${id}`, { status });
+    const url = `${endpointPath}/${id}`;
+    await apiClient.put(url, { status: status });
   } catch (error) {
-    console.error(`Error updating request ${id} to ${status}:`, error);
-    throw error; 
+    const urlForError = `${endpointPath}/${id}`;
+    console.error(`Error updating request ${id} at ${urlForError} to ${status}:`, error);
+    throw error;
   }
 };

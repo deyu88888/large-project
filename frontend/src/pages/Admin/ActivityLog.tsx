@@ -21,7 +21,7 @@ import { ActivityLog } from "../../types";
 import { tokens } from "../../theme/theme";
 import { useSettingsStore } from "../../stores/settings-store";
 import { SearchContext } from "../../components/layout/SearchContext";
-import { fetchPendingRequests } from "./utils";
+import { fetchPendingRequests } from "../../utils/utils";
 import { 
   NotificationState, 
   ActivityLogListProps, 
