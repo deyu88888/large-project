@@ -4,13 +4,13 @@ from unittest.mock import patch, MagicMock
 from types import SimpleNamespace
 
 from api.serializers import StartSocietyRequestSerializer
-from api.models import Society, Student
+from api.models import Society, Student, SocietyRequest
 
 class StartSocietyRequestSerializerTest(TestCase):
     """Tests for StartSocietyRequestSerializer."""
 
     def setUp(self):
-        """Set up a requester student for tests."""        
+        """Set up a requester student for tests."""
         self.student = Student.objects.create(
             username="student1",
             email="student1@example.com",
@@ -20,7 +20,7 @@ class StartSocietyRequestSerializerTest(TestCase):
             role="student",
             status="Approved"
         )
-        
+
         self.another_student = Student.objects.create(
             username="student2",
             email="student2@example.com",
@@ -30,16 +30,10 @@ class StartSocietyRequestSerializerTest(TestCase):
             role="student",
             status="Approved"
         )
-
         self.mock_request = SimpleNamespace(user=SimpleNamespace(student=self.student))
 
     def test_successful_creation(self):
-        """
-        Test that valid data creates a Society instance with:
-          - status set to "Pending"
-          - a roles dict containing the description and category,
-          - and the president set to the requested_by student.
-        """
+        """Test that valid data creates a SocietyRequest instance."""
         data = {
             "name": "New Society",
             "description": "A society for testing purposes.",
@@ -48,42 +42,84 @@ class StartSocietyRequestSerializerTest(TestCase):
         }
         serializer = StartSocietyRequestSerializer(data=data, context={"request": self.mock_request})
         self.assertTrue(serializer.is_valid(), serializer.errors)
-        
-        with patch('api.serializers.Society.objects.create') as mock_create:
-            
-            dummy_society = MagicMock(spec=Society)
-            dummy_society.name = data["name"]
-            dummy_society.status = "Pending"
-            dummy_society.roles = {"description": data["description"],
-                                   "category": data["category"]}
-            dummy_society.president = self.student
-            dummy_society.id = 1
-            mock_create.return_value = dummy_society
 
-            society = serializer.save()
+        with patch('api.models.SocietyRequest.objects.create') as mock_create:
+            dummy_request_obj = MagicMock(spec=SocietyRequest)
+            dummy_request_obj.name = data["name"]
+            dummy_request_obj.description = data["description"]
+            dummy_request_obj.category = data["category"]
+            dummy_request_obj.from_student = self.student
+            dummy_request_obj.president = self.student
+            dummy_request_obj.intent = "CreateSoc"
+            dummy_request_obj.approved = None
+            dummy_request_obj.id = 1
+            mock_create.return_value = dummy_request_obj
+
+            created_request = serializer.save()
+
             mock_create.assert_called_once_with(
                 name=data["name"],
                 description=data["description"],
                 category=data["category"],
                 president=self.student,
-                status="Pending"
+                intent="CreateSoc",
+                from_student=self.student
             )
-            self.assertEqual(society.name, data["name"])
-            self.assertEqual(society.status, "Pending")
-            self.assertEqual(society.roles, {"description": data["description"],
-                                              "category": data["category"]})
-            self.assertEqual(society.president, self.student)
+
+            self.assertEqual(created_request.name, data["name"])
+            self.assertEqual(created_request.description, data["description"])
+            self.assertEqual(created_request.category, data["category"])
+            self.assertEqual(created_request.from_student, self.student)
+            self.assertEqual(created_request.president, self.student)
+            self.assertEqual(created_request.intent, "CreateSoc")
+
+    def test_status_read_only(self):
+        """
+        Test that if extra fields (like status) are provided, they are ignored,
+        and a SocietyRequest is created correctly.
+        """
+        data = {
+            "name": "Society With Extra Status",
+            "description": "Testing ignored status.",
+            "category": "Sports",
+            "requested_by": self.student.id,
+            "status": "Approved"
+        }
+        serializer = StartSocietyRequestSerializer(data=data, context={"request": self.mock_request})
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+
+        with patch('api.models.SocietyRequest.objects.create') as mock_create:
+            dummy_request_obj = MagicMock(spec=SocietyRequest)
+            dummy_request_obj.name = data["name"]
+            dummy_request_obj.description = data["description"]
+            dummy_request_obj.category = data["category"]
+            dummy_request_obj.from_student = self.student
+            dummy_request_obj.president = self.student
+            dummy_request_obj.intent = "CreateSoc"
+            dummy_request_obj.id = 2
+            mock_create.return_value = dummy_request_obj
+
+            created_request = serializer.save()
+
+            mock_create.assert_called_once_with(
+                name=data["name"],
+                description=data["description"],
+                category=data["category"],
+                president=self.student,
+                intent="CreateSoc",
+                from_student=self.student
+            )
+
+            self.assertEqual(created_request.name, data["name"])
+            self.assertEqual(created_request.from_student, self.student)
 
     def test_duplicate_name_validation(self):
-        """
-        Test that the serializer rejects data when a Society with the same name already exists.
-        """
-        
-        Society.objects.create(
+        """Test duplicate Society name validation."""
+        approved_society = Society.objects.create(
             name="Existing Society",
-            approved_by=self.student,  
-            president=self.student,
-            status="Approved"
+            president=self.another_student,
+            status="Approved",
+            category="Test"
         )
         data = {
             "name": "Existing Society",
@@ -93,58 +129,20 @@ class StartSocietyRequestSerializerTest(TestCase):
         }
         serializer = StartSocietyRequestSerializer(data=data, context={"request": self.mock_request})
         self.assertFalse(serializer.is_valid())
-        errors = serializer.errors.get("non_field_errors", [])
-        self.assertTrue(any("already exists" in str(e) for e in errors))
+        self.assertIn('name', serializer.errors)
+        self.assertIn("society with this name already exists", str(serializer.errors['name'][0]))
 
     def test_missing_required_fields(self):
-        """
-        Test that errors are returned when required fields are missing.
-        """
-        data = {}  
+        """Test missing required fields validation."""
+        data = {"name": "Incomplete Society"}
         serializer = StartSocietyRequestSerializer(data=data, context={"request": self.mock_request})
         self.assertFalse(serializer.is_valid())
-        
         self.assertIn("description", serializer.errors)
         self.assertIn("category", serializer.errors)
         self.assertIn("requested_by", serializer.errors)
 
-    def test_status_read_only(self):
-        """
-        Test that if a status is provided in the input, it is ignored and the created Society still has status "Pending".
-        """
-        data = {
-            "name": "Society With Status Attempt",
-            "description": "Testing read-only status.",
-            "category": "Sports",
-            "requested_by": self.student.id,
-            "status": "Approved"  
-        }
-        serializer = StartSocietyRequestSerializer(data=data, context={"request": self.mock_request})
-        self.assertTrue(serializer.is_valid(), serializer.errors)
-        
-        with patch('api.serializers.Society.objects.create') as mock_create:
-            dummy_society = MagicMock(spec=Society)
-            dummy_society.status = "Pending"
-            dummy_society.name = data["name"]
-            dummy_society.roles = {"description": data["description"], "category": data["category"]}
-            dummy_society.president = self.student
-            dummy_society.id = 2
-            mock_create.return_value = dummy_society
-
-            society = serializer.save()
-            mock_create.assert_called_once_with(
-                name=data["name"],
-                description=data["description"],
-                category=data["category"],
-                president=self.student,
-                status="Pending"
-            )
-            self.assertEqual(society.status, "Pending")
-
     def test_field_length_validation(self):
-        """
-        Test that overly long 'description' and 'category' values produce validation errors.
-        """
+        """Test field length validation."""
         too_long_description = "a" * 501
         too_long_category = "b" * 51
         data = {
