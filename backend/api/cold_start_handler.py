@@ -1,5 +1,3 @@
-# backend/api/cold_start_handler.py
-
 import random
 from collections import Counter
 from django.db.models import Count, Q

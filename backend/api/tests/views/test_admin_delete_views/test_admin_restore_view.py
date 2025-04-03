@@ -309,7 +309,7 @@ class TestAdminRestoreView(APITestCase, URLPatternsTestCase):
         response = self.client.post(restore_url)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("Invalid action type", response.data["error"])
+        self.assertIn("Unsupported operation", response.data["error"])
 
     def test_restore_with_no_handler(self):
         """Test restoration when no handler is available."""

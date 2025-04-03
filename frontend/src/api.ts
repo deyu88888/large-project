@@ -1,6 +1,6 @@
 import axios from "axios";
 import { ACCESS_TOKEN } from "./constants";
-export const REFRESH_TOKEN = 'REFRESH_TOKEN';
+import { REFRESH_TOKEN } from "./constants";
 function isTokenValid(token: string): boolean {
   try {
     const payload = JSON.parse(atob(token.split(".")[1]));
@@ -29,16 +29,12 @@ export const apiClient = axios.create({
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem(ACCESS_TOKEN);
-    console.log("Request URL:", config.url);
-    console.log("Full URL:", apiUrl + config.url);
-    console.log("Authorization Token:", token);
-
+    
     if (token && isTokenValid(token)) {
       config.headers.Authorization = `Bearer ${token}`;
     } else {
       delete config.headers.Authorization;
     }
-    console.log("config:", config);
     return config;
   },
   (error) => Promise.reject(error)
@@ -52,8 +48,14 @@ apiClient.interceptors.response.use(
       originalRequest._retry = true;
       
       try {
+        const refreshToken = localStorage.getItem(REFRESH_TOKEN);
+        
+        if (!refreshToken) {
+          throw new Error("No refresh token available");
+        }
+        
         const refreshResponse = await axios.post(`${apiUrl}${apiPaths.USER.REFRESH}`, {
-          refresh_token: localStorage.getItem('REFRESH_TOKEN')
+          refresh: refreshToken
         });
         
         const { access } = refreshResponse.data;
@@ -64,6 +66,13 @@ apiClient.interceptors.response.use(
         return axios(originalRequest);
       } catch (refreshError) {
         console.error("Token refresh failed:", refreshError);
+        
+        // Clear tokens on refresh failure
+        localStorage.removeItem(ACCESS_TOKEN);
+        localStorage.removeItem(REFRESH_TOKEN);
+        
+        // Redirect to login page
+        window.location.href = "/login";
         return Promise.reject(refreshError);
       }
     }
@@ -85,7 +94,7 @@ export const apiPaths = {
     REJECTEDSOCIETY: "/api/admin/society/request/rejected",
     STUDENTS: "/api/admin/student",
     ADMIN: "/api/admin/admin",
-    PENDINGSOCIETYREQUEST: "/api/admin/society/request/pending",
+    PENDINGSOCIETYREQUEST: "/api/admin/society/request/Pending",
     PROFILE: "/api/user/profile",
     REPORT: "/api/admin/report-to-admin",
     PENDINGEVENTREQUEST: "/api/event/request/pending",

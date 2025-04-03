@@ -13,7 +13,7 @@ from api.views import (
     AdminRepliesListView, AdminReportsWithRepliesView, AdminManageAdminDetailsView,
 
     # Society
-    JoinedSocietiesView, RequestJoinSocietyView, StartSocietyRequestView,
+    JoinedSocietiesView, RequestJoinSocietyView, StartSocietyRequestView, StudentSocietyStatusView,
     ManageSocietyDetailsView, StudentSocietyDataView, SocietyMembersListView,
     PendingMembersView, SocietyRoleManagementView, get_popular_societies, get_upcoming_events,
     PublicSocietiesView,
@@ -149,6 +149,9 @@ society_patterns = [
     path('join/<int:society_id>/', RequestJoinSocietyView.as_view(), name='join_society'),
     path("popular", get_popular_societies, name="popular_societies"),
     path("<int:society_id>/news/", SocietyNewsListView.as_view(), name="society_news_list"),
+    # New endpoints for user status check
+    path("user-status/<int:user_id>/", StudentSocietyStatusView.as_view(), name="student_society_status"),
+    path("user-status/", StudentSocietyStatusView.as_view(), name="current_student_society_status"),
 ]
 
 # Recommendations patterns

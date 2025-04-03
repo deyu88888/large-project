@@ -185,9 +185,8 @@ class StartSocietyRequestSerializer(serializers.ModelSerializer):
     requested_by = serializers.PrimaryKeyRelatedField(queryset=Student.objects.all(), required=True)
 
     class Meta:
-        model = Society
-        fields = ["id", "name", "description", "category", "requested_by", "status"]
-        read_only_fields = ["status"]
+        model = SocietyRequest
+        fields = ["id", "name", "description", "category", "requested_by"]
 
     def validate(self, data):
         if Society.objects.filter(name=data["name"]).exists():
@@ -195,19 +194,20 @@ class StartSocietyRequestSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, validated_data):
-        """Handle creating a society request (save as a draft society)."""
+        """Handle creating a society request."""
         request = self.context.get("request")
         student = getattr(request.user, "student", None)
 
         if not student:
             raise serializers.ValidationError("Only students can start societies.")
 
-        return Society.objects.create(
+        return SocietyRequest.objects.create(
             name=validated_data["name"],
             description=validated_data["description"],
             category=validated_data["category"],
             president=validated_data["requested_by"],
-            status="Pending"
+            intent="CreateSoc",
+            from_student=validated_data["requested_by"]  # Change requested_by to from_student
         )
 
 class PendingMemberSerializer(serializers.ModelSerializer):

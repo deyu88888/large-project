@@ -54,7 +54,7 @@ const CommentsSectionWrapper: React.FC<{ isAuthenticated: boolean; children: Rea
         <Link to="/login" style={{ textDecoration: "underline", color: "blue" }}>
           login
         </Link>{" "}
-        to view the comments (don't have an account? click{" "}
+        to view the comments. (Don't have an account? Sign up {" "}
         <Link to="/register" style={{ textDecoration: "underline", color: "blue" }}>
           here
         </Link>

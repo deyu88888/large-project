@@ -1,4 +1,3 @@
-// Refactored
 import React, { useRef, useState } from "react";
 import {
   Box,
@@ -46,7 +45,6 @@ export default function ProfileHeader({
   onToggleFollow,
   onAvatarUpdated,
 }: ProfileHeaderProps) {
-  console.log(profile.is_staff);
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -108,6 +106,7 @@ export default function ProfileHeader({
   return (
     <Box sx={{ p: 3, backgroundColor: colors.blueAccent[700], color: colors.grey[100] }}>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        {/* Left side: Avatar & Greeting */}
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
           <Box sx={{ position: "relative", cursor: isSelf ? "pointer" : "default" }}>
             <Avatar
@@ -120,16 +119,19 @@ export default function ProfileHeader({
                 size="small"
                 sx={{ position: "absolute", bottom: -5, right: -5, backgroundColor: "white" }}
                 onClick={handleAvatarClick}
+                data-testid="edit-avatar-btn"
               >
-                <EditIcon fontSize="small" />
+                <EditIcon fontSize="small" data-testid="EditIcon" />
               </IconButton>
             )}
             <input
+              data-testid="file-input"
               type="file"
               ref={fileInputRef}
               style={{ display: "none" }}
               accept="image/*"
               onChange={handleFileChange}
+              aria-label="avatar-uploader"
             />
           </Box>
           <Typography
@@ -162,7 +164,13 @@ export default function ProfileHeader({
         </Box>
       )}
 
-      <Dialog open={cropModalOpen} onClose={() => setCropModalOpen(false)} fullWidth maxWidth="sm">
+      <Dialog
+        open={cropModalOpen}
+        onClose={() => setCropModalOpen(false)}
+        fullWidth
+        maxWidth="sm"
+        data-testid="crop-dialog"
+      >
         <DialogTitle>Crop your avatar</DialogTitle>
         <DialogContent>
           {imageSrc && (
@@ -181,7 +189,7 @@ export default function ProfileHeader({
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setCropModalOpen(false)}>Cancel</Button>
-          <Button variant="contained" onClick={handleCropConfirm}>
+          <Button variant="contained" onClick={handleCropConfirm} data-testid="crop-confirm-btn">
             Confirm
           </Button>
         </DialogActions>
