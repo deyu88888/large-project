@@ -283,6 +283,7 @@ const DashboardContent: FC<DashboardContentProps> = ({
     <div className="space-y-8">
       <StatsSection
         userStats={userStats || { totalUsers: 0 }}
+        active_members={0}
         eventsCount={events.length}
         notificationsCount={notifications.length}
         publicationsCount={pendingPublications.length}
