@@ -1,9 +1,9 @@
 import React from 'react';
 import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
 import { vi } from 'vitest';
-import { BrowserRouter, MemoryRouter } from 'react-router-dom';
-import StudentDrawer from '../../components/layout/StudentDrawer';
-import { apiClient } from '../../api';
+import { MemoryRouter } from 'react-router-dom';
+import StudentDrawer from '../../../components/layout/StudentDrawer';
+import { apiClient } from '../../../api';
 
 // Mock the react-router-dom hooks
 const mockNavigate = vi.fn();
@@ -16,14 +16,18 @@ vi.mock('react-router-dom', async () => {
 });
 
 // Mock the API client
-vi.mock('../../api', () => ({
+vi.mock('../../../api', () => ({
   apiClient: {
     get: vi.fn(),
   },
 }));
 
+// Mock the MUI icons
+vi.mock('@mui/icons-material/ChevronLeft', () => ({
+  default: () => <div data-testid="ChevronLeftIcon" />,
+}));
+
 describe('StudentDrawer Component', () => {
-  const mockLocation = { pathname: '/student' };
   const mockToggleDrawer = vi.fn();
   const mockStudentData = {
     username: 'testuser',
@@ -60,7 +64,6 @@ describe('StudentDrawer Component', () => {
           <StudentDrawer 
             drawer={drawerOpen} 
             toggleDrawer={mockToggleDrawer} 
-            location={mockLocation} 
           />
         </MemoryRouter>
       );
@@ -122,8 +125,11 @@ describe('StudentDrawer Component', () => {
     expect(screen.getByText('My Societies')).toBeInTheDocument();
     expect(screen.getByText('Start A Society')).toBeInTheDocument();
     expect(screen.getByText('My Events')).toBeInTheDocument();
-    expect(screen.getByText('News')).toBeInTheDocument();
+    expect(screen.getByText('Discover Societies')).toBeInTheDocument();
+    expect(screen.getByText('Discover Events')).toBeInTheDocument();
     expect(screen.getByText('Notifications')).toBeInTheDocument();
+    expect(screen.getByText('Inbox')).toBeInTheDocument();
+    expect(screen.getByText('Report')).toBeInTheDocument();
   });
 
   it('renders the logout button', async () => {
