@@ -227,12 +227,6 @@ const DataGridContainer: React.FC<DataGridContainerProps> = ({
           }}
           autoHeight
           resizeThrottleMs={0}
-          initialState={{
-            pagination: {
-              paginationModel: { pageSize: 10, page: 0 },
-            },
-          }}
-          pageSizeOptions={[5, 10, 25]}
           disableRowSelectionOnClick
           loading={loading}
         />

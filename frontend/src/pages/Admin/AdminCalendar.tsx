@@ -26,6 +26,7 @@ import {
   ShowMoreProps,
   EVENT_COLORS
 } from "../../types/admin/AdminCalendar";
+import { useSettingsStore } from "../../stores/settings-store";
 
 const localizer = momentLocalizer(moment);
 
@@ -118,6 +119,7 @@ const formatEvents = (data: any): CalendarEvent[] => {
 const AdminCalendar = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
+  const { drawer } = useSettingsStore();
 
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(false);
@@ -567,7 +569,12 @@ const AdminCalendar = () => {
   };
 
   return (
-    <Box m="20px">
+    <Box
+          sx={{
+            height: "calc(100vh - 64px)",
+            maxWidth: drawer ? `calc(100% - 3px)`: "100%",
+          }}
+        >
       <Box
         display="flex"
         justifyContent="space-between"

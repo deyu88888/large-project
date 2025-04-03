@@ -35,14 +35,14 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({ row, processing, onUndo, 
   const isProcessing = processing.id === row.id && processing.isProcessing;
   
   return (
-    <Stack direction="row" spacing={1}>
+    <Stack direction="row" spacing={1} alignItems="center" sx={{ height: '100%' }} >
       <Tooltip title="Undo this action">
         <Button
           variant="contained"
           color="primary"
           onClick={() => onUndo(row.id)}
           disabled={isProcessing}
-          size="small"
+          sx={{ marginRight: "8px" }}
         >
           {isProcessing ? <CircularProgress size={20} thickness={5} /> : "Undo"}
         </Button>
@@ -53,7 +53,6 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({ row, processing, onUndo, 
           color="error"
           onClick={() => onDelete(row)}
           disabled={isProcessing}
-          size="small"
         >
           Delete
         </Button>
