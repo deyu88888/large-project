@@ -11,6 +11,46 @@ from api.serializers import SocietySerializer, StartSocietyRequestSerializer, Ev
 from api.views_files.view_utility import student_has_no_role, get_student_if_user_is_student, get_admin_if_user_is_admin
 from django.db.models import Q
 
+class StudentSocietyStatusView(APIView):
+    """View to check if a student has pending society requests or is already a president."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, user_id=None):
+        """Get request to check student's society creation status"""
+        # If no user_id is provided, use the authenticated user
+        if not user_id:
+            user_id = request.user.id
+            
+        # Get the student if the user is a student
+        student, error = get_student_if_user_is_student(request.user, "check status")
+        if error:
+            return error
+
+        # Check if the student is already a president of a society
+        is_president = hasattr(student, 'president_of') and student.president_of is not None
+        
+        # Check if the student has any pending society creation requests
+        pending_request = SocietyRequest.objects.filter(
+            from_student=student,
+            intent="CreateSoc",
+            approved__isnull=True  # Only get ones where approved is NULL (pending)
+        ).first()
+        
+        has_pending_request = pending_request is not None
+        
+        # Prepare the response data
+        response_data = {
+            "hasPendingRequest": has_pending_request,
+            "isPresident": is_president
+        }
+        
+        # Add the pending request ID if there is one
+        if has_pending_request:
+            response_data["pendingRequestId"] = pending_request.id
+            response_data["pendingRequestName"] = pending_request.name
+
+        return Response(response_data, status=status.HTTP_200_OK)
+
 class StartSocietyRequestView(APIView):
     """View to handle society creation requests."""
     permission_classes = [IsAuthenticated]
@@ -26,6 +66,19 @@ class StartSocietyRequestView(APIView):
         error = student_has_no_role(student, True)
         if error:
             return error
+            
+        # Check if the student already has a pending society creation request
+        existing_request = SocietyRequest.objects.filter(
+            from_student=student,
+            intent="CreateSoc",
+            approved__isnull=True  # Only get ones where approved is NULL (pending)
+        ).exists()
+        
+        if existing_request:
+            return Response(
+                {"error": "You already have a pending society creation request. Please wait for admin approval."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         serializer = StartSocietyRequestSerializer(data=request.data, context={"request": request})
         if serializer.is_valid():

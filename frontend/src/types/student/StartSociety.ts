@@ -65,9 +65,26 @@ export interface InputFieldProps {
 
 export interface SubmitButtonProps {
   styleProps: StyleProps;
+  disabled?: boolean;
 }
 
 export interface PageContainerProps {
   children: React.ReactNode;
   styleProps: StyleProps;
+}
+
+// New interfaces for the user status feature
+export interface ModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  title: string;
+  message: string;
+  styleProps: StyleProps;
+}
+
+export interface UserStatusResponse {
+  hasPendingRequest: boolean;
+  isPresident: boolean;
+  pendingRequestId?: string;
+  pendingRequestName?: string;
 }
