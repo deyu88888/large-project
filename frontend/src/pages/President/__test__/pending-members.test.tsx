@@ -96,7 +96,7 @@ describe('PendingMembers Component', () => {
     fireEvent.click(acceptButtons[0]);
     await waitFor(() => {
       expect(apiClient.post).toHaveBeenCalledWith('/api/society/123/pending-members/1/', {
-        approved: true,
+        action: "approve"
       });
       expect(apiClient.get).toHaveBeenCalledTimes(2);
     });
@@ -111,7 +111,7 @@ describe('PendingMembers Component', () => {
     fireEvent.click(rejectButtons[0]);
     await waitFor(() => {
       expect(apiClient.post).toHaveBeenCalledWith('/api/society/123/pending-members/1/', {
-        approved: false,
+        action: "reject"
       });
       expect(apiClient.get).toHaveBeenCalledTimes(2);
     });
