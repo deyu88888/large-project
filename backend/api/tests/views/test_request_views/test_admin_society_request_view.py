@@ -50,8 +50,8 @@ class AdminSocietyRequestViewTests(APITestCase):
         self.client.force_authenticate(user=self.admin)
         response = self.client.get(self.get_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertTrue(len(response.data) >= 1)
-        self.assertTrue(any(req['id'] == self.pending_request.id for req in response.data))
+        self.assertGreaterEqual(len(response.data), 1)
+        self.assertTrue(any(req.get('id') == self.pending_request.id for req in response.data))
 
     @patch("api.views_files.request_views.get_admin_if_user_is_admin")
     def test_get_societies_by_status(self, mock_get_admin):
