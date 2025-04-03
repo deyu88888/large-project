@@ -9,6 +9,7 @@ ENV VITE_API_URL=$VITE_API_URL
 
 # Install dependencies
 COPY package*.json ./
+RUN npm cache clean --force
 RUN npm install
 
 # Copy the rest of the code

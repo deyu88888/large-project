@@ -87,7 +87,7 @@ class Command(BaseCommand):
         president, _ = self.get_or_create_user(
             Student,
             username="president_user",
-            email="president@example.com",
+            email="president@kcl.ac.uk",
             first_name="John",
             last_name="Doe",
             defaults={
@@ -100,7 +100,7 @@ class Command(BaseCommand):
         vice_president, _ = self.get_or_create_user(
              Student,
              username="vice_president_user",
-             email="vicepresident@example.com",
+             email="vicepresident@kcl.ac.uk",
              first_name="Vice",
              last_name="President",
              defaults={
@@ -111,7 +111,7 @@ class Command(BaseCommand):
         event_manager, _ = self.get_or_create_user(
             Student,
             username="event_manager_user",
-            email="eventmanager@example.com",
+            email="eventmanager@kcl.ac.uk",
             first_name="Event",
             last_name="Manager",
             defaults={
@@ -164,7 +164,7 @@ class Command(BaseCommand):
         student, _ = self.get_or_create_user(
             Student,
             username="student_user",
-            email="student@example.com",
+            email="student@kcl.ac.uk",
             first_name="John",
             last_name="Smith",
             defaults={
