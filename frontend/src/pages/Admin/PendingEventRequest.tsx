@@ -10,8 +10,7 @@ import { tokens } from "../../theme/theme";
 import { SearchContext } from "../../components/layout/SearchContext";
 import { useSettingsStore } from "../../stores/settings-store";
 import { fetchPendingRequests } from "../../utils/utils.ts";
-import { apiPaths } from "../../api";
-import { updateRequestStatus } from "../../api/requestApi";
+import { apiClient } from "../../api";
 import { EventPreview } from "../../components/EventPreview";
 import type { EventData } from "../../types/event/event";
 import { mapToEventRequestData } from "../../utils/mapper.ts";
@@ -158,10 +157,15 @@ const PendingEventRequest: React.FC = () => {
   const [pendingData, setPendingData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Correct API endpoints based on your Django URLs
+  const PENDING_EVENT_ENDPOINT = "/api/admin/society/event/pending";
+  
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      const data: any = await fetchPendingRequests(apiPaths.EVENTS.PENDINGEVENTREQUEST);
+      console.log("Fetching pending events from:", PENDING_EVENT_ENDPOINT);
+      const data: any = await fetchPendingRequests(PENDING_EVENT_ENDPOINT);
+      console.log("Received pending events data:", data);
       setPendingData(data);
     } catch (error) {
       console.error("Error fetching pending requests:", error);
@@ -186,13 +190,30 @@ const PendingEventRequest: React.FC = () => {
   const handleStatusChange = useCallback(
     async (id: number, status: "Approved" | "Rejected") => {
       try {
-        await updateRequestStatus(id, status, apiPaths.EVENTS.UPDATEENEVENTREQUEST);
+        const requestEndpoint = `/api/admin/society/event/request/${id}`;
+        console.log(`Updating event ${id} status to ${status}`);
+        console.log(`API URL: ${requestEndpoint}`);
+        const payload = {
+          status: status,
+          ...(status === "Rejected" && { rejection_reason: "Event rejected by admin" })
+        };
+        
+        console.log("Sending payload:", payload);
+        
+        const response = await apiClient.put(requestEndpoint, payload);
+        
+        console.log("Response from API:", response.data);
+        
         setAlert(createSuccessAlert(`Event ${status.toLowerCase()} successfully.`));
-        // Refresh data after status change
-        fetchData();
-      } catch (error) {
+        
+        await fetchData();
+      } catch (error: any) {
         console.error(`Error updating event status:`, error);
-        setAlert(createErrorAlert(`Failed to ${status.toLowerCase()} event.`));
+        console.error("Error details:", error.response?.data);
+        
+        setAlert(createErrorAlert(
+          `Failed to ${status.toLowerCase()} event. ${error.response?.data?.message || error.message}`
+        ));
       }
     },
     [fetchData]

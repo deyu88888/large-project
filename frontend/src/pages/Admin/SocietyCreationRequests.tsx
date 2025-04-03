@@ -314,24 +314,30 @@ const SocietyCreationRequests: React.FC = () => {
     setSocietyToReject(null);
   }, []);
 
+  // Updated to use consistent payload structure
   const handleStatusChange = useCallback(async (id: number, status: "Approved") => {
     try {
+      // Update UI first
       updateSocietiesAfterStatusChange(id);
       
-      await updateRequestStatus(id, status, apiPaths.USER.PENDINGSOCIETYREQUEST);
+      // Send direct API request with the correct payload format
+      await apiClient.put(`${apiPaths.USER.PENDINGSOCIETYREQUEST}/${id}`, {
+        approved: true
+      });
       
       showNotification(
-        `Society ${status === "Approved" ? "approved" : "rejected"} successfully.`, 
+        `Society approved successfully.`, 
         'success'
       );
     } catch (error) {
       console.error(`Error updating society status:`, error);
       
       showNotification(
-        `Failed to ${status.toLowerCase()} society request.`, 
+        `Failed to approve society request.`, 
         'error'
       );
       
+      // Refresh the list on error
       fetchSocieties();
     }
   }, [updateSocietiesAfterStatusChange, showNotification, fetchSocieties]);
@@ -340,7 +346,7 @@ const SocietyCreationRequests: React.FC = () => {
     try {
       updateSocietiesAfterStatusChange(id);
       
-      // Send rejection with reason to backend
+      // Same format as handleStatusChange but with approved: false
       await apiClient.put(`${apiPaths.USER.PENDINGSOCIETYREQUEST}/${id}`, {
         approved: false,
         rejection_reason: reason
