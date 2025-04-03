@@ -169,7 +169,7 @@ describe('GiveAwardPage Component', () => {
     });
     
     await waitFor(() => {
-      expect(apiClient.post).toHaveBeenCalledWith('/api/award-students', {
+      expect(apiClient.post).toHaveBeenCalledWith('/api/awards/students/', {
         student_id: 456,
         award_id: 1
       });
@@ -238,7 +238,7 @@ describe('GiveAwardPage Component', () => {
     });
     
     await waitFor(() => {
-      expect(apiClient.post).toHaveBeenCalledWith('/api/award-students', {
+      expect(apiClient.post).toHaveBeenCalledWith('/api/awards/students/', {
         student_id: NaN,
         award_id: 1
       });
