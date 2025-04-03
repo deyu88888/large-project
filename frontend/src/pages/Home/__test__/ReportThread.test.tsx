@@ -9,8 +9,8 @@ import {
 import { vi } from 'vitest';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import ReportThread from '../ReportThread'; // Path as provided
-import { apiClient } from '../../api'; // Path as provided
+import ReportThread from '../ReportThread';
+import { apiClient } from '../../../api';
 import '@testing-library/jest-dom';
 
 // Create theme instances for testing
@@ -26,9 +26,18 @@ const darkTheme = createTheme({
   },
 });
 
+// Mock MUI Icons to avoid issues with SVG rendering in tests
+vi.mock('@mui/icons-material/ArrowBack', () => ({
+  default: () => <div data-testid="ArrowBackIcon" />,
+}));
+
+vi.mock('@mui/icons-material/Email', () => ({
+  default: () => <div data-testid="EmailIcon" />,
+}));
+
 // ----------------------------------------------------------------
-// Updated API Mock: include correct endpoints for admin routes
-vi.mock('../../api', () => ({
+// Updated API Mock with correct path
+vi.mock('../../../api', () => ({
   apiClient: {
     get: vi.fn(),
     post: vi.fn(),
@@ -112,11 +121,17 @@ const setup = async (userRole = 'admin', useDarkTheme = false) => {
   }
 
   // Set up the API mock responses with corrected endpoints
-  vi.mocked(apiClient.get).mockImplementation((url: string) => {
-    if (url === `/api/admin/report-thread/${mockReportId}`) {
-      return Promise.resolve({ data: mockReport });
-    } else if (url === '/api/user/current') {
+  vi.mocked(apiClient.get).mockImplementation((url) => {
+    if (url === `/api/user/current`) {
       return Promise.resolve({ data: userData });
+    } else if (url === `/api/admin/report-thread/${mockReportId}`) {
+      if (userData.is_admin) {
+        return Promise.resolve({ data: mockReport });
+      } else {
+        return Promise.reject({ response: { status: 403 } });
+      }
+    } else if (url === `/api/reports/thread/${mockReportId}/`) {
+      return Promise.resolve({ data: mockReport });
     }
     return Promise.reject(new Error(`API call not mocked: ${url}`));
   });
@@ -177,11 +192,11 @@ describe('ReportThread Component', () => {
 
   it('renders report thread data correctly', async () => {
     // Mock correct API responses with corrected endpoint paths
-    vi.mocked(apiClient.get).mockImplementation((url: string) => {
-      if (url === `/api/admin/report-thread/${mockReportId}`) {
-        return Promise.resolve({ data: mockReport });
-      } else if (url === '/api/user/current') {
+    vi.mocked(apiClient.get).mockImplementation((url) => {
+      if (url === `/api/user/current`) {
         return Promise.resolve({ data: mockAdminUser });
+      } else if (url === `/api/admin/report-thread/${mockReportId}`) {
+        return Promise.resolve({ data: mockReport });
       }
       return Promise.reject(new Error(`API call not mocked: ${url}`));
     });
@@ -297,7 +312,13 @@ describe('ReportThread Component', () => {
   });
 
   it('displays error message when API fetch fails', async () => {
-    vi.mocked(apiClient.get).mockRejectedValueOnce(new Error('API error'));
+    vi.mocked(apiClient.get).mockImplementation((url) => {
+      if (url === '/api/user/current') {
+        return Promise.resolve({ data: mockStudentUser });
+      }
+      return Promise.reject(new Error('API error'));
+    });
+    
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     render(
@@ -311,7 +332,7 @@ describe('ReportThread Component', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Failed to fetch report thread')).toBeInTheDocument();
+      expect(screen.getByText(/Failed to fetch report thread/)).toBeInTheDocument();
     });
 
     consoleSpy.mockRestore();
@@ -359,8 +380,9 @@ describe('ReportThread Component', () => {
     const replyInput = screen.getByPlaceholderText('Type your reply here...');
     expect(replyInput).toBeInTheDocument();
 
-    // Use the suggested form back button selector (second button)
-    const formBackButton = screen.getAllByRole('button')[1];
+    // Find the back button in the form header by looking for ArrowBackIcon
+    const formBackIcon = screen.getAllByTestId('ArrowBackIcon')[1]; // The second one should be in the form
+    const formBackButton = formBackIcon.closest('button');
     expect(formBackButton).toBeInTheDocument();
     fireEvent.click(formBackButton);
 
@@ -415,11 +437,13 @@ describe('ReportThread Component', () => {
       top_level_replies: [],
     };
 
-    vi.mocked(apiClient.get).mockImplementation((url: string) => {
-      if (url === `/api/admin/report-thread/${mockReportId}`) {
-        return Promise.resolve({ data: noAdminRepliesReport });
-      } else if (url === '/api/user/current') {
+    vi.mocked(apiClient.get).mockImplementation((url) => {
+      if (url === '/api/user/current') {
         return Promise.resolve({ data: mockStudentUser });
+      } else if (url === `/api/reports/thread/${mockReportId}/`) {
+        return Promise.resolve({ data: noAdminRepliesReport });
+      } else if (url === `/api/admin/report-thread/${mockReportId}`) {
+        return Promise.reject({ response: { status: 403 } });
       }
       return Promise.reject(new Error(`API call not mocked: ${url}`));
     });
@@ -449,11 +473,11 @@ describe('ReportThread Component', () => {
   });
 
   it('displays "Report not found" when report is null', async () => {
-    vi.mocked(apiClient.get).mockImplementation((url: string) => {
-      if (url === `/api/admin/report-thread/${mockReportId}`) {
-        return Promise.resolve({ data: null });
-      } else if (url === '/api/user/current') {
+    vi.mocked(apiClient.get).mockImplementation((url) => {
+      if (url === '/api/user/current') {
         return Promise.resolve({ data: mockStudentUser });
+      } else if (url === `/api/reports/thread/${mockReportId}/` || url === `/api/admin/report-thread/${mockReportId}`) {
+        return Promise.resolve({ data: null });
       }
       return Promise.reject(new Error(`API call not mocked: ${url}`));
     });
