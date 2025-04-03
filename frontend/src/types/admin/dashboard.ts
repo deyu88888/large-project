@@ -94,6 +94,7 @@ export interface NotificationsSectionProps {
 
 export interface StatsSectionProps {
   userStats: UserStats;
+  active_members: number;
   eventsCount: number;
   notificationsCount: number;
   publicationsCount: number;
