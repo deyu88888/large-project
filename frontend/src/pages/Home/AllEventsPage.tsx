@@ -1,16 +1,14 @@
-// Refactored
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { apiClient } from "../../api.ts";
+import { apiClient } from "../../api";
 import { useTheme } from "@mui/material/styles";
-import { tokens } from "../../theme/theme.ts";
+import { tokens } from "../../theme/theme";
 import { CircularProgress, Pagination } from "@mui/material";
-import EventCard from "../../components/EventCard.tsx";
-import { useAuthStore } from "../../stores/auth-store.ts";
-import { User } from "../../types/user/user.ts";
-import { EventData, Attendee } from "../../types/event/event.ts";
+import EventCard from "../../components/EventCard";
+import { useAuthStore } from "../../stores/auth-store";
+import { EventData, Attendee } from "../../types/event/event";
 import { mapToEventData } from "../../utils/mapper.ts";
-import useAuthCheck from "../../hooks/useAuthCheck.ts";
+import useAuthCheck from "../../hooks/useAuthCheck";
 
 export default function AllEventsPage() {
     const navigate = useNavigate();

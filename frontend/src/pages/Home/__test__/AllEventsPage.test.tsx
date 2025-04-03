@@ -1,23 +1,30 @@
-// failing
-
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
-import AllEventsPage from "../../../pages/Home/AllEventsPage";
+import AllEventsPage from "../AllEventsPage";
 import { BrowserRouter } from "react-router-dom";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import { apiClient } from "../../../api";
 
-// Mocks
-vi.mock("../../api");
+vi.mock("../../../api", () => ({
+  apiClient: {
+    get: vi.fn()
+  }
+}));
+
 vi.mock("../../stores/auth-store", () => ({
   useAuthStore: vi.fn(() => ({
     user: null,
     setUser: vi.fn()
   }))
 }));
+
 vi.mock("../../components/EventCard", () => ({
-  default: ({ event }: any) => <div data-testid="event-card">{event.title}</div>
+  __esModule: true,
+  default: ({ event }) => (
+    <div data-testid="event-card">{event.title}</div>
+  )
 }));
+
 vi.mock("../../theme/theme", () => ({
   tokens: () => ({
     grey: { 100: "#ccc", 200: "#bbb", 300: "#aaa" },
@@ -26,8 +33,7 @@ vi.mock("../../theme/theme", () => ({
   })
 }));
 
-// Helper to wrap in ThemeProvider & Router
-const renderWithProviders = (ui: React.ReactNode) => {
+const renderWithProviders = (ui) => {
   const theme = createTheme({ palette: { mode: "light" } });
   return render(
     <BrowserRouter>
@@ -42,31 +48,44 @@ describe("AllEventsPage", () => {
   });
 
   it("renders loading spinner initially", async () => {
-    (apiClient.get as any).mockResolvedValueOnce({ data: [] }); // user
-    (apiClient.get as any).mockResolvedValueOnce({ data: [] }); // events
+    apiClient.get.mockImplementation((url) => {
+      if (url.includes('user')) {
+        return Promise.resolve({ data: [] });
+      } else {
+        return Promise.resolve({ data: [] });
+      }
+    });
 
     renderWithProviders(<AllEventsPage />);
     expect(screen.getByText(/loading events/i)).toBeInTheDocument();
   });
 
   it("renders event cards on success", async () => {
-    (apiClient.get as any)
-      .mockResolvedValueOnce({ data: { id: 1, following: [2] } }) // user
-      .mockResolvedValueOnce({
-        data: [{ id: 10, title: "Test Event", current_attendees: [{ id: 2 }] }]
-      });
+    apiClient.get.mockImplementation((url) => {
+      if (url.includes('user')) {
+        return Promise.resolve({ data: { id: 1, following: [2] } });
+      } else {
+        return Promise.resolve({
+          data: [{ id: 10, title: "Test Event", current_attendees: [{ id: 2 }] }]
+        });
+      }
+    });
 
     renderWithProviders(<AllEventsPage />);
 
     await waitFor(() => {
-      expect(screen.getByTestId("event-card")).toHaveTextContent("Test Event");
+      expect(screen.getByText("Test Event")).toBeInTheDocument();
     });
   });
 
   it("renders empty state when no events", async () => {
-    (apiClient.get as any)
-      .mockResolvedValueOnce({ data: { id: 1, following: [] } })
-      .mockResolvedValueOnce({ data: [] });
+    apiClient.get.mockImplementation((url) => {
+      if (url.includes('user')) {
+        return Promise.resolve({ data: { id: 1, following: [] } });
+      } else {
+        return Promise.resolve({ data: [] });
+      }
+    });
 
     renderWithProviders(<AllEventsPage />);
 
@@ -76,9 +95,13 @@ describe("AllEventsPage", () => {
   });
 
   it("shows error if event fetch fails", async () => {
-    (apiClient.get as any)
-      .mockResolvedValueOnce({ data: { id: 1, following: [] } })
-      .mockRejectedValueOnce(new Error("Server down"));
+    apiClient.get.mockImplementation((url) => {
+      if (url.includes('user')) {
+        return Promise.resolve({ data: { id: 1, following: [] } });
+      } else {
+        return Promise.reject(new Error("Server down"));
+      }
+    });
 
     renderWithProviders(<AllEventsPage />);
 
@@ -91,9 +114,14 @@ describe("AllEventsPage", () => {
 
   it("gracefully handles unauthenticated user (401)", async () => {
     const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-    (apiClient.get as any)
-      .mockRejectedValueOnce({ response: { status: 401 } }) // user
-      .mockResolvedValueOnce({ data: [] }); // events
+    
+    apiClient.get.mockImplementation((url) => {
+      if (url.includes('user')) {
+        return Promise.reject({ response: { status: 401 } });
+      } else {
+        return Promise.resolve({ data: [] });
+      }
+    });
 
     renderWithProviders(<AllEventsPage />);
     await waitFor(() => {

@@ -1,9 +1,9 @@
 import { Box, Container, Typography, useTheme } from "@mui/material";
-import { tokens } from "../../theme/theme.ts";
-import { getPopularSocieties, getUpcomingEvents } from "../../api.ts";
-import SocietyCard from "../../components/SocietyCard.tsx";
-import EventCard from "../../components/EventCard.tsx";
-import { Society, Event } from "../../types.ts";
+import { tokens } from "../../theme/theme";
+import { getPopularSocieties, getUpcomingEvents } from "../../api";
+import SocietyCard from "../../components/SocietyCard";
+import EventCard from "../../components/EventCard";
+import { Society, Event } from "../../types";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { EventData } from "../../types/event/event.ts";
