@@ -2,18 +2,19 @@ import { render, screen, fireEvent, waitFor, act } from "@testing-library/react"
 import { vi, describe, it, expect, beforeEach } from "vitest";
 import PendingEventRequest from "../PendingEventRequest";
 import { SearchContext } from "../../../components/layout/SearchContext";
-import { apiPaths } from "../../../api";
-import { updateRequestStatus } from "../../../api/requestApi";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 
 const mockFetchPendingRequests = vi.fn();
+const mockApiPut = vi.fn();
 
 vi.mock("../../../utils/utils.ts", () => ({
   fetchPendingRequests: () => mockFetchPendingRequests()
 }));
 
-vi.mock("../../../api/requestApi", () => ({
-  updateRequestStatus: vi.fn()
+vi.mock("../../../api", () => ({
+  apiClient: {
+    put: (...args) => mockApiPut(...args)
+  }
 }));
 
 vi.mock("../../../stores/settings-store", () => ({
@@ -46,6 +47,7 @@ describe("PendingEventRequest Component", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockFetchPendingRequests.mockResolvedValue(mockEvents);
+    mockApiPut.mockResolvedValue({ data: { success: true } });
   });
 
   it("renders the pending event requests", async () => {
@@ -85,9 +87,7 @@ describe("PendingEventRequest Component", () => {
     });
   });
 
-  it("calls updateRequestStatus when accept and reject buttons are clicked", async () => {
-    (updateRequestStatus).mockResolvedValue({ data: { success: true } });
-
+  it("calls API when accept and reject buttons are clicked", async () => {
     await act(async () => {
       render(
         <ThemeProvider theme={theme}>
@@ -107,18 +107,23 @@ describe("PendingEventRequest Component", () => {
       fireEvent.click(acceptButtons[0]);
     });
     
-    expect(updateRequestStatus).toHaveBeenCalledWith(1, "Approved", apiPaths.EVENTS.UPDATEENEVENTREQUEST);
+    expect(mockApiPut).toHaveBeenCalledWith("/api/admin/society/event/request/1", {
+      status: "Approved"
+    });
 
     const rejectButtons = screen.getAllByText("Reject");
     await act(async () => {
-      fireEvent.click(rejectButtons[0]);
+      fireEvent.click(rejectButtons[1]);
     });
     
-    expect(updateRequestStatus).toHaveBeenCalledWith(1, "Rejected", apiPaths.EVENTS.UPDATEENEVENTREQUEST);
+    expect(mockApiPut).toHaveBeenCalledWith("/api/admin/society/event/request/2", {
+      status: "Rejected",
+      rejection_reason: "Event rejected by admin"
+    });
   });
 
-  it("handles error when updateRequestStatus fails", async () => {
-    (updateRequestStatus).mockRejectedValueOnce(new Error("Network Error"));
+  it("handles error when API call fails", async () => {
+    mockApiPut.mockRejectedValueOnce(new Error("Network Error"));
     
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     
@@ -143,10 +148,10 @@ describe("PendingEventRequest Component", () => {
     });
 
     expect(consoleErrorSpy).toHaveBeenCalled();
-    expect(updateRequestStatus).toHaveBeenCalledWith(1, "Approved", apiPaths.EVENTS.UPDATEENEVENTREQUEST);
-    
-    // Remove this assertion that's failing
-    // The alert component may not be rendering the exact text in the way we're trying to check
+    expect(mockApiPut).toHaveBeenCalledWith("/api/admin/society/event/request/1", {
+      status: "Approved"
+    });
+  
 
     consoleErrorSpy.mockRestore();
   });
