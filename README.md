@@ -8,6 +8,7 @@ This is a **fullstack monorepo** containing:
 - **CI/CD**: GitHub Actions in `.github/workflows/`
 - **Developer Manual**: Frontend in `frontend/README.md` and Backend in `backend/README.md`
 - **SEG Report**: SEG Report is `SEG_report.pdf` and src in `SEG_report/`
+- **SEG Screencast**: SEG Screencast is `SEG_screencast` 
 
 Production app is at [https://infiniteloop.space](https://infiniteloop.space)
 Screencast is at [https://](https://)
