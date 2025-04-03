@@ -38,9 +38,11 @@ vi.mock('../../../context/AuthContext', () => ({
   }
 }));
 
-// Mock navigate function
+// Module-level variable for location state
+let mockLocationState = null;
+
+// Mock navigate function and location
 const mockNavigate = vi.fn();
-let mockLocationState = { from: { pathname: '/test-redirect' } };
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
@@ -56,6 +58,8 @@ describe('LoginPage', () => {
   
   beforeEach(() => {
     vi.clearAllMocks();
+    // Set default location state to null so that tests expecting default redirect work as intended
+    mockLocationState = null;
   });
   
   afterEach(() => {
@@ -153,7 +157,7 @@ describe('LoginPage', () => {
     const mockAccessToken = 'mock-access-token';
     const mockRefreshToken = 'mock-refresh-token';
     
-    // Set test redirect location
+    // For admin test, set a redirect in location state
     mockLocationState = { from: { pathname: '/test-redirect' } };
     
     apiClient.post.mockResolvedValueOnce({ 
@@ -163,7 +167,8 @@ describe('LoginPage', () => {
       } 
     });
     
-    jwtDecode.mockReturnValueOnce({ user_id: 1, role: 'admin' });
+    // Use mockReturnValue so subsequent calls to jwtDecode get the same object
+    jwtDecode.mockReturnValue({ user_id: 1, role: 'admin' });
     
     render(
       <ThemeProvider theme={theme}>
@@ -183,20 +188,19 @@ describe('LoginPage', () => {
         username: 'admin', 
         password: 'admin123' 
       });
-
       expect(mockLogin).toHaveBeenCalledWith(mockAccessToken, mockRefreshToken);
       expect(jwtDecode).toHaveBeenCalledWith(mockAccessToken);
       expect(mockNavigate).toHaveBeenCalled();
     });
     
-    // Check path specifically
+    // With redirect provided, expect '/test-redirect'
     expect(mockNavigate.mock.calls[0][0]).toBe('/test-redirect');
   });
   
   it('handles successful login for student user with default navigation', async () => {
     const user = userEvent.setup();
     
-    // Set mockLocationState to null for this test
+    // For student test, ensure no redirect is provided by leaving location state as null
     mockLocationState = null;
     
     apiClient.post.mockResolvedValueOnce({ 
@@ -206,9 +210,8 @@ describe('LoginPage', () => {
       } 
     });
     
-    jwtDecode.mockReturnValueOnce({ user_id: 2, role: 'student' });
+    jwtDecode.mockReturnValue({ user_id: 2, role: 'student' });
     
-    // For this test, adjust the expectation instead of fighting with the mocks
     render(
       <ThemeProvider theme={theme}>
         <MemoryRouter>
@@ -222,13 +225,12 @@ describe('LoginPage', () => {
     
     await user.click(screen.getByTestId('login-button'));
     
-    // Wait for condition to be true or check if navigate was called at all
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalled();
     });
     
-    // Accept the test-redirect path for now since that's what the component is using
-    expect(mockNavigate.mock.calls[0][0]).toBe('/test-redirect');
+    // With no redirect provided, the component should default to '/student'
+    expect(mockNavigate.mock.calls[0][0]).toBe('/student');
   });
   
   it('handles login failure', async () => {
