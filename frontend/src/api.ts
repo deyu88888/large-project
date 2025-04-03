@@ -94,7 +94,7 @@ export const apiPaths = {
     REJECTEDSOCIETY: "/api/admin/society/request/rejected",
     STUDENTS: "/api/admin/student",
     ADMIN: "/api/admin/admin",
-    PENDINGSOCIETYREQUEST: "/api/admin/society/request/pending",
+    PENDINGSOCIETYREQUEST: "/api/admin/society/request/Pending",
     PROFILE: "/api/user/profile",
     REPORT: "/api/admin/report-to-admin",
     PENDINGEVENTREQUEST: "/api/event/request/pending",

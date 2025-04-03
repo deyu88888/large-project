@@ -9,7 +9,7 @@ from rest_framework.views import APIView
 from api.models import ActivityLog, Society, SocietyRequest, Event
 from api.serializers import SocietySerializer, StartSocietyRequestSerializer, EventSerializer
 from api.views_files.view_utility import student_has_no_role, get_student_if_user_is_student, get_admin_if_user_is_admin
-
+from django.db.models import Q
 
 class StartSocietyRequestView(APIView):
     """View to handle society creation requests."""
@@ -50,8 +50,15 @@ class AdminSocietyRequestView(APIView):
 
         society_status = society_status.capitalize()
 
-        if society_status in ["Pending", "Rejected"]:
-            queryset = SocietyRequest.objects.filter(intent="CreateSoc", approved=False if society_status == "Pending" else None)
+        if society_status == "Pending":
+            # Exclude approved requests (where approved=True)
+            queryset = SocietyRequest.objects.filter(
+                intent="CreateSoc",
+                approved__isnull=True  # Only get ones where approved is NULL
+            )
+            serializer = SocietyRequestSerializer(queryset, many=True)
+        elif society_status == "Rejected":
+            queryset = SocietyRequest.objects.filter(intent="CreateSoc", approved=False)
             serializer = SocietyRequestSerializer(queryset, many=True)
         else:
             queryset = Society.objects.filter(status=society_status)
@@ -77,6 +84,46 @@ class AdminSocietyRequestView(APIView):
             serializer.save()
 
             approved_status = serializer.validated_data.get("approved")
+
+            if approved_status is True:
+                requesting_student = society_request.from_student
+                
+                if requesting_student:
+                    # Create the society first and ensure it's saved
+                    new_society = Society.objects.create(
+                        name=society_request.name,
+                        description=society_request.description,
+                        category=society_request.category,
+                        status="Approved",
+                        approved_by=user,
+                        president=requesting_student
+                    )
+                    
+                    # Save to ensure it has an ID
+                    new_society.save()
+                    
+                    # Add student relationship explicitly
+                    new_society.society_members.add(requesting_student)
+                    # Add this debug code to check if the relationship was established
+                    print(f"Society members: {list(new_society.society_members.all())}")
+                    print(f"Student societies: {list(requesting_student.societies_belongs_to.all())}")
+
+                    # Force a refresh from the database to ensure relationships are loaded
+                    requesting_student.refresh_from_db()
+                    new_society.refresh_from_db()
+
+                    # Check again after refresh
+                    print(f"After refresh - Society members: {list(new_society.society_members.all())}")
+                    print(f"After refresh - Student societies: {list(requesting_student.societies_belongs_to.all())}")
+                    
+                    # Make sure the president relationship is set
+                    requesting_student.president_of = new_society
+                    requesting_student.is_president = True
+                    requesting_student.save()
+                    
+                    # Link the society request to the society
+                    society_request.society = new_society
+                    society_request.save()
 
             action_type_map = {
                 True: "Approve",
