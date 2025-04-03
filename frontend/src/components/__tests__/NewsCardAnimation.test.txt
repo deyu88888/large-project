@@ -1,43 +1,127 @@
-// failing tests
-import { render, screen, fireEvent, act } from "@testing-library/react";
-import { describe, it, expect, vi } from "vitest";
-import { NewsCardAnimation } from "../NewsCardAnimation";
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { NewsCardAnimation } from '../NewsCardAnimation';
+import { News } from '../../types';
 
-vi.useFakeTimers();
+// Mock the NewsCard component
+vi.mock('./NewsCard', () => ({
+  NewsCard: ({ news }: { news: News }) => (
+    <div data-testid="mock-news-card">
+      <h2>{news.title}</h2>
+      <p>{news.brief}</p>
+    </div>
+  )
+}));
 
-describe("NewsCardAnimation", () => {
-  it("renders the first news card by default", () => {
+describe('NewsCardAnimation Component', () => {
+  // Helper function to wait for a specific duration
+  const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+  it('renders initial state with first news card', async () => {
     render(<NewsCardAnimation />);
-    expect(screen.getByText("News Title")).toBeInTheDocument();
-    expect(screen.getByText("News")).toBeInTheDocument();
+
+    // Wait for news to be loaded
+    await screen.findByTestId('mock-news-card');
+
+    // Check first news card is rendered
+    const newsCard = screen.getByTestId('mock-news-card');
+    const cardTitle = screen.getByText('News Title');
+    const cardBrief = screen.getByText('News Brief');
+
+    expect(newsCard).toBeInTheDocument();
+    expect(cardTitle).toBeInTheDocument();
+    expect(cardBrief).toBeInTheDocument();
   });
 
-  it("cycles to the next news card on click after flip animation", () => {
+  it('cycles through news cards when clicked', async () => {
     render(<NewsCardAnimation />);
-    const container = screen.getByTestId("card-container");
 
-    
-    act(() => {
-      fireEvent.click(container);
-      vi.advanceTimersByTime(500);
-    });
-    expect(screen.getByText("News Title2")).toBeInTheDocument();
-    expect(screen.getByText("News2")).toBeInTheDocument();
+    // Wait for news to be loaded
+    await screen.findByTestId('mock-news-card');
 
-    
-    act(() => {
-      fireEvent.click(container);
-      vi.advanceTimersByTime(500);
-    });
-    expect(screen.getByText("News Title3")).toBeInTheDocument();
-    expect(screen.getByText("News3")).toBeInTheDocument();
+    // Get the container
+    const container = screen.getByTestId('card-container');
 
-    
-    act(() => {
-      fireEvent.click(container);
-      vi.advanceTimersByTime(500);
+    // Initial state check
+    expect(screen.getByText('News Title')).toBeInTheDocument();
+
+    // Click to change card
+    fireEvent.click(container);
+
+    // Check flip class is added
+    expect(container).toHaveClass('flip');
+
+    // Wait for animation and state update
+    await wait(500);
+
+    // Check second news card is rendered
+    expect(screen.getByText('News Title2')).toBeInTheDocument();
+  });
+
+  it('cycles back to first card after last card', async () => {
+    render(<NewsCardAnimation />);
+
+    // Wait for news to be loaded
+    await screen.findByTestId('mock-news-card');
+
+    // Get the container
+    const container = screen.getByTestId('card-container');
+
+    // Cycle through all cards
+    fireEvent.click(container); // 2nd card
+    await wait(500);
+    fireEvent.click(container); // 3rd card
+    await wait(500);
+    fireEvent.click(container); // Back to 1st card
+    await wait(500);
+
+    // Check first news card is rendered again
+    expect(screen.getByText('News Title')).toBeInTheDocument();
+  });
+
+  it('handles empty news list gracefully', () => {
+    // Mock empty news list
+    vi.mock('react', async () => {
+      const actual = await vi.importActual('react');
+      return {
+        ...actual,
+        useEffect: (fn: () => void) => {
+          fn(); // Immediately invoke effect
+        },
+        useState: vi.fn().mockImplementation((initialState) => {
+          if (initialState[0] === undefined) {
+            return [[], () => {}];
+          }
+          return [initialState[0], () => {}];
+        })
+      };
     });
-    expect(screen.getByText("News Title")).toBeInTheDocument();
-    expect(screen.getByText("News")).toBeInTheDocument();
+
+    render(<NewsCardAnimation />);
+
+    // No news card should be rendered
+    const newsCards = screen.queryByTestId('mock-news-card');
+    expect(newsCards).not.toBeInTheDocument();
+  });
+
+  it('prevents multiple rapid clicks', async () => {
+    const mockSetTimeout = vi.spyOn(window, 'setTimeout');
+    render(<NewsCardAnimation />);
+
+    // Wait for news to be loaded
+    await screen.findByTestId('mock-news-card');
+
+    // Get the container
+    const container = screen.getByTestId('card-container');
+
+    // Rapid clicks
+    fireEvent.click(container);
+    fireEvent.click(container);
+    fireEvent.click(container);
+
+    // Check setTimeout was called only once
+    expect(mockSetTimeout).toHaveBeenCalledTimes(1);
+
+    mockSetTimeout.mockRestore();
   });
 });

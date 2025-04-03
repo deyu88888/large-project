@@ -6,7 +6,7 @@ import { LoadingView } from "../components/loading/LoadingView";
 import { PublicGuard } from "../components/guards/public-guard";
 import { PrivateGuard } from "../components/guards/private-guard";
 import CircularLoader from "../components/loading/CircularLoader";
-import Layout from "../components/layout";
+import Layout from "../components/Layout.tsx";
 import PageWithTitle from "../components/PageWithTitle";
 import ManageReports from "../pages/Admin/ManageReports";
 import PublicLayout from "../components/home/PublicLayout";

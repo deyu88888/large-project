@@ -16,14 +16,11 @@ const PopularSocieties: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Access the current MUI theme
   const theme = useTheme();
 
-  // Set background color dynamically
   const backgroundClass =
     theme.palette.mode === "dark" ? "bg-[#141b2d]" : "bg-[#ffffff]";
 
-  // Set text color dynamically
   const headerTextClass =
     theme.palette.mode === "dark" ? "text-white" : "text-black";
 

@@ -36,7 +36,7 @@ vi.mock("react-big-calendar", async () => {
 import { Calendar } from "react-big-calendar";
 
 // Import your actual component
-import EventCalendar from "./EventCalendar";
+import EventCalendar from "../EventCalendar";
 
 /** Helper to create date objects for testing */
 function createDate(
