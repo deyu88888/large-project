@@ -232,7 +232,7 @@ const StatsSection: FC<StatsSectionProps> = ({
       <StatCard
         icon={<FaUsers style={{ color: colours.greenAccent[400] }} />}
         title="Active Users"
-        value={userStats?.active_members || 0}
+        value={userStats?.activeUsers || 0}
       />
       <StatCard
         icon={<FaCalendarAlt style={{ color: colours.blueAccent[500] }} />}
