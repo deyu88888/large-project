@@ -1,181 +1,199 @@
 \chapter{Project Management}
 \label{chap:project-management}
 
-This chapter presents, reflects on, and evaluates our team's approach to project management throughout the development of the university society management platform. We discuss our methodology, coordination mechanisms, challenges encountered, and critical reflections on the effectiveness of our approaches.
+This chapter looks at how we managed our university society platform project, from our overall approach to the specific challenges we faced and how we solved them.
 
 \section{Project Management Approach}
 
-\subsection{Flexible Agile-Inspired Methodology}
+\subsection{Our Agile-Inspired Approach}
 
-Our team adopted a flexible Agile-inspired approach to project management, drawing on iterative principles while adapting them to fit our team's specific needs and academic constraints. This decision was based on several factors:
+We used an approach loosely based on Agile principles, but adapted to fit our team's needs and university workloads. We chose this for several reasons:
 
 \begin{itemize}
-    \item \textbf{Uncertain Requirements}: At project initiation, we recognized that while we had a clear vision of the platform's purpose, many specific requirements would evolve as we better understood stakeholder needs.
+    \item \textbf{Evolving Requirements}: When we started, we had a clear idea of what the platform should do, but knew many details would change as we better understood what users needed.
     
-    \item \textbf{Team Composition}: Our team consisted of members with varied experience levels in software development. Our emphasis on frequent communication and knowledge sharing provided a structure for less experienced members to learn from those with more expertise.
+    \item \textbf{Mixed Experience Levels}: Our team members had varying coding experience. Regular communication helped less experienced members learn from others.
     
-    \item \textbf{Project Complexity}: The multi-tiered nature of our platform (serving different user roles with distinct needs) suggested that a sequential approach would be less effective than an iterative one that allowed us to refine features based on feedback.
+    \item \textbf{Different User Roles}: Our platform needed to work for students, society leaders and administrators, which meant we needed a flexible approach to handle these distinct interfaces and permission levels.
 \end{itemize}
 
-\subsection{Practical Implementation}
+\subsection{How We Worked}
 
-While our approach was influenced by Agile principles, our actual implementation was adapted to better fit our team's working style and academic schedules:
+Our actual working method was quite practical:
 
 \begin{itemize}
-    \item \textbf{Regular Collaboration Sessions}: We held twice-weekly team meetings (2-3 hours each) for collaborative brainstorming, decision-making, and progress reviews.
+    \item \textbf{Regular Meetings}: We met twice a week for 2-3 hours to brainstorm, make decisions and review progress.
     
-    \item \textbf{Documentation}: We maintained comprehensive meeting minutes to document all decisions and action items, ensuring team alignment.
+    \item \textbf{Meeting Notes}: We kept detailed notes of all meetings to track decisions and tasks.
     
-    \item \textbf{Continuous Communication}: Daily communication in a group chat addressed immediate problems and facilitated necessary decisions between formal meetings.
+    \item \textbf{Group Chat}: Daily WhatsApp messages helped us solve urgent problems and make decisions between meetings.
     
-    \item \textbf{Phased Development Approach}: Our project naturally evolved through three distinct phases: initial development with rapid feature addition (first 5 weeks), feature refinement and completion (middle period), and final refactoring and debugging (final two weeks).
+    \item \textbf{Development Phases}: Our work naturally fell into three stages: building core features (first 5 weeks), refining and completing features (next 3 weeks), and fixing bugs (final 3 weeks).
 \end{itemize}
 
-\subsection{Critical Reflection on Our Approach}
+\subsection{What Worked and What Didn't}
 
-Our flexible approach had both strengths and limitations:
+Our approach had strengths and weaknesses:
 
 \begin{itemize}
-    \item \textbf{Adaptability Advantage}: The absence of rigid processes allowed us to shift focus quickly when needed, particularly when transitioning from feature development to refinement and debugging.
+    \item \textbf{Flexibility}: Not having rigid processes meant we could quickly shift focus when needed, especially when moving from building features to fixing bugs.
     
-    \item \textbf{Communication Challenges}: While our group chat provided continuous communication channels, important information sometimes got lost in the conversation flow. Our twice-weekly meetings helped realign everyone but occasionally left gaps in coordination between sessions.
+    \item \textbf{Communication Issues}: While our group chat was useful, important information sometimes got buried. Our twice-weekly meetings helped get everyone back on the same page.
     
-    \item \textbf{Documentation Value}: Our meeting minutes proved invaluable for maintaining project continuity, especially when team members missed meetings due to personal issues.
+    \item \textbf{Value of Notes}: Our meeting notes proved very helpful, especially when team members missed meetings due to other commitments.
 \end{itemize}
 
-\section{Task Management and Workflow}
+\section{Task Management}
 
-\subsection{Tool Selection and Task Organization}
+\subsection{Tools We Used}
 
-To manage our project tasks and workflow, we used a combination of lightweight tools:
+We kept our toolset simple:
 
 \begin{itemize}
-    \item \textbf{Discord}: For quick unscheduled meetings
+    \item \textbf{Discord}: For quick, unplanned meetings and discussions
     
-    \item \textbf{Teams}: For scheduled online meetings
+    \item \textbf{Microsoft Teams}: For scheduled online meetings
     
-    \item \textbf{WhatsApp Group}: For daily communication and quick decision-making
+    \item \textbf{WhatsApp}: For daily messages and quick decisions
     
-    \item \textbf{GitHub Pull Requests}: For code review and quality control
+    \item \textbf{GitHub}: For code review and version control
+
+    \item \textbf{Postman}: For checking endpoints
 \end{itemize}
 
-Our task organization evolved organically rather than following formal methods. We maintained a prioritized feature list that guided our development focus, with tasks generally self-assigned based on individual interests and expertise.
+Tasks were organised naturally rather than with formal methods. We maintained a list of features to build, and team members generally picked tasks that matched their skills.
 
-\subsection{Critical Reflection on Task Management}
+\subsection{Development Assistance Tools}
 
-Our approach to task management revealed several insights:
+To help manage our development process efficiently within our time constraints, we employed several productivity tools:
 
 \begin{itemize}
-    \item \textbf{Initial Overestimation}: During the first few weeks, we consistently overestimated what could be accomplished, committing to more features than we could complete. This led to some feature slippage and occasional team frustration.
+    \item \textbf{AI Assistance}: We used AI tools like ChatGPT for troubleshooting complex bugs, getting second opinions on code structure, and helping with debugging sessions when we were stuck on particularly difficult problems. This proved valuable when we couldn't afford to spend excessive time on issues that were blocking progress.
     
-    \item \textbf{Task Granularity Issues}: Early task definitions were often too broad (e.g., "Implement student dashboard"), making progress difficult to track. We gradually improved at breaking down complex features into more manageable components, which improved both estimation accuracy and work distribution.
+    \item \textbf{Code Formatting Tools}: We used tools like autopep8 to maintain consistent code formatting and catch potential issues early.
     
-    \item \textbf{Quality Control Evolution}: Initially, we lacked a clear process for determining when a feature was truly complete. As the project progressed, we developed more rigorous quality standards, including:
+\end{itemize}
+
+Our approach to using AI was practical—we used it as a supplementary resource rather than a replacement for our own problem-solving. We found it particularly helpful for:
+
+\begin{itemize}
+    \item Overcoming complex issues when debugging 
+    \item Validating our architectural decisions
+    \item Providing quick feedback on code quality
+\end{itemize}
+
+This balanced approach allowed us to keep our original code intact while leveraging available tools to overcome obstacles efficiently.
+
+\subsection{Lessons from Task Management}
+
+We learned several lessons about task management:
+
+\begin{itemize}
+    \item \textbf{Over-ambitious Planning}: In the first few weeks, we planned more features than we could actually build, which caused some stress and disappointment.
+    
+    \item \textbf{Better Task Breakdown}: We started with vague tasks like "Build the student dashboard," but learned to break these into smaller pieces, which made tracking progress easier.
+    
+    \item \textbf{Quality Standards}: We gradually developed better standards for when a feature was "done," including:
     \begin{itemize}
-        \item Code review by at least one team member
-        \item Manual testing on desktop browsers
-        \item Documentation updates
+        \item Code review by another team member
+        \item Rigorous testing
+        \item Updated documentation
     \end{itemize}
-    This improved overall code quality but was implemented reactively rather than from the outset.
 \end{itemize}
 
-\section{Team Organization and Collaboration}
+\section{Team Organisation}
 
-\subsection{Team Structure and Work Distribution}
+\subsection{How We Organised Ourselves}
 
-We adopted a flexible team structure based primarily on technical strengths:
+We kept our team structure flexible:
 
 \begin{itemize}
-    \item \textbf{Natural Leadership}: Rather than assigning formal project management roles, we allowed leadership to emerge naturally based on expertise in different areas
+    \item \textbf{Natural Leaders}: Instead of formal roles, we let leadership emerge based on who knew most about different aspects of the project.
     
-    \item \textbf{Technical Specializations}: Team members gravitated toward components matching their strengths (frontend, backend, AI, etc.)
+    \item \textbf{Playing to Strengths}: Team members worked on parts that matched their skills (frontend, backend, etc.).
     
-    \item \textbf{Collaborative Decision-Making}: Major decisions were made collectively during our twice-weekly meetings, with consensus-building as our primary approach
+    \item \textbf{Group Decisions}: Big decisions were made together during our meetings, aiming for consensus.
 \end{itemize}
 
-This flexible structure allowed us to adapt to the evolving needs of the project while leveraging each team member's unique skills.
+This approach let us adapt as the project evolved while using everyone's skills effectively.
 
-\subsection{Critical Reflection on Team Organization}
+\subsection{Team Challenges}
 
-Our team organization faced several challenges throughout the project:
+We faced several challenges in how we worked together:
 
 \begin{itemize}
-    \item \textbf{Knowledge Silos}: By mid-project, we recognized dangerous knowledge silos forming, with only one team member understanding certain critical components. We attempted to address this through more detailed documentation and explanations during meetings, though this remained a challenge throughout the project.
+    \item \textbf{Knowledge Hoarding}: By mid-project, we realised some critical parts were understood by only one person. We tried to fix this through better documentation and explanations, though it remained an issue.
     
-    \item \textbf{Workload Distribution}: Our self-selection approach to tasks occasionally led to uneven workload distribution. Some team members took on significantly more complex components than others, creating bottlenecks when those components needed integration.
+    \item \textbf{Uneven Workloads}: Letting people choose their tasks sometimes led to unbalanced work, with some team members taking on much more than others.
     
-    \item \textbf{Remote Collaboration Challenges}: The team's varied schedules meant that much work was done asynchronously. We initially struggled with communication that would enable effective asynchronous work. After identifying this issue, we improved our practices by:
+    \item \textbf{Asynchronous Development}: Different schedules meant much work happened independently. We improved this by:
     \begin{itemize}
-        \item Writing more descriptive commit messages
-        \item Sharing a summary of the implementation in the group chat
-        \item Sharing explanatory screenshots in the group chat when implementing new features
+        \item Writing clearer commit messages
+        \item Sharing summaries of new code in the group chat
+        \item Posting screenshots of new features
     \end{itemize}
 \end{itemize}
 
 \section{Risk Management}
 
-\subsection{Informal Risk Identification and Mitigation}
+\subsection{How We Handled Risks}
 
-Rather than conducting formal risk management exercises, our approach to risks was more organic and reactive. We identified several key risks through group discussions:
-
-\begin{itemize}
-    \item \textbf{Technical Complexity of Multi-Role System}: We recognized that implementing different user roles (student, society president, admin) with distinct interfaces would be challenging. We addressed this by discussing the permission structure early and establishing clear boundaries between role capabilities.
-    
-    \item \textbf{Feature Prioritization Challenges}: With numerous possible features to implement, we faced difficult decisions about which to prioritize. We mitigated this by focusing first on core functionality that would provide the most value to users before adding more specialized features.
-    
-    \item \textbf{Academic Time Constraints}: University coursework deadlines created variable availability throughout the project. We acknowledged this reality and maintained flexibility in our scheduling.
-\end{itemize}
-
-\subsection{Critical Reflection on Risk Management}
-
-Our informal approach to risk management had mixed results:
+We took an informal approach to risks, discussing them as they came up rather than through formal processes:
 
 \begin{itemize}
-    \item \textbf{Feature Prioritization Challenges}: Our initial approach to feature prioritization was sometimes based more on technical interest than user value. As the project progressed, we improved our prioritization by focusing on core user journeys first. However, this initial lack of structured prioritization meant we spent time on some features that were ultimately less important than others we had to rush later.
+    \item \textbf{User Role Management}: We knew that building different interfaces for students, society leaders and admins would be tricky. We addressed this by deciding early on how permissions would work and what each role could do.
     
-    \item \textbf{Technical Debt Accumulation}: In our rush to implement features, we accumulated technical debt, particularly in the early phase. This necessity to refactor code later was anticipated but not formally planned for. Our final two weeks became heavily focused on refactoring and debugging as a result.
-    
-    \item \textbf{Successful Role System Implementation}: Our early attention to defining user role permissions proved beneficial. By discussing the permission structure early and clearly defining role boundaries, we avoided major redesigns later in the project. This allowed us to build different dashboard interfaces for each role with consistent and appropriate access controls.
-\end{itemize}
-
-\section{Project Progress Monitoring}
-
-\subsection{Progress Tracking Approach}
-
-Our project progress monitoring relied primarily on:
-
-\begin{itemize}
-    \item \textbf{Feature Completion Tracking}: Regular reviews of which features were complete, in progress, or not yet started
-    
-    \item \textbf{GitHub Activity}: Monitoring commit activity and pull requests to gauge development progress
-    
-    \item \textbf{Biweekly Demonstrations}: Demonstrating working features during our meetings to verify progress
-\end{itemize}
-
-This lightweight approach to progress tracking aligned with our flexible project management methodology while providing sufficient visibility into project status.
-
-\subsection{Critical Reflection on Progress Monitoring}
-
-Our monitoring approach revealed several insights:
-
-\begin{itemize}
-    \item \textbf{Feature vs. Quality Tension}: Our focus on feature completion sometimes came at the expense of code quality. In later stages, we adjusted by placing greater emphasis on testing and refinement rather than new feature development.
-    
-    \item \textbf{Development Rhythm}: We observed that productivity typically increased just before our biweekly meetings, as team members worked to complete features for demonstration. While this created a somewhat uneven development pace, it established natural checkpoints that helped maintain momentum.
-   
-\end{itemize}
-
-\section{Key Lessons and Future Recommendations}
-
-Based on our project management experience, we identified several key lessons that would inform our approach to future projects:
-
-\begin{itemize}
-    \item \textbf{Balanced Structure}: While our flexible approach enabled adaptability, a slightly more structured process—particularly for code reviews and quality assurance—would have reduced technical debt without sacrificing creativity.
-    
-    \item \textbf{Knowledge Sharing}: More formalized knowledge transfer should be established earlier. Techniques such as pair programming and documentation requirements should be core practices rather than remedial measures.
-    
-    \item \textbf{Technical Debt Management}: Explicitly allocating time for refactoring and technical debt reduction should be planned from the outset rather than becoming a necessity at the end of the project.
+    \item \textbf{Feature Selection}: With many possible features to build, we had to decide what to prioritise. We tried to focus on core functions that would give users the most value.
     
 \end{itemize}
 
-Overall, our flexible approach provided the adaptability needed to accommodate our team's academic constraints while still delivering a functional platform. Our willingness to communicate frequently and adjust our processes as needed helped us overcome the challenges inherent in a complex project with a diverse team.
+\subsection{Risk Management Results}
+
+Our approach to risks had mixed outcomes:
+
+\begin{itemize}
+    \item \textbf{Feature Priorities}: Early on, we sometimes chose features based on what was technically interesting rather than what users needed most. We got better at focusing on core user needs as the project went on.
+    
+    \item \textbf{Code Quality Issues}: In our rush to add features, we sometimes wrote code that needed refactoring later. Our final two weeks focused heavily on fixing and improving existing code.
+    
+    \item \textbf{Role System Success}: Our early work on user roles and permissions paid off. By planning this carefully from the start, we avoided major rework later and built consistent interfaces for each user type.
+\end{itemize}
+
+\section{Progress Tracking}
+
+\subsection{How We Tracked Progress}
+
+We kept progress tracking simple:
+
+\begin{itemize}
+    \item \textbf{Trello Board Tracking}: We maintained a Trello board with cards for each feature, moving them through columns for 'To Do', 'In Progress', and 'Done' to visualize our progress
+    \item \textbf{GitHub Activity}: Looking at commits and pull requests to see development progress
+    
+    \item \textbf{Demos}: Showing working features during our meetings
+\end{itemize}
+
+This approach matched our overall flexible management style while giving us a good general view.
+
+\subsection{Progress Insights}
+
+Our approach to tracking revealed some patterns:
+
+\begin{itemize}
+    \item \textbf{Features vs Quality}: Our focus on completing features sometimes meant code quality suffered. Later in the project, we shifted to improving existing features rather than adding new ones.
+    
+    \item \textbf{Work Patterns}: We noticed that most work happened just before our meetings, as everyone prepared to show their progress. This created an uneven pace but provided natural deadlines.
+\end{itemize}
+
+\section{Key Lessons for Future Projects}
+
+Based on our experience, we'd make these changes for future projects:
+
+\begin{itemize}
+    \item \textbf{More Quality Control}: While flexibility worked well, having more structure around code reviews and quality checks would have saved us from spending time fixing things later.
+    
+    \item \textbf{Better Knowledge Sharing}: We should have established more formal ways to share knowledge early on, like documentation standards or pair programming.
+    
+    \item \textbf{Planned Refactoring Time}: We should have scheduled time for cleaning up code throughout the project rather than leaving it all to the end.
+\end{itemize}
+
+Overall, our flexible approach worked well for our project constraints. By maintaining regular communication and being open to adapting our process along the way, we managed to overcome challenges and deliver a working platform.

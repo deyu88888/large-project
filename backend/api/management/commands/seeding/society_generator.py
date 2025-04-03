@@ -5,7 +5,8 @@ from PIL import Image
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import color_style
 from api.models import User, Society, Student, SocietyRequest, SocietyShowreel
-from api.management.commands.seeding.seeding_utility import get_active_students
+from api.management.commands.seeding.seeding_utility import get_active_students, \
+    get_model_entries_as_list
 
 
 class RandomSocietyDataGenerator():
@@ -440,3 +441,27 @@ class RandomSocietyDataGenerator():
                 photo=uploaded_file,
                 caption=caption
             )
+
+    def create_society_detail_request(self, n):
+        """Seeds society detail requests"""
+        for i in range(1, n+1):
+            society = choice(get_model_entries_as_list(Society))
+            data = self.generate()
+            detail_request = SocietyRequest(
+                society=society,
+                from_student=society.president,
+                intent="UpdateSoc",
+            )
+            name_choice = choice((True, False))
+            description_choice = choice((True, False))
+            category_choice = choice((True, False))
+            if name_choice:
+                detail_request.name = data["name"]
+            if description_choice:
+                detail_request.description = data["description"]
+            if category_choice:
+                detail_request.category = data["category"]
+            detail_request.approved = choice((False, None))
+
+            print((f"Seeding society detail request {i}/{n}"), flush=True)
+        print(self.style.SUCCESS(f"Seeding society detail request {n}/{n}"), flush=True)
