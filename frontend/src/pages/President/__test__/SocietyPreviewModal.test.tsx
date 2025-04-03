@@ -1,5 +1,3 @@
-// failing
-
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
@@ -16,8 +14,8 @@ describe('SocietyPreviewModal Component', () => {
     upcoming_projects_or_plans: 'Annual conference in Spring',
     tags: ['academic', 'research', 'community'],
     social_media_links: {
-      Twitter: 'https:
-      Instagram: 'https:
+      Twitter: 'https://twitter.com/testsociety',
+      Instagram: 'https://instagram.com/testsociety'
     },
     icon: 'data:image/png;base64,fakeImageData'
   };
@@ -86,8 +84,10 @@ describe('SocietyPreviewModal Component', () => {
   it('displays social media links correctly', () => {
     renderComponent();
     expect(screen.getByText('Social Media Links:')).toBeInTheDocument();
-    expect(screen.getByText('Twitter: https:
-    expect(screen.getByText('Instagram: https:
+    expect(screen.getByText(/Twitter:/)).toBeInTheDocument();
+    expect(screen.getByText(/https:\/\/twitter.com\/testsociety/)).toBeInTheDocument();
+    expect(screen.getByText(/Instagram:/)).toBeInTheDocument();
+    expect(screen.getByText(/https:\/\/instagram.com\/testsociety/)).toBeInTheDocument();
   });
 
   it('displays icon when available', () => {
@@ -140,9 +140,11 @@ describe('SocietyPreviewModal Component', () => {
     });
     expect(screen.getByText('Tags:')).toBeInTheDocument();
     
-    
+    // Find the tags section first
     const tagsSection = screen.getByText('Tags:').closest('.MuiBox-root');
     expect(tagsSection).toBeInTheDocument();
+    
+    // Then look for the empty paragraph within that section specifically
     const emptyParagraph = tagsSection?.querySelector('p.MuiTypography-body1');
     expect(emptyParagraph).toBeInTheDocument();
     expect(emptyParagraph?.textContent).toBe('');
