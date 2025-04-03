@@ -1,5 +1,3 @@
-// failing
-
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
@@ -8,7 +6,10 @@ import { apiClient } from '../../../api';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { MemoryRouter } from 'react-router-dom';
 
+// Mock navigate function
+const mockNavigate = vi.fn();
 
+// Mock react-router-dom
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return {
@@ -17,30 +18,28 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
+// Mock API client
 vi.mock('../../../api', () => ({
   apiClient: {
     get: vi.fn(),
   },
 }));
 
-
+// Mock societies data with complete URLs
 const mockSocieties = [
   {
     id: 1,
     name: 'Computer Science Society',
     description: 'A society for computer science enthusiasts.',
-    icon: 'https:
+    icon: 'https://example.com/cs-icon.png',
   },
   {
     id: 2,
     name: 'Chess Club',
     description: 'Weekly chess meetups and tournaments.',
-    icon: 'https:
+    icon: 'https://example.com/chess-icon.png',
   },
 ];
-
-
-const mockNavigate = vi.fn();
 
 describe('MyJoinedSocieties Component', () => {
   beforeEach(() => {
@@ -64,7 +63,7 @@ describe('MyJoinedSocieties Component', () => {
   };
 
   it('displays loading state initially', () => {
-    
+    // Make the API call never resolve to keep loading state
     vi.mocked(apiClient.get).mockImplementation(() => new Promise(() => {}));
     
     renderComponent();
@@ -73,7 +72,7 @@ describe('MyJoinedSocieties Component', () => {
   });
 
   it('displays empty state when no societies are returned', async () => {
-    
+    // Mock empty data response
     vi.mocked(apiClient.get).mockResolvedValue({ data: [] });
     
     renderComponent();
@@ -86,7 +85,7 @@ describe('MyJoinedSocieties Component', () => {
   });
 
   it('displays societies when they are fetched successfully', async () => {
-    
+    // Mock successful data response
     vi.mocked(apiClient.get).mockResolvedValue({ data: mockSocieties });
     
     renderComponent();
@@ -111,10 +110,10 @@ describe('MyJoinedSocieties Component', () => {
       const chessIcon = screen.getByAltText('Chess Club icon');
       
       expect(csIcon).toBeInTheDocument();
-      expect(csIcon.getAttribute('src')).toBe('https:
+      expect(csIcon.getAttribute('src')).toBe('https://example.com/cs-icon.png');
       
       expect(chessIcon).toBeInTheDocument();
-      expect(chessIcon.getAttribute('src')).toBe('https:
+      expect(chessIcon.getAttribute('src')).toBe('https://example.com/chess-icon.png');
     });
   });
 
@@ -125,7 +124,7 @@ describe('MyJoinedSocieties Component', () => {
         id: 3,
         name: 'Long Description Society',
         description: longDescription,
-        icon: 'https:
+        icon: 'https://example.com/long-desc-icon.png',
       },
     ];
     
@@ -149,7 +148,7 @@ describe('MyJoinedSocieties Component', () => {
         id: 4,
         name: 'No Description Society',
         description: '',
-        icon: 'https:
+        icon: 'https://example.com/no-desc-icon.png',
       },
     ];
     
@@ -172,7 +171,7 @@ describe('MyJoinedSocieties Component', () => {
       expect(screen.getAllByText('View Society').length).toBe(2);
     });
     
-    
+    // Click the first "View Society" button
     fireEvent.click(screen.getAllByText('View Society')[0]);
     
     expect(mockNavigate).toHaveBeenCalledWith('/student/view-society/1');
@@ -183,15 +182,15 @@ describe('MyJoinedSocieties Component', () => {
     
     renderComponent();
     
-    expect(screen.getByText('My Societies')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'My Societies' })).toBeInTheDocument();
   });
 
   it('handles API errors gracefully', async () => {
-    
+    // Mock API error
     vi.mocked(apiClient.get).mockRejectedValue(new Error('API Error'));
     
-    
-    const consoleErrorSpy = vi.spyOn(console, 'error');
+    // Spy on console.error
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     
     renderComponent();
     
@@ -202,7 +201,7 @@ describe('MyJoinedSocieties Component', () => {
       );
     });
     
-    
+    // Should show empty state on error
     expect(screen.getByText("You haven't joined any societies yet.")).toBeInTheDocument();
     
     consoleErrorSpy.mockRestore();
@@ -213,25 +212,22 @@ describe('MyJoinedSocieties Component', () => {
     
     renderComponent('dark');
     
-    
+    // Verify content renders in dark theme
     await waitFor(() => {
       expect(screen.getByText('Computer Science Society')).toBeInTheDocument();
     });
-    
-    
-    
   });
   
   it('handles navigation errors gracefully', async () => {
     vi.mocked(apiClient.get).mockResolvedValue({ data: mockSocieties });
     
-    
+    // Make navigation throw an error
     mockNavigate.mockImplementation(() => {
       throw new Error('Navigation Error');
     });
     
-    
-    const consoleErrorSpy = vi.spyOn(console, 'error');
+    // Spy on console.error
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     
     renderComponent();
     
@@ -239,7 +235,7 @@ describe('MyJoinedSocieties Component', () => {
       expect(screen.getAllByText('View Society').length).toBe(2);
     });
     
-    
+    // Click button that triggers navigation error
     fireEvent.click(screen.getAllByText('View Society')[0]);
     
     expect(consoleErrorSpy).toHaveBeenCalledWith(
