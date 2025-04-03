@@ -6,6 +6,7 @@ import {
   Button,
   IconButton,
   Pagination,
+  TextField,
   Typography,
 } from "@mui/material";
 import { format } from "date-fns";
@@ -205,8 +206,8 @@ export function CommentItem({
         {/* Reply input box */}
         {showReplyBox && (
           <Box sx={{ mt: 1 }}>
-            <textarea
-              ref={replyTextAreaRef}
+            <TextField
+              inputRef={replyTextAreaRef}
               rows={1}
               value={replyContent}
               onChange={(e) => {
