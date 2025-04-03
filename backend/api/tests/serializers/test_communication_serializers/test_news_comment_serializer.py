@@ -2,12 +2,12 @@ from django.test import TestCase
 from django.utils import timezone
 from rest_framework.test import APIRequestFactory
 from unittest.mock import patch, Mock
-
 from api.models import (
     User, Student, Society, SocietyNews, NewsComment
 )
 from api.serializers import NewsCommentSerializer
-
+from django.contrib.auth.models import AnonymousUser
+import time
 
 class NewsCommentSerializerTest(TestCase):
     """Test suite for NewsCommentSerializer"""
@@ -140,8 +140,6 @@ class NewsCommentSerializerTest(TestCase):
         
         
         request = self.factory.get("/")
-        
-        from django.contrib.auth.models import AnonymousUser
         request.user = AnonymousUser()
         
         
@@ -265,8 +263,6 @@ class NewsCommentSerializerTest(TestCase):
         """Test dislikes_count returns 0 when there's an exception"""
         
         request = self.factory.get("/")
-        
-        from unittest.mock import Mock
         mock_user = Mock()
         mock_user.is_authenticated = True
         mock_user.id = self.student1.id
@@ -325,7 +321,6 @@ class NewsCommentSerializerTest(TestCase):
         
         request = self.factory.get("/")
         
-        from unittest.mock import Mock
         mock_user = Mock()
         mock_user.is_authenticated = True
         mock_user.id = self.student1.id
@@ -496,7 +491,6 @@ class NewsCommentSerializerTest(TestCase):
         request = self.factory.get("/")
         request.user = self.student1
         
-        import time
         start_time = time.time()
         
         serializer = NewsCommentSerializer(self.parent_comment, context={"request": request})

@@ -1,5 +1,3 @@
-# backend/api/tests/test_unseed.py
-
 from django.test import TestCase
 from django.core.management import call_command
 from django.core.exceptions import ObjectDoesNotExist

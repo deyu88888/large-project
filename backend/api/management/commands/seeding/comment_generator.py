@@ -1,5 +1,3 @@
-# TODO: initial refactoring complete
-
 from random import choice
 
 

@@ -2,7 +2,7 @@ from django.test import TestCase
 from django.utils import timezone
 from unittest.mock import patch, MagicMock
 import datetime
-
+import unittest
 from api.models import Student, Society, User, Event
 from api.recommendation_service import SocietyRecommender
 from api.nlp_similarity import text_similarity_analyzer
@@ -207,5 +207,4 @@ class SocietyRecommenderTests(TestCase):
         self.assertTrue(len(recommendations) > 0)
 
 if __name__ == '__main__':
-    import unittest
     unittest.main()

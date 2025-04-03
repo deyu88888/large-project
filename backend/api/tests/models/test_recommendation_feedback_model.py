@@ -4,7 +4,7 @@ from django.core.exceptions import ValidationError
 from django.db.utils import IntegrityError
 from django.utils import timezone
 from django.db import transaction
-
+import time
 from api.models import Student, Society, User
 from api.models_files.recommendation_feedback_model import RecommendationFeedback
 
@@ -233,7 +233,6 @@ class RecommendationFeedbackModelTests(TestCase):
         creation_time = feedback.created_at
         
         
-        import time
         time.sleep(0.1)
         
         

@@ -1,5 +1,4 @@
 from django.contrib.auth.password_validation import validate_password
-
 from api.models import User, Student, Society
 from rest_framework.validators import UniqueValidator
 from rest_framework import serializers

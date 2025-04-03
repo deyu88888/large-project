@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.test import APITestCase
 from unittest.mock import patch, MagicMock
-
+from datetime import datetime
 from api.models import SocietyNews, NewsPublicationRequest, Society, Student
 
 
@@ -201,7 +201,6 @@ class NewsPublicationRequestViewTests(APITestCase):
     @patch("api.views_files.news_views.NewsPublicationRequest.objects.filter")
     def test_post_with_last_rejection_date(self, mock_filter, mock_get_object, mock_has_permission, mock_mark_prev, mock_cancel_pending):
         self.client.force_authenticate(user=self.student)
-        from datetime import datetime
         dt = datetime(2025, 4, 1, 15, 30)
         self.news_post.last_rejection_date = dt
 

@@ -6,6 +6,8 @@ from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
 from django.utils.dateformat import format as django_format
 from django.utils.timezone import localtime
+import json
+
 
 
 class SocietyNewsSerializer(serializers.ModelSerializer):
@@ -174,7 +176,6 @@ class SocietyNewsSerializer(serializers.ModelSerializer):
                 try:
 
                     if isinstance(tags, str):
-                        import json
                         try:
 
                             parsed_tags = json.loads(tags)

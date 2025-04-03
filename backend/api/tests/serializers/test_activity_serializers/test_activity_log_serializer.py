@@ -3,7 +3,7 @@ from django.utils import timezone
 from unittest.mock import patch, MagicMock
 from rest_framework.exceptions import ValidationError
 from datetime import datetime, timezone as dt_timezone
-
+import time
 from api.serializers import ActivityLogSerializer
 from api.models import ActivityLog, User
 
@@ -78,7 +78,6 @@ class TestActivityLogSerializer(TestCase):
             log.original_data = f'{{"name": "Original Name {i}"}}'
             activity_logs.append(log)
         
-        import time
         start_time = time.time()
         
         

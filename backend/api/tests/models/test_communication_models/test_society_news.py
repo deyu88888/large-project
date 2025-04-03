@@ -7,6 +7,7 @@ from django.db.models import F
 from datetime import timedelta
 
 from api.models import Society, Student, User, SocietyNews
+from django.core.exceptions import ValidationError
 
 
 class SocietyNewsModelTest(TestCase):
@@ -368,6 +369,5 @@ class SocietyNewsModelTest(TestCase):
         )
         
         
-        from django.core.exceptions import ValidationError
         with self.assertRaises(ValidationError):
             invalid_post.full_clean()

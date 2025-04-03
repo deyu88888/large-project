@@ -1,6 +1,6 @@
 # api/admin.py
 from django.contrib import admin
-from .models import SiteSettings  # Import the SiteSettings model
+from .models import SiteSettings
 
 
 @admin.register(SiteSettings)

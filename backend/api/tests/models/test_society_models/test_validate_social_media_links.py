@@ -1,4 +1,3 @@
-"""Unit tests for the validate_social_media_links function."""
 from django.test import TestCase
 from django.core.exceptions import ValidationError
 from api.models import validate_social_media_links

@@ -1,5 +1,3 @@
-# backend/api/tests/test_cold_start.py
-
 from django.test import TestCase
 from django.db.models import Count
 from unittest.mock import patch, MagicMock, PropertyMock

@@ -16,6 +16,8 @@ from .admin_handle_admin_views import AdminRestoreHandler, AdminUpdateUndoHandle
 from .admin_handle_event_views import EventRestoreHandler, EventUpdateUndoHandler, EventStatusChangeUndoHandler
 from .admin_handle_society_views import SocietyRestoreHandler, SocietyUpdateUndoHandler, SocietyStatusChangeUndoHandler
 from api.views_files.view_utility import get_admin_if_user_is_admin, RestoreHandler, set_foreign_key_relationship, set_many_to_many_relationship
+from django.db import transaction
+
 
 class AdminBaseView(APIView):
     """Base class for admin operations with common utilities."""
@@ -192,9 +194,7 @@ class AdminDeleteView(AdminBaseView):
     def handle_student_deletion(self, student):
         """
         Handle special deletion logic for Student model to prevent foreign key constraint errors.
-        """
-        from django.db import transaction
-        
+        """        
         with transaction.atomic():
             if hasattr(student, 'president_of') and student.president_of:
                 society = student.president_of
