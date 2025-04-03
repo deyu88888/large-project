@@ -1,4 +1,3 @@
-// Refactored
 import { Dialog, DialogTitle, DialogActions, DialogContent, Button, Box } from "@mui/material";
 import Cropper from "react-easy-crop";
 import { useState } from "react";
