@@ -4,6 +4,7 @@ import { useSettingsStore } from "./stores/settings-store";
 import { BrowserRouter } from "react-router-dom";
 import { themeSettings } from "./theme/theme";
 import { Routes } from "./routes";
+import { AuthProvider } from "./context/AuthContext";
 
 export function App() {
   const { themeMode } = useSettingsStore();
@@ -11,11 +12,13 @@ export function App() {
   return (
     <ThemeProvider theme={createTheme(themeSettings(themeMode))}>
       <CssBaseline />
-      <SearchProvider>
-        <BrowserRouter>
-          <Routes />
-        </BrowserRouter>
-      </SearchProvider>
+      <AuthProvider>
+        <SearchProvider>
+          <BrowserRouter>
+            <Routes />
+          </BrowserRouter>
+        </SearchProvider>
+      </AuthProvider>
     </ThemeProvider>
   );
 }

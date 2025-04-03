@@ -59,7 +59,7 @@ class SocietyRequest(Request):
     membership_requirements = models.TextField(blank=True, default="")
     upcoming_projects_or_plans = models.TextField(blank=True, default="")
     icon = models.ImageField(upload_to="icon_request/", blank=True, null=True)
-
+    rejection_reason = models.TextField(blank=True, null=True)
 
 class SocietyShowreelRequest(models.Model):
     """

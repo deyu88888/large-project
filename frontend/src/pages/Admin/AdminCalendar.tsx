@@ -128,7 +128,6 @@ const AdminCalendar = () => {
     open: false, 
     data: [] 
   });
-  // Fix: Changed the type from string to View
   const [currentView, setCurrentView] = useState<View>('month');
 
   const requestRef = useRef<number | null>(null);

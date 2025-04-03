@@ -3,14 +3,11 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useTheme, Snackbar, Box } from "@mui/material";
 import { EventForm } from "../../components/EventForm";
 import { apiClient } from "../../api";
-import MuiAlert from "@mui/material/Alert"; // Import directly from MUI
+import MuiAlert from "@mui/material/Alert";
 
-// Create a proper ref-forwarding Alert component
-const Alert = React.forwardRef<HTMLDivElement, React.ComponentProps<typeof MuiAlert>>(
-  function Alert(props, ref) {
-    return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
-  }
-);
+const Alert = React.forwardRef<HTMLDivElement, React.ComponentProps<typeof MuiAlert>>(function Alert(props, ref) {
+  return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
+});
 
 interface FormData {
   [key: string]: any;
@@ -47,23 +44,15 @@ const CreateEvent: React.FC = () => {
   const navigate = useNavigate();
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
-  const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">(
-    "success"
-  );
+  const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
 
   const showSnackbar = (message: string, severity: "success" | "error") => {
     setSnackbarMessage(message);
     setSnackbarSeverity(severity);
-    // Add a slight delay to ensure DOM is ready
-    setTimeout(() => {
-      setSnackbarOpen(true);
-    }, 100);
+    setSnackbarOpen(true);
   };
 
-  const handleSnackbarClose = (
-    _event?: React.SyntheticEvent | Event,
-    reason?: string
-  ) => {
+  const handleSnackbarClose = (_event?: React.SyntheticEvent | Event, reason?: string) => {
     if (reason === "clickaway") return;
     setSnackbarOpen(false);
   };
@@ -79,47 +68,38 @@ const CreateEvent: React.FC = () => {
     };
   }, [theme.palette.mode]);
 
-  const isSuccessful = (status: number): boolean => status === 201;
+  const isSuccessful = (status: number) => status === 201;
 
-  const handleSubmit = async (formData: FormData): Promise<void> => {
+  const handleSubmit = async (formData: FormData) => {
     try {
-      const response = await apiClient.post(
-        `/api/events/requests/${societyId}/`,
-        formData
-      );
+      const response = await apiClient.post(`/api/events/requests/${societyId}/`, formData);
       if (isSuccessful(response.status)) {
         showSnackbar("Event created successfully!", "success");
-        setTimeout(() => {
-          navigate(-1);
-        }, 2000);
+        navigate(-1);
         return;
       }
       throw new Error(`Server error: ${response.statusText}`);
-    } catch (error: unknown) {
+    } catch (error) {
       console.error("Error creating event:", error);
       showSnackbar("Failed to create event.", "error");
     }
   };
 
   return (
-    <Box sx={{ position: 'relative' }}>
+    <Box sx={{ position: "relative" }}>
       <EventForm onSubmit={handleSubmit} />
       <Snackbar
         open={snackbarOpen}
         autoHideDuration={4000}
         onClose={handleSnackbarClose}
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
-        sx={{ 
-          '& .MuiSnackbar-root': { 
-            top: '24px'
+        sx={{
+          "& .MuiSnackbar-root": {
+            top: "24px"
           }
         }}
       >
-        <Alert
-          onClose={handleSnackbarClose}
-          severity={snackbarSeverity}
-          sx={{ width: "100%" }}
-        >
+        <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: "100%" }}>
           {snackbarMessage}
         </Alert>
       </Snackbar>
