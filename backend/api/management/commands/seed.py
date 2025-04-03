@@ -151,7 +151,7 @@ class Command(BaseCommand):
         society.vice_president = vice_president
         society.event_manager = event_manager
         society.icon = "pre-seed-icons/robotics.jpg"
-        society.society_members.add(student, president, vice_president, event_manager)
+        society.society_members.add(president, vice_president, event_manager)
 
         vice_president.is_vice_president = True
         event_manager.is_event_manager = True

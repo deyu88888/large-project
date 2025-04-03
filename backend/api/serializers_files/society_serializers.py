@@ -177,9 +177,6 @@ class JoinSocietySerializer(serializers.Serializer):
     
 
 class StartSocietyRequestSerializer(serializers.ModelSerializer):
-    """
-    Serializer for creating a new society request.
-    """
     description = serializers.CharField(max_length=500)
     category = serializers.CharField(max_length=50)
     requested_by = serializers.PrimaryKeyRelatedField(queryset=Student.objects.all(), required=True)
@@ -189,26 +186,33 @@ class StartSocietyRequestSerializer(serializers.ModelSerializer):
         fields = ["id", "name", "description", "category", "requested_by"]
 
     def validate(self, data):
-        if Society.objects.filter(name=data["name"]).exists():
-            raise serializers.ValidationError("A society with this name already exists.")
+        society_name = data.get("name")
+        if society_name and Society.objects.filter(name=society_name).exists():
+            raise serializers.ValidationError({'name': "A society with this name already exists."})
         return data
 
     def create(self, validated_data):
-        """Handle creating a society request."""
         request = self.context.get("request")
+        if not request or not hasattr(request, 'user'):
+             raise serializers.ValidationError("Request context with user is required.")
+
         student = getattr(request.user, "student", None)
 
         if not student:
             raise serializers.ValidationError("Only students can start societies.")
 
-        return SocietyRequest.objects.create(
-            name=validated_data["name"],
-            description=validated_data["description"],
-            category=validated_data["category"],
-            president=validated_data["requested_by"],
-            intent="CreateSoc",
-            from_student=validated_data["requested_by"]  # Change requested_by to from_student
-        )
+        try:
+            return SocietyRequest.objects.create(
+                name=validated_data["name"],
+                description=validated_data["description"],
+                category=validated_data["category"],
+                president=validated_data["requested_by"],
+                intent="CreateSoc",
+                from_student=validated_data["requested_by"]
+            )
+        except KeyError as e:
+            raise serializers.ValidationError(f"Missing required validated data: {e}")
+
 
 class PendingMemberSerializer(serializers.ModelSerializer):
     """
