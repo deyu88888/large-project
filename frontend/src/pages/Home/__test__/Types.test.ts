@@ -9,7 +9,7 @@ import {
   ActivityLog, 
   ReportReply,
   Admin
-} from '../../types'; // Adjust this import path as needed
+} from '../../types';
 
 describe('Type definitions', () => {
   // Society tests
