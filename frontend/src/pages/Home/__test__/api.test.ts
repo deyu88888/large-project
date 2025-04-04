@@ -84,7 +84,7 @@ describe("API Client Configuration", () => {
 
   it("should create an axios instance with correct baseURL", () => {
     expect(axios.create).toHaveBeenCalledWith({
-      baseURL: "http:
+      baseURL: "http://localhost:8000",
       paramsSerializer: {
         indexes: null,
       },
@@ -97,12 +97,12 @@ describe("API Client Configuration", () => {
     vi.mocked(import.meta).env = {};
 
     
-    const getApiUrl = vi.fn().mockReturnValue("https:
+    const getApiUrl = vi.fn().mockReturnValue("https://localhost:8000");
     
     
     vi.mocked(import.meta).env = originalEnv;
     
-    expect(getApiUrl()).toBe("https:
+    expect(getApiUrl()).toBe("https://localhost:8000");
   });
 });
 
@@ -637,7 +637,7 @@ describe("Request Interceptor", () => {
     await expect(errorInterceptor(error)).rejects.toEqual(error);
   });
 });
-const apiUrl = "https:
+const apiUrl = "https://api.example.com";
 describe("Response Interceptor", () => {
   let responseInterceptor: (response: any) => any;
   let errorInterceptor: (error: any) => Promise<any>;
