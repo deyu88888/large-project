@@ -98,11 +98,7 @@ class AdminBaseView(APIView):
 
 
 class AdminDeleteView(AdminBaseView):
-    """View for admins to delete students, societies, events, and other admins."""
-
     def delete(self, request, target_type, target_id):
-        """Handle resource deletion and log the action."""
-
         target_type = target_type.capitalize()
         admin, error = get_admin_if_user_is_admin(request.user, "delete resources")
         if error:
@@ -172,11 +168,11 @@ class AdminDeleteView(AdminBaseView):
         )
         
         try:
-            # Handle special case for Student deletion to avoid foreign key constraints
             if target_type == "Student":
                 self.handle_student_deletion(target)
+            elif target_type == "Society":
+                self.handle_society_deletion(target)
             else:
-                # This is the line that was commented out and needs to be active
                 target.delete()
                 
             ActivityLog.delete_expired_logs()
@@ -192,9 +188,6 @@ class AdminDeleteView(AdminBaseView):
             )
     
     def handle_student_deletion(self, student):
-        """
-        Handle special deletion logic for Student model to prevent foreign key constraint errors.
-        """        
         with transaction.atomic():
             if hasattr(student, 'president_of') and student.president_of:
                 society = student.president_of
@@ -214,6 +207,16 @@ class AdminDeleteView(AdminBaseView):
                 student.following.clear()
             
             student.delete()
+            
+    def handle_society_deletion(self, society):
+        with transaction.atomic():
+            if society.president:
+                student = society.president
+                if hasattr(student, 'president_of') and student.president_of == society:
+                    student.president_of = None
+                    student.save()
+            
+            society.delete()
 
 
 class AdminRestoreView(AdminBaseView):
