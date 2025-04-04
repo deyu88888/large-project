@@ -51,14 +51,30 @@ class Command(BaseCommand):
         self.student_generator.create_student(quantity[1])
 
         self.create_default_students()
+        
+        # Delete any duplicate Robotics Club societies before proceeding
+        robotics_clubs = Society.objects.filter(name="Robotics Club").order_by('id')
+        if robotics_clubs.count() > 1:
+            # Keep the first one, delete the rest
+            for club in robotics_clubs[1:]:
+                print(f"Deleting duplicate Robotics Club with ID {club.id}")
+                club.delete()
+        
+        # Modify the society generator's generated_names set to include "Robotics Club"
+        # This prevents it from generating another society with that name
+        self.society_generator.generated_names.add("Robotics Club")
+        
+        # Create additional societies
         self.society_generator.create_society(quantity[2])
         self.society_generator.create_society_requests(quantity[2])
+        
         self.event_generator.create_event(quantity[3], past=False)
         self.event_generator.create_event(quantity[4], past=True)
         self.event_generator.create_event_requests(quantity[3], past=False)
         self.event_generator.create_event_requests(quantity[4], past=True)
 
-        robotics_soc =  Society.objects.get(name="Robotics Club")
+        # Use filter().first() instead of get() to prevent the MultipleObjectsReturned error
+        robotics_soc = Society.objects.filter(name="Robotics Club").first()
         self.create_unassigned_student(robotics_soc)
 
         self.pre_define_awards()
@@ -136,12 +152,25 @@ class Command(BaseCommand):
             president.is_president = True
             president.save()
 
-        self.society_generator.create_society(
-            name="Robotics Club",
-            president_force=president
-        )
-
+        # Check if society already exists before creating
         society = Society.objects.filter(name="Robotics Club").first()
+        if not society:
+            # Add "Robotics Club" to the generated_names set to prevent duplicates
+            self.society_generator.generated_names.add("Robotics Club")
+            
+            self.society_generator.create_society(
+                name="Robotics Club",
+                president_force=president
+            )
+            society = Society.objects.filter(name="Robotics Club").first()
+        else:
+            # If society exists, ensure the president is properly set
+            society.president = president
+            president.president_of = society
+            president.is_president = True
+            president.save()
+            society.save()
+        
         president.president_of = society
         self.society_generator.seed_society_showreel(society, n=10)
         self.event_generator.create_event(1, for_society=society)

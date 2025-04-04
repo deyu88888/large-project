@@ -1,4 +1,3 @@
-// Refactored
 import React, {useEffect, useRef, useState} from "react";
 import {
   Box,
@@ -54,6 +53,7 @@ export const EventForm: React.FC<EventFormProps> = ({
   const coverImageInputRef = useRef<HTMLInputElement>(null);
 
   const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [errors, setErrors] = useState({ coverImage: false });
 
   const eventDateTime = new Date(`${date}T${startTime}`);
   const now = new Date();
@@ -169,6 +169,14 @@ export const EventForm: React.FC<EventFormProps> = ({
       return;
     }
 
+    const newErrors = { coverImage: false };
+    
+    if (!isEditMode && !coverImageFile) {
+      newErrors.coverImage = true;
+      setErrors(newErrors);
+      return;
+    }
+
     const formData = new FormData();
     formData.append("title", title);
     formData.append("main_description", mainDescription);
@@ -238,14 +246,15 @@ export const EventForm: React.FC<EventFormProps> = ({
             ref={coverImageInputRef}
             type="file"
             accept="image/*"
+            name="cover_image"
             style={{ display: "none" }}
             onChange={(e) => {
               const file = e.target.files?.[0];
               if (file) {
                 setCoverImageFile(file);
+                setErrors(prev => ({ ...prev, coverImage: false }));
               }
             }}
-            required={!isEditMode}
           />
 
           <Button
@@ -255,6 +264,12 @@ export const EventForm: React.FC<EventFormProps> = ({
           >
             Choose Cover Image
           </Button>
+
+          {errors.coverImage && (
+            <Typography color="error" sx={{ mt: 1 }}>
+              Please upload a cover image
+            </Typography>
+          )}
 
           {coverImagePreviewSrc && (
             <Box
@@ -400,7 +415,6 @@ export const EventForm: React.FC<EventFormProps> = ({
           />
         </Box>
 
-        {/* Extra Modules */}
         <Typography variant="h6" gutterBottom>
           Extra Content (Optional)
         </Typography>
@@ -434,7 +448,6 @@ export const EventForm: React.FC<EventFormProps> = ({
           <MenuItem onClick={() => handleSelectModule("file")}>File</MenuItem>
         </Menu>
 
-        {/* Participant Modules */}
         <Box sx={{ my: 4, p: 2, border: "1px dashed #aaa", borderRadius: 2 }}>
           <Typography variant="h6" gutterBottom>
             Participants Only Content (Optional)
