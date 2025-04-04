@@ -756,7 +756,7 @@ describe("Response Interceptor", () => {
     try {
       await errorInterceptor(error);
     } catch (e) {
-      
+      console.error(e);
     }
 
     
@@ -790,7 +790,7 @@ describe("Response Interceptor", () => {
     try {
       await errorInterceptor(error);
     } catch (e) {
-      
+      console.error(e);
     }
 
     
@@ -821,7 +821,7 @@ describe("Response Interceptor", () => {
     try {
       await errorInterceptor(error);
     } catch (e) {
-      
+      console.error("Error in test:", e);
     }
 
     
@@ -844,7 +844,7 @@ describe("Response Interceptor", () => {
     try {
       await errorInterceptor(error);
     } catch (e) {
-      
+      // Intentionally ignore error as the request was already retried
     }
 
     
