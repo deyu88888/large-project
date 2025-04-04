@@ -5,7 +5,6 @@ import SocietyList from '../SocietyList';
 import { SearchContext } from "../../../components/layout/SearchContext";
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 
-// Mock the API module
 vi.mock('../../../api', () => ({
   apiClient: {
     get: vi.fn().mockResolvedValue({ data: [] }),
@@ -35,7 +34,6 @@ vi.mock('../../../theme/theme', () => ({
   })
 }));
 
-// Mock navigate
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
@@ -44,16 +42,6 @@ vi.mock('react-router-dom', async () => {
     useNavigate: () => mockNavigate
   };
 });
-
-const mockWebSocket = {
-  onopen: null,
-  onmessage: null,
-  onerror: null,
-  onclose: null,
-  close: vi.fn()
-};
-
-global.WebSocket = vi.fn().mockImplementation(() => mockWebSocket);
 
 describe('Society List Page', () => {
   beforeEach(() => {
@@ -73,22 +61,13 @@ describe('Society List Page', () => {
       </ThemeProvider>
     );
     
-    // Call all WebSocket handlers to avoid act warnings
-    mockWebSocket.onopen && mockWebSocket.onopen({});
-    
-    // Instead of looking for a title that doesn't exist, 
-    // check for the DataGrid component
     await waitFor(() => {
-      // Check for the DataGrid toolbar that we can see in the DOM output
       expect(screen.getByRole('button', { name: /columns/i })).toBeInTheDocument();
     });
     
-    // Check for other elements that should be present in the DataGrid
     expect(screen.getByRole('button', { name: /filters/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /density/i })).toBeInTheDocument();
     
-    // If you want to verify column headers (once data is loaded)
-    // These might need to be adjusted based on exactly how columns appear in the DataGrid
     const columnHeaders = screen.getAllByRole('columnheader');
     expect(columnHeaders.length).toBeGreaterThan(0);
   });

@@ -5,7 +5,6 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { BrowserRouter } from 'react-router-dom';
 import ManageSocieties from '../AdminSocietyManagement';
 
-// Mock axios
 vi.mock('axios', () => ({
   default: {
     get: vi.fn(() => Promise.resolve({ data: [] })),
@@ -25,7 +24,6 @@ vi.mock('axios', () => ({
   }
 }));
 
-// Mock the child components
 vi.mock('../AdminSocietyManagement/SocietyList', () => ({
   default: () => <div data-testid="society-list">Society List Component</div>
 }));
@@ -42,7 +40,6 @@ vi.mock('../AdminSocietyManagement/PendingSocietyDetailRequest', () => ({
   default: () => <div data-testid="detail-requests">Description Requests Component</div>
 }));
 
-// Mock the theme tokens
 vi.mock('../theme/theme', () => ({
   tokens: () => ({
     grey: {
@@ -55,23 +52,7 @@ vi.mock('../theme/theme', () => ({
 describe('ManageSocieties', () => {
   let localStorageMock;
   
-  // Mock WebSocket
-  global.WebSocket = class MockWebSocket {
-    constructor() {
-      this.onopen = null;
-      this.onclose = null;
-      this.onmessage = null;
-      this.onerror = null;
-      setTimeout(() => {
-        if (this.onopen) this.onopen();
-      }, 0);
-    }
-    send() {}
-    close() {}
-  };
-  
   beforeEach(() => {
-    // Setup localStorage mock
     localStorageMock = {
       getItem: vi.fn(),
       setItem: vi.fn(),
@@ -118,16 +99,14 @@ describe('ManageSocieties', () => {
     localStorageMock.getItem.mockReturnValue(null);
     renderWithTheme(<ManageSocieties />);
     
-    // Instead of looking for the component content, just check if the first tab is selected
     const currentTab = screen.getByText('Current societies');
     expect(currentTab.closest('button')).toHaveAttribute('aria-selected', 'true');
   });
 
   it('shows the saved tab from localStorage on initial render', () => {
-    localStorageMock.getItem.mockReturnValue('2'); // Rejected societies tab (index 2)
+    localStorageMock.getItem.mockReturnValue('2');
     renderWithTheme(<ManageSocieties />);
     
-    // Check that the Rejected societies tab is selected
     const rejectedTab = screen.getByText('Rejected societies');
     expect(rejectedTab.closest('button')).toHaveAttribute('aria-selected', 'true');
   });
@@ -136,18 +115,14 @@ describe('ManageSocieties', () => {
     localStorageMock.getItem.mockReturnValue(null);
     renderWithTheme(<ManageSocieties />);
     
-    // Initially the first tab should be selected
     const currentTab = screen.getByText('Current societies');
     expect(currentTab.closest('button')).toHaveAttribute('aria-selected', 'true');
     
-    // Click on Pending societies tab
     const pendingTab = screen.getByText('Pending societies');
     fireEvent.click(pendingTab);
     
-    // The Pending societies tab should now be selected
     expect(pendingTab.closest('button')).toHaveAttribute('aria-selected', 'true');
     
-    // Should save the tab index to localStorage
     expect(localStorageMock.setItem).toHaveBeenCalledWith('activeTab', '1');
   });
 
@@ -155,29 +130,24 @@ describe('ManageSocieties', () => {
     localStorageMock.getItem.mockReturnValue(null);
     renderWithTheme(<ManageSocieties />);
     
-    // Check Current societies tab (default)
     const currentTab = screen.getByText('Current societies');
     expect(currentTab.closest('button')).toHaveAttribute('aria-selected', 'true');
     
-    // Click and check Pending societies tab
     const pendingTab = screen.getByText('Pending societies');
     fireEvent.click(pendingTab);
     expect(pendingTab.closest('button')).toHaveAttribute('aria-selected', 'true');
     expect(localStorageMock.setItem).toHaveBeenCalledWith('activeTab', '1');
     
-    // Click and check Rejected societies tab
     const rejectedTab = screen.getByText('Rejected societies');
     fireEvent.click(rejectedTab);
     expect(rejectedTab.closest('button')).toHaveAttribute('aria-selected', 'true');
     expect(localStorageMock.setItem).toHaveBeenCalledWith('activeTab', '2');
     
-    // Click and check Society detail requests tab
     const detailTab = screen.getByText('Society detail requests');
     fireEvent.click(detailTab);
     expect(detailTab.closest('button')).toHaveAttribute('aria-selected', 'true');
     expect(localStorageMock.setItem).toHaveBeenCalledWith('activeTab', '3');
     
-    // Go back to first tab
     fireEvent.click(currentTab);
     expect(currentTab.closest('button')).toHaveAttribute('aria-selected', 'true');
     expect(localStorageMock.setItem).toHaveBeenCalledWith('activeTab', '0');
