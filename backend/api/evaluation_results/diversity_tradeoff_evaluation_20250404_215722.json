@@ -1,0 +1,12 @@
+{
+  "timestamp": "2025-04-04T21:57:22.055582",
+  "num_test_users": 1,
+  "k": 5,
+  "diversity_levels": [
+    "low",
+    "balanced",
+    "high"
+  ],
+  "aggregate_metrics": {},
+  "per_user_results": {}
+}

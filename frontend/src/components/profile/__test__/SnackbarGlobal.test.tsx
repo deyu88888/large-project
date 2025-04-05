@@ -155,7 +155,6 @@ describe('SnackbarGlobal Component', () => {
 
     // Check the inline style on the Alert component
     const alertElement = screen.getByRole('alert');
-    // Get the computed style (note: in JSDOM this might not be perfect)
     expect(alertElement).toHaveStyle('width: 100%');
   });
 });

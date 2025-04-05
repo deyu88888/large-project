@@ -1,4 +1,3 @@
-// Refactored
 import { Box, Typography } from "@mui/material";
 import { StyledButton } from "./home/StyledButton";
 import { Attendee, EventData } from "../types/event/event";

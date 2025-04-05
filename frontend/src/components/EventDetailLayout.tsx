@@ -1,4 +1,3 @@
-// Refactored
 import { Box, Typography, Button, Snackbar, useTheme } from "@mui/material";
 import MuiAlert from "@mui/material/Alert";
 import { useState } from "react";

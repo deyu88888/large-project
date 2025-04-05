@@ -1,4 +1,3 @@
-// /Users/arhamzahid/Projects/large-project/frontend/src/pages/Home/__test__/app.test.tsx
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -29,12 +28,12 @@ vi.mock('../../../context/AuthContext', () => ({
 }));
 
 // Mock MUI minimally for structure testing
-const mockMuiTheme = { mui: 'theme' }; // Simple placeholder object
+const mockMuiTheme = { mui: 'theme' };  
 vi.mock('@mui/material', async (importOriginal) => {
   const actual = await importOriginal() as any;
   return {
     ...actual,
-    createTheme: vi.fn((themeArgs) => ({ ...mockMuiTheme, args: themeArgs })), // Return placeholder, capture args
+    createTheme: vi.fn((themeArgs) => ({ ...mockMuiTheme, args: themeArgs })),  
     ThemeProvider: ({ children, theme }) => (
         // Render children and add theme prop for inspection if needed
         <div data-testid="theme-provider" data-theme-args={JSON.stringify(theme?.args)}>
@@ -110,6 +109,4 @@ describe('App Component', () => {
         })
     );
   });
-
-  // The test for apiClient configuration was removed as it's not the responsibility of App.tsx
 });

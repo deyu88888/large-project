@@ -1,4 +1,3 @@
-// /Users/arhamzahid/Projects/large-project/frontend/src/pages/Home/__test__/Profile.test.tsx
 import React from 'react';
 import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
 import { vi } from 'vitest';

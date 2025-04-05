@@ -1,4 +1,3 @@
-// Refactored
 import { useEffect, useRef, useState } from "react";
 import { CommentItem } from "./CommentItem";
 import { apiClient } from "../api";

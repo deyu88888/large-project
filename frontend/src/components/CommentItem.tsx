@@ -1,4 +1,3 @@
-// Refactored
 import { useRef, useState } from "react";
 import {
   Avatar,

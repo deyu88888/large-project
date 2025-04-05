@@ -1,4 +1,3 @@
-// Refactored
 import { Box, Divider, Paper, Typography } from "@mui/material";
 import { FaTrophy } from "react-icons/fa";
 import { tokens } from "../../theme/theme";

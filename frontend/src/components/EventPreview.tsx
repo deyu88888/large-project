@@ -1,4 +1,3 @@
-// Refactored
 import {
   Dialog,
   DialogContent,
