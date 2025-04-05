@@ -14,7 +14,7 @@ import GitHubIcon from "@mui/icons-material/GitHub";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import PhoneIcon from "@mui/icons-material/Phone";
 
-const APP_VERSION = import.meta.env.VITE_API_URL || "1.0.0";
+const APP_VERSION = import.meta.env.VITE_APP_VERSION || "1.0.0";
 
 export const DashboardFooter = () => {
   const currentYear = new Date().getFullYear();
