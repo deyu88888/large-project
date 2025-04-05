@@ -75,7 +75,8 @@ describe('DashboardFooter', () => {
     const currentYear = new Date().getFullYear();
     renderWithTheme(<DashboardFooter />);
     
-    expect(screen.getByText(`© ${currentYear} Infinite Loop Innovators. All rights reserved.`)).toBeDefined();
+    const copyrightRegex = new RegExp(`© ${currentYear} Infinite Loop Innovators. All rights reserved.`);
+    expect(screen.getByText(copyrightRegex)).toBeDefined();
   });
 
   it('calls window.location.href when email icon is clicked', () => {
