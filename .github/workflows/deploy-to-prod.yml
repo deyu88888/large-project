@@ -32,6 +32,7 @@ jobs:
             echo "DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}" > .env.prod
             echo "DJANGO_DEBUG=False" >> .env.prod
             echo "VITE_API_URL=https://infiniteloop.space" >> .env.prod
+            echo "VITE_APP_VERSION"="${{ github.event.release.tag_name }}" >> .env.prod
 
             echo "Starting production containers..."
             make docker-up-prod
