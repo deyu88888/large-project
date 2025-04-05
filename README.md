@@ -2,8 +2,8 @@
 
 This is a **fullstack monorepo** containing:
 
-- **Frontend**: Vite + React + TypeScript + TailwindCSS + MUI
-- **Backend**: Django + SQLDB
+- **Frontend**: Vite + React + TypeScript + TailwindCSS + MUI (Read `frontend/README.md/`)
+- **Backend**: Django + SqlDB (Read `backend/README.md/`)
 - **Docker**: Development setup with Docker Compose
 - **CI/CD**: GitHub Actions in `.github/workflows/`
 - **Developer Manual**: Frontend in `frontend/README.md` and Backend in `backend/README.md`
@@ -11,7 +11,8 @@ This is a **fullstack monorepo** containing:
 - **SEG Screencast**: SEG Screencast is `SEG_screencast` 
 
 Production app is at [https://infiniteloop.space](https://infiniteloop.space)
-Screencast is at [https://](https://)
+
+Screencast is at [https://youtu.be/3u6wwups8_0](https://youtu.be/3u6wwups8_0)
 
 ---
 
