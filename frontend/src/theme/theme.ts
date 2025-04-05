@@ -1,3 +1,5 @@
+import { inputsCustomizations } from "./overrides/input";
+
 type ThemeMode = "light" | "dark";
 
 export type ColorTokens = {
@@ -98,7 +100,7 @@ export const tokens = (mode: ThemeMode): ColorTokens => ({
           700: "#995431",
           800: "#663821",
           900: "#331c10",
-        },        
+        },
       }
     : {
         grey: {
@@ -185,7 +187,6 @@ export const tokens = (mode: ThemeMode): ColorTokens => ({
           800: "#663821",
           900: "#331c10",
         },
-        
       }),
 });
 
@@ -219,28 +220,31 @@ export const themeSettings = (mode: ThemeMode) => {
     typography: {
       fontFamily: ["Source Sans Pro", "sans-serif"].join(","),
       fontSize: 12,
-      h1: { 
-        fontSize: 40, 
+      h1: {
+        fontSize: 40,
         fontFamily: "Monaco, monospace",
         fontWeight: "bold",
       },
-      h2: { 
-        fontSize: 32, 
+      h2: {
+        fontSize: 32,
         fontFamily: "Monaco, monospace",
       },
-      h3: { 
-        fontSize: 24, 
+      h3: {
+        fontSize: 24,
         fontFamily: "Monaco, monospace",
       },
-      h4: { 
-        fontSize: 20, 
+      h4: {
+        fontSize: 20,
       },
-      h5: { 
-        fontSize: 16, 
+      h5: {
+        fontSize: 16,
       },
-      h6: { 
-        fontSize: 14, 
+      h6: {
+        fontSize: 14,
       },
+    },
+    components: {
+      ...inputsCustomizations(mode),
     },
   };
 };
