@@ -16,8 +16,10 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_URL: ${VITE_API_URL}
+        VITE_APP_VERSION: ${VITE_APP_VERSION}
     environment:
       - VITE_API_URL=${VITE_API_URL}
+      - VITE_APP_VERSION=${VITE_APP_VERSION}
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.frontend.rule=Host(`infiniteloop.space`)"

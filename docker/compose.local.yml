@@ -9,6 +9,7 @@ services:
   frontend:
     environment:
       - VITE_API_URL=localhost:8000
+      - VITE_APP_VERSION=1.0.0
     ports:
       - "5173:80"
 
