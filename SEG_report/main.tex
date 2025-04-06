@@ -29,13 +29,13 @@ Please remove all expectations and assessment environments from this page before
 \title{Software Engineering Group Project}
 \subtitle{Major Group Project}%%% Insert project name here
 \author{\textit{Infinite Loop Innovators}\\  %%% Add team name here
-    Iliyan Adov\\                        %%% Add first author here
-    Tala Alqarzaee\\                        %%% Add second author here
-    Thomas Holden\\                       %%% Add third author here
-    Deyu Li\\                      %%% Add fourth author here
-    Yuanhao Li\\                        %%% Add fifth author here
-    Manusha Ravindrathas\\                      %%% Add sixth author here
-    Arham Zahid\\                       %%% Add seventh author here
+    Tala Alqarzaee\\                        %%% Add first author here
+    Iliyan Adov\\                        %%% Add second author here
+    Manusha Ravindrathas\\                      %%% Add three author here
+    Thomas Holden\\                       %%% Add four author here
+    Arham Zahid\\                       %%% Add five author here
+    Yuanhao Li\\                        %%% Add six author here
+    Deyu Li\\                      %%% Add seven author here
 }
 \date{\today}
 
@@ -82,5 +82,33 @@ Please remove all expectations and assessment environments from this page before
     % \input{chapter07--machine-learning}  % Uncomment this line if you need this chapter.
 
     \appendix
-    % \input{appendix01--manual-testing}  % Uncomment this line if you need this chapter.
+    \chapter{Test User Credentials}
+    \label{app:credentials}
+    
+    The following test accounts can be used to access different roles within the system:
+    
+    \begin{table}[h]
+    \centering
+    \begin{tabular}{|l|l|l|}
+    \hline
+    \textbf{Role} & \textbf{Username} & \textbf{Password} \\
+    \hline
+    Student & student\_user & studentpassword \\
+    \hline
+    Society President & president\_user & presidentpassword \\
+    \hline
+    Vice President & vice\_president\_user & vicepresidentpassword \\
+    \hline
+    Event Manager & event\_manager\_user & eventmanagerpassword \\
+    \hline
+    Administrator & admin1 & adminpassword \\
+    \hline
+    Super Administrator & superadmin1 & superadminpassword \\
+    \hline
+    \end{tabular}
+    \caption{Test accounts for different user roles}
+    \label{tab:test-accounts}
+    \end{table}
+    
+    Each account provides access to the role-specific dashboard and functionality.
 \end{document}
