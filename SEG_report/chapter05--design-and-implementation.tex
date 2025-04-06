@@ -78,7 +78,7 @@ We set up an automated deployment system to host our application on a Virtual Pr
 One of our most important design decisions was creating different dashboards for different user roles. This required:
 
 \begin{itemize}
-    \item \textbf{Role-Based Access}: Each dashboard only shows functions that role can use
+    \item \textbf{Role-Based Access}: Each dashboard only shows functions that the role can use
     \item \textbf{Shared Components}: Common parts reused across dashboards
     \item \textbf{Consistent Look}: Similar design across all dashboards despite different functions
 \end{itemize}
@@ -86,11 +86,11 @@ One of our most important design decisions was creating different dashboards for
 We took an approach that was a balance between:
 
 \begin{enumerate}
-    \item One dashboard with conditional elements based on role
-    \item Completely separate dashboards with no shared code
+    \item One dashboard with conditional elements based on role (student, president, vice-president, or event manager)
+    \item Completely separate dashboards
 \end{enumerate}
 
-This in practice meant separate dashboards for different roles, but with shared components where possible. This reduced duplicate code while keeping the role-specific functions clearly separated.
+This approach reduced duplicate code while keeping the role-specific functions separate.
 
 \subsection{Data Model Design}
 
