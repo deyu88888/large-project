@@ -2,19 +2,44 @@
 
 This is a **fullstack monorepo** containing:
 
-- **Frontend**: Vite + React + TypeScript + TailwindCSS + MUI (Read `frontend/README.md/`)
-- **Backend**: Django + SqlDB (Read `backend/README.md/`)
+- **Frontend**: Vite + React + TypeScript + TailwindCSS + MUI
+- **Backend**: Django + SQLDB
 - **Docker**: Development setup with Docker Compose
 - **CI/CD**: GitHub Actions in `.github/workflows/`
 - **Developer Manual**: Frontend in `frontend/README.md` and Backend in `backend/README.md`
 - **SEG Report**: SEG Report is `SEG_report.pdf` and src in `SEG_report/`
-- **SEG Screencast**: SEG Screencast is `SEG_screencast` 
+- **SEG Screencast**: SEG Screencast is `SEG_screencast`
 
 Production app is at [https://infiniteloop.space](https://infiniteloop.space)
-
-Screencast is at [https://youtu.be/3u6wwups8_0](https://youtu.be/3u6wwups8_0)
+Screencast is at [https://www.youtube.com/watch?v=3u6wwups8_0&ab_channel=ihevgun](https://www.youtube.com/watch?v=3u6wwups8_0&ab_channel=ihevgun)
 
 ---
+
+Test Account Credentials
+
+Student:
+Username: student_user
+Password: studentpassword
+
+Society President:
+Username: president_user
+Password: presidentpassword
+
+Vice President:
+Username: vice_president_user
+Password: vicepresidentpassword
+
+Event Manager:
+Username: event_manager_user
+Password: eventmanagerpassword
+
+Administrator:
+Username: admin1
+Password: adminpassword
+
+Super Administrator:
+Username: superadmin1
+Password: superadminpassword
 
 ## Directory Overview
 
