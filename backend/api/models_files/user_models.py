@@ -48,12 +48,12 @@ class User(AbstractUser):
         related_name="followers",
         blank=True,
     )
-    
+
     follower = models.ManyToManyField(
-         "self",
-         symmetrical=False,
-         related_name="followings",
-         blank=True,
+        "self",
+        symmetrical=False,
+        related_name="followings",
+        blank=True,
     )
 
     # This flag differentiates super-admins from normal admins
@@ -71,7 +71,7 @@ class User(AbstractUser):
 
     def is_admin(self):
         return self.role == "admin" or self.is_super_admin
-    
+
     @classmethod
     def get_admins(cls):
         """Return all admin users (including super-admins)."""
@@ -81,7 +81,7 @@ class User(AbstractUser):
         """
         Assign users to the correct groups based on role.
         """
-        
+
         if self.is_super_admin:
             self.is_superuser = True
             self.is_staff = True
@@ -148,7 +148,8 @@ class Student(User):
             leadership_roles.append("event manager")
 
         if len(leadership_roles) > 1:
-            raise ValidationError(f"A student can only hold one leadership role. This student is assigned as: {', '.join(leadership_roles)}")
+            raise ValidationError(
+                f"A student can only hold one leadership role. This student is assigned as: {', '.join(leadership_roles)}")
 
         super().save(*args, **kwargs)
 
@@ -164,6 +165,8 @@ class Student(User):
         return [society.name for society in obj.societies.all()]
 
 # Signal to update `is_president` when `president_of` changes
+
+
 @receiver(pre_save, sender=Student)
 def update_is_president(sender, instance, **kwargs):
     instance.is_president = instance.president_of is not None

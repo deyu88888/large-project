@@ -1877,7 +1877,17 @@
       "metadata": {
         "explanation_request": true
       }
+    },
+    {
+      "student_id": 2,
+      "society_id": 2,
+      "feedback_type": "view_details",
+      "timestamp": "2025-04-05T10:18:59.445815",
+      "value": null,
+      "metadata": {
+        "explanation_request": true
+      }
     }
   ],
-  "last_updated": "2025-04-04T21:56:13.743992"
+  "last_updated": "2025-04-05T10:18:59.445865"
 }

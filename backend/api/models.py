@@ -21,7 +21,8 @@ class SiteSettings(models.Model):
 
     introduction_title = models.CharField(
         max_length=255,
-        default=_("Welcome to the Universal Student Society Platform!"),  # Use translation
+        # Use translation
+        default=_("Welcome to the Universal Student Society Platform!"),
         verbose_name=_("Introduction Title"),
         help_text=_("The title of the website introduction section."),
     )
@@ -34,7 +35,8 @@ class SiteSettings(models.Model):
             "and customizable society pages. Get started by registering your society or logging in!"
         ),
         verbose_name=_("Introduction Content"),
-        help_text=_("The main content of the website introduction. Use newlines to separate paragraphs."),
+        help_text=_(
+            "The main content of the website introduction. Use newlines to separate paragraphs."),
     )
 
     verbose_name_plural = _("Site Settings")
@@ -59,6 +61,7 @@ class SiteSettings(models.Model):
         """
         obj, created = cls.objects.get_or_create(pk=cls.singleton_instance_id)
         return obj
+
 
 class ActivityLog(models.Model):
     """A model to keep track of admin activity"""
@@ -96,7 +99,8 @@ class ActivityLog(models.Model):
     def delete_expired_logs(cls):
         """Delete activity logs older than 30 days."""
         expiration_threshold = timezone.now() - timedelta(days=30)
-        expired_logs = cls.objects.filter(expiration_date__lt=expiration_threshold)
+        expired_logs = cls.objects.filter(
+            expiration_date__lt=expiration_threshold)
         deleted_count, _ = expired_logs.delete()
         return deleted_count
 
