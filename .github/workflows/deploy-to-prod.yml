@@ -19,7 +19,7 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H ${{ secrets.VPS_SSH_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Deploy via Makefile
+      - name: Deploy via SSH and validate
         run: |
           ssh -o StrictHostKeyChecking=no root@${{ secrets.VPS_SSH_HOST }} << 'EOF'
             set -e
@@ -32,8 +32,24 @@ jobs:
             echo "DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}" > .env.prod
             echo "DJANGO_DEBUG=False" >> .env.prod
             echo "VITE_API_URL=https://infiniteloop.space" >> .env.prod
-            echo "VITE_APP_VERSION"="${{ github.event.release.tag_name }}" >> .env.prod
+            echo "VITE_APP_VERSION=${{ github.event.release.tag_name }}" >> .env.prod
 
-            echo "Starting production containers..."
+            echo "Rebuilding and starting production containers..."
+            make docker-down-prod || true  # optional: stop old containers if running
             make docker-up-prod
+
+            echo "Waiting for containers to be healthy..."
+            sleep 10  # wait a few seconds if needed
+
+            echo "Checking running containers..."
+            docker ps
+
+            echo "Checking container health statuses..."
+            unhealthy=$(docker ps --filter "health=unhealthy" --format "{{.Names}}")
+            if [ -n "$unhealthy" ]; then
+              echo "Some containers are unhealthy: $unhealthy"
+              exit 1
+            fi
+
+            echo "Deployment successful 🎉"
           EOF
