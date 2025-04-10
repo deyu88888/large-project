@@ -90,7 +90,7 @@ class RequestJoinSocietyViewTests(APITestCase):
             from_student=self.student,
             society=self.society1,
             intent="JoinSoc",
-            approved=False
+            approved=None
         )
         response = self.client.post(f"/api/society/join/{self.society1.id}/")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
