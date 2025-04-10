@@ -201,6 +201,11 @@ class Command(BaseCommand):
                 "major": "Computer Science",
             },
         )
+        
+        student.president_of = None
+        student.is_vice_president = False
+        student.is_event_manager = False
+        
         student.save()
         society.society_members.add(student)
 
