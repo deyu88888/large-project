@@ -244,7 +244,6 @@ class RequestJoinSocietyView(APIView):
     API View for managing the joining of new societies by a student.
     """
     permission_classes = [IsAuthenticated]
-
     def get(self, request):
         """Get all joinable societies for student"""
         student, error = get_student_if_user_is_student(request.user, "join")
@@ -254,19 +253,16 @@ class RequestJoinSocietyView(APIView):
         available_societies = Society.objects.exclude(id__in=joined_societies)
         serializer = SocietySerializer(available_societies, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-
     def post(self, request, society_id=None):
         """Request to join a society by society_id"""
         student, error = get_student_if_user_is_student(request.user, "join")
         if error:
             return error
-
         if not society_id:
             return Response(
                 {"error": "Society ID is required."},
                 status=status.HTTP_400_BAD_REQUEST
             )
-
         try:
             society = Society.objects.get(id=society_id)
         except Society.DoesNotExist:
@@ -274,36 +270,31 @@ class RequestJoinSocietyView(APIView):
                 {"error": "Society does not exist."},
                 status=status.HTTP_404_NOT_FOUND
             )
-
         # Check if the student is already a member
         if society.members.filter(id=student.id).exists():
             return Response(
                 {"error": "You are already a member of this society."},
                 status=status.HTTP_400_BAD_REQUEST
             )
-
         # Check for existing pending request
         existing_request = SocietyRequest.objects.filter(
             from_student=student,
             society=society,
             intent="JoinSoc",
-            approved=False
+            approved=None
         ).first()
-
         if existing_request:
             return Response({
                 "message": f"You already have a pending request to join {society.name}.",
                 "request_id": existing_request.id
             }, status=status.HTTP_400_BAD_REQUEST)
-
         # Create new society request
         society_request = SocietyRequest.objects.create(
             intent="JoinSoc",
             from_student=student,
             society=society,
-            approved=False
+            approved=None
         )
-
         return Response({
             "message": f"Request to join society '{society.name}' has been submitted for approval.",
             "request_id": society_request.id
